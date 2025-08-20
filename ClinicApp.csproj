@@ -424,7 +424,6 @@
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
-    <Compile Include="Areas\Admin\Controllers\InsuranceController2 - Copy.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\Enums.cs" />
@@ -2833,7 +2832,6 @@
     <Content Include="Areas\Admin\Views\Department\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\Department\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Clinic\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\Shared\_AdminLayout - Copy.cshtml" />
     <Content Include="Content\plugins\DataTables\css\common.scss" />
     <Content Include="Content\plugins\DataTables\css\mixins.scss" />
     <Content Include="Content\plugins\DataTables\css\semanticui.scss" />
@@ -3040,7 +3038,6 @@
     <Content Include="Areas\Admin\Views\Insurance\_InsuranceListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_InsuranceTariffsListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Shared\_EditInsuranceTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\Index.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_CreateInsurance.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_EditInsurance.cshtml" />
@@ -3051,6 +3048,7 @@
     <Content Include="Areas\Admin\Views\Insurance\_ServiceListForTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_EditTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_TariffListPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_AdminLayout - Copy.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

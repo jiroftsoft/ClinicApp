@@ -1,6 +1,6 @@
 ﻿@{
     ViewBag.Title = "مدیریت جامع بیمه‌ها";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 <style>
@@ -21,45 +21,185 @@
     .btn-spinner {
         margin-left: 5px;
     }
+
+    /* استایل‌های خاص برای محیط پزشکی */
+    .medical-card {
+        border-radius: 12px;
+        box-shadow: var(--medical-card-shadow);
+        transition: all 0.2s ease;
+        border: none;
+        overflow: hidden;
+    }
+
+        .medical-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(13, 106, 202, 0.15);
+        }
+
+    .status-badge {
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-active {
+        background-color: rgba(25, 135, 84, 0.1);
+        color: var(--medical-green);
+    }
+
+    .status-inactive {
+        background-color: rgba(108, 117, 125, 0.1);
+        color: #6c757d;
+    }
+
+    .table-medical {
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+    }
+
+        .table-medical th {
+            background-color: var(--medical-blue-light);
+            color: var(--medical-blue-dark);
+            font-weight: 600;
+            padding: 0.75rem 1rem;
+            border-top: none;
+            border-bottom: 2px solid var(--medical-blue);
+        }
+
+        .table-medical td {
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
+        }
+
+        .table-medical tbody tr {
+            transition: all 0.15s ease;
+        }
+
+            .table-medical tbody tr:hover {
+                background-color: rgba(13, 106, 202, 0.04);
+            }
+
+        .table-medical .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+        }
+
+    .btn-medical {
+        border-radius: 8px;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.875rem;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary-medical {
+        background: linear-gradient(to right, var(--medical-blue), var(--medical-blue-dark));
+        border: none;
+        color: white;
+    }
+
+        .btn-primary-medical:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(13, 106, 202, 0.25);
+        }
+
+    .btn-green-medical {
+        background: linear-gradient(to right, var(--medical-green), var(--medical-green-dark));
+        border: none;
+        color: white;
+    }
+
+        .btn-green-medical:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(25, 135, 84, 0.25);
+        }
+
+    .btn-warning-medical {
+        background: linear-gradient(to right, #ffc107, #e0a800);
+        border: none;
+        color: white;
+    }
+
+        .btn-warning-medical:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.25);
+        }
+
+    .btn-danger-medical {
+        background: linear-gradient(to right, var(--medical-danger), #c82333);
+        border: none;
+        color: white;
+    }
+
+        .btn-danger-medical:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.25);
+        }
+
+    /* استایل‌های مودال پزشکی */
+    .modal-medical .modal-header {
+        background: linear-gradient(to right, var(--medical-blue), var(--medical-blue-dark));
+        color: white;
+        border-radius: 12px 12px 0 0;
+    }
+
+    .modal-medical .modal-title {
+        font-weight: 600;
+    }
+
+    .modal-medical .close {
+        color: white;
+        opacity: 0.9;
+    }
+
+    .modal-medical .modal-footer {
+        background: #f8f9fa;
+        border-radius: 0 0 12px 12px;
+    }
 </style>
 
 <div class="container-fluid mt-4">
     @Html.AntiForgeryToken()
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-light d-flex justify-content-between align-items-center">
-            <h4 class="card-title mb-0"><i class="fas fa-shield-alt text-primary mr-2"></i>@ViewBag.Title</h4>
-            <button id="btn-create" class="btn btn-success">
-                <i class="fas fa-plus mr-1"></i> ایجاد بیمه جدید
+    <div class="card medical-card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0"><i class="fas fa-shield-alt text-primary ml-2"></i>@ViewBag.Title</h4>
+            <button id="btn-create" class="btn btn-primary-medical btn-medical">
+                <i class="fas fa-plus ml-1"></i> ایجاد بیمه جدید
             </button>
         </div>
         <div class="card-body">
             <div class="row mb-3">
-                <div class="col-md-8">
+                <div class="col-md-6 mb-2 mb-md-0">
                     <div class="input-group">
                         <input type="text" id="searchTerm" class="form-control" placeholder="جستجو در نام یا توضیحات بیمه..." />
                         <div class="input-group-append">
-                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                            <button id="btn-search" class="btn btn-outline-secondary" type="button">
+                                <i class="fas fa-search"></i>
+                            </button>
                         </div>
                     </div>
                 </div>
-                <div class="col-md-4 d-flex align-items-center justify-content-end">
-                    <div class="custom-control custom-switch">
-                        <input type="checkbox" class="custom-control-input" id="activeOnly" checked>
-                        <label class="custom-control-label" for="activeOnly">فقط نمایش فعال‌ها</label>
+                <div class="col-md-6 d-flex align-items-center justify-content-end">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="activeOnly" checked>
+                        <label class="form-check-label" for="activeOnly">فقط نمایش فعال‌ها</label>
                     </div>
                 </div>
             </div>
 
             <div id="insurance-list-wrapper" class="position-relative">
                 <div id="insurance-list-container">
+                    <!-- لیست بیمه‌ها اینجا بارگیری می‌شود -->
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="main-modal" tabindex="-1" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+<div class="modal fade modal-medical" id="main-modal" tabindex="-1" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
@@ -69,238 +209,726 @@
                 </button>
             </div>
             <div class="modal-body" id="modal-body-content">
+                <!-- محتوای مودال اینجا بارگیری می‌شود -->
             </div>
         </div>
     </div>
 </div>
 
 @section scripts {
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
-    // IIFE (Immediately Invoked Function Expression) to avoid polluting the global scope
-    (function ($) {
-        "use strict";
+        // IIFE (Immediately Invoked Function Expression) برای جلوگیری از تداخل با فضای نام سراسری
+        (function ($) {
+            "use strict";
 
-        // Application State
-        const state = {
-            searchTerm: '',
-            page: 1,
-            activeOnly: true,
-            urls: {
-                load: '@Url.Action("LoadInsurances", "Insurance")',
-                create: '@Url.Action("Create", "Insurance")',
-                edit: '@Url.Action("Edit", "Insurance")',
-                delete: '@Url.Action("Delete", "Insurance")'
-            }
-        };
-
-        // --- UTILITY FUNCTIONS ---
-
-        function getAntiForgeryToken() {
-            return $('input[name="__RequestVerificationToken"]').val();
-        }
-
-        function showLoading() {
-            const overlay = `
-                <div class="loading-overlay">
-                    <div class="spinner-border text-primary" role="status">
-                        <span class="sr-only">Loading...</span>
-                    </div>
-                </div>`;
-            $('#insurance-list-wrapper').prepend(overlay);
-        }
-
-        function hideLoading() {
-            $('#insurance-list-wrapper .loading-overlay').remove();
-        }
-
-        function showAlert(icon, title, text, timer = null) {
-            Swal.fire({
-                icon: icon,
-                title: title,
-                text: text,
-                confirmButtonText: 'باشه',
-                timer: timer,
-                timerProgressBar: !!timer
-            });
-        }
-
-        function disableSubmitButton(btn) {
-            btn.prop('disabled', true).append('<span class="spinner-border spinner-border-sm btn-spinner"></span>');
-        }
-
-        function enableSubmitButton(btn) {
-            btn.prop('disabled', false).find('.btn-spinner').remove();
-        }
-
-        // --- CORE FUNCTIONS ---
-
-        function loadInsurances() {
-            showLoading();
-            state.searchTerm = $('#searchTerm').val();
-            state.activeOnly = $('#activeOnly').is(':checked');
-
-            $.ajax({
-                url: state.urls.load,
-                type: 'POST',
-                data: {
-                    __RequestVerificationToken: getAntiForgeryToken(),
-                    searchTerm: state.searchTerm,
-                    page: state.page,
-                    activeOnly: state.activeOnly
+            // وضعیت برنامه
+            const state = {
+                searchTerm: '',
+                page: 1,
+                activeOnly: true,
+                urls: {
+                    load: '@Url.Action("LoadInsurances", "Insurance")',
+                    create: '@Url.Action("Create", "Insurance")',
+                    edit: '@Url.Action("Edit", "Insurance")',
+                    delete: '@Url.Action("Delete", "Insurance")',
+                    details: '@Url.Action("Details", "Insurance")',
+                    loadTariffs: '@Url.Action("LoadTariffs", "Insurance")'
                 },
-                success: function (result) {
-                    $('#insurance-list-container').html(result);
-                },
-                error: function () {
-                    $('#insurance-list-container').html('<div class="alert alert-danger text-center">خطا در بارگذاری اطلاعات. لطفاً دوباره تلاش کنید.</div>');
-                },
-                complete: function () {
-                    hideLoading();
-                }
-            });
-        }
+                operationId: null
+            };
 
-        function openModalWithForm(url, title) {
-            $.get(url)
-                .done(function (html) {
-                    $('#modal-title').text(title);
-                    $('#modal-body-content').html(html);
-                    $('#main-modal').modal('show');
-                    // Re-parse the form for unobtrusive validation
-                    $.validator.unobtrusive.parse('#main-modal form');
-                })
-                .fail(function () {
-                    showAlert('error', 'خطا', 'دریافت اطلاعات از سرور با مشکل مواجه شد.');
-                });
-        }
+            // --- توابع کمکی ---
 
-        function handleFormSubmit(e) {
-            e.preventDefault();
-            const form = $(this);
-
-            if (!form.valid()) {
-                return;
+            function getAntiForgeryToken() {
+                return $('input[name="__RequestVerificationToken"]').val();
             }
 
-            const submitButton = form.find('button[type="submit"]');
-            disableSubmitButton(submitButton);
+            function showLoading() {
+                const overlay = `
+                    <div class="loading-overlay">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="sr-only">در حال بارگیری...</span>
+                        </div>
+                    </div>`;
+                $('#insurance-list-wrapper').prepend(overlay);
+            }
 
-            $.ajax({
-                url: form.attr('action'),
-                type: 'POST',
-                data: form.serialize(),
-                success: function (response) {
-                    if (response.success) {
-                        $('#main-modal').modal('hide');
-                        showAlert('success', 'موفق', response.message || 'عملیات با موفقیت انجام شد.', 2000);
-                        loadInsurances(); // Reload the list
-                    } else {
-                        let errorMsg = response.message || "خطایی در پردازش رخ داد.";
-                        if (response.errors && response.errors.length > 0) {
-                            errorMsg = '<ul>' + response.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
-                        }
-                        showAlert('error', 'خطا', errorMsg);
+            function hideLoading() {
+                $('#insurance-list-wrapper .loading-overlay').remove();
+            }
+
+            function showSuccessAlert(title, text, timer = 2000) {
+                Swal.fire({
+                    icon: 'success',
+                    title: title,
+                    text: text,
+                    confirmButtonText: 'باشه',
+                    timer: timer,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
                     }
-                },
-                error: function (xhr) {
-                     showAlert('error', 'خطای سرور', `خطای ${xhr.status}: ${xhr.statusText}`);
-                },
-                complete: function () {
-                    enableSubmitButton(submitButton);
-                }
-            });
-        }
+                });
+            }
 
-        function confirmAndDelete(id, name) {
-            Swal.fire({
-                title: 'آیا مطمئن هستید؟',
-                html: `شما در حال حذف بیمه "<b>${name}</b>" هستید. این عملیات غیرقابل بازگشت است.`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#d33',
-                cancelButtonColor: '#3085d6',
-                confirmButtonText: 'بله، حذف کن!',
-                cancelButtonText: 'انصراف'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    $.ajax({
-                        url: state.urls.delete,
-                        type: 'POST',
-                        data: {
-                            __RequestVerificationToken: getAntiForgeryToken(),
-                            id: id
-                        },
-                        success: function(response) {
-                            if (response.success) {
-                                showAlert('success', 'حذف شد!', response.message, 2000);
-                                loadInsurances();
-                            } else {
-                                showAlert('error', 'خطا در حذف', response.message);
+            function showErrorAlert(title, text) {
+                Swal.fire({
+                    icon: 'error',
+                    title: title,
+                    html: text,
+                    confirmButtonText: 'بستن',
+                    customClass: {
+                        popup: 'animated bounceInDown'
+                    }
+                });
+            }
+
+            function showWarningAlert(title, text) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: title,
+                    html: text,
+                    confirmButtonText: 'باشه',
+                    customClass: {
+                        popup: 'animated zoomIn'
+                    }
+                });
+            }
+
+            function disableSubmitButton(btn) {
+                btn.prop('disabled', true).append('<span class="spinner-border spinner-border-sm btn-spinner"></span>');
+            }
+
+            function enableSubmitButton(btn) {
+                btn.prop('disabled', false).find('.btn-spinner').remove();
+            }
+
+            // --- توابع اصلی ---
+
+            function loadInsurances() {
+                state.operationId = Guid.newGuid();
+                showLoading();
+
+                const searchTerm = $('#searchTerm').val().trim();
+                const activeOnly = $('#activeOnly').is(':checked');
+
+                // ثبت لاگ در کنسول برای عیب‌یابی
+                console.log(`[کلینیک شفا] درخواست بارگیری لیست بیمه‌ها. OperationId: ${state.operationId}, SearchTerm: "${searchTerm}", ActiveOnly: ${activeOnly}`);
+
+                $.ajax({
+                    url: state.urls.load,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: getAntiForgeryToken(),
+                        searchTerm: searchTerm,
+                        page: state.page,
+                        activeOnly: activeOnly
+                    },
+                    success: function (result) {
+                        $('#insurance-list-container').html(result);
+                        setupDynamicEventHandlers();
+
+                        // ثبت لاگ موفقیت‌آمیز
+                        console.log(`[کلینیک شفا] بارگیری لیست بیمه‌ها با موفقیت انجام شد. OperationId: ${state.operationId}`);
+                    },
+                    error: function (xhr) {
+                        console.error(`[کلینیک شفا] خطای سیستمی در بارگیری لیست بیمه‌ها. OperationId: ${state.operationId}, Status: ${xhr.status}`);
+
+                        let errorMessage = 'خطا در بارگذاری اطلاعات. لطفاً دوباره تلاش کنید.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        $('#insurance-list-container').html(`
+                            <div class="alert alert-danger text-center p-4">
+                                <i class="fas fa-exclamation-triangle fa-2x mb-3"></i>
+                                <p>${errorMessage}</p>
+                                <button id="retry-load" class="btn btn-primary-medical btn-medical mt-2">
+                                    <i class="fas fa-redo ml-1"></i> تلاش مجدد
+                                </button>
+                            </div>
+                        `);
+
+                        // افزودن گوشده رویداد برای دکمه تلاش مجدد
+                        $('#retry-load').on('click', function() {
+                            loadInsurances();
+                        });
+                    },
+                    complete: function () {
+                        hideLoading();
+                    }
+                });
+            }
+
+            function openModalWithForm(url, title) {
+                state.operationId = Guid.newGuid();
+                showLoading();
+
+                console.log(`[کلینیک شفا] درخواست باز کردن مودال. OperationId: ${state.operationId}, URL: ${url}`);
+
+                $.get(url)
+                    .done(function (html) {
+                        $('#modal-title').text(title);
+                        $('#modal-body-content').html(html);
+                        $('#main-modal').modal('show');
+
+                        // فعال‌سازی مجدد اعتبارسنجی غیرمتمرکز
+                        if ($.validator && $.validator.unobtrusive) {
+                            $.validator.unobtrusive.parse('#main-modal form');
+                        }
+
+                        // تنظیم گوشدهای رویداد برای فرم
+                        if (title.includes('ایجاد')) {
+                            setupCreateInsuranceForm();
+                        } else if (title.includes('ویرایش')) {
+                            setupEditInsuranceForm();
+                        }
+
+                        console.log(`[کلینیک شفا] مودال با موفقیت بارگیری شد. OperationId: ${state.operationId}`);
+                    })
+                    .fail(function (xhr) {
+                        console.error(`[کلینیک شفا] خطا در دریافت فرم. OperationId: ${state.operationId}, Status: ${xhr.status}`);
+
+                        let errorMessage = 'دریافت اطلاعات از سرور با مشکل مواجه شد.';
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        }
+
+                        showErrorAlert('خطا', errorMessage);
+                    })
+                    .always(function () {
+                        hideLoading();
+                    });
+            }
+
+            function handleFormSubmit(e) {
+                e.preventDefault();
+                const form = $(this);
+                const formId = form.attr('id') || 'unknown-form';
+
+                state.operationId = Guid.newGuid();
+                console.log(`[کلینیک شفا] درخواست ارسال فرم. OperationId: ${state.operationId}, Form: ${formId}`);
+
+                if (!form.valid()) {
+                    console.warn(`[کلینیک شفا] اعتبارسنجی فرم شکست خورد. OperationId: ${state.operationId}, Form: ${formId}`);
+                    return;
+                }
+
+                const submitButton = form.find('button[type="submit"]');
+                disableSubmitButton(submitButton);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            $('#main-modal').modal('hide');
+                            showSuccessAlert('موفق', response.message || 'عملیات با موفقیت انجام شد.');
+                            loadInsurances(); // بارگیری مجدد لیست بیمه‌ها
+
+                            console.log(`[کلینیک شفا] عملیات فرم با موفقیت انجام شد. OperationId: ${state.operationId}`);
+                        } else {
+                            let errorMsg = response.message || "خطایی در پردازش رخ داد.";
+                            if (response.errors && Array.isArray(response.errors) && response.errors.length > 0) {
+                                errorMsg = '<ul class="mb-0">' + response.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
                             }
-                        },
-                        error: function() {
-                             showAlert('error', 'خطای سرور', 'ارتباط با سرور جهت حذف برقرار نشد.');
+
+                            console.error(`[کلینیک شفا] خطا در پردازش فرم. OperationId: ${state.operationId}, Error: ${errorMsg}`);
+                            showErrorAlert('خطا', errorMsg);
+                        }
+                    },
+                    error: function (xhr) {
+                        console.error(`[کلینیک شفا] خطای سرور در ارسال فرم. OperationId: ${state.operationId}, Status: ${xhr.status}`);
+
+                        let errorMsg = `خطای ${xhr.status}: ${xhr.statusText}`;
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMsg = xhr.responseJSON.message;
+                        }
+
+                        showErrorAlert('خطای سرور', errorMsg);
+                    },
+                    complete: function () {
+                        enableSubmitButton(submitButton);
+                    }
+                });
+            }
+
+            function confirmAndDelete(id, name) {
+                state.operationId = Guid.newGuid();
+                console.log(`[کلینیک شفا] درخواست تأیید حذف بیمه. OperationId: ${state.operationId}, InsuranceId: ${id}, Name: ${name}`);
+
+                Swal.fire({
+                    title: 'تایید حذف',
+                    html: `آیا از حذف بیمه "<strong>${name}</strong>" اطمینان دارید؟<br><small class="text-muted">این عملیات غیرقابل بازگشت است.</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'بله، حذف شود',
+                    cancelButtonText: 'خیر',
+                    customClass: {
+                        popup: 'animated zoomIn'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        console.log(`[کلینیک شفا] تأیید حذف بیمه. OperationId: ${state.operationId}, InsuranceId: ${id}`);
+
+                        $.ajax({
+                            url: state.urls.delete,
+                            type: 'POST',
+                            data: {
+                                __RequestVerificationToken: getAntiForgeryToken(),
+                                id: id
+                            },
+                            beforeSend: function() {
+                                showLoading();
+                            },
+                            success: function(response) {
+                                if (response.success) {
+                                    showSuccessAlert('حذف شد!', response.message, 2000);
+                                    loadInsurances();
+
+                                    console.log(`[کلینیک شفا] بیمه با موفقیت حذف شد. OperationId: ${state.operationId}, InsuranceId: ${id}`);
+                                } else {
+                                    console.error(`[کلینیک شفا] خطا در حذف بیمه. OperationId: ${state.operationId}, Error: ${response.message}`);
+                                    showErrorAlert('خطا در حذف', response.message);
+                                }
+                            },
+                            error: function(xhr) {
+                                console.error(`[کلینیک شفا] خطای سرور در حذف بیمه. OperationId: ${state.operationId}, Status: ${xhr.status}`);
+
+                                let errorMsg = `خطای ${xhr.status}: ${xhr.statusText}`;
+                                if (xhr.responseJSON && xhr.responseJSON.message) {
+                                    errorMsg = xhr.responseJSON.message;
+                                }
+
+                                showErrorAlert('خطای سرور', errorMsg);
+                            },
+                            complete: function() {
+                                hideLoading();
+                            }
+                        });
+                    }
+                });
+            }
+
+            function setupDynamicEventHandlers() {
+                // مدیریت ویرایش
+                $('.btn-edit').off('click').on('click', function () {
+                    const id = $(this).data('id');
+                    const name = $(this).data('name');
+                    console.log(`[کلینیک شفا] درخواست ویرایش بیمه. InsuranceId: ${id}, Name: ${name}`);
+                    openModalWithForm(`${state.urls.edit}/${id}`, `ویرایش بیمه: ${name}`);
+                });
+
+                // مدیریت حذف
+                $('.btn-delete').off('click').on('click', function () {
+                    const id = $(this).data('id');
+                    const name = $(this).data('name');
+                    confirmAndDelete(id, name);
+                });
+
+                // مدیریت جزئیات
+                $('.btn-details').off('click').on('click', function () {
+                    const id = $(this).data('id');
+                    const name = $(this).data('name');
+                    console.log(`[کلینیک شفا] درخواست جزئیات بیمه. InsuranceId: ${id}, Name: ${name}`);
+                    window.location.href = `${state.urls.details}/${id}`;
+                });
+
+                // مدیریت صفحه‌بندی
+                $('.pagination a').off('click').on('click', function (e) {
+                    e.preventDefault();
+                    const page = $(this).data('page') || 1;
+                    state.page = page;
+                    loadInsurances();
+                });
+            }
+
+            function setupCreateInsuranceForm() {
+                // تابع برای محاسبه خودکار سهم‌ها
+                function calculateShares() {
+                    const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.')) || 0;
+                    const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.')) || 0;
+                    const total = patientShare + insurerShare;
+
+                    if (Math.abs(total - 100) > 0.01) {
+                        $('#shareValidationWarning').removeClass('d-none');
+                    } else {
+                        $('#shareValidationWarning').addClass('d-none');
+                    }
+                }
+
+                // افزودن گوشدهای رویداد برای محاسبه خودکار
+                $('#DefaultPatientShare, #DefaultInsurerShare').on('input', calculateShares);
+
+                // اطمینان از صحیح بودن مقادیر اولیه
+                function initializeValues() {
+                    // بررسی و تنظیم مقدار اولیه برای سهم بیمار
+                    if ($('#DefaultPatientShare').val() === '' || $('#DefaultPatientShare').val() === ',') {
+                        $('#DefaultPatientShare').val(0);
+                    }
+
+                    // بررسی و تنظیم مقدار اولیه برای سهم بیمه
+                    if ($('#DefaultInsurerShare').val() === '' || $('#DefaultInsurerShare').val() === ',') {
+                        $('#DefaultInsurerShare').val(100);
+                    }
+
+                    // تبدیل مقادیر به فرمت اعشاری صحیح
+                    const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.')) || 0;
+                    const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.')) || 100;
+
+                    $('#DefaultPatientShare').val(patientShare.toFixed(2));
+                    $('#DefaultInsurerShare').val(insurerShare.toFixed(2));
+
+                    // محاسبه مجدد سهم‌ها
+                    calculateShares();
+                }
+
+                // اطمینان از نمایش صحیح مقادیر
+                initializeValues();
+
+                // مدیریت دکمه‌های بستن مودال
+                function setupModalCloseHandlers() {
+                    // مدیریت دکمه X
+                    $('.close, [data-dismiss="modal"]').off('click.modalClose').on('click.modalClose', function(e) {
+                        e.preventDefault();
+                        $('#main-modal').modal('hide');
+                    });
+
+                    // مدیریت دکمه انصراف
+                    $('button[data-dismiss="modal"]').off('click.modalClose').on('click.modalClose', function(e) {
+                        e.preventDefault();
+                        $('#main-modal').modal('hide');
+                    });
+
+                    // مدیریت بسته شدن مودال
+                    $('#main-modal').off('hidden.bs.modal').on('hidden.bs.modal', function() {
+                        if (typeof loadInsurances === 'function') {
+                            loadInsurances();
                         }
                     });
                 }
-            });
-        }
 
-        // --- EVENT BINDING ---
+                // ارسال فرم با AJAX
+                $('#createInsuranceForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
 
-        function bindEvents() {
-            // Use a debouncer for search input to avoid excessive requests
-            let searchTimeout;
-            $('#searchTerm').on('keyup', function () {
-                clearTimeout(searchTimeout);
-                searchTimeout = setTimeout(() => {
-                    state.page = 1; // Reset to first page on new search
-                    loadInsurances();
-                }, 500);
-            });
+                    // پاک کردن خطاها
+                    $('#validationSummary').addClass('d-none');
+                    $('#validationErrors').empty();
 
-            $('#activeOnly').on('change', function () {
-                state.page = 1;
+                    // نمایش نمایه بارگیری
+                    const saveBtn = $('#saveInsuranceBtn');
+                    const originalBtnHtml = saveBtn.html();
+                    saveBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ایجاد...');
+                    saveBtn.prop('disabled', true);
+
+                    // اطمینان از فرمت صحیح مقادیر اعشاری
+                    const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.'));
+                    const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.'));
+                    $('#DefaultPatientShare').val(patientShare.toFixed(2));
+                    $('#DefaultInsurerShare').val(insurerShare.toFixed(2));
+
+                    $.ajax({
+                        url: this.action,
+                        type: this.method,
+                         $(this).serialize(),
+                        success: function(response) {
+                            if (response.success) {
+                                $('#main-modal').modal('hide');
+                                if (typeof showSuccessAlert === 'function') {
+                                    showSuccessAlert('موفقیت', response.message);
+                                }
+                                // بارگیری مجدد لیست بیمه‌ها
+                                if (typeof loadInsurances === 'function') {
+                                    loadInsurances();
+                                }
+                            } else {
+                                // نمایش خطاها
+                                let errors = [];
+                                if (response.message) {
+                                    errors.push(response.message);
+                                }
+
+                                // اگر خطاها به صورت آرایه باشند
+                                if (response.errors && Array.isArray(response.errors)) {
+                                    errors = errors.concat(response.errors);
+                                }
+
+                                if (errors.length > 0) {
+                                    const errorList = $('#validationErrors');
+                                    errorList.empty();
+
+                                    $.each(errors, function(index, error) {
+                                        errorList.append(`<li>${error}</li>`);
+                                    });
+
+                                    $('#validationSummary').removeClass('d-none');
+                                }
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = 'خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.status === 400) {
+                                errorMessage = 'داده‌های ارسالی نامعتبر هستند. لطفاً فرم را بررسی کنید.';
+                            } else if (xhr.status === 401) {
+                                errorMessage = 'شما مجوز لازم برای این عملیات را ندارید.';
+                            }
+
+                            if (typeof showErrorAlert === 'function') {
+                                showErrorAlert('خطا', errorMessage);
+                            }
+                        },
+                        complete: function() {
+                            // بازگرداندن وضعیت دکمه
+                            saveBtn.html(originalBtnHtml);
+                            saveBtn.prop('disabled', false);
+                        }
+                    });
+                });
+
+                // اطمینان از نمایش صحیح مودال
+                $('#main-modal').on('shown.bs.modal', function() {
+                    // فوکوس روی فیلد اول
+                    $('#Name').focus();
+                });
+
+                // اطمینان از نمایش صحیح مقادیر
+                initializeValues();
+
+                // تنظیم گوشدهای رویداد بستن مودال
+                setupModalCloseHandlers();
+
+                // محاسبه اولیه سهم‌ها
+                calculateShares();
+            }
+
+            function setupEditInsuranceForm() {
+                // تابع برای محاسبه خودکار سهم‌ها
+                function calculateShares() {
+                    const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.')) || 0;
+                    const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.')) || 0;
+                    const total = patientShare + insurerShare;
+
+                    if (Math.abs(total - 100) > 0.01) {
+                        $('#shareValidationWarning').removeClass('d-none');
+                    } else {
+                        $('#shareValidationWarning').addClass('d-none');
+                    }
+                }
+
+                // افزودن گوشدهای رویداد برای محاسبه خودکار
+                $('#DefaultPatientShare, #DefaultInsurerShare').on('input', calculateShares);
+
+                // اطمینان از صحیح بودن مقادیر اولیه
+                function initializeValues() {
+                    // بررسی و تنظیم مقدار اولیه برای سهم بیمار
+                    if ($('#DefaultPatientShare').val() === '' || $('#DefaultPatientShare').val() === ',') {
+                        $('#DefaultPatientShare').val(0);
+                    }
+
+                    // بررسی و تنظیم مقدار اولیه برای سهم بیمه
+                    if ($('#DefaultInsurerShare').val() === '' || $('#DefaultInsurerShare').val() === ',') {
+                        $('#DefaultInsurerShare').val(0);
+                    }
+
+                    // تبدیل مقادیر به فرمت اعشاری صحیح
+                    const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.')) || 0;
+                    const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.')) || 0;
+
+                    $('#DefaultPatientShare').val(patientShare.toFixed(2));
+                    $('#DefaultInsurerShare').val(insurerShare.toFixed(2));
+
+                    // محاسبه مجدد سهم‌ها
+                    calculateShares();
+                }
+
+                // اطمینان از نمایش صحیح مقادیر
+                initializeValues();
+
+                // مدیریت دکمه‌های بستن مودال
+                function setupModalCloseHandlers() {
+                    // مدیریت دکمه X
+                    $('.close, [data-dismiss="modal"]').off('click.modalClose').on('click.modalClose', function(e) {
+                        e.preventDefault();
+                        $('#main-modal').modal('hide');
+                    });
+
+                    // مدیریت دکمه انصراف
+                    $('button[data-dismiss="modal"]').off('click.modalClose').on('click.modalClose', function(e) {
+                        e.preventDefault();
+                        $('#main-modal').modal('hide');
+                    });
+
+                    // مدیریت بسته شدن مودال
+                    $('#main-modal').off('hidden.bs.modal').on('hidden.bs.modal', function() {
+                        if (typeof loadInsurances === 'function') {
+                            loadInsurances();
+                        }
+                    });
+                }
+
+                // ارسال فرم با AJAX
+                $('#editInsuranceForm').off('submit').on('submit', function(e) {
+                    e.preventDefault();
+
+                    // پاک کردن خطاها
+                    $('#validationSummary').addClass('d-none');
+                    $('#validationErrors').empty();
+
+                    // نمایش نمایه بارگیری
+                    const saveBtn = $('#saveInsuranceBtn');
+                    const originalBtnHtml = saveBtn.html();
+                    saveBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ذخیره...');
+                    saveBtn.prop('disabled', true);
+
+                    // اطمینان از فرمت صحیح مقادیر اعشاری
+                    const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.'));
+                    const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.'));
+                    $('#DefaultPatientShare').val(patientShare.toFixed(2));
+                    $('#DefaultInsurerShare').val(insurerShare.toFixed(2));
+
+                    $.ajax({
+                        url: this.action,
+                        type: this.method,
+                         $(this).serialize(),
+                        success: function(response) {
+                            if (response.success) {
+                                $('#main-modal').modal('hide');
+                                if (typeof showSuccessAlert === 'function') {
+                                    showSuccessAlert('موفقیت', response.message);
+                                }
+                                // بارگیری مجدد لیست بیمه‌ها
+                                if (typeof loadInsurances === 'function') {
+                                    loadInsurances();
+                                }
+                            } else {
+                                // نمایش خطاها
+                                let errors = [];
+                                if (response.message) {
+                                    errors.push(response.message);
+                                }
+
+                                // اگر خطاها به صورت آرایه باشند
+                                if (response.errors && Array.isArray(response.errors)) {
+                                    errors = errors.concat(response.errors);
+                                }
+
+                                if (errors.length > 0) {
+                                    const errorList = $('#validationErrors');
+                                    errorList.empty();
+
+                                    $.each(errors, function(index, error) {
+                                        errorList.append(`<li>${error}</li>`);
+                                    });
+
+                                    $('#validationSummary').removeClass('d-none');
+                                }
+                            }
+                        },
+                        error: function(xhr) {
+                            let errorMessage = 'خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.';
+
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.status === 400) {
+                                errorMessage = 'داده‌های ارسالی نامعتبر هستند. لطفاً فرم را بررسی کنید.';
+                            } else if (xhr.status === 401) {
+                                errorMessage = 'شما مجوز لازم برای این عملیات را ندارید.';
+                            }
+
+                            if (typeof showErrorAlert === 'function') {
+                                showErrorAlert('خطا', errorMessage);
+                            }
+                        },
+                        complete: function() {
+                            // بازگرداندن وضعیت دکمه
+                            saveBtn.html(originalBtnHtml);
+                            saveBtn.prop('disabled', false);
+                        }
+                    });
+                });
+
+                // اطمینان از نمایش صحیح مودال
+                $('#main-modal').on('shown.bs.modal', function() {
+                    // فوکوس روی فیلد اول
+                    $('#Name').focus();
+                });
+
+                // اطمینان از نمایش صحیح مقادیر
+                initializeValues();
+
+                // تنظیم گوشدهای رویداد بستن مودال
+                setupModalCloseHandlers();
+
+                // محاسبه اولیه سهم‌ها
+                calculateShares();
+            }
+
+            // --- ایجاد یک GUID منحصر به فرد ---
+            const Guid = {
+                newGuid: function() {
+                    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                        const r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+                        return v.toString(16);
+                    });
+                }
+            };
+
+            // --- راه‌اندازی اولیه ---
+
+            $(document).ready(function () {
+                // تابع برای راه‌اندازی رویدادهای اصلی
+                function setupMainEventHandlers() {
+                    // جستجو با دکمه
+                    $('#btn-search').on('click', function () {
+                        state.page = 1;
+                        loadInsurances();
+                    });
+
+                    // جستجو با Enter
+                    $('#searchTerm').keypress(function (e) {
+                        if (e.which === 13) {
+                            state.page = 1;
+                            loadInsurances();
+                            return false;
+                        }
+                    });
+
+                    // فیلتر فعال/غیرفعال
+                    $('#activeOnly').change(function () {
+                        state.page = 1;
+                        loadInsurances();
+                    });
+
+                    // ایجاد بیمه جدید
+                    $('#btn-create').on('click', function () {
+                        openModalWithForm(state.urls.create, 'ایجاد بیمه جدید');
+                    });
+                }
+
+                // راه‌اندازی رویدادهای اصلی
+                setupMainEventHandlers();
+
+                // بارگیری اولیه لیست بیمه‌ها
                 loadInsurances();
+
+                // اطمینان از صحیح بودن اعداد اعشاری در محیط فارسی
+                $(document).on('input', 'input[type="number"]', function() {
+                    // جایگزینی کاما با نقطه برای اعداد اعشاری
+                    const value = $(this).val();
+                    if (value && value.includes(',')) {
+                        $(this).val(value.replace(',', '.'));
+                    }
+                });
             });
 
-            $('#btn-create').on('click', function () {
-                openModalWithForm(state.urls.create, 'ایجاد بیمه جدید');
-            });
-
-            // --- Delegated Event Handlers for dynamic content ---
-            const doc = $(document);
-
-            doc.on('submit', '#main-modal form', handleFormSubmit);
-
-            doc.on('click', '.btn-edit', function () {
-                const id = $(this).data('id');
-                const url = `${state.urls.edit}/${id}`;
-                openModalWithForm(url, 'ویرایش بیمه');
-            });
-
-            doc.on('click', '.btn-delete', function () {
-                const id = $(this).data('id');
-                const name = $(this).data('name');
-                confirmAndDelete(id, name);
-            });
-
-            doc.on('click', '.pagination a', function (e) {
-                e.preventDefault();
-                const url = new URL($(this).attr('href'), window.location.origin);
-                state.page = url.searchParams.get('page') || 1;
-                loadInsurances();
-            });
-        }
-
-        // --- INITIALIZATION ---
-
-        $(document).ready(function () {
-            bindEvents();
-            loadInsurances(); // Initial load
-        });
-
-    })(jQuery);
+        })(jQuery);
     </script>
 }

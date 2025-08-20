@@ -5,6 +5,7 @@ using ClinicApp.ViewModels;
 using Serilog;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -30,6 +31,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// 12. رفع کامل مشکل نمایش بدون استایل فرم‌ها در صفحه جزئیات
     /// 13. رفع کامل مشکل بایند نشدن داده‌ها در فرم ویرایش
     /// 14. مدیریت صحیح دکمه‌های بستن مودال
+    /// 15. پشتیبانی کامل از سیستم‌های پزشکی حیاتی با مکانیزم‌های ریکاوری خطا
     /// </summary>
     //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     [RouteArea("Admin")]
@@ -267,6 +269,17 @@ namespace ClinicApp.Areas.Admin.Controllers
                 model.DefaultPatientShare = Convert.ToDecimal(model.DefaultPatientShare.ToString().Replace(",", "."));
                 model.DefaultInsurerShare = Convert.ToDecimal(model.DefaultInsurerShare.ToString().Replace(",", "."));
 
+                // بررسی مجموع سهم‌ها
+                if (Math.Abs(model.DefaultPatientShare + model.DefaultInsurerShare - 100) > 0.01m)
+                {
+                    _log.Warning(
+                        "مجموع سهم‌ها برای بیمه {Name} برابر با 100 نیست. OperationId: {OperationId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
+                        model.Name, operationId, model.DefaultPatientShare, model.DefaultInsurerShare,
+                        _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new { success = false, message = "جمع سهم بیمار و بیمه باید برابر با 100 درصد باشد." });
+                }
+
                 var result = await _insuranceService.CreateInsuranceAsync(model);
                 if (result.Success)
                 {
@@ -397,6 +410,31 @@ namespace ClinicApp.Areas.Admin.Controllers
                 model.DefaultPatientShare = Convert.ToDecimal(model.DefaultPatientShare.ToString().Replace(",", "."));
                 model.DefaultInsurerShare = Convert.ToDecimal(model.DefaultInsurerShare.ToString().Replace(",", "."));
 
+                // بررسی مجموع سهم‌ها
+                if (Math.Abs(model.DefaultPatientShare + model.DefaultInsurerShare - 100) > 0.01m)
+                {
+                    _log.Warning(
+                        "مجموع سهم‌ها برای بیمه {Name} برابر با 100 نیست. OperationId: {OperationId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
+                        model.Name, operationId, model.DefaultPatientShare, model.DefaultInsurerShare,
+                        _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new { success = false, message = "جمع سهم بیمار و بیمه باید برابر با 100 درصد باشد." });
+                }
+
+                // بررسی محدودیت‌های بیمه آزاد
+                if (model.Name == FreeInsuranceName)
+                {
+                    // بررسی اینکه آیا کاربر سعی در تغییر وضعیت فعال/غیرفعال بیمه آزاد دارد
+                    if (!model.IsActive)
+                    {
+                        _log.Warning(
+                            "درخواست غیرفعال کردن بیمه آزاد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                            operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+                        return Json(new { success = false, message = "بیمه آزاد نمی‌تواند غیرفعال شود." });
+                    }
+                }
+
                 var result = await _insuranceService.UpdateInsuranceAsync(model);
                 if (result.Success)
                 {
@@ -443,6 +481,20 @@ namespace ClinicApp.Areas.Admin.Controllers
 
             try
             {
+                // بررسی اینکه آیا بیمه قابل حذف است
+                var insuranceDetails = await _insuranceService.GetInsuranceDetailsAsync(id);
+                if (insuranceDetails.Success && insuranceDetails.Data != null)
+                {
+                    if (insuranceDetails.Data.Name == FreeInsuranceName)
+                    {
+                        _log.Warning(
+                            "درخواست حذف بیمه آزاد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                            operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+                        return Json(new { success = false, message = "بیمه آزاد قابل حذف نیست." });
+                    }
+                }
+
                 var result = await _insuranceService.DeleteInsuranceAsync(id);
                 if (result.Success)
                 {
@@ -499,7 +551,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     "لود تعرفه‌های بیمه شناسه {InsuranceId} با موفقیت انجام شد. OperationId: {OperationId}, Count: {Count}. User: {UserName} (Id: {UserId})",
                     insuranceId, operationId, tariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
 
-                return PartialView("_TariffListPartial", tariffs);
+                return PartialView("_InsuranceTariffsListPartial", tariffs);
             }
             catch (Exception ex)
             {
@@ -508,7 +560,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     "خطای سیستمی در لود تعرفه‌های بیمه شناسه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
                     insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
 
-                return PartialView("_TariffListPartial", new List<InsuranceTariffViewModel>());
+                return PartialView("_InsuranceTariffsListPartial", new List<InsuranceTariffViewModel>());
             }
         }
 

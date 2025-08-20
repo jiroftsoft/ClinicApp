@@ -1,88 +1,201 @@
 ﻿@model List<ClinicApp.ViewModels.InsuranceTariffViewModel>
 
-<div class="table-responsive">
-    <table class="table table-hover table-striped mb-0">
-        <thead class="thead-light">
-            <tr>
-                <th>نام خدمت</th>
-                <th>قیمت تعرفه</th>
-                <th>سهم بیمار</th>
-                <th>سهم بیمه</th>
-                <th>تاریخ ایجاد</th>
-                <th>تاریخ ویرایش</th>
-                <th class="text-center">عملیات</th>
-            </tr>
-        </thead>
-        <tbody>
-            @if (Model != null && Model.Any())
-            {
-                foreach (var item in Model)
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover table-sm">
+            <thead>
+                <tr>
+                    <th>نام خدمت</th>
+                    <th>قیمت تعرفه‌ای</th>
+                    <th>سهم بیمار</th>
+                    <th>سهم بیمه</th>
+                    <th>تاریخ ایجاد</th>
+                    <th class="text-center">عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
                 {
-                    <tr class="tariff-row existing-tariff"
-                        data-id="@item.InsuranceTariffId"
-                        data-service-title="@item.ServiceTitle">
-                        <td>@Html.DisplayFor(modelItem => item.ServiceTitle)</td>
-                        <td>@string.Format("{0:N0}", item.TariffPrice)</td>
-                        <td>@Html.DisplayFor(modelItem => item.PatientShare)%</td>
-                        <td>@Html.DisplayFor(modelItem => item.InsurerShare)%</td>
-                        <td>@Html.DisplayFor(modelItem => item.CreatedAtShamsi)</td>
-                        <td>@Html.DisplayFor(modelItem => item.UpdatedAtShamsi)</td>
+                    <tr data-id="@item.InsuranceTariffId">
+                        <td>@item.ServiceTitle</td>
+                        <td>@(item.TariffPrice.HasValue ? item.TariffPrice.Value.ToString("N0") + " ریال" : "-")</td>
+                        <td>@(item.PatientShare.HasValue ? item.PatientShare.Value.ToString("0.##") + "%" : "-")</td>
+                        <td>@(item.InsurerShare.HasValue ? item.InsurerShare.Value.ToString("0.##") + "%" : "-")</td>
+                        <td>@item.CreatedAtShamsi</td>
                         <td class="text-center">
-                            <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-warning btn-edit-tariff" title="ویرایش">
+                            <div class="btn-group btn-group-sm">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-primary btn-edit-tariff"
+                                        data-id="@item.InsuranceTariffId"
+                                        data-name="@item.ServiceTitle"
+                                        title="ویرایش">
                                     <i class="fas fa-edit"></i>
                                 </button>
-                                <button type="button" class="btn btn-sm btn-danger btn-delete-tariff" title="حذف">
+                                <button type="button"
+                                        class="btn btn-sm btn-outline-danger btn-delete-tariff"
+                                        data-id="@item.InsuranceTariffId"
+                                        data-name="@item.ServiceTitle"
+                                        title="حذف">
                                     <i class="fas fa-trash-alt"></i>
                                 </button>
                             </div>
                         </td>
                     </tr>
                 }
-            }
-            else
-            {
-                <tr>
-                    <td colspan="7" class="text-center py-4">
-                        <div class="text-muted">هیچ تعرفه‌ای برای این بیمه تعریف نشده است</div>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-@if (Model != null && Model.Any())
+            </tbody>
+        </table>
+    </div>
+}
+else
 {
+    <div class="alert alert-info text-center m-3">
+        <i class="fas fa-info-circle"></i> هیچ تعرفه‌ای برای این بیمه تعریف نشده است.
+    </div>
+}
+
+@section scripts {
     <script>
-        $(function () {
-            $('.btn-edit-tariff').click(function () {
-                const id = $(this).closest('tr').data('id');
-                $.ajax({
-                    url: '@Url.Action("EditTariff", "Insurance")/' + id,
-                    type: 'GET',
-                    beforeSend: function () {
-                        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
-                        $(this).prop('disabled', true);
-                    },
-                    success: function (result) {
-                        $('#modalContainer').html(result);
-                        $('#tariffModal').modal('show');
-                    },
-                    error: function (xhr) {
-                        showErrorAlert('خطا در بارگیری فرم ویرایش تعرفه');
-                    },
-                    complete: function () {
-                        $('.btn-edit-tariff').html('<i class="fas fa-edit"></i>');
-                        $('.btn-edit-tariff').prop('disabled', false);
-                    }
-                });
+        // تابع اصلی برای راه‌اندازی مدیریت تعرفه‌ها
+        function setupTariffManagement() {
+            // استفاده از event delegation برای مدیریت عناصر پویا
+            $(document).off('click', '.btn-edit-tariff').on('click', '.btn-edit-tariff', function () {
+                const tariffId = $(this).data('id');
+                const tariffName = $(this).data('name');
+                editTariff(tariffId, tariffName);
             });
 
-            $('.btn-delete-tariff').click(function () {
-                const id = $(this).closest('tr').data('id');
-                deleteTariff(id);
+            $(document).off('click', '.btn-delete-tariff').on('click', '.btn-delete-tariff', function () {
+                const tariffId = $(this).data('id');
+                const tariffName = $(this).data('name');
+                deleteTariff(tariffId, tariffName);
             });
+        }
+
+        // تابع ویرایش تعرفه
+        function editTariff(tariffId, tariffName) {
+            if (typeof showLoading === 'function') {
+                showLoading();
+            }
+
+            $.ajax({
+                url: '@Url.Action("EditTariff", "Insurance")',
+                type: 'GET',
+                data: { id: tariffId },
+                success: function (result) {
+                    $('#modalContainer').html(result);
+
+                    // فعال کردن اسکریپت‌های مربوط به فرم ویرایش
+                    if (typeof setupEditTariffForm === 'function') {
+                        setupEditTariffForm();
+                    }
+
+                    if (typeof hideLoading === 'function') {
+                        hideLoading();
+                    }
+                },
+                error: function (xhr) {
+                    if (typeof hideLoading === 'function') {
+                        hideLoading();
+                    }
+
+                    const errorMessage = xhr.responseJSON && xhr.responseJSON.message ?
+                        xhr.responseJSON.message : 'خطا در بارگیری فرم ویرایش تعرفه. لطفاً دوباره تلاش کنید.';
+
+                    if (typeof showErrorAlert === 'function') {
+                        showErrorAlert(errorMessage);
+                    } else {
+                        alert(errorMessage);
+                    }
+                }
+            });
+        }
+
+        // تابع حذف تعرفه
+        function deleteTariff(tariffId, tariffName) {
+            Swal.fire({
+                title: 'تایید حذف',
+                text: `آیا از حذف تعرفه "${tariffName}" اطمینان دارید؟`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف شود',
+                cancelButtonText: 'خیر'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    if (typeof showLoading === 'function') {
+                        showLoading();
+                    }
+
+                    $.ajax({
+                        url: '@Url.Action("DeleteTariff", "Insurance")',
+                        type: 'POST',
+                         {
+                            id: tariffId,
+                            __RequestVerificationToken: getAntiForgeryToken()
+                        },
+                        success: function (response) {
+                            if (typeof hideLoading === 'function') {
+                                hideLoading();
+                            }
+
+                            if (response.success) {
+                                if (typeof showSuccessAlert === 'function') {
+                                    showSuccessAlert(response.message);
+                                }
+                                // بارگیری مجدد لیست تعرفه‌ها
+                                if (typeof loadTariffs === 'function') {
+                                    loadTariffs();
+                                }
+                            } else {
+                                const errorMessage = response.message || 'خطا در حذف تعرفه. لطفاً دوباره تلاش کنید.';
+                                if (typeof showErrorAlert === 'function') {
+                                    showErrorAlert(errorMessage);
+                                } else {
+                                    alert(errorMessage);
+                                }
+                            }
+                        },
+                        error: function (xhr) {
+                            if (typeof hideLoading === 'function') {
+                                hideLoading();
+                            }
+
+                            let errorMessage = 'خطا در حذف تعرفه. لطفاً دوباره تلاش کنید.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            } else if (xhr.status === 400) {
+                                errorMessage = 'داده‌های ارسالی نامعتبر هستند.';
+                            } else if (xhr.status === 401) {
+                                errorMessage = 'شما مجوز لازم برای این عملیات را ندارید.';
+                            } else if (xhr.status === 409) {
+                                errorMessage = 'این تعرفه توسط کاربر دیگری ویرایش شده است. لطفاً صفحه را تازه‌سازی کنید.';
+                            }
+
+                            if (typeof showErrorAlert === 'function') {
+                                showErrorAlert(errorMessage);
+                            } else {
+                                alert(errorMessage);
+                            }
+                        }
+                    });
+                }
+            });
+        }
+
+        // اجرای تابع راه‌اندازی هنگام بارگیری صفحه
+        $(document).ready(function () {
+            setupTariffManagement();
         });
+
+        // اجرای مجدد تابع راه‌اندازی پس از بارگیری مجدد لیست تعرفه‌ها
+        if (typeof loadTariffs === 'function') {
+            const originalLoadTariffs = loadTariffs;
+            window.loadTariffs = function() {
+                originalLoadTariffs.apply(this, arguments);
+                setTimeout(setupTariffManagement, 500);
+            };
+        }
     </script>
 }

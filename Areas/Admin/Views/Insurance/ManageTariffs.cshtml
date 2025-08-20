@@ -1,218 +1,273 @@
 ﻿@model ClinicApp.ViewModels.InsuranceTariffsViewModel
 @{
     ViewBag.Title = "مدیریت تعرفه‌های بیمه: " + Model.InsuranceName;
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    Layout = "~/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="container-fluid py-3">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h1 class="h4 mb-0">مدیریت تعرفه‌های بیمه: @Model.InsuranceName</h1>
-        <button id="btnAddTariff" class="btn btn-primary d-flex align-items-center">
-            <i class="fas fa-plus-circle mr-1"></i> افزودن تعرفه جدید
-        </button>
+<!-- کانتینر مودال‌ها -->
+<div id="modalContainer"></div>
+
+<!-- افزودن AntiForgeryToken برای درخواست‌های امن -->
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <h2 class="h4">مدیریت تعرفه‌های بیمه: @Model.InsuranceName</h2>
+        </div>
+        <div class="col-md-6 text-md-right">
+            <a href="@Url.Action("Index", "Insurance")" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> بازگشت به لیست بیمه‌ها
+            </a>
+        </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <div class="row align-items-center">
-                <div class="col-md-6 mb-2 mb-md-0">
-                    <div class="input-group">
-                        <input type="text" id="searchTerm" class="form-control" placeholder="جستجو در نام خدمات...">
-                        <div class="input-group-append">
-                            <button id="btnSearch" class="btn btn-outline-secondary" type="button">
-                                <i class="fas fa-search"></i>
-                            </button>
+    <div class="card shadow-sm">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">لیست تعرفه‌های بیمه</h5>
+            <button type="button" class="btn btn-primary" id="btnAddTariff">
+                <i class="fas fa-plus"></i> افزودن تعرفه جدید
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div id="tariffsContainer">
+                @Html.Partial("_TariffListPartial", Model.Tariffs)
+            </div>
+        </div>
+    </div>
+
+    <!-- بخش اطلاعات کلی بیمه -->
+    <div class="card shadow-sm mt-3">
+        <div class="card-header bg-white">
+            <h5 class="card-title mb-0">اطلاعات کلی بیمه</h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label font-weight-bold">نام بیمه:</label>
+                        <div class="col-sm-8 col-form-label">
+                            @Model.InsuranceName
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label font-weight-bold">تعداد تعرفه‌ها:</label>
+                        <div class="col-sm-8 col-form-label">
+                            @Model.Tariffs.Count
                         </div>
                     </div>
                 </div>
-                <div class="col-md-6 text-md-right">
-                    <div class="form-check form-check-inline">
-                        <input class="form-check-input" type="checkbox" id="showAllServices" checked>
-                        <label class="form-check-label" for="showAllServices">نمایش تمام خدمات</label>
+                <div class="col-md-6">
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label font-weight-bold">سهم پیش‌فرض بیمار:</label>
+                        <div class="col-sm-8 col-form-label">
+                            @Model.DefaultPatientShare%
+                        </div>
+                    </div>
+                    <div class="form-group row">
+                        <label class="col-sm-4 col-form-label font-weight-bold">سهم پیش‌فرض بیمه:</label>
+                        <div class="col-sm-8 col-form-label">
+                            @Model.DefaultInsurerShare%
+                        </div>
                     </div>
                 </div>
-            </div>
-        </div>
-        <div class="card-body p-0">
-            <div id="tariffListContainer">
-                @Html.Partial("_TariffListPartial", Model.Tariffs)
             </div>
         </div>
     </div>
 </div>
 
-<div id="modalContainer"></div>
-
-@section styles {
-    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
-}
-
-@section scripts {
-    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
+@section Scripts {
     <script>
         $(document).ready(function () {
-            // افزودن تعرفه جدید
-            $('#btnAddTariff').click(function () {
-                const insuranceId = @Model.InsuranceId;
+            // تعریف توابع اصلی در سطح صفحه
+            window.showSuccessAlert = function(message) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'موفقیت',
+                    text: message,
+                    confirmButtonText: 'باشه',
+                    timer: 2000,
+                    timerProgressBar: true,
+                    didOpen: (toast) => {
+                        toast.addEventListener('mouseenter', Swal.stopTimer);
+                        toast.addEventListener('mouseleave', Swal.resumeTimer);
+                    }
+                });
+            };
+
+            window.showErrorAlert = function(message) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: message,
+                    confirmButtonText: 'بستن',
+                    customClass: {
+                        popup: 'animated bounceInDown'
+                    }
+                });
+            };
+
+            // تعریف تابع برای دریافت توکن CSRF
+            window.getAntiForgeryToken = function() {
+                return $('input[name="__RequestVerificationToken"]').val();
+            };
+
+            // افزودن توکن به تمام درخواست‌های Ajax
+            $.ajaxPrefilter(function (options, originalOptions, jqXHR) {
+                if (options.type && options.type.toLowerCase() === "post") {
+                    // اطمینان از وجود توکن در داده‌های درخواست
+                    if (!options.data || !options.data.includes('__RequestVerificationToken')) {
+                        const token = getAntiForgeryToken();
+                        if (token) {
+                            if (options.data) {
+                                options.data += '&__RequestVerificationToken=' + encodeURIComponent(token);
+                            } else {
+                                options.data = '__RequestVerificationToken=' + encodeURIComponent(token);
+                            }
+                        }
+                    }
+                }
+            });
+
+            // بارگیری اولیه تعرفه‌ها
+            loadTariffs();
+
+            // مدیریت افزودن تعرفه جدید
+            $('#btnAddTariff').on('click', function () {
+                showLoading();
                 $.ajax({
                     url: '@Url.Action("CreateTariff", "Insurance")',
                     type: 'GET',
-                    data: { insuranceId: insuranceId },
-                    beforeSend: function () {
-                        $('#btnAddTariff').prop('disabled', true);
-                        $('#btnAddTariff').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال بارگیری...');
-                    },
+                     { insuranceId: @Model.InsuranceId },
                     success: function (result) {
                         $('#modalContainer').html(result);
-                        $('#tariffModal').modal('show');
+                        if (typeof setupCreateTariffForm === 'function') {
+                            setupCreateTariffForm();
+                        }
+                        hideLoading();
                     },
                     error: function (xhr) {
-                        showErrorAlert('خطا در بارگیری فرم ایجاد تعرفه');
-                    },
-                    complete: function () {
-                        $('#btnAddTariff').prop('disabled', false);
-                        $('#btnAddTariff').html('<i class="fas fa-plus-circle mr-1"></i> افزودن تعرفه جدید');
+                        hideLoading();
+                        showErrorAlert('خطا در بارگیری فرم تعریف تعرفه جدید.');
                     }
                 });
             });
-
-            // جستجو
-            $('#btnSearch').click(function () {
-                filterTariffs();
-            });
-
-            // جستجو با Enter
-            $('#searchTerm').keypress(function (e) {
-                if (e.which === 13) {
-                    filterTariffs();
-                    return false;
-                }
-            });
-
-            // نمایش/مخفی کردن خدمات تعریف شده
-            $('#showAllServices').change(function () {
-                if ($(this).is(':checked')) {
-                    $('.existing-tariff').show();
-                } else {
-                    $('.existing-tariff').hide();
-                }
-            });
         });
 
-        function filterTariffs() {
-            const searchTerm = $('#searchTerm').val().trim().toLowerCase();
-            const showAll = $('#showAllServices').is(':checked');
-
-            $('.tariff-row').each(function () {
-                const serviceTitle = $(this).data('service-title').toLowerCase();
-                const isExisting = $(this).hasClass('existing-tariff');
-
-                let show = serviceTitle.includes(searchTerm);
-                if (!showAll && isExisting) {
-                    show = false;
-                }
-
-                if (show) {
-                    $(this).show();
-                } else {
-                    $(this).hide();
-                }
-            });
-        }
-
+        // تابع بارگیری تعرفه‌ها
         function loadTariffs() {
-            const insuranceId = @Model.InsuranceId;
-
+            showLoading();
             $.ajax({
                 url: '@Url.Action("LoadTariffs", "Insurance")',
                 type: 'POST',
-                data: { insuranceId: insuranceId },
-                beforeSend: function () {
-                    $('#tariffListContainer').html(`
-                        <div class="text-center p-4">
-                            <div class="spinner-border text-primary" role="status">
-                                <span class="sr-only">در حال بارگیری...</span>
-                            </div>
-                        </div>
-                    `);
-                },
+                 { insuranceId: @Model.InsuranceId },
                 success: function (result) {
-                    $('#tariffListContainer').html(result);
+                    $('#tariffsContainer').html(result);
+                    setupTariffEventHandlers();
+                    hideLoading();
                 },
                 error: function (xhr) {
-                    $('#tariffListContainer').html(`
-                        <div class="alert alert-danger text-center m-3">
-                            خطایی در بارگیری تعرفه‌ها رخ داده است.
-                        </div>
-                    `);
+                    $('#tariffsContainer').html('<div class="alert alert-danger text-center m-3">خطا در بارگیری تعرفه‌ها.</div>');
+                    hideLoading();
                 }
             });
         }
 
-        function deleteTariff(tariffId) {
+        // تنظیم گوشدهای رویداد برای تعرفه‌ها
+        function setupTariffEventHandlers() {
+            // مدیریت ویرایش تعرفه
+            $(document).off('click', '.btn-edit-tariff').on('click', '.btn-edit-tariff', function () {
+                const tariffId = $(this).data('id');
+                const tariffName = $(this).data('name');
+                editTariff(tariffId, tariffName);
+            });
+
+            // مدیریت حذف تعرفه
+            $(document).off('click', '.btn-delete-tariff').on('click', '.btn-delete-tariff', function () {
+                const tariffId = $(this).data('id');
+                const tariffName = $(this).data('name');
+                deleteTariff(tariffId, tariffName);
+            });
+        }
+
+        // تابع ویرایش تعرفه
+        function editTariff(tariffId, tariffName) {
+            showLoading();
+            $.ajax({
+                url: '@Url.Action("EditTariff", "Insurance")',
+                type: 'GET',
+                 { id: tariffId },
+                success: function (result) {
+                    $('#modalContainer').html(result);
+                    if (typeof setupEditTariffForm === 'function') {
+                        setupEditTariffForm();
+                    }
+                    hideLoading();
+                },
+                error: function (xhr) {
+                    hideLoading();
+                    showErrorAlert('خطا در بارگیری فرم ویرایش تعرفه.');
+                }
+            });
+        }
+
+        // تابع حذف تعرفه
+        function deleteTariff(tariffId, tariffName) {
             Swal.fire({
                 title: 'تایید حذف',
-                text: "آیا از حذف این تعرفه اطمینان دارید؟",
+                text: `آیا از حذف تعرفه "${tariffName}" اطمینان دارید؟`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#d33',
-                cancelButtonColor: '#6c757d',
-                confirmButtonText: 'بله، حذف کن',
-                cancelButtonText: 'لغو'
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف شود',
+                cancelButtonText: 'خیر'
             }).then((result) => {
                 if (result.isConfirmed) {
+                    showLoading();
                     $.ajax({
                         url: '@Url.Action("DeleteTariff", "Insurance")',
                         type: 'POST',
-                        data: { id: tariffId },
-                        beforeSend: function () {
-                            Swal.fire({
-                                title: 'در حال پردازش...',
-                                text: 'لطفاً منتظر بمانید',
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                    Swal.showLoading();
-                                }
-                            });
+                         {
+                            id: tariffId,
+                            __RequestVerificationToken: getAntiForgeryToken()
                         },
                         success: function (response) {
+                            hideLoading();
                             if (response.success) {
-                                Swal.fire(
-                                    'حذف شد!',
-                                    response.message,
-                                    'success'
-                                ).then(() => {
-                                    loadTariffs();
-                                });
+                                showSuccessAlert(response.message);
+                                loadTariffs();
                             } else {
-                                Swal.fire(
-                                    'خطا!',
-                                    response.message,
-                                    'error'
-                                );
+                                showErrorAlert(response.message);
                             }
                         },
                         error: function (xhr) {
-                            Swal.fire(
-                                'خطا!',
-                                'خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.',
-                                'error'
-                            );
+                            hideLoading();
+                            let errorMessage = 'خطا در حذف تعرفه. لطفاً دوباره تلاش کنید.';
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                errorMessage = xhr.responseJSON.message;
+                            }
+                            showErrorAlert(errorMessage);
                         }
                     });
                 }
             });
         }
 
-        function showErrorAlert(message) {
-            Swal.fire({
-                icon: 'error',
-                title: 'خطا',
-                text: message,
-                confirmButtonText: 'بستن'
-            });
+        // نمایش لودینگ
+        function showLoading() {
+            if ($('#loadingOverlay').length === 0) {
+                $('body').append('<div id="loadingOverlay" class="position-fixed w-100 h-100 bg-white bg-opacity-75 d-flex justify-content-center align-items-center" style="top:0; left:0; z-index:10000;">' +
+                    '<div class="spinner-border text-primary" role="status">' +
+                    '<span class="sr-only">در حال بارگیری...</span>' +
+                    '</div>' +
+                    '</div>');
+            }
+        }
+
+        // پنهان کردن لودینگ
+        function hideLoading() {
+            $('#loadingOverlay').remove();
         }
     </script>
 }
