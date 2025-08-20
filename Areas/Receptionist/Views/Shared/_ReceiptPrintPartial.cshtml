@@ -1,0 +1,51 @@
+﻿@model ClinicApp.ViewModels.ReceiptPrintViewModel
+
+<div id="receiptPrintContainer">
+    <h4>رسید پذیرش</h4>
+    <p><strong>بیمار:</strong> @Model.PatientFullName</p>
+    <p><strong>پزشک:</strong> @Model.DoctorFullName</p>
+    <p><strong>تاریخ:</strong> @Model.PrintDate</p>
+
+    <table class="table table-bordered">
+        <thead>
+        <tr>
+            <th>خدمت</th>
+            <th>تعداد</th>
+            <th>قیمت واحد</th>
+            <th>مجموع</th>
+        </tr>
+        </thead>
+        <tbody>
+        @foreach (var item in Model.Services)
+        {
+            <tr>
+                <td>@item.ServiceTitle</td>
+                <td>@item.Quantity</td>
+                <td>@($"{item.Price:N0}")</td>
+                <td>@($"{item.LineTotal:N0}")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+
+    <p><strong>جمع کل:</strong> @($"{Model.TotalAmount:N0}")
+    </p>
+    <p><strong>روش پرداخت:</strong> @Model.PaymentMethod</p>
+
+    <button class="btn btn-success" id="printReceiptBtn">چاپ رسید</button>
+</div>
+
+@section Scripts {
+    <script>
+    $(document).ready(function () {
+        $("#printReceiptBtn").click(function () {
+            var printContents = document.getElementById("receiptPrintContainer").innerHTML;
+            var originalContents = document.body.innerHTML;
+            document.body.innerHTML = printContents;
+            window.print();
+            document.body.innerHTML = originalContents;
+            location.reload(); // بارگذاری مجدد صفحه برای حفظ عملکرد
+        });
+    });
+</script>
+}

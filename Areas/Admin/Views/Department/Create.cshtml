@@ -1,0 +1,311 @@
+﻿@model ClinicApp.ViewModels.DepartmentCreateEditViewModel
+@{
+    ViewBag.Title = Model.DepartmentId > 0 ? "ویرایش دپارتمان" : "ایجاد دپارتمان جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
+<style type="text/css">
+    /* استایل‌های حیاتی برای اولین رندر - حداکثر 1KB */
+    .department-form-container {
+        max-width: 600px;
+        margin: 0 auto
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 15px;
+        margin-bottom: 15px
+    }
+
+    .form-section-title {
+        font-size: 1.1em;
+        margin: 0 0 12px 0;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e9ecef;
+        color: #007bff;
+        font-weight: 500
+    }
+
+    .form-group {
+        margin-bottom: 15px
+    }
+
+    .required:after {
+        content: " *";
+        color: #dc3545
+    }
+
+    .text-danger {
+        font-size: 0.85em;
+        margin-top: 4px
+    }
+
+    .btn-submit-container {
+        display: flex;
+        justify-content: flex-end;
+        gap: 8px;
+        margin-top: 15px;
+        padding-top: 12px;
+        border-top: 1px solid #e9ecef
+    }
+
+    .loading-spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid #e9ecef;
+        border-top: 3px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 6px
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg)
+        }
+
+        100% {
+            transform: rotate(360deg)
+        }
+    }
+
+    /* بهینه‌سازی برای دستگاه‌های پزشکی */
+    @@media (max-width: 768px) {
+        .department-form-container {
+            padding: 0 10px
+        }
+
+        .btn-submit-container {
+            flex-direction: column
+        }
+
+        .btn {
+            width: 100%
+        }
+    }
+
+    /* بهینه‌سازی برای عملکرد بالا */
+    .form-section {
+        will-change: transform
+    }
+
+        .form-section:hover {
+            will-change: auto
+        }
+</style>
+
+<div class="department-form-container">
+    <div class="page-header mb-3">
+        <h1 class="page-title h4">@ViewBag.Title</h1>
+        <p class="page-description small">
+            @(Model.DepartmentId > 0 ? "ویرایش اطلاعات دپارتمان در سیستم کلینیک شفا" : "ثبت دپارتمان جدید در سیستم کلینیک شفا")
+        </p>
+    </div>
+
+    <!-- نمایش پیام‌های وضعیت -->
+    <div id="statusMessages">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show small p-2" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show small p-2" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+            </div>
+        }
+    </div>
+
+    @using (Html.BeginForm(Model.DepartmentId > 0 ? "Edit" : "Create", "Department", new { area = "Admin" }, FormMethod.Post, new { @id = "departmentForm", @autocomplete = "off" }))
+    {
+        @Html.AntiForgeryToken()
+        if (Model.DepartmentId > 0)
+        {
+            @Html.HiddenFor(model => model.DepartmentId)
+        }
+
+        <!-- خلاصه اعتبارسنجی -->
+        <div id="validationSummary" class="alert alert-danger small p-2 mb-3" style="display: none;">
+            <i class="fa fa-exclamation-circle me-1"></i> لطفاً خطاهای زیر را اصلاح کنید:
+            <ul id="validationErrors" class="mb-0 ps-3" style="font-size: 0.9em;"></ul>
+        </div>
+
+        <!-- بخش اطلاعات اصلی دپارتمان -->
+        <div class="form-section">
+            <h2 class="form-section-title">اطلاعات اصلی دپارتمان</h2>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.Name, new { @class = "form-label required" })
+                @Html.TextBoxFor(model => model.Name, new
+                {
+                    @class = "form-control form-control-sm",
+                    @placeholder = "نام دپارتمان",
+                    @maxlength = "200",
+                    @autocomplete = "off",
+                    @accesskey = "n"
+                })
+                <div class="text-danger small">@Html.ValidationMessageFor(model => model.Name)</div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(model => model.ClinicId, new { @class = "form-label required" })
+                @Html.DropDownListFor(model => model.ClinicId,
+                    new SelectList(ViewBag.Clinics, "ClinicId", "Name"),
+                    "انتخاب کلینیک",
+                    new
+                         {
+                        @class = "form-select form-select-sm",
+                        @accesskey = "c"
+                    })
+                <div class="text-danger small">@Html.ValidationMessageFor(model => model.ClinicId)</div>
+            </div>
+        </div>
+
+        <!-- دکمه‌های اقدام -->
+        <div class="btn-submit-container">
+            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Index" })"
+               class="btn btn-sm btn-outline-secondary" accesskey="b">
+                <i class="fa fa-arrow-left me-1"></i> بازگشت
+            </a>
+            <button type="submit" id="submitButton" class="btn btn-sm btn-primary px-3">
+                <span id="loadingIndicator" style="display: none;">
+                    <span class="loading-spinner"></span>
+                </span>
+                <i class="fa @(Model.DepartmentId > 0 ? "fa-save" : "fa-plus") me-1"></i>
+                @(Model.DepartmentId > 0 ? "به‌روزرسانی" : "ایجاد")
+            </button>
+        </div>
+    }
+</div>
+
+<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
+<script type="text/javascript">
+    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
+    (function() {
+        'use strict';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('departmentForm');
+            const submitButton = document.getElementById('submitButton');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const validationSummary = document.getElementById('validationSummary');
+            const validationErrors = document.getElementById('validationErrors');
+
+            // تنظیم کلیدهای میانبر پزشکی
+            document.addEventListener('keydown', function(e) {
+                // Alt + S برای ذخیره
+                if (e.altKey && e.key === 's') {
+                    e.preventDefault();
+                    submitButton.click();
+                }
+
+                // Alt + B برای بازگشت
+                if (e.altKey && e.key === 'b') {
+                    e.preventDefault();
+                    const backLink = document.querySelector('a[accesskey="b"]');
+                    if (backLink) window.location.href = backLink.href;
+                }
+            });
+
+            // ارسال فرم با اعتبارسنجی پیشرفته
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // پاک کردن خطاها
+                    validationErrors.innerHTML = '';
+                    validationSummary.style.display = 'none';
+
+                    // نمایش لودر
+                    loadingIndicator.style.display = 'inline-block';
+                    submitButton.disabled = true;
+
+                    // ایجاد فرم دیتا
+                    const formData = new FormData(this);
+
+                    // ارسال درخواست
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: new URLSearchParams(formData),
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'RequestVerificationToken': formData.get('__RequestVerificationToken')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) return response.text();
+                        throw new Error('Network response was not ok');
+                    })
+                    .then(html => {
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+
+                        // بررسی پیام موفقیت
+                        const successMessage = doc.querySelector('.alert-success');
+                        if (successMessage) {
+                            window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Index" })';
+                            return;
+                        }
+
+                        // بررسی خطاها
+                        const errorElements = doc.querySelectorAll('.text-danger, .field-validation-error');
+                        if (errorElements.length > 0) {
+                            errorElements.forEach(error => {
+                                const text = error.textContent.trim();
+                                if (text) {
+                                    const li = document.createElement('li');
+                                    li.className = 'mb-1';
+                                    li.textContent = text;
+                                    validationErrors.appendChild(li);
+                                }
+                            });
+
+                            if (validationErrors.children.length > 0) {
+                                validationSummary.style.display = 'block';
+                            }
+                        } else {
+                            // خطای عمومی
+                            const li = document.createElement('li');
+                            li.className = 'mb-1';
+                            li.textContent = 'خطای ناشناخته رخ داده است. لطفاً مجدداً تلاش کنید.';
+                            validationErrors.appendChild(li);
+                            validationSummary.style.display = 'block';
+                        }
+                    })
+                    .catch(() => {
+                        const li = document.createElement('li');
+                        li.className = 'mb-1';
+                        li.textContent = 'خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.';
+                        validationErrors.appendChild(li);
+                        validationSummary.style.display = 'block';
+                    })
+                    .finally(() => {
+                        // پنهان کردن لودر
+                        loadingIndicator.style.display = 'none';
+                        submitButton.disabled = false;
+                    });
+                });
+            }
+
+            // راهنمای سریع برای کاربران جدید
+            if (!sessionStorage.getItem('departmentFormHelpShown')) {
+                setTimeout(() => {
+                    alert('راهنمای فرم دپارتمان:\n' +
+                          '- Alt+S: ذخیره فرم\n' +
+                          '- Alt+B: بازگشت به لیست\n' +
+                          '- برای انتخاب کلینیک، نام کلینیک را تایپ کنید');
+                    sessionStorage.setItem('departmentFormHelpShown', 'true');
+                }, 1500);
+            }
+        });
+    })();
+</script>

@@ -1,0 +1,42 @@
+﻿@model ClinicApp.ViewModels.PatientDetailsViewModel
+
+@{
+    ViewBag.Title = "جزئیات بیمار: " + Model.FullName;
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+            <div>
+                @Html.ActionLink("بازگشت به لیست", "Index", null, new { @class = "btn btn-secondary" })
+                @Html.ActionLink("ویرایش", "Edit", new { id = Model.PatientId }, new { @class = "btn btn-warning" })
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FullName)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.NationalCode)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.NationalCode)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.PhoneNumber)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.PhoneNumber)</dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.BirthDate)</dt>
+            <dd class="col-sm-9">
+                @(string.IsNullOrEmpty(Model.BirthDate) || Model.BirthDate == "-" ? "-" : Model.BirthDate)
+            </dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Address)</dt>
+            <dd class="col-sm-9">
+                @(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)
+            </dd>
+
+            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CreatedAt)</dt>
+            <dd class="col-sm-9">@Html.DisplayFor(model => model.CreatedAt)</dd>
+        </dl>
+    </div>
+</div>

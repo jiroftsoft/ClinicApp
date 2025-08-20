@@ -1,0 +1,191 @@
+﻿@model ClinicApp.ViewModels.EnterPhoneNumberViewModel
+@{
+    ViewBag.Title = "ورود / ثبت‌نام";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header text-center">
+                <h3 class="mb-0">@ViewBag.Title</h3>
+                <p class="mb-0 text-muted">لطفاً شماره موبایل خود را وارد کنید تا ادامه دهید</p>
+            </div>
+            <div class="card-body">
+
+                <div id="phone-number-step">
+                    @using (Html.BeginForm("SendOtp", "Account", FormMethod.Post, new { id = "phone-form", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
+                            <div class="input-group">
+                                <span class="input-group-text">+۹۸</span>
+                                @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "۹۱۲۳۴۵۶۷۸۹" })
+                            </div>
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger d-block mt-1" })
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" id="send-otp-button" class="btn btn-primary">
+                                <span class="button-text">ارسال کد تأیید</span>
+                                <span class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <div id="otp-step" style="display: none;">
+                    @using (Html.BeginForm("VerifyOtp", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "otp-form", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <p class="text-center text-success">کد تأیید به شماره <strong id="display-phone-number"></strong> ارسال شد.</p>
+
+                        @Html.Hidden("PhoneNumber", "")
+
+                        <div class="form-group">
+                            <label for="OtpCode" class="form-label">کد تأیید</label>
+                            <input type="text" id="OtpCode" name="OtpCode" class="form-control text-center" maxlength="6" autocomplete="off" />
+                            <div id="otp-error" class="text-danger mt-1"></div>
+                        </div>
+
+                        <div class="d-grid mt-3">
+                            <button type="submit" id="verify-otp-button" class="btn btn-success">
+                                <span class="button-text">تأیید و ورود</span>
+                                <span class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                            </button>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <span id="countdown-timer"></span>
+                            <a href="#" id="resend-otp-link" style="display: none;">ارسال مجدد کد</a>
+                        </div>
+                    }
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    @Html.Partial("_ValidationToasts")
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            var countdownInterval;
+
+            // --- مرحله ۱: ارسال شماره موبایل و دریافت کد ---
+            $('#phone-form').on('submit', function (e) {
+                e.preventDefault();
+                if (!$(this).valid()) {
+                    return;
+                }
+
+                var form = $(this);
+                var button = $('#send-otp-button');
+                var phoneNumber = form.find('#PhoneNumber').val();
+
+                showButtonSpinner(button, true);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: form.serialize(),
+                    // Inside the success callback of the #phone-form AJAX call
+                    success: function (response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            $('#phone-number-step').hide();
+                            // The original phone number is used directly
+                            $('#display-phone-number').text(phoneNumber);
+                            // **FIX:** The original, unaltered phone number is passed to the next step
+                            $('#otp-form').find('input[name="PhoneNumber"]').val(phoneNumber);
+                            $('#otp-step').show();
+                            $('#OtpCode').focus();
+                            startCountdown();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    complete: function () {
+                        showButtonSpinner(button, false);
+                    }
+                });
+            });
+
+            // --- مرحله ۲: تأیید کد OTP ---
+            $('#otp-form').on('submit', function (e) {
+                e.preventDefault();
+                var otpCode = $('#OtpCode').val();
+                if (!otpCode || otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
+                    $('#otp-error').text("کد تأیید باید یک عدد ۶ رقمی باشد.");
+                    return;
+                }
+                $('#otp-error').text('');
+
+                var form = $(this);
+                var button = $('#verify-otp-button');
+                showButtonSpinner(button, true);
+
+                $.ajax({
+                    url: form.attr('action'),
+                    type: 'POST',
+                    data: form.serialize(),
+                    success: function (response) {
+                        if (response.success && response.redirectUrl) {
+                            toastr.success("ورود با موفقیت انجام شد!");
+                            window.location.href = response.redirectUrl;
+                        } else {
+                            toastr.error(response.message);
+                            showButtonSpinner(button, false);
+                        }
+                    },
+                    error: function () {
+                        toastr.error("خطای غیرمنتظره‌ای رخ داد.");
+                        showButtonSpinner(button, false);
+                    }
+                });
+            });
+
+            // --- ارسال مجدد کد OTP ---
+            $('#resend-otp-link').on('click', function (e) {
+                e.preventDefault();
+                $('#phone-form').submit(); // ارسال مجدد فرم شماره موبایل
+            });
+
+            function startCountdown() {
+                clearInterval(countdownInterval);
+                $('#resend-otp-link').hide();
+                var timer = 120; // ۲ دقیقه
+                var countdownEl = $('#countdown-timer');
+                countdownEl.show().text("ارسال مجدد در " + timer + " ثانیه");
+
+                countdownInterval = setInterval(function () {
+                    timer--;
+                    countdownEl.text("ارسال مجدد در " + timer + " ثانیه");
+                    if (timer <= 0) {
+                        clearInterval(countdownInterval);
+                        countdownEl.hide();
+                        $('#resend-otp-link').show();
+                    }
+                }, 1000);
+            }
+
+            function showButtonSpinner(button, show) {
+                if (show) {
+                    button.prop('disabled', true);
+                    button.find('.button-text').hide();
+                    button.find('.spinner-border').show();
+                } else {
+                    button.prop('disabled', false);
+                    button.find('.button-text').show();
+                    button.find('.spinner-border').hide();
+                }
+            }
+        });
+    </script>
+}

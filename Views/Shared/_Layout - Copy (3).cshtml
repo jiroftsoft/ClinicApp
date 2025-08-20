@@ -1,0 +1,868 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <meta name="description" content="سیستم پیشرفته مدیریت کلینیک با قابلیت رزرو آنلاین، مدیریت پرونده‌های بیماران و هماهنگی با پزشکان متخصص. بهترین راه‌حل برای مدیریت حرفه‌ای کلینیک‌های شما." />
+    <meta name="keywords" content="مدیریت کلینیک, رزرو نوبت, سیستم پزشکی, نرم افزار کلینیک, مدیریت بیمارستان, سیستم آنلاین پزشکی" />
+    <meta name="author" content="سیستم مدیریت کلینیک" />
+    <meta property="og:title" content="@ViewBag.Title - سیستم مدیریت کلینیک" />
+    <meta property="og:description" content="سیستم پیشرفته مدیریت کلینیک با قابلیت رزرو آنلاین و مدیریت پرونده‌های بیماران" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@(Request.Url?.AbsoluteUri)" />
+    <meta property="og:image" content="~/Content/logo-og.png" />
+    <meta name="theme-color" content="#1a3a6c" />
+
+    <title>@(string.IsNullOrEmpty(ViewBag.Title) ? "سیستم مدیریت کلینیک" : ViewBag.Title + " - سیستم مدیریت کلینیک")</title>
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+    <!-- فونت‌های فارسی با کیفیت بالا -->
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- آیکون‌های حرفه‌ای -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+
+    <!-- فونت‌های اختصاصی برای سئو -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <!-- فاوآیکون -->
+    <link rel="icon" href="~/Content/favicon.ico" type="image/x-icon">
+    <link rel="apple-touch-icon" sizes="180x180" href="~/Content/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="~/Content/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="~/Content/favicon-16x16.png">
+
+    <style>
+        :root {
+            --primary-color: #1a3a6c;
+            --secondary-color: #2c5282;
+            --accent-color: #3182ce;
+            --light-color: #f8fafc;
+            --dark-color: #1e293b;
+            --success-color: #48bb78;
+            --warning-color: #ed8936;
+            --error-color: #e53e3e;
+            --gray-100: #f7fafc;
+            --gray-200: #edf2f7;
+            --gray-300: #e2e8f0;
+            --gray-400: #cbd5e0;
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            line-height: 1.7;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+            direction: rtl;
+            overflow-x: hidden;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* استایل نوار ناوبری حرفه‌ای */
+        .main-navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            padding: 0.5rem 0;
+            transition: var(--transition);
+            z-index: 1030;
+        }
+
+        .main-navbar.scrolled {
+            padding: 0.3rem 0;
+            background: linear-gradient(135deg, rgba(26, 58, 108, 0.95), rgba(44, 82, 130, 0.95));
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: var(--transition);
+        }
+
+        .navbar-brand:hover {
+            transform: translateX(5px);
+        }
+
+        .navbar-brand i {
+            color: #63b3ed;
+            font-size: 1.8rem;
+        }
+
+        .nav-link {
+            position: relative;
+            padding: 0.7rem 1rem !important;
+            font-weight: 500;
+            transition: var(--transition);
+            color: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 8px;
+            margin: 0 2px;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: white !important;
+            background: rgba(255, 255, 255, 0.1) !important;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            bottom: 5px;
+            right: 0;
+            width: 0;
+            height: 2px;
+            background: #63b3ed;
+            transition: var(--transition);
+        }
+
+        .nav-link:hover::after {
+            width: 100%;
+        }
+
+        .dropdown-menu {
+            border-radius: 12px;
+            border: none;
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            padding: 1.5rem;
+            margin-top: 12px;
+            min-width: 600px;
+            background: white;
+            direction: rtl;
+        }
+
+        .dropdown-item {
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            transition: var(--transition);
+            color: var(--dark-color);
+            font-weight: 500;
+        }
+
+        .dropdown-item:hover {
+            background: var(--gray-100);
+            transform: translateX(5px);
+            color: var(--accent-color);
+        }
+
+        .dropdown-item i {
+            margin-left: 10px;
+            color: var(--accent-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        /* استایل مگامنو */
+        .megamenu-header {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .megamenu-section {
+            margin-bottom: 1.5rem;
+        }
+
+        .megamenu-section h6 {
+            font-weight: 600;
+            color: var(--dark-color);
+            margin-bottom: 0.8rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .megamenu-section h6 i {
+            color: var(--accent-color);
+        }
+
+        .megamenu-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+        }
+
+        .megamenu-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .megamenu-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0.6rem;
+            border-radius: 8px;
+            transition: var(--transition);
+            color: var(--dark-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .megamenu-link:hover {
+            background: var(--gray-100);
+            color: var(--accent-color);
+            transform: translateX(5px);
+        }
+
+        .megamenu-link i {
+            color: var(--accent-color);
+            width: 20px;
+            text-align: center;
+        }
+
+        .megamenu-featured {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .megamenu-featured h5 {
+            font-weight: 700;
+            margin-bottom: 0.8rem;
+        }
+
+        .megamenu-featured p {
+            opacity: 0.9;
+            font-size: 0.95rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-box {
+            position: relative;
+            max-width: 350px;
+        }
+
+        .search-box input {
+            border-radius: 50px !important;
+            padding-right: 50px;
+            transition: var(--transition);
+        }
+
+        .search-box button {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--gray-400);
+        }
+
+        .search-box input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(49, 130, 206, 0.25);
+        }
+
+        /* استایل هدر */
+        .header-top {
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 0;
+            font-size: 0.9rem;
+        }
+
+        .header-top a {
+            color: #cbd5e0;
+            text-decoration: none;
+            transition: var(--transition);
+            margin: 0 10px;
+        }
+
+        .header-top a:hover {
+            color: white;
+        }
+
+        .header-top i {
+            margin-left: 5px;
+        }
+
+        /* استایل محتوا */
+        .container.body-content {
+            flex: 1;
+            padding-top: 2rem;
+            padding-bottom: 3rem;
+        }
+
+        .page-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 2px solid var(--gray-300);
+        }
+
+        .page-header h1 {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+            font-size: 2.2rem;
+        }
+
+        .page-header p {
+            color: var(--gray-500);
+            max-width: 700px;
+            margin: 0 auto;
+            font-size: 1.1rem;
+        }
+
+        /* استایل فوتر */
+        footer {
+            background: var(--dark-color);
+            color: white;
+            padding: 3rem 0 1.5rem;
+            margin-top: auto;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-column h5 {
+            position: relative;
+            padding-bottom: 0.8rem;
+            margin-bottom: 1.2rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .footer-column h5::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            width: 50px;
+            height: 2px;
+            background: var(--accent-color);
+        }
+
+        .footer-links {
+            list-style: none;
+        }
+
+        .footer-links li {
+            margin-bottom: 0.8rem;
+        }
+
+        .footer-links a {
+            color: #cbd5e0;
+            text-decoration: none;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .footer-links a:hover {
+            color: var(--accent-color);
+            transform: translateX(5px);
+        }
+
+        .footer-contact li {
+            display: flex;
+            margin-bottom: 1rem;
+            color: #cbd5e0;
+        }
+
+        .footer-contact i {
+            color: var(--accent-color);
+            margin-left: 10px;
+            min-width: 20px;
+        }
+
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 1.5rem;
+        }
+
+        .social-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: white;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .social-icon:hover {
+            background: var(--accent-color);
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(49, 130, 206, 0.4);
+        }
+
+        .copyright {
+            text-align: center;
+            padding-top: 1.5rem;
+            margin-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e0;
+            font-size: 0.9rem;
+        }
+
+        /* استایل کارت‌ها */
+        .card {
+            border-radius: 16px;
+            border: none;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: var(--transition);
+            overflow: hidden;
+            margin-bottom: 1.5rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            font-weight: 600;
+            padding: 1rem 1.5rem;
+            border: none;
+        }
+
+        /* استایل دکمه‌ها */
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            border: none;
+            padding: 0.6rem 1.8rem;
+            border-radius: 50px;
+            font-weight: 500;
+            transition: var(--transition);
+            box-shadow: 0 4px 15px rgba(26, 58, 108, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(26, 58, 108, 0.4);
+            background: linear-gradient(135deg, #162e5b, #254671);
+        }
+
+        .btn-outline-light {
+            border-radius: 50px;
+            padding: 0.6rem 1.5rem;
+            transition: var(--transition);
+            border: 2px solid white;
+        }
+
+        .btn-outline-light:hover {
+            background: white !important;
+            color: var(--primary-color) !important;
+        }
+
+        /* استایل نوار پیشرفت */
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background: var(--gray-300);
+            margin-bottom: 1.5rem;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, var(--success-color), #68d391);
+            border-radius: 4px;
+        }
+
+        /* استایل توتر */
+        .toast-top-left {
+            top: 80px !important;
+            left: 20px !important;
+            right: auto !important;
+        }
+
+        /* انیمیشن‌های ورود */
+        @@keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 0.6s ease forwards;
+        }
+
+        [data-aos="fade-up"] {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        [data-aos="fade-up"].aos-animate {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ریسپانسیو */
+        @@media (max-width: 992px) {
+            .megamenu-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .dropdown-menu {
+                min-width: 500px;
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .megamenu-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .dropdown-menu {
+                min-width: 100%;
+                padding: 1rem;
+            }
+
+            .search-box {
+                max-width: 100%;
+                margin-top: 10px;
+            }
+
+            .navbar-collapse {
+                background: var(--primary-color);
+                border-radius: 12px;
+                margin-top: 10px;
+                padding: 1rem 0;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .navbar-brand {
+                font-size: 1.3rem;
+            }
+
+            .header-top {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- نوار بالایی اطلاعات -->
+    <div class="header-top d-none d-md-block">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <i class="fas fa-clock"></i> ساعت کاری: شنبه تا چهارشنبه 8:00 - 20:00 | پنجشنبه 8:00 - 14:00
+                </div>
+                <div>
+                    <a href="tel:+982112345678"><i class="fas fa-phone"></i> تماس با ما: 021-12345678</a>
+                    <a href="mailto:info@clinic.com"><i class="fas fa-envelope"></i> info@clinic.com</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark main-navbar fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                    <i class="fas fa-clinic-medical"></i> سیستم مدیریت کلینیک
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">
+                            @Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="servicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                خدمات
+                            </a>
+                            <ul class="dropdown-menu megamenu" aria-labelledby="servicesDropdown">
+                                <div class="megamenu-grid">
+                                    <div class="megamenu-column">
+                                        <h6 class="megamenu-header"><i class="fas fa-heartbeat"></i> خدمات عمومی</h6>
+                                        <div class="megamenu-section">
+                                            <a href="@Url.Action("Index", "Services")" class="megamenu-link">
+                                                <i class="fas fa-stethoscope"></i> معاینه عمومی
+                                            </a>
+                                            <a href="@Url.Action("Index", "Services")" class="megamenu-link">
+                                                <i class="fas fa-syringe"></i> واکسیناسیون
+                                            </a>
+                                            <a href="@Url.Action("Index", "Services")" class="megamenu-link">
+                                                <i class="fas fa-pills"></i> داروخانه
+                                            </a>
+                                            <a href="@Url.Action("Index", "Services")" class="megamenu-link">
+                                                <i class="fas fa-file-medical"></i> پرونده الکترونیک سلامت
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="megamenu-column">
+                                        <h6 class="megamenu-header"><i class="fas fa-user-md"></i> خدمات تخصصی</h6>
+                                        <div class="megamenu-section">
+                                            <a href="@Url.Action("Special", "Services")" class="megamenu-link">
+                                                <i class="fas fa-tooth"></i> دندانپزشکی
+                                            </a>
+                                            <a href="@Url.Action("Special", "Services")" class="megamenu-link">
+                                                <i class="fas fa-eye"></i> چشم‌پزشکی
+                                            </a>
+                                            <a href="@Url.Action("Special", "Services")" class="megamenu-link">
+                                                <i class="fas fa-baby"></i> کودکان
+                                            </a>
+                                            <a href="@Url.Action("Special", "Services")" class="megamenu-link">
+                                                <i class="fas fa-heart"></i> قلب و عروق
+                                            </a>
+                                        </div>
+                                    </div>
+                                    <div class="megamenu-column">
+                                        <h6 class="megamenu-header"><i class="fas fa-laptop-medical"></i> خدمات آنلاین</h6>
+                                        <div class="megamenu-section">
+                                            <a href="@Url.Action("Consultation", "Services")" class="megamenu-link">
+                                                <i class="fas fa-video"></i> مشاوره ویدئویی
+                                            </a>
+                                            <a href="@Url.Action("Consultation", "Services")" class="megamenu-link">
+                                                <i class="fas fa-comments"></i> چت پزشکی
+                                            </a>
+                                            <a href="@Url.Action("Consultation", "Services")" class="megamenu-link">
+                                                <i class="fas fa-file-prescription"></i> نسخه الکترونیک
+                                            </a>
+                                            <a href="@Url.Action("Consultation", "Services")" class="megamenu-link">
+                                                <i class="fas fa-calendar-check"></i> رزرو آنلاین
+                                            </a>
+                                        </div>
+                                        <div class="megamenu-featured">
+                                            <h5><i class="fas fa-bolt"></i> ویژه امروز</h5>
+                                            <p>مشاوره آنلاین با پزشکان باتجربه با 30% تخفیف فقط برای امروز</p>
+                                            <a href="@Url.Action("Consultation", "Services")" class="btn btn-light btn-sm">دریافت تخفیف</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("پزشکان", "Index", "Doctors", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("رزرو نوبت", "Create", "Appointment", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("درباره ما", "About", "Home", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "nav-link" })
+                        </li>
+                    </ul>
+
+                    <div class="d-flex align-items-center">
+                        <div class="search-box me-3">
+                            <button type="submit"><i class="fas fa-search"></i></button>
+                            <input class="form-control" type="search" placeholder="جستجو در خدمات..." aria-label="Search">
+                        </div>
+                        @Html.Partial("_LoginPartial")
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="container body-content">
+        @RenderBody()
+
+        <!-- نوار پیشرفت سایت -->
+        <div class="container mt-5">
+            <div class="progress">
+                <div class="progress-bar" role="progressbar" style="width: 75%;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100"></div>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+
+        <footer>
+            <div class="container">
+                <div class="footer-content">
+                    <div class="footer-column">
+                        <h5>سیستم مدیریت کلینیک</h5>
+                        <p style="color: #cbd5e0; line-height: 1.8;">
+                            سیستم پیشرفته مدیریت کلینیک با هدف ارائه خدمات بهینه به مدیران کلینیک‌ها و بیمارستان‌ها طراحی شده است.
+                            با استفاده از این سیستم می‌توانید به راحتی نوبت‌دهی، مدیریت پرونده‌ها و ارتباط با بیماران را مدیریت کنید.
+                        </p>
+                        <div class="social-icons mt-3">
+                            <a href="#" class="social-icon" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
+                            <a href="#" class="social-icon" aria-label="تلگرام"><i class="fab fa-telegram"></i></a>
+                            <a href="#" class="social-icon" aria-label="لینکدین"><i class="fab fa-linkedin-in"></i></a>
+                            <a href="#" class="social-icon" aria-label="ایتویتر"><i class="fab fa-twitter"></i></a>
+                        </div>
+                    </div>
+
+                    <div class="footer-column">
+                        <h5>لینک‌های سریع</h5>
+                        <ul class="footer-links">
+                            <li><a href="@Url.Action("Index", "Home")"><i class="fas fa-home"></i> صفحه اصلی</a></li>
+                            <li><a href="@Url.Action("Index", "Services")"><i class="fas fa-concierge-bell"></i> خدمات کلینیک</a></li>
+                            <li><a href="@Url.Action("Index", "Doctors")"><i class="fas fa-user-md"></i> پزشکان ما</a></li>
+                            <li><a href="@Url.Action("Create", "Appointment")"><i class="fas fa-calendar-check"></i> رزرو نوبت</a></li>
+                            <li><a href="@Url.Action("About", "Home")"><i class="fas fa-info-circle"></i> درباره ما</a></li>
+                            <li><a href="@Url.Action("Contact", "Home")"><i class="fas fa-address-book"></i> تماس با ما</a></li>
+                        </ul>
+                    </div>
+
+                    <div class="footer-column">
+                        <h5>اطلاعات تماس</h5>
+                        <ul class="footer-contact">
+                            <li>
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>تهران، خیابان آزادی، کوچه بهشت، پلاک 123</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-phone-alt"></i>
+                                <span>021-12345678</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-mobile-alt"></i>
+                                <span>0912-345-6789</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-envelope"></i>
+                                <span>info@clinic.com</span>
+                            </li>
+                            <li>
+                                <i class="fas fa-globe"></i>
+                                <span>www.clinic.com</span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="copyright">
+                    <p>&copy; @DateTime.Now.Year - سیستم مدیریت کلینیک. تمامی حقوق محفوظ است.</p>
+                    <div class="d-flex justify-content-center gap-3 mt-2">
+                        <a href="#" style="color: #cbd5e0; text-decoration: none;">حریم خصوصی</a>
+                        <span>|</span>
+                        <a href="#" style="color: #cbd5e0; text-decoration: none;">شرایط استفاده</a>
+                        <span>|</span>
+                        <a href="#" style="color: #cbd5e0; text-decoration: none;">نقشه سایت</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    </main>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+    <script>
+        // تنظیمات جهانی برای Toastr
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-left",
+            "preventDuplicates": true,
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut"
+        };
+
+        // نمایش پیام‌های موقت
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <text>
+                toastr.success("@Html.Raw(TempData["SuccessMessage"])");
+            </text>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <text>
+                toastr.error("@Html.Raw(TempData["ErrorMessage"])");
+            </text>
+        }
+
+        @if (TempData["WarningMessage"] != null)
+        {
+            <text>
+                toastr.warning("@Html.Raw(TempData["WarningMessage"])");
+            </text>
+        }
+
+        // اسکرول نوار ناوبری
+        document.addEventListener('DOMContentLoaded', function() {
+            const navbar = document.querySelector('.main-navbar');
+            const scrollThreshold = 50;
+
+            // بررسی اولیه وضعیت اسکرول
+            if (window.scrollY > scrollThreshold) {
+                navbar.classList.add('scrolled');
+            }
+
+            // اضافه کردن رویداد اسکرول
+            window.addEventListener('scroll', function() {
+                if (window.scrollY > scrollThreshold) {
+                    navbar.classList.add('scrolled');
+                } else {
+                    navbar.classList.remove('scrolled');
+                }
+            });
+
+            // انیمیشن‌های ورود به صفحه
+            const animateElements = document.querySelectorAll('[data-aos="fade-up"]');
+            animateElements.forEach(element => {
+                element.style.opacity = '0';
+                element.style.transform = 'translateY(20px)';
+            });
+
+            setTimeout(() => {
+                animateElements.forEach((element, index) => {
+                    setTimeout(() => {
+                        element.style.transition = 'opacity 0.6s ease, transform 0.6s ease';
+                        element.style.opacity = '1';
+                        element.style.transform = 'translateY(0)';
+                    }, 200 * index);
+                });
+            }, 300);
+
+            // اضافه کردن افکت هاور به کارت‌ها
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    this.style.transform = 'translateY(-5px)';
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+        });
+    </script>
+</body>
+</html>

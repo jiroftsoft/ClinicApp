@@ -1,0 +1,365 @@
+﻿@model ClinicApp.ViewModels.ClinicCreateEditViewModel
+@{
+    ViewBag.Title = Model.ClinicId > 0 ? "ویرایش کلینیک" : "ایجاد کلینیک جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
+<style type="text/css">
+    /* استایل‌های حیاتی برای اولین رندر */
+    .clinic-form-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-section {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .form-section-title {
+        font-size: 1.2em;
+        margin: 0 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #e9ecef;
+        color: #007bff;
+    }
+
+    .form-group {
+        margin-bottom: 18px;
+    }
+
+    .required:after {
+        content: " *";
+        color: #dc3545;
+    }
+
+    .validation-summary {
+        margin-bottom: 20px;
+    }
+
+    .btn-submit-container {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .form-actions {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 25px;
+    }
+
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.8);
+        display: none;
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+    }
+
+    .loading-spinner {
+        width: 50px;
+        height: 50px;
+        border: 5px solid #e9ecef;
+        border-top: 5px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    /* بهینه‌سازی برای دستگاه‌های پزشکی */
+    @@media (max-width: 768px) {
+        .clinic-form-container {
+            padding: 0 10px;
+        }
+
+        .btn-submit-container {
+            flex-direction: column;
+        }
+
+        .btn {
+            width: 100%;
+        }
+    }
+
+    /* برای دستگاه‌های پزشکی با نور کم */
+    @@media (prefers-contrast: high) {
+        .form-section {
+            border: 2px solid #000;
+        }
+    }
+</style>
+
+<div class="clinic-form-container">
+    <div class="page-header">
+        <h1 class="page-title">@ViewBag.Title</h1>
+        <p class="page-description">
+            @(Model.ClinicId > 0 ? "ویرایش اطلاعات کلینیک در سیستم کلینیک شفا" : "ثبت کلینیک جدید در سیستم کلینیک شفا")
+        </p>
+    </div>
+
+    <!-- نمایش پیام‌های وضعیت -->
+    <div id="statusMessages">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+    </div>
+
+    @using (Html.BeginForm(Model.ClinicId > 0 ? "Edit" : "Create", "Clinic", new { area = "Admin" }, FormMethod.Post, new { @id = "clinicForm", @autocomplete = "off" }))
+    {
+        @Html.AntiForgeryToken()
+        if (Model.ClinicId > 0)
+        {
+            @Html.HiddenFor(model => model.ClinicId)
+        }
+
+        <!-- خلاصه اعتبارسنجی -->
+        <div class="validation-summary alert alert-danger" style="display: none;" id="validationSummary">
+            لطفاً خطاهای زیر را اصلاح کنید:
+            <ul id="validationErrors"></ul>
+        </div>
+
+        <!-- بخش اطلاعات اصلی کلینیک -->
+        <div class="form-section">
+            <h2 class="form-section-title">اطلاعات اصلی کلینیک</h2>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Name, new { @class = "required" })
+                        @Html.TextBoxFor(model => model.Name, new { @class = "form-control", @placeholder = "نام کلینیک", @maxlength = "200", @autocomplete = "off", @accesskey = "n" })
+                        @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.Address)
+                        @Html.TextAreaFor(model => model.Address, new { @class = "form-control", @rows = "3", @placeholder = "آدرس کلینیک", @maxlength = "500", @autocomplete = "off", @accesskey = "a" })
+                        @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">حداکثر 500 کاراکتر</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        @Html.LabelFor(model => model.PhoneNumber)
+                        @Html.TextBoxFor(model => model.PhoneNumber, new { @class = "form-control", @placeholder = "شماره تلفن کلینیک", @maxlength = "50", @autocomplete = "off", @accesskey = "p" })
+                        @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
+                        <small class="form-text text-muted">فرمت: 021-12345678 یا +982112345678</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه‌های اقدام -->
+        <div class="form-actions">
+            <a href="@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Index" })" class="btn btn-secondary" accesskey="b">
+                <i class="fa fa-arrow-left"></i> بازگشت به لیست
+            </a>
+            <div class="btn-submit-container">
+                <button type="button" id="cancelButton" class="btn btn-outline-secondary">
+                    <i class="fa fa-times"></i> لغو
+                </button>
+                <button type="submit" id="submitButton" class="btn btn-primary">
+                    <i class="fa @(Model.ClinicId > 0 ? "fa-save" : "fa-plus")"></i>
+                    @(Model.ClinicId > 0 ? "به‌روزرسانی" : "ایجاد کلینیک")
+                </button>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- لایه لودینگ -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
+<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
+<script type="text/javascript">
+    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
+    (function() {
+        'use strict';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('clinicForm');
+            const submitButton = document.getElementById('submitButton');
+            const cancelButton = document.getElementById('cancelButton');
+            const loadingOverlay = document.getElementById('loadingOverlay');
+            const validationSummary = document.getElementById('validationSummary');
+            const validationErrors = document.getElementById('validationErrors');
+
+            // اعتبارسنجی فوری شماره تلفن
+            const phoneNumberInput = document.querySelector('input[name="PhoneNumber"]');
+            if (phoneNumberInput) {
+                phoneNumberInput.addEventListener('blur', function() {
+                    const phone = this.value.trim();
+                    if (phone && !/^(\+?\d{1,3}[- ]?)?\d{2,4}[- ]?\d{3,4}[- ]?\d{3,4}$/.test(phone)) {
+                        alert('لطفاً شماره تلفن را با فرمت صحیح وارد کنید (مثال: 021-12345678 یا +982112345678)');
+                        this.focus();
+                    }
+                });
+            }
+
+            // تنظیم کلیدهای میانبر پزشکی
+            document.addEventListener('keydown', function(e) {
+                // Alt + S برای ذخیره
+                if (e.altKey && e.key === 's') {
+                    e.preventDefault();
+                    submitButton.click();
+                }
+
+                // Alt + C برای لغو
+                if (e.altKey && e.key === 'c') {
+                    e.preventDefault();
+                    cancelButton.click();
+                }
+
+                // Alt + B برای بازگشت
+                if (e.altKey && e.key === 'b') {
+                    e.preventDefault();
+                    window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Index" })';
+                }
+            });
+
+            // تنظیم دکمه لغو
+            if (cancelButton) {
+                cancelButton.addEventListener('click', function() {
+                    window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Index" })';
+                });
+            }
+
+            // ارسال فرم با اعتبارسنجی پیشرفته
+            if (form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    // پاک کردن خطاها
+                    validationErrors.innerHTML = '';
+                    validationSummary.style.display = 'none';
+
+                    // نمایش لودر
+                    loadingOverlay.style.display = 'flex';
+                    submitButton.disabled = true;
+
+                    // ایجاد فرم دیتا
+                    const formData = new FormData(this);
+
+                    // ارسال درخواست
+                    fetch(this.action, {
+                        method: 'POST',
+                        body: new URLSearchParams(formData),
+                        headers: {
+                            'RequestVerificationToken': formData.get('__RequestVerificationToken')
+                        }
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            return response.text();
+                        }
+                        throw new Error('خطا در ارتباط با سرور');
+                    })
+                    .then(html => {
+                        try {
+                            const parser = new DOMParser();
+                            const doc = parser.parseFromString(html, 'text/html');
+                            const successMessage = doc.querySelector('.alert-success');
+
+                            if (successMessage) {
+                                // موفقیت‌آمیز بوده - هدایت به لیست
+                                window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Index" })';
+                            } else {
+                                // خطا در اعتبارسنجی
+                                const errorList = doc.querySelectorAll('.text-danger');
+                                if (errorList.length > 0) {
+                                    errorList.forEach(error => {
+                                        if (error.textContent.trim()) {
+                                            const li = document.createElement('li');
+                                            li.textContent = error.textContent;
+                                            validationErrors.appendChild(li);
+                                        }
+                                    });
+
+                                    validationSummary.style.display = 'block';
+                                } else {
+                                    alert('خطای ناشناخته رخ داده است. لطفاً مجدداً تلاش کنید.');
+                                }
+
+                                // پنهان کردن لودر
+                                loadingOverlay.style.display = 'none';
+                                submitButton.disabled = false;
+                            }
+                        } catch (e) {
+                            console.error('Error parsing response:', e);
+                            alert('خطای سیستم رخ داده است. لطفاً مجدداً تلاش کنید.');
+                            loadingOverlay.style.display = 'none';
+                            submitButton.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.');
+                        loadingOverlay.style.display = 'none';
+                        submitButton.disabled = false;
+                    });
+                });
+            }
+
+            // بهینه‌سازی برای دستگاه‌های پزشکی
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.body.style.transition = 'none';
+            }
+
+            // راهنمای سریع برای کاربران جدید
+            if (!sessionStorage.getItem('clinicFormHelpShown')) {
+                setTimeout(() => {
+                    alert('راهنمای فرم:\n' +
+                          '- Alt+S: ذخیره فرم\n' +
+                          '- Alt+C: لغو تغییرات\n' +
+                          '- Alt+B: بازگشت به لیست\n' +
+                          '- برای جستجوی سریع در لیست‌های کشویی، کافیست کلمه مورد نظر را تایپ کنید');
+                    sessionStorage.setItem('clinicFormHelpShown', 'true');
+                }, 2000);
+            }
+        });
+    })();
+</script>

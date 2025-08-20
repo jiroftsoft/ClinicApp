@@ -1,0 +1,129 @@
+﻿@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.DepartmentIndexViewModel>
+
+@if (Model != null && Model.Items != null && Model.Items.Any())
+{
+    <div class="departments-list" aria-live="polite">
+        @foreach (var department in Model.Items)
+        {
+            <div class="department-card" id="department-@department.DepartmentId">
+                <div class="department-header">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h3 class="department-name">@department.Name</h3>
+                            <div class="department-clinic">
+                                <i class="fa fa-hospital"></i> @department.ClinicName
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-left">
+                            <span class="badge @(department.IsActive ? "badge-success" : "badge-danger")">
+                                @(department.IsActive ? "فعال" : "غیرفعال")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="department-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><i class="fa fa-user-md"></i> تعداد پزشکان: @department.DoctorCount</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><i class="fa fa-stethoscope"></i> تعداد خدمات: @department.ServiceCount</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="department-stats">
+                    <div class="department-stats-item">
+                        <span class="department-stats-label">پزشکان</span>
+                        <span class="department-stats-value">@department.DoctorCount</span>
+                    </div>
+                    <div class="department-stats-item">
+                        <span class="department-stats-label">خدمات</span>
+                        <span class="department-stats-value">@department.ServiceCount</span>
+                    </div>
+                    <div class="department-stats-item">
+                        <span class="department-stats-label">نوبت‌ها</span>
+                        <span class="department-stats-value">@(department.DoctorCount * 10)</span>
+                    </div>
+                </div>
+                <div class="department-actions">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Details", id = department.DepartmentId })"
+                               class="btn btn-sm btn-info action-btn"
+                               title="مشاهده جزئیات">
+                                <i class="fa fa-info-circle"></i> جزئیات
+                            </a>
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Edit", id = department.DepartmentId })"
+                               class="btn btn-sm btn-primary action-btn"
+                               title="ویرایش اطلاعات">
+                                <i class="fa fa-edit"></i> ویرایش
+                            </a>
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Delete", id = department.DepartmentId })"
+                               class="btn btn-sm btn-danger action-btn delete-btn"
+                               title="حذف دپارتمان">
+                                <i class="fa fa-trash"></i> حذف
+                            </a>
+                        </div>
+                        <div class="col-md-4 text-left">
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Doctor", action = "Index", departmentId = department.DepartmentId })"
+                               class="btn btn-sm btn-success action-btn"
+                               title="مدیریت پزشکان">
+                                <i class="fa fa-user-md"></i> پزشکان
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- صفحه‌بندی -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)
+            از @Model.TotalItems دپارتمان
+        </div>
+        <ul class="pagination">
+            @if (Model.PageNumber > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="1" aria-label="اولین">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="@(Model.PageNumber - 1)" aria-label="قبلی">
+                        <span aria-hidden="true"><</span>
+                    </a>
+                </li>
+            }
+
+            @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+
+            @if (Model.PageNumber < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="@(Model.PageNumber + 1)" aria-label="بعدی">
+                        <span aria-hidden="true">></span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="@Model.TotalPages" aria-label="آخرین">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle"></i> هیچ دپارتمانی یافت نشد. لطفاً عبارت جستجو را تغییر دهید یا دپارتمان جدیدی افزوده شود.
+    </div>
+}

@@ -1,0 +1,34 @@
+﻿@using Microsoft.AspNet.Identity
+@using ClinicApp.Helpers 
+
+@if (Request.IsAuthenticated)
+{
+    // --- نمای کاربر احراز هویت شده: منوی کشویی مدرن ---
+    using (Html.BeginForm("LogOff", "Account", FormMethod.Post, new { id = "logoutForm" }))
+    {
+        @Html.AntiForgeryToken()
+
+        <ul class="navbar-nav">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    سلام، @User.Identity.GetFirstName()!
+                </a>
+                <div class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                    @Html.ActionLink("پروفایل من", "Index", "Manage", routeValues: null, htmlAttributes: new { @class = "dropdown-item" })
+                    @Html.ActionLink("نوبت‌های من", "Index", "Appointment", routeValues: null, htmlAttributes: new { @class = "dropdown-item" })
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item" href="javascript:document.getElementById('logoutForm').submit()">خروج</a>
+                </div>
+            </li>
+        </ul>
+    }
+}
+else
+{
+    // --- نمای کاربر مهمان: یک دکمه روشن و ساده ---
+    <ul class="navbar-nav">
+        <li class="nav-item">
+            @Html.ActionLink("ورود / ثبت‌نام", "Login", "Account", routeValues: null, htmlAttributes: new { id = "loginLink", @class = "btn btn-primary" })
+        </li>
+    </ul>
+}

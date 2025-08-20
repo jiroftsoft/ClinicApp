@@ -1,0 +1,16 @@
+# هسته اصلی کتابخانه سرilog
+Install-Package Serilog
+
+# پکیج ضروری برای یکپارچه‌سازی با ASP.NET MVC 5 (برای لاگ خودکار درخواست‌ها)
+Install-Package SerilogWeb.Classic
+
+# Sink برای ذخیره لاگ‌ها در فایل به صورت روزانه (Rolling File)
+Install-Package Serilog.Sinks.File
+
+# Sink برای غیرهمزمان کردن عملیات لاگ‌گیری (جلوگیری از کاهش سرعت برنامه)
+Install-Package Serilog.Sinks.Async
+
+# پکیج‌های کمکی برای غنی‌سازی لاگ‌ها با اطلاعات مفید
+Install-Package Serilog.Enrichers.Environment
+Install-Package Serilog.Enrichers.Process
+Install-Package Serilog.Enrichers.Thread

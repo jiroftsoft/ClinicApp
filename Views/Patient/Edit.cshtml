@@ -1,0 +1,171 @@
+﻿@model ClinicApp.ViewModels.PatientCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش اطلاعات بیمار";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow-sm">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>@ViewBag.Title</h4>
+            </div>
+            <div class="card-body">
+                @using (Html.BeginForm("Edit", "Patient", FormMethod.Post, new { id = "edit-patient-form", role = "form" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+
+                    // **مهمترین فیلد در فرم ویرایش**
+                    // این فیلد مخفی، شناسه بیمار را برای به‌روزرسانی به سرور ارسال می‌کند
+                    @Html.HiddenFor(model => model.PatientId)
+
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.FirstName, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.LastName, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.NationalCode, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.NationalCode, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.PhoneNumber, new { htmlAttributes = new { @class = "form-control" } })
+                            @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.BirthDatePersian, new { @class = "form-label" })
+                            @Html.TextBoxFor(model => model.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", autocomplete = "off" })
+                            @Html.ValidationMessageFor(model => model.BirthDatePersian, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-12">
+                            @Html.LabelFor(model => model.Address, new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Address, 4, 0, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex justify-content-end">
+                        @Html.ActionLink("انصراف", "Index", null, new { @class = "btn btn-outline-secondary me-2" })
+                        <button type="submit" id="submit-button" class="btn btn-primary">
+                            <span id="submit-button-text">
+                                <i class="fas fa-save me-2"></i>ذخیره تغییرات
+                            </span>
+                            <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+
+            // ۱. پیکربندی بهینه تقویم شمسی
+            $("#birthdate-picker").pDatepicker({
+                format: 'YYYY/MM/DD',            // فرمت نمایش شمسی به کاربر
+                autoClose: true,                 // بستن خودکار بعد از انتخاب
+                initialValue: false,             // بدون مقدار اولیه
+                observer: true,                  // برای کار با اعتبارسنجی MVC
+
+                // اتصال به فیلد مخفی میلادی
+                altFormat: 'YYYY-MM-DD',         // فرمت استاندارد میلادی برای ارسال به سرور
+
+                // تنظیمات تقویم فارسی
+                calendarSettings: {
+                    persian: {
+                        locale: 'fa',
+                        leapYearMode: 'astronomical'
+                    }
+                },
+
+                // تم و ظاهر
+                theme: 'blue',                   // می‌توانید: default, blue, dark, red
+                digits: 'persian',               // نمایش اعداد فارسی
+
+                // متن‌ها و ترجمه کامل دکمه‌ها
+                toolbox: {
+                    todayBtn: {
+                        enabled: true,
+                        text: { fa: 'امروز' }
+                    },
+                    clearBtn: {
+                        enabled: true,
+                        text: { fa: 'پاک کردن' }
+                    },
+                    calendarSwitch: {
+                        enabled: true,
+                        format: 'YYYY'
+                    }
+                },
+
+                // نام ماه‌ها و روزها
+                calendar: {
+                    persian: {
+                        monthNames: [
+                            'فروردین', 'اردیبهشت', 'خرداد',
+                            'تیر', 'مرداد', 'شهریور',
+                            'مهر', 'آبان', 'آذر',
+                            'دی', 'بهمن', 'اسفند'
+                        ],
+                        dayNames: [
+                            'شنبه', 'یک‌شنبه', 'دوشنبه',
+                            'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'
+                        ],
+                        dayNamesShort: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
+                    }
+                },
+
+                // متن‌های پیش‌فرض
+                textArray: {
+                    'fa': {
+                        'today': 'امروز',
+                        'yesterday': 'دیروز',
+                        'lastWeek': 'هفته گذشته',
+                        'lastMonth': 'ماه گذشته',
+                        'lastYear': 'سال گذشته',
+                        'clear': 'پاک کردن',
+                        'close': 'بستن'
+                    }
+                }
+            });
+
+            // ۲. مدیریت وضعیت دکمه ثبت
+            $('#edit-patient-form').on('submit', function () {
+                if ($(this).valid()) {
+                    $('#submit-button').prop('disabled', true);
+                    $('#submit-button-text').hide();
+                    $('#submit-button-spinner').show();
+                }
+            });
+
+            // ۳. بهبود نمایش خطاهای اعتبارسنجی
+            $.validator.setDefaults({
+                highlight: function (element) { $(element).addClass('is-invalid'); },
+                unhighlight: function (element) { $(element).removeClass('is-invalid'); }
+            });
+
+             // ۴. نمایش خطاهای سرور با Toastr
+             @Html.Partial("_ValidationToasts")
+        });
+    </script>
+}

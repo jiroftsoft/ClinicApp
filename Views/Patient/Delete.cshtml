@@ -1,0 +1,55 @@
+﻿@model ClinicApp.ViewModels.PatientDetailsViewModel
+@{
+    ViewBag.Title = "تأیید حذف بیمار";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>@ViewBag.Title</h4>
+            </div>
+            <div class="card-body">
+                <p class="lead">آیا از حذف بیمار زیر اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
+                <hr />
+
+                <dl class="row">
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.FullName)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.FullName)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.NationalCode)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.NationalCode)
+                    </dd>
+
+                    <dt class="col-sm-4">
+                        @Html.DisplayNameFor(model => model.PhoneNumber)
+                    </dt>
+                    <dd class="col-sm-8">
+                        @Html.DisplayFor(model => model.PhoneNumber)
+                    </dd>
+                </dl>
+
+                @using (Html.BeginForm())
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(model => model.PatientId)
+
+                    <hr />
+                    <div class="d-flex justify-content-end">
+                        @Html.ActionLink("انصراف", "Index", null, new { @class = "btn btn-outline-secondary me-2" })
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-trash-alt me-2"></i> بله، حذف کن
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

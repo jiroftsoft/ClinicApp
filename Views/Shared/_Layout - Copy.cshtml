@@ -1,0 +1,118 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewBag.Title - سیستم مدیریت کلینیک</title>
+
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" />
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")">نام کلینیک</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav">
+                        <li class="nav-item">
+                            @Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link dropdown-toggle" href="#" id="servicesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">خدمات</a>
+                            <ul class="dropdown-menu" aria-labelledby="servicesDropdown">
+                                <li>@Html.ActionLink("خدمات عمومی", "Index", "Services", null, new { @class = "dropdown-item" })</li>
+                                <li>@Html.ActionLink("خدمات ویژه", "Special", "Services", null, new { @class = "dropdown-item" })</li>
+                                <li>@Html.ActionLink("مشاوره آنلاین", "Consultation", "Services", null, new { @class = "dropdown-item" })</li>
+                            </ul>
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("پزشکان", "Index", "Doctors", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("رزرو نوبت", "Create", "Appointment", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("درباره ما", "About", "Home", null, new { @class = "nav-link" })
+                        </li>
+                        <li class="nav-item">
+                            @Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "nav-link" })
+                        </li>
+                    </ul>
+                    <form class="d-flex ms-auto">
+                        <input class="form-control me-2" type="search" placeholder="جستجو..." aria-label="Search">
+                        <button class="btn btn-outline-light" type="submit">جستجو</button>
+                    </form>
+                    @Html.Partial("_LoginPartial")
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - سیستم مدیریت کلینیک. تمامی حقوق محفوظ است.</p>
+            <div class="social-icons">
+                <a href="#" class="social-icon"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="social-icon"><i class="fab fa-instagram"></i></a>
+            </div>
+        </footer>
+    </main>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+
+    <script>
+    // Set global options for Toastr
+    toastr.options = {
+        "closeButton": true,
+        "debug": false,
+        "newestOnTop": true,
+        "progressBar": true,
+        "positionClass": "toast-top-left", // Best position for RTL layouts
+        "preventDuplicates": true,
+        "timeOut": "5000",
+        "extendedTimeOut": "1000",
+        "showEasing": "swing",
+        "hideEasing": "linear",
+        "showMethod": "fadeIn",
+        "hideMethod": "fadeOut"
+    };
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script type="text/javascript">
+            toastr.success("@Html.Raw(TempData["SuccessMessage"])");
+    </script>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <script type="text/javascript">
+            toastr.error("@Html.Raw(TempData["ErrorMessage"])");
+    </script>
+}
+
+@if (TempData["WarningMessage"] != null)
+{
+    <script type="text/javascript">
+            toastr.warning("@Html.Raw(TempData["WarningMessage"])");
+    </script>
+}
+
+</body>
+</html>

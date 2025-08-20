@@ -1,0 +1,136 @@
+﻿@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.ClinicIndexViewModel>
+
+@if (Model.Items != null && Model.Items.Any())
+{
+    <div class="clinics-list" aria-live="polite">
+        @foreach (var clinic in Model.Items)
+        {
+            <div class="clinic-card" id="clinic-@clinic.ClinicId">
+                <div class="clinic-header">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h3 class="clinic-name">@clinic.Name</h3>
+                            @if (!string.IsNullOrEmpty(clinic.Address))
+                            {
+                                <div class="clinic-address">
+                                    <i class="fa fa-map-marker"></i> @clinic.Address
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-4 text-left">
+                            <span class="badge @(clinic.IsActive ? "badge-success" : "badge-danger")">
+                                @(clinic.IsActive ? "فعال" : "غیرفعال")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="clinic-content">
+                    <div class="row">
+                        <div class="col-md-6">
+                            @if (!string.IsNullOrEmpty(clinic.PhoneNumber))
+                            {
+                                <p><i class="fa fa-phone"></i> شماره تماس: @clinic.PhoneNumber</p>
+                            }
+                        </div>
+                        <div class="col-md-6">
+                            <p><i class="fa fa-building"></i> تعداد دپارتمان‌ها: @clinic.DepartmentCount</p>
+                            <p><i class="fa fa-user-md"></i> تعداد پزشکان: @clinic.DoctorCount</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="clinic-stats">
+                    <div class="clinic-stats-item">
+                        <span class="clinic-stats-label">دپارتمان‌ها</span>
+                        <span class="clinic-stats-value">@clinic.DepartmentCount</span>
+                    </div>
+                    <div class="clinic-stats-item">
+                        <span class="clinic-stats-label">پزشکان</span>
+                        <span class="clinic-stats-value">@clinic.DoctorCount</span>
+                    </div>
+                    <div class="clinic-stats-item">
+                        <span class="clinic-stats-label">خدمات</span>
+                        <span class="clinic-stats-value">@(clinic.DepartmentCount * 5)</span>
+                    </div>
+                </div>
+                <div class="clinic-actions">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Details", id = clinic.ClinicId })"
+                               class="btn btn-sm btn-info action-btn"
+                               title="مشاهده جزئیات">
+                                <i class="fa fa-info-circle"></i> جزئیات
+                            </a>
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Edit", id = clinic.ClinicId })"
+                               class="btn btn-sm btn-primary action-btn"
+                               title="ویرایش اطلاعات">
+                                <i class="fa fa-edit"></i> ویرایش
+                            </a>
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Delete", id = clinic.ClinicId })"
+                               class="btn btn-sm btn-danger action-btn delete-btn"
+                               title="حذف کلینیک">
+                                <i class="fa fa-trash"></i> حذف
+                            </a>
+                        </div>
+                        <div class="col-md-4 text-left">
+                            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Index", clinicId = clinic.ClinicId })"
+                               class="btn btn-sm btn-success action-btn"
+                               title="مدیریت دپارتمان‌ها">
+                                <i class="fa fa-sitemap"></i> دپارتمان‌ها
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- صفحه‌بندی -->
+    <div class="pagination-container">
+        <div class="pagination-info">
+            نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)
+            از @Model.TotalItems کلینیک
+        </div>
+        <ul class="pagination">
+            @if (Model.PageNumber > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="1" aria-label="اولین">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="@(Model.PageNumber - 1)" aria-label="قبلی">
+                        <span aria-hidden="true"><</span>
+                    </a>
+                </li>
+            }
+
+            @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+            {
+                <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    <a class="page-link" href="#" data-page="@i">@i</a>
+                </li>
+            }
+
+            @if (Model.PageNumber < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="@(Model.PageNumber + 1)" aria-label="بعدی">
+                        <span aria-hidden="true">></span>
+                    </a>
+                </li>
+                <li class="page-item">
+                    <a class="page-link" href="#" data-page="@Model.TotalPages" aria-label="آخرین">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            }
+        </ul>
+    </div>
+}
+else
+{
+    <div class="alert alert-info">
+        <i class="fa fa-info-circle"></i> هیچ کلینیکی یافت نشد. لطفاً عبارت جستجو را تغییر دهید یا کلینیک جدیدی افزوده شود.
+    </div>
+}

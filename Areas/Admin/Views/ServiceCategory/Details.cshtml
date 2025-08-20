@@ -1,0 +1,347 @@
+﻿@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.ServiceCategoryDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات دسته‌بندی خدمات";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- بسته‌های CSS مورد نیاز -->
+@section Styles {
+    <style>
+        /* استایل‌های اختصاصی برای صفحه جزئیات دسته‌بندی خدمات */
+        .details-card {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .details-header {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            color: white;
+            padding: 15px 20px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+        }
+
+            .details-header i {
+                margin-left: 8px;
+                font-size: 1.2rem;
+            }
+
+        .details-body {
+            padding: 20px;
+        }
+
+        .details-item {
+            display: flex;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .details-label {
+            flex: 0 0 180px;
+            font-weight: 600;
+            color: #495057;
+        }
+
+        .details-value {
+            flex: 1;
+            color: #212529;
+        }
+
+            .details-value.badge {
+                vertical-align: middle;
+            }
+
+        .section-title {
+            font-weight: 600;
+            color: #1a6dcc;
+            margin: 20px 0 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+            .section-title i {
+                margin-left: 8px;
+                font-size: 1.1rem;
+            }
+
+        .stats-card {
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s;
+            height: 100%;
+            border: 1px solid #e9ecef;
+        }
+
+            .stats-card:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+            }
+
+        .stats-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1rem;
+            margin-right: 10px;
+        }
+
+        .audit-info {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 12px;
+            font-size: 0.9rem;
+        }
+
+        .audit-info-item {
+            display: flex;
+            margin-bottom: 6px;
+        }
+
+        .audit-info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+        }
+
+        .audit-info-value {
+            color: #212529;
+        }
+
+        .btn-action {
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            margin-right: 5px;
+        }
+
+            .btn-action i {
+                margin-left: 5px;
+            }
+
+            .btn-action:hover {
+                transform: translateY(-1px);
+            }
+
+        .btn-edit {
+            background-color: #e3f2fd;
+            color: #1a6dcc;
+        }
+
+        .btn-back {
+            background-color: #f1f3f5;
+            color: #495057;
+        }
+
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        /* استایل‌های موبایل */
+        @@media (max-width: 768px) {
+            .details-label {
+                flex: 0 0 140px;
+            }
+
+            .btn-action {
+                width: 100%;
+                margin-bottom: 8px;
+                justify-content: center;
+            }
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- هدر صفحه -->
+        <div class="row align-items-center mb-3">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-layer-group text-primary me-2"></i>
+                    جزئیات دسته‌بندی خدمات
+                </h1>
+                <p class="text-muted mb-0">مشاهده اطلاعات کامل دسته‌بندی خدمات پزشکی کلینیک شفا</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <div class="d-flex justify-content-end gap-2">
+                    <a href="@Url.Action("Edit", "ServiceCategory", new { id = Model.ServiceCategoryId })" class="btn btn-edit btn-action">
+                        <i class="fas fa-edit"></i> ویرایش
+                    </a>
+                    <a href="@Url.Action("Index", "ServiceCategory")" class="btn btn-back btn-action">
+                        <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات اصلی دسته‌بندی -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="details-card">
+                    <div class="details-header">
+                        <i class="fas fa-info-circle"></i> اطلاعات اصلی دسته‌بندی
+                    </div>
+                    <div class="details-body">
+                        <div class="details-item">
+                            <div class="details-label">عنوان دسته‌بندی:</div>
+                            <div class="details-value">@Model.Title</div>
+                        </div>
+                        <div class="details-item">
+                            <div class="details-label">دپارتمان مرتبط:</div>
+                            <div class="details-value">@Model.DepartmentName</div>
+                        </div>
+                        <div class="details-item">
+                            <div class="details-label">تعداد خدمات:</div>
+                            <div class="details-value">
+                                <span class="badge bg-primary">@Model.ServiceCount</span>
+                                @if (Model.ServiceCount > 0)
+                                {
+                                    <a href="@Url.Action("Index", "Services", new { serviceCategoryId = Model.ServiceCategoryId })"
+                                       class="text-decoration-none ms-2"
+                                       style="color: #1a6dcc;">
+                                        <i class="fas fa-external-link-alt me-1"></i> مشاهده خدمات
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                        <div class="details-item">
+                            <div class="details-label">وضعیت:</div>
+                            <div class="details-value">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="status-badge status-active">
+                                        <i class="fas fa-check-circle me-1"></i> فعال
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge status-inactive">
+                                        <i class="fas fa-times-circle me-1"></i> غیرفعال
+                                    </span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- لیست خدمات مرتبط (در صورت وجود) -->
+                <!--@@service.Title</td>
+                                                <td>@@service.ServiceCode</td>
+                                                <td>@@service.Price.ToString("N0")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                }-->
+            </div>
+
+            <div class="col-lg-4">
+                <!-- اطلاعات سیستم -->
+                <div class="details-card">
+                    <div class="details-header">
+                        <i class="fas fa-history"></i> اطلاعات سیستم
+                    </div>
+                    <div class="details-body">
+                        <div class="audit-info">
+                            <div class="audit-info-item">
+                                <span class="audit-info-label">ایجاد شده توسط:</span>
+                                <span class="audit-info-value">@(Model.CreatedByUser?.FullName)</span>
+                            </div>
+                            <div class="audit-info-item">
+                                <span class="audit-info-label">تاریخ ایجاد:</span>
+                                <span class="audit-info-value">@Model.CreatedAt.ToPersianDateTime()</span>
+                            </div>
+                            @if (Model.UpdatedAt.HasValue)
+                            {
+                                <div class="audit-info-item">
+                                    <span class="audit-info-label">آخرین ویرایش:</span>
+                                    <span class="audit-info-value">@Model.UpdatedAt.Value.ToPersianDateTime()</span>
+                                </div>
+                                <div class="audit-info-item">
+                                    <span class="audit-info-label">ویرایش توسط:</span>
+                                    <span class="audit-info-value">@(Model.UpdatedByUser?.FullName)</span>
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="audit-info-item">
+                                    <span class="audit-info-label">آخرین ویرایش:</span>
+                                    <span class="audit-info-value">ندارد</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- آمارهای سریع -->
+                <div class="row">
+                    <div class="col-12 mb-3">
+                        <div class="stats-card h-100">
+                            <div class="p-3 d-flex align-items-center">
+                                <div class="stats-icon bg-primary text-white">
+                                    <i class="fas fa-layer-group"></i>
+                                </div>
+                                <div>
+                                    <h6 class="text-muted mb-0">تعداد خدمات</h6>
+                                    <h5 class="mb-0">@Model.ServiceCount</h5>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- اقدامات سریع -->
+                <div class="details-card">
+                    <div class="details-header">
+                        <i class="fas fa-bolt"></i> اقدامات سریع
+                    </div>
+                    <div class="details-body">
+                        <div class="d-grid gap-2">
+                            <a href="@Url.Action("Edit", "ServiceCategory", new { id = Model.ServiceCategoryId })"
+                               class="btn btn-edit btn-lg py-2">
+                                <i class="fas fa-edit me-2"></i> ویرایش اطلاعات
+                            </a>
+                            <a href="@Url.Action("Create", "Services", new { serviceCategoryId = Model.ServiceCategoryId })"
+                               class="btn btn-submit btn-lg py-2"
+                               style="background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);">
+                                <i class="fas fa-plus-circle me-2"></i> افزودن خدمات جدید
+                            </a>
+                            <a href="@Url.Action("Index", "ServiceCategory")"
+                               class="btn btn-outline-secondary btn-lg py-2">
+                                <i class="fas fa-list me-2"></i> بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

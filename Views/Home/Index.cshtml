@@ -1,0 +1,418 @@
+﻿@{
+    ViewBag.Title = "خانه";
+}
+
+<main class="animate-section" id="mainContent">
+    <!-- بخش اصلی و جذاب -->
+    <section class="text-center py-5 mb-5" style="background: linear-gradient(135deg, #f0f7ff, #e6f3ff); border-radius: 20px; overflow: hidden; position: relative; margin-bottom: 3.5rem !important;">
+        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: url('data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'100\' height=\'100\' viewBox=\'0 0 100 100\'><rect width=\'100\' height=\'100\' fill=\'none\' stroke=\'%232c6ca0\' stroke-opacity=\'0.05\' stroke-width=\'1\'/></svg>');"></div>
+        <div class="container" style="position: relative; z-index: 2;">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <h1 id="title" style="color: var(--primary-color); font-weight: 700; font-size: 2.8rem; margin-bottom: 1.2rem;">
+                        کلینیک شفا جیرفت
+                    </h1>
+                    <p class="lead" style="font-size: 1.35rem; color: var(--dark-color); max-width: 800px; margin: 0 auto 1.8rem; line-height: 1.7;">
+                        بهترین خدمات درمانی با پزشکان باتجربه و تجهیزات پیشرفته در شهر جیرفت
+                    </p>
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <a href="@Url.Action("Create", "Appointment")" class="btn btn-primary btn-lg px-5 py-3">
+                            <i class="fas fa-calendar-check me-2"></i> رزرو نوبت آنلاین
+                        </a>
+                        <a href="@Url.Action("Consultation", "Services")" class="btn btn-outline-light btn-lg px-5 py-3">
+                            <i class="fas fa-video me-2"></i> مشاوره آنلاین
+                        </a>
+                    </div>
+                    <div class="mt-4" style="display: flex; justify-content: center; gap: 25px; flex-wrap: wrap;">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.4rem;"></i>
+                            <span style="font-weight: 500;">45+ پزشک متخصص</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.4rem;"></i>
+                            <span style="font-weight: 500;">15,000+ بیمار راضی</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.4rem;"></i>
+                            <span style="font-weight: 500;">24/7 پشتیبانی</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- بخش سرویس‌های کلینیک -->
+    <div class="container">
+        <div class="row mb-5">
+            <section class="col-md-4 mb-4" aria-labelledby="generalServicesTitle">
+                <div class="card service-card h-100 hover-scale">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-4" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-stethoscope" style="font-size: 3.5rem; color: var(--primary-color);"></i>
+                        </div>
+                        <h2 id="generalServicesTitle" class="h4 mb-3" style="color: var(--primary-color);">خدمات عمومی</h2>
+                        <p class="text-muted mb-4" style="min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                            معاینات عمومی، واکسیناسیون، خدمات داروخانه و پرونده الکترونیک سلامت با جدیدترین استانداردها
+                        </p>
+                        <a href="@Url.Action("Index", "Services")" class="btn btn-outline-primary w-100 py-2">
+                            مشاهده خدمات <i class="fas fa-arrow-left me-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <section class="col-md-4 mb-4" aria-labelledby="specialistServicesTitle">
+                <div class="card service-card h-100 hover-scale" style="border-top: 4px solid var(--accent-color);">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-4" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-user-md" style="font-size: 3.5rem; color: var(--primary-color);"></i>
+                        </div>
+                        <h2 id="specialistServicesTitle" class="h4 mb-3" style="color: var(--primary-color);">خدمات تخصصی</h2>
+                        <p class="text-muted mb-4" style="min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                            خدمات تخصصی دندانپزشکی، چشم‌پزشکی، کودکان، قلب و عروق و سایر تخصص‌ها با پزشکان باتجربه
+                        </p>
+                        <a href="@Url.Action("Special", "Services")" class="btn btn-outline-primary w-100 py-2">
+                            مشاهده تخصص‌ها <i class="fas fa-arrow-left me-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+            <section class="col-md-4 mb-4" aria-labelledby="onlineServicesTitle">
+                <div class="card service-card h-100 hover-scale">
+                    <div class="card-body p-4 text-center">
+                        <div class="mb-4" style="height: 80px; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-laptop-medical" style="font-size: 3.5rem; color: var(--primary-color);"></i>
+                        </div>
+                        <h2 id="onlineServicesTitle" class="h4 mb-3" style="color: var(--primary-color);">خدمات آنلاین</h2>
+                        <p class="text-muted mb-4" style="min-height: 100px; display: flex; align-items: center; justify-content: center;">
+                            مشاوره ویدئویی، چت پزشکی، نسخه الکترونیک و رزرو آنلاین نوبت بدون نیاز به مراجعه حضوری
+                        </p>
+                        <a href="@Url.Action("Consultation", "Services")" class="btn btn-outline-primary w-100 py-2">
+                            شروع مشاوره آنلاین <i class="fas fa-arrow-left me-2"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- بخش ویژه کلینیک -->
+        <section class="special-section mb-5" style="background: linear-gradient(to right, #f0f9ff, #e6f3ff);">
+            <div class="row align-items-center">
+                <div class="col-lg-6 mb-4 mb-lg-0">
+                    <img src="https://images.unsplash.com/photo-1576091160550-2173dba999ef?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=400&q=80"
+                         alt="کلینیک شفا جیرفت"
+                         class="img-fluid rounded-4 shadow-lg"
+                         style="width: 100%; max-height: 400px; object-fit: cover;">
+                </div>
+                <div class="col-lg-6">
+                    <h2 class="mb-4" style="color: var(--primary-color); font-weight: 700; font-size: 2.2rem;">
+                        <i class="fas fa-hospital"></i> کلینیک شفا جیرفت
+                    </h2>
+                    <p class="lead mb-4" style="line-height: 1.8; color: #4a5568;">
+                        کلینیک شفا جیرفت با بیش از 10 سال تجربه در ارائه خدمات درمانی با کیفیت به مردم شهرستان جیرفت، همواره تلاش کرده تا با بهره‌گیری از جدیدترین روش‌های درمانی و تجهیزات پیشرفته، سلامت شما را در اولویت کار خود قرار دهد.
+                    </p>
+                    <div class="d-flex flex-wrap gap-3 mb-4">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.2rem;"></i>
+                            <span>پزشکان باتجربه در تمامی تخصص‌ها</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.2rem;"></i>
+                            <span>تجهیزات پزشکی مدرن و به‌روز</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.2rem;"></i>
+                            <span>پشتیبانی 24/7 برای بیماران</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success me-2" style="font-size: 1.2rem;"></i>
+                            <span>محیطی آرام و درمانی برای بیماران</span>
+                        </div>
+                    </div>
+                    <a href="@Url.Action("About", "Home")" class="btn btn-primary btn-lg px-4 py-3">
+                        <i class="fas fa-info-circle me-2"></i> بیشتر درباره ما بدانید
+                    </a>
+                </div>
+            </div>
+        </section>
+
+        <!-- بخش پزشکان برجسته -->
+        <section class="mb-5">
+            <div class="text-center mb-5">
+                <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">پزشکان باتجربه ما</h2>
+                <p class="lead text-muted" style="max-width: 700px; margin: 1rem auto;">
+                    تیمی از پزشکان باتجربه و متخصص در حوزه‌های مختلف پزشکی که سلامت شما را در اولویت قرار داده‌اند
+                </p>
+            </div>
+
+            <div class="row">
+                <!-- پزشک 1 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card hover-scale h-100" style="border-radius: 16px; overflow: hidden; transition: all 0.4s ease;">
+                        <div style="height: 220px; overflow: hidden;">
+                            <img src="~/Content/Images/4.jpg"
+                                 class="card-img-top w-100 h-100"
+                                 alt="دکتر محمدی - پزشک عمومی"
+                                 style="object-fit: cover; transition: transform 0.5s ease;">
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <h3 class="h5 mb-1" style="color: var(--primary-color);">دکتر محمدی</h3>
+                            <p class="text-muted mb-3">پزشک عمومی</p>
+                            <div class="d-flex justify-content-center mb-3">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                            <p class="text-muted mb-4" style="min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                                بیش از 15 سال سابقه در معاینات عمومی و تشخیص بیماری‌های پیچیده
+                            </p>
+                            <a href="@Url.Action("DoctorProfile", "Doctors", new { id = 1 })" class="btn btn-outline-primary w-100 py-2">
+                                مشاهده پروفایل <i class="fas fa-arrow-left me-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- پزشک 2 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card hover-scale h-100" style="border-radius: 16px; overflow: hidden; transition: all 0.4s ease;">
+                        <div style="height: 220px; overflow: hidden;">
+                            <img src="~/Content/Images/3.jpg"
+                                 class="card-img-top w-100 h-100"
+                                 alt="دکتر احمدی - دندانپزشک"
+                                 style="object-fit: cover; transition: transform 0.5s ease;">
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <h3 class="h5 mb-1" style="color: var(--primary-color);">دکتر احمدی</h3>
+                            <p class="text-muted mb-3">دندانپزشک</p>
+                            <div class="d-flex justify-content-center mb-3">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star-half-alt text-warning"></i>
+                            </div>
+                            <p class="text-muted mb-4" style="min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                                متخصص جراحی‌های لثه و ایمپلنت با آخرین روش‌های درمانی
+                            </p>
+                            <a href="@Url.Action("DoctorProfile", "Doctors", new { id = 2 })" class="btn btn-outline-primary w-100 py-2">
+                                مشاهده پروفایل <i class="fas fa-arrow-left me-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- پزشک 3 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card hover-scale h-100" style="border-radius: 16px; overflow: hidden; transition: all 0.4s ease;">
+                        <div style="height: 220px; overflow: hidden;">
+                            <img src="~/Content/Images/2.jpg"
+                                 class="card-img-top w-100 h-100"
+                                 alt="دکتر رضایی - چشم‌پزشک"
+                                 style="object-fit: cover; transition: transform 0.5s ease;">
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <h3 class="h5 mb-1" style="color: var(--primary-color);">دکتر رضایی</h3>
+                            <p class="text-muted mb-3">چشم‌پزشک</p>
+                            <div class="d-flex justify-content-center mb-3">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                            </div>
+                            <p class="text-muted mb-4" style="min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                                تخصص در جراحی‌های چشم و درمان بیماری‌های قرنیه
+                            </p>
+                            <a href="@Url.Action("DoctorProfile", "Doctors", new { id = 3 })" class="btn btn-outline-primary w-100 py-2">
+                                مشاهده پروفایل <i class="fas fa-arrow-left me-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- پزشک 4 -->
+                <div class="col-md-6 col-lg-3 mb-4">
+                    <div class="card hover-scale h-100" style="border-radius: 16px; overflow: hidden; transition: all 0.4s ease;">
+                        <div style="height: 220px; overflow: hidden;">
+                            <img src="~/Content/Images/1.jpg"
+                                 class="card-img-top w-100 h-100"
+                                 alt="دکتر حسینی - قلب و عروق"
+                                 style="object-fit: cover; transition: transform 0.5s ease;">
+                        </div>
+                        <div class="card-body text-center p-4">
+                            <h3 class="h5 mb-1" style="color: var(--primary-color);">دکتر حسینی</h3>
+                            <p class="text-muted mb-3">قلب و عروق</p>
+                            <div class="d-flex justify-content-center mb-3">
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="fas fa-star text-warning"></i>
+                                <i class="far fa-star text-warning"></i>
+                            </div>
+                            <p class="text-muted mb-4" style="min-height: 60px; display: flex; align-items: center; justify-content: center;">
+                                متخصص قلب و عروق با بیش از 12 سال تجربه در تشخیص و درمان
+                            </p>
+                            <a href="@Url.Action("DoctorProfile", "Doctors", new { id = 4 })" class="btn btn-outline-primary w-100 py-2">
+                                مشاهده پروفایل <i class="fas fa-arrow-left me-2"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <a href="@Url.Action("Index", "Doctors")" class="btn btn-primary btn-lg px-5 py-3">
+                    <i class="fas fa-user-md me-2"></i> مشاهده تمامی پزشکان
+                </a>
+            </div>
+        </section>
+
+        <!-- بخش نظرات بیماران -->
+        <section class="mb-5" style="background: #f8fafc; border-radius: 20px; padding: 3rem 0;">
+            <div class="text-center mb-5">
+                <h2 class="h1" style="color: var(--primary-color); font-weight: 700;">نظرات بیماران ما</h2>
+                <p class="lead text-muted" style="max-width: 700px; margin: 1rem auto;">
+                    این چیزی است که بیماران ما درباره کلینیک شفا جیرفت می‌گویند
+                </p>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 p-4" style="border-radius: 16px; border: none; box-shadow: var(--shadow-sm);">
+                        <div class="mb-3">
+                            <i class="fas fa-quote-left" style="color: var(--primary-color); font-size: 1.8rem;"></i>
+                        </div>
+                        <p class="text-muted mb-4" style="line-height: 1.8; min-height: 120px; display: flex; align-items: center;">
+                            "خدمات بسیار عالی و پرسنل بسیار مهربان. دکتر محمدی با دقت کامل معاینه کردند و درمان مناسب را تجویز کردند. واقعاً متشکرم."
+                        </p>
+                        <div class="d-flex align-items-center mt-auto">
+                            <div class="me-3" style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                ع
+                            </div>
+                            <div>
+                                <h4 class="h6 mb-0" style="color: var(--primary-color);">علی محمدی</h4>
+                                <div class="text-warning">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 p-4" style="border-radius: 16px; border: none; box-shadow: var(--shadow-sm);">
+                        <div class="mb-3">
+                            <i class="fas fa-quote-left" style="color: var(--primary-color); font-size: 1.8rem;"></i>
+                        </div>
+                        <p class="text-muted mb-4" style="line-height: 1.8; min-height: 120px; display: flex; align-items: center;">
+                            "برای اولین بار در جیرفت چنین کلینیک پیشرفته‌ای دیدم. تجهیزات بسیار مدرن و پزشکان بسیار حرفه‌ای. قطعاً به دیگران هم معرفی می‌کنم."
+                        </p>
+                        <div class="d-flex align-items-center mt-auto">
+                            <div class="me-3" style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                س
+                            </div>
+                            <div>
+                                <h4 class="h6 mb-0" style="color: var(--primary-color);">سارا حسینی</h4>
+                                <div class="text-warning">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star-half-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 p-4" style="border-radius: 16px; border: none; box-shadow: var(--shadow-sm);">
+                        <div class="mb-3">
+                            <i class="fas fa-quote-left" style="color: var(--primary-color); font-size: 1.8rem;"></i>
+                        </div>
+                        <p class="text-muted mb-4" style="line-height: 1.8; min-height: 120px; display: flex; align-items: center;">
+                            "پشتیبانی 24/7 واقعاً عالی است. شب گذشته موقع بحران تنفسی تماس گرفتم و در کمتر از 30 دقیقه راهنمایی لازم را دریافت کردم. سپاسگزارم."
+                        </p>
+                        <div class="d-flex align-items-center mt-auto">
+                            <div class="me-3" style="width: 50px; height: 50px; border-radius: 50%; background: var(--primary-color); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                م
+                            </div>
+                            <div>
+                                <h4 class="h6 mb-0" style="color: var(--primary-color);">محمد رضایی</h4>
+                                <div class="text-warning">
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                    <i class="fas fa-star"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- بخش فراخوان اقدام -->
+        <section class="text-center py-5 mb-5" style="background: linear-gradient(135deg, var(--primary-color), #1a5a8c); border-radius: 20px; color: white;">
+            <div class="container">
+                <h2 class="h1 mb-4" style="font-weight: 700;">نوبت خود را آنلاین رزرو کنید</h2>
+                <p class="lead mb-5" style="max-width: 700px; margin: 0 auto; line-height: 1.8; opacity: 0.9;">
+                    در کمتر از 2 دقیقه نوبت خود را آنلاین رزرو کنید و از انتظار طولانی در کلینیک جلوگیری نمایید. امکان رزرو نوبت برای تمامی پزشکان و تخصص‌ها فراهم است.
+                </p>
+                <div class="d-flex flex-wrap justify-content-center gap-3">
+                    <a href="@Url.Action("Create", "Appointment")" class="btn btn-light btn-lg px-5 py-3">
+                        <i class="fas fa-calendar-check me-2"></i> رزرو نوبت آنلاین
+                    </a>
+                    <a href="tel:+983432221234" class="btn btn-outline-light btn-lg px-5 py-3">
+                        <i class="fas fa-phone-alt me-2"></i> تماس سریع: 034-3222-1234
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+</main>
+
+<script>document.addEventListener('DOMContentLoaded', function() {
+        // فعال کردن انیمیشن‌ها برای بخش اصلی
+        const mainContent = document.getElementById('mainContent');
+        if (mainContent) {
+            setTimeout(() => {
+                mainContent.style.opacity = '1';
+                mainContent.style.transform = 'translateY(0)';
+            }, 200);
+        }
+
+        // افکت هاور برای تصاویر پزشکان
+        const doctorImages = document.querySelectorAll('.card-img-top');
+        doctorImages.forEach(img => {
+            img.addEventListener('mouseenter', function() {
+                this.style.transform = 'scale(1.05)';
+            });
+
+            img.addEventListener('mouseleave', function() {
+                this.style.transform = 'scale(1)';
+            });
+        });
+
+        // اضافه کردن انیمیشن به بخش‌های مختلف هنگام اسکرول
+        const animatedSections = document.querySelectorAll('.animate-section');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('animated');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        animatedSections.forEach(section => {
+            observer.observe(section);
+        });
+    });</script>

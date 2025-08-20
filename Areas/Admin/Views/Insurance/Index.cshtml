@@ -1,0 +1,306 @@
+﻿@{
+    ViewBag.Title = "مدیریت جامع بیمه‌ها";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+    /* استایل‌های سفارشی برای بهبود UX */
+    .loading-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.75);
+        z-index: 10;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .btn-spinner {
+        margin-left: 5px;
+    }
+</style>
+
+<div class="container-fluid mt-4">
+    @Html.AntiForgeryToken()
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-light d-flex justify-content-between align-items-center">
+            <h4 class="card-title mb-0"><i class="fas fa-shield-alt text-primary mr-2"></i>@ViewBag.Title</h4>
+            <button id="btn-create" class="btn btn-success">
+                <i class="fas fa-plus mr-1"></i> ایجاد بیمه جدید
+            </button>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <input type="text" id="searchTerm" class="form-control" placeholder="جستجو در نام یا توضیحات بیمه..." />
+                        <div class="input-group-append">
+                            <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 d-flex align-items-center justify-content-end">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="activeOnly" checked>
+                        <label class="custom-control-label" for="activeOnly">فقط نمایش فعال‌ها</label>
+                    </div>
+                </div>
+            </div>
+
+            <div id="insurance-list-wrapper" class="position-relative">
+                <div id="insurance-list-container">
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="main-modal" tabindex="-1" role="dialog" aria-labelledby="modal-title" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modal-title"></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="modal-body-content">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+    // IIFE (Immediately Invoked Function Expression) to avoid polluting the global scope
+    (function ($) {
+        "use strict";
+
+        // Application State
+        const state = {
+            searchTerm: '',
+            page: 1,
+            activeOnly: true,
+            urls: {
+                load: '@Url.Action("LoadInsurances", "Insurance")',
+                create: '@Url.Action("Create", "Insurance")',
+                edit: '@Url.Action("Edit", "Insurance")',
+                delete: '@Url.Action("Delete", "Insurance")'
+            }
+        };
+
+        // --- UTILITY FUNCTIONS ---
+
+        function getAntiForgeryToken() {
+            return $('input[name="__RequestVerificationToken"]').val();
+        }
+
+        function showLoading() {
+            const overlay = `
+                <div class="loading-overlay">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="sr-only">Loading...</span>
+                    </div>
+                </div>`;
+            $('#insurance-list-wrapper').prepend(overlay);
+        }
+
+        function hideLoading() {
+            $('#insurance-list-wrapper .loading-overlay').remove();
+        }
+
+        function showAlert(icon, title, text, timer = null) {
+            Swal.fire({
+                icon: icon,
+                title: title,
+                text: text,
+                confirmButtonText: 'باشه',
+                timer: timer,
+                timerProgressBar: !!timer
+            });
+        }
+
+        function disableSubmitButton(btn) {
+            btn.prop('disabled', true).append('<span class="spinner-border spinner-border-sm btn-spinner"></span>');
+        }
+
+        function enableSubmitButton(btn) {
+            btn.prop('disabled', false).find('.btn-spinner').remove();
+        }
+
+        // --- CORE FUNCTIONS ---
+
+        function loadInsurances() {
+            showLoading();
+            state.searchTerm = $('#searchTerm').val();
+            state.activeOnly = $('#activeOnly').is(':checked');
+
+            $.ajax({
+                url: state.urls.load,
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: getAntiForgeryToken(),
+                    searchTerm: state.searchTerm,
+                    page: state.page,
+                    activeOnly: state.activeOnly
+                },
+                success: function (result) {
+                    $('#insurance-list-container').html(result);
+                },
+                error: function () {
+                    $('#insurance-list-container').html('<div class="alert alert-danger text-center">خطا در بارگذاری اطلاعات. لطفاً دوباره تلاش کنید.</div>');
+                },
+                complete: function () {
+                    hideLoading();
+                }
+            });
+        }
+
+        function openModalWithForm(url, title) {
+            $.get(url)
+                .done(function (html) {
+                    $('#modal-title').text(title);
+                    $('#modal-body-content').html(html);
+                    $('#main-modal').modal('show');
+                    // Re-parse the form for unobtrusive validation
+                    $.validator.unobtrusive.parse('#main-modal form');
+                })
+                .fail(function () {
+                    showAlert('error', 'خطا', 'دریافت اطلاعات از سرور با مشکل مواجه شد.');
+                });
+        }
+
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            const form = $(this);
+
+            if (!form.valid()) {
+                return;
+            }
+
+            const submitButton = form.find('button[type="submit"]');
+            disableSubmitButton(submitButton);
+
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: form.serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        $('#main-modal').modal('hide');
+                        showAlert('success', 'موفق', response.message || 'عملیات با موفقیت انجام شد.', 2000);
+                        loadInsurances(); // Reload the list
+                    } else {
+                        let errorMsg = response.message || "خطایی در پردازش رخ داد.";
+                        if (response.errors && response.errors.length > 0) {
+                            errorMsg = '<ul>' + response.errors.map(e => `<li>${e}</li>`).join('') + '</ul>';
+                        }
+                        showAlert('error', 'خطا', errorMsg);
+                    }
+                },
+                error: function (xhr) {
+                     showAlert('error', 'خطای سرور', `خطای ${xhr.status}: ${xhr.statusText}`);
+                },
+                complete: function () {
+                    enableSubmitButton(submitButton);
+                }
+            });
+        }
+
+        function confirmAndDelete(id, name) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                html: `شما در حال حذف بیمه "<b>${name}</b>" هستید. این عملیات غیرقابل بازگشت است.`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن!',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: state.urls.delete,
+                        type: 'POST',
+                        data: {
+                            __RequestVerificationToken: getAntiForgeryToken(),
+                            id: id
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                showAlert('success', 'حذف شد!', response.message, 2000);
+                                loadInsurances();
+                            } else {
+                                showAlert('error', 'خطا در حذف', response.message);
+                            }
+                        },
+                        error: function() {
+                             showAlert('error', 'خطای سرور', 'ارتباط با سرور جهت حذف برقرار نشد.');
+                        }
+                    });
+                }
+            });
+        }
+
+        // --- EVENT BINDING ---
+
+        function bindEvents() {
+            // Use a debouncer for search input to avoid excessive requests
+            let searchTimeout;
+            $('#searchTerm').on('keyup', function () {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    state.page = 1; // Reset to first page on new search
+                    loadInsurances();
+                }, 500);
+            });
+
+            $('#activeOnly').on('change', function () {
+                state.page = 1;
+                loadInsurances();
+            });
+
+            $('#btn-create').on('click', function () {
+                openModalWithForm(state.urls.create, 'ایجاد بیمه جدید');
+            });
+
+            // --- Delegated Event Handlers for dynamic content ---
+            const doc = $(document);
+
+            doc.on('submit', '#main-modal form', handleFormSubmit);
+
+            doc.on('click', '.btn-edit', function () {
+                const id = $(this).data('id');
+                const url = `${state.urls.edit}/${id}`;
+                openModalWithForm(url, 'ویرایش بیمه');
+            });
+
+            doc.on('click', '.btn-delete', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                confirmAndDelete(id, name);
+            });
+
+            doc.on('click', '.pagination a', function (e) {
+                e.preventDefault();
+                const url = new URL($(this).attr('href'), window.location.origin);
+                state.page = url.searchParams.get('page') || 1;
+                loadInsurances();
+            });
+        }
+
+        // --- INITIALIZATION ---
+
+        $(document).ready(function () {
+            bindEvents();
+            loadInsurances(); // Initial load
+        });
+
+    })(jQuery);
+    </script>
+}

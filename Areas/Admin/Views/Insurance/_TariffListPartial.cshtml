@@ -1,0 +1,88 @@
+﻿@model List<ClinicApp.ViewModels.InsuranceTariffViewModel>
+
+<div class="table-responsive">
+    <table class="table table-hover table-striped mb-0">
+        <thead class="thead-light">
+            <tr>
+                <th>نام خدمت</th>
+                <th>قیمت تعرفه</th>
+                <th>سهم بیمار</th>
+                <th>سهم بیمه</th>
+                <th>تاریخ ایجاد</th>
+                <th>تاریخ ویرایش</th>
+                <th class="text-center">عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model != null && Model.Any())
+            {
+                foreach (var item in Model)
+                {
+                    <tr class="tariff-row existing-tariff"
+                        data-id="@item.InsuranceTariffId"
+                        data-service-title="@item.ServiceTitle">
+                        <td>@Html.DisplayFor(modelItem => item.ServiceTitle)</td>
+                        <td>@string.Format("{0:N0}", item.TariffPrice)</td>
+                        <td>@Html.DisplayFor(modelItem => item.PatientShare)%</td>
+                        <td>@Html.DisplayFor(modelItem => item.InsurerShare)%</td>
+                        <td>@Html.DisplayFor(modelItem => item.CreatedAtShamsi)</td>
+                        <td>@Html.DisplayFor(modelItem => item.UpdatedAtShamsi)</td>
+                        <td class="text-center">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-warning btn-edit-tariff" title="ویرایش">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger btn-delete-tariff" title="حذف">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="7" class="text-center py-4">
+                        <div class="text-muted">هیچ تعرفه‌ای برای این بیمه تعریف نشده است</div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <script>
+        $(function () {
+            $('.btn-edit-tariff').click(function () {
+                const id = $(this).closest('tr').data('id');
+                $.ajax({
+                    url: '@Url.Action("EditTariff", "Insurance")/' + id,
+                    type: 'GET',
+                    beforeSend: function () {
+                        $(this).html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>');
+                        $(this).prop('disabled', true);
+                    },
+                    success: function (result) {
+                        $('#modalContainer').html(result);
+                        $('#tariffModal').modal('show');
+                    },
+                    error: function (xhr) {
+                        showErrorAlert('خطا در بارگیری فرم ویرایش تعرفه');
+                    },
+                    complete: function () {
+                        $('.btn-edit-tariff').html('<i class="fas fa-edit"></i>');
+                        $('.btn-edit-tariff').prop('disabled', false);
+                    }
+                });
+            });
+
+            $('.btn-delete-tariff').click(function () {
+                const id = $(this).closest('tr').data('id');
+                deleteTariff(id);
+            });
+        });
+    </script>
+}

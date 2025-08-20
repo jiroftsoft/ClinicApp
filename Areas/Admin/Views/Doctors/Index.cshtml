@@ -1,0 +1,337 @@
+﻿@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.DoctorIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت پزشکان - کلینیک شفا";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
+<style type="text/css">
+    /* استایل‌های حیاتی برای اولین رندر */
+    .doctors-container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .search-controls {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 4px;
+        margin-bottom: 20px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .doctor-card {
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+        background: #fff;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        position: relative;
+    }
+
+        .doctor-card:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            transform: translateY(-1px);
+            border-color: #c3e6cb;
+        }
+
+    .doctor-header {
+        padding: 12px 15px;
+        background: #f1f8ff;
+        border-bottom: 1px solid #d6e9f8;
+        border-radius: 3px 3px 0 0;
+    }
+
+    .doctor-content {
+        padding: 15px;
+    }
+
+    .doctor-specialization {
+        background: #e9f7fe;
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 0.85em;
+        display: inline-block;
+        margin-top: 5px;
+    }
+
+    .doctor-actions {
+        padding: 10px 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        border-radius: 0 0 4px 4px;
+        text-align: left;
+    }
+
+    .pagination-container {
+        margin-top: 25px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .pagination-info {
+        color: #6c757d;
+        font-size: 0.9em;
+    }
+
+    /* بهینه‌سازی برای دستگاه‌های پزشکی */
+    @@media (max-width: 768px) {
+        .doctor-actions {
+            text-align: center;
+        }
+
+        .action-btn {
+            margin: 5px 0;
+            width: 100%;
+        }
+    }
+
+    /* وضعیت‌های پزشکی */
+    .status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    /* برای دستگاه‌های پزشکی با نور کم */
+    @@media (prefers-contrast: high) {
+        .doctor-card {
+            border: 2px solid #000;
+        }
+    }
+</style>
+
+<div class="doctors-container">
+    <div class="page-header">
+        <h1 class="page-title">مدیریت پزشکان</h1>
+        <p class="page-description">لیست پزشکان فعال در کلینیک شفا</p>
+    </div>
+
+    <div class="search-controls">
+        <div class="row">
+            <div class="col-md-8">
+                <div class="input-group">
+                    <input type="text" id="searchTerm" class="form-control"
+                           placeholder="جستجو در نام، تخصص یا شماره تلفن..."
+                           value="@ViewBag.SearchTerm"
+                           aria-label="جستجوی پزشکان">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" id="searchButton" type="button">
+                            <i class="fa fa-search"></i> جستجو
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 text-left">
+                @if (User.IsInRole(ClinicApp.Models.Entities.AppRoles.Admin) ||
+                     User.IsInRole(ClinicApp.Models.Entities.AppRoles.Receptionist))
+                {
+                    <a href="@Url.Action("Create")" class="btn btn-success" id="createDoctorBtn">
+                        <i class="fa fa-plus"></i> افزودن پزشک جدید
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- نمایش پیام‌های وضعیت -->
+    <div id="statusMessages">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- لودر پیشرفته برای عملکرد بهتر -->
+    <div id="loadingIndicator" class="text-center" style="display: none; padding: 20px;">
+        <div class="spinner-border text-primary" role="status">
+            <span class="sr-only">در حال بارگذاری...</span>
+        </div>
+        <p style="margin-top: 10px;">در حال بارگذاری اطلاعات پزشکان</p>
+    </div>
+
+    <!-- محتوای اصلی با قابلیت به‌روزرسانی بدون رفرش -->
+    <div id="doctorsContent">
+        @Html.Partial("_DoctorsListPartial", Model)
+    </div>
+</div>
+
+<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
+<script type="text/javascript">
+    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
+    (function() {
+        'use strict';
+
+        // بهینه‌سازی برای محیط‌های پزشکی
+        document.addEventListener('DOMContentLoaded', function() {
+            // تنظیمات اولیه
+            const searchTermInput = document.getElementById('searchTerm');
+            const searchButton = document.getElementById('searchButton');
+            const doctorsContent = document.getElementById('doctorsContent');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+
+            // تنظیم تأخیر برای جلوگیری از درخواست‌های زیاد
+            let searchTimeout;
+            const SEARCH_DEBOUNCE = 300; // 300ms
+
+            // تابع اصلی جستجو
+            function performSearch() {
+                const searchTerm = searchTermInput.value;
+                const currentPage = 1; // همیشه از صفحه اول شروع می‌کنیم
+
+                // نمایش لودر
+                loadingIndicator.style.display = 'block';
+                doctorsContent.style.opacity = '0.7';
+
+                // پاک کردن تایمر قبلی
+                clearTimeout(searchTimeout);
+
+                // ایجاد درخواست با تأخیر
+                searchTimeout = setTimeout(function() {
+                    // ایجاد URL برای درخواست
+                    const url = '@Url.Action("Index")' +
+                        '?searchTerm=' + encodeURIComponent(searchTerm) +
+                        '&page=' + currentPage +
+                        '&pageSize=10' +
+                        '&_=' + new Date().getTime(); // جلوگیری از کش مرورگر
+
+                    // ایجاد درخواست AJAX
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+
+                    xhr.onload = function() {
+                        if (xhr.status >= 200 && xhr.status < 400) {
+                            // جایگزینی محتوا بدون رفرش کامل صفحه
+                            doctorsContent.innerHTML = xhr.responseText;
+                            doctorsContent.style.opacity = '1';
+
+                            // ریسیت کردن دکمه‌های صفحه‌بندی
+                            setupPagination();
+                        } else {
+                            // نمایش خطا
+                            doctorsContent.innerHTML = '<div class="alert alert-danger">خطا در بارگذاری اطلاعات. لطفاً مجدداً تلاش کنید.</div>';
+                            doctorsContent.style.opacity = '1';
+                        }
+
+                        // مخفی کردن لودر
+                        loadingIndicator.style.display = 'none';
+                    };
+
+                    xhr.onerror = function() {
+                        doctorsContent.innerHTML = '<div class="alert alert-danger">خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.</div>';
+                        doctorsContent.style.opacity = '1';
+                        loadingIndicator.style.display = 'none';
+                    };
+
+                    xhr.send();
+                }, SEARCH_DEBOUNCE);
+            }
+
+            // تنظیم رویدادها
+            if (searchButton) {
+                searchButton.addEventListener('click', performSearch);
+            }
+
+            if (searchTermInput) {
+                searchTermInput.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') {
+                        performSearch();
+                    }
+                });
+            }
+
+            // تابع برای ریسیت کردن دکمه‌های صفحه‌بندی
+            function setupPagination() {
+                const paginationLinks = document.querySelectorAll('.pagination a.page-link');
+                paginationLinks.forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        const page = this.getAttribute('data-page');
+                        if (!page) return;
+
+                        // نمایش لودر
+                        loadingIndicator.style.display = 'block';
+                        doctorsContent.style.opacity = '0.7';
+
+                        // ایجاد درخواست
+                        const url = '@Url.Action("Index")' +
+                            '?searchTerm=' + encodeURIComponent(searchTermInput.value) +
+                            '&page=' + page +
+                            '&pageSize=10' +
+                            '&_=' + new Date().getTime();
+
+                        const xhr = new XMLHttpRequest();
+                        xhr.open('GET', url, true);
+
+                        xhr.onload = function() {
+                            if (xhr.status >= 200 && xhr.status < 400) {
+                                doctorsContent.innerHTML = xhr.responseText;
+                                doctorsContent.style.opacity = '1';
+                                setupPagination(); // ریسیت مجدد
+                            }
+                            loadingIndicator.style.display = 'none';
+                        };
+
+                        xhr.send();
+                    });
+                });
+            }
+
+            // ریسیت اولیه
+            setupPagination();
+
+            // بهینه‌سازی برای دستگاه‌های پزشکی
+            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+                document.body.style.transition = 'none';
+            }
+
+            // کلیدهای میانبر پزشکی
+            document.addEventListener('keydown', function(e) {
+                // Ctrl + F برای فوکوس روی جستجو
+                if (e.ctrlKey && e.key === 'f') {
+                    e.preventDefault();
+                    searchTermInput.focus();
+                }
+
+                // Ctrl + N برای افزودن پزشک جدید
+                if (e.ctrlKey && e.key === 'n' &&
+                    ('@User.IsInRole(ClinicApp.Models.Entities.AppRoles.Admin)' === 'True' ||
+                     '@User.IsInRole(ClinicApp.Models.Entities.AppRoles.Receptionist)' === 'True')) {
+                    e.preventDefault();
+                    window.location.href = '@Url.Action("Create")';
+                }
+            });
+
+            // بهینه‌سازی برای دستگاه‌های لمسی پزشکی
+            if ('ontouchstart' in window) {
+                const doctorCards = document.querySelectorAll('.doctor-card');
+                doctorCards.forEach(card => {
+                    card.style.touchAction = 'manipulation';
+                });
+            }
+        });
+    })();
+</script>

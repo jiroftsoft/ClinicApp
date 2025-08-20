@@ -1,0 +1,234 @@
+﻿@model ClinicApp.ViewModels.EditInsuranceTariffViewModel
+@{
+    ViewBag.Title = "ویرایش تعرفه";
+    Layout = null;
+}
+
+<div id="tariffModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="tariffModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="tariffModalLabel">ویرایش تعرفه: @Model.ServiceTitle</h5>
+                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            @using (Html.BeginForm("EditTariff", "Insurance", FormMethod.Post, new { id = "editTariffForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(model => model.InsuranceTariffId)
+                @Html.HiddenFor(model => model.InsuranceId)
+
+                <div class="modal-body">
+                    <div id="validationSummary" class="alert alert-danger d-none">
+                        <strong>خطاهای اعتبارسنجی:</strong>
+                        <ul id="validationErrors"></ul>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            @Html.LabelFor(model => model.ServiceTitle, new { @class = "font-weight-bold" })
+                            <div class="form-control-plaintext">
+                                @Html.DisplayFor(model => model.ServiceTitle)
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            @Html.LabelFor(model => model.TariffPrice, new { @class = "font-weight-bold" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(model => model.TariffPrice, new
+                                {
+                                    @class = "form-control",
+                                    type = "number",
+                                    min = "0",
+                                    step = "0.01",
+                                    placeholder = "قیمت تعرفه‌ای (اختیاری)"
+                                })
+                                <div class="input-group-append">
+                                    <span class="input-group-text">ریال</span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">اگر خالی باشد، از قیمت پایه خدمت استفاده می‌شود</small>
+                            @Html.ValidationMessageFor(model => model.TariffPrice, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            @Html.LabelFor(model => model.PatientShare, new { @class = "font-weight-bold" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(model => model.PatientShare, new
+                                {
+                                    @class = "form-control",
+                                    type = "number",
+                                    min = "0",
+                                    max = "100",
+                                    step = "0.01",
+                                    @required = "required"
+                                })
+                                <div class="input-group-append">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">سهم بیمار از هزینه خدمات</small>
+                            @Html.ValidationMessageFor(model => model.PatientShare, "", new { @class = "text-danger small" })
+                        </div>
+
+                        <div class="form-group col-md-6">
+                            @Html.LabelFor(model => model.InsurerShare, new { @class = "font-weight-bold" })
+                            <div class="input-group">
+                                @Html.TextBoxFor(model => model.InsurerShare, new
+                                {
+                                    @class = "form-control",
+                                    type = "number",
+                                    min = "0",
+                                    max = "100",
+                                    step = "0.01",
+                                    @required = "required"
+                                })
+                                <div class="input-group-append">
+                                    <span class="input-group-text">%</span>
+                                </div>
+                            </div>
+                            <small class="form-text text-muted">سهم بیمه از هزینه خدمات</small>
+                            @Html.ValidationMessageFor(model => model.InsurerShare, "", new { @class = "text-danger small" })
+                        </div>
+                    </div>
+
+                    <div id="shareValidationWarning" class="alert alert-warning d-none mb-3">
+                        <i class="fas fa-exclamation-triangle"></i> مجموع سهم بیمار و بیمه باید برابر با 100% باشد.
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group col-md-12">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i> <strong>نکته:</strong> برای استفاده از سهم‌های پیش‌فرض بیمه، می‌توانید این فیلدها را خالی بگذارید.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
+                        <i class="fas fa-times"></i> انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary" id="saveTariffBtn">
+                        <i class="fas fa-save"></i> ذخیره تغییرات
+                    </button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<script>
+    // تابع برای تنظیم مدیریت فرم ویرایش تعرفه
+    function setupEditTariffForm() {
+        // محاسبه خودکار سهم‌ها
+        function calculateShares() {
+            const patientShare = parseFloat($('#PatientShare').val()) || 0;
+            const insurerShare = parseFloat($('#InsurerShare').val()) || 0;
+            const total = patientShare + insurerShare;
+
+            if (Math.abs(total - 100) > 0.01) {
+                $('#shareValidationWarning').removeClass('d-none');
+            } else {
+                $('#shareValidationWarning').addClass('d-none');
+            }
+        }
+
+        // افزودن گوشدهای رویداد برای محاسبه خودکار
+        $('#PatientShare, #InsurerShare').on('input', calculateShares);
+
+        // ارسال فرم با AJAX
+        $('#editTariffForm').off('submit').on('submit', function (e) {
+            e.preventDefault();
+
+            // پاک کردن خطاها
+            $('#validationSummary').addClass('d-none');
+            $('#validationErrors').empty();
+
+            // نمایش نمایه بارگیری
+            const saveBtn = $('#saveTariffBtn');
+            const originalBtnHtml = saveBtn.html();
+            saveBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ذخیره...');
+            saveBtn.prop('disabled', true);
+
+            $.ajax({
+                url: this.action,
+                type: this.method,
+                data: $(this).serialize(),
+                success: function (response) {
+                    if (response.success) {
+                        $('#tariffModal').modal('hide');
+                        if (typeof showSuccessAlert === 'function') {
+                            showSuccessAlert(response.message);
+                        }
+                        // بارگیری مجدد لیست تعرفه‌ها
+                        if (typeof loadTariffs === 'function') {
+                            loadTariffs();
+                        }
+                    } else {
+                        // نمایش خطاها
+                        let errors = [];
+                        if (response.message) {
+                            errors.push(response.message);
+                        }
+
+                        // اگر خطاها به صورت آرایه باشند
+                        if (response.errors && Array.isArray(response.errors)) {
+                            errors = errors.concat(response.errors);
+                        }
+
+                        if (errors.length > 0) {
+                            const errorList = $('#validationErrors');
+                            errorList.empty();
+
+                            $.each(errors, function (index, error) {
+                                errorList.append(`<li>${error}</li>`);
+                            });
+
+                            $('#validationSummary').removeClass('d-none');
+                        }
+                    }
+                },
+                error: function (xhr) {
+                    let errorMessage = 'خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.';
+
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.status === 400) {
+                        errorMessage = 'داده‌های ارسالی نامعتبر هستند. لطفاً فرم را بررسی کنید.';
+                    } else if (xhr.status === 401) {
+                        errorMessage = 'شما مجوز لازم برای این عملیات را ندارید.';
+                    }
+
+                    if (typeof showErrorAlert === 'function') {
+                        showErrorAlert(errorMessage);
+                    }
+                },
+                complete: function () {
+                    // بازگرداندن وضعیت دکمه
+                    saveBtn.html(originalBtnHtml);
+                    saveBtn.prop('disabled', false);
+                }
+            });
+        });
+
+        // نمایش مودال
+        $('#tariffModal').modal({
+            backdrop: 'static',
+            keyboard: false
+        });
+        $('#tariffModal').modal('show');
+
+        // محاسبه اولیه سهم‌ها
+        calculateShares();
+    }
+
+    // اجرای تابع تنظیم فرم هنگام بارگیری
+    $(document).ready(function () {
+        setupEditTariffForm();
+    });
+</script>

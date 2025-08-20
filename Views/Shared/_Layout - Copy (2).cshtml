@@ -1,0 +1,885 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+
+<head>
+    <!-- Meta Tags for SEO -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="index, follow" />
+    <meta name="author" content="سیستم مدیریت کلینیک" />
+    <meta name="generator" content="ASP.NET MVC" />
+    <meta name="language" content="Persian" />
+    <meta name="geo.region" content="IR" />
+
+    <!-- Title and Description -->
+    <title>@ViewBag.Title - سیستم مدیریت کلینیک | خدمات پزشکی تخصصی</title>
+    <meta name="description" content="@ViewBag.MetaDescription ?? 'سیستم مدیریت کلینیک ارائه دهنده خدمات پزشکی تخصصی، رزرو آنلاین نوبت، مشاوره پزشکی و خدمات بهداشتی درمانی'" />
+    <meta name="keywords" content="@ViewBag.Keywords ?? 'کلینیک، پزشک، رزرو نوبت، مشاوره پزشکی، خدمات درمانی، بهداشت'" />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@Request.Url.AbsoluteUri" />
+    <meta property="og:title" content="@ViewBag.Title - سیستم مدیریت کلینیک" />
+    <meta property="og:description" content="@ViewBag.MetaDescription ?? 'خدمات پزشکی تخصصی با بهترین پزشکان'" />
+    <meta property="og:image" content="@Url.Content("~/Content/images/clinic-og-image.jpg")" />
+    <meta property="og:locale" content="fa_IR" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="@Request.Url.AbsoluteUri" />
+    <meta property="twitter:title" content="@ViewBag.Title - سیستم مدیریت کلینیک" />
+    <meta property="twitter:description" content="@ViewBag.MetaDescription ?? 'خدمات پزشکی تخصصی با بهترین پزشکان'" />
+    <meta property="twitter:image" content="@Url.Content("~/Content/images/clinic-og-image.jpg")" />
+
+    <!-- Canonical Link -->
+    <link rel="canonical" href="@Request.Url.AbsoluteUri" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="@Url.Content("~/favicon.ico")" />
+    <link rel="apple-touch-icon" sizes="180x180" href="@Url.Content("~/Content/images/apple-touch-icon.png")" />
+
+    <!-- Preload Critical Resources -->
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" as="style" />
+    <link rel="preload" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" as="style" />
+
+    <!-- Stylesheets -->
+    @Styles.Render("~/Content/css")
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+
+    <!-- JSON-LD Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "MedicalOrganization",
+        "name": "سیستم مدیریت کلینیک",
+        "url": "@Request.Url.GetLeftPart(UriPartial.Authority)",
+        "logo": "@Url.Content("~/Content/images/logo.png")",
+        "description": "ارائه دهنده خدمات پزشکی تخصصی و مشاوره آنلاین",
+        "telephone": "+98-21-12345678",
+        "address": {
+            "@@type": "PostalAddress",
+            "addressCountry": "IR",
+            "addressRegion": "تهران",
+            "streetAddress": "خیابان نمونه، پلاک 123"
+        },
+        "medicalSpecialty": ["عمومی", "قلب و عروق", "اطفال", "زنان و زایمان"],
+        "priceRange": "$$"
+    }
+    </script>
+
+    @Scripts.Render("~/bundles/modernizr")
+
+    <style>
+        :root {
+            --primary-color: #2c5aa0;
+            --secondary-color: #34d399;
+            --accent-color: #f59e0b;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+            --bg-light: #f8fafc;
+            --white: #ffffff;
+            --shadow: 0 10px 25px rgba(0,0,0,0.1);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            line-height: 1.7;
+            color: var(--text-dark);
+            background-color: var(--bg-light);
+            padding-top: 0;
+        }
+
+        /* Header Styles */
+        .main-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #1e40af 100%);
+            box-shadow: var(--shadow);
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            transition: var(--transition);
+        }
+
+        .header-top {
+            background: rgba(255,255,255,0.1);
+            padding: 8px 0;
+            font-size: 14px;
+        }
+
+        .contact-info {
+            color: rgba(255,255,255,0.9);
+        }
+
+        .contact-info i {
+            margin-left: 8px;
+            color: var(--secondary-color);
+        }
+
+        .social-header {
+            text-align: left;
+        }
+
+        .social-header a {
+            color: rgba(255,255,255,0.8);
+            margin-left: 15px;
+            transition: var(--transition);
+        }
+
+        .social-header a:hover {
+            color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        /* Navigation */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+            display: flex;
+            align-items: center;
+        }
+
+        .navbar-brand img {
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+        }
+
+        .navbar-nav {
+            align-items: center;
+        }
+
+        .nav-link {
+            color: rgba(255,255,255,0.9) !important;
+            font-weight: 500;
+            padding: 12px 20px !important;
+            margin: 0 5px;
+            border-radius: 8px;
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .nav-link:hover {
+            color: white !important;
+            background: rgba(255,255,255,0.1);
+            transform: translateY(-2px);
+        }
+
+        /* Mega Menu */
+        .mega-menu {
+            position: static !important;
+            width: 100%;
+            border: none;
+            border-radius: 0;
+            margin-top: 0;
+            box-shadow: var(--shadow);
+            background: white;
+            padding: 30px 0;
+        }
+
+        .mega-menu-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .mega-menu-column {
+            padding: 0 15px;
+        }
+
+        .mega-menu-title {
+            font-weight: 600;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--secondary-color);
+        }
+
+        .mega-menu-item {
+            display: block;
+            padding: 8px 0;
+            color: var(--text-dark);
+            text-decoration: none;
+            transition: var(--transition);
+            border-radius: 6px;
+            padding: 10px 15px;
+            margin-bottom: 5px;
+        }
+
+        .mega-menu-item:hover {
+            background: var(--bg-light);
+            color: var(--primary-color);
+            transform: translateX(10px);
+            text-decoration: none;
+        }
+
+        .mega-menu-item i {
+            width: 20px;
+            text-align: center;
+            margin-left: 10px;
+            color: var(--secondary-color);
+        }
+
+        /* Search Box */
+        .search-form {
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            padding: 5px;
+            margin-left: 20px;
+        }
+
+        .search-form .form-control {
+            background: transparent;
+            border: none;
+            color: white;
+            padding: 8px 15px;
+        }
+
+        .search-form .form-control::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .search-form .btn {
+            border-radius: 20px;
+            background: var(--secondary-color);
+            border: none;
+            color: white;
+            padding: 8px 15px;
+        }
+
+        /* User Menu */
+        .user-menu {
+            background: rgba(255,255,255,0.1);
+            border-radius: 25px;
+            padding: 5px 15px;
+            margin-left: 15px;
+        }
+
+        .user-menu .dropdown-toggle {
+            background: none;
+            border: none;
+            color: white;
+            font-weight: 500;
+        }
+
+        .user-menu .dropdown-toggle:after {
+            margin-right: 8px;
+        }
+
+        /* Mobile Menu */
+        @@media(max-width: 991px) {
+            .navbar-collapse {
+                background: var(--primary-color);
+                margin-top: 15px;
+                border-radius: 10px;
+                padding: 20px;
+            }
+
+            .mega-menu {
+                position: relative !important;
+                width: auto;
+                box-shadow: none;
+                background: rgba(255,255,255,0.1);
+                padding: 15px;
+                border-radius: 8px;
+                margin-top: 10px;
+            }
+
+            .mega-menu-title {
+                color: white;
+                border-bottom-color: var(--secondary-color);
+            }
+
+            .mega-menu-item {
+                color: rgba(255,255,255,0.9);
+            }
+
+            .mega-menu-item:hover {
+                background: rgba(255,255,255,0.1);
+                color: white;
+            }
+        }
+
+        /* Main Content */
+        .main-content {
+            margin-top: 120px;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Footer */
+        .main-footer {
+            background: linear-gradient(135deg, var(--text-dark) 0%, #374151 100%);
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 60px;
+        }
+
+        .footer-section h5 {
+            color: var(--secondary-color);
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+
+        .footer-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 10px;
+        }
+
+        .footer-section ul li a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-section ul li a:hover {
+            color: var(--secondary-color);
+            transform: translateX(5px);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid rgba(255,255,255,0.1);
+            margin-top: 30px;
+            padding-top: 20px;
+            text-align: center;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .social-footer a {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            color: white;
+            text-align: center;
+            line-height: 40px;
+            border-radius: 50%;
+            margin: 0 5px;
+            transition: var(--transition);
+        }
+
+        .social-footer a:hover {
+            background: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+
+        /* Loading Animation */
+        .loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: white;
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 4px solid var(--bg-light);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Scroll to Top Button */
+        .scroll-top {
+            position: fixed;
+            bottom: 30px;
+            left: 30px;
+            background: var(--primary-color);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            opacity: 0;
+            visibility: hidden;
+            z-index: 1000;
+        }
+
+        .scroll-top.show {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .scroll-top:hover {
+            background: var(--secondary-color);
+            transform: translateY(-3px);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Loading Screen -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="main-header">
+        <!-- Header Top -->
+        <div class="header-top d-none d-lg-block">
+            <div class="container">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <div class="contact-info">
+                            <span class="me-4">
+                                <i class="fas fa-phone"></i>
+                                ۰۲۱-۱۲۳۴۵۶۷۸
+                            </span>
+                            <span class="me-4">
+                                <i class="fas fa-envelope"></i>
+                                info@clinic.ir
+                            </span>
+                            <span>
+                                <i class="fas fa-clock"></i>
+                                شنبه تا پنج‌شنبه: ۸ الی ۲۰
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="social-header">
+                            <a href="#" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
+                            <a href="#" aria-label="تلگرام"><i class="fab fa-telegram"></i></a>
+                            <a href="#" aria-label="واتساپ"><i class="fab fa-whatsapp"></i></a>
+                            <a href="#" aria-label="لینکدین"><i class="fab fa-linkedin"></i></a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Navigation -->
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                    <img src="@Url.Content("~/Content/images/logo.png")" alt="لوگو کلینیک" />
+                    مرکز درمانی سلامت
+                </a>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                        aria-controls="navbarNav" aria-expanded="false" aria-label="منوی ناوبری">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            @Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link" })
+                        </li>
+
+                        <!-- Services Mega Menu -->
+                        <li class="nav-item dropdown position-static">
+                            <a class="nav-link dropdown-toggle" href="#" id="servicesDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                خدمات پزشکی
+                            </a>
+                            <div class="dropdown-menu mega-menu">
+                                <div class="mega-menu-content">
+                                    <div class="row">
+                                        <div class="col-md-3 mega-menu-column">
+                                            <h6 class="mega-menu-title">خدمات عمومی</h6>
+                                            @Html.ActionLink("ویزیت عمومی", "General", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("آزمایش خون", "BloodTest", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("رادیولوژی", "Radiology", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("فیزیوتراپی", "Physiotherapy", "Services", null, new { @class = "mega-menu-item" })
+                                        </div>
+                                        <div class="col-md-3 mega-menu-column">
+                                            <h6 class="mega-menu-title">تخصص‌های پزشکی</h6>
+                                            @Html.ActionLink("قلب و عروق", "Cardiology", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("ارتوپدی", "Orthopedics", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("زنان و زایمان", "Gynecology", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("اطفال", "Pediatrics", "Services", null, new { @class = "mega-menu-item" })
+                                        </div>
+                                        <div class="col-md-3 mega-menu-column">
+                                            <h6 class="mega-menu-title">خدمات آنلاین</h6>
+                                            @Html.ActionLink("مشاوره آنلاین", "OnlineConsultation", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("نتایج آزمایش", "LabResults", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("پرونده الکترونیک", "EMR", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("دارو یاب", "PharmacyFinder", "Services", null, new { @class = "mega-menu-item" })
+                                        </div>
+                                        <div class="col-md-3 mega-menu-column">
+                                            <h6 class="mega-menu-title">خدمات ویژه</h6>
+                                            @Html.ActionLink("طب سنتی", "TraditionalMedicine", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("طب سوزنی", "Acupuncture", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("ماساژ درمانی", "Massage", "Services", null, new { @class = "mega-menu-item" })
+                                            @Html.ActionLink("رژیم درمانی", "Nutrition", "Services", null, new { @class = "mega-menu-item" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+
+                        <li class="nav-item">
+                            @Html.ActionLink("پزشکان", "Index", "Doctors", null, new { @class = "nav-link" })
+                        </li>
+
+                        <li class="nav-item">
+                            @Html.ActionLink("رزرو نوبت", "Create", "Appointment", null, new { @class = "nav-link" })
+                        </li>
+
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="pagesDropdown" role="button"
+                               data-bs-toggle="dropdown" aria-expanded="false">
+                                صفحات
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>@Html.ActionLink("درباره ما", "About", "Home", null, new { @class = "dropdown-item" })</li>
+                                <li>@Html.ActionLink("اخبار و مقالات", "News", "Home", null, new { @class = "dropdown-item" })</li>
+                                <li>@Html.ActionLink("گالری تصاویر", "Gallery", "Home", null, new { @class = "dropdown-item" })</li>
+                                <li>@Html.ActionLink("سوالات متداول", "FAQ", "Home", null, new { @class = "dropdown-item" })</li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>@Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "dropdown-item" })</li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    <!-- Search Form -->
+                    <form class="search-form d-flex d-none d-lg-flex" method="GET" action="@Url.Action("Search", "Home")">
+                        <input class="form-control" type="search" name="q" placeholder="جستجو در سایت..." aria-label="جستجو">
+                        <button class="btn" type="submit" aria-label="جستجو">
+                            <i class="fas fa-search"></i>
+                        </button>
+                    </form>
+
+                    <!-- User Menu -->
+                    <div class="user-menu dropdown">
+                        @Html.Partial("_LoginPartial")
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main role="main" class="main-content">
+        <div class="container">
+            @RenderBody()
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="footer-section">
+                        <h5>مرکز درمانی سلامت</h5>
+                        <p class="mb-3">
+                            ارائه دهنده خدمات پزشکی تخصصی با بهترین پزشکان و تجهیزات پیشرفته.
+                            سلامت شما اولویت ماست.
+                        </p>
+                        <div class="social-footer">
+                            <a href="#" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
+                            <a href="#" aria-label="تلگرام"><i class="fab fa-telegram"></i></a>
+                            <a href="#" aria-label="واتساپ"><i class="fab fa-whatsapp"></i></a>
+                            <a href="#" aria-label="لینکدین"><i class="fab fa-linkedin"></i></a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-2 col-md-6 mb-4">
+                    <div class="footer-section">
+                        <h5>دسترسی سریع</h5>
+                        <ul>
+                            <li>@Html.ActionLink("خانه", "Index", "Home")</li>
+                            <li>@Html.ActionLink("درباره ما", "About", "Home")</li>
+                            <li>@Html.ActionLink("خدمات", "Index", "Services")</li>
+                            <li>@Html.ActionLink("پزشکان", "Index", "Doctors")</li>
+                            <li>@Html.ActionLink("رزرو نوبت", "Create", "Appointment")</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="footer-section">
+                        <h5>خدمات پزشکی</h5>
+                        <ul>
+                            <li><a href="#">قلب و عروق</a></li>
+                            <li><a href="#">ارتوپدی</a></li>
+                            <li><a href="#">زنان و زایمان</a></li>
+                            <li><a href="#">اطفال</a></li>
+                            <li><a href="#">مشاوره آنلاین</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="footer-section">
+                        <h5>اطلاعات تماس</h5>
+                        <ul>
+                            <li>
+                                <i class="fas fa-map-marker-alt me-2"></i>
+                                تهران، خیابان نمونه، پلاک ۱۲۳
+                            </li>
+                            <li>
+                                <i class="fas fa-phone me-2"></i>
+                                ۰۲۱-۱۲۳۴۵۶۷۸
+                            </li>
+                            <li>
+                                <i class="fas fa-envelope me-2"></i>
+                                info@clinic.ir
+                            </li>
+                            <li>
+                                <i class="fas fa-clock me-2"></i>
+                                شنبه تا پنج‌شنبه: ۸ الی ۲۰
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <p>&copy; @DateTime.Now.Year مرکز درمانی سلامت. تمامی حقوق محفوظ است.</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <a href="#" class="me-3">حریم خصوصی</a>
+                        <a href="#" class="me-3">قوانین و مقررات</a>
+                        <a href="#">نقشه سایت</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scroll to Top Button -->
+    <div class="scroll-top" id="scrollTop">
+        <i class="fas fa-arrow-up"></i>
+    </div>
+
+    <!-- Scripts -->
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/2.1.4/toastr.min.js"></script>
+
+    <script>
+        // Remove loading screen
+        window.addEventListener('load', function () {
+            document.getElementById('loading').style.display = 'none';
+        });
+
+        // Scroll to top functionality
+        const scrollTop = document.getElementById('scrollTop');
+
+        window.addEventListener('scroll', function () {
+            if (window.pageYOffset > 300) {
+                scrollTop.classList.add('show');
+            } else {
+                scrollTop.classList.remove('show');
+            }
+        });
+
+        scrollTop.addEventListener('click', function () {
+            window.scrollTo({
+                top: 0,
+                behavior: 'smooth'
+            });
+        });
+
+        // Header scroll effect
+        let lastScroll = 0;
+        const header = document.querySelector('.main-header');
+
+        window.addEventListener('scroll', function () {
+            const currentScroll = window.pageYOffset;
+
+            if (currentScroll > lastScroll && currentScroll > 100) {
+                header.style.transform = 'translateY(-100%)';
+            } else {
+                header.style.transform = 'translateY(0)';
+            }
+
+            lastScroll = currentScroll;
+        });
+
+        // Navbar active link
+        const currentLocation = location.pathname;
+        const menuItems = document.querySelectorAll('.navbar-nav .nav-link');
+
+        menuItems.forEach(item => {
+            if (item.href.includes(currentLocation)) {
+                item.classList.add('active');
+            }
+        });
+
+        // Search form enhancement
+        const searchForm = document.querySelector('.search-form');
+        const searchInput = searchForm?.querySelector('input[type="search"]');
+
+        if (searchInput) {
+            searchInput.addEventListener('focus', function () {
+                searchForm.style.width = '300px';
+            });
+
+            searchInput.addEventListener('blur', function () {
+                if (!this.value) {
+                    searchForm.style.width = '250px';
+                }
+            });
+        }
+
+        // Mega menu hover effects
+        const megaMenuItems = document.querySelectorAll('.mega-menu-item');
+
+        megaMenuItems.forEach(item => {
+            item.addEventListener('mouseenter', function () {
+                this.style.background = 'var(--bg-light)';
+                this.style.transform = 'translateX(10px)';
+            });
+
+            item.addEventListener('mouseleave', function () {
+                this.style.background = '';
+                this.style.transform = '';
+            });
+        });
+
+        // Mobile menu close on link click
+        const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+        const navbarToggler = document.querySelector('.navbar-toggler');
+        const navbarCollapse = document.querySelector('.navbar-collapse');
+
+        navLinks.forEach(link => {
+            link.addEventListener('click', function () {
+                if (window.innerWidth < 992) {
+                    navbarCollapse.classList.remove('show');
+                }
+            });
+        });
+
+        // Toastr configuration for RTL
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-left",
+            "preventDuplicates": true,
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut",
+            "rtl": true
+        };
+
+        // Accessibility improvements
+        document.addEventListener('keydown', function (e) {
+            // Skip to main content with Alt+S
+            if (e.altKey && e.key === 's') {
+                e.preventDefault();
+                document.querySelector('main').focus();
+            }
+
+            // Open search with Alt+/
+            if (e.altKey && e.key === '/') {
+                e.preventDefault();
+                const searchInput = document.querySelector('.search-form input');
+                if (searchInput) {
+                    searchInput.focus();
+                }
+            }
+        });
+
+        // Performance optimization - Lazy load images
+        if ('IntersectionObserver' in window) {
+            const imageObserver = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const img = entry.target;
+                        img.src = img.dataset.src;
+                        img.classList.remove('lazy');
+                        imageObserver.unobserve(img);
+                    }
+                });
+            });
+
+            const lazyImages = document.querySelectorAll('img[data-src]');
+            lazyImages.forEach(img => imageObserver.observe(img));
+        }
+
+        // Service Worker registration for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function () {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(registration => console.log('SW registered'))
+                    .catch(error => console.log('SW registration failed'));
+            });
+        }
+
+        // Add smooth scrolling to anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            });
+        });
+    </script>
+
+    @RenderSection("scripts", required: false)
+
+    <!-- Toast notifications -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <script type="text/javascript">
+            toastr.success("@Html.Raw(TempData["SuccessMessage"])");
+        </script>
+    }
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <script type="text/javascript">
+            toastr.error("@Html.Raw(TempData["ErrorMessage"])");
+        </script>
+    }
+
+    @if (TempData["WarningMessage"] != null)
+    {
+        <script type="text/javascript">
+            toastr.warning("@Html.Raw(TempData["WarningMessage"])");
+        </script>
+    }
+
+    @if (TempData["InfoMessage"] != null)
+    {
+        <script type="text/javascript">
+            toastr.info("@Html.Raw(TempData["InfoMessage"])");
+        </script>
+    }
+
+    <!-- Custom CSS for specific pages -->
+    @RenderSection("styles", required: false)
+</body>
+</html>

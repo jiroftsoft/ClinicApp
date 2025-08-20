@@ -1,0 +1,433 @@
+﻿<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <title>@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title + " - کلینیک شفا جیرفت")</title>
+    <meta name="description" content="کلینیک شفا جیرفت با ارائه خدمات درمانی تخصصی، پزشکان باتجربه و تجهیزات پیشرفته. رزرو آنلاین نوبت، مشاوره پزشکی و خدمات درمانی با کیفیت در شهر جیرفت." />
+    <meta name="keywords" content="کلینیک شفا جیرفت, کلینیک درمانی جیرفت, رزرو نوبت جیرفت, پزشکان جیرفت, خدمات درمانی جیرفت, کلینیک شفا, پزشک متخصص جیرفت, درمان در جیرفت" />
+    <meta name="author" content="کلینیک شفا جیرفت" />
+    <meta name="robots" content="index, follow" />
+    <meta name="geo.placename" content="جیرفت" />
+    <meta name="geo.region" content="IR-Kerman" />
+    <meta property="og:title" content="@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title)" />
+    <meta property="og:description" content="رزرو آنلاین نوبت و مشاوره با پزشکان متخصص کلینیک شفا در جیرفت." />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="@(Request.Url?.AbsoluteUri ?? "https://shafa-jiroft.com")" />
+    <meta property="og:image" content="@Url.Content("~/Content/Images/shafa-logo.png")" />
+    <meta property="og:site_name" content="کلینیک شفا جیرفت" />
+    <meta property="og:locale" content="fa_IR" />
+    <script type="application/ld+json">
+    {
+        "@@context": "https://schema.org",
+        "@@type": "MedicalOrganization",
+        "name": "کلینیک شفا جیرفت",
+        "url": "https://shafa-jiroft.com",
+        "logo": "@Url.Content("~/Content/Images/shafa-logo.png")",
+        "telephone": "+983432221234",
+        "address": {
+            "@@type": "PostalAddress",
+            "streetAddress": "جیرفت، خیابان اصلی، کوچه شفا، پلاک 10",
+            "addressLocality": "جیرفت",
+            "postalCode": "78511",
+            "addressCountry": "IR"
+        }
+    }
+
+    </script>
+    <meta name="theme-color" content="#2c6e7d" />
+    <link rel="icon" href="@Url.Content("~/Content/favicon.ico")" type="image/x-icon">
+    <link rel="apple-touch-icon" href="@Url.Content("~/Content/apple-touch-icon.png")">
+    <link rel="manifest" href="@Url.Content("/site.webmanifest")">
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    @Styles.Render("~/Content/css")
+    @Styles.Render("~/Content/plugins/css")
+    @RenderSection("styles", required: false)
+    <style>
+        :root {
+            --primary-color: #2c6e7d;
+            --secondary-color: #4a9da9;
+            --accent-color: #c5a47e;
+            --light-color: #f8f9fa;
+            --dark-color: #2d3748;
+            --gray-100: #edf2f7;
+            --gray-200: #e2e8f0;
+            --transition: all 0.3s ease-in-out;
+            --shadow-md: 0 10px 15px -3px rgba(44, 110, 125, 0.12);
+            --shadow-lg: 0 20px 25px -5px rgba(44, 110, 125, 0.15);
+            --golden-accent: linear-gradient(90deg, #c5a47e 0%, #d4b89b 100%);
+        }
+
+        body {
+            font-family: 'Vazirmatn', Tahoma, sans-serif;
+            line-height: 1.7;
+            color: var(--dark-color);
+            background-color: var(--light-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        main {
+            flex: 1;
+        }
+
+        .main-navbar {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            box-shadow: 0 4px 20px rgba(44, 110, 125, 0.25);
+            padding: 0.5rem 0;
+            transition: padding 0.3s ease, background-color 0.3s ease, backdrop-filter 0.3s ease;
+            position: sticky;
+            top: 0;
+            z-index: 1030;
+        }
+
+            .main-navbar.scrolled {
+                background: linear-gradient(135deg, rgba(44, 110, 125, 0.9), rgba(74, 157, 169, 0.9));
+                backdrop-filter: blur(8px);
+            }
+
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+            color: white !important;
+        }
+
+            .navbar-brand i {
+                color: var(--accent-color);
+                font-size: 1.8rem;
+            }
+
+        .nav-link {
+            font-weight: 500;
+            color: rgba(255, 255, 255, 0.9) !important;
+            border-radius: 8px;
+            margin: 0 4px;
+            transition: var(--transition);
+        }
+
+            .nav-link:hover, .nav-link.active {
+                color: white !important;
+                background-color: rgba(255, 255, 255, 0.1);
+            }
+        /* --- Simplified & Robust Megamenu --- */
+        .dropdown-menu {
+            border-radius: 16px;
+            border: 1px solid var(--gray-200);
+            box-shadow: var(--shadow-lg);
+            margin-top: 10px; /* Provides space from navbar */
+        }
+        /* Hover-to-open on desktop */
+        @@media (min-width: 992px) {
+            .dropdown:hover > .dropdown-menu {
+                display: block;
+            }
+
+            .dropdown-menu {
+                min-width: 600px;
+                padding: 1.5rem;
+            }
+        }
+
+        .megamenu-header {
+            font-weight: 700;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--gray-200);
+        }
+
+        .megamenu-link {
+            display: block;
+            padding: 0.7rem 1rem;
+            border-radius: 8px;
+            transition: var(--transition);
+            color: var(--dark-color);
+            text-decoration: none;
+        }
+
+            .megamenu-link:hover {
+                background-color: var(--gray-100);
+                color: var(--primary-color);
+                transform: translateX(5px);
+            }
+
+        .megamenu-featured {
+            background: var(--golden-accent);
+            color: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+        /* --- End Megamenu --- */
+        footer {
+            background: linear-gradient(to top, #1A202C, #2D3748);
+            color: white;
+            padding-top: 3rem;
+            border-top: 4px solid;
+            border-image: var(--golden-accent) 1;
+        }
+
+        .footer-column h5 {
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .footer-links a {
+            color: #e0f0ff;
+            text-decoration: none;
+            transition: var(--transition);
+            display: inline-block;
+        }
+
+            .footer-links a:hover {
+                color: var(--accent-color);
+                transform: translateX(5px);
+            }
+
+        .social-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 50%;
+            color: white;
+            transition: var(--transition);
+        }
+
+            .social-icon:hover {
+                background: var(--accent-color);
+                transform: translateY(-4px);
+            }
+
+        .copyright {
+            text-align: center;
+            padding: 1.5rem 0;
+            margin-top: 2rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #cbd5e0;
+            font-size: 0.9rem;
+        }
+        /* --- Toastr Position --- */
+        .toast-top-left {
+            top: 80px !important;
+            left: 20px !important;
+            right: auto !important;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark main-navbar">
+            <div class="container">
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")">
+                    <i class="fas fa-heartbeat"></i> کلینیک شفا جیرفت
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav-collapse" aria-controls="main-nav-collapse" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="main-nav-collapse">
+                    <ul class="navbar-nav mx-auto">
+                        <li class="nav-item">@Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link" })</li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">خدمات</a>
+                            <div class="dropdown-menu megamenu">
+                                <div class="row">
+                                    <div class="col-lg-4">
+                                        <h6 class="megamenu-header"><i class="fas fa-stethoscope"></i> خدمات عمومی</h6>
+                                        <a href="#" class="megamenu-link">معاینه عمومی</a>
+                                        <a href="#" class="megamenu-link">آزمایشگاه</a>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <h6 class="megamenu-header"><i class="fas fa-user-md"></i> خدمات تخصصی</h6>
+                                        <a href="#" class="megamenu-link">دندانپزشکی</a>
+                                        <a href="#" class="megamenu-link">قلب و عروق</a>
+                                    </div>
+                                    <div class="col-lg-4">
+                                        <div class="megamenu-featured">
+                                            <h5><i class="fas fa-bolt"></i> ویژه امروز</h5>
+                                            <p>مشاوره آنلاین با 30% تخفیف.</p>
+                                            <a href="#" class="btn btn-light btn-sm">دریافت تخفیف</a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </li>
+                        <li class="nav-item">@Html.ActionLink("پزشکان", "Index", "Doctors", null, new { @class = "nav-link" })</li>
+                        <li class="nav-item">@Html.ActionLink("تماس با ما", "Contact", "Home", null, new { @class = "nav-link" })</li>
+                    </ul>
+                    <div class="d-flex align-items-center">
+                        @Html.Partial("_LoginPartial")
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+        <div class="container body-content py-5">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+            </div>
+            <div class="copyright">
+                &copy; @DateTime.Now.Year - کلینیک شفا جیرفت. تمامی حقوق محفوظ است.
+            </div>
+        </div>
+    </footer>
+
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 shadow-lg" id="loginModalContent">
+            </div>
+        </div>
+    </div>
+    @Html.Partial("_ValidationToasts")
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/jqueryval")
+    @Scripts.Render("~/bundles/bootstrap")
+    @Scripts.Render("~/bundles/modernizr")
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+    @Scripts.Render("~/bundles/plugins")
+    <!-- AOS JS -->
+
+    @RenderSection("scripts", required: false)
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            // --- 1. Initialize AOS (Animate on Scroll) for animations ---
+            document.addEventListener("DOMContentLoaded", function () {
+                if (typeof AOS !== "undefined") {
+                    AOS.init({
+                        duration: 700,
+                        once: true,
+                        offset: 100,
+                    });
+
+                    // Lazy AOS: فقط وقتی المان دیده شد اجرا شود
+                    const elements = document.querySelectorAll("[data-aos]");
+                    const observer = new IntersectionObserver((entries, obs) => {
+                        entries.forEach(entry => {
+                            if (entry.isIntersecting) {
+                                entry.target.classList.add("aos-animate");
+                                obs.unobserve(entry.target);
+                            }
+                        });
+                    }, { threshold: 0.1 });
+
+                    elements.forEach(el => observer.observe(el));
+                }
+            });
+
+            // --- 2. Navbar color change on scroll ---
+            const navbar = document.querySelector('.main-navbar');
+            if (navbar) {
+                window.addEventListener('scroll', function() {
+                    if (window.scrollY > 50) {
+                        navbar.classList.add('scrolled');
+                    } else {
+                        navbar.classList.remove('scrolled');
+                    }
+                });
+            }
+
+            // --- 3. AJAX loading for Login Modal ---
+            const loginModal = document.getElementById('loginModal');
+            if(loginModal) {
+                 const loginModalContent = document.getElementById('loginModalContent');
+                 loginModal.addEventListener('show.bs.modal', function() {
+                     // Display a spinner while loading
+                     loginModalContent.innerHTML = `<div class="d-flex justify-content-center p-5"><div class="spinner-border text-primary" style="width: 3rem; height: 3rem;" role="status"><span class="visually-hidden">Loading...</span></div></div>`;
+
+                     // Load content from the partial view
+                     fetch('@Url.Action("LoginModal", "Account")')
+                         .then(response => response.text())
+                         .then(html => {
+                             loginModalContent.innerHTML = html;
+                             // Re-attach AJAX form submission script after loading new content
+                             const form = loginModalContent.querySelector('#loginForm');
+                             if (form) {
+                                 attachLoginFormHandler(form);
+                             }
+                         })
+                         .catch(error => {
+                             loginModalContent.innerHTML = '<div class="alert alert-danger m-3">خطا در بارگذاری فرم. لطفاً دوباره تلاش کنید.</div>';
+                         });
+                 });
+            }
+
+            // Function to handle the login form submission via AJAX
+            function attachLoginFormHandler(form) {
+                form.addEventListener('submit', function(e) {
+                    e.preventDefault();
+
+                    const submitButton = form.querySelector('button[type="submit"]');
+                    const spinner = submitButton.querySelector('.spinner-border');
+
+                    submitButton.disabled = true;
+                    if(spinner) spinner.classList.remove('d-none');
+
+                    fetch(form.action, {
+                        method: 'POST',
+                        body: new FormData(form),
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            toastr.success('ورود با موفقیت انجام شد!');
+                            window.location.href = data.redirectUrl;
+                        } else {
+                            data.errors.forEach(error => toastr.error(error));
+                        }
+                    })
+                    .catch(error => {
+                        toastr.error('خطا در ارتباط با سرور.');
+                    })
+                    .finally(() => {
+                        submitButton.disabled = false;
+                        if(spinner) spinner.classList.add('d-none');
+                    });
+                });
+            }
+
+            // --- 4. Global Toastr configuration ---
+            toastr.options = {
+                "closeButton": true,              // نمایش دکمه بستن
+                "debug": false,                   // غیر فعال کردن debug
+                "newestOnTop": true,              // نمایش پیام جدید در بالای لیست
+                "progressBar": true,              // نمایش نوار پیشرفت
+                "positionClass": "toast-top-left",// موقعیت پیام (راست‌چین یا چپ‌چین)
+                "preventDuplicates": true,        // جلوگیری از نمایش پیام تکراری
+                "onclick": null,
+                "showDuration": "300",            // زمان نمایش انیمیشن ورود
+                "hideDuration": "1000",           // زمان نمایش انیمیشن خروج
+                "timeOut": "5000",                // مدت زمان نمایش پیام
+                "extendedTimeOut": "1000",        // مدت زمان اضافه در صورت hover
+                "showEasing": "swing",
+                "hideEasing": "linear",
+                "showMethod": "fadeIn",           // افکت نمایش
+                "hideMethod": "fadeOut",          // افکت مخفی شدن
+                "rtl": true                        // فعال‌سازی راست‌چین برای فارسی
+            };
+
+
+
+            // --- 5. Display TempData messages from the server ---
+@if (TempData["SuccessMessage"] != null) {
+    <text>toastr.success("@Html.Raw(TempData["SuccessMessage"])", "موفقیت");</text>
+}
+        @if (TempData["ErrorMessage"] != null) {
+            <text>toastr.error("@Html.Raw(TempData["ErrorMessage"])", "خطا");</text>
+        }
+
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,560 @@
+﻿@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.ServiceDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات خدمات: " + Model.Title;
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- بسته‌های CSS مورد نیاز -->
+@section Styles {
+    <style>
+        /* استایل‌های اختصاصی برای صفحه جزئیات خدمات پزشکی */
+        .service-header {
+            background-color: #1a6dcc;
+            color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .service-status {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .service-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .service-card-title {
+            font-weight: 600;
+            color: #1a6dcc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+            .service-card-title i {
+                margin-left: 8px;
+                font-size: 1.1rem;
+            }
+
+        .service-info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px dashed #eee;
+        }
+
+            .service-info-row:last-child {
+                border-bottom: none;
+            }
+
+        .service-info-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .service-info-value {
+            font-weight: 500;
+        }
+
+        .audit-info {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            border-left: 3px solid #1a6dcc;
+        }
+
+            .audit-info h6 {
+                color: #1a6dcc;
+                margin-top: 0;
+                display: flex;
+                align-items: center;
+            }
+
+                .audit-info h6 i {
+                    margin-left: 8px;
+                }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-action {
+            border-radius: 20px;
+            padding: 6px 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .btn-action i {
+                margin-left: 5px;
+            }
+
+            .btn-action:hover {
+                transform: translateY(-2px);
+            }
+
+        .btn-edit {
+            background-color: #e3f2fd;
+            color: #1a6dcc;
+        }
+
+        .btn-delete {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a6dcc;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .medical-highlight {
+            background-color: #e3f2fd;
+            border-left: 3px solid #1a6dcc;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 15px;
+        }
+
+            .medical-highlight h5 {
+                margin-top: 0;
+                color: #1a6dcc;
+            }
+
+            .medical-highlight ul {
+                padding-right: 20px;
+            }
+
+            .medical-highlight li {
+                margin-bottom: 8px;
+            }
+
+        /* استایل‌های موبایل */
+        @@media (max-width: 768px) {
+            .service-info-row {
+                flex-direction: column;
+            }
+
+            .service-info-label {
+                margin-bottom: 4px;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+            }
+
+            .btn-action {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- هدر صفحه -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-concierge-bell text-white me-2"></i>
+                    جزئیات خدمات: @Model.Title
+                </h1>
+                <p class="text-muted mb-0">مشاهده اطلاعات کامل خدمات پزشکی در کلینیک شفا</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <a href="@Url.Action("Index", "Service")" class="btn btn-light">
+                    <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
+                </a>
+            </div>
+        </div>
+
+        <!-- وضعیت خدمات -->
+        <div class="service-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-0">@Model.Title</h2>
+                    <p class="mb-0">کد خدمات: <strong>@Model.ServiceCode</strong></p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <span class="service-status @(Model.IsActive ? "status-active" : "status-inactive")">
+                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات اصلی خدمات -->
+        <div class="row">
+            <div class="col-lg-8">
+                <div class="service-card">
+                    <h5 class="service-card-title">
+                        <i class="fas fa-info-circle"></i> اطلاعات اصلی خدمات
+                    </h5>
+                    <div class="service-info-row">
+                        <span class="service-info-label">عنوان:</span>
+                        <span class="service-info-value">@Model.Title</span>
+                    </div>
+                    <div class="service-info-row">
+                        <span class="service-info-label">کد خدمات:</span>
+                        <span class="service-info-value">@Model.ServiceCode</span>
+                    </div>
+                    <div class="service-info-row">
+                        <span class="service-info-label">دسته‌بندی:</span>
+                        <span class="service-info-value">@Model.ServiceCategoryTitle</span>
+                    </div>
+                    <div class="service-info-row">
+                        <span class="service-info-label">قیمت:</span>
+                        <span class="service-info-value">@Model.Price.ToString("N0") تومان</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Description))
+                    {
+                        <div class="service-info-row">
+                            <span class="service-info-label">توضیحات:</span>
+                            <span class="service-info-value">@Model.Description</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- آمار استفاده از خدمات -->
+                <div class="service-card">
+                    <h5 class="service-card-title">
+                        <i class="fas fa-chart-line"></i> آمار استفاده از خدمات
+                    </h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div class="stat-label">تعداد استفاده‌ها</div>
+                                <div class="stat-value">@Model.UsageCount</div>
+                                <div class="text-muted small">در کل دوره زمانی</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <div class="stat-label">درآمد کل</div>
+                                <div class="stat-value">@Model.TotalRevenue.ToString("N0") تومان</div>
+                                <div class="text-muted small">در کل دوره زمانی</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="@Url.Action("Report", "Service", new { area = "Admin", id = Model.ServiceId })" class="btn btn-sm btn-outline-primary">
+                            <i class="fas fa-chart-bar me-1"></i> مشاهده گزارش کامل
+                        </a>
+                    </div>
+                </div>
+
+                <!-- راهنمای استفاده -->
+                <div class="medical-highlight">
+                    <h5><i class="fas fa-lightbulb"></i> نکات مهم برای استفاده از این خدمات</h5>
+                    <ul>
+                        <li>این خدمات در <strong>@Model.UsageCount بار</strong> استفاده شده است</li>
+                        <li>درآمد کل ایجاد شده توسط این خدمات: <strong>@Model.TotalRevenue.ToString("N0") تومان</strong></li>
+                        <li>این خدمات در صورت نیاز می‌تواند برای بیماران خاص تنظیم شود</li>
+                        <li>برای تغییر اطلاعات این خدمات از دکمه ویرایش استفاده کنید</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- اطلاعات ردیابی (Audit Trail) -->
+                <div class="service-card">
+                    <h5 class="service-card-title">
+                        <i class="fas fa-history"></i> اطلاعات ردیابی
+                    </h5>
+                    <div class="audit-info">
+                        <h6><i class="fas fa-user-plus"></i> اطلاعات ایجاد</h6>
+                        <div class="service-info-row">
+                            <span class="service-info-label">ایجاد کننده:</span>
+                            <span class="service-info-value">@Model.CreatedBy</span>
+                        </div>
+                        <div class="service-info-row">
+                            <span class="service-info-label">تاریخ ایجاد:</span>
+                            <span class="service-info-value">@Model.CreatedAtShamsi</span>
+                        </div>
+                        <div class="service-info-row">
+                            <span class="service-info-label">ساعت ایجاد:</span>
+                            <span class="service-info-value">@Model.CreatedAt.ToString("HH:mm")</span>
+                        </div>
+
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <h6 class="mt-3"><i class="fas fa-user-edit"></i> آخرین ویرایش</h6>
+                            <div class="service-info-row">
+                                <span class="service-info-label">ویرایش کننده:</span>
+                                <span class="service-info-value">@Model.UpdatedBy</span>
+                            </div>
+                            <div class="service-info-row">
+                                <span class="service-info-label">تاریخ ویرایش:</span>
+                                <span class="service-info-value">@Model.UpdatedAtShamsi</span>
+                            </div>
+                            <div class="service-info-row">
+                                <span class="service-info-label">ساعت ویرایش:</span>
+                                <span class="service-info-value">@Model.UpdatedAt.Value.ToString("HH:mm")</span>
+                            </div>
+                        }
+
+                        @if (Model.DeletedAt.HasValue)
+                        {
+                            <h6 class="mt-3"><i class="fas fa-user-times"></i> اطلاعات حذف</h6>
+                            <div class="service-info-row">
+                                <span class="service-info-label">حذف کننده:</span>
+                                <span class="service-info-value">@Model.DeletedBy</span>
+                            </div>
+                            <div class="service-info-row">
+                                <span class="service-info-label">تاریخ حذف:</span>
+                                <span class="service-info-value">@Model.DeletedAtShamsi</span>
+                            </div>
+                            <div class="service-info-row">
+                                <span class="service-info-label">ساعت حذف:</span>
+                                <span class="service-info-value">@Model.DeletedAt.Value.ToString("HH:mm")</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- اقدامات -->
+                <div class="service-card">
+                    <h5 class="service-card-title">
+                        <i class="fas fa-cogs"></i> اقدامات
+                    </h5>
+                    <div class="action-buttons">
+                        <a href="@Url.Action("Edit", "Service", new { id = Model.ServiceId })" class="btn btn-primary btn-edit">
+                            <i class="fas fa-edit"></i> ویرایش
+                        </a>
+                        <a href="#" class="btn btn-danger btn-delete"
+                           data-id="@Model.ServiceId"
+                           data-title="@Model.Title">
+                            <i class="fas fa-trash"></i> حذف
+                        </a>
+                    </div>
+                </div>
+
+                <!-- اطلاعات سیستم -->
+                <div class="service-card">
+                    <h5 class="service-card-title">
+                        <i class="fas fa-info-circle"></i> اطلاعات سیستم
+                    </h5>
+                    <div class="text-muted">
+                        <div class="service-info-row">
+                            <span class="service-info-label">وضعیت:</span>
+                            <span class="service-info-value">
+                                <span class="service-status @(Model.IsActive ? "status-active" : "status-inactive")">
+                                    @(Model.IsActive ? "فعال" : "غیرفعال")
+                                </span>
+                            </span>
+                        </div>
+                        <div class="service-info-row">
+                            <span class="service-info-label">تعداد استفاده‌ها:</span>
+                            <span class="service-info-value">@Model.UsageCount</span>
+                        </div>
+                        <div class="service-info-row">
+                            <span class="service-info-label">درآمد کل:</span>
+                            <span class="service-info-value">@Model.TotalRevenue.ToString("N0") تومان</span>
+                        </div>
+                        <div class="service-info-row">
+                            <span class="service-info-label">آخرین استفاده:</span>
+                            <span class="service-info-value">@Model.LastUsageDateShamsi</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال تأیید حذف -->
+<div class="modal fade" id="deleteConfirmationModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف خدمات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف خدمات <strong id="deleteServiceTitle"></strong> اطمینان دارید؟</p>
+                <div class="alert alert-danger" id="deleteWarningMessage" style="display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i> انصراف
+                </button>
+                <button type="button" class="btn btn-danger" id="confirmDelete">
+                    <i class="fas fa-trash me-1"></i> حذف
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // تابع باز کردن مودال تأیید حذف
+            $(document).on('click', '.btn-delete', function () {
+                var serviceId = $(this).data('id');
+                var title = $(this).data('title');
+
+                $('#deleteServiceTitle').text(title);
+                $('#deleteWarningMessage').hide().text('');
+
+                // نمایش وضعیت بارگذاری
+                $('#deleteWarningMessage').html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال بررسی اطلاعات...');
+                $('#deleteWarningMessage').show();
+
+                // دریافت اطلاعات حذف
+                $.get('@Url.Action("CanDelete", "Service")/' + serviceId, function (result) {
+                    $('#deleteWarningMessage').hide().text('');
+
+                    // بررسی آیا پاسخ یک شیء JSON است یا خیر
+                    if (typeof result === 'string') {
+                        try {
+                            result = JSON.parse(result);
+                        } catch (e) {
+                            $('#deleteWarningMessage').text('خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.').show();
+                            return;
+                        }
+                    }
+
+                    if (!result.success) {
+                        $('#deleteWarningMessage').text(result.message).show();
+                    }
+                })
+                .fail(function (xhr, status, error) {
+                    console.error("خطا در دریافت اطلاعات حذف:", status, error);
+                    $('#deleteWarningMessage').text('خطا در بررسی امکان حذف. لطفاً دوباره تلاش کنید.').show();
+                });
+
+                $('#confirmDelete').data('id', serviceId);
+                $('#deleteConfirmationModal').modal('show');
+            });
+
+            // تابع تأیید حذف
+            $('#confirmDelete').click(function () {
+                var serviceId = $(this).data('id');
+
+                // غیرفعال کردن دکمه حذف برای جلوگیری از کلیک چندباره
+                $('#confirmDelete').prop('disabled', true)
+                    .html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال حذف...');
+
+                $.ajax({
+                    url: '@Url.Action("Delete", "Service")/' + serviceId,
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function (result) {
+                        // بررسی آیا پاسخ یک شیء JSON است یا خیر
+                        if (typeof result === 'string') {
+                            try {
+                                result = JSON.parse(result);
+                            } catch (e) {
+                                // اگر پاسخ نمی‌تواند به JSON تبدیل شود، احتمالاً یک Redirect است
+                                window.location.href = '@Url.Action("Index", "Service")';
+                                return;
+                            }
+                        }
+
+                        // بررسی وجود خاصیت success در پاسخ
+                        if (result.hasOwnProperty('success')) {
+                            if (result.success) {
+                                $('#deleteConfirmationModal').modal('hide');
+                                // نمایش پیام موفقیت‌آمیز
+                                var successMessage = $('<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+                                    '<strong>موفقیت!</strong> ' + (result.message || 'خدمات با موفقیت حذف شد.') +
+                                    '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+                                    '</div>');
+                                $('.container-fluid').prepend(successMessage);
+
+                                // ریدایرکت به صفحه لیست پس از 1.5 ثانیه
+                                setTimeout(function() {
+                                    window.location.href = '@Url.Action("Index", "Service")';
+                                }, 1500);
+                            } else {
+                                var errorMessage = result.message || 'خطا در حذف خدمات.';
+                                $('#deleteWarningMessage').text(errorMessage).show();
+                                $('#confirmDelete').prop('disabled', false)
+                                    .html('<i class="fas fa-trash me-1"></i> حذف');
+                            }
+                        } else {
+                            // اگر پاسخ شامل خاصیت success نباشد، احتمالاً یک Redirect است
+                            window.location.href = '@Url.Action("Index", "Service")';
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("خطا در حذف خدمات:", status, error);
+                        console.error("پاسخ سرور:", xhr.responseText);
+
+                        var errorMessage = 'خطا در ارتباط با سرور. لطفاً دوباره تلاش کنید.';
+
+                        // سعی در استخراج پیام خطا از پاسخ سرور
+                        try {
+                            var response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMessage = response.message;
+                            }
+                        } catch (e) {
+                            // بررسی آیا پاسخ شامل پیام خطای HTML است
+                            if (xhr.responseText && xhr.responseText.indexOf('<!DOCTYPE html>') !== -1) {
+                                errorMessage = 'خطا در سرور. لطفاً بعداً مجدداً تلاش کنید.';
+                            }
+                        }
+
+                        $('#deleteWarningMessage').text(errorMessage).show();
+                        $('#confirmDelete').prop('disabled', false)
+                            .html('<i class="fas fa-trash me-1"></i> حذف');
+                    }
+                });
+            });
+        });
+    </script>
+}

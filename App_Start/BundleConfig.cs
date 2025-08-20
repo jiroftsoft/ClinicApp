@@ -1,0 +1,69 @@
+﻿using System.Web;
+using System.Web.Optimization;
+
+namespace ClinicApp
+{
+    public class BundleConfig
+    {
+        public static void RegisterBundles(BundleCollection bundles)
+        {
+            bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
+                        "~/Scripts/jquery-{version}.js"));
+
+            bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
+                        "~/Scripts/jquery.validate*"));
+
+            // Use the development version of Modernizr to develop with and learn from. Then, when you're
+            // ready for production, use the build tool at https://modernizr.com to pick only the tests you need.
+            bundles.Add(new ScriptBundle("~/bundles/modernizr").Include(
+                        "~/Scripts/modernizr-*"));
+
+            bundles.Add(new Bundle("~/bundles/bootstrap").Include(
+                      "~/Scripts/bootstrap.js",
+                      "~/Scripts/aos.js",
+                      "~/Scripts/jquery-ui.min.js",
+                      "~/Scripts/toastr.min.js",
+                      "~/Scripts/persian-date.min.js",
+                      "~/Scripts/persian-datepicker.min.js",
+                      "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
+
+                      ));
+            // --- CSS Bundle ---
+            bundles.Add(new StyleBundle("~/Content/plugins/css").Include(
+                "~/Content/plugins/datatables/css/dataTables.bootstrap4.min.css",
+                "~/Content/plugins/datatables/css/responsive.bootstrap4.min.css",
+                "~/Content/plugins/select2/css/select2.min.css",
+                "~/Content/plugins/SweetAlert2/sweetalert2.min.css"
+            ));
+
+            // --- JS Bundle ---
+            bundles.Add(new ScriptBundle("~/bundles/plugins").Include(
+                "~/Content/plugins/datatables/js/jquery.dataTables.min.js",
+                "~/Content/plugins/datatables/js/dataTables.bootstrap4.min.js",
+                "~/Content/plugins/datatables/js/dataTables.responsive.min.js",
+                "~/Content/plugins/datatables/js/responsive.bootstrap4.min.js",
+                "~/Content/plugins/select2/js/select2.full.min.js",
+                "~/Content/plugins/select2/js/fa.min.js",
+                "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
+            ));
+
+            // Use CDN Bootstrap in layout; avoid duplicate local Bootstrap CSS here
+            bundles.Add(new StyleBundle("~/Content/css").Include(
+                       "~/Content/bootstrap.css",
+                      "~/Content/bootstrap-rtl.css",
+                      "~/Content/Site.css",
+                      "~/Content/aos.css",
+                      "~/Content/toastr.min.css",
+                      "~/Content/persian-datepicker.min.css",
+                      "~/Content/plugins/SweetAlert2/sweetalert2.min.css"
+                      ));
+            // Add a new bundle for Toastr styles
+            bundles.Add(new StyleBundle("~/Content/toastr").Include(
+                "~/Content/toastr.min.css"));
+
+            // Add a new bundle for Toastr script
+            bundles.Add(new ScriptBundle("~/bundles/toastr").Include(
+                "~/Scripts/toastr.min.js"));
+        }
+    }
+}

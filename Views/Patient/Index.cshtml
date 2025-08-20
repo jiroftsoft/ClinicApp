@@ -1,0 +1,169 @@
+﻿@{
+    ViewBag.Title = "مدیریت بیماران";
+}
+
+<div class="card shadow-sm">
+    <div class="card-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">@ViewBag.Title</h4>
+            @Html.ActionLink("ثبت بیمار جدید", "Create", null, new { @class = "btn btn-success" })
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <div class="input-group">
+                    <input type="text" id="search-input" class="form-control" placeholder="جستجو بر اساس نام، کد ملی..." />
+                    <div class="input-group-append">
+                        <button id="search-button" class="btn btn-primary" type="button">
+                            <i class="fa fa-search"></i> جستجو
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="patient-list-container">
+            <div id="loading-spinner" class="text-center p-5">
+                <i class="fa fa-spinner fa-spin fa-3x"></i>
+                <p class="mt-2">در حال بارگذاری اطلاعات...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="delete-confirm-modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تایید حذف</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف بیمار <strong id="patient-name-to-delete"></strong> اطمینان دارید؟</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                <button type="button" id="confirm-delete-button" class="btn btn-danger">حذف کن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+@section Scripts {
+    @* اطمینان از وجود AntiForgeryToken برای ارسال با AJAX *@
+    @Html.AntiForgeryToken()
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var patientToDeleteId = null;
+
+            // ۱. بارگذاری اولیه لیست
+            loadPatientList(1, '');
+
+            // ۲. مدیریت جستجو
+            $('#search-button').on('click', function() {
+                var searchTerm = $('#search-input').val();
+                loadPatientList(1, searchTerm); // همیشه از صفحه ۱ شروع کن
+            });
+
+            $('#search-input').on('keypress', function(e) {
+                if (e.which === 13) { // کلید Enter
+                    $('#search-button').click();
+                }
+            });
+
+            // ۳. مدیریت صفحه‌بندی (با event delegation)
+            $('#patient-list-container').on('click', '.page-link', function (e) {
+                e.preventDefault();
+                var page = $(this).data('page');
+                var searchTerm = $('#search-input').val(); // حفظ مقدار جستجو
+                if(page) loadPatientList(page, searchTerm);
+            });
+
+            // ۴. مدیریت باز کردن مودال حذف
+            $('#patient-list-container').on('click', '.delete-btn', function () {
+                patientToDeleteId = $(this).data('id');
+                var patientName = $(this).data('name');
+                $('#patient-name-to-delete').text(patientName);
+                $('#delete-confirm-modal').modal('show');
+            });
+
+            // ۵. مدیریت تایید نهایی حذف
+            $('#confirm-delete-button').on('click', function() {
+                if (patientToDeleteId) {
+                    deletePatient(patientToDeleteId);
+                }
+            });
+        });
+
+        // تابع اصلی بارگذاری لیست با AJAX
+        function loadPatientList(pageNumber, searchTerm) {
+            var container = $('#patient-list-container');
+            var spinner = $('#loading-spinner');
+            var token = $('input[name="__RequestVerificationToken"]').val(); // دریافت توکن امنیتی
+
+            $.ajax({
+                url: '@Url.Action("LoadPatients", "Patient")',
+                type: 'POST', // تغییر به POST برای امنیت بیشتر و ارسال توکن
+                data: {
+                    __RequestVerificationToken: token,
+                    page: pageNumber,
+                    searchTerm: searchTerm
+                },
+                beforeSend: function () {
+                    container.html(spinner.prop('outerHTML'));
+                    spinner.show();
+                },
+                success: function (result) {
+                    container.html(result);
+                },
+                error: function (xhr, status, error) {
+                    container.html('<div class="alert alert-danger">خطا در بارگذاری اطلاعات. لطفاً دوباره تلاش کنید.</div>');
+                    console.error("AJAX Error: ", status, error);
+                }
+            });
+        }
+
+        // تابع حذف بیمار با AJAX
+  // This function is in your Index.cshtml
+function deletePatient(id) {
+    var token = $('input[name="__RequestVerificationToken"]').val();
+    var deleteButton = $('#confirm-delete-button'); // Get the confirm button
+
+    $.ajax({
+        url: '@Url.Action("Delete", "Patient")',
+        type: 'POST',
+        data: {
+            __RequestVerificationToken: token,
+            id: id
+        },
+        beforeSend: function() {
+            // Disable the button and show a spinner to prevent double-clicks
+            deleteButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> در حال حذف...');
+        },
+        success: function (response) {
+            $('#delete-confirm-modal').modal('hide');
+            if (response.success) {
+                toastr.success("بیمار با موفقیت حذف شد.");
+                // Refresh the list; the soft-deleted patient will now be filtered out.
+                loadPatientList(1, $('#search-input').val());
+            } else {
+                toastr.error(response.message || "An error occurred while deleting the patient.");
+            }
+        },
+        error: function () {
+            $('#delete-confirm-modal').modal('hide');
+            toastr.error("A communication error occurred. Please try again.");
+        },
+        complete: function() {
+            // Re-enable the button and restore its text
+            deleteButton.prop('disabled', false).html('حذف کن');
+        }
+    });
+}
+    </script>
+}

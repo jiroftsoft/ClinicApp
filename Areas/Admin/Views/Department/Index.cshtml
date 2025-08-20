@@ -1,0 +1,461 @@
+﻿@model ClinicApp.ViewModels.DepartmentIndexPageViewModel
+@{
+    ViewBag.Title = "مدیریت دپارتمان‌ها - بخش ادمین";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
+<style type="text/css">
+    /* استایل‌های حیاتی برای اولین رندر - حداکثر 1KB */
+    .departments-container {
+        max-width: 100%;
+        margin: 0;
+        padding: 0
+    }
+
+    .filters-bar {
+        background: #f8f9fa;
+        padding: 12px;
+        border-radius: 4px;
+        margin-bottom: 15px
+    }
+
+    .department-card {
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        transition: all 0.15s ease;
+        background: #fff;
+        position: relative;
+        overflow: hidden
+    }
+
+        .department-card:hover {
+            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            transform: translateY(-2px);
+            border-color: #b8daff
+        }
+
+    .department-header {
+        padding: 10px 15px;
+        background: #f1f8ff;
+        border-bottom: 1px solid #d6e9f8;
+        font-weight: 500
+    }
+
+    .department-content {
+        padding: 12px 15px
+    }
+
+    .department-clinic {
+        background: #e9f7fe;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.85em;
+        display: inline-block;
+        margin-top: 4px
+    }
+
+    .department-stats {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid #f1f1f1;
+        font-size: 0.85rem;
+        color: #6c757d
+    }
+
+    .department-stats-value {
+        font-weight: 600;
+        color: #007bff;
+        font-size: 1rem
+    }
+
+    .department-actions {
+        padding: 8px 15px;
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        text-align: left
+    }
+
+    .pagination-container {
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 0.9rem
+    }
+
+    .clinic-filter {
+        margin-bottom: 8px
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        font-weight: 500
+    }
+
+    .status-active {
+        background: #d4edda;
+        color: #155724
+    }
+
+    .status-inactive {
+        background: #f8d7da;
+        color: #721c24
+    }
+
+    .loading-spinner {
+        width: 24px;
+        height: 24px;
+        border: 3px solid #e9ecef;
+        border-top: 3px solid #007bff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        display: inline-block;
+        margin-right: 8px
+    }
+
+    @@keyframes spin {
+        0% {
+            transform: rotate(0deg)
+        }
+
+        100% {
+            transform: rotate(360deg)
+        }
+    }
+
+    /* بهینه‌سازی برای دستگاه‌های پزشکی */
+    @@media (max-width: 768px) {
+        .department-stats {
+            flex-direction: column
+        }
+
+        .department-actions {
+            text-align: center
+        }
+
+        .action-btn {
+            width: 100%;
+            margin: 4px 0
+        }
+    }
+
+    /* بهینه‌سازی برای عملکرد بالا */
+    .department-card, .department-content {
+        will-change: transform, box-shadow
+    }
+
+        .department-card:hover {
+            will-change: auto
+        }
+</style>
+
+<div class="departments-container">
+    <div class="page-header">
+        <h1 class="page-title">مدیریت دپارتمان‌ها</h1>
+        <p class="page-description">لیست دپارتمان‌های فعال در سیستم کلینیک شفا</p>
+    </div>
+
+    <div class="filters-bar">
+        <div class="row g-2">
+            <div class="col-md-3 clinic-filter">
+                <select id="clinicFilter" class="form-control form-control-sm">
+                    <option value="">همه کلینیک‌ها</option>
+                    @foreach (var clinic in Model.Clinics)
+                    {
+                        <option value="@clinic.ClinicId" @(Model.ClinicId == clinic.ClinicId ? "selected" : "")>@clinic.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-6">
+                <div class="input-group input-group-sm">
+                    <input type="text" id="searchTerm" class="form-control form-control-sm"
+                           placeholder="جستجو در نام یا نام کلینیک..."
+                           value="@Model.SearchTerm"
+                           aria-label="جستجوی دپارتمان‌ها">
+                    <button class="btn btn-sm btn-primary" id="searchButton" type="button">
+                        <i class="fa fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3 text-end">
+                <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Create" })"
+                   class="btn btn-sm btn-success" id="createDepartmentBtn">
+                    <i class="fa fa-plus"></i> افزودن
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- نمایش پیام‌های وضعیت -->
+    <div id="statusMessages">
+        @if (TempData["SuccessMessage"] != null)
+        {
+            <div class="alert alert-success alert-dismissible fade show small" role="alert">
+                @TempData["SuccessMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+            </div>
+        }
+
+        @if (TempData["ErrorMessage"] != null)
+        {
+            <div class="alert alert-danger alert-dismissible fade show small" role="alert">
+                @TempData["ErrorMessage"]
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
+            </div>
+        }
+    </div>
+
+    <!-- لودر پیشرفته برای عملکرد بهتر -->
+    <div id="loadingIndicator" class="text-center p-3" style="display: none;">
+        <span class="loading-spinner"></span> در حال بارگذاری اطلاعات...
+    </div>
+
+    <!-- محتوای اصلی -->
+    <div id="departmentsContent">
+        @if (Model.Departments?.Items?.Any() == true)
+        {
+            foreach (var department in Model.Departments.Items)
+            {
+                <div class="department-card" data-department-id="@department.DepartmentId">
+                    <div class="department-header">
+                        @department.Name
+                    </div>
+                    <div class="department-content">
+                        <div class="department-clinic">
+                            <i class="fa fa-hospital"></i> @department.ClinicName
+                        </div>
+                        <div class="department-stats">
+                            <div class="department-stats-item">
+                                <span>پزشکان</span>
+                                <span class="department-stats-value">@department.DoctorCount</span>
+                            </div>
+                            <div class="department-stats-item">
+                                <span>خدمات</span>
+                                <span class="department-stats-value">@department.ServiceCount</span>
+                            </div>
+                            <div class="department-stats-item">
+                                <span>وضعیت</span>
+                                <span class="status-badge @(department.IsActive ? "status-active" : "status-inactive")">
+                                    @(department.IsActive ? "فعال" : "غیرفعال")
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="department-actions">
+                        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Details", id = department.DepartmentId })"
+                           class="btn btn-sm btn-outline-primary action-btn">
+                            <i class="fa fa-info-circle"></i> جزئیات
+                        </a>
+                        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Edit", id = department.DepartmentId })"
+                           class="btn btn-sm btn-outline-warning action-btn">
+                            <i class="fa fa-edit"></i> ویرایش
+                        </a>
+                        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Delete", id = department.DepartmentId })"
+                           class="btn btn-sm btn-outline-danger action-btn">
+                            <i class="fa fa-trash"></i> حذف
+                        </a>
+                    </div>
+                </div>
+            }
+
+            <!-- صفحه‌بندی -->
+           if (Model.Departments.TotalItems > Model.PageSize)
+            {
+                <div class="pagination-container">
+                    <div class="pagination-info">
+                        نمایش @(Model.PageNumber * Model.PageSize - Model.PageSize + 1) تا
+                        @(Math.Min(Model.PageNumber * Model.PageSize, Model.Departments.TotalItems)) از
+                        @Model.Departments.TotalItems مورد
+                    </div>
+                    <ul class="pagination pagination-sm">
+                        @for (int i = 1; i <= Math.Ceiling((double)Model.Departments.TotalItems / Model.PageSize); i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <a class="page-link" href="#" data-page="@i">@i</a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="alert alert-info">
+                <i class="fa fa-info-circle"></i> هیچ دپارتمانی یافت نشد.
+            </div>
+        }
+    </div>
+</div>
+
+<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
+<script type="text/javascript">
+    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
+    (function() {
+        'use strict';
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchTermInput = document.getElementById('searchTerm');
+            const searchButton = document.getElementById('searchButton');
+            const clinicFilter = document.getElementById('clinicFilter');
+            const departmentsContent = document.getElementById('departmentsContent');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const statusMessages = document.getElementById('statusMessages');
+
+            // تنظیمات اولیه
+            const SEARCH_DEBOUNCE = 300; // 300ms
+            let searchTimeout;
+            let currentPage = @Model.PageNumber;
+            let currentPageSize = @Model.PageSize;
+            let currentSearchTerm = '@(Model.SearchTerm ?? "")';
+            let currentClinicId = @(Model.ClinicId.HasValue ? Model.ClinicId.ToString() : "null");
+
+            // تابع اصلی جستجو
+            function performSearch(page = 1) {
+                const searchTerm = searchTermInput ? searchTermInput.value.trim() : '';
+                const clinicId = clinicFilter ? clinicFilter.value : '';
+
+                // به‌روزرسانی وضعیت
+                currentSearchTerm = searchTerm;
+                currentClinicId = clinicId;
+                currentPage = page;
+
+                // نمایش لودر
+                if (loadingIndicator) {
+                    loadingIndicator.style.display = 'block';
+                }
+
+                // پاک کردن تایمر قبلی
+                clearTimeout(searchTimeout);
+
+                // ایجاد درخواست با تأخیر
+                searchTimeout = setTimeout(function() {
+                    // ایجاد URL برای درخواست
+                    let url = '@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Index" })';
+                    const params = [];
+
+                    if (clinicId) params.push(`clinicId=${encodeURIComponent(clinicId)}`);
+                    if (searchTerm) params.push(`searchTerm=${encodeURIComponent(searchTerm)}`);
+                    params.push(`page=${page}`);
+                    params.push(`pageSize=${currentPageSize}`);
+                    params.push(`_=${Date.now()}`);
+
+                    url += '?' + params.join('&');
+
+                    // ایجاد درخواست
+                    fetch(url, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest',
+                            'Accept': 'text/html'
+                        }
+                    })
+                    .then(response => {
+                        if (!response.ok) throw new Error('Network response was not ok');
+                        return response.text();
+                    })
+                    .then(html => {
+                        // جایگزینی محتوا
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(html, 'text/html');
+                        const newContent = doc.getElementById('departmentsContent');
+
+                        if (newContent) {
+                            departmentsContent.innerHTML = newContent.innerHTML;
+                            setupPagination();
+                            setupStatusMessages();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Search error:', error);
+                        if (departmentsContent) {
+                            departmentsContent.innerHTML =
+                                '<div class="alert alert-danger small">خطا در بارگذاری اطلاعات. لطفاً مجدداً تلاش کنید.</div>';
+                        }
+                    })
+                    .finally(() => {
+                        if (loadingIndicator) {
+                            loadingIndicator.style.display = 'none';
+                        }
+                    });
+                }, SEARCH_DEBOUNCE);
+            }
+
+            // تنظیم صفحه‌بندی
+            function setupPagination() {
+                document.querySelectorAll('.pagination .page-link').forEach(link => {
+                    link.addEventListener('click', function(e) {
+                        e.preventDefault();
+                        const page = this.getAttribute('data-page');
+                        if (page) performSearch(parseInt(page));
+                    });
+                });
+            }
+
+            // تنظیم پیام‌های وضعیت
+            function setupStatusMessages() {
+                document.querySelectorAll('.alert .btn-close').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        this.closest('.alert').remove();
+                    });
+                });
+            }
+
+            // تنظیم رویدادها
+            if (searchButton) {
+                searchButton.addEventListener('click', () => performSearch());
+            }
+
+            if (searchTermInput) {
+                searchTermInput.addEventListener('keyup', function(e) {
+                    if (e.key === 'Enter') performSearch();
+                });
+            }
+
+            if (clinicFilter) {
+                clinicFilter.addEventListener('change', () => performSearch());
+            }
+
+            // کلیدهای میانبر پزشکی
+            document.addEventListener('keydown', function(e) {
+                // Alt + F برای فوکوس روی جستجو
+                if (e.altKey && e.key === 'f' && searchTermInput) {
+                    e.preventDefault();
+                    searchTermInput.focus();
+                }
+
+                // Alt + N برای افزودن دپارتمان جدید
+                if (e.altKey && e.key === 'n') {
+                    e.preventDefault();
+                    window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Create" })';
+                }
+
+                // Alt + C برای فوکوس روی فیلتر کلینیک
+                if (e.altKey && e.key === 'c' && clinicFilter) {
+                    e.preventDefault();
+                    clinicFilter.focus();
+                }
+            });
+
+            // راهنمای سریع برای کاربران جدید
+            if (!sessionStorage.getItem('departmentsListHelpShown')) {
+                setTimeout(() => {
+                    alert('راهنمای لیست دپارتمان‌ها:\n' +
+                          '- Alt+F: فوکوس روی فیلد جستجو\n' +
+                          '- Alt+N: افزودن دپارتمان جدید\n' +
+                          '- Alt+C: فوکوس روی فیلتر کلینیک');
+                    sessionStorage.setItem('departmentsListHelpShown', 'true');
+                }, 1500);
+            }
+
+            // راه‌اندازی اولیه
+            setupPagination();
+            setupStatusMessages();
+        });
+    })();
+</script>

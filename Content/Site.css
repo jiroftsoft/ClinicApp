@@ -1,0 +1,39 @@
+﻿/* Set padding to keep content from hitting the edges */
+.body-content {
+    margin-top: 15px;
+    padding-left: 15px;
+    padding-right: 15px;
+}
+
+/* Override the default bootstrap behavior where horizontal description lists 
+   will truncate terms that are too long to fit in the left column 
+*/
+.dl-horizontal dt {
+    white-space: normal;
+}
+
+/* Set width on the form input elements since they're 100% wide by default */
+input,
+select,
+textarea {
+    max-width: 280px;
+}
+#toast-container {
+    font-family: 'Vazirmatn', Tahoma, sans-serif;
+    direction: rtl; /* راست‌چین */
+    text-align: right;
+}
+/* ========================================= */
+/* Fix for Dropdown Menu Link Color        */
+/* ========================================= */
+
+/* Sets a dark, readable color for the dropdown links in the navbar */
+.navbar .dropdown-menu .dropdown-item {
+    color: #212529; /* Bootstrap's default dark text color */
+}
+
+    /* Ensures the text color is light and readable when hovering */
+    .navbar .dropdown-menu .dropdown-item:hover,
+    .navbar .dropdown-menu .dropdown-item:focus {
+        color: #ffffff;
+    }

@@ -1,0 +1,537 @@
+﻿@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.ServiceReportViewModel
+@{
+    ViewBag.Title = "گزارش استفاده از خدمات: " + Model.ServiceTitle;
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- بسته‌های CSS و JavaScript مورد نیاز -->
+@section Styles {
+
+    <style>
+        /* استایل‌های اختصاصی برای گزارش خدمات پزشکی */
+        .report-header {
+            background-color: #1a6dcc;
+            color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-info {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-left: 3px solid #1a6dcc;
+        }
+
+            .report-info h6 {
+                color: #1a6dcc;
+                margin-top: 0;
+                display: flex;
+                align-items: center;
+            }
+
+                .report-info h6 i {
+                    margin-left: 8px;
+                }
+
+            .report-info .info-row {
+                display: flex;
+                justify-content: space-between;
+                padding: 8px 0;
+                border-bottom: 1px dashed #eee;
+            }
+
+                .report-info .info-row:last-child {
+                    border-bottom: none;
+                }
+
+            .report-info .info-label {
+                font-weight: 500;
+                color: #495057;
+            }
+
+            .report-info .info-value {
+                font-weight: 500;
+            }
+
+        .stat-card {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: #1a6dcc;
+            margin: 5px 0;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .report-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-report {
+            border-radius: 20px;
+            padding: 6px 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .btn-report i {
+                margin-left: 5px;
+            }
+
+            .btn-report:hover {
+                transform: translateY(-2px);
+            }
+
+        .btn-print {
+            background-color: #e3f2fd;
+            color: #1a6dcc;
+        }
+
+        .btn-excel {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .date-filter {
+            background-color: #f8f9fa;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+            .date-filter .form-control {
+                border-radius: 20px;
+                padding: 6px 15px;
+            }
+
+            .date-filter .btn {
+                border-radius: 20px;
+                padding: 6px 15px;
+            }
+
+        /* استایل‌های موبایل */
+        @@media (max-width: 768px) {
+            .report-info .info-row {
+                flex-direction: column;
+            }
+
+            .report-info .info-label {
+                margin-bottom: 4px;
+            }
+
+            .report-actions {
+                flex-direction: column;
+            }
+
+            .btn-report {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .stat-value {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* استایل‌های مربوط به محیط پزشکی */
+        .medical-highlight {
+            background-color: #e3f2fd;
+            border-left: 3px solid #1a6dcc;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 15px;
+        }
+
+            .medical-highlight h5 {
+                margin-top: 0;
+                color: #1a6dcc;
+            }
+
+            .medical-highlight ul {
+                padding-right: 20px;
+            }
+
+            .medical-highlight li {
+                margin-bottom: 8px;
+            }
+
+        .table-report {
+            border-collapse: separate;
+            border-spacing: 0;
+            width: 100%;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+            .table-report th {
+                background-color: #1a6dcc;
+                color: white;
+                padding: 12px 15px;
+                text-align: right;
+            }
+
+            .table-report td {
+                padding: 10px 15px;
+                border-bottom: 1px solid #eee;
+            }
+
+            .table-report tr:last-child td {
+                border-bottom: none;
+            }
+
+            .table-report tr:hover {
+                background-color: #f8f9fa;
+            }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- هدر صفحه -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-chart-line text-white me-2"></i>
+                    گزارش استفاده از خدمات: @Model.ServiceTitle
+                </h1>
+                <p class="text-muted mb-0">گزارش آمار استفاده از خدمات پزشکی در کلینیک شفا</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <a href="@Url.Action("Index", "Service")" class="btn btn-light">
+                    <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
+                </a>
+            </div>
+        </div>
+
+        <!-- فیلترهای گزارش -->
+        <div class="date-filter">
+            <div class="row align-items-center">
+                <div class="col-md-2">
+                    <strong>بازه زمانی:</strong>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" id="startDate" class="form-control"
+                           value="@Model.StartDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-1 text-center">
+                    <strong>تا</strong>
+                </div>
+                <div class="col-md-3">
+                    <input type="date" id="endDate" class="form-control"
+                           value="@Model.EndDate.ToString("yyyy-MM-dd")">
+                </div>
+                <div class="col-md-3 text-md-end">
+                    <button id="applyFilter" class="btn btn-primary btn-report">
+                        <i class="fas fa-filter"></i> اعمال فیلتر
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات کلی گزارش -->
+        <div class="report-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h2 class="mb-0">@Model.ServiceTitle</h2>
+                    <p class="mb-0">کد خدمات: <strong>@Model.ServiceCode</strong> | دسته‌بندی: <strong>@Model.ServiceCategoryTitle</strong></p>
+                </div>
+                <div class="col-md-4 text-md-end">
+                    <span class="badge bg-light text-dark fs-6">
+                        بازه زمانی: @Model.StartDateShamsi تا @Model.EndDateShamsi
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-8">
+                <!-- آمار کلی -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-label">تعداد استفاده‌ها</div>
+                            <div class="stat-value">@Model.TotalUsage</div>
+                            <div class="text-muted small">در بازه انتخاب شده</div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="stat-card">
+                            <div class="stat-label">درآمد کل</div>
+                            <div class="stat-value">@Model.TotalRevenue.ToString("N0") تومان</div>
+                            <div class="text-muted small">در بازه انتخاب شده</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- نمودارهای آماری -->
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-chart-bar text-primary me-2"></i>
+                            آمار روزانه استفاده از خدمات
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="dailyUsageChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-money-bill-wave text-success me-2"></i>
+                            آمار روزانه درآمد
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="dailyRevenueChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- جدول آمار روزانه -->
+                <div class="card">
+                    <div class="card-header bg-white">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-table me-2"></i>
+                            جزئیات روزانه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table-report">
+                                <thead>
+                                    <tr>
+                                        <th>تاریخ (شمسی)</th>
+                                        <th>تعداد استفاده</th>
+                                        <th>درآمد (تومان)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var date in Model.DailyUsage.Keys)
+                                    {
+                                        <tr>
+                                            <td>@date</td>
+                                            <td>@Model.DailyUsage[date]</td>
+                                            <td>@Model.DailyRevenue[date].ToString("N0")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <!-- اطلاعات خدمات -->
+                <div class="report-info">
+                    <h6><i class="fas fa-info-circle"></i> اطلاعات خدمات</h6>
+                    <div class="info-row">
+                        <span class="info-label">عنوان خدمات:</span>
+                        <span class="info-value">@Model.ServiceTitle</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">کد خدمات:</span>
+                        <span class="info-value">@Model.ServiceCode</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">دسته‌بندی:</span>
+                        <span class="info-value">@Model.ServiceCategoryTitle</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">بازه زمانی گزارش:</span>
+                        <span class="info-value">@Model.StartDateShamsi تا @Model.EndDateShamsi</span>
+                    </div>
+                </div>
+
+                <!-- اقدامات گزارش -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-cogs me-2"></i>
+                            اقدامات گزارش
+                        </h5>
+                        <div class="report-actions">
+                            <a href="#" id="printReport" class="btn btn-report btn-print w-100">
+                                <i class="fas fa-print"></i> چاپ گزارش
+                            </a>
+                            <a href="@Url.Action("ExportReport", "Service", new { id = Model.ServiceId, startDate = Model.StartDate, endDate = Model.EndDate })"
+                               class="btn btn-report btn-excel w-100">
+                                <i class="fas fa-file-excel"></i> خروجی اکسل
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- راهنمای استفاده -->
+                <div class="medical-highlight">
+                    <h5><i class="fas fa-lightbulb"></i> راهنمای استفاده از گزارش</h5>
+                    <ul>
+                        <li>برای تغییر بازه زمانی گزارش از فیلدهای تاریخ استفاده کنید</li>
+                        <li>برای چاپ گزارش از دکمه چاپ استفاده کنید</li>
+                        <li>برای خروجی گرفتن از فرمت اکسل از دکمه خروجی اکسل استفاده کنید</li>
+                        <li>برای بررسی دقیق‌تر آمار روزانه، به جدول جزئیات مراجعه کنید</li>
+                    </ul>
+                </div>
+
+                <!-- اطلاعات سیستم -->
+                <div class="report-info">
+                    <h6><i class="fas fa-history"></i> اطلاعات سیستم</h6>
+                    <div class="info-row">
+                        <span class="info-label">تاریخ ایجاد گزارش:</span>
+                        <span class="info-value">@DateTime.Now.ToPersianDateTime()</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">ایجاد کننده:</span>
+                        <span class="info-value">@ViewBag.CurrentUserName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">تعداد روزهای گزارش:</span>
+                        <span class="info-value">@((Model.EndDate - Model.StartDate).Days + 1) روز</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/chartjs/Chart.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // تبدیل تاریخ به فرمت شمسی برای نمایش در UI
+            function convertToPersianDate(gregorianDate) {
+                const date = new Date(gregorianDate);
+                return date.toLocaleDateString('fa-IR', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit'
+                });
+            }
+
+            $('#applyFilter').click(function () {
+    var startDate = $('#startDate').val();
+    var endDate = $('#endDate').val();
+    var serviceId = @Model.ServiceId;
+
+    if (!startDate || !endDate) {
+        alert('لطفاً تاریخ‌ها را به درستی وارد کنید.');
+        return;
+    }
+
+    // ساخت URL با Url.Action و جایگزینی مقادیر جاوااسکریپتی
+    var url = '@Url.Action("Report", "Service", new { area = "Admin", id = "__id__", startDateShamsi = "__start__", endDateShamsi = "__end__" })';
+
+    url = url.replace("__id__", serviceId)
+             .replace("__start__", encodeURIComponent(startDate))
+             .replace("__end__", encodeURIComponent(endDate));
+
+    window.location.href = url;
+});
+
+
+            // چاپ گزارش
+            $('#printReport').click(function (e) {
+                e.preventDefault();
+                window.print();
+            });
+
+            // داده‌های نمودار استفاده روزانه
+            var dailyUsageData = {
+                labels: @Html.Raw(Json.Encode(Model.DailyUsage.Keys)),
+                datasets: [{
+                    label: 'تعداد استفاده‌ها',
+                    data: @Html.Raw(Json.Encode(Model.DailyUsage.Values)),
+                    backgroundColor: 'rgba(26, 109, 204, 0.5)',
+                    borderColor: 'rgba(26, 109, 204, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            // داده‌های نمودار درآمد روزانه
+            var dailyRevenueData = {
+                labels: @Html.Raw(Json.Encode(Model.DailyRevenue.Keys)),
+                datasets: [{
+                    label: 'درآمد (تومان)',
+                    data: @Html.Raw(Json.Encode(Model.DailyRevenue.Values)),
+                    backgroundColor: 'rgba(46, 125, 50, 0.5)',
+                    borderColor: 'rgba(46, 125, 50, 1)',
+                    borderWidth: 1
+                }]
+            };
+
+            // گزینه‌های نمودار
+            var chartOptions = {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            precision: 0
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return context.dataset.label + ': ' + context.parsed.y;
+                            }
+                        }
+                    }
+                }
+            };
+
+            // رسم نمودار استفاده روزانه
+            var dailyUsageCtx = document.getElementById('dailyUsageChart').getContext('2d');
+            new Chart(dailyUsageCtx, {
+                type: 'bar',
+                data: dailyUsageData,
+                options: chartOptions
+            });
+
+            // رسم نمودار درآمد روزانه
+            var dailyRevenueCtx = document.getElementById('dailyRevenueChart').getContext('2d');
+            new Chart(dailyRevenueCtx, {
+                type: 'line',
+                data: dailyRevenueData,
+                options: chartOptions
+            });
+        });
+    </script>
+}
