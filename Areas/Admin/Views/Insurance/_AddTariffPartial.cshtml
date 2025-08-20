@@ -1,215 +1,223 @@
-﻿@{
-    ViewBag.Title = "افزودن تعرفه جدید";
-    Layout = null;
+﻿@using ClinicApp.Interfaces
+@model List<ClinicApp.Interfaces.ServiceSelectItem>
+@{
+    Layout = null; // این یک Partial View است
+    var categories = ViewBag.Categories as IEnumerable<ServiceCategorySelectItem> ?? new List<ServiceCategorySelectItem>();
 }
 
-<div id="tariffModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="tariffModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="tariffModalLabel">افزودن تعرفه جدید</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+<style>
+    .filter-options {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 0.75rem 1rem;
+        background-color: #f8fafc;
+        border-bottom: 1px solid #e0e6ed;
+    }
+
+    .filter-option label {
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+
+    .service-category-badge {
+        display: inline-block;
+        background-color: #e9f2fa;
+        color: #0d6ab2;
+        border-radius: 12px;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+</style>
+
+<div class="modal-body p-0">
+    <div class="card medical-services-card shadow-sm border-0">
+        <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+            <div>
+                <h6 class="card-title mb-0 d-flex align-items-center">
+                    <i class="fas fa-stethoscope me-2 text-primary"></i>
+                    انتخاب خدمت برای افزودن به تعرفه
+                </h6>
             </div>
-            @using (Html.BeginForm("AddTariff", "Insurance", FormMethod.Post, new { id = "addTariffForm" }))
-            {
-                @Html.AntiForgeryToken()
-                @Html.Hidden("InsuranceId", (int)ViewBag.InsuranceId)
-
-                <div class="modal-body">
-                    <div id="validationSummary" class="alert alert-danger d-none">
-                        <strong>خطاهای اعتبارسنجی:</strong>
-                        <ul id="validationErrors"></ul>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-12">
-                            @Html.Label("ServiceId", "نام خدمت", new { @class = "font-weight-bold" })
-                            <select id="ServiceId" name="ServiceId" class="form-control" required>
-                                <option value="">لطفاً خدمت مورد نظر را انتخاب کنید</option>
-                                @foreach (var service in ViewBag.AvailableServices as List<ClinicApp.ViewModels.ServiceSelectItem>)
-                                {
-                                    <option value="@service.ServiceId">@service.Title</option>
-                                }
-                            </select>
-                            <small class="form-text text-muted">خدمتی که برای آن می‌خواهید تعرفه تعریف کنید را انتخاب کنید</small>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            @Html.Label("TariffPrice", "قیمت تعرفه‌ای", new { @class = "font-weight-bold" })
-                            <div class="input-group">
-                                <input type="number" id="TariffPrice" name="TariffPrice" class="form-control"
-                                       placeholder="قیمت تعرفه‌ای (اختیاری)"
-                                       min="0" step="0.01" />
-                                <div class="input-group-append">
-                                    <span class="input-group-text">ریال</span>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">اگر خالی باشد، از قیمت پایه خدمت استفاده می‌شود</small>
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            @Html.Label("PatientShare", "سهم بیمار", new { @class = "font-weight-bold" })
-                            <div class="input-group">
-                                <input type="number" id="PatientShare" name="PatientShare" class="form-control"
-                                       type="number" min="0" max="100" step="0.01" required />
-                                <div class="input-group-append">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">سهم بیمار از هزینه خدمات</small>
-                        </div>
-
-                        <div class="form-group col-md-6">
-                            @Html.Label("InsurerShare", "سهم بیمه", new { @class = "font-weight-bold" })
-                            <div class="input-group">
-                                <input type="number" id="InsurerShare" name="InsurerShare" class="form-control"
-                                       type="number" min="0" max="100" step="0.01" required />
-                                <div class="input-group-append">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">سهم بیمه از هزینه خدمات</small>
-                        </div>
-                    </div>
-
-                    <div id="shareValidationWarning" class="alert alert-warning d-none mb-3">
-                        <i class="fas fa-exclamation-triangle"></i> مجموع سهم بیمار و بیمه باید برابر با 100% باشد.
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-12">
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle"></i> <strong>نکته:</strong> برای استفاده از سهم‌های پیش‌فرض بیمه، می‌توانید این فیلدها را خالی بگذارید.
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times"></i> انصراف
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="saveTariffBtn">
-                        <i class="fas fa-save"></i> افزودن تعرفه
-                    </button>
-                </div>
-            }
+            <div class="input-group" style="width: 250px;">
+                <input type="text" id="serviceSearch" class="form-control" placeholder="جستجو در خدمات...">
+                <span class="input-group-text bg-white"><i class="fas fa-search"></i></span>
+            </div>
+        </div>
+        <div class="filter-options">
+            <div class="filter-option">
+                <label for="categoryFilter" class="me-2">دسته‌بندی:</label>
+                <select id="categoryFilter" class="form-select form-select-sm">
+                    <option value="">همه</option>
+                    @foreach (var category in categories)
+                    {
+                        <option value="@category.ServiceCategoryId">@category.Title</option>
+                    }
+                </select>
+            </div>
+            <div class="filter-option">
+                <label for="sortFilter" class="me-2">مرتب‌سازی:</label>
+                <select id="sortFilter" class="form-select form-select-sm">
+                    <option value="usage-desc" selected>بیشترین استفاده</option>
+                    <option value="title-asc">نام (صعودی)</option>
+                    <option value="title-desc">نام (نزولی)</option>
+                    <option value="price-desc">گران‌ترین</option>
+                    <option value="price-asc">ارزان‌ترین</option>
+                </select>
+            </div>
+        </div>
+        <div class="card-body p-0 position-relative" style="min-height: 200px;">
+            <div id="servicesListContainer">
+            </div>
         </div>
     </div>
 </div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-secondary btn-medical" data-bs-dismiss="modal">
+        <i class="fas fa-times me-1"></i> بستن
+    </button>
+</div>
+
 
 <script>
-    // تابع برای تنظیم مدیریت فرم افزودن تعرفه
-    function setupCreateTariffForm() {
-        // محاسبه خودکار سهم‌ها
-        function calculateShares() {
-            const patientShare = parseFloat($('#PatientShare').val()) || 0;
-            const insurerShare = parseFloat($('#InsurerShare').val()) || 0;
-            const total = patientShare + insurerShare;
+    // IIFE برای جلوگیری از تداخل
+    (function ($) {
+        "use strict";
 
-            if (Math.abs(total - 100) > 0.01) {
-                $('#shareValidationWarning').removeClass('d-none');
-            } else {
-                $('#shareValidationWarning').addClass('d-none');
-            }
+        // وضعیت کامپوننت
+        const state = {
+            services: @Html.Raw(Json.Encode(Model)),
+            originalServices: @Html.Raw(Json.Encode(Model)),
+            searchTimeout: null
+        };
+
+        function formatPrice(price) {
+            if (isNaN(price) || price === null) return '-';
+            return price.toLocaleString('fa-IR') + ' ریال';
         }
 
-        // افزودن گوشدهای رویداد برای محاسبه خودکار
-        $('#PatientShare, #InsurerShare').on('input', calculateShares);
+        function highlight(text, term) {
+            if (!term) return text;
+            const regex = new RegExp(`(${term})`, 'gi');
+            return text.replace(regex, '<span class="search-highlight">$1</span>');
+        }
 
-        // ارسال فرم با AJAX
-        $('#addTariffForm').off('submit').on('submit', function (e) {
-            e.preventDefault();
-
-            // پاک کردن خطاها
-            $('#validationSummary').addClass('d-none');
-            $('#validationErrors').empty();
-
-            // نمایش نمایه بارگیری
-            const saveBtn = $('#saveTariffBtn');
-            const originalBtnHtml = saveBtn.html();
-            saveBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال افزودن...');
-            saveBtn.prop('disabled', true);
-
-            $.ajax({
-                url: this.action,
-                type: this.method,
-                $(this).serialize(),
-                success: function (response) {
-                    if (response.success) {
-                        $('#tariffModal').modal('hide');
-                        if (typeof showSuccessAlert === 'function') {
-                            showSuccessAlert(response.message);
-                        }
-                        // بارگیری مجدد لیست تعرفه‌ها
-                        if (typeof loadTariffs === 'function') {
-                            loadTariffs();
-                        }
-                    } else {
-                        // نمایش خطاها
-                        let errors = [];
-                        if (response.message) {
-                            errors.push(response.message);
-                        }
-
-                        // اگر خطاها به صورت آرایه باشند
-                        if (response.errors && Array.isArray(response.errors)) {
-                            errors = errors.concat(response.errors);
-                        }
-
-                        if (errors.length > 0) {
-                            const errorList = $('#validationErrors');
-                            errorList.empty();
-
-                            $.each(errors, function (index, error) {
-                                errorList.append(`<li>${error}</li>`);
-                            });
-
-                            $('#validationSummary').removeClass('d-none');
-                        }
-                    }
-                },
-                error: function (xhr) {
-                    let errorMessage = 'خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.';
-
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.status === 400) {
-                        errorMessage = 'داده‌های ارسالی نامعتبر هستند. لطفاً فرم را بررسی کنید.';
-                    } else if (xhr.status === 401) {
-                        errorMessage = 'شما مجوز لازم برای این عملیات را ندارید.';
-                    }
-
-                    if (typeof showErrorAlert === 'function') {
-                        showErrorAlert(errorMessage);
-                    }
-                },
-                complete: function () {
-                    // بازگرداندن وضعیت دکمه
-                    saveBtn.html(originalBtnHtml);
-                    saveBtn.prop('disabled', false);
+        // تابع برای مرتب‌سازی آرایه خدمات
+        function sortServices(services, sortType) {
+            return services.sort((a, b) => {
+                switch (sortType) {
+                    case 'title-asc': return a.Title.localeCompare(b.Title, 'fa');
+                    case 'title-desc': return b.Title.localeCompare(a.Title, 'fa');
+                    case 'price-asc': return (a.Price || 0) - (b.Price || 0);
+                    case 'price-desc': return (b.Price || 0) - (a.Price || 0);
+                    case 'usage-desc':
+                    default:
+                        return (b.UsageCount || 0) - (a.UsageCount || 0);
                 }
             });
+        }
+
+        // تابع اصلی برای فیلتر و رندر کردن لیست
+        function applyFiltersAndRender() {
+            const searchTerm = $('#serviceSearch').val().trim().toLowerCase();
+            const categoryId = $('#categoryFilter').val();
+            const sortType = $('#sortFilter').val();
+
+            let filtered = state.originalServices;
+
+            // اعمال فیلتر جستجو
+            if (searchTerm) {
+                filtered = filtered.filter(s =>
+                    s.Title.toLowerCase().includes(searchTerm) ||
+                    s.ServiceCode.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // اعمال فیلتر دسته‌بندی
+            if (categoryId) {
+                filtered = filtered.filter(s => s.ServiceCategoryId == categoryId);
+            }
+
+            // اعمال مرتب‌سازی
+            state.services = sortServices(filtered, sortType);
+            renderServicesList(searchTerm);
+        }
+
+        // تابع برای رندر کردن HTML لیست
+        function renderServicesList(searchTerm = '') {
+            const container = $('#servicesListContainer');
+            if (!state.services || state.services.length === 0) {
+                container.html(`
+                    <div class="empty-state">
+                        <i class="fas fa-stethoscope"></i>
+                        <h5>هیچ خدمتی یافت نشد</h5>
+                        <p>می‌توانید فیلترها را تغییر دهید.</p>
+                    </div>`);
+                return;
+            }
+
+            const tableRows = state.services.map(service => {
+                // بررسی اینکه آیا خدمت قبلا در جدول تعرفه‌ها وجود دارد یا نه
+                const isAdded = $(`#tariffsContainer tr[data-service-id='${service.Id}']`).length > 0;
+
+                return `
+                    <tr data-id="${service.Id}">
+                        <td>${highlight(service.Title, searchTerm)}</td>
+                        <td><span class="badge bg-secondary">${highlight(service.ServiceCode, searchTerm)}</span></td>
+                        <td>${formatPrice(service.Price)}</td>
+                        <td><span class="service-category-badge">${service.CategoryTitle || '-'}</span></td>
+                        <td class="text-center">
+                            <button type="button" class="btn-service btn-add-service"
+                                    data-service-id="${service.Id}"
+                                    data-service-title="${service.Title}"
+                                    title="افزودن به لیست تعرفه" ${isAdded ? 'disabled' : ''}>
+                                <i class="fas ${isAdded ? 'fa-check' : 'fa-plus'}"></i>
+                            </button>
+                        </td>
+                    </tr>`;
+            }).join('');
+
+            container.html(`
+                <div class="table-responsive">
+                    <table class="table services-table">
+                        <thead><tr><th>نام</th><th>کد</th><th>قیمت پایه</th><th>دسته‌بندی</th><th class="text-center">افزودن</th></tr></thead>
+                        <tbody>${tableRows}</tbody>
+                    </table>
+                </div>`);
+        }
+
+        // تابع برای مدیریت رویدادها
+        function setupEventHandlers() {
+            const container = $('#servicesListContainer');
+
+            // رویدادهای فیلترها
+            $('#serviceSearch').on('keyup', function () {
+                clearTimeout(state.searchTimeout);
+                state.searchTimeout = setTimeout(applyFiltersAndRender, 300);
+            });
+            $('#categoryFilter, #sortFilter').on('change', applyFiltersAndRender);
+
+            // رویداد کلیک روی دکمه افزودن (با event delegation)
+            container.off('click', '.btn-add-service').on('click', '.btn-add-service', function () {
+                const btn = $(this);
+                const serviceId = btn.data('service-id');
+                const serviceTitle = btn.data('service-title');
+
+                // پر کردن فرم اصلی در مودال با اطلاعات این خدمت
+                $('#serviceSelector').val(serviceId).trigger('change');
+
+                // بستن مودال انتخاب خدمت (این مودال) و نمایش پیام
+                $('#tariffModal').modal('hide');
+                window.showSuccessAlert(`خدمت "${serviceTitle}" برای تعریف تعرفه انتخاب شد.`);
+            });
+        }
+
+        // اجرای اولیه
+        $(document).ready(function() {
+            applyFiltersAndRender();
+            setupEventHandlers();
         });
 
-        // نمایش مودال
-        $('#tariffModal').modal({
-            backdrop: 'static',
-            keyboard: false
-        });
-        $('#tariffModal').modal('show');
-
-        // محاسبه اولیه سهم‌ها
-        calculateShares();
-    }
-
-    // اجرای تابع تنظیم فرم هنگام بارگیری
-    $(document).ready(function () {
-        setupCreateTariffForm();
-    });
+    })(jQuery);
 </script>

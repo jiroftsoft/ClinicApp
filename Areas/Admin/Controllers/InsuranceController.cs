@@ -526,7 +526,67 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
-        #region Tariffs Management
+        #region Manage Tariffs
+
+        /// <summary>
+        /// نمایش صفحه مدیریت تعرفه‌های بیمه
+        /// </summary>
+        [HttpGet]
+        [Route("ManageTariffs/{insuranceId}")]
+        [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
+        public async Task<ActionResult> ManageTariffs(int insuranceId)
+        {
+            var operationId = Guid.NewGuid().ToString();
+            _log.Information(
+                "درخواست مدیریت تعرفه‌های بیمه با شناسه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت جزئیات بیمه
+                var insuranceResult = await _insuranceService.GetInsuranceDetailsAsync(insuranceId);
+                if (!insuranceResult.Success || insuranceResult.Data == null)
+                {
+                    _log.Warning(
+                        "دریافت جزئیات بیمه شناسه {InsuranceId} برای مدیریت تعرفه‌ها ناموفق بود. OperationId: {OperationId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        insuranceId, operationId, insuranceResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    TempData["ErrorMessage"] = "بیمه مورد نظر یافت نشد یا دسترسی لازم را ندارید.";
+                    return RedirectToAction("Index");
+                }
+
+                // دریافت تعرفه‌های بیمه
+                var tariffsResult = await _insuranceService.GetInsuranceTariffsAsync(insuranceId);
+                var tariffs = tariffsResult.Success && tariffsResult.Data != null ?
+                    tariffsResult.Data : new List<InsuranceTariffViewModel>();
+
+                // ایجاد ViewModel برای نمایش
+                var viewModel = new InsuranceTariffsViewModel
+                {
+                    InsuranceId = insuranceId,
+                    InsuranceName = insuranceResult.Data.Name,
+                    DefaultPatientShare = insuranceResult.Data.DefaultPatientShare,
+                    DefaultInsurerShare = insuranceResult.Data.DefaultInsurerShare,
+                    Tariffs = tariffs
+                };
+
+                _log.Information(
+                    "صفحه مدیریت تعرفه‌های بیمه شناسه {InsuranceId} با موفقیت بارگیری شد. OperationId: {OperationId}, TariffCount: {TariffCount}. User: {UserName} (Id: {UserId})",
+                    insuranceId, operationId, tariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return View(viewModel);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در بارگیری صفحه مدیریت تعرفه‌های بیمه شناسه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                    insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
+            }
+        }
 
         /// <summary>
         /// بارگیری لیست تعرفه‌های بیمه
@@ -561,6 +621,54 @@ namespace ClinicApp.Areas.Admin.Controllers
                     insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return PartialView("_InsuranceTariffsListPartial", new List<InsuranceTariffViewModel>());
+            }
+        }
+
+        /// <summary>
+        /// نمایش فرم ایجاد تعرفه جدید
+        /// </summary>
+        [HttpGet]
+        [Route("CreateTariff")]
+        public async Task<ActionResult> CreateTariff(int insuranceId)
+        {
+            var operationId = Guid.NewGuid().ToString();
+            _log.Information(
+                "درخواست فرم ایجاد تعرفه جدید برای بیمه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت خدمات فعال
+                var services = await _serviceService.GetActiveServicesAsync() ??
+                               new List<ServiceSelectItem>();
+
+                // دریافت تعرفه‌های موجود
+                var tariffsResult = await _insuranceService.GetInsuranceTariffsAsync(insuranceId);
+                var tariffs = tariffsResult.Success && tariffsResult.Data != null ?
+                    tariffsResult.Data : new List<InsuranceTariffViewModel>();
+
+                // فیلتر خدمات قابل انتخاب
+                var availableServices = services
+                    .Where(s => tariffs.All(t => t.ServiceTitle != s.Title))
+                    .ToList();
+
+                ViewBag.AvailableServices = availableServices;
+                ViewBag.InsuranceId = insuranceId;
+
+                _log.Information(
+                    "فرم ایجاد تعرفه جدید برای بیمه {InsuranceId} با موفقیت بارگیری شد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                    insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return PartialView("_AddTariffPartial");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در بارگیری فرم ایجاد تعرفه جدید برای بیمه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                    insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return PartialView("_ErrorPartial", "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.");
             }
         }
 
@@ -641,54 +749,6 @@ namespace ClinicApp.Areas.Admin.Controllers
                     model.InsuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(new { success = false, message = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید." });
-            }
-        }
-
-        /// <summary>
-        /// نمایش فرم ایجاد تعرفه جدید
-        /// </summary>
-        [HttpGet]
-        [Route("CreateTariff")]
-        public async Task<ActionResult> CreateTariff(int insuranceId)
-        {
-            var operationId = Guid.NewGuid().ToString();
-            _log.Information(
-                "درخواست فرم ایجاد تعرفه جدید برای بیمه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
-
-            try
-            {
-                // دریافت خدمات فعال
-                var services = await _serviceService.GetActiveServicesAsync() ??
-                               new List<ServiceSelectItem>();
-
-                // دریافت تعرفه‌های موجود
-                var tariffsResult = await _insuranceService.GetInsuranceTariffsAsync(insuranceId);
-                var tariffs = tariffsResult.Success && tariffsResult.Data != null ?
-                    tariffsResult.Data : new List<InsuranceTariffViewModel>();
-
-                // فیلتر خدمات قابل انتخاب
-                var availableServices = services
-                    .Where(s => tariffs.All(t => t.ServiceTitle != s.Title))
-                    .ToList();
-
-                ViewBag.AvailableServices = availableServices;
-                ViewBag.InsuranceId = insuranceId;
-
-                _log.Information(
-                    "فرم ایجاد تعرفه جدید برای بیمه {InsuranceId} با موفقیت بارگیری شد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
-
-                return PartialView("_AddTariffPartial");
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطای سیستمی در بارگیری فرم ایجاد تعرفه جدید برای بیمه {InsuranceId}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    insuranceId, operationId, _currentUserService.UserName, _currentUserService.UserId);
-
-                return PartialView("_ErrorPartial", "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.");
             }
         }
 

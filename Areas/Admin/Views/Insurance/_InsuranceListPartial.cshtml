@@ -1,212 +1,5 @@
 ﻿@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.InsuranceViewModel>
 
-<style>
-    /* استایل‌های خاص برای لیست بیمه‌ها در محیط پزشکی */
-    .table-medical {
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-        min-width: 800px;
-    }
-
-    .table-medical th {
-        background-color: #e9f2fa;
-        color: #0d6ab2;
-        font-weight: 600;
-        padding: 0.75rem 1rem;
-        border-top: none;
-        border-bottom: 2px solid #0d6ab2;
-        text-align: right;
-    }
-
-    .table-medical td {
-        padding: 0.75rem 1rem;
-        vertical-align: middle;
-        text-align: right;
-    }
-
-    .table-medical tbody tr {
-        transition: all 0.15s ease;
-        border-bottom: 1px solid #e0e6ed;
-    }
-
-    .table-medical tbody tr:hover {
-        background-color: #f0f7ff;
-    }
-
-    .status-badge {
-        padding: 0.25rem 0.75rem;
-        border-radius: 20px;
-        font-size: 0.85rem;
-        font-weight: 500;
-        display: inline-block;
-    }
-
-    .status-active {
-        background-color: #e6f4ea;
-        color: #137333;
-    }
-
-    .status-inactive {
-        background-color: #f0f0f0;
-        color: #6c757d;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 0.5rem;
-        justify-content: center;
-    }
-
-    .btn-medical {
-        border-radius: 8px;
-        padding: 0.25rem 0.75rem;
-        font-size: 0.875rem;
-        transition: all 0.2s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        border: none;
-        cursor: pointer;
-    }
-
-    .btn-details {
-        background-color: #e9f2fa;
-        color: #0d6ab2;
-    }
-
-    .btn-details:hover {
-        background-color: #d4e3f5;
-        transform: translateY(-1px);
-    }
-
-    .btn-edit {
-        background-color: #fff8e6;
-        color: #e0a800;
-    }
-
-    .btn-edit:hover {
-        background-color: #ffeec9;
-        transform: translateY(-1px);
-    }
-
-    .btn-delete {
-        background-color: #ffebee;
-        color: #d32f2f;
-    }
-
-    .btn-delete:hover {
-        background-color: #ffcdd2;
-        transform: translateY(-1px);
-    }
-
-    .pagination-medical {
-        display: flex;
-        padding-left: 0;
-        list-style: none;
-        border-top: 1px solid #e0e6ed;
-        margin-top: 1rem;
-        border-radius: 0 0 8px 8px;
-        background-color: #f8fafc;
-    }
-
-    .page-item-medical {
-        margin: 0 2px;
-    }
-
-    .page-link-medical {
-        display: inline-block;
-        padding: 0.5rem 0.75rem;
-        margin-left: -1px;
-        line-height: 1.25;
-        color: #0d6ab2;
-        background-color: #fff;
-        border: 1px solid #dee2e6;
-        border-radius: 4px;
-        text-decoration: none;
-    }
-
-    .page-link-medical:hover {
-        z-index: 2;
-        color: #0a58ca;
-        background-color: #e9f2fa;
-        border-color: #c6d9f0;
-    }
-
-    .page-item-medical.active .page-link-medical {
-        z-index: 3;
-        color: #fff;
-        background-color: #0d6ab2;
-        border-color: #0d6ab2;
-    }
-
-    .page-item-medical.disabled .page-link-medical {
-        color: #6c757d;
-        pointer-events: none;
-        cursor: not-allowed;
-        background-color: #fff;
-        border-color: #dee2e6;
-    }
-
-    .search-highlight {
-        background-color: #fff9c4;
-        padding: 0 2px;
-        border-radius: 2px;
-        font-weight: 600;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: 2rem;
-        background-color: #f8fafc;
-        border-radius: 8px;
-        margin-top: 1rem;
-    }
-
-    .empty-state i {
-        font-size: 3rem;
-        color: #adb5bd;
-        margin-bottom: 1rem;
-    }
-
-    .empty-state p {
-        color: #6c757d;
-        margin-bottom: 0;
-    }
-
-    .loading-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(255, 255, 255, 0.75);
-        z-index: 10;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .loading-spinner {
-        width: 2rem;
-        height: 2rem;
-        border: 0.25em solid rgba(13, 106, 202, 0.2);
-        border-left: 0.25em solid #0d6ab2;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-    }
-
-    @@keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
-    }
-
-    .insurance-list-container {
-        position: relative;
-        min-height: 300px;
-    }
-</style>
-
 @if (Model != null && Model.Items.Any())
 {
     <div class="insurance-list-container">
@@ -218,7 +11,7 @@
                         <th>سهم بیمار</th>
                         <th>سهم بیمه</th>
                         <th>تعداد تعرفه‌ها</th>
-                        <th>وضعیت</th>
+                        <th class="text-center">وضعیت</th>
                         <th class="text-center">عملیات</th>
                     </tr>
                 </thead>
@@ -228,13 +21,13 @@
                         <tr data-id="@item.InsuranceId" data-name="@item.Name">
                             <td>
                                 <div class="d-flex align-items-center">
-                                    <i class="fas fa-shield-alt fa-lg text-primary ml-2"></i>
-                                    <span class="font-weight-bold">@item.Name</span>
+                                    <i class="fas fa-shield-alt fa-lg text-primary me-2"></i>
+                                    <span class="fw-bold">@item.Name</span>
                                 </div>
                             </td>
-                            <td class="font-weight-bold">@item.DefaultPatientShare%</td>
-                            <td class="font-weight-bold">@item.DefaultInsurerShare%</td>
-                            <td>
+                            <td class="fw-bold">@item.DefaultPatientShare%</td>
+                            <td class="fw-bold">@item.DefaultInsurerShare%</td>
+                            <td class="text-center">
                                 <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-3 py-1">
                                     @item.TariffCount
                                 </span>
@@ -244,28 +37,37 @@
                                     @(item.IsActive ? "فعال" : "غیرفعال")
                                 </span>
                             </td>
-                            <td class="text-center action-buttons">
-                                <button type="button"
-                                        class="btn-medical btn-details"
-                                        data-id="@item.InsuranceId"
-                                        data-name="@item.Name"
-                                        title="جزئیات">
-                                    <i class="fas fa-info-circle"></i>
-                                </button>
-                                <button type="button"
-                                        class="btn-medical btn-edit"
-                                        data-id="@item.InsuranceId"
-                                        data-name="@item.Name"
-                                        title="ویرایش">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button"
-                                        class="btn-medical btn-delete"
-                                        data-id="@item.InsuranceId"
-                                        data-name="@item.Name"
-                                        title="حذف">
-                                    <i class="fas fa-trash-alt"></i>
-                                </button>
+                            <td class="text-center">
+                                <div class="action-buttons">
+                                    <button type="button"
+                                            class="btn-medical btn-details"
+                                            data-id="@item.InsuranceId"
+                                            data-name="@item.Name"
+                                            title="جزئیات">
+                                        <i class="fas fa-info-circle"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn-medical btn-edit"
+                                            data-id="@item.InsuranceId"
+                                            data-name="@item.Name"
+                                            title="ویرایش">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn-medical btn-delete"
+                                            data-id="@item.InsuranceId"
+                                            data-name="@item.Name"
+                                            title="حذف">
+                                        <i class="fas fa-trash-alt"></i>
+                                    </button>
+                                    <button type="button"
+                                            class="btn-medical btn-manage-tariffs"
+                                            data-id="@item.InsuranceId"
+                                            data-name="@item.Name"
+                                            title="مدیریت تعرفه‌ها">
+                                        <i class="fas fa-list"></i>
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                     }
@@ -273,9 +75,8 @@
             </table>
         </div>
 
-        <!-- صفحه‌بندی -->
         <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light rounded-bottom">
-            <div class="text-muted">
+            <div class="text-muted small">
                 نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) از @Model.TotalItems مورد
             </div>
             <nav>
@@ -283,28 +84,16 @@
                     @if (Model.HasPreviousPage)
                     {
                         <li class="page-item-medical">
-                            <a class="page-link-medical" href="#" data-page="1" aria-label="اولین">
-                                <span aria-hidden="true">&laquo;</span>
-                            </a>
+                            <a class="page-link-medical" href="#" data-page="1" aria-label="اولین">&laquo;</a>
                         </li>
                         <li class="page-item-medical">
-                            <a class="page-link-medical" href="#" data-page="@Model.PreviousPageNumber" aria-label="قبلی">
-                                <span aria-hidden="true">&lsaquo;</span>
-                            </a>
+                            <a class="page-link-medical" href="#" data-page="@Model.PreviousPageNumber" aria-label="قبلی">&lsaquo;</a>
                         </li>
                     }
                     else
                     {
-                        <li class="page-item-medical disabled">
-                            <span class="page-link-medical" aria-hidden="true">
-                                <span aria-hidden="true">&laquo;</span>
-                            </span>
-                        </li>
-                        <li class="page-item-medical disabled">
-                            <span class="page-link-medical" aria-hidden="true">
-                                <span aria-hidden="true">&lsaquo;</span>
-                            </span>
-                        </li>
+                        <li class="page-item-medical disabled"><span class="page-link-medical">&laquo;</span></li>
+                        <li class="page-item-medical disabled"><span class="page-link-medical">&lsaquo;</span></li>
                     }
 
                     @for (int i = 1; i <= Model.TotalPages; i++)
@@ -317,28 +106,16 @@
                     @if (Model.HasNextPage)
                     {
                         <li class="page-item-medical">
-                            <a class="page-link-medical" href="#" data-page="@Model.NextPageNumber" aria-label="بعدی">
-                                <span aria-hidden="true">&rsaquo;</span>
-                            </a>
+                            <a class="page-link-medical" href="#" data-page="@Model.NextPageNumber" aria-label="بعدی">&rsaquo;</a>
                         </li>
                         <li class="page-item-medical">
-                            <a class="page-link-medical" href="#" data-page="@Model.TotalPages" aria-label="آخرین">
-                                <span aria-hidden="true">&raquo;</span>
-                            </a>
+                            <a class="page-link-medical" href="#" data-page="@Model.TotalPages" aria-label="آخرین">&raquo;</a>
                         </li>
                     }
                     else
                     {
-                        <li class="page-item-medical disabled">
-                            <span class="page-link-medical" aria-hidden="true">
-                                <span aria-hidden="true">&rsaquo;</span>
-                            </span>
-                        </li>
-                        <li class="page-item-medical disabled">
-                            <span class="page-link-medical" aria-hidden="true">
-                                <span aria-hidden="true">&raquo;</span>
-                            </span>
-                        </li>
+                        <li class="page-item-medical disabled"><span class="page-link-medical">&rsaquo;</span></li>
+                        <li class="page-item-medical disabled"><span class="page-link-medical">&raquo;</span></li>
                     }
                 </ul>
             </nav>
@@ -348,103 +125,16 @@
 else
 {
     <div class="empty-state">
-        <i class="fas fa-shield-alt"></i>
+        <i class="fas fa-shield-alt fa-3x"></i>
         <h5>بیمه‌ای یافت نشد</h5>
         <p>هیچ بیمه‌ای با معیارهای جستجو یافت نشد. می‌توانید فیلترها را تغییر دهید یا بیمه جدیدی ایجاد کنید.</p>
         @if (!string.IsNullOrEmpty(ViewBag.SearchTerm))
         {
             <div class="mt-3">
                 <button id="clear-search" class="btn btn-outline-primary">
-                    <i class="fas fa-times-circle ml-1"></i> پاک کردن جستجو
+                    <i class="fas fa-times-circle me-1"></i> پاک کردن جستجو
                 </button>
             </div>
         }
     </div>
 }
-
-<script>
-    // IIFE برای جلوگیری از تداخل با فضای نام سراسری
-    (function($) {
-        "use strict";
-
-        // تنظیم گوشدهای رویداد برای عناصر پویا
-        function setupDynamicEventHandlers() {
-            // مدیریت ویرایش
-            $('.btn-edit').off('click').on('click', function() {
-                const insuranceId = $(this).data('id');
-                const insuranceName = $(this).data('name');
-                console.log(`[کلینیک شفا] درخواست ویرایش بیمه. InsuranceId: ${insuranceId}, Name: ${insuranceName}`);
-                if (typeof editInsurance === 'function') {
-                    editInsurance(insuranceId);
-                }
-            });
-
-            // مدیریت حذف
-            $('.btn-delete').off('click').on('click', function() {
-                const insuranceId = $(this).data('id');
-                const insuranceName = $(this).data('name');
-                console.log(`[کلینیک شفا] درخواست حذف بیمه. InsuranceId: ${insuranceId}, Name: ${insuranceName}`);
-                if (typeof confirmDelete === 'function') {
-                    confirmDelete(insuranceId, insuranceName);
-                }
-            });
-
-            // مدیریت جزئیات
-            $('.btn-details').off('click').on('click', function() {
-                const insuranceId = $(this).data('id');
-                const insuranceName = $(this).data('name');
-                console.log(`[کلینیک شفا] درخواست جزئیات بیمه. InsuranceId: ${insuranceId}, Name: ${insuranceName}`);
-                if (typeof viewInsuranceDetails === 'function') {
-                    viewInsuranceDetails(insuranceId);
-                }
-            });
-
-            // مدیریت صفحه‌بندی
-            $('.page-link-medical').off('click').on('click', function(e) {
-                e.preventDefault();
-                const page = $(this).data('page');
-                if (page && typeof loadInsurances === 'function') {
-                    console.log(`[کلینیک شفا] درخواست بارگیری صفحه ${page} لیست بیمه‌ها`);
-                    loadInsurances(page);
-                }
-            });
-
-            // مدیریت دکمه پاک کردن جستجو
-            $('#clear-search').off('click').on('click', function() {
-                $('#searchTerm').val('');
-                if (typeof loadInsurances === 'function') {
-                    console.log(`[کلینیک شفا] درخواست پاک کردن جستجو و بارگیری مجدد لیست بیمه‌ها`);
-                    loadInsurances(1);
-                }
-            });
-        }
-
-        // اطمینان از اجرای صحیح پس از بارگیری
-        $(document).ready(function() {
-            // اگر توابع اصلی تعریف نشده باشند، تعریف اولیه آنها
-            if (typeof setupDynamicEventHandlers !== 'function') {
-                window.setupDynamicEventHandlers = setupDynamicEventHandlers;
-            }
-
-            // اجرای تنظیم گوشدهای رویداد
-            setupDynamicEventHandlers();
-
-            // اطمینان از وجود توابع اصلی
-            if (typeof loadInsurances !== 'function') {
-                console.error('[کلینیک شفا] تابع loadInsurances تعریف نشده است.');
-            }
-
-            if (typeof editInsurance !== 'function') {
-                console.error('[کلینیک شفا] تابع editInsurance تعریف نشده است.');
-            }
-
-            if (typeof confirmDelete !== 'function') {
-                console.error('[کلینیک شفا] تابع confirmDelete تعریف نشده است.');
-            }
-
-            if (typeof viewInsuranceDetails !== 'function') {
-                console.error('[کلینیک شفا] تابع viewInsuranceDetails تعریف نشده است.');
-            }
-        });
-    })(jQuery);
-</script>

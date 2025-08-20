@@ -1,314 +1,143 @@
 ﻿@model ClinicApp.ViewModels.CreateInsuranceViewModel
+
 @{
-    ViewBag.Title = "ایجاد بیمه جدید";
+    // این فایل یک Partial View است و نیازی به Layout ندارد
     Layout = null;
 }
 
-<div id="insuranceModal" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="insuranceModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="insuranceModalLabel">ایجاد بیمه جدید</h5>
-                <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+@using (Html.BeginForm("Create", "Insurance", FormMethod.Post, new { id = "createInsuranceForm" }))
+{
+    @Html.AntiForgeryToken()
+
+    <div class="modal-body">
+        <div id="validationSummary" class="alert alert-danger d-none p-2 mb-3">
+            <h6 class="alert-heading small"><i class="fas fa-exclamation-circle"></i> خطای اعتبارسنجی</h6>
+            <ul id="validationErrors" class="mb-0 small ps-4"></ul>
+        </div>
+
+        <div class="row g-3">
+            <div class="col-12">
+                @Html.LabelFor(model => model.Name, new { @class = "form-label fw-bold" })
+                @Html.TextBoxFor(model => model.Name, new { @class = "form-control", placeholder = "مثال: بیمه تامین اجتماعی" })
+                @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
             </div>
-            @using (Html.BeginForm("Create", "Insurance", FormMethod.Post, new { id = "createInsuranceForm" }))
-            {
-                @Html.AntiForgeryToken()
-                <div class="modal-body">
-                    <div id="validationSummary" class="alert alert-danger d-none">
-                        <strong>خطاهای اعتبارسنجی:</strong>
-                        <ul id="validationErrors"></ul>
-                    </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-12">
-                            @Html.LabelFor(model => model.Name, new { @class = "font-weight-bold" })
-                            @Html.TextBoxFor(model => model.Name, new
-                            {
-                                @class = "form-control",
-                                placeholder = "نام بیمه (مثال: تأمین اجتماعی)",
-                                autofocus = "autofocus"
-                            })
-                            <small class="form-text text-muted">نام بیمه باید منحصر به فرد باشد</small>
-                            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small" })
-                        </div>
-                    </div>
+            <div class="col-12">
+                @Html.LabelFor(model => model.Description, new { @class = "form-label fw-bold" })
+                @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = 2, placeholder = "توضیحات (اختیاری)" })
+                @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small" })
+            </div>
 
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            @Html.LabelFor(model => model.DefaultPatientShare, new { @class = "font-weight-bold" })
-                            <div class="input-group">
-                                @Html.TextBoxFor(model => model.DefaultPatientShare, new
-                                {
-                                    @class = "form-control",
-                                    type = "number",
-                                    min = "0",
-                                    max = "100",
-                                    step = "0.01",
-                                    @required = "required",
-                                    value = Model.DefaultPatientShare.ToString("0.##").Replace(",", ".")
-                                })
-                                <div class="input-group-append">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">سهم بیمار از هزینه خدمات</small>
-                            @Html.ValidationMessageFor(model => model.DefaultPatientShare, "", new { @class = "text-danger small" })
-                        </div>
-
-                        <div class="form-group col-md-6">
-                            @Html.LabelFor(model => model.DefaultInsurerShare, new { @class = "font-weight-bold" })
-                            <div class="input-group">
-                                @Html.TextBoxFor(model => model.DefaultInsurerShare, new
-                                {
-                                    @class = "form-control",
-                                    type = "number",
-                                    min = "0",
-                                    max = "100",
-                                    step = "0.01",
-                                    @required = "required",
-                                    value = Model.DefaultInsurerShare.ToString("0.##").Replace(",", ".")
-                                })
-                                <div class="input-group-append">
-                                    <span class="input-group-text">%</span>
-                                </div>
-                            </div>
-                            <small class="form-text text-muted">سهم بیمه از هزینه خدمات</small>
-                            @Html.ValidationMessageFor(model => model.DefaultInsurerShare, "", new { @class = "text-danger small" })
-                        </div>
-                    </div>
-
-                    <div id="shareValidationWarning" class="alert alert-warning d-none mb-3">
-                        <i class="fas fa-exclamation-triangle"></i> مجموع سهم بیمار و بیمه باید برابر با 100% باشد.
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-12">
-                            @Html.LabelFor(model => model.Description, new { @class = "font-weight-bold" })
-                            @Html.TextAreaFor(model => model.Description, new
-                            {
-                                @class = "form-control",
-                                rows = "3",
-                                placeholder = "توضیحات تکمیلی درباره بیمه"
-                            })
-                            <small class="form-text text-muted">مثال: شرایط پوشش خدمات، محدودیت‌ها و توضیحات دیگر</small>
-                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small" })
-                        </div>
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group col-md-12">
-                            <div class="form-check">
-                                @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
-                                @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label font-weight-bold" })
-                                <small class="form-text text-muted">تعیین وضعیت فعال/غیرفعال بیمه</small>
-                            </div>
-                        </div>
-                    </div>
+            <div class="col-md-6">
+                @Html.LabelFor(model => model.DefaultPatientShare, "سهم بیمار (پیش‌فرض)", new { @class = "form-label fw-bold" })
+                <div class="input-group">
+                    @Html.TextBoxFor(model => model.DefaultPatientShare, new
+                    {
+                        @class = "form-control",
+                        type = "number",
+                        min = "0",
+                        max = "100",
+                        step = "0.01",
+                        placeholder = "مثال: 30"
+                    })
+                    <span class="input-group-text">%</span>
                 </div>
-                <div class="modal-footer bg-light">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">
-                        <i class="fas fa-times"></i> انصراف
-                    </button>
-                    <button type="submit" class="btn btn-primary" id="saveInsuranceBtn">
-                        <i class="fas fa-save"></i> ایجاد بیمه
-                    </button>
+                @Html.ValidationMessageFor(model => model.DefaultPatientShare, "", new { @class = "text-danger small" })
+            </div>
+
+            <div class="col-md-6">
+                @Html.LabelFor(model => model.DefaultInsurerShare, "سهم بیمه (پیش‌فرض)", new { @class = "form-label fw-bold" })
+                <div class="input-group">
+                    @Html.TextBoxFor(model => model.DefaultInsurerShare, new
+                    {
+                        @class = "form-control",
+                        type = "number",
+                        min = "0",
+                        max = "100",
+                        step = "0.01",
+                        placeholder = "مثال: 70"
+                    })
+                    <span class="input-group-text">%</span>
                 </div>
-            }
+                @Html.ValidationMessageFor(model => model.DefaultInsurerShare, "", new { @class = "text-danger small" })
+            </div>
+
+            <div id="shareValidationWarning" class="col-12 alert alert-warning d-none p-2 small">
+                <i class="fas fa-exclamation-triangle"></i> مجموع سهم بیمار و بیمه باید برابر با 100% باشد.
+            </div>
+
+            <div class="col-12">
+                <div class="form-check form-switch">
+                    @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
+                    @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label fw-bold" })
+                </div>
+            </div>
         </div>
     </div>
-</div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-medical" data-bs-dismiss="modal">
+            <i class="fas fa-times me-1"></i> انصراف
+        </button>
+        <button type="submit" class="btn btn-primary-medical btn-medical" id="saveInsuranceBtn">
+            <i class="fas fa-save me-1"></i> ایجاد بیمه
+        </button>
+    </div>
+}
 
 <script>
-    // تابع برای تنظیم مدیریت فرم ایجاد
-    function setupCreateInsuranceForm() {
-        // اطمینان از صحیح بودن مقادیر اولیه
-        function initializeValues() {
-            // بررسی و تنظیم مقدار اولیه برای سهم بیمار
-            if ($('#DefaultPatientShare').val() === '' || $('#DefaultPatientShare').val() === ',') {
-                $('#DefaultPatientShare').val(0);
+    // IIFE برای جلوگیری از تداخل با اسکریپت‌های دیگر
+    (function ($) {
+        "use strict";
+
+        // این تابع از اسکریپت اصلی (Index.cshtml) فراخوانی می‌شود
+        // تا منطق این فرم را راه‌اندازی کند.
+        function setupCreateInsuranceForm() {
+            const form = $('#createInsuranceForm');
+            const patientShareInput = $('#DefaultPatientShare');
+            const insurerShareInput = $('#DefaultInsurerShare');
+            const shareWarning = $('#shareValidationWarning');
+
+            // تابع برای محاسبه و بررسی سهم‌ها
+            function calculateShares() {
+                const patientShare = parseFloat(patientShareInput.val().replace(',', '.')) || 0;
+
+                // محاسبه خودکار سهم بیمه
+                if ($(document.activeElement).is(patientShareInput)) {
+                    if (patientShare >= 0 && patientShare <= 100) {
+                        insurerShareInput.val((100 - patientShare).toFixed(2));
+                    }
+                }
+
+                const insurerShare = parseFloat(insurerShareInput.val().replace(',', '.')) || 0;
+
+                if (Math.abs(patientShare + insurerShare - 100) > 0.01) {
+                    shareWarning.removeClass('d-none');
+                } else {
+                    shareWarning.addClass('d-none');
+                }
             }
 
-            // بررسی و تنظیم مقدار اولیه برای سهم بیمه
-            if ($('#DefaultInsurerShare').val() === '' || $('#DefaultInsurerShare').val() === ',') {
-                $('#DefaultInsurerShare').val(100);
-            }
+            // اتصال رویداد به فیلدهای سهم
+            patientShareInput.on('input', calculateShares);
+            insurerShareInput.on('input', function () {
+                const insurerShare = parseFloat($(this).val().replace(',', '.')) || 0;
+                if (insurerShare >= 0 && insurerShare <= 100) {
+                    patientShareInput.val((100 - insurerShare).toFixed(2));
+                }
+                calculateShares();
+            });
 
-            // تبدیل مقادیر به فرمت اعشاری صحیح
-            const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.')) || 0;
-            const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.')) || 100;
+            // اتصال رویداد ارسال فرم
+            form.off('submit').on('submit', window.handleFormSubmit);
 
-            $('#DefaultPatientShare').val(patientShare.toFixed(2));
-            $('#DefaultInsurerShare').val(insurerShare.toFixed(2));
-
-            // محاسبه مجدد سهم‌ها
+            // محاسبه اولیه در زمان بارگذاری فرم
             calculateShares();
         }
 
-        // مدیریت ورودی‌های عددی
-        $('input[type="number"]').on('input', function () {
-            // محدود کردن ورودی به محدوده 0 تا 100
-            let value = parseFloat($(this).val().replace(',', '.'));
-            if (isNaN(value)) return;
-
-            if (value < 0) $(this).val(0);
-            if (value > 100) $(this).val(100);
-
-            // محاسبه خودکار سهم‌ها
-            calculateShares();
-        });
-
-        // محاسبه خودکار سهم‌ها
-        function calculateShares() {
-            const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.')) || 0;
-            const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.')) || 0;
-            const total = patientShare + insurerShare;
-
-            if (Math.abs(total - 100) > 0.01) {
-                $('#shareValidationWarning').removeClass('d-none');
-            } else {
-                $('#shareValidationWarning').addClass('d-none');
-            }
-        }
-
-        // افزودن گوشدهای رویداد برای محاسبه خودکار
-        $('#DefaultPatientShare, #DefaultInsurerShare').on('input', calculateShares);
-
-        // اطمینان از بسته شدن صحیح مودال
-        function setupModalCloseHandlers() {
-            // مدیریت دکمه X
-            $('.close, [data-dismiss="modal"]').off('click.modalClose').on('click.modalClose', function (e) {
-                e.preventDefault();
-                $('#insuranceModal').modal('hide');
-            });
-
-            // مدیریت دکمه انصراف
-            $('button[data-dismiss="modal"]').off('click.modalClose').on('click.modalClose', function (e) {
-                e.preventDefault();
-                $('#insuranceModal').modal('hide');
-            });
-
-            // مدیریت بسته شدن مودال
-            $('#insuranceModal').off('hidden.bs.modal').on('hidden.bs.modal', function () {
-                $(this).remove();
-                if (typeof loadInsurances === 'function') {
-                    loadInsurances();
-                }
-            });
-        }
-
-        // ارسال فرم با AJAX
-        $('#createInsuranceForm').off('submit').on('submit', function (e) {
-            e.preventDefault();
-
-            // پاک کردن خطاها
-            $('#validationSummary').addClass('d-none');
-            $('#validationErrors').empty();
-
-            // نمایش نمایه بارگیری
-            const saveBtn = $('#saveInsuranceBtn');
-            const originalBtnHtml = saveBtn.html();
-            saveBtn.html('<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> در حال ایجاد...');
-            saveBtn.prop('disabled', true);
-
-            // اطمینان از فرمت صحیح مقادیر اعشاری
-            const patientShare = parseFloat($('#DefaultPatientShare').val().replace(',', '.'));
-            const insurerShare = parseFloat($('#DefaultInsurerShare').val().replace(',', '.'));
-            $('#DefaultPatientShare').val(patientShare.toFixed(2));
-            $('#DefaultInsurerShare').val(insurerShare.toFixed(2));
-
-            $.ajax({
-                url: this.action,
-                type: this.method,
-                $(this).serialize(),
-                success: function (response) {
-                    if (response.success) {
-                        $('#insuranceModal').modal('hide');
-                        if (typeof showSuccessAlert === 'function') {
-                            showSuccessAlert(response.message);
-                        }
-                        // بارگیری مجدد لیست بیمه‌ها
-                        if (typeof loadInsurances === 'function') {
-                            loadInsurances();
-                        }
-                    } else {
-                        // نمایش خطاها
-                        let errors = [];
-                        if (response.message) {
-                            errors.push(response.message);
-                        }
-
-                        // اگر خطاها به صورت آرایه باشند
-                        if (response.errors && Array.isArray(response.errors)) {
-                            errors = errors.concat(response.errors);
-                        }
-
-                        if (errors.length > 0) {
-                            const errorList = $('#validationErrors');
-                            errorList.empty();
-
-                            $.each(errors, function (index, error) {
-                                errorList.append(`<li>${error}</li>`);
-                            });
-
-                            $('#validationSummary').removeClass('d-none');
-                        }
-                    }
-                },
-                error: function (xhr) {
-                    let errorMessage = 'خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.';
-
-                    if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage = xhr.responseJSON.message;
-                    } else if (xhr.status === 400) {
-                        errorMessage = 'داده‌های ارسالی نامعتبر هستند. لطفاً فرم را بررسی کنید.';
-                    } else if (xhr.status === 401) {
-                        errorMessage = 'شما مجوز لازم برای این عملیات را ندارید.';
-                    }
-
-                    if (typeof showErrorAlert === 'function') {
-                        showErrorAlert(errorMessage);
-                    }
-                },
-                complete: function () {
-                    // بازگرداندن وضعیت دکمه
-                    saveBtn.html(originalBtnHtml);
-                    saveBtn.prop('disabled', false);
-                }
-            });
-        });
-
-        // نمایش مودال
-        $('#insuranceModal').modal({
-            backdrop: 'static',
-            keyboard: false
-        });
-
-        // اطمینان از نمایش صحیح مودال
-        $('#insuranceModal').on('shown.bs.modal', function () {
-            // فوکوس روی فیلد اول
-            $('#Name').focus();
-        });
-
-        // اطمینان از نمایش صحیح مقادیر
-        initializeValues();
-
-        // تنظیم گوشدهای رویداد بستن مودال
-        setupModalCloseHandlers();
-
-        // محاسبه اولیه سهم‌ها
-        calculateShares();
-    }
-
-    // اجرای تابع تنظیم فرم هنگام بارگیری
-    $(document).ready(function () {
-        // اطمینان از وجود تابع setupCreateInsuranceForm قبل از اجرا
-        if (typeof setupCreateInsuranceForm === 'function') {
+        // اجرای تابع راه‌اندازی
+        $(document).ready(function () {
             setupCreateInsuranceForm();
-        } else {
-            console.error('تابع setupCreateInsuranceForm تعریف نشده است.');
-        }
-    });
+        });
+
+    })(jQuery);
 </script>

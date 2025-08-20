@@ -25,10 +25,11 @@
     /* استایل‌های خاص برای محیط پزشکی */
     .medical-card {
         border-radius: 12px;
-        box-shadow: var(--medical-card-shadow);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
         transition: all 0.2s ease;
         border: none;
         overflow: hidden;
+        border: 1px solid #e0e6ed;
     }
 
         .medical-card:hover {
@@ -41,15 +42,16 @@
         border-radius: 20px;
         font-size: 0.85rem;
         font-weight: 500;
+        display: inline-block;
     }
 
     .status-active {
-        background-color: rgba(25, 135, 84, 0.1);
-        color: var(--medical-green);
+        background-color: #e6f4ea;
+        color: #137333;
     }
 
     .status-inactive {
-        background-color: rgba(108, 117, 125, 0.1);
+        background-color: #f0f0f0;
         color: #6c757d;
     }
 
@@ -57,28 +59,32 @@
         border-collapse: separate;
         border-spacing: 0;
         width: 100%;
+        min-width: 800px;
     }
 
         .table-medical th {
-            background-color: var(--medical-blue-light);
-            color: var(--medical-blue-dark);
+            background-color: #e9f2fa;
+            color: #0d6ab2;
             font-weight: 600;
             padding: 0.75rem 1rem;
             border-top: none;
-            border-bottom: 2px solid var(--medical-blue);
+            border-bottom: 2px solid #0d6ab2;
+            text-align: right;
         }
 
         .table-medical td {
             padding: 0.75rem 1rem;
             vertical-align: middle;
+            text-align: right;
         }
 
         .table-medical tbody tr {
             transition: all 0.15s ease;
+            border-bottom: 1px solid #e0e6ed;
         }
 
             .table-medical tbody tr:hover {
-                background-color: rgba(13, 106, 202, 0.04);
+                background-color: #f0f7ff;
             }
 
         .table-medical .action-buttons {
@@ -92,10 +98,45 @@
         padding: 0.25rem 0.75rem;
         font-size: 0.875rem;
         transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        cursor: pointer;
     }
 
+    .btn-details {
+        background-color: #e9f2fa;
+        color: #0d6ab2;
+    }
+
+        .btn-details:hover {
+            background-color: #d4e3f5;
+            transform: translateY(-1px);
+        }
+
+    .btn-edit {
+        background-color: #fff8e6;
+        color: #e0a800;
+    }
+
+        .btn-edit:hover {
+            background-color: #ffeec9;
+            transform: translateY(-1px);
+        }
+
+    .btn-delete {
+        background-color: #ffebee;
+        color: #d32f2f;
+    }
+
+        .btn-delete:hover {
+            background-color: #ffcdd2;
+            transform: translateY(-1px);
+        }
+
     .btn-primary-medical {
-        background: linear-gradient(to right, var(--medical-blue), var(--medical-blue-dark));
+        background: linear-gradient(to right, #0d6ab2, #0a58ca);
         border: none;
         color: white;
     }
@@ -106,7 +147,7 @@
         }
 
     .btn-green-medical {
-        background: linear-gradient(to right, var(--medical-green), var(--medical-green-dark));
+        background: linear-gradient(to right, #198754, #157347);
         border: none;
         color: white;
     }
@@ -128,7 +169,7 @@
         }
 
     .btn-danger-medical {
-        background: linear-gradient(to right, var(--medical-danger), #c82333);
+        background: linear-gradient(to right, #dc3545, #c82333);
         border: none;
         color: white;
     }
@@ -140,7 +181,7 @@
 
     /* استایل‌های مودال پزشکی */
     .modal-medical .modal-header {
-        background: linear-gradient(to right, var(--medical-blue), var(--medical-blue-dark));
+        background: linear-gradient(to right, #0d6ab2, #0a58ca);
         color: white;
         border-radius: 12px 12px 0 0;
     }
@@ -157,6 +198,94 @@
     .modal-medical .modal-footer {
         background: #f8f9fa;
         border-radius: 0 0 12px 12px;
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 2rem;
+        background-color: #f8fafc;
+        border-radius: 8px;
+        margin-top: 1rem;
+    }
+
+        .empty-state i {
+            font-size: 3rem;
+            color: #adb5bd;
+            margin-bottom: 1rem;
+        }
+
+        .empty-state p {
+            color: #6c757d;
+            margin-bottom: 0;
+        }
+
+    .search-highlight {
+        background-color: #fff9c4;
+        padding: 0 2px;
+        border-radius: 2px;
+        font-weight: 600;
+    }
+
+    .pagination-medical {
+        display: flex;
+        padding-left: 0;
+        list-style: none;
+        border-top: 1px solid #e0e6ed;
+        margin-top: 1rem;
+        border-radius: 0 0 8px 8px;
+        background-color: #f8fafc;
+    }
+
+    .page-item-medical {
+        margin: 0 2px;
+    }
+
+    .page-link-medical {
+        display: inline-block;
+        padding: 0.5rem 0.75rem;
+        margin-left: -1px;
+        line-height: 1.25;
+        color: #0d6ab2;
+        background-color: #fff;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        text-decoration: none;
+    }
+
+    .page-link-medical:hover {
+        z-index: 2;
+        color: #0a58ca;
+        background-color: #e9f2fa;
+        border-color: #c6d9f0;
+    }
+
+    .page-item-medical.active .page-link-medical {
+        z-index: 3;
+        color: #fff;
+        background-color: #0d6ab2;
+        border-color: #0d6ab2;
+    }
+
+    .page-item-medical.disabled .page-link-medical {
+        color: #6c757d;
+        pointer-events: none;
+        cursor: not-allowed;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
+
+    .loading-spinner {
+        width: 2rem;
+        height: 2rem;
+        border: 0.25em solid rgba(13, 106, 202, 0.2);
+        border-left: 0.25em solid #0d6ab2;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+    }
+
+    @@keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
     }
 </style>
 
@@ -215,7 +344,7 @@
     </div>
 </div>
 
-@section scripts {
+@section Scripts {
     <script>
         // IIFE (Immediately Invoked Function Expression) برای جلوگیری از تداخل با فضای نام سراسری
         (function ($) {
@@ -232,7 +361,7 @@
                     edit: '@Url.Action("Edit", "Insurance")',
                     delete: '@Url.Action("Delete", "Insurance")',
                     details: '@Url.Action("Details", "Insurance")',
-                    loadTariffs: '@Url.Action("LoadTariffs", "Insurance")'
+                    manageTariffs: '@Url.Action("ManageTariffs", "Insurance")'
                 },
                 operationId: null
             };
@@ -246,9 +375,7 @@
             function showLoading() {
                 const overlay = `
                     <div class="loading-overlay">
-                        <div class="spinner-border text-primary" role="status">
-                            <span class="sr-only">در حال بارگیری...</span>
-                        </div>
+                        <div class="loading-spinner"></div>
                     </div>`;
                 $('#insurance-list-wrapper').prepend(overlay);
             }
@@ -306,15 +433,16 @@
 
             // --- توابع اصلی ---
 
-            function loadInsurances() {
+            function loadInsurances(page = 1) {
                 state.operationId = Guid.newGuid();
+                state.page = page;
                 showLoading();
 
                 const searchTerm = $('#searchTerm').val().trim();
                 const activeOnly = $('#activeOnly').is(':checked');
 
                 // ثبت لاگ در کنسول برای عیب‌یابی
-                console.log(`[کلینیک شفا] درخواست بارگیری لیست بیمه‌ها. OperationId: ${state.operationId}, SearchTerm: "${searchTerm}", ActiveOnly: ${activeOnly}`);
+                console.log(`[کلینیک شفا] درخواست بارگیری لیست بیمه‌ها. OperationId: ${state.operationId}, SearchTerm: "${searchTerm}", Page: ${page}, ActiveOnly: ${activeOnly}`);
 
                 $.ajax({
                     url: state.urls.load,
@@ -322,7 +450,7 @@
                     data: {
                         __RequestVerificationToken: getAntiForgeryToken(),
                         searchTerm: searchTerm,
-                        page: state.page,
+                        page: page,
                         activeOnly: activeOnly
                     },
                     success: function (result) {
@@ -352,7 +480,7 @@
 
                         // افزودن گوشده رویداد برای دکمه تلاش مجدد
                         $('#retry-load').on('click', function() {
-                            loadInsurances();
+                            loadInsurances(state.page);
                         });
                     },
                     complete: function () {
@@ -426,7 +554,7 @@
                         if (response.success) {
                             $('#main-modal').modal('hide');
                             showSuccessAlert('موفق', response.message || 'عملیات با موفقیت انجام شد.');
-                            loadInsurances(); // بارگیری مجدد لیست بیمه‌ها
+                            loadInsurances(state.page); // بارگیری مجدد لیست بیمه‌ها
 
                             console.log(`[کلینیک شفا] عملیات فرم با موفقیت انجام شد. OperationId: ${state.operationId}`);
                         } else {
@@ -488,7 +616,7 @@
                             success: function(response) {
                                 if (response.success) {
                                     showSuccessAlert('حذف شد!', response.message, 2000);
-                                    loadInsurances();
+                                    loadInsurances(state.page);
 
                                     console.log(`[کلینیک شفا] بیمه با موفقیت حذف شد. OperationId: ${state.operationId}, InsuranceId: ${id}`);
                                 } else {
@@ -538,12 +666,19 @@
                     window.location.href = `${state.urls.details}/${id}`;
                 });
 
+                // مدیریت مدیریت تعرفه‌ها
+                $('.btn-manage-tariffs').off('click').on('click', function () {
+                    const id = $(this).data('id');
+                    const name = $(this).data('name');
+                    console.log(`[کلینیک شفا] درخواست مدیریت تعرفه‌های بیمه. InsuranceId: ${id}, Name: ${name}`);
+                    window.location.href = `${state.urls.manageTariffs}/${id}`;
+                });
+
                 // مدیریت صفحه‌بندی
                 $('.pagination a').off('click').on('click', function (e) {
                     e.preventDefault();
                     const page = $(this).data('page') || 1;
-                    state.page = page;
-                    loadInsurances();
+                    loadInsurances(page);
                 });
             }
 
@@ -607,7 +742,7 @@
                     // مدیریت بسته شدن مودال
                     $('#main-modal').off('hidden.bs.modal').on('hidden.bs.modal', function() {
                         if (typeof loadInsurances === 'function') {
-                            loadInsurances();
+                            loadInsurances(state.page);
                         }
                     });
                 }
@@ -635,7 +770,7 @@
                     $.ajax({
                         url: this.action,
                         type: this.method,
-                         $(this).serialize(),
+                        data: $(this).serialize(),
                         success: function(response) {
                             if (response.success) {
                                 $('#main-modal').modal('hide');
@@ -644,7 +779,7 @@
                                 }
                                 // بارگیری مجدد لیست بیمه‌ها
                                 if (typeof loadInsurances === 'function') {
-                                    loadInsurances();
+                                    loadInsurances(state.page);
                                 }
                             } else {
                                 // نمایش خطاها
@@ -769,7 +904,7 @@
                     // مدیریت بسته شدن مودال
                     $('#main-modal').off('hidden.bs.modal').on('hidden.bs.modal', function() {
                         if (typeof loadInsurances === 'function') {
-                            loadInsurances();
+                            loadInsurances(state.page);
                         }
                     });
                 }
@@ -797,7 +932,7 @@
                     $.ajax({
                         url: this.action,
                         type: this.method,
-                         $(this).serialize(),
+                        data: $(this).serialize(),
                         success: function(response) {
                             if (response.success) {
                                 $('#main-modal').modal('hide');
@@ -806,7 +941,7 @@
                                 }
                                 // بارگیری مجدد لیست بیمه‌ها
                                 if (typeof loadInsurances === 'function') {
-                                    loadInsurances();
+                                    loadInsurances(state.page);
                                 }
                             } else {
                                 // نمایش خطاها
@@ -888,23 +1023,20 @@
                 function setupMainEventHandlers() {
                     // جستجو با دکمه
                     $('#btn-search').on('click', function () {
-                        state.page = 1;
-                        loadInsurances();
+                        loadInsurances(1);
                     });
 
                     // جستجو با Enter
                     $('#searchTerm').keypress(function (e) {
                         if (e.which === 13) {
-                            state.page = 1;
-                            loadInsurances();
+                            loadInsurances(1);
                             return false;
                         }
                     });
 
                     // فیلتر فعال/غیرفعال
                     $('#activeOnly').change(function () {
-                        state.page = 1;
-                        loadInsurances();
+                        loadInsurances(1);
                     });
 
                     // ایجاد بیمه جدید
@@ -917,7 +1049,7 @@
                 setupMainEventHandlers();
 
                 // بارگیری اولیه لیست بیمه‌ها
-                loadInsurances();
+                loadInsurances(1);
 
                 // اطمینان از صحیح بودن اعداد اعشاری در محیط فارسی
                 $(document).on('input', 'input[type="number"]', function() {

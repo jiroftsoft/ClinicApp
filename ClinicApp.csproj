@@ -3045,10 +3045,9 @@
     <Content Include="Areas\Admin\Views\Insurance\_AddTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_ErrorPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_SuccessPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_ServiceListForTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_EditTariffPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_TariffListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_AdminLayout - Copy.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_AdminLayout - Copy %282%29.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

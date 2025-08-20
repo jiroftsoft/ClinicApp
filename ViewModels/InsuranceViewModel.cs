@@ -84,6 +84,12 @@ public class InsuranceDetailsViewModel
 
     [Display(Name = "تاریخ آخرین ویرایش")]
     public string UpdatedAtShamsi { get; set; }
+    // لیستی از تعرفه‌ها برای نمایش در صفحه جزئیات
+    public List<InsuranceTariffViewModel> Tariffs { get; set; }
+    public InsuranceDetailsViewModel()
+    {
+        Tariffs = new List<InsuranceTariffViewModel>();
+    }
 }
 /// <summary>
 /// ویو مدل ایجاد بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
@@ -302,6 +308,21 @@ public class InsuranceTariffsViewModel
 {
     public int InsuranceId { get; set; }
     public string InsuranceName { get; set; }
+
+    // --- فیلدهای اضافه شده ---
+    [Display(Name = "سهم پیش‌فرض بیمار")]
+    public decimal DefaultPatientShare { get; set; }
+
+    [Display(Name = "سهم پیش‌فرض بیمه")]
+    public decimal DefaultInsurerShare { get; set; }
+    // -------------------------
+
     public List<InsuranceTariffViewModel> Tariffs { get; set; }
     public List<SelectListItem> AvailableServices { get; set; }
+
+    public InsuranceTariffsViewModel()
+    {
+        Tariffs = new List<InsuranceTariffViewModel>();
+        AvailableServices = new List<SelectListItem>();
+    }
 }
