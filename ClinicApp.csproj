@@ -3037,7 +3037,7 @@
     <Content Include="Areas\Admin\Views\Service\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\Service\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Service\Report.cshtml" />
-    <Content Include="Areas\Admin\Views\Shared\_InsuranceListPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\Insurance\_InsuranceListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_InsuranceTariffsListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_EditInsuranceTariffPartial.cshtml" />

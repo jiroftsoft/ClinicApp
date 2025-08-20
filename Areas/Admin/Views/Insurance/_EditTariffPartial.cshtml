@@ -13,11 +13,12 @@
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
-            @using (Html.BeginForm("EditTariff", "Insurance", FormMethod.Post, new { id = "editTariffForm" }))
+            @using (Html.BeginForm("UpdateTariff", "Insurance", FormMethod.Post, new { id = "editTariffForm" }))
             {
                 @Html.AntiForgeryToken()
                 @Html.HiddenFor(model => model.InsuranceTariffId)
                 @Html.HiddenFor(model => model.InsuranceId)
+                @Html.HiddenFor(model => model.ServiceId)
 
                 <div class="modal-body">
                     <div id="validationSummary" class="alert alert-danger d-none">

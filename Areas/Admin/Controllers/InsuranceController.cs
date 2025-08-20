@@ -31,7 +31,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// 13. رفع کامل مشکل بایند نشدن داده‌ها در فرم ویرایش
     /// 14. مدیریت صحیح دکمه‌های بستن مودال
     /// </summary>
-    [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
+    //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
     [RouteArea("Admin")]
     [RoutePrefix("Insurance")]
     public class InsuranceController : Controller
