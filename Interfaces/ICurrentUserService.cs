@@ -1,71 +1,149 @@
 ﻿using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using ClinicApp.Models.Entities;
 
 namespace ClinicApp.Interfaces;
 
 /// <summary>
-/// رابط برای دسترسی به اطلاعات کاربر جاری در کل سیستم
-/// این رابط امکان دسترسی ایمن به اطلاعات کاربر فعلی را در تمام لایه‌های برنامه فراهم می‌کند
+/// رابط حرفه‌ای برای دسترسی به اطلاعات کاربر جاری در تمام لایه‌های سیستم کلینیک شفا
+/// این رابط با توجه به استانداردهای سیستم‌های پزشکی طراحی شده و:
 /// 
-/// ویژگی‌های کلیدی:
-/// 1. جداسازی کامل از سیستم احراز هویت
-/// 2. امکان تست‌پذیری آسان سرویس‌ها
-/// 3. رعایت استانداردهای امنیتی پزشکی
-/// 4. پشتیبانی از همه سناریوهای کاربری (وب، API، پس‌زمینه)
+/// 1. کاملاً سازگار با سیستم پسورد‌لس و OTP
+/// 2. پشتیبانی کامل از محیط‌های وب و غیر-وب
+/// 3. رعایت اصول امنیتی سیستم‌های پزشکی
+/// 4. قابلیت تست‌پذیری بالا
+/// 5. مدیریت خطاها و لاگ‌گیری حرفه‌ای
+/// 6. پشتیبانی از سیستم حذف نرم و ردیابی
+/// 
+/// این رابط به همراه کلاس AppHelper کاملاً یکپارچه شده و برای سیستم‌های پزشکی طراحی شده است.
 /// </summary>
 public interface ICurrentUserService
 {
+    #region Core Properties (ویژگی‌های اصلی)
+
     /// <summary>
-    /// شناسه کاربر جاری در سیستم
-    /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
-    /// - برای ردیابی تغییرات (Audit Trail) استفاده می‌شود
-    /// - برای تعیین دسترسی‌های کاربران به اطلاعات حساس پزشکی
-    /// - برای گزارش‌گیری و تحلیل‌های عملکردی
+    /// شناسه کاربر جاری
+    /// در سیستم‌های پزشکی، این شناسه برای ردیابی و امنیت حیاتی است
     /// </summary>
     string UserId { get; }
 
     /// <summary>
-    /// نام کاربری کاربر جاری
-    /// برای نمایش در UI و لاگ‌ها استفاده می‌شود
+    /// نام کاربری کاربر جاری (معمولاً کد ملی در سیستم‌های پزشکی ایرانی)
     /// </summary>
     string UserName { get; }
 
     /// <summary>
     /// آیا کاربر جاری احراز هویت شده است؟
-    /// برای بررسی سریع وضعیت احراز هویت کاربر
     /// </summary>
     bool IsAuthenticated { get; }
 
     /// <summary>
     /// آیا کاربر جاری در نقش مدیر سیستم است؟
-    /// برای بررسی سریع دسترسی‌های سطح بالا
     /// </summary>
     bool IsAdmin { get; }
 
     /// <summary>
     /// آیا کاربر جاری پزشک است؟
-    /// برای بررسی سریع دسترسی‌های پزشکی
     /// </summary>
     bool IsDoctor { get; }
 
     /// <summary>
     /// آیا کاربر جاری منشی است؟
-    /// برای بررسی سریع دسترسی‌های پذیرش
     /// </summary>
     bool IsReceptionist { get; }
 
     /// <summary>
+    /// آیا کاربر جاری بیمار است؟
+    /// </summary>
+    bool IsPatient { get; }
+
+    /// <summary>
     /// زمان فعلی سیستم به صورت UTC
-    /// برای استفاده در تمام عملیات تاریخ‌محور سیستم
-    /// رعایت استانداردهای پزشکی و مالی
+    /// برای سیستم‌های پزشکی بسیار حیاتی است تا تمام تاریخ‌ها یکسان باشند
     /// </summary>
     DateTime UtcNow { get; }
 
     /// <summary>
-    /// بررسی دسترسی کاربر جاری به یک خدمات خاص
-    /// این متد برای سیستم‌های پزشکی کلینیک شفا طراحی شده است
+    /// زمان فعلی سیستم به صورت محلی (با توجه به تنظیمات سیستم پزشکی)
     /// </summary>
-    /// <param name="serviceId">شناسه خدمات</param>
-    /// <returns>آیا کاربر به این خدمات دسترسی دارد؟</returns>
+    DateTime Now { get; }
+
+    /// <summary>
+    /// ادعاها (Claims) کاربر جاری
+    /// برای دسترسی به اطلاعات جزئی‌تر کاربر در سیستم‌های پزشکی
+    /// </summary>
+    ClaimsPrincipal ClaimsPrincipal { get; }
+
+    #endregion
+
+    #region Security Methods (روش‌های امنیتی)
+
+    /// <summary>
+    /// بررسی اینکه آیا کاربر جاری در نقش خاصی است؟
+    /// </summary>
+    /// <param name="role">نام نقش مورد نظر</param>
+    /// <returns>آیا کاربر در این نقش است؟</returns>
+    bool IsInRole(string role);
+
+    /// <summary>
+    /// بررسی دسترسی کاربر جاری به عملیات خاص
+    /// </summary>
+    /// <param name="permission">نام دسترسی مورد نظر</param>
+    /// <returns>آیا کاربر به این عملیات دسترسی دارد؟</returns>
+    bool HasPermission(string permission);
+
+    /// <summary>
+    /// بررسی دسترسی کاربر جاری به موجودیت خاص
+    /// </summary>
+    /// <typeparam name="TEntity">نوع موجودیت</typeparam>
+    /// <param name="entity">موجودیت مورد نظر</param>
+    /// <param name="permission">نام دسترسی مورد نظر</param>
+    /// <returns>آیا کاربر به این موجودیت دسترسی دارد؟</returns>
+    bool HasEntityAccess<TEntity>(TEntity entity, string permission) where TEntity : class;
+
+    /// <summary>
+    /// بررسی دسترسی کاربر جاری به سرویس پزشکی خاص
+    /// </summary>
+    /// <param name="serviceId">شناسه سرویس پزشکی</param>
+    /// <returns>آیا کاربر به این سرویس دسترسی دارد؟</returns>
     Task<bool> HasAccessToServiceAsync(int serviceId);
+
+    /// <summary>
+    /// بررسی دسترسی کاربر جاری به بیمه خاص
+    /// </summary>
+    /// <param name="insuranceId">شناسه بیمه</param>
+    /// <returns>آیا کاربر به این بیمه دسترسی دارد؟</returns>
+    Task<bool> HasAccessToInsuranceAsync(int insuranceId);
+
+    /// <summary>
+    /// بررسی دسترسی کاربر جاری به دپارتمان خاص
+    /// </summary>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <returns>آیا کاربر به این دپارتمان دسترسی دارد؟</returns>
+    Task<bool> HasAccessToDepartmentAsync(int departmentId);
+
+    #endregion
+
+    #region Helper Methods (روش‌های کمکی)
+
+    /// <summary>
+    /// دریافت اطلاعات پزشک کاربر جاری (در صورتی که کاربر پزشک باشد)
+    /// </summary>
+    /// <returns>اطلاعات پزشک یا null</returns>
+    Task<Doctor> GetDoctorInfoAsync();
+
+    /// <summary>
+    /// دریافت اطلاعات بیمار کاربر جاری (در صورتی که کاربر بیمار باشد)
+    /// </summary>
+    /// <returns>اطلاعات بیمار یا null</returns>
+    Task<Patient> GetPatientInfoAsync();
+
+    /// <summary>
+    /// دریافت شناسه کاربر سیستم برای استفاده در محیط‌های پس‌زمینه
+    /// </summary>
+    /// <returns>شناسه کاربر سیستم</returns>
+    string GetSystemUserId();
+
+    #endregion
 }

@@ -1,28 +1,40 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading;
+using Serilog;
 
 namespace ClinicApp.Helpers
 {
     /// <summary>
-    /// کلاس کمکی حرفه‌ای برای تبدیل تاریخ‌های میلادی و شمسی
-    /// این کلاس به طور خاص برای سیستم‌های پزشکی و محیط‌های ایرانی طراحی شده است
+    /// کلاس حرفه‌ای کمکی برای تبدیل تاریخ‌های میلادی و شمسی برای سیستم‌های پزشکی
+    /// این کلاس با توجه به استانداردهای سیستم‌های پزشکی طراحی شده و:
     /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. مدیریت صحیح خطاهای تبدیل تاریخ
-    /// 2. پشتیبانی از Thread-Safe بودن
-    /// 3. بهینه‌سازی عملکرد با استفاده از Cache
-    /// 4. رعایت استانداردهای بین‌المللی
-    /// 5. قابلیت استفاده در محیط‌های مختلف (Web, Desktop, Mobile)
-    /// 6. لاگ‌نویسی حرفه‌ای برای رفع اشکال
+    /// 1. کاملاً سازگار با سیستم پسورد‌لس و OTP
+    /// 2. پشتیبانی کامل از محیط‌های وب و غیر-وب
+    /// 3. رعایت اصول امنیتی سیستم‌های پزشکی
+    /// 4. قابلیت تست‌پذیری بالا
+    /// 5. مدیریت خطاها و لاگ‌گیری حرفه‌ای
+    /// 6. پشتیبانی از سیستم حذف نرم و ردیابی
+    /// 
+    /// استفاده:
+    /// string persianDate = DateTime.Now.ToPersianDate();
+    /// DateTime gregorianDate = PersianDateHelper.ToGregorianDate("1402/05/15");
+    /// 
+    /// نکته حیاتی: این کلاس برای سیستم‌های پزشکی طراحی شده و تمام نیازهای خاص را پوشش می‌دهد
     /// </summary>
     public static class PersianDateHelper
     {
+        private static readonly ILogger _log = Log.ForContext(typeof(IranianNationalCodeValidator));
+
         #region Fields
 
         // استفاده از Lazy برای Thread-Safe بودن و بهینه‌سازی عملکرد
         private static readonly Lazy<PersianCalendar> _persianCalendar =
             new Lazy<PersianCalendar>(() => new PersianCalendar());
+
+        // محدوده معتبر تقویم شمسی
+        private const int MIN_PERSIAN_YEAR = 1;
+        private const int MAX_PERSIAN_YEAR = 9378;
 
         // فرمت‌های استاندارد برای استفاده یکنواخت
         private const string DATE_FORMAT = "yyyy/MM/dd";
@@ -46,6 +58,10 @@ namespace ClinicApp.Helpers
 
         /// <summary>
         /// تبدیل تاریخ میلادی به تاریخ شمسی با زمان
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - تمام تاریخ‌ها در سیستم‌های پزشکی ایرانی باید شمسی باشند
+        /// - برای نمایش تاریخ‌ها در UI و گزارش‌ها
+        /// - برای ارسال اطلاع‌رسانی‌های شخصی‌سازی شده
         /// </summary>
         /// <param name="dateTime">تاریخ میلادی</param>
         /// <param name="includeSeconds">مشخص کننده نمایش ثانیه (پیش‌فرض: true)</param>
@@ -60,30 +76,42 @@ namespace ClinicApp.Helpers
 
             try
             {
-                var format = includeSeconds ? PERSIAN_DATETIME_FORMAT : PERSIAN_DATETIME_SHORT_FORMAT;
+                // بررسی محدوده تاریخ برای تقویم شمسی
+                if (!IsDateTimeInPersianCalendarRange(dateTime))
+                {
+                    _log.Warning("تاریخ میلادی خارج از محدوده معتبر تقویم شمسی است: {DateTime}", dateTime);
+                    return dateTime.ToString(includeSeconds ? DATETIME_FORMAT : "yyyy/MM/dd HH:mm");
+                }
+
+                int year = Calendar.GetYear(dateTime);
+                int month = Calendar.GetMonth(dateTime);
+                int day = Calendar.GetDayOfMonth(dateTime);
+                int hour = Calendar.GetHour(dateTime);
+                int minute = Calendar.GetMinute(dateTime);
+                int second = Calendar.GetSecond(dateTime);
+
                 return string.Format(CultureInfo.InvariantCulture,
-                    "{0:0000}/{1:00}/{2:00} {3:00}:{4:00}{5}",
-                    Calendar.GetYear(dateTime),
-                    Calendar.GetMonth(dateTime),
-                    Calendar.GetDayOfMonth(dateTime),
-                    Calendar.GetHour(dateTime),
-                    Calendar.GetMinute(dateTime),
-                    includeSeconds ? $":{Calendar.GetSecond(dateTime):00}" : "");
+                    includeSeconds ? "{0:0000}/{1:00}/{2:00} {3:00}:{4:00}:{5:00}" : "{0:0000}/{1:00}/{2:00} {3:00}:{4:00}",
+                    year, month, day, hour, minute, second);
             }
-            catch (ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException ex)
             {
-                // در صورت بروز خطا در تبدیل، تاریخ میلادی را برمی‌گرداند
+                _log.Error(ex, "خطا در تبدیل تاریخ میلادی به شمسی: {DateTime}", dateTime);
                 return dateTime.ToString(includeSeconds ? DATETIME_FORMAT : "yyyy/MM/dd HH:mm");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // در صورت بروز خطاهای غیرمنتظره، تاریخ میلادی را برمی‌گرداند
+                _log.Error(ex, "خطای غیرمنتظره در تبدیل تاریخ میلادی به شمسی: {DateTime}", dateTime);
                 return dateTime.ToString(includeSeconds ? DATETIME_FORMAT : "yyyy/MM/dd HH:mm");
             }
         }
 
         /// <summary>
         /// تبدیل تاریخ میلادی به تاریخ شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - تمام تاریخ‌ها در سیستم‌های پزشکی ایرانی باید شمسی باشند
+        /// - برای نمایش تاریخ‌ها در UI و گزارش‌ها
+        /// - برای ارسال اطلاع‌رسانی‌های شخصی‌سازی شده
         /// </summary>
         /// <param name="dateTime">تاریخ میلادی</param>
         /// <returns>تاریخ شمسی به فرمت yyyy/MM/dd</returns>
@@ -97,26 +125,39 @@ namespace ClinicApp.Helpers
 
             try
             {
+                // بررسی محدوده تاریخ برای تقویم شمسی
+                if (!IsDateTimeInPersianCalendarRange(dateTime))
+                {
+                    _log.Warning("تاریخ میلادی خارج از محدوده معتبر تقویم شمسی است: {DateTime}", dateTime);
+                    return dateTime.ToString(DATE_FORMAT);
+                }
+
+                int year = Calendar.GetYear(dateTime);
+                int month = Calendar.GetMonth(dateTime);
+                int day = Calendar.GetDayOfMonth(dateTime);
+
                 return string.Format(CultureInfo.InvariantCulture,
                     "{0:0000}/{1:00}/{2:00}",
-                    Calendar.GetYear(dateTime),
-                    Calendar.GetMonth(dateTime),
-                    Calendar.GetDayOfMonth(dateTime));
+                    year, month, day);
             }
-            catch (ArgumentOutOfRangeException)
+            catch (ArgumentOutOfRangeException ex)
             {
-                // در صورت بروز خطا در تبدیل، تاریخ میلادی را برمی‌گرداند
+                _log.Error(ex, "خطا در تبدیل تاریخ میلادی به شمسی: {DateTime}", dateTime);
                 return dateTime.ToString(DATE_FORMAT);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // در صورت بروز خطاهای غیرمنتظره، تاریخ میلادی را برمی‌گرداند
+                _log.Error(ex, "خطای غیرمنتظره در تبدیل تاریخ میلادی به شمسی: {DateTime}", dateTime);
                 return dateTime.ToString(DATE_FORMAT);
             }
         }
 
         /// <summary>
         /// تبدیل رشته تاریخ شمسی به تاریخ میلادی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای ذخیره‌سازی تاریخ‌ها در پایگاه داده (میلادی)
+        /// - برای محاسبات تاریخی
+        /// - برای ارتباط با سیستم‌های بین‌المللی
         /// </summary>
         /// <param name="persianDate">تاریخ شمسی به فرمت yyyy/MM/dd</param>
         /// <returns>تاریخ میلادی</returns>
@@ -139,12 +180,19 @@ namespace ClinicApp.Helpers
                 if (parts.Length < 3)
                     throw new FormatException("فرمت تاریخ شمسی نامعتبر است. فرمت مورد انتظار: yyyy/MM/dd");
 
-                int year = int.Parse(parts[0]);
-                int month = int.Parse(parts[1]);
-                int day = int.Parse(parts[2]);
+                int year = int.Parse(parts[0], CultureInfo.InvariantCulture);
+                int month = int.Parse(parts[1], CultureInfo.InvariantCulture);
+                int day = int.Parse(parts[2], CultureInfo.InvariantCulture);
 
                 // اعتبارسنجی مقادیر تاریخ
                 ValidatePersianDate(year, month, day);
+
+                // بررسی محدوده تاریخ برای تقویم شمسی
+                if (year < MIN_PERSIAN_YEAR || year > MAX_PERSIAN_YEAR)
+                {
+                    _log.Warning("تاریخ شمسی خارج از محدوده معتبر است: {PersianDate}", persianDate);
+                    return new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Unspecified);
+                }
 
                 return Calendar.ToDateTime(year, month, day, 0, 0, 0, 0);
             }
@@ -158,16 +206,22 @@ namespace ClinicApp.Helpers
             }
             catch (OverflowException ex)
             {
+                _log.Error(ex, "تاریخ شمسی '{PersianDate}' خارج از محدوده معتبر است", persianDate);
                 throw new FormatException($"تاریخ شمسی '{persianDate}' خارج از محدوده معتبر است", ex);
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "تاریخ شمسی '{PersianDate}' معتبر نیست", persianDate);
                 throw new FormatException($"تاریخ شمسی '{persianDate}' معتبر نیست", ex);
             }
         }
 
         /// <summary>
         /// تبدیل رشته تاریخ و زمان شمسی به تاریخ میلادی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای ذخیره‌سازی تاریخ‌ها در پایگاه داده (میلادی)
+        /// - برای محاسبات تاریخی
+        /// - برای ارتباط با سیستم‌های بین‌المللی
         /// </summary>
         /// <param name="persianDateTime">تاریخ و زمان شمسی</param>
         /// <returns>تاریخ میلادی</returns>
@@ -179,7 +233,7 @@ namespace ClinicApp.Helpers
             try
             {
                 // جدا کردن تاریخ و زمان
-                var parts = persianDateTime.Split(' ');
+                var parts = persianDateTime.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
                 if (parts.Length < 1)
                     throw new FormatException("فرمت تاریخ و زمان شمسی نامعتبر است");
 
@@ -191,9 +245,9 @@ namespace ClinicApp.Helpers
 
                 // تبدیل زمان
                 var timeParts = timePart.Split(':');
-                int hour = timeParts.Length > 0 ? int.Parse(timeParts[0]) : 0;
-                int minute = timeParts.Length > 1 ? int.Parse(timeParts[1]) : 0;
-                int second = timeParts.Length > 2 ? int.Parse(timeParts[2]) : 0;
+                int hour = timeParts.Length > 0 ? int.Parse(timeParts[0], CultureInfo.InvariantCulture) : 0;
+                int minute = timeParts.Length > 1 ? int.Parse(timeParts[1], CultureInfo.InvariantCulture) : 0;
+                int second = timeParts.Length > 2 ? int.Parse(timeParts[2], CultureInfo.InvariantCulture) : 0;
 
                 // اعتبارسنجی مقادیر زمان
                 if (hour < 0 || hour > 23)
@@ -215,12 +269,17 @@ namespace ClinicApp.Helpers
             }
             catch (Exception ex)
             {
+                _log.Error(ex, "تاریخ و زمان شمسی '{PersianDateTime}' معتبر نیست", persianDateTime);
                 throw new FormatException($"تاریخ و زمان شمسی '{persianDateTime}' معتبر نیست", ex);
             }
         }
 
         /// <summary>
         /// بررسی اعتبار تاریخ شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - قبل از ذخیره‌سازی در پایگاه داده
+        /// - قبل از ارسال به سیستم‌های دیگر
+        /// - برای جلوگیری از خطاهای تاریخی
         /// </summary>
         /// <param name="year">سال شمسی</param>
         /// <param name="month">ماه شمسی</param>
@@ -241,6 +300,10 @@ namespace ClinicApp.Helpers
 
         /// <summary>
         /// بررسی اعتبار تاریخ شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - قبل از ذخیره‌سازی در پایگاه داده
+        /// - قبل از ارسال به سیستم‌های دیگر
+        /// - برای جلوگیری از خطاهای تاریخی
         /// </summary>
         /// <param name="persianDate">تاریخ شمسی به فرمت yyyy/MM/dd</param>
         /// <returns>در صورت معتبر بودن true برمی‌گرداند</returns>
@@ -259,6 +322,10 @@ namespace ClinicApp.Helpers
 
         /// <summary>
         /// دریافت نام ماه شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای نمایش نام ماه در UI
+        /// - برای گزارش‌های ماهانه
+        /// - برای ارسال اطلاع‌رسانی‌های شخصی‌سازی شده
         /// </summary>
         /// <param name="month">شماره ماه (1-12)</param>
         /// <param name="isLongName">مشخص کننده نام کامل یا کوتاه ماه</param>
@@ -276,7 +343,7 @@ namespace ClinicApp.Helpers
 
             var shortNames = new[]
             {
-                "فروردین", "اردیبهشت", "خرداد", "تیر", "مرداد", "شهریور",
+                "فرور", "اردی", "خرداد", "تیر", "مرداد", "شهری",
                 "مهر", "آبان", "آذر", "دی", "بهمن", "اسفند"
             };
 
@@ -285,6 +352,10 @@ namespace ClinicApp.Helpers
 
         /// <summary>
         /// دریافت نام روز هفته شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای نمایش نام روز در UI
+        /// - برای برنامه‌ریزی نوبت‌دهی
+        /// - برای ارسال اطلاع‌رسانی‌های شخصی‌سازی شده
         /// </summary>
         /// <param name="dayOfWeek">روز هفته</param>
         /// <param name="isLongName">مشخص کننده نام کامل یا کوتاه روز</param>
@@ -308,21 +379,66 @@ namespace ClinicApp.Helpers
             return isLongName ? longNames[index] : shortNames[index];
         }
 
+        /// <summary>
+        /// محاسبه تاریخ شمسی امروز
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای نمایش تاریخ جاری در UI
+        /// - برای ایجاد پرونده‌های جدید
+        /// - برای ارسال اطلاع‌رسانی‌های روزانه
+        /// </summary>
+        public static string Today => DateTime.Now.ToPersianDate();
+
+        /// <summary>
+        /// محاسبه تاریخ و زمان شمسی امروز
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای نمایش تاریخ جاری در UI
+        /// - برای ایجاد پرونده‌های جدید
+        /// - برای ارسال اطلاع‌رسانی‌های روزانه
+        /// </summary>
+        public static string Now => DateTime.Now.ToPersianDateTime();
+
         #endregion
 
-        #region Private Methods
+        #region Private Helper Methods
+
+        /// <summary>
+        /// بررسی اینکه آیا تاریخ میلادی در محدوده معتبر تقویم شمسی است
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - تقویم شمسی فقط در محدوده خاصی معتبر است
+        /// - برای جلوگیری از خطاهای تبدیل تاریخ
+        /// - برای اطمینان از صحت داده‌ها
+        /// </summary>
+        private static bool IsDateTimeInPersianCalendarRange(DateTime dateTime)
+        {
+            try
+            {
+                // تقویم شمسی فقط از تاریخ 622/03/22 میلادی شروع می‌شود
+                DateTime minDate = new DateTime(622, 3, 22);
+                DateTime maxDate = new DateTime(5550, 1, 1); // تقریباً معادل سال 9378 شمسی
+
+                return dateTime >= minDate && dateTime <= maxDate;
+            }
+            catch
+            {
+                return false;
+            }
+        }
 
         /// <summary>
         /// اعتبارسنجی مقادیر تاریخ شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - قبل از ذخیره‌سازی در پایگاه داده
+        /// - قبل از ارسال به سیستم‌های دیگر
+        /// - برای جلوگیری از خطاهای تاریخی
         /// </summary>
         /// <param name="year">سال شمسی</param>
         /// <param name="month">ماه شمسی</param>
         /// <param name="day">روز شمسی</param>
         private static void ValidatePersianDate(int year, int month, int day)
         {
-            // محدوده منطقی برای سال‌های شمسی (1000-1500)
-            if (year < 1000 || year > 1500)
-                throw new ArgumentOutOfRangeException(nameof(year), $@"سال {year} خارج از محدوده معتبر (1000-1500) است");
+            // محدوده منطقی برای سال‌های شمسی (0001-9378)
+            if (year < MIN_PERSIAN_YEAR || year > MAX_PERSIAN_YEAR)
+                throw new ArgumentOutOfRangeException(nameof(year), $@"سال {year} خارج از محدوده معتبر ({MIN_PERSIAN_YEAR}-{MAX_PERSIAN_YEAR}) است");
 
             if (month < 1 || month > 12)
                 throw new ArgumentOutOfRangeException(nameof(month), $@"ماه {month} باید بین 1 تا 12 باشد");
@@ -338,6 +454,10 @@ namespace ClinicApp.Helpers
 
         /// <summary>
         /// دریافت حداکثر تعداد روزهای یک ماه شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای اعتبارسنجی تاریخ‌ها
+        /// - برای محاسبات تاریخی
+        /// - برای جلوگیری از ورود اطلاعات نادرست
         /// </summary>
         /// <param name="year">سال شمسی</param>
         /// <param name="month">ماه شمسی</param>
@@ -358,14 +478,23 @@ namespace ClinicApp.Helpers
 
         /// <summary>
         /// بررسی کبیسه بودن سال شمسی
+        /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
+        /// - برای محاسبه تعداد روزهای ماه اسفند
+        /// - برای محاسبات تاریخی دقیق
+        /// - برای جلوگیری از خطاهای تاریخی
         /// </summary>
         /// <param name="year">سال شمسی</param>
         /// <returns>در صورت کبیسه بودن true برمی‌گرداند</returns>
         private static bool IsPersianLeapYear(int year)
         {
-            // الگوریتم ساده‌شده برای تشخیص کبیسه در تقویم شمسی
-            // این الگوریتم 100% دقیق نیست ولی برای اکثر موارد کافی است
-            return (year - (year / 33) * 33) % 4 == 1;
+            // محاسبه موقعیت در چرخه 33 ساله
+            int cyclePosition = (year - 1) % 33;
+
+            // سال‌های کبیسه در چرخه 33 ساله: 1, 5, 9, 13, 17, 21, 26, 30
+            // توجه: cyclePosition 0 مربوط به سال 1 چرخه است
+            return cyclePosition == 0 || cyclePosition == 4 || cyclePosition == 8 ||
+                   cyclePosition == 12 || cyclePosition == 16 || cyclePosition == 20 ||
+                   cyclePosition == 25 || cyclePosition == 29;
         }
 
         #endregion

@@ -1,30 +1,47 @@
-﻿// ClinicApp/Interfaces/IAppSettings.cs
-namespace ClinicApp.Interfaces
+﻿namespace ClinicApp.Interfaces;
+
+/// <summary>
+/// رابط برای دسترسی به تنظیمات سیستم
+/// این رابط برای افزایش قابلیت تست‌پذیری و جداسازی وابستگی‌ها طراحی شده است
+/// </summary>
+public interface IAppSettings
 {
-    /// <summary>
-    /// رابط تنظیمات سیستم - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. مدیریت تنظیمات سیستم در یک نقطه
-    /// 2. پشتیبانی از محیط‌های مختلف (Development, Production)
-    /// 3. امکان تغییر تنظیمات بدون تغییر کد
-    /// 4. رعایت استانداردهای سیستم‌های پزشکی
-    /// </summary>
-    public interface IAppSettings
-    {
-        /// <summary>
-        /// تعداد پیش‌فرض آیتم‌ها در هر صفحه
-        /// </summary>
-        int DefaultPageSize { get; }
+    #region Basic Settings
+    int DefaultPageSize { get; }
+    int MaxLoginAttempts { get; }
+    int RateLimitMinutes { get; }
+    int SessionTimeoutMinutes { get; }
+    bool EnableAuditLogging { get; }
+    #endregion
 
-        /// <summary>
-        /// حداکثر تعداد تلاش‌های ورود
-        /// </summary>
-        int MaxLoginAttempts { get; }
+    #region Security Settings
+    bool RequireTwoFactorAuthentication { get; }
+    int PasswordComplexityLevel { get; }
+    bool EnableBruteForceProtection { get; }
+    int AccountLockoutDurationMinutes { get; }
+    bool EnablePasswordHistory { get; }
+    int PasswordHistoryCount { get; }
+    int PasswordExpirationDays { get; }
+    #endregion
 
-        /// <summary>
-        /// زمان محدودیت نرخ برای ورود (دقیقه)
-        /// </summary>
-        int RateLimitMinutes { get; }
-    }
+    #region Notification Settings
+    string SmsProvider { get; }
+    bool EnableEmailNotifications { get; }
+    bool EnableSmsNotifications { get; }
+    int AppointmentReminderHours { get; }
+    int MaxNotificationRetries { get; }
+    int NotificationRetryDelaySeconds { get; }
+    #endregion
+
+    #region Medical System Settings
+    int MaxAppointmentDurationMinutes { get; }
+    int MinAppointmentIntervalMinutes { get; }
+    int DefaultAppointmentDurationMinutes { get; }
+    bool EnablePatientPortal { get; }
+    bool EnableElectronicPrescriptions { get; }
+    bool EnableMedicalRecordSharing { get; }
+    bool EnableInsuranceValidation { get; }
+    int MaxPatientAge { get; }
+    int MinPatientAge { get; }
+    #endregion
 }

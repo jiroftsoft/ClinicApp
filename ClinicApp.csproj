@@ -428,10 +428,8 @@
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
     <Compile Include="Core\Class1.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
-    <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
-    <Compile Include="Helpers\SystemConstants.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\Class1.cs" />
     <Compile Include="Infrastructure\DatabaseMigrationManager.cs" />

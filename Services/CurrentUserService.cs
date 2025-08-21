@@ -16,6 +16,7 @@ namespace ClinicApp.Services
 {
     /// <summary>
     /// پیاده‌سازی سرویس کاربر فعلی برای سیستم‌های پزشکی با رعایت کامل استانداردهای امنیتی و عملکردی
+    /// این نسخه کامل و هماهنگ با رابط ICurrentUserService است
     /// </summary>
     public class CurrentUserService : ICurrentUserService
     {
@@ -23,6 +24,7 @@ namespace ClinicApp.Services
         private readonly ApplicationUserManager _userManager;
         private readonly ILogger _logger;
         private readonly ApplicationDbContext _context;
+        private ApplicationUser _currentUser;
 
         public CurrentUserService(
             HttpContextBase httpContext,
@@ -36,15 +38,110 @@ namespace ClinicApp.Services
             _context = context;
         }
 
+        #region Core Properties (ویژگی‌های اصلی)
+
         public string UserId => GetUserId();
         public string UserName => GetUserName();
         public bool IsAuthenticated => GetIsAuthenticated();
         public bool IsAdmin => IsInRole(AppRoles.Admin);
         public bool IsDoctor => IsInRole(AppRoles.Doctor);
         public bool IsReceptionist => IsInRole(AppRoles.Receptionist);
+        public bool IsPatient => IsInRole(AppRoles.Patient);
         public DateTime UtcNow => DateTime.UtcNow;
-        public DateTime IranNow => DateTime.Now;
-        public string PersianDate => DateTime.Now.ToPersianDateTime();
+        public DateTime Now => DateTime.Now;
+        public ClaimsPrincipal ClaimsPrincipal => _httpContext?.User as ClaimsPrincipal;
+
+        #endregion
+
+        #region Security Methods (روش‌های امنیتی)
+
+        public bool IsInRole(string role)
+        {
+            try
+            {
+                if (_httpContext?.User?.Identity == null || !_httpContext.User.Identity.IsAuthenticated)
+                {
+                    return false;
+                }
+
+                var userId = UserId;
+                if (userId == "System")
+                {
+                    return false;
+                }
+
+                return _userManager.IsInRole(userId, role);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی نقش کاربر برای نقش {Role}.", role);
+                return false;
+            }
+        }
+
+        public bool HasPermission(string permission)
+        {
+            try
+            {
+                if (!IsAuthenticated)
+                {
+                    return false;
+                }
+
+                // منطق خاص بررسی دسترسی‌ها برای سیستم‌های پزشکی
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی دسترسی به {Permission}.", permission);
+                return false;
+            }
+        }
+
+        public bool HasEntityAccess<TEntity>(TEntity entity, string permission) where TEntity : class
+        {
+            try
+            {
+                if (!IsAuthenticated)
+                {
+                    return false;
+                }
+
+                // منطق خاص بررسی دسترسی به موجودیت‌ها
+                if (IsAdmin)
+                {
+                    return true;
+                }
+
+                // بررسی مالکیت موجودیت
+                if (entity is Patient patient)
+                {
+                    return patient.CreatedByUserId == UserId ||
+                           patient.ApplicationUserId == UserId;
+                }
+
+                if (entity is Reception reception)
+                {
+                    return reception.CreatedByUserId == UserId ||
+                           reception.DoctorId.ToString() == UserId;
+                }
+
+                // برای سایر موجودیت‌ها
+                var trackable = entity as ITrackable;
+                if (trackable != null)
+                {
+                    return trackable.CreatedByUserId == UserId;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی دسترسی به موجودیت {EntityType} با دسترسی {Permission}.",
+                    typeof(TEntity).Name, permission);
+                return false;
+            }
+        }
 
         public async Task<bool> HasAccessToServiceAsync(int serviceId)
         {
@@ -88,7 +185,7 @@ namespace ClinicApp.Services
                         return false;
                     }
 
-                    // دریافت خدمات - بدون استفاده از ThenInclude (EF6)
+                    // دریافت خدمات
                     var service = await _context.Services
                         .Include(s => s.ServiceCategory)
                         .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
@@ -99,7 +196,7 @@ namespace ClinicApp.Services
                         return false;
                     }
 
-                    // دریافت Department مربوطه به صورت جداگانه (به جای ThenInclude)
+                    // دریافت Department مربوطه
                     var serviceCategory = await _context.ServiceCategories
                         .Include(sc => sc.Department)
                         .FirstOrDefaultAsync(sc => sc.ServiceCategoryId == service.ServiceCategoryId);
@@ -167,6 +264,159 @@ namespace ClinicApp.Services
                 return false;
             }
         }
+
+        public async Task<bool> HasAccessToInsuranceAsync(int insuranceId)
+        {
+            try
+            {
+                if (!IsAuthenticated)
+                {
+                    return false;
+                }
+
+                // 1. اگر کاربر نقش مدیر دارد، به همه چیز دسترسی دارد
+                if (IsAdmin)
+                {
+                    return true;
+                }
+
+                // 2. اگر کاربر نقش پزشک یا منشی دارد
+                if (IsDoctor || IsReceptionist)
+                {
+                    // دریافت کاربر فعلی
+                    var user = await _userManager.FindByIdAsync(UserId);
+                    if (user == null)
+                    {
+                        return false;
+                    }
+
+                    // دریافت پزشک یا منشی مربوطه
+                    if (IsDoctor)
+                    {
+                        var doctor = await _context.Doctors
+                            .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+                        return doctor != null;
+                    }
+                    else if (IsReceptionist)
+                    {
+                        // منشی می‌تواند به تمام بیمه‌ها دسترسی داشته باشد
+                        return true;
+                    }
+                }
+
+                // 3. سایر نقش‌ها (بیمار و غیره)
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی دسترسی به بیمه {InsuranceId}.", insuranceId);
+                return false;
+            }
+        }
+
+        public async Task<bool> HasAccessToDepartmentAsync(int departmentId)
+        {
+            try
+            {
+                if (!IsAuthenticated)
+                {
+                    return false;
+                }
+
+                // 1. اگر کاربر نقش مدیر دارد، به همه چیز دسترسی دارد
+                if (IsAdmin)
+                {
+                    return true;
+                }
+
+                // 2. اگر کاربر نقش پزشک دارد
+                if (IsDoctor)
+                {
+                    var doctor = await _context.Doctors
+                        .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+
+                    if (doctor == null)
+                    {
+                        return false;
+                    }
+
+                    // پزشک فقط به دپارتمان خود دسترسی دارد
+                    return doctor.DepartmentId.HasValue &&
+                           doctor.DepartmentId.Value == departmentId;
+                }
+
+                // 3. اگر کاربر نقش منشی دارد
+                if (IsReceptionist)
+                {
+                    // منشی می‌تواند به تمام دپارتمان‌ها دسترسی داشته باشد
+                    return true;
+                }
+
+                // 4. سایر نقش‌ها (بیمار و غیره)
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی دسترسی به دپارتمان {DepartmentId}.", departmentId);
+                return false;
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods (روش‌های کمکی)
+
+        public async Task<Doctor> GetDoctorInfoAsync()
+        {
+            try
+            {
+                if (!IsDoctor)
+                {
+                    return null;
+                }
+
+                return await _context.Doctors
+                    .Include(d => d.ApplicationUser)
+                    .Include(d => d.Clinic)
+                    .Include(d => d.Department)
+                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اطلاعات پزشک برای کاربر {UserId}.", UserId);
+                return null;
+            }
+        }
+
+        public async Task<Patient> GetPatientInfoAsync()
+        {
+            try
+            {
+                if (!IsPatient)
+                {
+                    return null;
+                }
+
+                return await _context.Patients
+                    .Include(p => p.ApplicationUser)
+                    .Include(p => p.Insurance)
+                    .FirstOrDefaultAsync(p => p.ApplicationUserId == UserId && !p.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اطلاعات بیمار برای کاربر {UserId}.", UserId);
+                return null;
+            }
+        }
+
+        public string GetSystemUserId()
+        {
+            return SystemUsers.SystemUserId;
+        }
+
+        #endregion
+
+        #region Private Helper Methods (روش‌های کمکی خصوصی)
 
         private string GetUserId()
         {
@@ -301,30 +551,6 @@ namespace ClinicApp.Services
             }
         }
 
-        private bool IsInRole(string role)
-        {
-            try
-            {
-                if (_httpContext?.User?.Identity == null || !_httpContext.User.Identity.IsAuthenticated)
-                {
-                    return false;
-                }
-
-                var userId = UserId;
-                if (userId == "System")
-                {
-                    return false;
-                }
-
-                return _userManager.IsInRole(userId, role);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در بررسی نقش کاربر برای نقش {Role}.", role);
-                return false;
-            }
-        }
-
         private bool UserExistsInDatabase(string userId)
         {
             try
@@ -368,23 +594,6 @@ namespace ClinicApp.Services
             }
         }
 
-        public bool HasAccess(string resource)
-        {
-            try
-            {
-                if (!IsAuthenticated)
-                {
-                    return false;
-                }
-
-                // منطق خاص بررسی دسترسی‌ها
-                return true;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در بررسی دسترسی به {Resource}.", resource);
-                return false;
-            }
-        }
+        #endregion
     }
 }
