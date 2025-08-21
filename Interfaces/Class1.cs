@@ -8,5 +8,3 @@ namespace ClinicApp.Interfaces
     }
 
 }
-
-

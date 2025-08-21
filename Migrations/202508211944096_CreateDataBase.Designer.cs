@@ -7,13 +7,13 @@ namespace ClinicApp.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class Change01 : IMigrationMetadata
+    public sealed partial class CreateDataBase : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(Change01));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(CreateDataBase));
         
         string IMigrationMetadata.Id
         {
-            get { return "202508192059457_Change01"; }
+            get { return "202508211944096_CreateDataBase"; }
         }
         
         string IMigrationMetadata.Source

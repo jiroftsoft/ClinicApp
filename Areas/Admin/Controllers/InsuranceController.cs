@@ -217,111 +217,111 @@ namespace ClinicApp.Areas.Admin.Controllers
             return PartialView("_CreateInsurance");
         }
 
-        /// <summary>
-        /// پردازش ایجاد بیمه جدید
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        [Route("Create")]
-        public async Task<JsonResult> Create(CreateInsuranceViewModel model)
-        {
-            var operationId = Guid.NewGuid().ToString();
-            _log.Information(
-                "درخواست ایجاد بیمه جدید. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                operationId, _currentUserService.UserName, _currentUserService.UserId);
+        ///// <summary>
+        ///// پردازش ایجاد بیمه جدید
+        ///// </summary>
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //[Route("Create")]
+        //public async Task<JsonResult> Create(CreateInsuranceViewModel model)
+        //{
+        //    var operationId = Guid.NewGuid().ToString();
+        //    _log.Information(
+        //        "درخواست ایجاد بیمه جدید. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+        //        operationId, _currentUserService.UserName, _currentUserService.UserId);
 
-            try
-            {
-                // **مرحله 1: پردازش و تبدیل صحیح فرمت اعشاری در محیط فارسی**
-                var patientShareValue = Request.Form["DefaultPatientShare"];
-                if (!string.IsNullOrEmpty(patientShareValue))
-                {
-                    var patientShareStr = patientShareValue.ToString().Replace(",", ".");
-                    if (decimal.TryParse(patientShareStr, out decimal patientShare))
-                    {
-                        model.DefaultPatientShare = patientShare;
-                    }
-                }
+        //    try
+        //    {
+        //        // **مرحله 1: پردازش و تبدیل صحیح فرمت اعشاری در محیط فارسی**
+        //        var patientShareValue = Request.Form["DefaultPatientShare"];
+        //        if (!string.IsNullOrEmpty(patientShareValue))
+        //        {
+        //            var patientShareStr = patientShareValue.ToString().Replace(",", ".");
+        //            if (decimal.TryParse(patientShareStr, out decimal patientShare))
+        //            {
+        //                model.DefaultPatientShare = patientShare;
+        //            }
+        //        }
 
-                var insurerShareValue = Request.Form["DefaultInsurerShare"];
-                if (!string.IsNullOrEmpty(insurerShareValue))
-                {
-                    var insurerShareStr = insurerShareValue.ToString().Replace(",", ".");
-                    if (decimal.TryParse(insurerShareStr, out decimal insurerShare))
-                    {
-                        model.DefaultInsurerShare = insurerShare;
-                    }
-                }
+        //        var insurerShareValue = Request.Form["DefaultInsurerShare"];
+        //        if (!string.IsNullOrEmpty(insurerShareValue))
+        //        {
+        //            var insurerShareStr = insurerShareValue.ToString().Replace(",", ".");
+        //            if (decimal.TryParse(insurerShareStr, out decimal insurerShare))
+        //            {
+        //                model.DefaultInsurerShare = insurerShare;
+        //            }
+        //        }
 
-                // **مرحله 2: اعتبارسنجی مدل**
-                if (!ModelState.IsValid)
-                {
-                    _log.Warning(
-                        "اعتبارسنجی ایجاد بیمه شکست خورد. OperationId: {OperationId}, Errors: {@Errors}. User: {UserName} (Id: {UserId})",
-                        operationId, ModelState.Values.SelectMany(v => v.Errors),
-                        _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, errors = GetModelErrors() });
-                }
+        //        // **مرحله 2: اعتبارسنجی مدل**
+        //        if (!ModelState.IsValid)
+        //        {
+        //            _log.Warning(
+        //                "اعتبارسنجی ایجاد بیمه شکست خورد. OperationId: {OperationId}, Errors: {@Errors}. User: {UserName} (Id: {UserId})",
+        //                operationId, ModelState.Values.SelectMany(v => v.Errors),
+        //                _currentUserService.UserName, _currentUserService.UserId);
+        //            return Json(new { success = false, errors = GetModelErrors() });
+        //        }
 
-                // **مرحله 3: اعتبارسنجی محدوده سهم‌ها**
-                if (model.DefaultPatientShare.HasValue)
-                {
-                    if (model.DefaultPatientShare < 0 || model.DefaultPatientShare > 100)
-                    {
-                        _log.Warning(
-                            "سهم بیمار خارج از محدوده معتبر است. OperationId: {OperationId}, Value: {PatientShare}, User: {UserName} (Id: {UserId})",
-                            operationId, model.DefaultPatientShare, _currentUserService.UserName, _currentUserService.UserId);
-                        return Json(new { success = false, message = "سهم بیمار باید بین 0 تا 100 درصد باشد." });
-                    }
-                }
+        //        // **مرحله 3: اعتبارسنجی محدوده سهم‌ها**
+        //        if (model.DefaultPatientShare.HasValue)
+        //        {
+        //            if (model.DefaultPatientShare < 0 || model.DefaultPatientShare > 100)
+        //            {
+        //                _log.Warning(
+        //                    "سهم بیمار خارج از محدوده معتبر است. OperationId: {OperationId}, Value: {PatientShare}, User: {UserName} (Id: {UserId})",
+        //                    operationId, model.DefaultPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+        //                return Json(new { success = false, message = "سهم بیمار باید بین 0 تا 100 درصد باشد." });
+        //            }
+        //        }
 
-                if (model.DefaultInsurerShare.HasValue)
-                {
-                    if (model.DefaultInsurerShare < 0 || model.DefaultInsurerShare > 100)
-                    {
-                        _log.Warning(
-                            "سهم بیمه خارج از محدوده معتبر است. OperationId: {OperationId}, Value: {InsurerShare}, User: {UserName} (Id: {UserId})",
-                            operationId, model.DefaultInsurerShare, _currentUserService.UserName, _currentUserService.UserId);
-                        return Json(new { success = false, message = "سهم بیمه باید بین 0 تا 100 درصد باشد." });
-                    }
-                }
+        //        if (model.DefaultInsurerShare.HasValue)
+        //        {
+        //            if (model.DefaultInsurerShare < 0 || model.DefaultInsurerShare > 100)
+        //            {
+        //                _log.Warning(
+        //                    "سهم بیمه خارج از محدوده معتبر است. OperationId: {OperationId}, Value: {InsurerShare}, User: {UserName} (Id: {UserId})",
+        //                    operationId, model.DefaultInsurerShare, _currentUserService.UserName, _currentUserService.UserId);
+        //                return Json(new { success = false, message = "سهم بیمه باید بین 0 تا 100 درصد باشد." });
+        //            }
+        //        }
 
-                // **مرحله 4: اعتبارسنجی مجموع سهم‌ها**
-                if (model.DefaultPatientShare.HasValue && model.DefaultInsurerShare.HasValue)
-                {
-                    if (Math.Abs(model.DefaultPatientShare.Value + model.DefaultInsurerShare.Value - 100) > 0.01m)
-                    {
-                        _log.Warning(
-                            "جمع سهم‌های بیمار و بیمه برابر با 100 نیست. OperationId: {OperationId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
-                            operationId, model.DefaultPatientShare, model.DefaultInsurerShare, _currentUserService.UserName, _currentUserService.UserId);
-                        return Json(new { success = false, message = "جمع سهم بیمار و بیمه باید برابر با 100 درصد باشد." });
-                    }
-                }
+        //        // **مرحله 4: اعتبارسنجی مجموع سهم‌ها**
+        //        if (model.DefaultPatientShare.HasValue && model.DefaultInsurerShare.HasValue)
+        //        {
+        //            if (Math.Abs(model.DefaultPatientShare.Value + model.DefaultInsurerShare.Value - 100) > 0.01m)
+        //            {
+        //                _log.Warning(
+        //                    "جمع سهم‌های بیمار و بیمه برابر با 100 نیست. OperationId: {OperationId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
+        //                    operationId, model.DefaultPatientShare, model.DefaultInsurerShare, _currentUserService.UserName, _currentUserService.UserId);
+        //                return Json(new { success = false, message = "جمع سهم بیمار و بیمه باید برابر با 100 درصد باشد." });
+        //            }
+        //        }
 
-                // **مرحله 5: ایجاد بیمه در سرویس**
-                var result = await _insuranceService.CreateInsuranceAsync(model);
-                if (result != null && result.Success)
-                {
-                    _log.Information(
-                        "بیمه با موفقیت ایجاد شد. OperationId: {OperationId}, InsuranceName: {InsuranceName}, User: {UserName} (Id: {UserId})",
-                        operationId, model.Name, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = true, message = result.Message });
-                }
+        //        // **مرحله 5: ایجاد بیمه در سرویس**
+        //        var result = await _insuranceService.CreateInsuranceAsync(model);
+        //        if (result != null && result.Success)
+        //        {
+        //            _log.Information(
+        //                "بیمه با موفقیت ایجاد شد. OperationId: {OperationId}, InsuranceName: {InsuranceName}, User: {UserName} (Id: {UserId})",
+        //                operationId, model.Name, _currentUserService.UserName, _currentUserService.UserId);
+        //            return Json(new { success = true, message = result.Message });
+        //        }
 
-                _log.Warning(
-                    "ایجاد بیمه ناموفق بود. OperationId: {OperationId}, InsuranceName: {InsuranceName}, Error: {Error}. User: {UserName} (Id: {UserId})",
-                    operationId, model.Name, result?.Message, _currentUserService.UserName, _currentUserService.UserId);
-                return Json(new { success = false, message = result?.Message ?? "خطا در ایجاد بیمه." });
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطای سیستمی در ایجاد بیمه. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    operationId, _currentUserService.UserName, _currentUserService.UserId);
-                return Json(new { success = false, message = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید." });
-            }
-        }
+        //        _log.Warning(
+        //            "ایجاد بیمه ناموفق بود. OperationId: {OperationId}, InsuranceName: {InsuranceName}, Error: {Error}. User: {UserName} (Id: {UserId})",
+        //            operationId, model.Name, result?.Message, _currentUserService.UserName, _currentUserService.UserId);
+        //        return Json(new { success = false, message = result?.Message ?? "خطا در ایجاد بیمه." });
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _log.Error(
+        //            ex,
+        //            "خطای سیستمی در ایجاد بیمه. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+        //            operationId, _currentUserService.UserName, _currentUserService.UserId);
+        //        return Json(new { success = false, message = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید." });
+        //    }
+        //}
         #endregion
 
         #region Edit

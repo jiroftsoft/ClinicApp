@@ -66,7 +66,7 @@ namespace ClinicApp.Services
                     // تنظیم فیلدهای ردیابی (Audit Trail)
                     clinic.CreatedAt = DateTime.UtcNow;
                     clinic.UpdatedAt = DateTime.UtcNow; // اضافه کردن این خط
-                    clinic.CreatedById = _currentUserService.UserId;
+                    clinic.CreatedByUserId = _currentUserService.UserId;
                     clinic.IsDeleted = false;
                     clinic.IsActive = true;
                     
@@ -123,7 +123,7 @@ namespace ClinicApp.Services
                     // به‌روزرسانی کلینیک
                     _mapper.Map(model, existingClinic);
                     existingClinic.UpdatedAt = DateTime.UtcNow;
-                    existingClinic.UpdatedById = _currentUserService.UserId;
+                    existingClinic.UpdatedByUserId = _currentUserService.UserId;
 
                     await _context.SaveChangesAsync();
                     transaction.Commit();
@@ -186,7 +186,7 @@ namespace ClinicApp.Services
                     // تنظیمات Soft Delete برای کلینیک
                     clinic.IsDeleted = true;
                     clinic.DeletedAt = DateTime.UtcNow;
-                    clinic.DeletedById = _currentUserService.UserId;
+                    clinic.DeletedByUserId = _currentUserService.UserId;
 
                     await _context.SaveChangesAsync();
                     transaction.Commit();

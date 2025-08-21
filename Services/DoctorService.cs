@@ -262,7 +262,7 @@ namespace ClinicApp.Services
                     // تنظیمات Soft Delete برای پزشک
                     doctor.IsDeleted = true;
                     doctor.DeletedAt = DateTime.UtcNow; // زمان حذف با UTC
-                    doctor.DeletedById = _currentUserService.UserId; // کاربر حذف کننده
+                    doctor.DeletedByUserId = _currentUserService.UserId; // کاربر حذف کننده
 
                     // Soft Delete برای نوبت‌های فعال پزشک
                     var activeAppointments = await _context.Appointments
@@ -273,7 +273,7 @@ namespace ClinicApp.Services
                     {
                         appointment.IsDeleted = true;
                         appointment.DeletedAt = DateTime.UtcNow;
-                        appointment.DeletedById = _currentUserService.UserId;
+                        appointment.DeletedByUserId = _currentUserService.UserId;
                     }
 
                     // غیرفعال کردن حساب کاربری پزشک

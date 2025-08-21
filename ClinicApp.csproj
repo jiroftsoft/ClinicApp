@@ -193,6 +193,9 @@
     <Reference Include="Microsoft.Owin.Security.Twitter, Version=4.2.3.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.Owin.Security.Twitter.4.2.3\lib\net45\Microsoft.Owin.Security.Twitter.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.Web.Infrastructure, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.Web.Infrastructure.2.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
+    </Reference>
     <Reference Include="MimeKit, Version=4.11.0.0, Culture=neutral, PublicKeyToken=bede1c8a46c66814, processorArchitecture=MSIL">
       <HintPath>packages\MimeKit.4.11.0\lib\net48\MimeKit.dll</HintPath>
     </Reference>
@@ -367,10 +370,6 @@
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web.Services" />
     <Reference Include="System.EnterpriseServices" />
-    <Reference Include="Microsoft.Web.Infrastructure, Version=2.0.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <Private>True</Private>
-      <HintPath>packages\Microsoft.Web.Infrastructure.2.0.0\lib\net40\Microsoft.Web.Infrastructure.dll</HintPath>
-    </Reference>
     <Reference Include="System.Net.Http">
     </Reference>
     <Reference Include="System.Net.Http.WebRequest">
@@ -415,6 +414,7 @@
     <Compile Include="App_Start\BundleConfig.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\IdentityConfig.cs" />
+    <Compile Include="App_Start\IdentitySeed.cs" />
     <Compile Include="App_Start\MappingProfile.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
@@ -426,21 +426,28 @@
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController - Copy.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
+    <Compile Include="Core\Class1.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\Enums.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
+    <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\SystemConstants.cs" />
+    <Compile Include="Helpers\SystemUsers.cs" />
+    <Compile Include="Infrastructure\Class1.cs" />
+    <Compile Include="Infrastructure\DatabaseMigrationManager.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IInsuranceService.cs" />
-    <Compile Include="Migrations\202508191630082_InitialCreateModels.cs" />
-    <Compile Include="Migrations\202508191630082_InitialCreateModels.Designer.cs">
-      <DependentUpon>202508191630082_InitialCreateModels.cs</DependentUpon>
+    <Compile Include="Interfaces\INotificationChannel.cs" />
+    <Compile Include="Interfaces\INotificationHistoryService.cs" />
+    <Compile Include="Interfaces\INotificationService.cs" />
+    <Compile Include="Interfaces\INotificationTemplateService.cs" />
+    <Compile Include="Migrations\202508211944096_CreateDataBase.cs" />
+    <Compile Include="Migrations\202508211944096_CreateDataBase.Designer.cs">
+      <DependentUpon>202508211944096_CreateDataBase.cs</DependentUpon>
     </Compile>
-    <Compile Include="Migrations\202508192059457_Change01.cs" />
-    <Compile Include="Migrations\202508192059457_Change01.Designer.cs">
-      <DependentUpon>202508192059457_Change01.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Models\Entities\Notifications.cs" />
     <Compile Include="Services\InsuranceService.cs" />
+    <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
@@ -2805,6 +2812,7 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Migrations\001_Initial_Setup_And_Test.sql" />
     <Content Include="Scripts\aos.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
@@ -3322,11 +3330,8 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202508191630082_InitialCreateModels.resx">
-      <DependentUpon>202508191630082_InitialCreateModels.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202508192059457_Change01.resx">
-      <DependentUpon>202508192059457_Change01.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202508211944096_CreateDataBase.resx">
+      <DependentUpon>202508211944096_CreateDataBase.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

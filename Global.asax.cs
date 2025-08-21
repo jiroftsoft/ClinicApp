@@ -1,4 +1,6 @@
 ﻿using AutoMapper;
+using ClinicApp.Helpers;
+using ClinicApp.Infrastructure;
 using ClinicApp.Models;
 using Serilog;
 using Serilog.Events;
@@ -25,8 +27,15 @@ namespace ClinicApp
             // اگر UnityConfig دارید اینجا هم اضافه کنید:
             DependencyResolver.SetResolver(new UnityDependencyResolver(UnityConfig.Container));
 
-            //مقادیر پیش فرض
-            IdentitySeed.SeedDefaultData(new ApplicationDbContext());
+            // اجرای فرآیند Seed فقط یک بار در زمان شروع برنامه
+            using (var context = new ApplicationDbContext())
+            {
+                // مرحله ۱: اجرای فرآیند Seed برای اطمینان از وجود کاربران سیستمی
+                IdentitySeed.SeedDefaultData(context);
+
+                // مرحله ۲: مقداردهی اولیه و کش کردن شناسه‌های کاربران سیستمی
+                SystemUsers.Initialize(context);
+            }
 
             #region پیکربندی نهایی و حرفه‌ای Serilog
 
