@@ -424,6 +424,7 @@
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
+    <Compile Include="Areas\Admin\Controllers\InsuranceController - Copy.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\Enums.cs" />

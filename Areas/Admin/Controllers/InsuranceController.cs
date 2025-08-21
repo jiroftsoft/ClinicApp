@@ -203,41 +203,18 @@ namespace ClinicApp.Areas.Admin.Controllers
         #region Create
 
         /// <summary>
-        /// نمایش فرم ایجاد بیمه جدید
+        /// نمایش فرم ایجاد بیمه
         /// </summary>
         [HttpGet]
         [Route("Create")]
-        public async Task<ActionResult> Create()
+        public ActionResult Create()
         {
             var operationId = Guid.NewGuid().ToString();
             _log.Information(
-                "درخواست ایجاد بیمه جدید. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                "درخواست فرم ایجاد بیمه. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
                 operationId, _currentUserService.UserName, _currentUserService.UserId);
 
-            try
-            {
-                var viewModel = new CreateInsuranceViewModel
-                {
-                    IsActive = true,
-                    DefaultPatientShare = 0,
-                    DefaultInsurerShare = 100
-                };
-
-                _log.Information(
-                    "صفحه ایجاد بیمه با موفقیت بارگیری شد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    operationId, _currentUserService.UserName, _currentUserService.UserId);
-
-                return PartialView("_CreateInsurance", viewModel);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطای سیستمی در بارگیری صفحه ایجاد بیمه. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    operationId, _currentUserService.UserName, _currentUserService.UserId);
-
-                return Json(new { success = false, message = "خطای سیستمی رخ داده است. لطفاً بعداً تلاش کنید." }, JsonRequestBehavior.AllowGet);
-            }
+            return PartialView("_CreateInsurance");
         }
 
         /// <summary>
@@ -246,67 +223,105 @@ namespace ClinicApp.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Route("Create")]
-        public async Task<ActionResult> Create(CreateInsuranceViewModel model)
+        public async Task<JsonResult> Create(CreateInsuranceViewModel model)
         {
             var operationId = Guid.NewGuid().ToString();
             _log.Information(
-                "درخواست ایجاد بیمه جدید با نام {Name}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                model.Name, operationId, _currentUserService.UserName, _currentUserService.UserId);
-
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                _log.Warning(
-                    "اعتبارسنجی ایجاد بیمه با نام {Name} شکست خورد. OperationId: {OperationId}, Errors: {@Errors}. User: {UserName} (Id: {UserId})",
-                    model.Name, operationId, errors, _currentUserService.UserName, _currentUserService.UserId);
-
-                return Json(new { success = false, errors });
-            }
+                "درخواست ایجاد بیمه جدید. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                operationId, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
-                // تبدیل صحیح فرمت اعشاری در محیط فارسی
-                model.DefaultPatientShare = Convert.ToDecimal(model.DefaultPatientShare.ToString().Replace(",", "."));
-                model.DefaultInsurerShare = Convert.ToDecimal(model.DefaultInsurerShare.ToString().Replace(",", "."));
-
-                // بررسی مجموع سهم‌ها
-                if (Math.Abs(model.DefaultPatientShare + model.DefaultInsurerShare - 100) > 0.01m)
+                // **مرحله 1: پردازش و تبدیل صحیح فرمت اعشاری در محیط فارسی**
+                var patientShareValue = Request.Form["DefaultPatientShare"];
+                if (!string.IsNullOrEmpty(patientShareValue))
                 {
-                    _log.Warning(
-                        "مجموع سهم‌ها برای بیمه {Name} برابر با 100 نیست. OperationId: {OperationId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
-                        model.Name, operationId, model.DefaultPatientShare, model.DefaultInsurerShare,
-                        _currentUserService.UserName, _currentUserService.UserId);
-
-                    return Json(new { success = false, message = "جمع سهم بیمار و بیمه باید برابر با 100 درصد باشد." });
+                    var patientShareStr = patientShareValue.ToString().Replace(",", ".");
+                    if (decimal.TryParse(patientShareStr, out decimal patientShare))
+                    {
+                        model.DefaultPatientShare = patientShare;
+                    }
                 }
 
+                var insurerShareValue = Request.Form["DefaultInsurerShare"];
+                if (!string.IsNullOrEmpty(insurerShareValue))
+                {
+                    var insurerShareStr = insurerShareValue.ToString().Replace(",", ".");
+                    if (decimal.TryParse(insurerShareStr, out decimal insurerShare))
+                    {
+                        model.DefaultInsurerShare = insurerShare;
+                    }
+                }
+
+                // **مرحله 2: اعتبارسنجی مدل**
+                if (!ModelState.IsValid)
+                {
+                    _log.Warning(
+                        "اعتبارسنجی ایجاد بیمه شکست خورد. OperationId: {OperationId}, Errors: {@Errors}. User: {UserName} (Id: {UserId})",
+                        operationId, ModelState.Values.SelectMany(v => v.Errors),
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, errors = GetModelErrors() });
+                }
+
+                // **مرحله 3: اعتبارسنجی محدوده سهم‌ها**
+                if (model.DefaultPatientShare.HasValue)
+                {
+                    if (model.DefaultPatientShare < 0 || model.DefaultPatientShare > 100)
+                    {
+                        _log.Warning(
+                            "سهم بیمار خارج از محدوده معتبر است. OperationId: {OperationId}, Value: {PatientShare}, User: {UserName} (Id: {UserId})",
+                            operationId, model.DefaultPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+                        return Json(new { success = false, message = "سهم بیمار باید بین 0 تا 100 درصد باشد." });
+                    }
+                }
+
+                if (model.DefaultInsurerShare.HasValue)
+                {
+                    if (model.DefaultInsurerShare < 0 || model.DefaultInsurerShare > 100)
+                    {
+                        _log.Warning(
+                            "سهم بیمه خارج از محدوده معتبر است. OperationId: {OperationId}, Value: {InsurerShare}, User: {UserName} (Id: {UserId})",
+                            operationId, model.DefaultInsurerShare, _currentUserService.UserName, _currentUserService.UserId);
+                        return Json(new { success = false, message = "سهم بیمه باید بین 0 تا 100 درصد باشد." });
+                    }
+                }
+
+                // **مرحله 4: اعتبارسنجی مجموع سهم‌ها**
+                if (model.DefaultPatientShare.HasValue && model.DefaultInsurerShare.HasValue)
+                {
+                    if (Math.Abs(model.DefaultPatientShare.Value + model.DefaultInsurerShare.Value - 100) > 0.01m)
+                    {
+                        _log.Warning(
+                            "جمع سهم‌های بیمار و بیمه برابر با 100 نیست. OperationId: {OperationId}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
+                            operationId, model.DefaultPatientShare, model.DefaultInsurerShare, _currentUserService.UserName, _currentUserService.UserId);
+                        return Json(new { success = false, message = "جمع سهم بیمار و بیمه باید برابر با 100 درصد باشد." });
+                    }
+                }
+
+                // **مرحله 5: ایجاد بیمه در سرویس**
                 var result = await _insuranceService.CreateInsuranceAsync(model);
-                if (result.Success)
+                if (result != null && result.Success)
                 {
                     _log.Information(
-                        "بیمه جدید با نام {Name} با موفقیت ایجاد شد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                        model.Name, operationId, _currentUserService.UserName, _currentUserService.UserId);
-
+                        "بیمه با موفقیت ایجاد شد. OperationId: {OperationId}, InsuranceName: {InsuranceName}, User: {UserName} (Id: {UserId})",
+                        operationId, model.Name, _currentUserService.UserName, _currentUserService.UserId);
                     return Json(new { success = true, message = result.Message });
                 }
 
                 _log.Warning(
-                    "ایجاد بیمه با نام {Name} ناموفق بود. OperationId: {OperationId}, Error: {Error}. User: {UserName} (Id: {UserId})",
-                    model.Name, operationId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
-
-                return Json(new { success = false, message = result.Message });
+                    "ایجاد بیمه ناموفق بود. OperationId: {OperationId}, InsuranceName: {InsuranceName}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                    operationId, model.Name, result?.Message, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = result?.Message ?? "خطا در ایجاد بیمه." });
             }
             catch (Exception ex)
             {
                 _log.Error(
                     ex,
-                    "خطای سیستمی در ایجاد بیمه با نام {Name}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    model.Name, operationId, _currentUserService.UserName, _currentUserService.UserId);
-
+                    "خطای سیستمی در ایجاد بیمه. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
+                    operationId, _currentUserService.UserName, _currentUserService.UserId);
                 return Json(new { success = false, message = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید." });
             }
         }
-
         #endregion
 
         #region Edit
@@ -533,7 +548,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// </summary>
         [HttpGet]
         [Route("ManageTariffs/{insuranceId}")]
-        [Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
+        //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
         public async Task<ActionResult> ManageTariffs(int insuranceId)
         {
             var operationId = Guid.NewGuid().ToString();

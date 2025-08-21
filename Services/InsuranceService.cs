@@ -239,14 +239,6 @@ namespace ClinicApp.Services
                 return ServiceResult.Failed("داده‌های ورودی نامعتبر است.");
             }
 
-            if (!model.ValidateShares())
-            {
-                _log.Warning(
-                    "درخواست ایجاد بیمه با سهم‌های نامعتبر. Name: {Name}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",
-                    model.Name, model.DefaultPatientShare, model.DefaultInsurerShare, operationId, _currentUserService.UserName, _currentUserService.UserId);
-                return ServiceResult.Failed("مجموع سهم بیمار و بیمه باید برابر با 100 درصد باشد.");
-            }
-
             // بررسی وجود بیمه با همین نام
             var existingInsurance = await _context.Insurances.AnyAsync(i => i.Name == model.Name && !i.IsDeleted);
             if (existingInsurance)

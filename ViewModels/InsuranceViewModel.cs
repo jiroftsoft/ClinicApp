@@ -92,44 +92,50 @@ public class InsuranceDetailsViewModel
     }
 }
 /// <summary>
-/// ویو مدل ایجاد بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
-/// 
-/// ویژگی‌های کلیدی:
-/// 1. اعتبارسنجی‌های کامل برای ایجاد بیمه
-/// 2. پشتیبانی از محیط‌های پزشکی ایرانی
-/// 3. اعتبارسنجی سهم‌های بیمه و بیمار (باید در مجموع 100% باشند)
-/// 4. پشتیبانی از وضعیت فعال/غیرفعال بیمه
+/// ویو مدل ایجاد بیمه - نسخه نهایی برای محیط واقعی کلینیک
+/// شامل اعتبارسنجی قوی‌تر و استفاده از IValidatableObject
 /// </summary>
-public class CreateInsuranceViewModel
+public class CreateInsuranceViewModel : IValidatableObject
 {
     [Display(Name = "نام بیمه")]
-    [Required(ErrorMessage = "نام بیمه الزامی است.")]
+    [Required(ErrorMessage = "وارد کردن نام بیمه الزامی است.")]
     [MaxLength(250, ErrorMessage = "نام بیمه نمی‌تواند بیش از 250 کاراکتر باشد.")]
+    [RegularExpression(@"^[\u0600-\u06FF\s]+$", ErrorMessage = "نام بیمه فقط باید شامل حروف فارسی و فاصله باشد.")]
     public string Name { get; set; }
 
     [Display(Name = "توضیحات")]
-    [MaxLength(1000, ErrorMessage = "توضیحات بیمه نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+    [MaxLength(1000, ErrorMessage = "توضیحات نمی‌تواند بیش از 1000 کاراکتر باشد.")]
     public string Description { get; set; }
 
     [Display(Name = "سهم پیش‌فرض بیمار")]
-    [Required(ErrorMessage = "سهم پیش‌فرض بیمار الزامی است.")]
+    [Required(ErrorMessage = "وارد کردن سهم پیش‌فرض بیمار الزامی است.")]
     [Range(0, 100, ErrorMessage = "سهم بیمار باید بین 0 تا 100 درصد باشد.")]
     public decimal DefaultPatientShare { get; set; }
 
     [Display(Name = "سهم پیش‌فرض بیمه")]
-    [Required(ErrorMessage = "سهم پیش‌فرض بیمه الزامی است.")]
+    [Required(ErrorMessage = "وارد کردن سهم پیش‌فرض بیمه الزامی است.")]
     [Range(0, 100, ErrorMessage = "سهم بیمه باید بین 0 تا 100 درصد باشد.")]
     public decimal DefaultInsurerShare { get; set; }
 
     [Display(Name = "فعال باشد؟")]
     public bool IsActive { get; set; } = true;
 
-    // اعتبارسنجی سمت سرور - بررسی مجموع سهم‌ها
-    public bool ValidateShares()
+    /// <summary>
+    /// اعتبارسنجی پیچیده برای اطمینان از اینکه مجموع سهم‌ها برابر 100 است.
+    /// این متد به صورت خودکار توسط ASP.NET MVC فراخوانی می‌شود.
+    /// </summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        return Math.Abs(DefaultPatientShare + DefaultInsurerShare - 100) < 0.01m;
+        if (Math.Abs(DefaultPatientShare + DefaultInsurerShare - 100) > 0.01m)
+        {
+            yield return new ValidationResult(
+                "مجموع سهم بیمه و بیمار باید دقیقاً برابر با 100 درصد باشد.",
+                new[] { nameof(DefaultPatientShare), nameof(DefaultInsurerShare) }
+            );
+        }
     }
 }
+
 /// <summary>
 /// ویو مدل ویرایش بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
 /// 

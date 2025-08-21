@@ -15,6 +15,13 @@ namespace ClinicApp.Areas.Admin
         public override void RegisterArea(AreaRegistrationContext context) 
         {
             context.MapRoute(
+                name: "Admin_Insurance_ManageTariffs",
+                url: "Admin/Insurance/ManageTariffs/{insuranceId}",
+                defaults: new { controller = "Insurance", action = "ManageTariffs" },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
+            );
+
+            context.MapRoute(
                 "Admin_default",
                 "Admin/{controller}/{action}/{id}",
                 new { action = "Index", id = UrlParameter.Optional }

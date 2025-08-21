@@ -55,7 +55,9 @@
                         min = "0",
                         max = "100",
                         step = "0.01",
-                        placeholder = "مثال: 70"
+                        placeholder = "مثال: 70",
+                        @readonly = "readonly", // <-- این خط اضافه شده
+                        tabindex = "-1"         // <-- این خط برای بهبود تجربه کاربری اضافه شده
                     })
                     <span class="input-group-text">%</span>
                 </div>
@@ -85,56 +87,48 @@
 }
 
 <script>
-    // IIFE برای جلوگیری از تداخل با اسکریپت‌های دیگر
     (function ($) {
         "use strict";
 
-        // این تابع از اسکریپت اصلی (Index.cshtml) فراخوانی می‌شود
-        // تا منطق این فرم را راه‌اندازی کند.
         function setupCreateInsuranceForm() {
-            const form = $('#createInsuranceForm');
             const patientShareInput = $('#DefaultPatientShare');
             const insurerShareInput = $('#DefaultInsurerShare');
             const shareWarning = $('#shareValidationWarning');
 
-            // تابع برای محاسبه و بررسی سهم‌ها
-            function calculateShares() {
+            function updateShares() {
+                // مقدار ورودی کاربر را بخوان و مطمئن شو که عدد است
                 const patientShare = parseFloat(patientShareInput.val().replace(',', '.')) || 0;
+                let insurerShare = 0;
 
-                // محاسبه خودکار سهم بیمه
-                if ($(document.activeElement).is(patientShareInput)) {
-                    if (patientShare >= 0 && patientShare <= 100) {
-                        insurerShareInput.val((100 - patientShare).toFixed(2));
-                    }
+                // فقط اگر سهم بیمار معتبر بود، سهم بیمه را محاسبه کن
+                if (patientShare >= 0 && patientShare <= 100) {
+                    insurerShare = 100 - patientShare;
+                    // مقدار محاسبه شده را با دو رقم اعشار در فیلد بیمه قرار بده
+                    insurerShareInput.val(insurerShare.toFixed(2));
+                } else {
+                    // اگر ورودی نامعتبر بود، فیلد بیمه را خالی کن
+                    insurerShareInput.val('');
                 }
 
-                const insurerShare = parseFloat(insurerShareInput.val().replace(',', '.')) || 0;
-
-                if (Math.abs(patientShare + insurerShare - 100) > 0.01) {
+                // بررسی نهایی برای نمایش هشدار (اختیاری ولی خوب است که باشد)
+                const total = patientShare + insurerShare;
+                if (Math.abs(total - 100) > 0.01 && patientShareInput.val() !== '') {
                     shareWarning.removeClass('d-none');
                 } else {
                     shareWarning.addClass('d-none');
                 }
             }
 
-            // اتصال رویداد به فیلدهای سهم
-            patientShareInput.on('input', calculateShares);
-            insurerShareInput.on('input', function () {
-                const insurerShare = parseFloat($(this).val().replace(',', '.')) || 0;
-                if (insurerShare >= 0 && insurerShare <= 100) {
-                    patientShareInput.val((100 - insurerShare).toFixed(2));
-                }
-                calculateShares();
-            });
+            // رویداد را فقط به فیلد سهم بیمار متصل کن
+            patientShareInput.on('input', updateShares);
 
             // اتصال رویداد ارسال فرم
-            form.off('submit').on('submit', window.handleFormSubmit);
+            $('#createInsuranceForm').off('submit').on('submit', window.handleFormSubmit);
 
             // محاسبه اولیه در زمان بارگذاری فرم
-            calculateShares();
+            updateShares();
         }
 
-        // اجرای تابع راه‌اندازی
         $(document).ready(function () {
             setupCreateInsuranceForm();
         });
