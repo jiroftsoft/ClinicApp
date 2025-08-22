@@ -14,8 +14,11 @@ using System.Data.Entity.Infrastructure;
 using System.Data.Entity.ModelConfiguration;
 using System.Data.Entity.ModelConfiguration.Conventions;
 using System.Data.Entity.Validation;
+using System.IO;
 using System.Linq;
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
@@ -563,9 +566,14 @@ namespace ClinicApp.Models
     /// <summary>
     /// کلاس کمکی برای مدیریت امنیت داده‌های بیماران
     /// </summary>
+    /// <summary>
+    /// نسخه نهایی و امن سرویس رمزنگاری با استفاده از IV تصادفی برای هر عملیات
+    /// </summary>
     public static class EncryptionService
     {
-        private static readonly string EncryptionKey = ConfigurationManager.AppSettings["EncryptionKey"] ?? "ClinicAppEncryptionKey2023!";
+        // کلید باید حداقل ۳۲ بایت باشد و به صورت امن نگهداری شود (مثلاً در Web.config با بخش encrypted).
+        private static readonly string EncryptionKey = ConfigurationManager.AppSettings["EncryptionKey"] ?? "DefaultSuperSecureKey!@#$12345678";
+        private static readonly ILogger _log = Log.ForContext(typeof(EncryptionService));
 
         public static string Encrypt(string plainText)
         {
@@ -574,32 +582,38 @@ namespace ClinicApp.Models
 
             try
             {
-                using (var aesAlg = System.Security.Cryptography.Aes.Create())
+                using (var aes = Aes.Create())
                 {
-                    var key = System.Text.Encoding.UTF8.GetBytes(EncryptionKey);
-                    aesAlg.Key = key;
-                    aesAlg.IV = key.Take(16).ToArray();
+                    // از کلید اصلی برای ساختن یک کلید ۳۲ بایتی (۲۵۶ بیت) امن استفاده می‌کنیم
+                    var keyBytes = new Rfc2898DeriveBytes(EncryptionKey, new byte[8], 1000).GetBytes(32);
+                    aes.Key = keyBytes;
 
-                    var encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV);
+                    // ۱. مهم‌ترین بخش: تولید یک IV جدید و کاملاً تصادفی برای این عملیات
+                    aes.GenerateIV();
+                    var iv = aes.IV;
 
-                    using (var msEncrypt = new System.IO.MemoryStream())
+                    using (var encryptor = aes.CreateEncryptor(aes.Key, iv))
+                    using (var ms = new MemoryStream())
                     {
-                        using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
+                        // ۲. ابتدا IV را در ابتدای استریم می‌نویسیم
+                        ms.Write(iv, 0, iv.Length);
+
+                        // ۳. سپس داده اصلی را رمز کرده و به ادامه استریم اضافه می‌کنیم
+                        using (var cs = new CryptoStream(ms, encryptor, CryptoStreamMode.Write))
+                        using (var sw = new StreamWriter(cs, Encoding.UTF8))
                         {
-                            using (var swEncrypt = new System.IO.StreamWriter(csEncrypt))
-                            {
-                                swEncrypt.Write(plainText);
-                            }
-                            return Convert.ToBase64String(msEncrypt.ToArray());
+                            sw.Write(plainText);
                         }
+                        // نتیجه نهایی: [۱۶ بایت IV] + [بایت‌های داده رمز شده]
+                        return Convert.ToBase64String(ms.ToArray());
                     }
                 }
             }
             catch (Exception ex)
             {
-                // ✅ رفع خطا: استفاده از Log به جای AuditLogger
-                Log.Error(ex, "خطا در رمزنگاری اطلاعات: {Message}", ex.Message);
-                throw new Exception("خطا در رمزنگاری اطلاعات", ex);
+                _log.Error(ex, "خطای غیرمنتظره در زمان رمزنگاری داده.");
+                // در صورت خطا، یک رشته خالی یا مقدار مشخصی را برگردانید تا از ذخیره داده خام جلوگیری شود.
+                return string.Empty;
             }
         }
 
@@ -610,43 +624,57 @@ namespace ClinicApp.Models
 
             try
             {
-                using (var aesAlg = System.Security.Cryptography.Aes.Create())
+                // داده را از Base64 به آرایه بایت برمی‌گردانیم
+                var fullCipher = Convert.FromBase64String(cipherText);
+
+                using (var aes = Aes.Create())
                 {
-                    var key = System.Text.Encoding.UTF8.GetBytes(EncryptionKey);
-                    aesAlg.Key = key;
-                    aesAlg.IV = key.Take(16).ToArray();
+                    var keyBytes = new Rfc2898DeriveBytes(EncryptionKey, new byte[8], 1000).GetBytes(32);
+                    aes.Key = keyBytes;
 
-                    var decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV);
+                    // ۱. ۱۶ بایت اول را به عنوان IV استخراج می‌کنیم
+                    var iv = new byte[16];
+                    Array.Copy(fullCipher, 0, iv, 0, iv.Length);
+                    aes.IV = iv;
 
-                    using (var msDecrypt = new System.IO.MemoryStream(Convert.FromBase64String(cipherText)))
+                    // ۲. بقیه بایت‌ها را به عنوان داده اصلی رمز شده در نظر می‌گیریم
+                    using (var decryptor = aes.CreateDecryptor(aes.Key, aes.IV))
+                    using (var ms = new MemoryStream(fullCipher, iv.Length, fullCipher.Length - iv.Length))
+                    using (var cs = new CryptoStream(ms, decryptor, CryptoStreamMode.Read))
+                    using (var sr = new StreamReader(cs, Encoding.UTF8))
                     {
-                        using (var csDecrypt = new System.Security.Cryptography.CryptoStream(msDecrypt, decryptor, System.Security.Cryptography.CryptoStreamMode.Read))
-                        {
-                            using (var srDecrypt = new System.IO.StreamReader(csDecrypt))
-                            {
-                                return srDecrypt.ReadToEnd();
-                            }
-                        }
+                        return sr.ReadToEnd();
                     }
                 }
             }
+            catch (FormatException ex)
+            {
+                _log.Warning(ex, " تلاش برای رمزگشایی یک رشته که فرمت Base64 ندارد. احتمالاً داده از قبل رمز نشده بوده است.");
+                return cipherText; // اگر فرمت اشتباه بود، خود رشته را برمی‌گردانیم
+            }
+            catch (CryptographicException ex)
+            {
+                _log.Error(ex, "خطای رمزگشایی. احتمالاً کلید تغییر کرده یا داده با روش قدیمی رمز شده است.");
+                // مقدار اصلی را برنگردانید تا از نشت اطلاعات جلوگیری شود
+                return "خطا در رمزگشایی";
+            }
             catch (Exception ex)
             {
-                // ✅ رفع خطا: استفاده از Log به جای AuditLogger
-                Log.Error(ex, "خطا در رمزگشایی اطلاعات: {Message}", ex.Message);
-                throw new Exception("خطا در رمزگشایی اطلاعات", ex);
+                _log.Error(ex, "خطای غیرمنتظره در زمان رمزگشایی.");
+                return "خطای غیرمنتظره";
             }
         }
     }
 
-    /// <summary>
-    /// کلاس کمکی برای دسترسی ایمن به HttpContext در تمام محیط‌ها
-    /// این کلاس برای سیستم‌های پزشکی حیاتی است چون:
-    /// 1. امکان دسترسی به HttpContext در سرویس‌های پس‌زمینه را فراهم می‌کند
-    /// 2. از خطا در محیط‌های غیر-وب جلوگیری می‌کند
-    /// 3. برای سیستم‌های پزشکی با امنیت بالا طراحی شده است
-    /// </summary>
-    public static class HttpContextStorage
+
+/// <summary>
+/// کلاس کمکی برای دسترسی ایمن به HttpContext در تمام محیط‌ها
+/// این کلاس برای سیستم‌های پزشکی حیاتی است چون:
+/// 1. امکان دسترسی به HttpContext در سرویس‌های پس‌زمینه را فراهم می‌کند
+/// 2. از خطا در محیط‌های غیر-وب جلوگیری می‌کند
+/// 3. برای سیستم‌های پزشکی با امنیت بالا طراحی شده است
+/// </summary>
+public static class HttpContextStorage
     {
         private static readonly string HttpContextKey = "HttpContext.Current";
 

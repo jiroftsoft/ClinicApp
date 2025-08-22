@@ -6,4 +6,6 @@ namespace ClinicApp.Helpers
     public class Class1
     {
     }
+ 
+
 }

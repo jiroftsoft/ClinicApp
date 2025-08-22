@@ -455,6 +455,13 @@ namespace ClinicApp.Models.Entities
         /// بیماران می‌توانند نوبت بگیرند، اطلاعات پرونده خود را مشاهده کنند و پیام ارسال کنند.
         /// </summary>
         public const string Patient = "Patient"; // برای استفاده در آینده (پورتال بیمار)
+
+        /// <summary>
+        /// نقش کاربر سیستم برای اجرای عملیات پس‌زمینه.
+        /// این نقش برای کارهای خودکار سیستم مانند گزارش‌گیری و پشتیبان‌گیری استفاده می‌شود.
+        /// </summary>
+        public const string System = "System";
+
         #endregion
     }
     #endregion
