@@ -17,21 +17,29 @@ namespace ClinicApp.Areas.Admin.Controllers
     {
         private readonly IClinicManagementService _clinicService;
         private readonly ILogger _log;
+        private readonly ICurrentUserService _currentUserService;
 
-        public ClinicController(IClinicManagementService clinicService, ILogger logger)
+        public ClinicController(IClinicManagementService clinicService, ILogger logger, ICurrentUserService currentUserService)
         {
             _clinicService = clinicService;
             _log = logger.ForContext<ClinicController>();
+            _currentUserService = currentUserService;
         }
 
         // GET: Admin/Clinic
         public async Task<ActionResult> Index(string searchTerm = "", int pageNumber = 1, bool isAjax = false)
         {
+            _log.Information("🏥 MEDICAL: درخواست صفحه لیست کلینیک‌ها. SearchTerm: {SearchTerm}, Page: {Page}, IsAjax: {IsAjax}, User: {UserId}",
+                searchTerm, pageNumber, isAjax, _currentUserService?.UserId ?? "Anonymous");
+
             int pageSize = 10; // می‌توان این را از IAppSettings خواند
             var result = await _clinicService.GetClinicsAsync(searchTerm, pageNumber, pageSize);
 
             if (!result.Success)
             {
+                _log.Warning("🏥 MEDICAL: خطا در دریافت لیست کلینیک‌ها. Message: {Message}, User: {UserId}",
+                    result.Message, _currentUserService?.UserId ?? "Anonymous");
+
                 // در صورت بروز خطا در سرویس، یک پیام خطا نمایش می‌دهیم
                 if (isAjax)
                 {
@@ -40,6 +48,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                 TempData["ErrorMessage"] = result.Message;
                 return View(new PagedResult<ClinicIndexViewModel>()); // یک مدل خالی به ویو پاس می‌دهیم
             }
+
+            _log.Information("🏥 MEDICAL: لیست کلینیک‌ها با موفقیت دریافت شد. Count: {Count}, User: {UserId}",
+                result.Data?.Items?.Count ?? 0, _currentUserService?.UserId ?? "Anonymous");
 
             // ✅ بازگرداندن JSON برای درخواست‌های AJAX
             if (isAjax)
@@ -104,7 +115,6 @@ namespace ClinicApp.Areas.Admin.Controllers
             return View(result.Data);
         }
 
-        // POST: Admin/Clinic/Edit/5
         // POST: Admin/Clinic/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]

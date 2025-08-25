@@ -18,15 +18,18 @@ namespace ClinicApp.Services
         private readonly IClinicRepository _clinicRepo;
         private readonly IValidator<ClinicCreateEditViewModel> _validator;
         private readonly ILogger _log;
+        private readonly ICurrentUserService _currentUserService;
 
         public ClinicManagementService(
             IClinicRepository clinicRepository,
             IValidator<ClinicCreateEditViewModel> validator,
-            ILogger logger)
+            ILogger logger,
+            ICurrentUserService currentUserService)
         {
             _clinicRepo = clinicRepository;
             _validator = validator;
             _log = logger.ForContext<ClinicManagementService>();
+            _currentUserService = currentUserService;
         }
 
         public async Task<ServiceResult> CreateClinicAsync(ClinicCreateEditViewModel model)
@@ -71,7 +74,13 @@ namespace ClinicApp.Services
         {
             try
             {
+                _log.Information("🏥 MEDICAL: درخواست دریافت لیست کلینیک‌ها. SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}, User: {UserId}",
+                    searchTerm, pageNumber, pageSize, _currentUserService?.UserId ?? "Anonymous");
+
                 var clinics = await _clinicRepo.GetClinicsAsync(searchTerm);
+
+                _log.Information("🏥 MEDICAL: {Count} کلینیک از دیتابیس دریافت شد. User: {UserId}",
+                    clinics?.Count ?? 0, _currentUserService?.UserId ?? "Anonymous");
 
                 // نگاشت به ViewModel
                 var clinicViewModels = clinics.Select(ClinicIndexViewModel.FromEntity).ToList();
@@ -79,11 +88,15 @@ namespace ClinicApp.Services
                 // صفحه‌بندی در حافظه
                 var pagedResult = new PagedResult<ClinicIndexViewModel>(clinicViewModels, clinicViewModels.Count, pageNumber, pageSize);
 
+                _log.Information("🏥 MEDICAL: لیست کلینیک‌ها با موفقیت آماده شد. TotalItems: {TotalItems}, User: {UserId}",
+                    pagedResult.TotalItems, _currentUserService?.UserId ?? "Anonymous");
+
                 return ServiceResult<PagedResult<ClinicIndexViewModel>>.Successful(pagedResult);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در بازیابی لیست کلینیک‌ها با عبارت جستجوی: {SearchTerm}", searchTerm);
+                _log.Error(ex, "🏥 MEDICAL: خطا در بازیابی لیست کلینیک‌ها با عبارت جستجوی: {SearchTerm}, User: {UserId}", 
+                    searchTerm, _currentUserService?.UserId ?? "Anonymous");
                 return ServiceResult<PagedResult<ClinicIndexViewModel>>.Failed("خطای سیستمی در بازیابی اطلاعات رخ داد.", "DB_ERROR");
             }
         }

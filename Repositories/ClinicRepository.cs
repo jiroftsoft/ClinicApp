@@ -24,7 +24,11 @@ namespace ClinicApp.Repositories
         public async Task<List<Clinic>> GetClinicsAsync(string searchTerm)
         {
             // ✅ FIX: Explicitly declare the type as IQueryable<Clinic> instead of using var.
-            IQueryable<Clinic> query = _context.Clinics.AsNoTracking();
+            // ✅ CRITICAL FIX: Add IsDeleted filter to exclude soft-deleted clinics
+            // ✅ PERFORMANCE FIX: Include Departments for count calculation
+            IQueryable<Clinic> query = _context.Clinics.AsNoTracking()
+                .Include(c => c.Departments) // 🏥 MEDICAL: Include departments for count calculation
+                .Where(c => !c.IsDeleted); // 🏥 MEDICAL: Only show non-deleted clinics
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -38,16 +42,18 @@ namespace ClinicApp.Repositories
         public Task<Clinic> GetByIdAsync(int clinicId)
         {
             // We do not use AsNoTracking() here because the service might want to update this entity.
+            // ✅ CRITICAL FIX: Add IsDeleted filter to exclude soft-deleted clinics
             return _context.Clinics
                 .Include(c => c.CreatedByUser)
                 .Include(c => c.UpdatedByUser)
+                .Where(c => !c.IsDeleted) // 🏥 MEDICAL: Only show non-deleted clinics
                 .FirstOrDefaultAsync(c => c.ClinicId == clinicId);
         }
 
         public Task<bool> DoesClinicExistAsync(string name, int? excludeId = null)
         {
             var query = _context.Clinics.AsNoTracking() // ✅ Performance optimization
-                                       .Where(c => c.Name == name);
+                                       .Where(c => c.Name == name && !c.IsDeleted); // 🏥 MEDICAL: Only check non-deleted clinics
             if (excludeId.HasValue)
             {
                 query = query.Where(c => c.ClinicId != excludeId.Value);
@@ -77,7 +83,7 @@ namespace ClinicApp.Repositories
         {
             return _context.Clinics
                            .AsNoTracking() // ✅ Performance optimization
-                           .Where(c => c.IsActive)
+                           .Where(c => c.IsActive && !c.IsDeleted) // 🏥 MEDICAL: Only show active and non-deleted clinics
                            .OrderBy(c => c.Name)
                            .ToListAsync();
         }

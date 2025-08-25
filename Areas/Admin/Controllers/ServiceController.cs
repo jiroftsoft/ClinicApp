@@ -16,6 +16,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// کنترلر مدیریت خدمات - محیط درمانی با اطمینان 100%
     /// Medical Environment Service Management Controller with 100% Reliability
     /// </summary>
+    [MedicalEnvironmentFilter]
     public class ServiceController : Controller
     {
         #region Dependencies and Constructor
@@ -1108,8 +1109,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 // اضافه کردن اطلاعات اضافی برای UI
                 ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
 
-                _log.Information("🏥 MEDICAL: فرم ویرایش خدمت آماده شد. ServiceId: {ServiceId}, Title: {Title}, User: {UserId}",
-                    id, model.Title, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: فرم ویرایش خدمت آماده شد. ServiceId: {ServiceId}, Title: {Title}, Price: {Price}, User: {UserId}",
+                    id, model.Title, model.Price, _currentUserService.UserId);
 
                 return View("Edit", model);
             }

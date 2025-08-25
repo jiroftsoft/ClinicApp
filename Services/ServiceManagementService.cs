@@ -566,6 +566,8 @@ namespace ClinicApp.Services
                 }
 
                 var viewModel = ServiceCreateEditViewModel.FromEntity(service);
+                _log.Information("🏥 MEDICAL: Service data loaded for edit. ServiceId: {ServiceId}, Title: {Title}, Price: {Price}, User: {UserId}",
+                    serviceId, viewModel.Title, viewModel.Price, _currentUserService.UserId);
                 return ServiceResult<ServiceCreateEditViewModel>.Successful(viewModel);
             }
             catch (Exception ex)

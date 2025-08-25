@@ -338,19 +338,19 @@
     <div class="p-3">
         <div class="medical-stats">
             <div class="stat-card">
-                <div class="stat-number" id="total-clinics">-</div>
+                <div class="stat-number" id="total-clinics">@(Model?.TotalItems ?? 0)</div>
                 <div class="stat-label">مجموع کلینیک‌ها</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="active-clinics">-</div>
+                <div class="stat-number" id="active-clinics">@(Model?.Items?.Count(c => c.IsActive) ?? 0)</div>
                 <div class="stat-label">کلینیک‌های فعال</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="total-departments">-</div>
+                <div class="stat-number" id="total-departments">@(Model?.Items?.Sum(c => c.DepartmentCount) ?? 0)</div>
                 <div class="stat-label">مجموع دپارتمان‌ها</div>
             </div>
             <div class="stat-card">
-                <div class="stat-number" id="avg-departments">-</div>
+                <div class="stat-number" id="avg-departments">@(Model?.Items?.Any() == true ? Math.Round((double)(Model.Items.Sum(c => c.DepartmentCount) / Model.Items.Count), 1) : 0)</div>
                 <div class="stat-label">میانگین دپارتمان</div>
             </div>
         </div>
@@ -409,12 +409,115 @@
                     </tr>
                 </thead>
                 <tbody id="clinics-table-body">
+                    @if (Model?.Items != null && Model.Items.Any())
+                    {
+                        foreach (var clinic in Model.Items)
+                        {
+                            <tr class="clinic-row" data-clinic-id="@clinic.ClinicId">
+                                <td>
+                                    <div class="fw-bold text-primary">@clinic.Name</div>
+                                    <small class="text-muted">@(clinic.Address ?? "")</small>
+                                </td>
+                                <td>
+                                    <span class="text-dark">@(clinic.PhoneNumber ?? "-")</span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark fs-6">@clinic.DepartmentCount</span>
+                                </td>
+                                <td>
+                                    @if (clinic.IsActive)
+                                    {
+                                        <span class="status-badge status-active">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge status-inactive">غیرفعال</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="action-buttons">
+                                        <a href="@Url.Action("Edit", "Clinic", new { id = clinic.ClinicId })" 
+                                           class="btn btn-action btn-edit" 
+                                           title="ویرایش کلینیک" 
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <a href="@Url.Action("Details", "Clinic", new { id = clinic.ClinicId })" 
+                                           class="btn btn-action btn-view" 
+                                           title="مشاهده جزئیات" 
+                                           data-bs-toggle="tooltip">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <button class="btn btn-action btn-delete" 
+                                                data-id="@clinic.ClinicId" 
+                                                data-name="@clinic.Name" 
+                                                title="حذف کلینیک" 
+                                                data-bs-toggle="tooltip">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5">
+                                <div class="empty-state">
+                                    <i class="fas fa-clinic-medical"></i>
+                                    <h5>هیچ کلینیکی یافت نشد</h5>
+                                    <p class="mb-3">در حال حاضر کلینیکی در سیستم وجود ندارد.</p>
+                                    <a href="@Url.Action("Create")" class="btn btn-medical-success">
+                                        <i class="fas fa-plus me-1"></i> ایجاد کلینیک جدید
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-clinic-medical"></i>
+                                <h5>هیچ کلینیکی یافت نشد</h5>
+                                <p class="mb-3">در حال حاضر کلینیکی در سیستم وجود ندارد.</p>
+                                <a href="@Url.Action("Create")" class="btn btn-medical-success">
+                                    <i class="fas fa-plus me-1"></i> ایجاد کلینیک جدید
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                
                 </tbody>
             </table>
         </div>
         
         <!-- Pagination -->
         <div id="pagination-container" class="pagination-modern">
+            @if (Model?.TotalPages > 1)
+            {
+                <div class="d-flex justify-content-center gap-2">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <button class="page-btn" data-page="@(Model.PageNumber - 1)">
+                            <i class="fas fa-chevron-right me-1"></i> قبلی
+                        </button>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                    {
+                        var activeClass = i == Model.PageNumber ? "active" : "";
+                        <button class="page-btn @activeClass" data-page="@i">@i</button>
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <button class="page-btn" data-page="@(Model.PageNumber + 1)">
+                            بعدی <i class="fas fa-chevron-left ms-1"></i>
+                        </button>
+                    }
+                </div>
+            }
         </div>
     </div>
 </div>
@@ -746,8 +849,20 @@
                 });
             }
 
-            // بارگذاری اولیه
-            fetchClinics();
+            // بارگذاری اولیه - فقط اگر داده‌ای در Model نباشد
+            @if (Model?.Items == null || !Model.Items.Any())
+            {
+                <text>
+                fetchClinics();
+                </text>
+            }
+            else
+            {
+                <text>
+                // داده‌ها از Model بارگذاری شده‌اند، فقط tooltips را فعال کن
+                $('[data-bs-toggle="tooltip"]').tooltip();
+                </text>
+            }
 
             // تنظیم focus روی جستجو
             searchTermInput.focus();

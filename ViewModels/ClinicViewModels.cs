@@ -66,6 +66,7 @@ namespace ClinicApp.ViewModels
     {
         public int ClinicId { get; set; }
         public string Name { get; set; }
+        public string Address { get; set; } // ✅ CRITICAL FIX: Added missing Address field
         public string PhoneNumber { get; set; }
         public int DepartmentCount { get; set; }
         public bool IsActive { get; set; }
@@ -81,6 +82,7 @@ namespace ClinicApp.ViewModels
             {
                 ClinicId = clinic.ClinicId,
                 Name = clinic.Name,
+                Address = clinic.Address, // ✅ CRITICAL FIX: Added missing Address mapping
                 PhoneNumber = clinic.PhoneNumber,
                 // برای جلوگیری از خطای Null Reference، ابتدا collection را چک می‌کنیم
                 DepartmentCount = clinic.Departments?.Count(d => !d.IsDeleted) ?? 0,

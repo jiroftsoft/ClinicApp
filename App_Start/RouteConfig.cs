@@ -13,6 +13,24 @@ namespace ClinicApp
         {
             routes.IgnoreRoute("{resource}.axd/{*pathInfo}");
 
+            // 🔒 Medical Environment Routes - با اطمینان 100%
+            routes.MapRoute(
+                name: "ServiceIndex",
+                url: "Admin/Service",
+                defaults: new { controller = "Service", action = "Index", area = "Admin" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET") }
+            );
+
+            routes.MapRoute(
+                name: "ServiceIndexWithCategory",
+                url: "Admin/Service/{serviceCategoryId}",
+                defaults: new { controller = "Service", action = "Index", area = "Admin" },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET"),
+                    serviceCategoryId = @"^\d+$" // فقط اعداد
+                }
+            );
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",

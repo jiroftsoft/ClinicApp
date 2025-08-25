@@ -447,6 +447,7 @@
     <Compile Include="Extensions\Class1.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
+    <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
@@ -3117,6 +3118,8 @@
     <Content Include="Content\Fonts\vazirmatn\Vazirmatn[wght].woff2" />
     <Content Include="Areas\Admin\Views\Service\EditCategory.cshtml" />
     <Content Include="Areas\Admin\Views\Service\Report.cshtml" />
+    <Content Include="FINAL_FIX_SUMMARY.md" />
+    <Content Include="MEDICAL_TROUBLESHOOTING.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3350,6 +3353,10 @@
     <Content Include="Views\Shared\_ValidationToasts.cshtml" />
     <Content Include="Views\Account\CompleteRegistration.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
+    <Content Include="SERVICE_DELETION_DEBUG.md" />
+    <Content Include="SERVICE_DELETION_FIX.md" />
+    <Content Include="SERVICE_FILTERS_FIX.md" />
+    <Content Include="TOAST_UNDEFINED_FIX.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
