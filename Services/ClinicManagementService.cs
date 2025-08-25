@@ -2,6 +2,7 @@
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
 using FluentValidation;
@@ -10,6 +11,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Models;
 
 namespace ClinicApp.Services
 {
@@ -105,16 +107,28 @@ namespace ClinicApp.Services
         {
             try
             {
+                _log.Information("🏥 MEDICAL: درخواست جزئیات کلینیک {ClinicId}. User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
+
                 var clinic = await _clinicRepo.GetByIdAsync(clinicId);
                 if (clinic == null)
+                {
+                    _log.Warning("🏥 MEDICAL: کلینیک {ClinicId} یافت نشد. User: {UserId}", 
+                        clinicId, _currentUserService?.UserId ?? "Anonymous");
                     return ServiceResult<ClinicDetailsViewModel>.Failed("کلینیک مورد نظر یافت نشد.", "NOT_FOUND", ErrorCategory.NotFound);
+                }
 
                 var viewModel = ClinicDetailsViewModel.FromEntity(clinic);
+                
+                _log.Information("🏥 MEDICAL: جزئیات کلینیک {ClinicId} با موفقیت بارگذاری شد. User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
+                
                 return ServiceResult<ClinicDetailsViewModel>.Successful(viewModel);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در بازیابی جزئیات کلینیک با شناسه: {ClinicId}", clinicId);
+                _log.Error(ex, "🏥 MEDICAL: خطا در بازیابی جزئیات کلینیک {ClinicId}. User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
                 return ServiceResult<ClinicDetailsViewModel>.Failed("خطای سیستمی در بازیابی اطلاعات رخ داد.", "DB_ERROR");
             }
         }
@@ -181,24 +195,79 @@ namespace ClinicApp.Services
         {
             try
             {
+                _log.Information("🏥 MEDICAL: درخواست حذف کلینیک با شناسه: {ClinicId}, User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
+
                 var clinic = await _clinicRepo.GetByIdAsync(clinicId);
                 if (clinic == null)
+                {
+                    _log.Warning("🏥 MEDICAL: کلینیک با شناسه {ClinicId} یافت نشد. User: {UserId}", 
+                        clinicId, _currentUserService?.UserId ?? "Anonymous");
                     return ServiceResult.Failed("کلینیک مورد نظر یافت نشد.", "NOT_FOUND", ErrorCategory.NotFound);
+                }
 
-                // TODO: در آینده، قبل از حذف باید بررسی شود که آیا دپارتمان فعالی دارد یا خیر
-                // if (clinic.Departments.Any(d => !d.IsDeleted))
-                //    return ServiceResult.Failed("امکان حذف کلینیک دارای دپارتمان فعال وجود ندارد.", "BUSINESS_RULE_VIOLATION");
+                // 🏥 MEDICAL: بررسی وابستگی‌ها قبل از حذف
+                var dependencyInfo = await _clinicRepo.GetClinicDependencyInfoAsync(clinicId);
+                if (dependencyInfo == null)
+                {
+                    _log.Warning("🏥 MEDICAL: اطلاعات وابستگی کلینیک {ClinicId} یافت نشد. User: {UserId}", 
+                        clinicId, _currentUserService?.UserId ?? "Anonymous");
+                    return ServiceResult.Failed("خطا در بررسی وابستگی‌های کلینیک.", "DEPENDENCY_CHECK_ERROR");
+                }
 
+                if (!dependencyInfo.CanBeDeleted)
+                {
+                    _log.Warning("🏥 MEDICAL: تلاش برای حذف کلینیک دارای وابستگی. ClinicId: {ClinicId}, ClinicName: {ClinicName}, User: {UserId}. Dependencies: {Dependencies}", 
+                        clinicId, clinic.Name, _currentUserService?.UserId ?? "Anonymous", dependencyInfo.SummaryMessage);
+                    
+                    return ServiceResult.Failed(dependencyInfo.DeletionErrorMessage, "BUSINESS_RULE_VIOLATION", ErrorCategory.BusinessLogic);
+                }
+
+                // 🏥 MEDICAL: حذف کلینیک (فقط اگر هیچ وابستگی فعالی نداشته باشد)
                 _clinicRepo.Delete(clinic);
                 await _clinicRepo.SaveChangesAsync();
 
-                _log.Information("کلینیک با شناسه {ClinicId} با موفقیت حذف نرم شد.", clinicId);
+                _log.Information("🏥 MEDICAL: کلینیک با شناسه {ClinicId} و نام '{ClinicName}' با موفقیت حذف شد. User: {UserId}", 
+                    clinicId, clinic.Name, _currentUserService?.UserId ?? "Anonymous");
+                
                 return ServiceResult.Successful("کلینیک با موفقیت حذف شد.");
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در حذف نرم کلینیک با شناسه: {ClinicId}", clinicId);
+                _log.Error(ex, "🏥 MEDICAL: خطا در حذف کلینیک با شناسه: {ClinicId}, User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
                 return ServiceResult.Failed("خطای سیستمی در حذف کلینیک رخ داد.", "DB_ERROR");
+            }
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: دریافت اطلاعات وابستگی‌های کلینیک
+        /// </summary>
+        public async Task<ServiceResult<ClinicDependencyInfo>> GetClinicDependencyInfoAsync(int clinicId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست اطلاعات وابستگی کلینیک {ClinicId}, User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
+
+                var dependencyInfo = await _clinicRepo.GetClinicDependencyInfoAsync(clinicId);
+                if (dependencyInfo == null)
+                {
+                    _log.Warning("🏥 MEDICAL: کلینیک {ClinicId} یافت نشد. User: {UserId}", 
+                        clinicId, _currentUserService?.UserId ?? "Anonymous");
+                    return ServiceResult<ClinicDependencyInfo>.Failed("کلینیک مورد نظر یافت نشد.", "NOT_FOUND", ErrorCategory.NotFound);
+                }
+
+                _log.Information("🏥 MEDICAL: اطلاعات وابستگی کلینیک {ClinicId} با موفقیت دریافت شد. User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
+
+                return ServiceResult<ClinicDependencyInfo>.Successful(dependencyInfo);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت اطلاعات وابستگی کلینیک {ClinicId}, User: {UserId}", 
+                    clinicId, _currentUserService?.UserId ?? "Anonymous");
+                return ServiceResult<ClinicDependencyInfo>.Failed("خطای سیستمی در دریافت اطلاعات وابستگی رخ داد.", "DB_ERROR");
             }
         }
 

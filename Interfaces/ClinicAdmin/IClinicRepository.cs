@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
+using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 
 namespace ClinicApp.Interfaces.ClinicAdmin
@@ -49,5 +50,15 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// ذخیره تمام تغییرات در صف در پایگاه داده به صورت غیرهمگام.
         /// </summary>
         Task SaveChangesAsync();
+
+        /// <summary>
+        /// 🏥 MEDICAL: بررسی وابستگی‌های کلینیک قبل از حذف
+        /// </summary>
+        Task<ClinicDependencyInfo> GetClinicDependencyInfoAsync(int clinicId);
+
+        /// <summary>
+        /// 🏥 MEDICAL: بررسی امکان حذف کلینیک بر اساس وابستگی‌ها
+        /// </summary>
+        Task<bool> CanDeleteClinicAsync(int clinicId);
     }
 }

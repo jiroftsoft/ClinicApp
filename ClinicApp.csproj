@@ -482,6 +482,7 @@
     <Compile Include="Migrations\202508241019241_Chnage14040602.Designer.cs">
       <DependentUpon>202508241019241_Chnage14040602.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Entities\Notifications.cs" />
     <Compile Include="Repositories\Class1.cs" />
     <Compile Include="Repositories\ClinicRepository.cs" />

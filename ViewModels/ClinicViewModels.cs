@@ -2,6 +2,7 @@
 using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
@@ -108,6 +109,17 @@ namespace ClinicApp.ViewModels
         public int DepartmentCount { get; set; }
         public int DoctorCount { get; set; }
         public bool IsActive { get; set; }
+        
+        // 🏥 MEDICAL: اطلاعات اضافی برای نمایش بهتر
+        public int ActiveDepartmentCount { get; set; }
+        public int TotalServiceCategoryCount { get; set; }
+        public int ActiveServiceCategoryCount { get; set; }
+        public int TotalServiceCount { get; set; }
+        public int ActiveServiceCount { get; set; }
+        public int ActiveDoctorCount { get; set; }
+        public string LastActivityShamsi { get; set; }
+        public string StatusDescription { get; set; }
+        public List<DepartmentSummaryInfo> DepartmentSummaries { get; set; } = new List<DepartmentSummaryInfo>();
 
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
@@ -115,7 +127,8 @@ namespace ClinicApp.ViewModels
         public static ClinicDetailsViewModel FromEntity(Clinic clinic)
         {
             if (clinic == null) return null;
-            return new ClinicDetailsViewModel
+            
+            var viewModel = new ClinicDetailsViewModel
             {
                 ClinicId = clinic.ClinicId,
                 Name = clinic.Name,
@@ -129,6 +142,66 @@ namespace ClinicApp.ViewModels
                 DepartmentCount = clinic.Departments?.Count(d => !d.IsDeleted) ?? 0,
                 DoctorCount = clinic.Doctors?.Count(d => !d.IsDeleted) ?? 0
             };
+
+            // 🏥 MEDICAL: محاسبه آمار دقیق
+            if (clinic.Departments != null)
+            {
+                viewModel.ActiveDepartmentCount = clinic.Departments.Count(d => !d.IsDeleted && d.IsActive);
+                viewModel.TotalServiceCategoryCount = clinic.Departments
+                    .Where(d => !d.IsDeleted)
+                    .Sum(d => d.ServiceCategories?.Count(sc => !sc.IsDeleted) ?? 0);
+                viewModel.ActiveServiceCategoryCount = clinic.Departments
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .Sum(d => d.ServiceCategories?.Count(sc => !sc.IsDeleted && sc.IsActive) ?? 0);
+                viewModel.TotalServiceCount = clinic.Departments
+                    .Where(d => !d.IsDeleted)
+                    .Sum(d => d.ServiceCategories?.Sum(sc => sc.Services?.Count(s => !s.IsDeleted) ?? 0) ?? 0);
+                viewModel.ActiveServiceCount = clinic.Departments
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .Sum(d => d.ServiceCategories?.Sum(sc => sc.Services?.Count(s => !s.IsDeleted && sc.IsActive) ?? 0) ?? 0);
+                viewModel.ActiveDoctorCount = clinic.Departments
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .Sum(d => d.DoctorDepartments?.Count(dd => dd.Doctor != null && !dd.Doctor.IsDeleted) ?? 0);
+
+                // 🏥 MEDICAL: خلاصه دپارتمان‌ها
+                viewModel.DepartmentSummaries = clinic.Departments
+                    .Where(d => !d.IsDeleted)
+                    .Take(5) // فقط 5 دپارتمان اول
+                    .Select(d => new DepartmentSummaryInfo
+                    {
+                        DepartmentId = d.DepartmentId,
+                        DepartmentName = d.Name,
+                        IsActive = d.IsActive,
+                        ServiceCategoryCount = d.ServiceCategories?.Count(sc => !sc.IsDeleted) ?? 0,
+                        ServiceCount = d.ServiceCategories?.Sum(sc => sc.Services?.Count(s => !s.IsDeleted) ?? 0) ?? 0,
+                        DoctorCount = d.DoctorDepartments?.Count(dd => dd.Doctor != null && !dd.Doctor.IsDeleted) ?? 0
+                    })
+                    .ToList();
+            }
+
+            // 🏥 MEDICAL: تعیین آخرین فعالیت
+            var lastActivity = clinic.UpdatedAt ?? clinic.CreatedAt;
+            viewModel.LastActivityShamsi = lastActivity.ToPersianDateTime();
+
+            // 🏥 MEDICAL: توضیح وضعیت
+            viewModel.StatusDescription = clinic.IsActive 
+                ? "کلینیک فعال و آماده ارائه خدمات" 
+                : "کلینیک غیرفعال - نیاز به بررسی دارد";
+
+            return viewModel;
         }
+    }
+
+    /// <summary>
+    /// 🏥 MEDICAL: اطلاعات خلاصه دپارتمان برای نمایش در جزئیات کلینیک
+    /// </summary>
+    public class DepartmentSummaryInfo
+    {
+        public int DepartmentId { get; set; }
+        public string DepartmentName { get; set; }
+        public bool IsActive { get; set; }
+        public int ServiceCategoryCount { get; set; }
+        public int ServiceCount { get; set; }
+        public int DoctorCount { get; set; }
     }
 }

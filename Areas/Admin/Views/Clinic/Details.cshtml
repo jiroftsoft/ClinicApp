@@ -370,8 +370,9 @@
                         <div class="stat-icon">
                             <i class="fas fa-building"></i>
                         </div>
-                        <div class="stat-number">@Model.DepartmentCount</div>
+                        <div class="stat-number">@Model.ActiveDepartmentCount</div>
                         <div class="stat-label">دپارتمان فعال</div>
+                        <small class="text-muted">از @Model.DepartmentCount کل</small>
                     </div>
                 </div>
                 <div class="col-md-3 col-6 mb-3 mb-md-0">
@@ -379,8 +380,9 @@
                         <div class="stat-icon">
                             <i class="fas fa-user-md"></i>
                         </div>
-                        <div class="stat-number">@Model.DoctorCount</div>
+                        <div class="stat-number">@Model.ActiveDoctorCount</div>
                         <div class="stat-label">پزشک متخصص</div>
+                        <small class="text-muted">از @Model.DoctorCount کل</small>
                     </div>
                 </div>
                 <div class="col-md-3 col-6">
@@ -466,6 +468,34 @@
                         <code>#@Model.ClinicId.ToString("D4")</code>
                     </div>
                 </div>
+
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="fas fa-info-circle text-primary"></i>
+                        وضعیت:
+                    </div>
+                    <div class="info-value">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-warning text-dark">غیرفعال</span>
+                        }
+                        <small class="text-muted ms-2">@Model.StatusDescription</small>
+                    </div>
+                </div>
+
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="fas fa-clock text-secondary"></i>
+                        آخرین فعالیت:
+                    </div>
+                    <div class="info-value">
+                        <i class="fas fa-calendar me-1"></i>@Model.LastActivityShamsi
+                    </div>
+                </div>
             </div>
 
             <!-- Department Preview -->
@@ -477,32 +507,83 @@
                         دپارتمان‌ها و خدمات
                     </h3>
                     
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-md-3 col-6 mb-3">
                             <div class="department-preview">
                                 <i class="fas fa-building text-primary mb-2" style="font-size: 2rem;"></i>
-                                <h5>@Model.DepartmentCount دپارتمان</h5>
+                                <h5>@Model.ActiveDepartmentCount دپارتمان</h5>
                                 <p class="text-muted mb-2">بخش‌های تخصصی فعال</p>
-                                <a href="#" class="btn btn-sm btn-outline-primary">مشاهده همه</a>
+                                <small class="text-muted">از @Model.DepartmentCount کل</small>
+                                <a href="@Url.Action("Index", "Department", new { clinicId = Model.ClinicId })" class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="fas fa-eye me-1"></i>مشاهده همه
+                                </a>
                             </div>
                         </div>
-                        <div class="col-md-4 mb-3">
+                        <div class="col-md-3 col-6 mb-3">
                             <div class="department-preview">
-                                <i class="fas fa-user-md text-success mb-2" style="font-size: 2rem;"></i>
-                                <h5>@Model.DoctorCount پزشک</h5>
+                                <i class="fas fa-list-alt text-info mb-2" style="font-size: 2rem;"></i>
+                                <h5>@Model.ActiveServiceCategoryCount دسته‌بندی</h5>
+                                <p class="text-muted mb-2">دسته‌بندی‌های خدمت فعال</p>
+                                <small class="text-muted">از @Model.TotalServiceCategoryCount کل</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="department-preview">
+                                <i class="fas fa-stethoscope text-success mb-2" style="font-size: 2rem;"></i>
+                                <h5>@Model.ActiveServiceCount خدمت</h5>
+                                <p class="text-muted mb-2">خدمات فعال</p>
+                                <small class="text-muted">از @Model.TotalServiceCount کل</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="department-preview">
+                                <i class="fas fa-user-md text-warning mb-2" style="font-size: 2rem;"></i>
+                                <h5>@Model.ActiveDoctorCount پزشک</h5>
                                 <p class="text-muted mb-2">متخصصان مجرب</p>
-                                <a href="#" class="btn btn-sm btn-outline-success">لیست پزشکان</a>
-                            </div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <div class="department-preview">
-                                <i class="fas fa-calendar-plus text-warning mb-2" style="font-size: 2rem;"></i>
-                                <h5>نوبت‌دهی</h5>
-                                <p class="text-muted mb-2">رزرو آنلاین نوبت</p>
-                                <a href="#" class="btn btn-sm btn-outline-warning">نوبت جدید</a>
+                                <small class="text-muted">از @Model.DoctorCount کل</small>
                             </div>
                         </div>
                     </div>
+
+                    <!-- لیست دپارتمان‌ها -->
+                    @if (Model.DepartmentSummaries.Any())
+                    {
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-list me-2"></i>
+                            دپارتمان‌های موجود
+                        </h6>
+                        <div class="row">
+                            @foreach (var dept in Model.DepartmentSummaries)
+                            {
+                                <div class="col-md-6 col-lg-4 mb-3">
+                                    <div class="department-preview @(dept.IsActive ? "border-success" : "border-warning")">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <i class="fas fa-building @(dept.IsActive ? "text-success" : "text-warning")" style="font-size: 1.5rem;"></i>
+                                            <span class="badge @(dept.IsActive ? "bg-success" : "bg-warning") text-dark">
+                                                @(dept.IsActive ? "فعال" : "غیرفعال")
+                                            </span>
+                                        </div>
+                                        <h6 class="fw-bold mb-2">@dept.DepartmentName</h6>
+                                        <div class="row text-center">
+                                            <div class="col-4">
+                                                <small class="text-muted">دسته‌بندی</small>
+                                                <div class="fw-bold">@dept.ServiceCategoryCount</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">خدمت</small>
+                                                <div class="fw-bold">@dept.ServiceCount</div>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">پزشک</small>
+                                                <div class="fw-bold">@dept.DoctorCount</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
                 </div>
             }
         </div>
@@ -551,6 +632,9 @@
                 <div class="d-grid gap-2">
                     <a href="@Url.Action("Edit", new { id = Model.ClinicId })" class="btn btn-medical btn-medical-warning">
                         <i class="fas fa-edit me-2"></i>ویرایش اطلاعات
+                    </a>
+                    <a href="@Url.Action("Index", "Department", new { clinicId = Model.ClinicId })" class="btn btn-medical" style="background: var(--medical-primary);">
+                        <i class="fas fa-building me-2"></i>مشاهده دپارتمان‌ها
                     </a>
                     <button class="btn btn-medical" style="background: var(--medical-info);">
                         <i class="fas fa-plus me-2"></i>افزودن دپارتمان

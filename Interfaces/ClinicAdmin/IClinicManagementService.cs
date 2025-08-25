@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
+using ClinicApp.Models;
 using ClinicApp.ViewModels;
 
 namespace ClinicApp.Interfaces.ClinicAdmin;
@@ -67,4 +68,11 @@ public interface IClinicManagementService
     /// </summary>
     /// <returns>لیستی از کلینیک‌های فعال.</returns>
     Task<ServiceResult<List<LookupItemViewModel>>> GetActiveClinicsForLookupAsync();
+
+    /// <summary>
+    /// 🏥 MEDICAL: دریافت اطلاعات وابستگی‌های کلینیک برای اعتبارسنجی حذف
+    /// </summary>
+    /// <param name="clinicId">شناسه کلینیک</param>
+    /// <returns>اطلاعات وابستگی‌های کلینیک</returns>
+    Task<ServiceResult<ClinicDependencyInfo>> GetClinicDependencyInfoAsync(int clinicId);
 }

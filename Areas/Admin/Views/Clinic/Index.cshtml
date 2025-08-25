@@ -475,18 +475,6 @@
                             </td>
                         </tr>
                     }
-                    <tr>
-                        <td colspan="5">
-                            <div class="empty-state">
-                                <i class="fas fa-clinic-medical"></i>
-                                <h5>هیچ کلینیکی یافت نشد</h5>
-                                <p class="mb-3">در حال حاضر کلینیکی در سیستم وجود ندارد.</p>
-                                <a href="@Url.Action("Create")" class="btn btn-medical-success">
-                                    <i class="fas fa-plus me-1"></i> ایجاد کلینیک جدید
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
                 
                 </tbody>
             </table>
@@ -577,6 +565,64 @@
     .modal-footer {
         border-radius: 0 0 12px 12px;
         background: #f8f9fa;
+    }
+    
+    /* 🏥 MEDICAL: استایل‌های Dependency Cards */
+    .dependency-details {
+        margin-top: 1.5rem;
+    }
+    
+    .dependency-card {
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+    }
+    
+    .dependency-card:hover {
+        background: #e9ecef;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .dependency-icon {
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-left: 1rem;
+        color: white;
+        font-size: 1.2rem;
+    }
+    
+    .dependency-info {
+        flex: 1;
+    }
+    
+    .dependency-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 0.25rem;
+    }
+    
+    .dependency-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+    
+    .dependency-active {
+        font-size: 0.8rem;
+        color: #28a745;
+        font-weight: 500;
     }
     
     .btn-close-white {
@@ -829,11 +875,223 @@
             tableBody.on('click', '.btn-delete', function () {
                 const id = $(this).data('id');
                 const name = $(this).data('name');
-                clinicNameToDelete.text(name);
-                const deleteUrl = `@Url.Action("Delete", "Clinic")/${id}`;
-                deleteForm.attr('action', deleteUrl);
-                deleteModal.show();
+                
+                // 🏥 MEDICAL: بررسی وابستگی‌ها قبل از نمایش modal حذف
+                checkClinicDependencies(id, name);
             });
+
+            // 🏥 MEDICAL: بررسی وابستگی‌های کلینیک
+            function checkClinicDependencies(clinicId, clinicName) {
+                console.log('🏥 MEDICAL: بررسی وابستگی‌های کلینیک:', clinicId, clinicName);
+                showLoading();
+                
+                $.ajax({
+                    url: '@Url.Action("GetDependencyInfo", "Clinic")',
+                    type: 'GET',
+                    data: { id: clinicId },
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    success: function (result) {
+                        hideLoading();
+                        console.log('🏥 MEDICAL: پاسخ سرور (Raw):', result);
+                        console.log('🏥 MEDICAL: نوع پاسخ:', typeof result);
+                        
+                        // 🏥 MEDICAL: بررسی نوع پاسخ و تبدیل در صورت نیاز
+                        let responseData = result;
+                        console.log('🏥 MEDICAL: نوع پاسخ اصلی:', typeof result);
+                        
+                        if (typeof result === 'string') {
+                            try {
+                                responseData = JSON.parse(result);
+                                console.log('🏥 MEDICAL: پاسخ تبدیل شده:', responseData);
+                            } catch (parseError) {
+                                console.error('🏥 MEDICAL: خطا در تبدیل JSON:', parseError);
+                                console.error('🏥 MEDICAL: متن پاسخ:', result);
+                                showMedicalToast('❌ خطا', 'خطا در پردازش پاسخ سرور', 'error');
+                                return;
+                            }
+                        } else if (typeof result === 'object' && result !== null) {
+                            responseData = result;
+                            console.log('🏥 MEDICAL: پاسخ object است:', responseData);
+                        } else {
+                            console.error('🏥 MEDICAL: نوع پاسخ نامعتبر:', typeof result, result);
+                            showMedicalToast('❌ خطا', 'پاسخ سرور نامعتبر است', 'error');
+                            return;
+                        }
+                        
+                        // 🏥 MEDICAL: بررسی وجود success property
+                        if (responseData && responseData.success === true) {
+                            console.log('🏥 MEDICAL: پاسخ موفق - canDelete:', responseData.canDelete);
+                            
+                            if (responseData.canDelete === true) {
+                                console.log('🏥 MEDICAL: امکان حذف وجود دارد');
+                                // ✅ امکان حذف وجود دارد
+                                clinicNameToDelete.text(clinicName);
+                                const deleteUrl = `@Url.Action("Delete", "Clinic")/${clinicId}`;
+                                deleteForm.attr('action', deleteUrl);
+                                deleteModal.show();
+                            } else {
+                                console.log('🏥 MEDICAL: امکان حذف وجود ندارد - نمایش هشدار');
+                                // ❌ امکان حذف وجود ندارد - نمایش جزئیات وابستگی‌ها
+                                if (responseData.data) {
+                                    showDependencyWarning(responseData.data, clinicName);
+                                } else {
+                                    console.error('🏥 MEDICAL: data property موجود نیست:', responseData);
+                                    showMedicalToast('❌ خطا', 'اطلاعات وابستگی در دسترس نیست', 'error');
+                                }
+                            }
+                        } else {
+                            console.log('🏥 MEDICAL: پاسخ ناموفق:', responseData);
+                            const errorMessage = responseData?.message || 'خطا در بررسی وابستگی‌های کلینیک';
+                            showMedicalToast('❌ خطا', errorMessage, 'error');
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        hideLoading();
+                        console.error('🏥 MEDICAL: خطا در AJAX:', error);
+                        console.error('🏥 MEDICAL: Status:', status);
+                        console.error('🏥 MEDICAL: Response:', xhr.responseText);
+                        showMedicalToast('❌ خطا', 'خطا در ارتباط با سرور', 'error');
+                    }
+                });
+            }
+
+            // 🏥 MEDICAL: نمایش هشدار وابستگی‌ها
+            function showDependencyWarning(dependencyInfo, clinicName) {
+                console.log('🏥 MEDICAL: نمایش هشدار وابستگی‌ها برای کلینیک:', clinicName);
+                console.log('🏥 MEDICAL: اطلاعات وابستگی:', dependencyInfo);
+                
+                // 🏥 MEDICAL: بررسی وجود داده‌های ضروری
+                if (!dependencyInfo) {
+                    console.error('🏥 MEDICAL: dependencyInfo موجود نیست');
+                    showMedicalToast('❌ خطا', 'اطلاعات وابستگی در دسترس نیست', 'error');
+                    return;
+                }
+                
+                // 🏥 MEDICAL: اطمینان از وجود مقادیر
+                const deptCount = dependencyInfo.TotalDepartmentCount || 0;
+                const activeDeptCount = dependencyInfo.ActiveDepartmentCount || 0;
+                const categoryCount = dependencyInfo.TotalServiceCategoryCount || 0;
+                const activeCategoryCount = dependencyInfo.ActiveServiceCategoryCount || 0;
+                const serviceCount = dependencyInfo.TotalServiceCount || 0;
+                const activeServiceCount = dependencyInfo.ActiveServiceCount || 0;
+                const doctorCount = dependencyInfo.TotalDoctorCount || 0;
+                const activeDoctorCount = dependencyInfo.ActiveDoctorCount || 0;
+                const errorMessage = dependencyInfo.DeletionErrorMessage || 'امکان حذف این کلینیک وجود ندارد.';
+                
+                const modalHtml = `
+                    <div class="modal fade" id="dependencyWarningModal" tabindex="-1" aria-labelledby="dependencyModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                            <div class="modal-content border-0 shadow-lg">
+                                <div class="modal-header bg-warning text-dark border-0">
+                                    <h5 class="modal-title" id="dependencyModalLabel">
+                                        <i class="fas fa-exclamation-triangle me-2"></i>
+                                        عدم امکان حذف کلینیک
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body py-4">
+                                    <div class="text-center mb-4">
+                                        <i class="fas fa-clinic-medical text-warning" style="font-size: 3rem; opacity: 0.7;"></i>
+                                    </div>
+                                    <div class="alert alert-warning border-0 bg-light">
+                                        <h6 class="fw-bold mb-3">${escapeHtml(errorMessage)}</h6>
+                                    </div>
+                                    <div class="dependency-details">
+                                        <h6 class="fw-bold mb-3">جزئیات وابستگی‌ها:</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="dependency-card">
+                                                    <div class="dependency-icon">
+                                                        <i class="fas fa-building"></i>
+                                                    </div>
+                                                    <div class="dependency-info">
+                                                        <div class="dependency-number">${deptCount}</div>
+                                                        <div class="dependency-label">دپارتمان</div>
+                                                        <div class="dependency-active">${activeDeptCount} فعال</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="dependency-card">
+                                                    <div class="dependency-icon">
+                                                        <i class="fas fa-list-alt"></i>
+                                                    </div>
+                                                    <div class="dependency-info">
+                                                        <div class="dependency-number">${categoryCount}</div>
+                                                        <div class="dependency-label">دسته‌بندی خدمت</div>
+                                                        <div class="dependency-active">${activeCategoryCount} فعال</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="dependency-card">
+                                                    <div class="dependency-icon">
+                                                        <i class="fas fa-stethoscope"></i>
+                                                    </div>
+                                                    <div class="dependency-info">
+                                                        <div class="dependency-number">${serviceCount}</div>
+                                                        <div class="dependency-label">خدمت</div>
+                                                        <div class="dependency-active">${activeServiceCount} فعال</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="dependency-card">
+                                                    <div class="dependency-icon">
+                                                        <i class="fas fa-user-md"></i>
+                                                    </div>
+                                                    <div class="dependency-info">
+                                                        <div class="dependency-number">${doctorCount}</div>
+                                                        <div class="dependency-label">پزشک</div>
+                                                        <div class="dependency-active">${activeDoctorCount} فعال</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="mt-4">
+                                        <small class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            برای حذف این کلینیک، ابتدا تمام وابستگی‌های فعال آن را حذف کنید.
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-0 justify-content-center">
+                                    <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">
+                                        <i class="fas fa-times me-1"></i>
+                                        بستن
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // حذف modal قبلی اگر وجود دارد
+                $('#dependencyWarningModal').remove();
+                
+                // اضافه کردن modal جدید
+                $('body').append(modalHtml);
+                
+                // نمایش modal با تأخیر کوتاه
+                setTimeout(() => {
+                    try {
+                        const dependencyModal = new bootstrap.Modal(document.getElementById('dependencyWarningModal'));
+                        dependencyModal.show();
+                        console.log('🏥 MEDICAL: Modal هشدار وابستگی نمایش داده شد');
+                    } catch (error) {
+                        console.error('🏥 MEDICAL: خطا در نمایش modal:', error);
+                        // نمایش پیام ساده در صورت خطا
+                        showMedicalToast('⚠️ هشدار', errorMessage, 'warning');
+                    }
+                }, 100);
+                
+                // حذف modal بعد از بسته شدن
+                $('#dependencyWarningModal').on('hidden.bs.modal', function () {
+                    $(this).remove();
+                });
+            }
 
             // تابع کمکی برای XSS Protection
             function escapeHtml(string) {

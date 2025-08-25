@@ -64,14 +64,39 @@ namespace ClinicApp.Areas.Admin.Controllers
         // GET: Admin/Clinic/Details/5
         public async Task<ActionResult> Details(int id)
         {
-            var result = await _clinicService.GetClinicDetailsAsync(id);
-            if (!result.Success)
+            _log.Information("🏥 MEDICAL: درخواست مشاهده جزئیات کلینیک {ClinicId}. User: {UserId}", 
+                id, _currentUserService?.UserId ?? "Anonymous");
+
+            try
             {
-                if (result.Code == "NOT_FOUND") return HttpNotFound();
-                TempData["ErrorMessage"] = result.Message;
+                var result = await _clinicService.GetClinicDetailsAsync(id);
+                if (!result.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: کلینیک {ClinicId} یافت نشد. Error: {Error}, User: {UserId}", 
+                        id, result.Message, _currentUserService?.UserId ?? "Anonymous");
+
+                    if (result.Code == "NOT_FOUND") 
+                    {
+                        return HttpNotFound("کلینیک مورد نظر یافت نشد.");
+                    }
+                    
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Index");
+                }
+
+                _log.Information("🏥 MEDICAL: جزئیات کلینیک {ClinicId} با موفقیت بارگذاری شد. User: {UserId}", 
+                    id, _currentUserService?.UserId ?? "Anonymous");
+
+                return View(result.Data);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در بارگذاری جزئیات کلینیک {ClinicId}. User: {UserId}", 
+                    id, _currentUserService?.UserId ?? "Anonymous");
+                
+                TempData["ErrorMessage"] = "خطای سیستمی در بارگذاری اطلاعات رخ داد.";
                 return RedirectToAction("Index");
             }
-            return View(result.Data);
         }
 
         // GET: Admin/Clinic/Create
@@ -144,16 +169,51 @@ namespace ClinicApp.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Delete(int id)
         {
+            _log.Information("🏥 MEDICAL: درخواست حذف کلینیک {ClinicId} از طریق Controller. User: {UserId}", 
+                id, _currentUserService?.UserId ?? "Anonymous");
+
             var result = await _clinicService.SoftDeleteClinicAsync(id);
             if (result.Success)
             {
+                _log.Information("🏥 MEDICAL: کلینیک {ClinicId} با موفقیت حذف شد. User: {UserId}", 
+                    id, _currentUserService?.UserId ?? "Anonymous");
                 TempData["SuccessMessage"] = result.Message;
             }
             else
             {
+                _log.Warning("🏥 MEDICAL: حذف کلینیک {ClinicId} ناموفق بود. Error: {Error}, User: {UserId}", 
+                    id, result.Message, _currentUserService?.UserId ?? "Anonymous");
                 TempData["ErrorMessage"] = result.Message;
             }
             return RedirectToAction("Index");
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: دریافت اطلاعات وابستگی‌های کلینیک (برای AJAX)
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDependencyInfo(int id)
+        {
+            _log.Information("🏥 MEDICAL: درخواست اطلاعات وابستگی کلینیک {ClinicId} از طریق AJAX. User: {UserId}", 
+                id, _currentUserService?.UserId ?? "Anonymous");
+
+            var result = await _clinicService.GetClinicDependencyInfoAsync(id);
+            if (result.Success)
+            {
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    canDelete = result.Data.CanBeDeleted,
+                    message = result.Data.DeletionErrorMessage
+                }, JsonRequestBehavior.AllowGet);
+            }
+            else
+            {
+                return Json(new { 
+                    success = false, 
+                    message = result.Message 
+                }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         /// <summary>

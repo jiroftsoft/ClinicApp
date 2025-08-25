@@ -43,9 +43,13 @@ namespace ClinicApp.Repositories
         {
             // We do not use AsNoTracking() here because the service might want to update this entity.
             // ✅ CRITICAL FIX: Add IsDeleted filter to exclude soft-deleted clinics
+            // 🏥 MEDICAL: Enhanced includes for detailed view
             return _context.Clinics
                 .Include(c => c.CreatedByUser)
                 .Include(c => c.UpdatedByUser)
+                .Include(c => c.Departments.Select(d => d.ServiceCategories.Select(sc => sc.Services)))
+                .Include(c => c.Departments.Select(d => d.DoctorDepartments.Select(dd => dd.Doctor)))
+                .Include(c => c.Doctors)
                 .Where(c => !c.IsDeleted) // 🏥 MEDICAL: Only show non-deleted clinics
                 .FirstOrDefaultAsync(c => c.ClinicId == clinicId);
         }
@@ -91,6 +95,68 @@ namespace ClinicApp.Repositories
         public Task SaveChangesAsync()
         {
             return _context.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: بررسی وابستگی‌های کلینیک قبل از حذف
+        /// </summary>
+        public async Task<ClinicDependencyInfo> GetClinicDependencyInfoAsync(int clinicId)
+        {
+            var clinic = await _context.Clinics
+                .Include(c => c.Departments.Select(d => d.ServiceCategories.Select(sc => sc.Services)))
+                .Include(c => c.Departments.Select(d => d.DoctorDepartments.Select(dd => dd.Doctor)))
+                .Where(c => c.ClinicId == clinicId && !c.IsDeleted)
+                .FirstOrDefaultAsync();
+
+            if (clinic == null)
+                return null;
+
+            var dependencyInfo = new ClinicDependencyInfo
+            {
+                ClinicId = clinic.ClinicId,
+                ClinicName = clinic.Name,
+                TotalDepartmentCount = clinic.Departments?.Count ?? 0,
+                ActiveDepartmentCount = clinic.Departments?.Count(d => !d.IsDeleted && d.IsActive) ?? 0
+            };
+
+            // محاسبه وابستگی‌های غیرمستقیم
+            if (clinic.Departments != null)
+            {
+                foreach (var department in clinic.Departments.Where(d => !d.IsDeleted))
+                {
+                    var deptInfo = new DepartmentDependencyInfo
+                    {
+                        DepartmentId = department.DepartmentId,
+                        DepartmentName = department.Name,
+                        IsActive = department.IsActive,
+                        ServiceCategoryCount = department.ServiceCategories?.Count(sc => !sc.IsDeleted) ?? 0,
+                        ServiceCount = department.ServiceCategories?.Sum(sc => sc.Services?.Count(s => !s.IsDeleted) ?? 0) ?? 0,
+                        DoctorCount = department.DoctorDepartments?.Count(dd => dd.Doctor != null && !dd.Doctor.IsDeleted) ?? 0
+                    };
+
+                    dependencyInfo.Departments.Add(deptInfo);
+                }
+
+                dependencyInfo.TotalServiceCategoryCount = dependencyInfo.Departments.Sum(d => d.ServiceCategoryCount);
+                dependencyInfo.ActiveServiceCategoryCount = dependencyInfo.Departments.Where(d => d.IsActive).Sum(d => d.ServiceCategoryCount);
+                
+                dependencyInfo.TotalServiceCount = dependencyInfo.Departments.Sum(d => d.ServiceCount);
+                dependencyInfo.ActiveServiceCount = dependencyInfo.Departments.Where(d => d.IsActive).Sum(d => d.ServiceCount);
+                
+                dependencyInfo.TotalDoctorCount = dependencyInfo.Departments.Sum(d => d.DoctorCount);
+                dependencyInfo.ActiveDoctorCount = dependencyInfo.Departments.Where(d => d.IsActive).Sum(d => d.DoctorCount);
+            }
+
+            return dependencyInfo;
+        }
+
+        /// <summary>
+        /// 🏥 MEDICAL: بررسی امکان حذف کلینیک بر اساس وابستگی‌ها
+        /// </summary>
+        public async Task<bool> CanDeleteClinicAsync(int clinicId)
+        {
+            var dependencyInfo = await GetClinicDependencyInfoAsync(clinicId);
+            return dependencyInfo?.CanBeDeleted ?? false;
         }
     }
 }
