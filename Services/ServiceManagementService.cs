@@ -271,25 +271,31 @@ namespace ClinicApp.Services
         /// </summary>
         public async Task<ServiceResult> SoftDeleteServiceCategoryAsync(int serviceCategoryId)
         {
-            _log.Information("درخواست حذف نرم دسته‌بندی. Id: {Id}. User: {UserId}",
-                serviceCategoryId, _currentUserService.UserId);
+            _log.Information("🏥 MEDICAL: درخواست حذف نرم دسته‌بندی. Id: {Id}. User: {UserId}",
+                serviceCategoryId, _currentUserService?.UserId ?? "NULL");
 
             try
             {
                 if (serviceCategoryId <= 0)
                 {
+                    _log.Warning("🏥 MEDICAL: شناسه دسته‌بندی نامعتبر. Id: {Id}. User: {UserId}",
+                        serviceCategoryId, _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("شناسه دسته‌بندی معتبر نیست.");
                 }
 
                 var category = await _categoryRepo.GetByIdAsync(serviceCategoryId);
                 if (category == null)
                 {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی یافت نشد. Id: {Id}. User: {UserId}",
+                        serviceCategoryId, _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("دسته‌بندی مورد نظر یافت نشد.");
                 }
 
                 // Check if category is already deleted
                 if (category.IsDeleted)
                 {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی قبلاً حذف شده. Id: {Id}. User: {UserId}",
+                        serviceCategoryId, _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("دسته‌بندی مورد نظر قبلاً حذف شده است.");
                 }
 
@@ -297,29 +303,37 @@ namespace ClinicApp.Services
                 var activeServices = await _serviceRepo.GetActiveServicesAsync(serviceCategoryId);
                 if (activeServices.Any())
                 {
+                    _log.Warning("🏥 MEDICAL: تلاش برای حذف دسته‌بندی دارای خدمات فعال. Id: {Id}, ActiveServices: {Count}. User: {UserId}",
+                        serviceCategoryId, activeServices.Count(), _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("نمی‌توان دسته‌بندی‌ای را حذف کرد که حاوی خدمات فعال است.");
                 }
+
+                // 🔒 تعیین شناسه کاربر معتبر برای عملیات حذف
+                string validUserId = GetValidUserIdForOperation();
+
+                _log.Information("🏥 MEDICAL: شناسه کاربر معتبر برای عملیات: {ValidUserId}. Original User: {OriginalUserId}",
+                    validUserId, _currentUserService?.UserId ?? "NULL");
 
                 // Soft delete
                 category.IsDeleted = true;
                 category.DeletedAt = DateTime.UtcNow;
-                category.DeletedByUserId = _currentUserService.UserId;
+                category.DeletedByUserId = validUserId;
                 category.UpdatedAt = DateTime.UtcNow;
-                category.UpdatedByUserId = _currentUserService.UserId;
+                category.UpdatedByUserId = validUserId;
 
                 _categoryRepo.Update(category);
                 await _categoryRepo.SaveChangesAsync();
                 
-                _log.Information("دسته‌بندی حذف شد. Id: {Id}. User: {UserId}",
-                    serviceCategoryId, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: دسته‌بندی حذف شد. Id: {Id}. User: {UserId}",
+                    serviceCategoryId, _currentUserService?.UserId ?? "NULL");
 
                 return ServiceResult.Successful("دسته‌بندی خدمات با موفقیت حذف شد.");
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در حذف دسته‌بندی. Id: {Id}. User: {UserId}",
-                    serviceCategoryId, _currentUserService.UserId);
-                return ServiceResult.Failed("خطای سیستمی در حذف دسته‌بندی خدمات رخ داد.", "DB_ERROR");
+                _log.Error(ex, "🏥 MEDICAL: خطا در حذف دسته‌بندی. Id: {Id}, ExceptionType: {ExceptionType}, Message: {Message}. User: {UserId}",
+                    serviceCategoryId, ex.GetType().Name, ex.Message, _currentUserService?.UserId ?? "NULL");
+                return ServiceResult.Failed("خطای سیستمی در حذف دسته‌بندی رخ داد.", "DB_ERROR");
             }
         }
 
@@ -671,7 +685,7 @@ namespace ClinicApp.Services
         public async Task<ServiceResult> SoftDeleteServiceAsync(int serviceId)
         {
             _log.Information("🏥 MEDICAL: درخواست حذف نرم خدمت. Id: {Id}. User: {UserId}",
-                serviceId, _currentUserService.UserId);
+                serviceId, _currentUserService?.UserId ?? "NULL");
 
             try
             {
@@ -679,61 +693,67 @@ namespace ClinicApp.Services
                 if (serviceId <= 0)
                 {
                     _log.Warning("🏥 MEDICAL: شناسه خدمت نامعتبر. Id: {Id}. User: {UserId}",
-                        serviceId, _currentUserService.UserId);
+                        serviceId, _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("شناسه خدمت معتبر نیست.");
                 }
 
                 _log.Information("🏥 MEDICAL: بازیابی خدمت از دیتابیس. Id: {Id}. User: {UserId}",
-                    serviceId, _currentUserService.UserId);
+                    serviceId, _currentUserService?.UserId ?? "NULL");
 
                 var service = await _serviceRepo.GetByIdAsync(serviceId);
                 if (service == null)
                 {
                     _log.Warning("🏥 MEDICAL: خدمت یافت نشد. Id: {Id}. User: {UserId}",
-                        serviceId, _currentUserService.UserId);
+                        serviceId, _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("خدمت مورد نظر یافت نشد.");
                 }
 
                 _log.Information("🏥 MEDICAL: خدمت یافت شد. Id: {Id}, Title: {Title}, IsDeleted: {IsDeleted}. User: {UserId}",
-                    serviceId, service.Title, service.IsDeleted, _currentUserService.UserId);
+                    serviceId, service.Title, service.IsDeleted, _currentUserService?.UserId ?? "NULL");
 
                 // Check if service is already deleted
                 if (service.IsDeleted)
                 {
                     _log.Warning("🏥 MEDICAL: خدمت قبلاً حذف شده. Id: {Id}. User: {UserId}",
-                        serviceId, _currentUserService.UserId);
+                        serviceId, _currentUserService?.UserId ?? "NULL");
                     return ServiceResult.Failed("خدمت مورد نظر قبلاً حذف شده است.");
                 }
 
                 _log.Information("🏥 MEDICAL: شروع حذف نرم. Id: {Id}. User: {UserId}",
-                    serviceId, _currentUserService.UserId);
+                    serviceId, _currentUserService?.UserId ?? "NULL");
+
+                // 🔒 تعیین شناسه کاربر معتبر برای عملیات حذف
+                string validUserId = GetValidUserIdForOperation();
+
+                _log.Information("🏥 MEDICAL: شناسه کاربر معتبر برای عملیات: {ValidUserId}. Original User: {OriginalUserId}",
+                    validUserId, _currentUserService?.UserId ?? "NULL");
 
                 // Soft delete
                 service.IsDeleted = true;
                 service.DeletedAt = DateTime.UtcNow;
-                service.DeletedByUserId = _currentUserService?.UserId ?? "System";
+                service.DeletedByUserId = validUserId;
                 service.UpdatedAt = DateTime.UtcNow;
-                service.UpdatedByUserId = _currentUserService?.UserId ?? "System";
+                service.UpdatedByUserId = validUserId;
 
                 _log.Information("🏥 MEDICAL: به‌روزرسانی خدمت. Id: {Id}, DeletedBy: {DeletedBy}, UpdatedBy: {UpdatedBy}. User: {UserId}",
-                    serviceId, service.DeletedByUserId, service.UpdatedByUserId, _currentUserService.UserId);
+                    serviceId, service.DeletedByUserId, service.UpdatedByUserId, _currentUserService?.UserId ?? "NULL");
 
                 _serviceRepo.Update(service);
                 
                 _log.Information("🏥 MEDICAL: ذخیره تغییرات در دیتابیس. Id: {Id}. User: {UserId}",
-                    serviceId, _currentUserService.UserId);
+                    serviceId, _currentUserService?.UserId ?? "NULL");
                 
                 await _serviceRepo.SaveChangesAsync();
                 
                 _log.Information("🏥 MEDICAL: خدمت با موفقیت حذف شد. Id: {Id}. User: {UserId}",
-                    serviceId, _currentUserService.UserId);
+                    serviceId, _currentUserService?.UserId ?? "NULL");
 
                 return ServiceResult.Successful("خدمت با موفقیت حذف شد.");
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در حذف خدمت. Id: {Id}, ExceptionType: {ExceptionType}, Message: {Message}. User: {UserId}",
-                    serviceId, ex.GetType().Name, ex.Message, _currentUserService.UserId);
+                    serviceId, ex.GetType().Name, ex.Message, _currentUserService?.UserId ?? "NULL");
                 return ServiceResult.Failed("خطای سیستمی در حذف خدمت رخ داد.", "DB_ERROR");
             }
         }
@@ -861,5 +881,46 @@ namespace ClinicApp.Services
         }
 
         #endregion
+
+        /// <summary>
+        /// 🔒 تعیین شناسه کاربر معتبر برای عملیات‌های دیتابیس
+        /// این متد اطمینان حاصل می‌کند که همیشه یک شناسه کاربر معتبر برای عملیات‌های حذف نرم استفاده شود
+        /// </summary>
+        private string GetValidUserIdForOperation()
+        {
+            try
+            {
+                // 1. ابتدا سعی می‌کنیم از کاربر جاری استفاده کنیم
+                if (!string.IsNullOrWhiteSpace(_currentUserService?.UserId))
+                {
+                    _log.Debug("🏥 MEDICAL: استفاده از شناسه کاربر جاری: {UserId}", _currentUserService.UserId);
+                    return _currentUserService.UserId;
+                }
+
+                // 2. اگر کاربر جاری موجود نبود، از کاربر سیستم استفاده می‌کنیم
+                if (!string.IsNullOrWhiteSpace(SystemUsers.SystemUserId))
+                {
+                    _log.Debug("🏥 MEDICAL: استفاده از شناسه کاربر سیستم: {SystemUserId}", SystemUsers.SystemUserId);
+                    return SystemUsers.SystemUserId;
+                }
+
+                // 3. اگر کاربر سیستم هم موجود نبود، از کاربر ادمین استفاده می‌کنیم
+                if (!string.IsNullOrWhiteSpace(SystemUsers.AdminUserId))
+                {
+                    _log.Debug("🏥 MEDICAL: استفاده از شناسه کاربر ادمین: {AdminUserId}", SystemUsers.AdminUserId);
+                    return SystemUsers.AdminUserId;
+                }
+
+                // 4. در نهایت، اگر هیچ کاربر سیستمی موجود نبود، یک شناسه پیش‌فرض استفاده می‌کنیم
+                // این حالت فقط در محیط‌های توسعه یا تست رخ می‌دهد
+                _log.Warning("🏥 MEDICAL: هیچ کاربر سیستمی یافت نشد. استفاده از شناسه پیش‌فرض.");
+                return "00000000-0000-0000-0000-000000000000"; // شناسه پیش‌فرض
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در تعیین شناسه کاربر معتبر. استفاده از شناسه پیش‌فرض.");
+                return "00000000-0000-0000-0000-000000000000"; // شناسه پیش‌فرض
+            }
+        }
     }
 }

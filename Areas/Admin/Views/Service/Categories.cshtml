@@ -391,6 +391,9 @@
             $('#confirmDeleteBtn').off('click').on('click', function() {
                 deleteCategory(id);
             });
+            
+            // Fix accessibility issue: Remove aria-hidden before showing modal
+            $('#deleteModal').removeAttr('aria-hidden');
             $('#deleteModal').modal('show');
         }
 
@@ -424,17 +427,28 @@
                     console.log('🏥 MEDICAL: Result message:', result.message);
                     console.log('🏥 MEDICAL: Result success:', result.success);
                     
-                    // اطمینان از وجود پیام
-                    const message = result.message || 'پیام نامشخص';
-                    const success = result.success === true;
+                    // اطمینان از وجود پیام با بررسی دقیق‌تر
+                    let message = 'پیام نامشخص';
+                    if (result && result.message !== undefined && result.message !== null && result.message !== '') {
+                        message = result.message;
+                    } else if (result && result.Message !== undefined && result.Message !== null && result.Message !== '') {
+                        message = result.Message;
+                    }
+                    
+                    const success = result && (result.success === true || result.Success === true);
+                    
+                    console.log('🏥 MEDICAL: Final message:', message);
+                    console.log('🏥 MEDICAL: Final success:', success);
                     
                     if (success) {
+                        console.log('🏥 MEDICAL: Calling showMedicalToast with success...');
                         showMedicalToast('✅ موفقیت', message, 'success');
                         // حذف ردیف از جدول
                         $(`tr[data-category-id="${id}"]`).fadeOut();
                         // بروزرسانی آمار
                         updateStats();
                     } else {
+                        console.log('🏥 MEDICAL: Calling showMedicalToast with error...');
                         // بررسی نوع خطا برای نمایش پیام مناسب
                         let errorType = 'error';
                         let title = '❌ خطا';
@@ -480,53 +494,8 @@
             }, 1000);
         }
 
-        // تابع نمایش پیام برای محیط درمانی
-        function showMedicalToast(title, message, type) {
-            console.log('🏥 MEDICAL: Showing toast:', {title, message, type});
-            
-            // اطمینان از وجود پیام
-            const displayMessage = message || 'پیام نامشخص';
-            const displayTitle = title || 'اطلاعیه';
-            
-            // ایجاد toast container اگر وجود نداشته باشد
-            if (!$('#medicalToastContainer').length) {
-                $('body').append('<div id="medicalToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
-            }
-            
-            // تعیین کلاس بر اساس نوع
-            const toastClass = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-danger';
-            const iconClass = type === 'success' ? 'fas fa-check-circle' : type === 'warning' ? 'fas fa-exclamation-triangle' : 'fas fa-times-circle';
-            
-            // ایجاد toast
-            const toast = `
-                <div class="toast ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                    <div class="toast-header ${toastClass} text-white border-0">
-                        <i class="${iconClass} me-2"></i>
-                        <strong class="me-auto">${displayTitle}</strong>
-                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
-                    </div>
-                    <div class="toast-body">
-                        ${displayMessage}
-                    </div>
-                </div>
-            `;
-            
-            // اضافه کردن toast به container
-            $('#medicalToastContainer').append(toast);
-            
-            // نمایش toast
-            const toastElement = $('#medicalToastContainer .toast').last();
-            const bsToast = new bootstrap.Toast(toastElement, {
-                autohide: true,
-                delay: type === 'success' ? 3000 : 5000
-            });
-            bsToast.show();
-            
-            // حذف toast بعد از نمایش
-            toastElement.on('hidden.bs.toast', function() {
-                $(this).remove();
-            });
-        }
+        // استفاده از تابع showMedicalToast از فایل medical-toast.js
+        // این تابع در فایل Content/js/medical-toast.js تعریف شده است
 
         // Toast notification - Medical Environment
         function showToast(title, message, type) {

@@ -623,15 +623,23 @@
                 $.ajax({
                     url: '@Url.Action("CheckServiceCode", "Service")',
                     type: 'POST',
-                    data: { serviceCode: serviceCode },
+                    dataType: 'json',
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    data: { 
+                        serviceCode: serviceCode,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
                     success: function(response) {
+                        console.log('🏥 MEDICAL: CheckServiceCode response:', response);
                         if (!response.isAvailable) {
-                            showFieldError($field, 'این کد خدمت قبلاً استفاده شده است');
+                            showFieldError($field, response.message || 'این کد خدمت قبلاً استفاده شده است');
                         } else {
                             $field.removeClass('is-invalid').addClass('is-valid');
+                            $field.siblings('.text-danger').remove();
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('🏥 MEDICAL: CheckServiceCode error:', {xhr, status, error});
                         showFieldError($field, 'خطا در بررسی کد خدمت');
                     }
                 });

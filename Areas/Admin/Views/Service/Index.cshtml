@@ -279,9 +279,9 @@
     </div>
 }
 
-<!-- فیلترها و جستجو -->
+<!-- فیلترها و جستجو - Medical Environment -->
 <div class="search-filters">
-    <form method="get" id="searchForm">
+    <form method="get" id="searchForm" action="@Url.Action("Index", "Service")" novalidate>
         <div class="row g-3">
             <div class="col-md-3">
                 <label class="form-label">دسته‌بندی:</label>
@@ -300,8 +300,9 @@
                 <label class="form-label">جستجو:</label>
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="جستجو در خدمات..." 
-                           name="searchTerm" value="@ViewBag.SearchTerm" id="searchInput">
-                    <button class="btn btn-outline-secondary" type="submit">
+                           name="searchTerm" value="@ViewBag.SearchTerm" id="searchInput"
+                           maxlength="100" pattern="[\\u0600-\\u06FF\\u0750-\\u077F\\u08A0-\\u08FF\\uFB50-\\uFDFF\\uFE70-\\uFEFF\\s\\w\\d\\-\\(\\)\\,\\.\\!\\?]+">
+                    <button class="btn btn-outline-secondary" type="submit" id="searchBtn">
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
@@ -327,6 +328,10 @@
             </div>
         </div>
         <input type="hidden" name="page" value="1" id="pageInput">
+        <!-- 🔒 اطمینان از حفظ serviceCategoryId - Medical Environment -->
+        <input type="hidden" name="serviceCategoryId" value="@ViewBag.ServiceCategoryId" id="serviceCategoryIdInput">
+        <!-- 🔒 امنیت و ردیابی - Medical Environment -->
+        <input type="hidden" name="timestamp" value="@DateTime.Now.Ticks" id="timestampInput">
     </form>
 </div>
 
@@ -543,35 +548,57 @@
     <script src="~/Content/plugins/select2/js/select2.min.js"></script>
     <script>
         $(document).ready(function() {
-            // Initialize Select2
-            $('#categorySelect').select2({
-                placeholder: 'انتخاب دسته‌بندی...',
-                allowClear: true,
-                dir: 'rtl'
-            });
+            console.log('🏥 MEDICAL: شروع راه‌اندازی صفحه مدیریت خدمات');
+            
+            // 🔒 Initialize Select2 - Medical Environment
+            try {
+                $('#categorySelect').select2({
+                    placeholder: 'انتخاب دسته‌بندی...',
+                    allowClear: true,
+                    dir: 'rtl',
+                    width: '100%',
+                    minimumResultsForSearch: 10
+                });
+                console.log('🏥 MEDICAL: Select2 initialized successfully');
+            } catch (error) {
+                console.error('🏥 MEDICAL: Select2 initialization error:', error);
+            }
 
-            // Auto-submit on category change
+            // 🔒 Auto-submit on category change - Medical Environment
             $('#categorySelect').on('change', function() {
+                console.log('🏥 MEDICAL: Category changed to:', $(this).val());
                 $('#pageInput').val(1);
-                $('#searchForm').submit();
+                submitSearchForm();
             });
 
-            // Auto-submit on page size change
+            // 🔒 Auto-submit on page size change - Medical Environment
             $('#pageSizeSelect').on('change', function() {
+                console.log('🏥 MEDICAL: Page size changed to:', $(this).val());
                 $('#pageInput').val(1);
-                $('#searchForm').submit();
+                submitSearchForm();
             });
 
-            // Search with Enter key
+            // 🔒 Search with Enter key - Medical Environment
             $('#searchInput').on('keypress', function(e) {
                 if (e.which === 13) {
+                    e.preventDefault();
+                    console.log('🏥 MEDICAL: Search triggered by Enter key');
                     $('#pageInput').val(1);
-                    $('#searchForm').submit();
+                    submitSearchForm();
                 }
             });
 
-            // View toggle
+            // 🔒 Search button click - Medical Environment
+            $('#searchBtn').on('click', function(e) {
+                e.preventDefault();
+                console.log('🏥 MEDICAL: Search button clicked');
+                $('#pageInput').val(1);
+                submitSearchForm();
+            });
+
+            // 🔒 View toggle - Medical Environment
             $('#tableViewBtn').on('click', function() {
+                console.log('🏥 MEDICAL: Switching to table view');
                 $(this).addClass('active');
                 $('#cardViewBtn').removeClass('active');
                 $('#tableView').show();
@@ -580,6 +607,7 @@
             });
 
             $('#cardViewBtn').on('click', function() {
+                console.log('🏥 MEDICAL: Switching to card view');
                 $(this).addClass('active');
                 $('#tableViewBtn').removeClass('active');
                 $('#tableView').hide();
@@ -587,17 +615,110 @@
                 localStorage.setItem('servicesViewMode', 'card');
             });
 
-            // Restore view mode
-            const savedViewMode = localStorage.getItem('servicesViewMode') || 'table';
-            if (savedViewMode === 'card') {
-                $('#cardViewBtn').click();
+            // 🔒 Restore view mode - Medical Environment
+            try {
+                const savedViewMode = localStorage.getItem('servicesViewMode') || 'table';
+                console.log('🏥 MEDICAL: Restoring view mode:', savedViewMode);
+                if (savedViewMode === 'card') {
+                    $('#cardViewBtn').click();
+                }
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error restoring view mode:', error);
             }
+
+            // 🔒 Form submission prevention - Medical Environment
+            $('#searchForm').on('submit', function(e) {
+                e.preventDefault();
+                console.log('🏥 MEDICAL: Form submission prevented, using custom submit');
+                submitSearchForm();
+            });
+
+            // 🔒 Input validation - Medical Environment
+            $('#searchInput').on('input', function() {
+                const value = $(this).val();
+                if (value.length > 100) {
+                    $(this).val(value.substring(0, 100));
+                    showMedicalToast('⚠️ هشدار', 'حداکثر 100 کاراکتر مجاز است', 'warning');
+                }
+            });
+
+            console.log('🏥 MEDICAL: صفحه مدیریت خدمات راه‌اندازی شد');
         });
 
-        // تغییر صفحه
+        // 🔒 تابع ارسال فرم جستجو - Medical Environment
+        function submitSearchForm() {
+            try {
+                console.log('🏥 MEDICAL: Submitting search form');
+                
+                // 🔒 اعتبارسنجی فرم
+                const form = $('#searchForm')[0];
+                if (!form) {
+                    console.error('🏥 MEDICAL: Search form not found');
+                    showMedicalToast('❌ خطا', 'فرم جستجو یافت نشد', 'error');
+                    return;
+                }
+
+                // 🔒 اطمینان از وجود action
+                if (!form.action) {
+                    form.action = '@Url.Action("Index", "Service")';
+                    console.log('🏥 MEDICAL: Set form action to:', form.action);
+                }
+
+                // 🔒 اطمینان از وجود serviceCategoryId در URL
+                const currentUrl = new URL(window.location.href);
+                const serviceCategoryId = currentUrl.searchParams.get('serviceCategoryId');
+                
+                if (serviceCategoryId) {
+                    // اضافه کردن serviceCategoryId به فرم اگر وجود ندارد
+                    let categoryInput = form.querySelector('input[name="serviceCategoryId"]');
+                    if (!categoryInput) {
+                        categoryInput = document.createElement('input');
+                        categoryInput.type = 'hidden';
+                        categoryInput.name = 'serviceCategoryId';
+                        form.appendChild(categoryInput);
+                    }
+                    categoryInput.value = serviceCategoryId;
+                    console.log('🏥 MEDICAL: Added serviceCategoryId to form:', serviceCategoryId);
+                }
+
+                // 🔒 بروزرسانی timestamp
+                $('#timestampInput').val(Date.now());
+
+                // 🔒 نمایش loading
+                $('#searchBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+                
+                // 🔒 ارسال فرم
+                console.log('🏥 MEDICAL: Form action:', form.action);
+                console.log('🏥 MEDICAL: Form method:', form.method);
+                console.log('🏥 MEDICAL: Form data:', new FormData(form));
+                form.submit();
+                
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error submitting search form:', error);
+                showMedicalToast('❌ خطا', 'خطا در ارسال فرم جستجو', 'error');
+                $('#searchBtn').prop('disabled', false).html('<i class="fas fa-search"></i>');
+            }
+        }
+
+        // 🔒 تغییر صفحه - Medical Environment
         function changePage(page) {
-            $('#pageInput').val(page);
-            $('#searchForm').submit();
+            try {
+                console.log('🏥 MEDICAL: Changing to page:', page);
+                
+                // 🔒 اعتبارسنجی شماره صفحه
+                if (!page || page < 1) {
+                    console.warn('🏥 MEDICAL: Invalid page number:', page);
+                    showMedicalToast('⚠️ هشدار', 'شماره صفحه نامعتبر است', 'warning');
+                    return;
+                }
+                
+                $('#pageInput').val(page);
+                submitSearchForm();
+                
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error changing page:', error);
+                showMedicalToast('❌ خطا', 'خطا در تغییر صفحه', 'error');
+            }
         }
 
         // تأیید حذف
@@ -606,12 +727,10 @@
             $('#confirmDeleteBtn').off('click').on('click', function() {
                 deleteService(id);
             });
-            $('#deleteModal').modal('show');
             
-            // Fix accessibility issue: Remove aria-hidden when modal is shown
-            $('#deleteModal').on('shown.bs.modal', function() {
-                $(this).removeAttr('aria-hidden');
-            });
+            // Fix accessibility issue: Remove aria-hidden before showing modal
+            $('#deleteModal').removeAttr('aria-hidden');
+            $('#deleteModal').modal('show');
             
             // Restore aria-hidden when modal is hidden
             $('#deleteModal').on('hidden.bs.modal', function() {
@@ -621,60 +740,162 @@
 
         // حذف خدمت
         function deleteService(id) {
+            console.log('🏥 MEDICAL: Deleting service with ID:', id);
+            
+            // 🔒 اطمینان از وجود Anti-Forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            if (!token) {
+                console.error('🏥 MEDICAL: Anti-Forgery Token not found!');
+                showMedicalToast('❌ خطا', 'خطای امنیتی: توکن تأیید یافت نشد. لطفاً صفحه را رفرش کنید.', 'error');
+                return;
+            }
+            
+            console.log('🏥 MEDICAL: Anti-Forgery Token found:', token.substring(0, 10) + '...');
+            
             $.ajax({
                 url: '@Url.Action("Delete")',
                 type: 'POST',
+                dataType: 'json',
+                contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
                 data: {
                     id: id,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    __RequestVerificationToken: token
                 },
                 success: function(result) {
                     $('#deleteModal').modal('hide');
-                    if (result.success) {
-                        showToast('موفقیت', result.message, 'success');
-                        // حذف از هر دو نمایش
+                    console.log('🏥 MEDICAL: Delete result:', result);
+                    console.log('🏥 MEDICAL: Result type:', typeof result);
+                    console.log('🏥 MEDICAL: Result message:', result.message);
+                    console.log('🏥 MEDICAL: Result success:', result.success);
+                    
+                    // اطمینان از وجود پیام با بررسی دقیق‌تر
+                    let message = 'پیام نامشخص';
+                    if (result && result.message !== undefined && result.message !== null && result.message !== '') {
+                        message = result.message;
+                    } else if (result && result.Message !== undefined && result.Message !== null && result.Message !== '') {
+                        message = result.Message;
+                    }
+                    
+                    const success = result && (result.success === true || result.Success === true);
+                    
+                    console.log('🏥 MEDICAL: Final message:', message);
+                    console.log('🏥 MEDICAL: Final success:', success);
+                    
+                    if (success) {
+                        console.log('🏥 MEDICAL: Calling showMedicalToast with success...');
+                        showMedicalToast('✅ موفقیت', message, 'success');
+                        // حذف ردیف از جدول
                         $(`tr[data-service-id="${id}"]`).fadeOut();
                         $(`.service-card[data-service-id="${id}"]`).fadeOut();
                         // بروزرسانی آمار
                         updateStats();
                     } else {
-                        showToast('خطا', result.message, 'error');
+                        console.log('🏥 MEDICAL: Calling showMedicalToast with error...');
+                        showMedicalToast('❌ خطا', message, 'error');
                     }
                 },
-                error: function() {
+                error: function(xhr, status, error) {
                     $('#deleteModal').modal('hide');
-                    showToast('خطا', 'خطا در ارتباط با سرور', 'error');
+                    console.error('🏥 MEDICAL: Delete error:', {xhr, status, error});
+                    
+                    // تلاش برای استخراج پیام خطا از پاسخ
+                    let errorMessage = 'خطا در ارتباط با سرور';
+                    try {
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseText) {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMessage = response.message;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('🏥 MEDICAL: Error parsing response:', e);
+                    }
+                    
+                    showMedicalToast('❌ خطا', errorMessage, 'error');
                 }
             });
         }
 
-        // بروزرسانی آمار
+        // 🔒 بروزرسانی آمار - Medical Environment
         function updateStats() {
-            setTimeout(function() {
-                location.reload();
-            }, 1000);
+            try {
+                console.log('🏥 MEDICAL: Updating statistics');
+                
+                // شمارش تعداد خدمات باقی‌مانده
+                const remainingServices = $('tr[data-service-id]').length + $('.service-card[data-service-id]').length;
+                
+                // بروزرسانی آمار در صفحه
+                $('.stats-card .stat-value').each(function() {
+                    const $stat = $(this);
+                    const statType = $stat.data('stat-type');
+                    
+                    if (statType === 'totalServices') {
+                        $stat.text(remainingServices);
+                    }
+                });
+                
+                console.log('🏥 MEDICAL: Statistics updated, remaining services:', remainingServices);
+                
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error updating statistics:', error);
+            }
         }
 
-        // Toast notification
-        function showToast(title, message, type) {
-            const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
-            const toast = `
-                <div class="toast ${toastClass} text-white" role="alert">
-                    <div class="toast-header">
-                        <strong class="me-auto">${title}</strong>
-                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
-                    </div>
-                    <div class="toast-body">${message}</div>
-                </div>
-            `;
-            
-            if (!$('#toastContainer').length) {
-                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+        // 🔒 تابع اعتبارسنجی ورودی - Medical Environment
+        function validateInput(input, maxLength = 100) {
+            try {
+                const value = input.value;
+                
+                // حذف کاراکترهای خطرناک
+                const sanitized = value.replace(/[<>\"'&]/g, '');
+                
+                // بررسی طول
+                if (sanitized.length > maxLength) {
+                    return sanitized.substring(0, maxLength);
+                }
+                
+                return sanitized;
+                
+            } catch (error) {
+                console.error('🏥 MEDICAL: Input validation error:', error);
+                return '';
             }
-            
-            $('#toastContainer').append(toast);
-            $('.toast').last().toast('show');
         }
+
+        // 🔒 تابع امنیت صفحه - Medical Environment
+        function securePage() {
+            try {
+                // جلوگیری از کلیک راست
+                $(document).on('contextmenu', function(e) {
+                    e.preventDefault();
+                    showMedicalToast('⚠️ هشدار', 'کلیک راست غیرفعال است', 'warning');
+                });
+                
+                // جلوگیری از کلیدهای میانبر خطرناک
+                $(document).on('keydown', function(e) {
+                    // F12, Ctrl+Shift+I, Ctrl+U
+                    if (e.keyCode === 123 || (e.ctrlKey && e.shiftKey && e.keyCode === 73) || (e.ctrlKey && e.keyCode === 85)) {
+                        e.preventDefault();
+                        showMedicalToast('⚠️ هشدار', 'این عملیات مجاز نیست', 'warning');
+                    }
+                });
+                
+                console.log('🏥 MEDICAL: Page security initialized');
+                
+            } catch (error) {
+                console.error('🏥 MEDICAL: Security initialization error:', error);
+            }
+        }
+
+        // 🔒 راه‌اندازی امنیت صفحه
+        $(document).ready(function() {
+            securePage();
+        });
+
+        // استفاده از تابع showMedicalToast از فایل medical-toast.js
+        // این تابع در فایل Content/js/medical-toast.js تعریف شده است
     </script>
     
     <!-- Anti-Forgery Token -->

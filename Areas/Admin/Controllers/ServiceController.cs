@@ -715,19 +715,36 @@ namespace ClinicApp.Areas.Admin.Controllers
         #region Service Management
 
         /// <summary>
-        /// نمایش لیست خدمات یک دسته‌بندی
+        /// نمایش لیست خدمات یک دسته‌بندی - Medical Environment
         /// </summary>
         public async Task<ActionResult> Index(int? serviceCategoryId, string searchTerm = "", int page = 1, int pageSize = 10, bool isAjax = false)
         {
             try
             {
-                _log.Information("درخواست لیست خدمات. CategoryId: {CategoryId}, Page: {Page}, User: {UserId}",
+                _log.Information("🏥 MEDICAL: درخواست لیست خدمات. CategoryId: {CategoryId}, Page: {Page}, User: {UserId}",
                     serviceCategoryId, page, _currentUserService.UserId);
 
-                // اگر serviceCategoryId مشخص نشده، به صفحه انتخاب دسته‌بندی هدایت کن
+                // 🔒 بررسی و بازیابی serviceCategoryId از Session یا TempData
                 if (!serviceCategoryId.HasValue)
                 {
-                    return RedirectToAction("Categories");
+                    // تلاش برای بازیابی از Session
+                    var sessionCategoryId = Session["CurrentServiceCategoryId"] as int?;
+                    if (sessionCategoryId.HasValue)
+                    {
+                        serviceCategoryId = sessionCategoryId;
+                        _log.Information("🏥 MEDICAL: بازیابی serviceCategoryId از Session: {CategoryId}", serviceCategoryId);
+                    }
+                    else
+                    {
+                        _log.Warning("🏥 MEDICAL: serviceCategoryId مشخص نشده و در Session موجود نیست");
+                        return RedirectToAction("Categories");
+                    }
+                }
+                else
+                {
+                    // ذخیره در Session برای استفاده‌های بعدی
+                    Session["CurrentServiceCategoryId"] = serviceCategoryId.Value;
+                    _log.Information("🏥 MEDICAL: ذخیره serviceCategoryId در Session: {CategoryId}", serviceCategoryId);
                 }
 
                 var result = await _serviceManagementService.GetServicesAsync(
