@@ -5,6 +5,7 @@ using Microsoft.AspNet.Identity;
 using OfficeOpenXml.FormulaParsing.Excel.Functions.Math;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Security.Claims;
@@ -289,6 +290,24 @@ namespace ClinicApp.Helpers
 
             public string GetSystemUserId() =>
                 SystemUsers.SystemUserId;
+
+            public Task<List<Department>> GetDoctorActiveDepartmentsAsync() =>
+                Task.FromResult(new List<Department>());
+
+            public Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync() =>
+                Task.FromResult(new List<ServiceCategory>());
+
+            public Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId) =>
+                Task.FromResult(false);
+
+            public Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId) =>
+                Task.FromResult(false);
+
+            public Task<string> GetDoctorRoleInDepartmentAsync(int departmentId) =>
+                Task.FromResult<string>(null);
+
+            public string[] GetUserRoles() =>
+                new string[0];
         }
 
         private class ThreadPrincipalCurrentUserService : ICurrentUserService
@@ -344,6 +363,24 @@ namespace ClinicApp.Helpers
 
             public string GetSystemUserId() =>
                 SystemUsers.SystemUserId;
+
+            public Task<List<Department>> GetDoctorActiveDepartmentsAsync() =>
+                Task.FromResult(new List<Department>());
+
+            public Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync() =>
+                Task.FromResult(new List<ServiceCategory>());
+
+            public Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId) =>
+                Task.FromResult(false);
+
+            public Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId) =>
+                Task.FromResult(false);
+
+            public Task<string> GetDoctorRoleInDepartmentAsync(int departmentId) =>
+                Task.FromResult<string>(null);
+
+            public string[] GetUserRoles() =>
+                new string[0];
         }
 
         private class SystemCurrentUserService : ICurrentUserService
@@ -386,6 +423,24 @@ namespace ClinicApp.Helpers
 
             public string GetSystemUserId() =>
                 SystemUsers.SystemUserId;
+
+            public Task<List<Department>> GetDoctorActiveDepartmentsAsync() =>
+                Task.FromResult(new List<Department>());
+
+            public Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync() =>
+                Task.FromResult(new List<ServiceCategory>());
+
+            public Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId) =>
+                Task.FromResult(false);
+
+            public Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId) =>
+                Task.FromResult(false);
+
+            public Task<string> GetDoctorRoleInDepartmentAsync(int departmentId) =>
+                Task.FromResult<string>(null);
+
+            public string[] GetUserRoles() =>
+                new string[] { AppRoles.Admin };
         }
 
         #endregion

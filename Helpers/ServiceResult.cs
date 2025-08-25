@@ -2,91 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using ClinicApp.Core;
+using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Helpers
 {
-    /// <summary>
-    /// سطوح امنیتی برای سیستم‌های پزشکی
-    /// این سطوح بر اساس استانداردهای امنیتی سیستم‌های پزشکی تعریف شده‌اند
-    /// </summary>
-    public enum SecurityLevel
-    {
-        [Description("پایین - اطلاعات عمومی")]
-        Low = 1,
 
-        [Description("متوسط - اطلاعات داخلی سیستم")]
-        Medium = 2,
-
-        [Description("بالا - اطلاعات حساس پزشکی")]
-        High = 3,
-
-        [Description("بحرانی - اطلاعات حیاتی و محرمانه پزشکی")]
-        Critical = 4
-    }
-
-    /// <summary>
-    /// دسته‌بندی خطاها برای سیستم‌های پزشکی
-    /// این دسته‌بندی‌ها بر اساس استانداردهای سیستم‌های پزشکی تعریف شده‌اند
-    /// </summary>
-    public enum ErrorCategory
-    {
-        [Description("خطای عمومی")]
-        General = 0,
-
-        [Description("خطای اعتبارسنجی")]
-        Validation = 1,
-
-        [Description("مورد یافت نشد")]
-        NotFound = 2,
-
-        [Description("عدم دسترسی")]
-        Unauthorized = 3,
-
-        [Description("خطای منطق کسب‌وکار")]
-        BusinessLogic = 4,
-
-        [Description("خطای پایگاه داده")]
-        Database = 5,
-
-        [Description("خطای امنیتی")]
-        Security = 6,
-
-        [Description("خطای ارتباطی")]
-        Communication = 7,
-
-        [Description("خطای پزشکی")]
-        Medical = 8,
-
-        [Description("خطای مالی")]
-        Financial = 9
-    }
-
-    /// <summary>
-    /// وضعیت عملیات برای سیستم‌های پزشکی
-    /// این وضعیت‌ها بر اساس استانداردهای سیستم‌های پزشکی تعریف شده‌اند
-    /// </summary>
-    public enum OperationStatus
-    {
-        [Description("در انتظار")]
-        Pending = 0,
-
-        [Description("در حال انجام")]
-        InProgress = 1,
-
-        [Description("تکمیل شده")]
-        Completed = 2,
-
-        [Description("ناموفق")]
-        Failed = 3,
-
-        [Description("لغو شده")]
-        Canceled = 4,
-
-        [Description("معلق")]
-        Suspended = 5
-    }
 
     /// <summary>
     /// کلاس حرفه‌ای برای مدیریت نتایج سرویس‌ها در سیستم‌های پزشکی
@@ -104,6 +27,9 @@ namespace ClinicApp.Helpers
     /// var patientResult = ServiceResult<Patient>.Successful(patient);
     /// 
     /// نکته حیاتی: این کلاس برای سیستم‌های پزشکی طراحی شده و تمام نیازهای خاص را پوشش می‌دهد
+    /// </summary>
+    /// <summary>
+    /// کلاس حرفه‌ای برای مدیریت نتایج سرویس‌ها در سیستم‌های پزشکی
     /// </summary>
     public class ServiceResult
     {
@@ -157,7 +83,8 @@ namespace ClinicApp.Helpers
             string userId = null,
             string userName = null,
             string userFullName = null,
-            string userRole = null)
+            string userRole = null,
+            SecurityLevel securityLevel = SecurityLevel.Low)
         {
             return new ServiceResult
             {
@@ -170,7 +97,7 @@ namespace ClinicApp.Helpers
                 UserFullName = userFullName,
                 UserRole = userRole,
                 Status = OperationStatus.Completed,
-                SecurityLevel = SecurityLevel.Low
+                SecurityLevel = securityLevel
             };
         }
 
@@ -287,16 +214,16 @@ namespace ClinicApp.Helpers
             switch (result.SecurityLevel)
             {
                 case SecurityLevel.Low:
-                    Log.Warning(logMessage);
+                    Serilog.Log.Warning(logMessage);
                     break;
                 case SecurityLevel.Medium:
-                    Log.Error(logMessage);
+                    Serilog.Log.Error(logMessage);
                     break;
                 case SecurityLevel.High:
-                    Log.Error("خطای حساس: {LogMessage}", logMessage);
+                    Serilog.Log.Error("خطای حساس: {LogMessage}", logMessage);
                     break;
                 case SecurityLevel.Critical:
-                    Log.Fatal("خطای بحرانی: {LogMessage}", logMessage);
+                    Serilog.Log.Fatal("خطای بحرانی: {LogMessage}", logMessage);
                     break;
             }
         }
@@ -310,7 +237,7 @@ namespace ClinicApp.Helpers
                 return;
 
             var errors = string.Join(", ", result.ValidationErrors.Select(e => $"{e.Field}: {e.ErrorMessage}"));
-            Log.Warning("خطاهای اعتبارسنجی در {Operation}: {Errors}",
+            Serilog.Log.Warning("خطاهای اعتبارسنجی در {Operation}: {Errors}",
                 result.OperationName ?? "عملیات نامشخص", errors);
         }
 
@@ -360,7 +287,9 @@ namespace ClinicApp.Helpers
             string userId = null,
             string userName = null,
             string userFullName = null,
-            string userRole = null)
+            string userRole = null,
+            // ✅ پارامتر فراموش شده در اینجا اضافه شد
+            SecurityLevel securityLevel = SecurityLevel.Low)
         {
             return new ServiceResult<T>
             {
@@ -374,7 +303,8 @@ namespace ClinicApp.Helpers
                 UserName = userName,
                 UserFullName = userFullName,
                 UserRole = userRole,
-                SecurityLevel = SecurityLevel.Low
+                // ✅ مقدار آن نیز در اینجا تنظیم شد
+                SecurityLevel = securityLevel
             };
         }
 
@@ -542,6 +472,10 @@ namespace ClinicApp.Helpers
     /// <summary>
     /// کلاس کمکی برای ایجاد ServiceResult
     /// </summary>
+
+    /// <summary>
+    /// کلاس کمکی برای ایجاد ServiceResult
+    /// </summary>
     public static class ServiceResultFactory
     {
         #region General Results
@@ -554,6 +488,12 @@ namespace ClinicApp.Helpers
         public static ServiceResult Error(string message, string code = "ERROR")
         {
             return ServiceResult.Failed(message, code);
+        }
+
+        // ✅ متد overload جدید برای پشتیبانی کامل از خطاها
+        public static ServiceResult Error(string message, string code, ErrorCategory category, SecurityLevel securityLevel)
+        {
+            return ServiceResult.Failed(message, code, category, securityLevel);
         }
 
         public static ServiceResult NotFound(string entityName, string identifier)
@@ -635,3 +575,4 @@ namespace ClinicApp.Helpers
         #endregion
     }
 }
+

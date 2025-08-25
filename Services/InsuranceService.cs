@@ -12,6 +12,7 @@ using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.Services
 {
@@ -160,9 +161,9 @@ namespace ClinicApp.Services
                     $"{insurance.UpdatedByUser.FirstName} {insurance.UpdatedByUser.LastName}" : null;
 
                 // تاریخ‌های شمسی
-                details.CreatedAtShamsi = details.CreatedAt.ToPersianDateTime();
+                details.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.CreatedAt);
                 if (details.UpdatedAt.HasValue)
-                    details.UpdatedAtShamsi = details.UpdatedAt.Value.ToPersianDateTime();
+                    details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt.Value);
 
                 _log.Information(
                     "جزئیات بیمه با شناسه {InsuranceId} با موفقیت دریافت شد. OperationId: {OperationId}, User: {UserName} (Id: {UserId})",

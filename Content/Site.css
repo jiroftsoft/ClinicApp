@@ -1,39 +1,153 @@
-﻿/* Set padding to keep content from hitting the edges */
+﻿/* ========================================= */
+/* Font Face Vazirmatn - Medical Environment */
+/* Cache-busting version: 1.0.1 */
+/* ========================================= */
+
+/* Thin (100) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-Thin.woff2?v=1.0.1') format('woff2');
+    font-weight: 100;
+    font-style: normal;
+    font-display: swap; /* Medical: Fast loading */
+}
+
+/* ExtraLight (200) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-ExtraLight.woff2?v=1.0.1') format('woff2');
+    font-weight: 200;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Light (300) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-Light.woff2?v=1.0.1') format('woff2');
+    font-weight: 300;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Regular (400) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-Regular.woff2?v=1.0.1') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Medium (500) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-Medium.woff2?v=1.0.1') format('woff2');
+    font-weight: 500;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* SemiBold (600) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-SemiBold.woff2?v=1.0.1') format('woff2');
+    font-weight: 600;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Bold (700) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-Bold.woff2?v=1.0.1') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ExtraBold (800) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-ExtraBold.woff2?v=1.0.1') format('woff2');
+    font-weight: 800;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* Black (900) */
+@font-face {
+    font-family: 'Vazirmatn';
+    src: url('../Fonts/vazirmatn/Vazirmatn-Black.woff2?v=1.0.1') format('woff2');
+    font-weight: 900;
+    font-style: normal;
+    font-display: swap;
+}
+
+/* ========================================= */
+/* Global Font Settings - Medical Environment */
+/* ========================================= */
+
+/* Primary font stack for medical environment */
+body, html {
+    font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+    font-weight: 400;
+    font-display: swap;
+}
+
+/* Font weight utilities for medical interface */
+.font-thin { font-weight: 100; }
+.font-extralight { font-weight: 200; }
+.font-light { font-weight: 300; }
+.font-regular { font-weight: 400; }
+.font-medium { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold { font-weight: 700; }
+.font-extrabold { font-weight: 800; }
+.font-black { font-weight: 900; }
+
+/* ========================================= */
+/* General Layout Fixes                      */
+/* ========================================= */
+
+/* Set padding to keep content from hitting the edges */
 .body-content {
     margin-top: 15px;
     padding-left: 15px;
     padding-right: 15px;
 }
 
-/* Override the default bootstrap behavior where horizontal description lists 
-   will truncate terms that are too long to fit in the left column 
-*/
+/* Override bootstrap dl-horizontal truncation */
 .dl-horizontal dt {
     white-space: normal;
 }
 
-/* Set width on the form input elements since they're 100% wide by default */
+/* Set width on form inputs */
 input,
 select,
 textarea {
     max-width: 280px;
 }
+
+/* Toast Notifications Style */
 #toast-container {
     font-family: 'Vazirmatn', Tahoma, sans-serif;
-    direction: rtl; /* راست‌چین */
+    direction: rtl;
     text-align: right;
 }
+
 /* ========================================= */
-/* Fix for Dropdown Menu Link Color        */
+/* Navbar Dropdown Fix                       */
 /* ========================================= */
 
-/* Sets a dark, readable color for the dropdown links in the navbar */
+/* Default dropdown link color */
 .navbar .dropdown-menu .dropdown-item {
     color: #212529; /* Bootstrap's default dark text color */
 }
 
-    /* Ensures the text color is light and readable when hovering */
+    /* Hover/Focus readable contrast */
     .navbar .dropdown-menu .dropdown-item:hover,
     .navbar .dropdown-menu .dropdown-item:focus {
         color: #ffffff;
+        background-color: #0d6efd; /* optional bootstrap primary */
     }

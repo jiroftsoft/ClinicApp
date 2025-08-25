@@ -1,9 +1,16 @@
 ﻿using AutoMapper;
 using ClinicApp.Helpers;
+using ClinicApp.Infrastructure;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces.OTP;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Repositories;
 using ClinicApp.Services;
+using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Validators;
+using FluentValidation;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -14,7 +21,6 @@ using System.Configuration;
 using System.Data.Entity;
 using System.Security.Claims;
 using System.Web;
-using ClinicApp.Infrastructure;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -283,16 +289,38 @@ namespace ClinicApp
             {
                 // ثبت سرویس‌های پزشکی با پشتیبانی از سیستم حذف نرم
                 container.RegisterType<IPatientService, PatientService>(new HierarchicalLifetimeManager());
-                container.RegisterType<IDoctorService, DoctorService>(new HierarchicalLifetimeManager());
-                container.RegisterType<IClinicService, ClinicService>(new HierarchicalLifetimeManager());
-                container.RegisterType<IDepartmentService, DepartmentService>(new HierarchicalLifetimeManager());
+                container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IInsuranceService, InsuranceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
-
+                container.RegisterType<ApplicationUserManager>();
                 // ثبت سرویس‌های ارتباطی پزشکی
                 container.RegisterType<IIdentityMessageService, AsanakSmsService>(new HierarchicalLifetimeManager());
+
+                container.RegisterType<IOtpStateStore, HttpSessionOtpStateStore>(new PerRequestLifetimeManager());
+                container.RegisterType<IClientInfoProvider, HttpContextClientInfoProvider>(new PerRequestLifetimeManager());
+                container.RegisterType<IRateLimiter, MemoryCacheRateLimiter>(new ContainerControlledLifetimeManager()); // Singleton
+                // This tells Unity: "When you need an IAppSettings, don't use a constructor.
+                // Instead, call AppSettings.Instance to get the existing singleton."
+                container.RegisterType<IAppSettings>(new InjectionFactory(c => AppSettings.Instance));
+
+                container.RegisterType<IAuthSettings, AuthSettingsFromConfig>(new ContainerControlledLifetimeManager());
+                //================================================================================================================
+                container.RegisterType<IClinicManagementService, ClinicManagementService>(new PerRequestLifetimeManager());
+                container.RegisterType<IClinicRepository, ClinicRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDepartmentRepository, DepartmentRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IServiceCategoryRepository, ServiceCategoryRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IServiceRepository, ServiceRepository>(new PerRequestLifetimeManager());
+
+                // Register Service Management services
+                container.RegisterType<IServiceManagementService, ServiceManagementService>(new PerRequestLifetimeManager());
+
+                // ثبت Validator برای FluentValidation
+                container.RegisterType<IValidator<ClinicCreateEditViewModel>, ClinicCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DepartmentCreateEditViewModel>, DepartmentCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ServiceCategoryCreateEditViewModel>, ServiceCategoryCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ServiceCreateEditViewModel>, ServiceCreateEditViewModelValidator>(new PerRequestLifetimeManager());
 
                 _log.Information("سرویس‌های پزشکی با موفقیت ثبت شدند");
             }

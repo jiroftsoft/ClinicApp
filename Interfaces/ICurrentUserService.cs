@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
@@ -144,6 +145,45 @@ public interface ICurrentUserService
     /// </summary>
     /// <returns>شناسه کاربر سیستم</returns>
     string GetSystemUserId();
+
+    /// <summary>
+    /// دریافت لیست دپارتمان‌هایی که پزشک فعلی در آن‌ها فعال است
+    /// </summary>
+    /// <returns>لیست دپارتمان‌های فعال پزشک</returns>
+    Task<List<Department>> GetDoctorActiveDepartmentsAsync();
+
+    /// <summary>
+    /// دریافت لیست دسته‌بندی خدماتی که پزشک فعلی مجاز به ارائه آن‌ها است
+    /// </summary>
+    /// <returns>لیست دسته‌بندی خدمات مجاز پزشک</returns>
+    Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync();
+
+    /// <summary>
+    /// بررسی اینکه آیا پزشک فعلی در دپارتمان مشخص شده فعال است یا خیر
+    /// </summary>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <returns>آیا پزشک در این دپارتمان فعال است؟</returns>
+    Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId);
+
+    /// <summary>
+    /// بررسی اینکه آیا پزشک فعلی مجاز به دسته‌بندی خدمات مشخص شده است یا خیر
+    /// </summary>
+    /// <param name="serviceCategoryId">شناسه دسته‌بندی خدمات</param>
+    /// <returns>آیا پزشک مجاز به این دسته‌بندی خدمات است؟</returns>
+    Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId);
+
+    /// <summary>
+    /// دریافت نقش پزشک در دپارتمان مشخص شده
+    /// </summary>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <returns>نقش پزشک در دپارتمان یا null</returns>
+    Task<string> GetDoctorRoleInDepartmentAsync(int departmentId);
+
+    /// <summary>
+    /// دریافت آرایه نقش‌های کاربر جاری
+    /// </summary>
+    /// <returns>آرایه نقش‌های کاربر</returns>
+    string[] GetUserRoles();
 
     #endregion
 }

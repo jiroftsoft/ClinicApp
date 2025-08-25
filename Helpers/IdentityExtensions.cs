@@ -272,45 +272,9 @@ public static class IdentityExtensions
     /// - برای مدیریت نوبت‌های پزشک
     /// - برای ارتباط با سایر سرویس‌های پزشکی
     /// </summary>
-    public static Doctor GetDoctorInfo(this IIdentity identity)
-    {
-        if (!identity.IsDoctor()) return null;
 
-        // این متد باید در سرویس‌های پزشکی پیاده‌سازی شود
-        // اینجا فقط یک نمونه ساده ارائه می‌شود
-        var userId = identity.GetUserId();
-        // در سیستم واقعی، این اطلاعات از سرویس پزشکی دریافت می‌شود
-        return new Doctor
-        {
-            ApplicationUserId = userId,
-            FirstName = identity.GetFirstName(),
-            LastName = identity.GetLastName()
-        };
-    }
 
-    /// <summary>
-    /// دریافت اطلاعات بیماری کاربر (در صورتی که کاربر بیمار باشد)
-    /// برای سیستم‌های پزشکی بسیار حیاتی است چون:
-    /// - برای نمایش اطلاعات بیمار در سیستم
-    /// - برای مدیریت نوبت‌های بیمار
-    /// - برای دسترسی به پرونده پزشکی بیمار
-    /// </summary>
-    public static Patient GetPatientInfo(this IIdentity identity)
-    {
-        if (!identity.IsPatient()) return null;
-
-        // این متد باید در سرویس‌های پزشکی پیاده‌سازی شود
-        // اینجا فقط یک نمونه ساده ارائه می‌شود
-        var userId = identity.GetUserId();
-        // در سیستم واقعی، این اطلاعات از سرویس بیمار دریافت می‌شود
-        return new Patient
-        {
-            ApplicationUserId = userId,
-            NationalCode = identity.GetNationalCode(),
-            FirstName = identity.GetFirstName(),
-            LastName = identity.GetLastName()
-        };
-    }
+ 
 
     #endregion
 }

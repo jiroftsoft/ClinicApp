@@ -1,5 +1,4 @@
-﻿@model ClinicApp.ViewModels.EnterPhoneNumberViewModel
-@{
+﻿@{
     ViewBag.Title = "ورود / ثبت‌نام";
 }
 
@@ -8,55 +7,74 @@
         <div class="card shadow-sm">
             <div class="card-header text-center">
                 <h3 class="mb-0">@ViewBag.Title</h3>
-                <p class="mb-0 text-muted">لطفاً شماره موبایل خود را وارد کنید تا ادامه دهید</p>
+                <p id="card-subtitle" class="mb-0 text-muted">برای ادامه لطفاً کد ملی خود را وارد کنید</p>
             </div>
-            <div class="card-body">
+            <div class="card-body p-4">
 
-                <div id="phone-number-step">
-                    @using (Html.BeginForm("SendOtp", "Account", FormMethod.Post, new { id = "phone-form", role = "form" }))
+                <div id="step-national-code">
+                    @using (Html.BeginForm("CheckUser", "Account", FormMethod.Post, new { id = "form-check-user" }))
                     {
                         @Html.AntiForgeryToken()
-                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
                         <div class="form-group">
-                            @Html.LabelFor(m => m.PhoneNumber, new { @class = "form-label" })
-                            <div class="input-group">
-                                <span class="input-group-text">+۹۸</span>
-                                @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "۹۱۲۳۴۵۶۷۸۹" })
-                            </div>
-                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger d-block mt-1" })
+                            <label for="NationalCode" class="form-label">کد ملی</label>
+                            <input type="tel" id="NationalCode" name="NationalCode" class="form-control text-center" maxlength="10" autocomplete="off" placeholder="کد ملی ۱۰ رقمی خود را وارد کنید" />
+                            <div class="text-danger d-block mt-1" data-valmsg-for="NationalCode"></div>
                         </div>
-
                         <div class="d-grid mt-3">
-                            <button type="submit" id="send-otp-button" class="btn btn-primary">
-                                <span class="button-text">ارسال کد تأیید</span>
-                                <span class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="button-text">ادامه</span>
+                                <span class="spinner"></span>
                             </button>
                         </div>
                     }
                 </div>
 
-                <div id="otp-step" style="display: none;">
-                    @using (Html.BeginForm("VerifyOtp", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "otp-form", role = "form" }))
+                <div id="step-register-phone" style="display:none;">
+                    <p id="register-prompt" class="text-center text-info mb-3"></p>
+                    @using (Html.BeginForm("SendRegistrationOtp", "Account", FormMethod.Post, new { id = "form-send-reg-otp" }))
                     {
                         @Html.AntiForgeryToken()
-                        <p class="text-center text-success">کد تأیید به شماره <strong id="display-phone-number"></strong> ارسال شد.</p>
-
-                        @Html.Hidden("PhoneNumber", "")
-
+                        <input type="hidden" name="NationalCode" />
                         <div class="form-group">
-                            <label for="OtpCode" class="form-label">کد تأیید</label>
-                            <input type="text" id="OtpCode" name="OtpCode" class="form-control text-center" maxlength="6" autocomplete="off" />
-                            <div id="otp-error" class="text-danger mt-1"></div>
+                            <label for="PhoneNumber" class="form-label">شماره موبایل</label>
+                            <input type="tel" id="PhoneNumber" name="PhoneNumber" class="form-control" placeholder="مثال: ۰۹۱۲۳۴۵۶۷۸۹" />
+                            <div class="text-danger d-block mt-1" data-valmsg-for="PhoneNumber"></div>
                         </div>
-
                         <div class="d-grid mt-3">
-                            <button type="submit" id="verify-otp-button" class="btn btn-success">
-                                <span class="button-text">تأیید و ورود</span>
-                                <span class="spinner-border spinner-border-sm" style="display: none;" role="status" aria-hidden="true"></span>
+                            <button type="submit" class="btn btn-primary">
+                                <span class="button-text">ارسال کد تایید</span>
+                                <span class="spinner"></span>
                             </button>
                         </div>
+                    }
+                </div>
 
+                <div id="step-otp" style="display:none;">
+                    <p id="otp-prompt" class="text-center text-success mb-3"></p>
+                    @using (Html.BeginForm("VerifyLoginOtp", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "form-verify-otp" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="NationalCode" />
+                        <input type="hidden" name="PhoneNumber" />
+                        <input type="hidden" id="combined-otp-code" name="OtpCode" />
+                        <div class="form-group text-center">
+                            <label for="otp-input-1" class="form-label">کد تایید</label>
+                            <div id="otp-inputs" class="d-flex justify-content-center gap-2" dir="ltr">
+                                <input type="tel" id="otp-input-1" class="form-control otp-input text-center" maxlength="1" />
+                                <input type="tel" id="otp-input-2" class="form-control otp-input text-center" maxlength="1" />
+                                <input type="tel" id="otp-input-3" class="form-control otp-input text-center" maxlength="1" />
+                                <input type="tel" id="otp-input-4" class="form-control otp-input text-center" maxlength="1" />
+                                <input type="tel" id="otp-input-5" class="form-control otp-input text-center" maxlength="1" />
+                                <input type="tel" id="otp-input-6" class="form-control otp-input text-center" maxlength="1" />
+                            </div>
+                            <div id="otp-error" class="text-danger mt-2"></div>
+                        </div>
+                        <div class="d-grid mt-3">
+                            <button type="submit" class="btn btn-success">
+                                <span class="button-text">تایید و ورود</span>
+                                <span class="spinner"></span>
+                            </button>
+                        </div>
                         <div class="text-center mt-3">
                             <span id="countdown-timer"></span>
                             <a href="#" id="resend-otp-link" style="display: none;">ارسال مجدد کد</a>
@@ -72,120 +90,246 @@
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     @Html.Partial("_ValidationToasts")
+    <script>
+    (function ($) {
+        // --- CONFIG & STATE ---
+        const RESEND_TIMER_SECONDS = 120;
+        let state = { nationalCode: '', phoneNumber: '', isRegistrationFlow: false };
+        let countdownInterval;
 
-    <script type="text/javascript">
-        $(document).ready(function () {
-
-            var countdownInterval;
-
-            // --- مرحله ۱: ارسال شماره موبایل و دریافت کد ---
-            $('#phone-form').on('submit', function (e) {
-                e.preventDefault();
-                if (!$(this).valid()) {
-                    return;
-                }
-
-                var form = $(this);
-                var button = $('#send-otp-button');
-                var phoneNumber = form.find('#PhoneNumber').val();
-
-                showButtonSpinner(button, true);
-
-                $.ajax({
-                    url: form.attr('action'),
-                    type: 'POST',
-                    data: form.serialize(),
-                    // Inside the success callback of the #phone-form AJAX call
-                    success: function (response) {
-                        if (response.success) {
-                            toastr.success(response.message);
-                            $('#phone-number-step').hide();
-                            // The original phone number is used directly
-                            $('#display-phone-number').text(phoneNumber);
-                            // **FIX:** The original, unaltered phone number is passed to the next step
-                            $('#otp-form').find('input[name="PhoneNumber"]').val(phoneNumber);
-                            $('#otp-step').show();
-                            $('#OtpCode').focus();
-                            startCountdown();
-                        } else {
-                            toastr.error(response.message);
+        // --- UI ELEMENTS & INITIALIZATION ---
+        const ui = {
+            panels: {
+                nationalCode: $('#step-national-code'),
+                registerPhone: $('#step-register-phone'),
+                otp: $('#step-otp')
+            },
+            forms: {
+                checkUser: $('#form-check-user'),
+                sendRegOtp: $('#form-send-reg-otp'),
+                verifyOtp: $('#form-verify-otp')
+            },
+            otpInputs: $('.otp-input'),
+            otpError: $('#otp-error'),
+            hiddenOtpInput: $('#combined-otp-code'),
+            countdownTimer: $('#countdown-timer'),
+            resendLink: $('#resend-otp-link'),
+            init: function() {
+                this.bindForms();
+                this.bindOtpInputs();
+            },
+            showPanel: function(panel) {
+                Object.values(this.panels).forEach(p => p.hide());
+                panel.fadeIn();
+            },
+            bindForms: function() {
+                ui.forms.checkUser.on('submit', handleCheckUserSubmit);
+                ui.forms.sendRegOtp.on('submit', handleSendRegOtpSubmit);
+                ui.forms.verifyOtp.on('submit', handleVerifyOtpSubmit);
+                ui.resendLink.on('click', handleResendOtp);
+            },
+            bindOtpInputs: function() {
+                this.otpInputs.on('input', function() {
+                    const $this = $(this);
+                    if ($this.val().length === 1 && $this.next('.otp-input').length) {
+                        $this.next('.otp-input').focus();
+                    }
+                }).on('keydown', function(e) {
+                    if (e.key === "Backspace" && $(this).val().length === 0 && $(this).prev('.otp-input').length) {
+                        $(this).prev('.otp-input').focus();
+                    }
+                }).on('paste', function(e) {
+                    e.preventDefault();
+                    const pasteData = (e.originalEvent.clipboardData || window.clipboardData).getData('text');
+                    const digits = pasteData.replace(/\D/g, '');
+                    if (digits.length > 0) {
+                        ui.otpInputs.each(function(i) {
+                            if (i < digits.length) $(this).val(digits[i]);
+                        });
+                        const lastInput = ui.otpInputs.eq(Math.min(5, digits.length - 1));
+                        lastInput.focus();
+                        if (digits.length >= 6) {
+                            lastInput.blur();
+                            ui.forms.verifyOtp.submit();
                         }
-                    },
-                    complete: function () {
-                        showButtonSpinner(button, false);
                     }
                 });
-            });
-
-            // --- مرحله ۲: تأیید کد OTP ---
-            $('#otp-form').on('submit', function (e) {
-                e.preventDefault();
-                var otpCode = $('#OtpCode').val();
-                if (!otpCode || otpCode.length !== 6 || !/^\d{6}$/.test(otpCode)) {
-                    $('#otp-error').text("کد تأیید باید یک عدد ۶ رقمی باشد.");
-                    return;
-                }
-                $('#otp-error').text('');
-
-                var form = $(this);
-                var button = $('#verify-otp-button');
-                showButtonSpinner(button, true);
-
-                $.ajax({
-                    url: form.attr('action'),
-                    type: 'POST',
-                    data: form.serialize(),
-                    success: function (response) {
-                        if (response.success && response.redirectUrl) {
-                            toastr.success("ورود با موفقیت انجام شد!");
-                            window.location.href = response.redirectUrl;
-                        } else {
-                            toastr.error(response.message);
-                            showButtonSpinner(button, false);
-                        }
-                    },
-                    error: function () {
-                        toastr.error("خطای غیرمنتظره‌ای رخ داد.");
-                        showButtonSpinner(button, false);
-                    }
-                });
-            });
-
-            // --- ارسال مجدد کد OTP ---
-            $('#resend-otp-link').on('click', function (e) {
-                e.preventDefault();
-                $('#phone-form').submit(); // ارسال مجدد فرم شماره موبایل
-            });
-
-            function startCountdown() {
-                clearInterval(countdownInterval);
-                $('#resend-otp-link').hide();
-                var timer = 120; // ۲ دقیقه
-                var countdownEl = $('#countdown-timer');
-                countdownEl.show().text("ارسال مجدد در " + timer + " ثانیه");
-
-                countdownInterval = setInterval(function () {
-                    timer--;
-                    countdownEl.text("ارسال مجدد در " + timer + " ثانیه");
-                    if (timer <= 0) {
-                        clearInterval(countdownInterval);
-                        countdownEl.hide();
-                        $('#resend-otp-link').show();
-                    }
-                }, 1000);
             }
+        };
 
-            function showButtonSpinner(button, show) {
-                if (show) {
-                    button.prop('disabled', true);
-                    button.find('.button-text').hide();
-                    button.find('.spinner-border').show();
+        // --- CORE EVENT HANDLERS ---
+        function handleCheckUserSubmit(e) {
+            e.preventDefault();
+            const form = $(this);
+            state.nationalCode = form.find('#NationalCode').val();
+            if (state.nationalCode.length !== 10 || !/^\d{10}$/.test(state.nationalCode)) {
+                $('[data-valmsg-for="NationalCode"]').text('کد ملی باید ۱۰ رقم باشد.');
+                return;
+            }
+            $('[data-valmsg-for="NationalCode"]').text('');
+
+            submitAjax(form,
+                // onSuccess Callback
+                (response) => {
+                    state.isRegistrationFlow = true;
+                    toastr.success(response.message);
+                    $('#card-subtitle').text("این کد ملی ثبت‌نام نشده. لطفاً شماره موبایل خود را وارد کنید.");
+                    ui.forms.sendRegOtp.find('input[name="NationalCode"]').val(state.nationalCode);
+                    ui.showPanel(ui.panels.registerPhone);
+                    $('#PhoneNumber').focus();
+                },
+                // onError Callback
+                (response) => {
+                    if (response.code === 'USER_ALREADY_EXISTS') {
+                        state.isRegistrationFlow = false;
+                        toastr.info(response.message);
+                        sendLoginOtp();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                }
+            );
+        }
+
+        function handleSendRegOtpSubmit(e) {
+            e.preventDefault();
+            const form = $(this);
+            state.phoneNumber = form.find('#PhoneNumber').val();
+            submitAjax(form, response => {
+                toastr.success(response.message);
+                $('#otp-prompt').html(`کد تایید به شماره <strong>${state.phoneNumber}</strong> ارسال شد.`);
+                ui.forms.verifyOtp.find('input[name="NationalCode"]').val(state.nationalCode);
+                ui.forms.verifyOtp.find('input[name="PhoneNumber"]').val(state.phoneNumber);
+                ui.showPanel(ui.panels.otp);
+                ui.otpInputs.first().focus();
+                startCountdown();
+            });
+        }
+
+        function handleVerifyOtpSubmit(e) {
+            e.preventDefault();
+            const form = $(this);
+            let otp = '';
+            ui.otpInputs.each(function() { otp += $(this).val(); });
+            ui.hiddenOtpInput.val(otp);
+
+            if (otp.length !== 6) {
+                ui.otpError.text('کد تایید باید ۶ رقم باشد.');
+                return;
+            }
+            ui.otpError.text('');
+
+            const actionUrl = state.isRegistrationFlow ? '@Url.Action("VerifyRegistrationOtp", "Account")' : '@Url.Action("VerifyLoginOtp", "Account")';
+            form.attr('action', actionUrl);
+
+            submitAjax(form, response => {
+                if(response.redirectUrl) {
+                    toastr.success(response.message || "عملیات موفقیت‌آمیز بود!");
+                    window.location.href = response.redirectUrl;
+                }
+            }, response => {
+                ui.otpError.text(response.message);
+                ui.otpInputs.val('').first().focus();
+            });
+        }
+
+        function handleResendOtp(e) {
+            e.preventDefault();
+            if (state.isRegistrationFlow) {
+                ui.forms.sendRegOtp.submit();
+            } else {
+                sendLoginOtp();
+            }
+        }
+
+        // --- HELPER FUNCTIONS ---
+        function sendLoginOtp() {
+            const data = {
+                __RequestVerificationToken: ui.forms.checkUser.find('input[name="__RequestVerificationToken"]').val(),
+                NationalCode: state.nationalCode
+            };
+            const button = ui.panels.nationalCode.find('button[type="submit"]');
+            showButtonSpinner(button, true);
+
+            $.post('@Url.Action("SendLoginOtp", "Account")', data)
+             .done(response => {
+                if(response.success) {
+                    $('#otp-prompt').text("کد ورود به شماره موبایل ثبت شده شما ارسال شد.");
+                    ui.forms.verifyOtp.find('input[name="NationalCode"]').val(state.nationalCode);
+                    ui.showPanel(ui.panels.otp);
+                    ui.otpInputs.first().focus();
+                    startCountdown();
                 } else {
-                    button.prop('disabled', false);
-                    button.find('.button-text').show();
-                    button.find('.spinner-border').hide();
+                    toastr.error(response.message);
                 }
+             })
+             .fail(() => toastr.error("خطا در ارسال کد ورود."))
+             .always(() => showButtonSpinner(button, false));
+        }
+
+        function submitAjax(form, onSuccess, onError) {
+            if (!form.valid()) return;
+            const button = form.find('button[type="submit"]');
+            showButtonSpinner(button, true);
+
+            $.ajax({
+                url: form.attr('action'),
+                type: 'POST',
+                data: form.serialize(),
+                success: function(response) {
+                    if (response.success) {
+                        onSuccess(response);
+                    } else {
+                        if (onError) onError(response);
+                        else toastr.error(response.message || "خطایی رخ داده است.");
+                    }
+                },
+                error: () => toastr.error("خطای شبکه یا سرور. لطفاً دقایقی دیگر تلاش کنید."),
+                complete: () => showButtonSpinner(button, false)
+            });
+        }
+
+        function showButtonSpinner(button, show) {
+            button.prop('disabled', show);
+            const textSpan = button.find('.button-text');
+            const spinnerSpan = button.find('.spinner');
+            if (show) {
+                textSpan.hide();
+                spinnerSpan.addClass('spinner-border spinner-border-sm');
+            } else {
+                textSpan.show();
+                spinnerSpan.removeClass('spinner-border spinner-border-sm');
             }
-        });
+        }
+
+        function startCountdown() {
+            clearInterval(countdownInterval);
+            ui.resendLink.hide();
+            ui.countdownTimer.show();
+            let timer = RESEND_TIMER_SECONDS;
+
+            const updateTimer = () => {
+                const minutes = Math.floor(timer / 60);
+                const seconds = timer % 60;
+                ui.countdownTimer.text(`ارسال مجدد کد تا ${minutes}:${seconds.toString().padStart(2, '0')} دیگر`);
+            };
+
+            updateTimer();
+            countdownInterval = setInterval(() => {
+                timer--;
+                if (timer < 0) {
+                    clearInterval(countdownInterval);
+                    ui.countdownTimer.hide();
+                    ui.resendLink.show();
+                } else {
+                    updateTimer();
+                }
+            }, 1000);
+        }
+
+        // --- INITIALIZE THE SCRIPT ---
+        ui.init();
+
+    })(jQuery);
     </script>
 }

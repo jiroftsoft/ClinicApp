@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNet.Identity.EntityFramework;
+﻿using ClinicApp.Core;
+using ClinicApp.Services;
+using Microsoft.AspNet.Identity;
+using Microsoft.AspNet.Identity.EntityFramework;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -8,7 +11,6 @@ using System.Data.Entity.ModelConfiguration;
 using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.AspNet.Identity;
 
 namespace ClinicApp.Models.Entities
 {
@@ -179,6 +181,10 @@ namespace ClinicApp.Models.Entities
         [Required(ErrorMessage = "نام خانوادگی الزامی است.")]
         [MaxLength(100, ErrorMessage = "نام خانوادگی نمی‌تواند بیش از 100 کاراکتر باشد.")]
         public string LastName { get; set; }
+        [Required]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "کد ملی باید 10 رقم باشد.")]
+        [Index(IsUnique = true)]
+        public string NationalCode { get; set; }
 
         // ✅ اضافه شده: شماره تلفن همراه
         [Required(ErrorMessage = "شماره تلفن همراه الزامی است.")]
@@ -282,6 +288,24 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public virtual ICollection<Patient> Patients { get; set; } = new HashSet<Patient>();
         public virtual ICollection<NotificationHistory> NotificationHistories { get; set; }
+        /// <summary>
+        /// تاریخ آخرین ورود بیمار به سیستم
+        /// </summary>
+        public DateTime? LastLoginDate { get; set; }
+
+        /// <summary>
+        /// جنسیت بیمار
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        [Required(ErrorMessage = "جنسیت الزامی است.")]
+        public Gender Gender { get; set; }
+
+        /// <summary>
+        /// آدرس بیمار
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Address { get; set; }
+
         #endregion
 
         /// <summary>
@@ -312,6 +336,12 @@ namespace ClinicApp.Models.Entities
             ToTable("ApplicationUsers");
             HasKey(u => u.Id);
 
+
+
+            Property(p => p.Address)
+                .IsOptional()
+                .HasMaxLength(500);
+
             // ویژگی‌های اصلی
             Property(u => u.FirstName)
                 .IsRequired()
@@ -324,6 +354,12 @@ namespace ClinicApp.Models.Entities
                 .HasMaxLength(100)
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_ApplicationUser_LastName")));
+
+            Property(u => u.NationalCode)
+            .IsRequired()
+            .HasMaxLength(10)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_NationalCode") { IsUnique = true }));
 
             Property(u => u.IsActive)
                 .IsRequired()
@@ -366,6 +402,11 @@ namespace ClinicApp.Models.Entities
                 .IsOptional()
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_ApplicationUser_DeletedByUserId")));
+
+            Property(p => p.Gender)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Patient_Gender")));
 
             // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
             Property(u => u.UserName)
@@ -700,6 +741,7 @@ namespace ClinicApp.Models.Entities
     /// 3. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
     /// 4. ارتباط با کاربران ایجاد کننده، ویرایش کننده و حذف کننده برای ردیابی دقیق
     /// 5. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط
+    /// 6. **رابطه Many-to-Many با پزشکان برای انتساب چندگانه**
     /// </summary>
     public class Department : ISoftDelete, ITrackable
     {
@@ -711,7 +753,7 @@ namespace ClinicApp.Models.Entities
 
         /// <summary>
         /// نام دپارتمان
-        /// مثال: "دندانپزشکی"، "چشم پزشکی"، "اورولوژی"
+        /// مثال: "دندانپزشکی"، "چشم پزشکی"، "اورولوژی"، "تزریقات"، "اورژانس"
         /// </summary>
         [Required(ErrorMessage = "نام دپارتمان الزامی است.")]
         [MaxLength(200, ErrorMessage = "نام دپارتمان نمی‌تواند بیش از 200 کاراکتر باشد.")]
@@ -723,6 +765,13 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         [Required(ErrorMessage = "کلینیک الزامی است.")]
         public int ClinicId { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال/غیرفعال بودن دپارتمان
+        /// دپارتمان‌های غیرفعال در سیستم نوبت‌دهی نمایش داده نمی‌شوند
+        /// </summary>
+        [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
+        public bool IsActive { get; set; } = true;
 
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>
@@ -796,19 +845,19 @@ namespace ClinicApp.Models.Entities
         public virtual Clinic Clinic { get; set; }
 
         /// <summary>
-        /// لیست پزشکان مرتبط با این دپارتمان
-        /// این لیست برای نمایش تمام پزشکان موجود در این دپارتمان استفاده می‌شود
+        /// لیست ارتباطات Many-to-Many با پزشکان
+        /// این رابطه برای مشخص کردن اینکه کدام پزشکان در این دپارتمان فعالیت می‌کنند استفاده می‌شود
+        /// مثال: دکتر احمدی هم در دپارتمان اورژانس و هم در دپارتمان تزریقات فعال است
         /// </summary>
-        public virtual ICollection<Doctor> Doctors { get; set; } = new HashSet<Doctor>();
+        public virtual ICollection<DoctorDepartment> DoctorDepartments { get; set; } = new HashSet<DoctorDepartment>();
 
         /// <summary>
         /// لیست دسته‌بندی‌های خدمات مرتبط با این دپارتمان
         /// این لیست برای نمایش تمام دسته‌بندی‌های خدمات موجود در این دپارتمان استفاده می‌شود
+        /// مثال: دپارتمان تزریقات شامل "تزریقات عضلانی"، "تزریقات وریدی" و "تزریقات زیبایی"
         /// </summary>
         public virtual ICollection<ServiceCategory> ServiceCategories { get; set; } = new HashSet<ServiceCategory>();
 
-        [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
-        public bool IsActive { get; set; } = true;
 
         #endregion
     }
@@ -835,6 +884,11 @@ namespace ClinicApp.Models.Entities
                 .IsRequired()
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Department_ClinicId")));
+
+            Property(d => d.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Department_IsActive")));
 
             // پیاده‌سازی ISoftDelete
             Property(d => d.IsDeleted)
@@ -879,16 +933,19 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(d => d.ClinicId)
                 .WillCascadeOnDelete(false);
 
-            HasMany(d => d.Doctors)
-                .WithOptional(doctor => doctor.Department)
-                .HasForeignKey(doctor => doctor.DepartmentId)
+            // ✅ رابطه Many-to-Many با پزشکان
+            HasMany(d => d.DoctorDepartments)
+                .WithRequired(dd => dd.Department)
+                .HasForeignKey(dd => dd.DepartmentId)
                 .WillCascadeOnDelete(false);
 
+            // رابطه با دسته‌بندی خدمات
             HasMany(d => d.ServiceCategories)
                 .WithRequired(sc => sc.Department)
                 .HasForeignKey(sc => sc.DepartmentId)
                 .WillCascadeOnDelete(false);
 
+            // روابط Audit
             HasOptional(d => d.DeletedByUser)
                 .WithMany()
                 .HasForeignKey(d => d.DeletedByUserId)
@@ -907,6 +964,9 @@ namespace ClinicApp.Models.Entities
             // ایندکس‌های ترکیبی برای گزارش‌گیری و جستجوهای رایج در سیستم‌های پزشکی
             HasIndex(d => new { d.ClinicId, d.IsDeleted })
                 .HasName("IX_Department_ClinicId_IsDeleted");
+
+            HasIndex(d => new { d.ClinicId, d.IsActive, d.IsDeleted })
+                .HasName("IX_Department_ClinicId_IsActive_IsDeleted");
         }
     }
 
@@ -924,6 +984,7 @@ namespace ClinicApp.Models.Entities
     /// 3. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
     /// 4. ارتباط با دپارتمان‌های پزشکی برای سازماندهی بهتر خدمات
     /// 5. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط
+    /// 6. **رابطه Many-to-Many با پزشکان برای انتساب خدمات**
     /// </summary>
     public class ServiceCategory : ISoftDelete, ITrackable
     {
@@ -1030,6 +1091,16 @@ namespace ClinicApp.Models.Entities
         /// این لیست برای نمایش تمام خدمات موجود در این دسته‌بندی استفاده می‌شود
         /// </summary>
         public virtual ICollection<Service> Services { get; set; } = new HashSet<Service>();
+
+        /// <summary>
+        /// لیست ارتباطات Many-to-Many با پزشکان
+        /// این رابطه برای مشخص کردن اینکه کدام پزشکان مجاز به ارائه این دسته خدمات هستند استفاده می‌شود
+        /// مثال: دکتر احمدی مجاز به ارائه خدمات "تزریقات عضلانی" است ولی مجاز به "تزریق بوتاکس" نیست
+        /// </summary>
+        public virtual ICollection<DoctorServiceCategory> DoctorServiceCategories { get; set; } = new HashSet<DoctorServiceCategory>();
+
+        public string Description { get; set; }
+
         #endregion
     }
 
@@ -1102,6 +1173,12 @@ namespace ClinicApp.Models.Entities
             HasRequired(sc => sc.Department)
                 .WithMany(d => d.ServiceCategories)
                 .HasForeignKey(sc => sc.DepartmentId)
+                .WillCascadeOnDelete(false);
+
+            // ✅ رابطه Many-to-Many با پزشکان
+            HasMany(sc => sc.DoctorServiceCategories)
+                .WithRequired(dsc => dsc.ServiceCategory)
+                .HasForeignKey(dsc => dsc.ServiceCategoryId)
                 .WillCascadeOnDelete(false);
 
             HasOptional(sc => sc.DeletedByUser)
@@ -1267,6 +1344,10 @@ namespace ClinicApp.Models.Entities
         /// این لیست برای نمایش تمام تعرفه‌های بیمه‌ای موجود برای این خدمت استفاده می‌شود
         /// </summary>
         public virtual ICollection<InsuranceTariff> Tariffs { get; set; } = new HashSet<InsuranceTariff>();
+
+        public bool IsActive { get; set; }
+        public string Notes { get; set; }
+
         #endregion
     }
 
@@ -1700,6 +1781,12 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         [MaxLength(50, ErrorMessage = "شماره تلفن نمی‌تواند بیش از 50 کاراکتر باشد.")]
         public string PhoneNumber { get; set; }
+        /// <summary>
+        /// جنسیت بیمار
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        [Required(ErrorMessage = "جنسیت الزامی است.")]
+        public Gender Gender { get; set; }
 
         /// <summary>
         /// شناسه بیمه
@@ -1808,6 +1895,9 @@ namespace ClinicApp.Models.Entities
         /// این لیست برای نمایش تمام نوبت‌های ثبت شده توسط این بیمار استفاده می‌شود
         /// </summary>
         public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
+
+
+
         #endregion
     }
 
@@ -1946,11 +2036,11 @@ namespace ClinicApp.Models.Entities
     {
         public int OtpRequestId { get; set; }
 
-        [Required, StringLength(11)]
+        [Required, StringLength(20)] // ✅ افزایش طول به ۲۰ کاراکتر
         public string PhoneNumber { get; set; }
 
-        [Required, StringLength(6)]
-        public string OtpCode { get; set; }
+        [Required]
+        public string OtpCodeHash { get; set; } // هش کد در اینجا ذخیره می‌شود
 
         public DateTime RequestTime { get; set; } = DateTime.Now;
 
@@ -1991,9 +2081,11 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_OtpRequest_PhoneNumber")));
 
-            Property(o => o.OtpCode)
-                .IsRequired()
-                .HasMaxLength(6);
+            Property(o => o.OtpCodeHash)
+                .IsRequired();
+            Property(p => p.PhoneNumber)
+                .HasMaxLength(20) // Set the new maximum length
+                .IsRequired();    // You can chain other configurations
 
             Property(o => o.RequestTime)
                 .IsRequired()
@@ -2305,6 +2397,7 @@ namespace ClinicApp.Models.Entities
     /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
     /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
     /// 5. ارتباط با کلینیک‌ها، دپارتمان‌ها و سایر موجودیت‌های سیستم
+    /// 6. **رابطه Many-to-Many با دپارتمان‌ها و دسته‌بندی خدمات**
     /// </summary>
     public class Doctor : ISoftDelete, ITrackable
     {
@@ -2328,10 +2421,16 @@ namespace ClinicApp.Models.Entities
         [MaxLength(100, ErrorMessage = "نام خانوادگی نمی‌تواند بیش از 100 کاراکتر باشد.")]
         public string LastName { get; set; }
 
+        /// <summary>
+        /// وضعیت فعال/غیرفعال بودن پزشک
+        /// پزشکان غیرفعال در سیستم نوبت‌دهی نمایش داده نمی‌شوند
+        /// </summary>
         [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
         public bool IsActive { get; set; } = true;
+
         /// <summary>
         /// تخصص پزشک
+        /// مثال: "متخصص داخلی", "پزشک عمومی", "متخصص پوست"
         /// </summary>
         [MaxLength(250, ErrorMessage = "تخصص نمی‌تواند بیش از 250 کاراکتر باشد.")]
         public string Specialization { get; set; }
@@ -2344,16 +2443,13 @@ namespace ClinicApp.Models.Entities
 
         /// <summary>
         /// شناسه کلینیک مربوطه (اختیاری)
+        /// این فیلد برای مشخص کردن کلینیک اصلی پزشک استفاده می‌شود
         /// </summary>
         public int? ClinicId { get; set; }
 
         /// <summary>
-        /// شناسه دپارتمان مربوطه (اختیاری)
-        /// </summary>
-        public int? DepartmentId { get; set; }
-
-        /// <summary>
         /// بیوگرافی یا توضیحات پزشک
+        /// شامل سوابق تحصیلی، تجربیات کاری و سایر اطلاعات مهم
         /// </summary>
         [MaxLength(2000, ErrorMessage = "توضیحات نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         public string Bio { get; set; }
@@ -2367,16 +2463,19 @@ namespace ClinicApp.Models.Entities
 
         /// <summary>
         /// تاریخ و زمان حذف پزشک
+        /// این اطلاعات برای ردیابی عملیات‌های حساس در سیستم‌های پزشکی حیاتی است
         /// </summary>
         public DateTime? DeletedAt { get; set; }
 
         /// <summary>
         /// شناسه کاربری که پزشک را حذف کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
         /// </summary>
         public string DeletedByUserId { get; set; }
 
         /// <summary>
         /// ارجاع به کاربر حذف کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر حذف کننده ضروری است
         /// </summary>
         public virtual ApplicationUser DeletedByUser { get; set; }
         #endregion
@@ -2384,31 +2483,37 @@ namespace ClinicApp.Models.Entities
         #region پیاده‌سازی ITrackable (مدیریت ردیابی)
         /// <summary>
         /// تاریخ و زمان ایجاد پزشک
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         /// <summary>
         /// شناسه کاربری که پزشک را ایجاد کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
         /// </summary>
         public string CreatedByUserId { get; set; }
 
         /// <summary>
         /// ارجاع به کاربر ایجاد کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ایجاد کننده ضروری است
         /// </summary>
         public virtual ApplicationUser CreatedByUser { get; set; }
 
         /// <summary>
         /// تاریخ و زمان آخرین ویرایش پزشک
+        /// این اطلاعات برای ردیابی تغییرات در سیستم‌های پزشکی حیاتی است
         /// </summary>
         public DateTime? UpdatedAt { get; set; }
 
         /// <summary>
         /// شناسه کاربری که پزشک را ویرایش کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
         /// </summary>
         public string UpdatedByUserId { get; set; }
 
         /// <summary>
         /// ارجاع به کاربر ویرایش کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ویرایش کننده ضروری است
         /// </summary>
         public virtual ApplicationUser UpdatedByUser { get; set; }
         #endregion
@@ -2416,7 +2521,9 @@ namespace ClinicApp.Models.Entities
         #region روابط
         /// <summary>
         /// شناسه کاربر مرتبط با این پزشک
+        /// هر پزشک باید یک حساب کاربری در سیستم داشته باشد
         /// </summary>
+        [Required(ErrorMessage = "کاربر مرتبط الزامی است.")]
         public string ApplicationUserId { get; set; }
 
         /// <summary>
@@ -2432,12 +2539,6 @@ namespace ClinicApp.Models.Entities
         public virtual Clinic Clinic { get; set; }
 
         /// <summary>
-        /// ارجاع به دپارتمان مرتبط با این پزشک
-        /// این ارتباط برای نمایش اطلاعات دپارتمان در سیستم‌های پزشکی ضروری است
-        /// </summary>
-        public virtual Department Department { get; set; }
-
-        /// <summary>
         /// لیست پذیرش‌های مرتبط با این پزشک
         /// این لیست برای نمایش تمام پذیرش‌های انجام شده توسط این پزشک استفاده می‌شود
         /// </summary>
@@ -2448,6 +2549,20 @@ namespace ClinicApp.Models.Entities
         /// این لیست برای نمایش تمام نوبت‌های ثبت شده برای این پزشک استفاده می‌شود
         /// </summary>
         public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
+
+        /// <summary>
+        /// لیست ارتباطات Many-to-Many با دپارتمان‌ها
+        /// این رابطه برای مشخص کردن اینکه پزشک در کدام دپارتمان‌ها فعالیت می‌کند استفاده می‌شود
+        /// مثال: دکتر احمدی هم در دپارتمان اورژانس و هم در دپارتمان تزریقات فعال است
+        /// </summary>
+        public virtual ICollection<DoctorDepartment> DoctorDepartments { get; set; } = new HashSet<DoctorDepartment>();
+
+        /// <summary>
+        /// لیست ارتباطات Many-to-Many با دسته‌بندی خدمات
+        /// این رابطه برای مشخص کردن اینکه پزشک مجاز به ارائه کدام دسته خدمات است استفاده می‌شود
+        /// مثال: دکتر احمدی مجاز به "تزریقات عضلانی" است ولی مجاز به "تزریق بوتاکس" نیست
+        /// </summary>
+        public virtual ICollection<DoctorServiceCategory> DoctorServiceCategories { get; set; } = new HashSet<DoctorServiceCategory>();
         #endregion
     }
 
@@ -2475,6 +2590,11 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Doctor_LastName")));
 
+            Property(d => d.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_IsActive")));
+
             Property(d => d.Specialization)
                 .IsOptional()
                 .HasMaxLength(250)
@@ -2490,6 +2610,12 @@ namespace ClinicApp.Models.Entities
             Property(d => d.Bio)
                 .IsOptional()
                 .HasMaxLength(2000);
+
+            // ApplicationUserId - Required
+            Property(d => d.ApplicationUserId)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_ApplicationUserId")));
 
             // پیاده‌سازی ISoftDelete
             Property(d => d.IsDeleted)
@@ -2534,11 +2660,6 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Doctor_ClinicId")));
 
-            Property(d => d.DepartmentId)
-                .IsOptional()
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Doctor_DepartmentId")));
-
             // روابط
             HasRequired(d => d.ApplicationUser)
                 .WithMany(u => u.Doctors)
@@ -2550,11 +2671,18 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(d => d.ClinicId)
                 .WillCascadeOnDelete(false);
 
-            HasOptional(d => d.Department)
-                .WithMany(dept => dept.Doctors)
-                .HasForeignKey(d => d.DepartmentId)
+            // ✅ روابط Many-to-Many جدید
+            HasMany(d => d.DoctorDepartments)
+                .WithRequired(dd => dd.Doctor)
+                .HasForeignKey(dd => dd.DoctorId)
                 .WillCascadeOnDelete(false);
 
+            HasMany(d => d.DoctorServiceCategories)
+                .WithRequired(dsc => dsc.Doctor)
+                .HasForeignKey(dsc => dsc.DoctorId)
+                .WillCascadeOnDelete(false);
+
+            // روابط عملیاتی
             HasMany(d => d.Receptions)
                 .WithRequired(r => r.Doctor)
                 .HasForeignKey(r => r.DoctorId)
@@ -2565,6 +2693,7 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(a => a.DoctorId)
                 .WillCascadeOnDelete(false);
 
+            // روابط Audit
             HasOptional(d => d.DeletedByUser)
                 .WithMany()
                 .HasForeignKey(d => d.DeletedByUserId)
@@ -2581,15 +2710,471 @@ namespace ClinicApp.Models.Entities
                 .WillCascadeOnDelete(false);
 
             // ایندکس‌های ترکیبی برای گزارش‌گیری و جستجوهای رایج در سیستم‌های پزشکی
-            HasIndex(d => new { d.ClinicId, d.DepartmentId, d.Specialization })
-                .HasName("IX_Doctor_ClinicId_DepartmentId_Specialization");
-
             HasIndex(d => new { d.LastName, d.FirstName })
                 .HasName("IX_Doctor_LastName_FirstName");
+
+            HasIndex(d => new { d.ClinicId, d.IsActive, d.IsDeleted })
+                .HasName("IX_Doctor_ClinicId_IsActive_IsDeleted");
+
+            HasIndex(d => new { d.Specialization, d.IsActive, d.IsDeleted })
+                .HasName("IX_Doctor_Specialization_IsActive_IsDeleted");
         }
     }
 
     #endregion
+
+    #region DoctorDepartment
+
+    /// <summary>
+    /// جدول واسط برای رابطه چند-به-چند بین پزشک و دپارتمان
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. ارتباط Many-to-Many بین Doctor و Department
+    /// 2. مدیریت Audit کامل (کی، کی ایجاد/ویرایش کرده)
+    /// 3. کلید ترکیبی (Composite Key) برای جلوگیری از تکرار
+    /// 4. پشتیبانی از سناریوهای پیچیده (پزشک در چند دپارتمان)
+    /// 
+    /// مثال کاربرد:
+    /// - دکتر احمدی: عضو دپارتمان "اورژانس" و "تزریقات"
+    /// - دکتر محمدی: عضو دپارتمان "داخلی" و "اورژانس"
+    /// </summary>
+    public class DoctorDepartment : ITrackable
+    {
+        /// <summary>
+        /// شناسه پزشک - بخشی از کلید ترکیبی
+        /// </summary>
+        [Required(ErrorMessage = "شناسه پزشک الزامی است.")]
+        public int DoctorId { get; set; }
+
+        /// <summary>
+        /// شناسه دپارتمان - بخشی از کلید ترکیبی
+        /// </summary>
+        [Required(ErrorMessage = "شناسه دپارتمان الزامی است.")]
+        public int DepartmentId { get; set; }
+
+        /// <summary>
+        /// نقش یا سمت پزشک در این دپارتمان (اختیاری)
+        /// مثال: "رئیس دپارتمان"، "پزشک معاون"، "پزشک عادی"
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "نقش نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string Role { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال بودن پزشک در این دپارتمان
+        /// می‌تواند پزشک در دپارتمان عضو باشد ولی موقتاً غیرفعال باشد
+        /// </summary>
+        [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// تاریخ شروع فعالیت پزشک در این دپارتمان
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان فعالیت پزشک در این دپارتمان (در صورت وجود)
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        #region پیاده‌سازی ITrackable
+        /// <summary>
+        /// تاریخ و زمان ایجاد این ارتباط
+        /// مهم برای ردیابی زمان اضافه شدن پزشک به دپارتمان
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که این ارتباط را ایجاد کرده
+        /// مهم برای سیستم‌های پزشکی - چه کسی پزشک را به دپارتمان اضافه کرده
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش این ارتباط
+        /// مهم برای ردیابی تغییرات (مثل تغییر نقش، وضعیت فعال/غیرفعال)
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که این ارتباط را ویرایش کرده
+        /// مهم برای سیستم‌های پزشکی - چه کسی تغییرات را اعمال کرده
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+        #endregion
+
+        #region Navigation Properties
+        /// <summary>
+        /// ارجاع به پزشک مرتبط
+        /// برای دسترسی مستقیم به اطلاعات پزشک از طریق این رابطه
+        /// </summary>
+        public virtual Doctor Doctor { get; set; }
+
+        /// <summary>
+        /// ارجاع به دپارتمان مرتبط
+        /// برای دسترسی مستقیم به اطلاعات دپارتمان از طریق این رابطه
+        /// </summary>
+        public virtual Department Department { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ایجاد کننده
+        /// برای دسترسی مستقیم به اطلاعات کاربری که این ارتباط را ایجاد کرده
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده
+        /// برای دسترسی مستقیم به اطلاعات کاربری که این ارتباط را ویرایش کرده
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی Entity Framework برای جدول DoctorDepartment
+    /// این پیکربندی با استانداردهای سیستم‌های پزشکی طراحی شده است
+    /// </summary>
+    public class DoctorDepartmentConfig : EntityTypeConfiguration<DoctorDepartment>
+    {
+        public DoctorDepartmentConfig()
+        {
+            // تنظیمات جدول
+            ToTable("DoctorDepartments");
+            
+            // کلید ترکیبی (Composite Key)
+            HasKey(dd => new { dd.DoctorId, dd.DepartmentId });
+
+            // تنظیمات Property ها
+            Property(dd => dd.DoctorId)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_DoctorId")));
+
+            Property(dd => dd.DepartmentId)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_DepartmentId")));
+
+            Property(dd => dd.Role)
+                .IsOptional()
+                .HasMaxLength(100)
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_Role")));
+
+            Property(dd => dd.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_IsActive")));
+
+            Property(dd => dd.StartDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_StartDate")));
+
+            Property(dd => dd.EndDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_EndDate")));
+
+            // تنظیمات ITrackable
+            Property(dd => dd.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_CreatedAt")));
+
+            Property(dd => dd.CreatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_CreatedByUserId")));
+
+            Property(dd => dd.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_UpdatedAt")));
+
+            Property(dd => dd.UpdatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_UpdatedByUserId")));
+
+            // روابط اصلی
+            HasRequired(dd => dd.Doctor)
+                .WithMany(d => d.DoctorDepartments)
+                .HasForeignKey(dd => dd.DoctorId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(dd => dd.Department)
+                .WithMany(d => d.DoctorDepartments)
+                .HasForeignKey(dd => dd.DepartmentId)
+                .WillCascadeOnDelete(false);
+
+            // روابط Audit
+            HasOptional(dd => dd.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(dd => dd.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(dd => dd.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(dd => dd.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود کارایی
+            HasIndex(dd => new { dd.DoctorId, dd.IsActive })
+                .HasName("IX_DoctorDepartment_DoctorId_IsActive");
+
+            HasIndex(dd => new { dd.DepartmentId, dd.IsActive })
+                .HasName("IX_DoctorDepartment_DepartmentId_IsActive");
+
+            HasIndex(dd => new { dd.DoctorId, dd.DepartmentId, dd.IsActive })
+                .HasName("IX_DoctorDepartment_DoctorId_DepartmentId_IsActive");
+
+            HasIndex(dd => new { dd.StartDate, dd.EndDate })
+                .HasName("IX_DoctorDepartment_StartDate_EndDate");
+        }
+    }
+
+    #endregion
+
+    #region DoctorServiceCategory
+
+    /// <summary>
+    /// جدول واسط برای رابطه چند-به-چند بین پزشک و دسته‌بندی خدمات مجاز
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. کنترل دسترسی پزشکان به خدمات خاص
+    /// 2. مدیریت صلاحیت‌های پزشکی (Medical Authorization)
+    /// 3. کلید ترکیبی (Composite Key) برای جلوگیری از تکرار
+    /// 4. پشتیبانی از سناریوهای پیچیده (صلاحیت‌های مختلف)
+    /// 
+    /// مثال کاربرد:
+    /// - دکتر احمدی: مجاز به "تزریقات عضلانی" و "تزریقات وریدی"
+    /// - دکتر محمدی: مجاز به "بررسی‌های اولیه" ولی غیرمجاز به "تزریقات زیبایی"
+    /// </summary>
+    public class DoctorServiceCategory : ITrackable
+    {
+        /// <summary>
+        /// شناسه پزشک - بخشی از کلید ترکیبی
+        /// </summary>
+        [Required(ErrorMessage = "شناسه پزشک الزامی است.")]
+        public int DoctorId { get; set; }
+
+        /// <summary>
+        /// شناسه دسته‌بندی خدمات - بخشی از کلید ترکیبی
+        /// </summary>
+        [Required(ErrorMessage = "شناسه دسته‌بندی خدمات الزامی است.")]
+        public int ServiceCategoryId { get; set; }
+
+        /// <summary>
+        /// سطح صلاحیت پزشک در این دسته خدمات (اختیاری)
+        /// مثال: "مبتدی"، "متوسط"، "پیشرفته"، "متخصص"
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "سطح صلاحیت نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string AuthorizationLevel { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال بودن این صلاحیت
+        /// می‌تواند پزشک صلاحیت داشته باشد ولی موقتاً غیرفعال باشد
+        /// </summary>
+        [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// تاریخ اعطای صلاحیت
+        /// </summary>
+        public DateTime? GrantedDate { get; set; }
+
+        /// <summary>
+        /// تاریخ انقضای صلاحیت (در صورت وجود)
+        /// برای خدمات خاص که نیاز به تمدید دارند
+        /// </summary>
+        public DateTime? ExpiryDate { get; set; }
+
+        /// <summary>
+        /// شماره گواهی یا مجوز (اختیاری)
+        /// برای خدمات خاص که نیاز به گواهی‌نامه دارند
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "شماره گواهی نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string CertificateNumber { get; set; }
+
+        /// <summary>
+        /// توضیحات اضافی در مورد این صلاحیت
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Notes { get; set; }
+
+        #region پیاده‌سازی ITrackable
+        /// <summary>
+        /// تاریخ و زمان ایجاد این صلاحیت
+        /// مهم برای ردیابی زمان اعطای صلاحیت به پزشک
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که این صلاحیت را اعطا کرده
+        /// مهم برای سیستم‌های پزشکی - چه کسی صلاحیت را اعطا کرده
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش این صلاحیت
+        /// مهم برای ردیابی تغییرات (مثل تغییر سطح، تمدید انقضا)
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که این صلاحیت را ویرایش کرده
+        /// مهم برای سیستم‌های پزشکی - چه کسی تغییرات را اعمال کرده
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+        #endregion
+
+        #region Navigation Properties
+        /// <summary>
+        /// ارجاع به پزشک مرتبط
+        /// برای دسترسی مستقیم به اطلاعات پزشک از طریق این صلاحیت
+        /// </summary>
+        public virtual Doctor Doctor { get; set; }
+
+        /// <summary>
+        /// ارجاع به دسته‌بندی خدمات مرتبط
+        /// برای دسترسی مستقیم به اطلاعات دسته خدمات از طریق این صلاحیت
+        /// </summary>
+        public virtual ServiceCategory ServiceCategory { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر اعطا کننده صلاحیت
+        /// برای دسترسی مستقیم به اطلاعات کاربری که این صلاحیت را اعطا کرده
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده صلاحیت
+        /// برای دسترسی مستقیم به اطلاعات کاربری که این صلاحیت را ویرایش کرده
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی Entity Framework برای جدول DoctorServiceCategory
+    /// این پیکربندی با استانداردهای سیستم‌های پزشکی طراحی شده است
+    /// </summary>
+    public class DoctorServiceCategoryConfig : EntityTypeConfiguration<DoctorServiceCategory>
+    {
+        public DoctorServiceCategoryConfig()
+        {
+            // تنظیمات جدول
+            ToTable("DoctorServiceCategories");
+            
+            // کلید ترکیبی (Composite Key)
+            HasKey(dsc => new { dsc.DoctorId, dsc.ServiceCategoryId });
+
+            // تنظیمات Property ها
+            Property(dsc => dsc.DoctorId)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_DoctorId")));
+
+            Property(dsc => dsc.ServiceCategoryId)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_ServiceCategoryId")));
+
+            Property(dsc => dsc.AuthorizationLevel)
+                .IsOptional()
+                .HasMaxLength(50)
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_AuthorizationLevel")));
+
+            Property(dsc => dsc.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_IsActive")));
+
+            Property(dsc => dsc.GrantedDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_GrantedDate")));
+
+            Property(dsc => dsc.ExpiryDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_ExpiryDate")));
+
+            Property(dsc => dsc.CertificateNumber)
+                .IsOptional()
+                .HasMaxLength(100)
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_CertificateNumber")));
+
+            Property(dsc => dsc.Notes)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            // تنظیمات ITrackable
+            Property(dsc => dsc.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_CreatedAt")));
+
+            Property(dsc => dsc.CreatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_CreatedByUserId")));
+
+            Property(dsc => dsc.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_UpdatedAt")));
+
+            Property(dsc => dsc.UpdatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index", 
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_UpdatedByUserId")));
+
+            // روابط اصلی
+            HasRequired(dsc => dsc.Doctor)
+                .WithMany(d => d.DoctorServiceCategories)
+                .HasForeignKey(dsc => dsc.DoctorId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(dsc => dsc.ServiceCategory)
+                .WithMany(sc => sc.DoctorServiceCategories)
+                .HasForeignKey(dsc => dsc.ServiceCategoryId)
+                .WillCascadeOnDelete(false);
+
+            // روابط Audit
+            HasOptional(dsc => dsc.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(dsc => dsc.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(dsc => dsc.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(dsc => dsc.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود کارایی
+            HasIndex(dsc => new { dsc.DoctorId, dsc.IsActive })
+                .HasName("IX_DoctorServiceCategory_DoctorId_IsActive");
+
+            HasIndex(dsc => new { dsc.ServiceCategoryId, dsc.IsActive })
+                .HasName("IX_DoctorServiceCategory_ServiceCategoryId_IsActive");
+
+            HasIndex(dsc => new { dsc.DoctorId, dsc.ServiceCategoryId, dsc.IsActive })
+                .HasName("IX_DoctorServiceCategory_DoctorId_ServiceCategoryId_IsActive");
+
+            HasIndex(dsc => new { dsc.ExpiryDate, dsc.IsActive })
+                .HasName("IX_DoctorServiceCategory_ExpiryDate_IsActive");
+
+            HasIndex(dsc => new { dsc.AuthorizationLevel, dsc.IsActive })
+                .HasName("IX_DoctorServiceCategory_AuthorizationLevel_IsActive");
+        }
+    }
+
+    #endregion
+
+
 
     #region Reception
 
@@ -4455,4 +5040,4 @@ namespace ClinicApp.Models.Entities
 
     #endregion
 
-  }
+}

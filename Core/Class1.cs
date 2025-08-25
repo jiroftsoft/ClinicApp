@@ -8,6 +8,4 @@ namespace ClinicApp.Core
     public class Class1
     {
     }
-
-  
 }

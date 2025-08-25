@@ -12,11 +12,34 @@
     <meta name="viewport" content="width=device-width,initial-scale=1,shrink-to-fit=no">
     <title>@title - @appName</title>
     <meta name="description" content="@metaDescription">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
+    <link href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css?v=1.0.1" rel="stylesheet" />
     @RenderSection("styles", required: false)
+    
+    <!-- Medical Environment: Icon Fallback CSS -->
+    <style>
+        /* Fallback Icons for Medical Environment */
+        .fa-medical-kit:before, .fas.fa-medical-kit:before { content: "🏥"; }
+        .fa-edit:before, .fas.fa-edit:before { content: "✏️"; }
+        .fa-info-circle:before, .fas.fa-info-circle:before { content: "ℹ️"; }
+        .fa-trash:before, .fas.fa-trash:before { content: "🗑️"; }
+        .fa-plus:before, .fas.fa-plus:before { content: "➕"; }
+        .fa-save:before, .fas.fa-save:before { content: "💾"; }
+        .fa-arrow-right:before, .fas.fa-arrow-right:before { content: "➡️"; }
+        .fa-sitemap:before, .fas.fa-sitemap:before { content: "🏗️"; }
+        .fa-search:before, .fas.fa-search:before { content: "🔍"; }
+        
+        /* Only apply if FontAwesome failed to load */
+        .fa:not([class*=" fa-"]):before,
+        .fas:not([class*=" fa-"]):before {
+            font-family: "Segoe UI Emoji", "Apple Color Emoji", sans-serif;
+            font-weight: normal;
+            font-style: normal;
+            text-decoration: none;
+            line-height: 1;
+        }
+    </style>
 
     <!-- Critical CSS Inline -->
     <style>
@@ -35,15 +58,17 @@
             --border-radius: 8px;
         }
 
-        * { box-sizing: border-box; }
+        * {
+            box-sizing: border-box;
+        }
 
-        body {
-            font-family: 'Vazirmatn', system-ui, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: var(--gray-50);
-            color: var(--gray-900);
-            line-height: 1.5;
+                    body {
+                font-family: 'Vazirmatn', 'Tahoma', 'Arial', sans-serif;
+                margin: 0;
+                padding: 0;
+                background: var(--gray-50);
+                color: var(--gray-900);
+                line-height: 1.5;
         }
 
         .container {
@@ -52,11 +77,25 @@
             padding: 0 1rem;
         }
 
-        .flex { display: flex; }
-        .items-center { align-items: center; }
-        .justify-between { justify-content: space-between; }
-        .gap-4 { gap: 1rem; }
-        .hidden { display: none; }
+        .flex {
+            display: flex;
+        }
+
+        .items-center {
+            align-items: center;
+        }
+
+        .justify-between {
+            justify-content: space-between;
+        }
+
+        .gap-4 {
+            gap: 1rem;
+        }
+
+        .hidden {
+            display: none;
+        }
 
         /* Header */
         .header {
@@ -69,10 +108,20 @@
             box-shadow: var(--shadow-md);
         }
 
-        .logo { font-size: 1.5rem; font-weight: bold; text-decoration: none; color: white; }
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+        }
 
         /* Layout */
-        .layout { display: grid; grid-template-columns: 250px 1fr; gap: 1.5rem; min-height: calc(100vh - 80px); }
+        .layout {
+            display: grid;
+            grid-template-columns: 250px 1fr;
+            gap: 1.5rem;
+            min-height: calc(100vh - 80px);
+        }
 
         /* Sidebar */
         .sidebar {
@@ -95,10 +144,10 @@
             transition: all 0.2s;
         }
 
-        .nav-item:hover, .nav-item.active {
-            background: rgba(3, 105, 161, 0.1);
-            color: var(--primary);
-        }
+            .nav-item:hover, .nav-item.active {
+                background: rgba(3, 105, 161, 0.1);
+                color: var(--primary);
+            }
 
         /* Main Content */
         .main-content {
@@ -123,7 +172,9 @@
             font-weight: 600;
         }
 
-        .card-body { padding: 1.5rem; }
+        .card-body {
+            padding: 1.5rem;
+        }
 
         /* Stats Cards */
         .stats-grid {
@@ -160,18 +211,18 @@
             margin-top: 1rem;
         }
 
-        .table th,
-        .table td {
-            padding: 0.75rem;
-            text-align: right;
-            border-bottom: 1px solid var(--gray-200);
-        }
+            .table th,
+            .table td {
+                padding: 0.75rem;
+                text-align: right;
+                border-bottom: 1px solid var(--gray-200);
+            }
 
-        .table th {
-            background: var(--gray-50);
-            font-weight: 600;
-            color: var(--gray-700);
-        }
+            .table th {
+                background: var(--gray-50);
+                font-weight: 600;
+                color: var(--gray-700);
+            }
 
         /* Buttons */
         .btn {
@@ -191,9 +242,9 @@
             color: white;
         }
 
-        .btn-primary:hover {
-            background: var(--primary-dark);
-        }
+            .btn-primary:hover {
+                background: var(--primary-dark);
+            }
 
         .btn-success {
             background: var(--success);
@@ -257,22 +308,21 @@
             --gray-900: #f9fafb;
         }
 
-        [data-theme="dark"] body {
-            background: var(--gray-50);
-            color: var(--gray-900);
-        }
+            [data-theme="dark"] body {
+                background: var(--gray-50);
+                color: var(--gray-900);
+            }
 
-        [data-theme="dark"] .sidebar,
-        [data-theme="dark"] .main-content,
-        [data-theme="dark"] .card,
-        [data-theme="dark"] .stat-card {
-            background: var(--gray-100);
-        }
+            [data-theme="dark"] .sidebar,
+            [data-theme="dark"] .main-content,
+            [data-theme="dark"] .card,
+            [data-theme="dark"] .stat-card {
+                background: var(--gray-100);
+            }
     </style>
 
     <!-- Preload Font -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap" as="style">
+    <!-- حذف Google Fonts برای سادگی و امنیت Admin Panel -->
 
     <!-- Schema.org -->
     <script type="application/ld+json">
@@ -390,6 +440,10 @@
     @Scripts.Render("~/bundles/modernizr")
     <script src="~/Scripts/bootstrap.bundle.min.js"></script>
     @Scripts.Render("~/bundles/plugins")
+    <!-- Medical Toast Notifications -->
+    <script src="~/Content/js/medical-toast.js"></script>
+    <!-- Medical Debug Utilities -->
+    <script src="~/Content/js/medical-debug.js"></script>
     <!-- AOS JS -->
 
     <!-- Scripts -->
@@ -453,7 +507,7 @@
     <script>
         window.addEventListener('load', function () {
             const link = document.createElement('link');
-            link.href = 'https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;500;600;700&display=swap';
+            // حذف Google Fonts برای سادگی Admin Panel
             link.rel = 'stylesheet';
             document.head.appendChild(link);
         });

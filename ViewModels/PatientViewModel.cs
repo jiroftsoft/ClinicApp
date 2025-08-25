@@ -1,12 +1,24 @@
-﻿using ClinicApp.Helpers;
+﻿using ClinicApp.Core;
+using ClinicApp.Filters;
+using ClinicApp.Helpers;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Web.Mvc;
 
 namespace ClinicApp.ViewModels
 {
+    /// <summary>
+    /// ویومدل پایه بیماران - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 2. مدیریت کامل ردیابی (Audit Trail) برای حسابرسی
+    /// 3. پشتیبانی از محیط‌های پزشکی ایرانی با تاریخ شمسی و اعداد فارسی
+    /// 4. رعایت استانداردهای امنیتی سیستم‌های پزشکی
+    /// 5. پشتیبانی از سیستم بیمه‌ها و محاسبات مالی
+    /// </summary>
     public class PatientViewModel
     {
         public int PatientId { get; set; }
@@ -14,30 +26,74 @@ namespace ClinicApp.ViewModels
         [Display(Name = "کد ملی")]
         [Required(ErrorMessage = "لطفاً {0} را وارد کنید.")]
         [StringLength(10, MinimumLength = 10, ErrorMessage = "{0} باید ۱۰ رقم باشد.")]
-        [RegularExpression("^[0-9]*$", ErrorMessage = "در فیلد {0} فقط عدد مجاز است.")]
         public string NationalCode { get; set; }
 
         [Display(Name = "نام و نام خانوادگی")]
-        [Required(ErrorMessage = "لطفاً {0} را وارد کنید.")]
-        [MaxLength(250, ErrorMessage = "حداکثر طول {0}، {1} کاراکتر است.")]
         public string FullName { get; set; }
 
         [Display(Name = "شماره موبایل")]
-        [Required(ErrorMessage = "لطفاً {0} را وارد کنید.")]
-        [RegularExpression("09[0-9]{9}", ErrorMessage = "فرمت {0} صحیح نیست.")]
         public string PhoneNumber { get; set; }
 
         [Display(Name = "تاریخ تولد")]
         [DataType(DataType.Date)]
         public DateTime? BirthDate { get; set; }
 
+        [Display(Name = "تاریخ تولد (شمسی)")]
+        public string BirthDateShamsi { get; set; }
+
+        [Display(Name = "جنسیت")]
+        public Gender Gender { get; set; }
+
+        [Display(Name = "جنسیت")]
+        public string GenderDisplay => Gender == Gender.Male ? "مرد" : "زن";
+
+
         [Display(Name = "آدرس")]
         [DataType(DataType.MultilineText)]
-        [MaxLength(500)]
         public string Address { get; set; }
 
         [Display(Name = "بیمه")]
         public string InsuranceName { get; set; }
+
+        [Display(Name = "تاریخ ایجاد")]
+        public DateTime CreatedAt { get; set; }
+
+        [Display(Name = "تاریخ ایجاد (شمسی)")]
+        public string CreatedAtShamsi { get; set; }
+
+        [Display(Name = "ایجاد شده توسط")]
+        public string CreatedByUser { get; set; }
+
+        [Display(Name = "تاریخ آخرین ویرایش")]
+        public DateTime? UpdatedAt { get; set; }
+
+        [Display(Name = "تاریخ آخرین ویرایش (شمسی)")]
+        public string UpdatedAtShamsi { get; set; }
+
+        [Display(Name = "ویرایش شده توسط")]
+        public string UpdatedByUser { get; set; }
+
+        [Display(Name = "تاریخ آخرین ورود")]
+        public DateTime? LastLoginDate { get; set; }
+
+        [Display(Name = "تاریخ آخرین ورود (شمسی)")]
+        public string LastLoginDateShamsi { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌ها")]
+        public int ReceptionCount { get; set; }
+
+        [Display(Name = "مانده بدهی")]
+        public decimal DebtBalance { get; set; }
+
+        [Display(Name = "مانده بدهی")]
+        public string DebtBalanceFormatted => DebtBalance > 0 ?
+            DebtBalance.ToString("N0") + " ریال" : "بدون بدهی";
+
+        // فیلدهای مربوط به سیستم حذف نرم
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public string DeletedAtShamsi { get; set; }
+        public string DeletedByUser { get; set; }
     }
 
     /// <summary>
@@ -52,17 +108,16 @@ namespace ClinicApp.ViewModels
         [Display(Name = "کد ملی")]
         [Required(ErrorMessage = "لطفاً {0} را وارد کنید.")]
         [StringLength(10, MinimumLength = 10, ErrorMessage = "{0} باید ۱۰ رقم باشد.")]
-        [RegularExpression("^[0-9]*$", ErrorMessage = "در فیلد {0} فقط عدد مجاز است.")]
         public string NationalCode { get; set; }
 
         [Display(Name = "نام")]
         [Required(ErrorMessage = "وارد کردن {0} الزامی است.")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "{0} نمی‌تواند بیش از {1} کاراکتر باشد.")]
         public string FirstName { get; set; }
 
         [Display(Name = "نام خانوادگی")]
         [Required(ErrorMessage = "وارد کردن {0} الزامی است.")]
-        [MaxLength(150)]
+        [MaxLength(150, ErrorMessage = "{0} نمی‌تواند بیش از {1} کاراکتر باشد.")]
         public string LastName { get; set; }
 
         [Display(Name = "شماره موبایل")]
@@ -70,53 +125,30 @@ namespace ClinicApp.ViewModels
         [RegularExpression("09[0-9]{9}", ErrorMessage = "فرمت {0} صحیح نیست.")]
         public string PhoneNumber { get; set; }
 
-        public DateTime? BirthDate { get; set; }
+        [Display(Name = "ایمیل")]
+        [EmailAddress(ErrorMessage = "آدرس ایمیل نامعتبر است.")]
+        [MaxLength(256, ErrorMessage = "آدرس ایمیل نمی‌تواند بیش از 256 کاراکتر باشد.")]
+        public string Email { get; set; }
+
+        [Display(Name = "جنسیت")]
+        [Required(ErrorMessage = "انتخاب {0} الزامی است.")]
+        public Gender Gender { get; set; }
 
         [Display(Name = "تاریخ تولد")]
-        public string BirthDatePersian
-        {
-            get
-            {
-                if (BirthDate.HasValue)
-                {
-                    var pc = new PersianCalendar();
-                    return $"{pc.GetYear(BirthDate.Value)}/{pc.GetMonth(BirthDate.Value):D2}/{pc.GetDayOfMonth(BirthDate.Value):D2}";
-                }
-                return string.Empty; // بهتر است رشته خالی برگردانیم تا null
-            }
-            set
-            {
-                if (!string.IsNullOrWhiteSpace(value))
-                {
-                    // *** مرحله کلیدی: تبدیل اعداد فارسی به انگلیسی ***
-                    var englishValue = PersianNumberHelper.ToEnglishNumbers(value);
+        public DateTime? BirthDate { get; set; }
 
-                    try
-                    {
-                        var parts = englishValue.Split('/');
-                        if (parts.Length == 3)
-                        {
-                            int year = int.Parse(parts[0]);
-                            int month = int.Parse(parts[1]);
-                            int day = int.Parse(parts[2]);
-                            BirthDate = new PersianCalendar().ToDateTime(year, month, day, 0, 0, 0, 0);
-                        }
-                    }
-                    catch
-                    {
-                        BirthDate = null; // در صورت فرمت نامعتبر
-                    }
-                }
-                else
-                {
-                    BirthDate = null;
-                }
-            }
-        }
+        [Display(Name = "تاریخ تولد (شمسی)")]
+        [PersianDate(
+            IsRequired = false,
+            MustBePastDate = true,
+            ErrorMessage = "تاریخ تولد وارد شده معتبر نیست.",
+            PastDateRequiredMessage = "تاریخ تولد نمی‌تواند در آینده باشد."
+        )]
+        public string BirthDateShamsi { get; set; }
 
         [Display(Name = "آدرس")]
         [DataType(DataType.MultilineText)]
-        [MaxLength(500)]
+        [MaxLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از {1} کاراکتر باشد.")]
         public string Address { get; set; }
 
         [Display(Name = "بیمه")]
@@ -125,11 +157,20 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "نام بیمه")]
         public string InsuranceName { get; set; }
-        [System.ComponentModel.DataAnnotations.Schema.NotMapped] // اضافه شد
-        public IEnumerable<SelectListItem> Insurances { get; set; } // اضافه شد
 
+        [NotMapped]
+        public IEnumerable<SelectListItem> Insurances { get; set; }
+
+        [Display(Name = "نام پزشک معالج")]
+        [MaxLength(200, ErrorMessage = "نام پزشک نمی‌تواند بیش از {1} کاراکتر باشد.")]
+        public string DoctorName { get; set; }
+
+        // فیلدهای مربوط به تاریخ ایجاد و ویرایش
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
+
+        [Display(Name = "تاریخ ایجاد (شمسی)")]
+        public string CreatedAtShamsi { get; set; }
 
         [Display(Name = "ایجاد شده توسط")]
         public string CreatedByUser { get; set; }
@@ -137,15 +178,11 @@ namespace ClinicApp.ViewModels
         [Display(Name = "تاریخ آخرین ویرایش")]
         public DateTime? UpdatedAt { get; set; }
 
+        [Display(Name = "تاریخ آخرین ویرایش (شمسی)")]
+        public string UpdatedAtShamsi { get; set; }
+
         [Display(Name = "ویرایش شده توسط")]
         public string UpdatedByUser { get; set; }
-
-        // فیلدهای مربوط به تاریخ شمسی
-        [Display(Name = "تاریخ ایجاد")]
-        public string CreatedAtShamsi { get; set; }
-
-        [Display(Name = "تاریخ آخرین ویرایش")]
-        public string UpdatedAtShamsi { get; set; }
     }
 
     /// <summary>
@@ -161,6 +198,11 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "کد ملی")]
         public string NationalCode { get; set; }
+        [Display(Name = "جنسیت")]
+        public Gender Gender { get; set; }
+
+        [Display(Name = "جنسیت")]
+        public string GenderDisplay => this.Gender == Gender.Male ? "مرد" : "زن";
 
         [Display(Name = "شماره موبایل")]
         public string PhoneNumber { get; set; }
@@ -171,23 +213,37 @@ namespace ClinicApp.ViewModels
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
 
-        [Display(Name = "تاریخ ایجاد")]
+        [Display(Name = "تاریخ ایجاد (شمسی)")]
         public string CreatedAtShamsi { get; set; }
 
         [Display(Name = "مانده بدهی")]
-        public string DebtBalanceFormatted => DebtBalance > 0 ? DebtBalance.ToString("N0") + " ریال" : "بدون بدهی";
+        public string DebtBalanceFormatted => DebtBalance > 0 ?
+            DebtBalance.ToString("N0") + " ریال" : "بدون بدهی";
 
         public decimal DebtBalance { get; set; }
+
+        [Display(Name = "تاریخ آخرین ورود")]
+        public DateTime? LastLoginDate { get; set; }
+
+        [Display(Name = "تاریخ آخرین ورود (شمسی)")]
+        public string LastLoginDateShamsi { get; set; }
+
+        public int ReceptionCount { get; set; }
+        [Display(Name = "تاریخ تولد (شمسی)")]
+        public string BirthDateShamsi { get; set; }
+
     }
 
     /// <summary>
     /// مدل ویو برای جزئیات بیمار - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
     /// 
     /// ویژگی‌های کلیدی:
-    /// 1. نمایش کامل اطلاعات بیمار
-    /// 2. پشتیبانی از محیط‌های ایرانی با تاریخ شمسی
-    /// 3. رعایت استانداردهای سیستم‌های پزشکی
+    /// 1. نمایش کامل اطلاعات بیمار با رعایت استانداردهای پزشکی
+    /// 2. پشتیبانی از محیط‌های ایرانی با تاریخ شمسی و اعداد فارسی
+    /// 3. رعایت استانداردهای سیستم‌های پزشکی ایران
     /// 4. امنیت بالا با عدم نمایش اطلاعات حساس
+    /// 5. پشتیبانی از سیستم حذف نرم (Soft Delete)
+    /// 6. مدیریت کامل ردیابی (Audit Trail)
     /// </summary>
     public class PatientDetailsViewModel
     {
@@ -202,8 +258,20 @@ namespace ClinicApp.ViewModels
         [Display(Name = "نام خانوادگی")]
         public string LastName { get; set; }
 
+        [Display(Name = "جنسیت")]
+        public Gender Gender { get; set; }
+
+        [Display(Name = "جنسیت")]
+        public string GenderDisplay => this.Gender == Gender.Male ? "مرد" : "زن";
+
+        [Display(Name = "نام کامل")]
+        public string FullName => $"{FirstName} {LastName}".Trim();
+
         [Display(Name = "تاریخ تولد")]
         public DateTime? BirthDate { get; set; }
+
+        [Display(Name = "تاریخ تولد (شمسی)")]
+        public string BirthDateShamsi { get; set; }
 
         [Display(Name = "آدرس")]
         public string Address { get; set; }
@@ -211,14 +279,23 @@ namespace ClinicApp.ViewModels
         [Display(Name = "شماره تلفن")]
         public string PhoneNumber { get; set; }
 
+        [Display(Name = "ایمیل")]
+        public string Email { get; set; }
+
         [Display(Name = "بیمه")]
         public int InsuranceId { get; set; }
 
         [Display(Name = "نام بیمه")]
         public string InsuranceName { get; set; }
 
+        [Display(Name = "نام پزشک معالج")]
+        public string DoctorName { get; set; }
+
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
+
+        [Display(Name = "تاریخ ایجاد (شمسی)")]
+        public string CreatedAtShamsi { get; set; }
 
         [Display(Name = "ایجاد شده توسط")]
         public string CreatedByUser { get; set; }
@@ -226,11 +303,17 @@ namespace ClinicApp.ViewModels
         [Display(Name = "تاریخ آخرین ویرایش")]
         public DateTime? UpdatedAt { get; set; }
 
+        [Display(Name = "تاریخ آخرین ویرایش (شمسی)")]
+        public string UpdatedAtShamsi { get; set; }
+
         [Display(Name = "ویرایش شده توسط")]
         public string UpdatedByUser { get; set; }
 
         [Display(Name = "تاریخ آخرین ورود")]
         public DateTime? LastLoginDate { get; set; }
+
+        [Display(Name = "تاریخ آخرین ورود (شمسی)")]
+        public string LastLoginDateShamsi { get; set; }
 
         [Display(Name = "تعداد پذیرش‌ها")]
         public int ReceptionCount { get; set; }
@@ -238,13 +321,14 @@ namespace ClinicApp.ViewModels
         [Display(Name = "مانده بدهی")]
         public decimal DebtBalance { get; set; }
 
-        // فیلدهای مربوط به تاریخ شمسی
-        [Display(Name = "تاریخ ایجاد")]
-        public string CreatedAtShamsi { get; set; }
+        [Display(Name = "مانده بدهی")]
+        public string DebtBalanceFormatted => DebtBalance > 0 ?
+            DebtBalance.ToString("N0") + " ریال" : "بدون بدهی";
 
-        [Display(Name = "تاریخ آخرین ویرایش")]
-        public string UpdatedAtShamsi { get; set; }
-
-        public string FullName { get; set; }
+        // فیلدهای مربوط به سیستم حذف نرم
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public string DeletedAtShamsi { get; set; }
+        public string DeletedByUser { get; set; }
     }
 }

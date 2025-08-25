@@ -1,0 +1,582 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.ServiceCategoryIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت دسته‌بندی خدمات پزشکی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    // تنظیم Content-Type برای اطمینان از UTF-8
+    Response.ContentType = "text/html; charset=utf-8";
+    Response.ContentEncoding = System.Text.Encoding.UTF8;
+}
+
+@section Styles {
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* استایل‌های اختصاصی برای مدیریت دسته‌بندی خدمات */
+        .header-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -15px -15px 20px -15px;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-info h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .header-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stats-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .stats-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.4rem;
+            color: #2c3e50;
+        }
+
+        .stats-card p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .search-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 15px;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+        }
+
+        .action-buttons .btn {
+            margin: 0 2px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+
+        .pagination-container {
+            background: white;
+            padding: 15px;
+            border-radius: 0 0 10px 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        @@media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+        }
+    </style>
+}
+
+<!-- Header Section -->
+<div class="header-section">
+    <div class="header-content">
+        <div class="header-info">
+            <h1><i class="fas fa-layer-group me-2"></i>مدیریت دسته‌بندی خدمات</h1>
+            <p>
+                @if (ViewBag.DepartmentId != null)
+                {
+                    <span>دسته‌بندی‌های دپارتمان انتخاب شده</span>
+                }
+                else
+                {
+                    <span>همه دسته‌بندی‌های خدمات پزشکی</span>
+                }
+            </p>
+        </div>
+        <div class="header-actions">
+            @if (ViewBag.DepartmentId != null)
+            {
+                <a href="@Url.Action("Categories")" class="btn btn-outline-light me-2">
+                    <i class="fas fa-list me-2"></i>
+                    همه دسته‌بندی‌ها
+                </a>
+                <a href="@Url.Action("CreateCategory", new { departmentId = ViewBag.DepartmentId })" 
+                   class="btn btn-light btn-lg">
+                    <i class="fas fa-plus me-2"></i>دسته‌بندی جدید
+                </a>
+            }
+            else
+            {
+                <a href="@Url.Action("CreateCategory", new { departmentId = 0 })" 
+                   class="btn btn-light btn-lg">
+                    <i class="fas fa-plus me-2"></i>دسته‌بندی جدید
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- آمار کلی -->
+<div class="stats-cards">
+    <div class="stats-card">
+        <h3 id="totalCategories">@(Model?.TotalItems ?? 0)</h3>
+        <p>کل دسته‌بندی‌ها</p>
+    </div>
+    <div class="stats-card">
+        <h3 id="activeCategories">@(Model?.Items?.Count(c => c.IsActive) ?? 0)</h3>
+        <p>دسته‌بندی‌های فعال</p>
+    </div>
+    <div class="stats-card">
+        <h3 id="totalServices">@(Model?.Items?.Sum(c => c.ServiceCount) ?? 0)</h3>
+        <p>کل خدمات</p>
+    </div>
+</div>
+
+<!-- فیلترها و جستجو -->
+<div class="search-filters">
+    <form method="get" id="searchForm">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">دپارتمان:</label>
+                <select class="form-select" name="departmentId" id="departmentSelect">
+                    <option value="">همه دسته‌بندی‌ها</option>
+                    @if (ViewBag.Departments != null)
+                    {
+                        foreach (var dept in (IEnumerable<SelectListItem>)ViewBag.Departments)
+                        {
+                            <option value="@dept.Value" @(dept.Selected ? "selected" : "")>@dept.Text</option>
+                        }
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">جستجو:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="جستجو در دسته‌بندی‌ها..." 
+                           name="searchTerm" value="@ViewBag.SearchTerm" id="searchInput">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">تعداد نمایش:</label>
+                <select class="form-select" name="pageSize" id="pageSizeSelect">
+                    <option value="10" @(ViewBag.PageSize == 10 ? "selected" : "")>10</option>
+                    <option value="25" @(ViewBag.PageSize == 25 ? "selected" : "")>25</option>
+                    <option value="50" @(ViewBag.PageSize == 50 ? "selected" : "")>50</option>
+                </select>
+            </div>
+        </div>
+        <input type="hidden" name="page" value="1" id="pageInput">
+    </form>
+</div>
+
+<!-- جدول دسته‌بندی‌ها -->
+<div class="table-container" id="categoriesContainer">
+    @Html.Partial("_CategoriesPartial", Model)
+</div>
+
+<!-- Pagination -->
+@if (Model?.TotalPages > 1)
+{
+    <div class="pagination-container">
+        <nav aria-label="صفحه‌بندی">
+            <ul class="pagination justify-content-center mb-0">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber - 1))">قبلی</a>
+                    </li>
+                }
+
+                @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" href="#" onclick="changePage(@i)">@i</a>
+                    </li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber + 1))">بعدی</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) از @Model.TotalItems مورد
+            </small>
+        </div>
+    </div>
+}
+
+<!-- Modal حذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف دسته‌بندی "<span id="deleteItemName"></span>" اطمینان دارید؟</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>توجه:</strong> 
+                    <ul class="mb-0 mt-2">
+                        <li>دسته‌بندی‌هایی که دارای خدمات فعال هستند قابل حذف نیستند.</li>
+                        <li>ابتدا تمام خدمات مرتبط را حذف کنید، سپس دسته‌بندی را حذف نمایید.</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">حذف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/select2/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('#departmentSelect').select2({
+                placeholder: 'انتخاب دپارتمان...',
+                allowClear: true,
+                dir: 'rtl'
+            });
+
+            // Auto-submit on department change - Medical Environment
+            $('#departmentSelect').on('change', function() {
+                console.log('🏥 MEDICAL: Department changed to:', $(this).val());
+                $('#pageInput').val(1);
+                
+                const departmentId = $(this).val();
+                if (departmentId) {
+                    // اگر دپارتمان انتخاب شد، به صفحه آن دپارتمان برو
+                    window.location.href = '@Url.Action("Categories")?departmentId=' + departmentId;
+                } else {
+                    // اگر "همه" انتخاب شد، به صفحه اصلی برو
+                    window.location.href = '@Url.Action("Categories")';
+                }
+            });
+
+            // Auto-submit on page size change - Medical Environment
+            $('#pageSizeSelect').on('change', function() {
+                console.log('🏥 MEDICAL: Page size changed to:', $(this).val());
+                $('#pageInput').val(1);
+                
+                // حفظ پارامترهای فعلی
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('pageSize', $(this).val());
+                currentUrl.searchParams.set('page', '1');
+                
+                console.log('🏥 MEDICAL: Redirecting to:', currentUrl.toString());
+                window.location.href = currentUrl.toString();
+            });
+
+            // Search with Enter key
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#pageInput').val(1);
+                    $('#searchForm').submit();
+                }
+            });
+        });
+
+        // تغییر صفحه - Medical Environment
+        function changePage(page) {
+            console.log('🏥 MEDICAL: Changing page to:', page);
+            $('#pageInput').val(page);
+            
+            // حفظ پارامترهای فعلی
+            const currentUrl = new URL(window.location);
+            currentUrl.searchParams.set('page', page);
+            
+            // اگر departmentId وجود دارد، حفظ کن
+            const departmentId = @(ViewBag.DepartmentId?.ToString() ?? "null");
+            if (departmentId) {
+                currentUrl.searchParams.set('departmentId', departmentId);
+            }
+            
+            console.log('🏥 MEDICAL: Redirecting to:', currentUrl.toString());
+            window.location.href = currentUrl.toString();
+        }
+
+        // تأیید حذف
+        function confirmDelete(id, name) {
+            $('#deleteItemName').text(name);
+            $('#confirmDeleteBtn').off('click').on('click', function() {
+                deleteCategory(id);
+            });
+            $('#deleteModal').modal('show');
+        }
+
+        // حذف دسته‌بندی
+        function deleteCategory(id) {
+            console.log('🏥 MEDICAL: Attempting to delete category with ID:', id);
+            
+            // 🔒 اطمینان از وجود Anti-Forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            if (!token) {
+                console.error('🏥 MEDICAL: Anti-Forgery Token not found!');
+                showMedicalError('خطای امنیتی: توکن تأیید یافت نشد. لطفاً صفحه را رفرش کنید.');
+                return;
+            }
+            
+            console.log('🏥 MEDICAL: Anti-Forgery Token found:', token.substring(0, 10) + '...');
+            
+            $.ajax({
+                url: '@Url.Action("DeleteCategory")',
+                type: 'POST',
+                dataType: 'json',
+                contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: token
+                },
+                success: function(result) {
+                    $('#deleteModal').modal('hide');
+                    console.log('🏥 MEDICAL: Delete result:', result);
+                    console.log('🏥 MEDICAL: Result type:', typeof result);
+                    console.log('🏥 MEDICAL: Result message:', result.message);
+                    console.log('🏥 MEDICAL: Result success:', result.success);
+                    
+                    // اطمینان از وجود پیام
+                    const message = result.message || 'پیام نامشخص';
+                    const success = result.success === true;
+                    
+                    if (success) {
+                        showMedicalToast('✅ موفقیت', message, 'success');
+                        // حذف ردیف از جدول
+                        $(`tr[data-category-id="${id}"]`).fadeOut();
+                        // بروزرسانی آمار
+                        updateStats();
+                    } else {
+                        // بررسی نوع خطا برای نمایش پیام مناسب
+                        let errorType = 'error';
+                        let title = '❌ خطا';
+                        
+                        if (message && message.includes('حاوی خدمات فعال')) {
+                            errorType = 'warning';
+                            title = '⚠️ هشدار';
+                        }
+                        
+                        showMedicalToast(title, message, errorType);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#deleteModal').modal('hide');
+                    console.error('🏥 MEDICAL: Delete error:', {xhr, status, error});
+                    console.error('🏥 MEDICAL: Response text:', xhr.responseText);
+                    console.error('🏥 MEDICAL: Response JSON:', xhr.responseJSON);
+                    
+                    // تلاش برای استخراج پیام خطا از پاسخ
+                    let errorMessage = 'خطا در ارتباط با سرور';
+                    try {
+                        if (xhr.responseJSON && xhr.responseJSON.message) {
+                            errorMessage = xhr.responseJSON.message;
+                        } else if (xhr.responseText) {
+                            const response = JSON.parse(xhr.responseText);
+                            if (response.message) {
+                                errorMessage = response.message;
+                            }
+                        }
+                    } catch (e) {
+                        console.error('🏥 MEDICAL: Error parsing response:', e);
+                    }
+                    
+                    showMedicalToast('❌ خطا', errorMessage, 'error');
+                }
+            });
+        }
+
+        // بروزرسانی آمار
+        function updateStats() {
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+        }
+
+        // تابع نمایش پیام برای محیط درمانی
+        function showMedicalToast(title, message, type) {
+            console.log('🏥 MEDICAL: Showing toast:', {title, message, type});
+            
+            // اطمینان از وجود پیام
+            const displayMessage = message || 'پیام نامشخص';
+            const displayTitle = title || 'اطلاعیه';
+            
+            // ایجاد toast container اگر وجود نداشته باشد
+            if (!$('#medicalToastContainer').length) {
+                $('body').append('<div id="medicalToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+            }
+            
+            // تعیین کلاس بر اساس نوع
+            const toastClass = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-danger';
+            const iconClass = type === 'success' ? 'fas fa-check-circle' : type === 'warning' ? 'fas fa-exclamation-triangle' : 'fas fa-times-circle';
+            
+            // ایجاد toast
+            const toast = `
+                <div class="toast ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header ${toastClass} text-white border-0">
+                        <i class="${iconClass} me-2"></i>
+                        <strong class="me-auto">${displayTitle}</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        ${displayMessage}
+                    </div>
+                </div>
+            `;
+            
+            // اضافه کردن toast به container
+            $('#medicalToastContainer').append(toast);
+            
+            // نمایش toast
+            const toastElement = $('#medicalToastContainer .toast').last();
+            const bsToast = new bootstrap.Toast(toastElement, {
+                autohide: true,
+                delay: type === 'success' ? 3000 : 5000
+            });
+            bsToast.show();
+            
+            // حذف toast بعد از نمایش
+            toastElement.on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+
+        // Toast notification - Medical Environment
+        function showToast(title, message, type) {
+            // اطمینان از وجود پیام
+            const safeMessage = message || 'پیام نامشخص';
+            console.log('🏥 MEDICAL: Showing toast:', {title, message: safeMessage, type});
+            
+            // تعیین کلاس مناسب بر اساس نوع پیام
+            let toastClass = 'bg-primary';
+            switch (type) {
+                case 'success':
+                    toastClass = 'bg-success';
+                    break;
+                case 'error':
+                    toastClass = 'bg-danger';
+                    break;
+                case 'warning':
+                    toastClass = 'bg-warning text-dark';
+                    break;
+                case 'info':
+                    toastClass = 'bg-info';
+                    break;
+                default:
+                    toastClass = 'bg-primary';
+            }
+            
+            const toast = `
+                <div class="toast ${toastClass}" role="alert" style="min-width: 300px;">
+                    <div class="toast-header">
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${safeMessage}</div>
+                </div>
+            `;
+            
+            if (!$('#toastContainer').length) {
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+            }
+            
+            $('#toastContainer').append(toast);
+            $('.toast').last().toast('show');
+            
+            // حذف خودکار بعد از 5 ثانیه
+            setTimeout(function() {
+                $('.toast').last().toast('hide');
+            }, 5000);
+        }
+    </script>
+    
+    <!-- Anti-Forgery Token -->
+    @Html.AntiForgeryToken()
+}

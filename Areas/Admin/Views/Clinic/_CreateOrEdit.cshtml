@@ -1,0 +1,484 @@
+﻿@model ClinicApp.ViewModels.ClinicCreateEditViewModel
+
+<style>
+    :root {
+        --form-primary: #2c5aa0;
+        --form-success: #28a745;
+        --form-danger: #dc3545;
+        --form-warning: #ffc107;
+        --form-info: #17a2b8;
+        --form-light: #f8f9fa;
+        --form-dark: #343a40;
+        --form-border: #dee2e6;
+        --form-focus: rgba(44, 90, 160, 0.25);
+    }
+
+    .medical-form-container {
+        background: white;
+        border-radius: 15px;
+        padding: 2rem;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        border: 1px solid var(--form-border);
+    }
+
+    .form-group-enhanced {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+
+    .form-label-enhanced {
+        font-weight: 600;
+        color: var(--form-dark);
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-label-icon {
+        width: 20px;
+        text-align: center;
+        color: var(--form-primary);
+    }
+
+    .form-control-enhanced {
+        border: 2px solid var(--form-border);
+        border-radius: 10px;
+        padding: 0.875rem 1rem;
+        font-size: 1rem;
+        transition: all 0.3s ease;
+        background: white;
+        position: relative;
+    }
+
+    .form-control-enhanced:focus {
+        border-color: var(--form-primary);
+        box-shadow: 0 0 0 0.2rem var(--form-focus);
+        outline: none;
+        transform: translateY(-1px);
+    }
+
+    .form-control-enhanced:valid {
+        border-color: var(--form-success);
+    }
+
+    .form-control-enhanced.is-invalid {
+        border-color: var(--form-danger);
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+    }
+
+    .input-group-enhanced {
+        position: relative;
+        display: flex;
+        align-items: stretch;
+    }
+
+    .input-icon {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--form-primary);
+        z-index: 3;
+        pointer-events: none;
+    }
+
+    .form-control-with-icon {
+        padding-left: 3rem;
+    }
+
+    .form-hint {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .validation-message-enhanced {
+        color: var(--form-danger);
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-weight: 500;
+    }
+
+    .form-switch-enhanced {
+        background: var(--form-light);
+        border-radius: 12px;
+        padding: 1.5rem;
+        border: 2px solid var(--form-border);
+        transition: all 0.3s ease;
+    }
+
+    .form-switch-enhanced:hover {
+        border-color: var(--form-primary);
+        box-shadow: 0 2px 10px rgba(44, 90, 160, 0.1);
+    }
+
+            /* استاندارد Bootstrap Switch */
+        .form-switch-modern {
+            padding-left: 0;
+        }
+
+        .form-switch-modern .form-check-input {
+            width: 3rem;
+            height: 1.5rem;
+            margin-left: 0;
+            background-image: none;
+            background-color: #ccc;
+            border: none;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .form-switch-modern .form-check-input:checked {
+            background-color: var(--form-success);
+            border-color: var(--form-success);
+        }
+
+        .form-switch-modern .form-check-input:focus {
+            box-shadow: 0 0 0 0.25rem rgba(44, 90, 160, 0.25);
+            background-color: #ccc;
+        }
+
+        .form-switch-modern .form-check-input:checked:focus {
+            box-shadow: 0 0 0 0.25rem rgba(40, 167, 69, 0.25);
+        }
+
+        .switch-status-text {
+            margin-top: 0.5rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            transition: color 0.3s ease;
+        }
+
+        .switch-status-active {
+            color: var(--form-success);
+        }
+
+        .switch-status-inactive {
+            color: var(--form-danger);
+        }
+
+    .validation-summary-enhanced {
+        background: linear-gradient(135deg, #fee, #fdd);
+        border: 1px solid var(--form-danger);
+        border-radius: 10px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .validation-summary-enhanced h4 {
+        color: var(--form-danger);
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .required-field::after {
+        content: "*";
+        color: var(--form-danger);
+        margin-left: 0.25rem;
+    }
+
+    .form-step-indicator {
+        display: flex;
+        justify-content: center;
+        margin-bottom: 2rem;
+    }
+
+    .step-item {
+        display: flex;
+        align-items: center;
+        color: var(--form-primary);
+        font-weight: 600;
+    }
+
+        @@media (max-width: 768px) {
+        .medical-form-container {
+            padding: 1rem;
+        }
+        
+        .form-control-enhanced {
+            padding: 0.75rem;
+        }
+    }
+</style>
+
+<!-- Form Container -->
+<div class="medical-form-container">
+    @Html.AntiForgeryToken()
+    @Html.ValidationSummary(true, "", new { @class = "validation-summary-enhanced", style = Model != null && ViewData.ModelState.IsValid ? "display: none;" : "" })
+    
+    @if (Model != null && !ViewData.ModelState.IsValid)
+    {
+        <div class="validation-summary-enhanced">
+            <h4>
+                <i class="fas fa-exclamation-triangle"></i>
+                لطفاً خطاهای زیر را بررسی کنید:
+            </h4>
+            @Html.ValidationSummary(true, "", new { @class = "list-unstyled mb-0" })
+        </div>
+    }
+
+    @if (Model.ClinicId > 0)
+    {
+        @Html.HiddenFor(model => model.ClinicId)
+    }
+
+    <!-- Progress Indicator -->
+    <div class="form-step-indicator">
+        <div class="step-item">
+            <i class="fas fa-hospital-alt me-2"></i>
+            @if (Model.ClinicId > 0)
+            {
+                <span>ویرایش اطلاعات کلینیک</span>
+            }
+            else
+            {
+                <span>ایجاد کلینیک جدید</span>
+            }
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Clinic Name -->
+        <div class="col-md-6">
+            <div class="form-group-enhanced">
+                <label class="form-label-enhanced required-field">
+                    <i class="fas fa-hospital form-label-icon"></i>
+                    نام کلینیک
+                </label>
+                <div class="input-group-enhanced">
+                    @Html.EditorFor(model => model.Name, new { 
+                        htmlAttributes = new { 
+                            @class = "form-control form-control-enhanced", 
+                            placeholder = "مثال: کلینیک تخصصی شیفا",
+                            @autocomplete = "organization",
+                            @required = "required"
+                        } 
+                    })
+                </div>
+                @if (Html.ValidationMessageFor(model => model.Name).ToString() != "")
+                {
+                    <div class="validation-message-enhanced">
+                        <i class="fas fa-exclamation-circle"></i>
+                        @Html.ValidationMessageFor(model => model.Name, "")
+                    </div>
+                }
+                <div class="form-hint">
+                    <i class="fas fa-info-circle"></i>
+                    نام کلینیک باید واضح و قابل شناسایی باشد
+                </div>
+            </div>
+        </div>
+
+        <!-- Phone Number -->
+        <div class="col-md-6">
+            <div class="form-group-enhanced">
+                <label class="form-label-enhanced">
+                    <i class="fas fa-phone form-label-icon"></i>
+                    شماره تلفن
+                </label>
+                <div class="input-group-enhanced">
+                    <i class="fas fa-phone input-icon"></i>
+                    @Html.EditorFor(model => model.PhoneNumber, new { 
+                        htmlAttributes = new { 
+                            @class = "form-control form-control-enhanced form-control-with-icon", 
+                            placeholder = "021-12345678",
+                            @type = "tel",
+                            @autocomplete = "tel",
+                            @pattern = "[0-9\\-\\+\\s\\(\\)]+"
+                        } 
+                    })
+                </div>
+                @if (Html.ValidationMessageFor(model => model.PhoneNumber).ToString() != "")
+                {
+                    <div class="validation-message-enhanced">
+                        <i class="fas fa-exclamation-circle"></i>
+                        @Html.ValidationMessageFor(model => model.PhoneNumber, "")
+                    </div>
+                }
+                <div class="form-hint">
+                    <i class="fas fa-info-circle"></i>
+                    شماره تلفن برای تماس اضطراری استفاده می‌شود
+                </div>
+            </div>
+        </div>
+
+        <!-- Address -->
+        <div class="col-12">
+            <div class="form-group-enhanced">
+                <label class="form-label-enhanced">
+                    <i class="fas fa-map-marker-alt form-label-icon"></i>
+                    آدرس کامل
+                </label>
+                <div class="input-group-enhanced">
+                    @Html.TextAreaFor(model => model.Address, 3, 0, new { 
+                        htmlAttributes = new { 
+                            @class = "form-control form-control-enhanced", 
+                            placeholder = "آدرس کامل کلینیک شامل شهر، خیابان و پلاک",
+                            @autocomplete = "street-address",
+                            @rows = "3"
+                        } 
+                    })
+                </div>
+                @if (Html.ValidationMessageFor(model => model.Address).ToString() != "")
+                {
+                    <div class="validation-message-enhanced">
+                        <i class="fas fa-exclamation-circle"></i>
+                        @Html.ValidationMessageFor(model => model.Address, "")
+                    </div>
+                }
+                <div class="form-hint">
+                    <i class="fas fa-info-circle"></i>
+                    آدرس دقیق برای یافتن کلینیک توسط بیماران ضروری است
+                </div>
+            </div>
+        </div>
+
+        <!-- Status Switch -->
+        <div class="col-12">
+            <div class="form-switch-enhanced">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <label class="form-label-enhanced mb-1">
+                            <i class="fas fa-toggle-on form-label-icon"></i>
+                            وضعیت کلینیک
+                        </label>
+                        <div class="form-hint mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            کلینیک‌های فعال در سیستم نوبت‌دهی نمایش داده می‌شوند
+                        </div>
+                    </div>
+                    <div class="text-center">
+                        <div class="form-check form-switch form-switch-modern">
+                            @Html.CheckBoxFor(model => model.IsActive, new { 
+                                @class = "form-check-input", 
+                                @id = "statusSwitch",
+                                @role = "switch"
+                            })
+                        </div>
+                        <div class="switch-status-text" id="switchStatusText">
+                            @if (Model.IsActive)
+                            {
+                                <span class="switch-status-active">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="switch-status-inactive">غیرفعال</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Real-time validation feedback
+    const inputs = document.querySelectorAll('.form-control-enhanced');
+    
+    inputs.forEach(input => {
+        input.addEventListener('blur', function() {
+            validateField(this);
+        });
+        
+        input.addEventListener('input', function() {
+            if (this.classList.contains('is-invalid')) {
+                validateField(this);
+            }
+        });
+    });
+    
+    function validateField(field) {
+        const value = field.value.trim();
+        const isRequired = field.hasAttribute('required');
+        
+        // Remove previous validation classes
+        field.classList.remove('is-invalid', 'is-valid');
+        
+        if (isRequired && !value) {
+            field.classList.add('is-invalid');
+        } else if (value) {
+            // Basic validation passed
+            field.classList.add('is-valid');
+            
+            // Field-specific validation
+            if (field.type === 'tel') {
+                const phoneRegex = /^[\d\-\+\s\(\)]+$/;
+                if (!phoneRegex.test(value)) {
+                    field.classList.remove('is-valid');
+                    field.classList.add('is-invalid');
+                }
+            }
+        }
+    }
+    
+    // Form submission enhancement
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const submitButton = form.querySelector('button[type="submit"]');
+            if (submitButton) {
+                submitButton.disabled = true;
+                submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...';
+            }
+        });
+    }
+    
+    // Phone number formatting
+    const phoneInput = document.querySelector('input[type="tel"]');
+    if (phoneInput) {
+        phoneInput.addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            if (value.length > 0) {
+                if (value.startsWith('0')) {
+                    value = value.substring(1);
+                }
+                if (value.length <= 2) {
+                    value = value;
+                } else if (value.length <= 10) {
+                    value = value.substring(0, 2) + '-' + value.substring(2);
+                } else {
+                    value = value.substring(0, 2) + '-' + value.substring(2, 10);
+                }
+                if (!value.startsWith('0')) {
+                    value = '0' + value;
+                }
+            }
+            e.target.value = value;
+        });
+    }
+    
+    // استاندارد Switch functionality
+    const statusSwitch = document.getElementById('statusSwitch');
+    const statusText = document.getElementById('switchStatusText');
+    
+    if (statusSwitch && statusText) {
+        // تابع بروزرسانی متن وضعیت
+        function updateStatusText() {
+            if (statusSwitch.checked) {
+                statusText.innerHTML = '<span class="switch-status-active">فعال</span>';
+            } else {
+                statusText.innerHTML = '<span class="switch-status-inactive">غیرفعال</span>';
+            }
+        }
+        
+        // گوش دادن به تغییرات switch
+        statusSwitch.addEventListener('change', updateStatusText);
+        
+        // مقداردهی اولیه
+        updateStatusText();
+    }
+});
+</script>

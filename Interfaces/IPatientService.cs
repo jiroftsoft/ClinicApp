@@ -1,6 +1,5 @@
 ﻿using ClinicApp.Helpers;
 using ClinicApp.ViewModels;
-using Microsoft.AspNet.Identity;
 using System.Threading.Tasks;
 
 namespace ClinicApp.Interfaces
@@ -46,8 +45,8 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="model">مدل ثبت‌نام بیمار حاوی اطلاعات ضروری بیمار</param>
         /// <param name="userIp">آدرس IP کاربر برای محدودیت نرخ و لاگ‌گیری امنیتی</param>
-        /// <returns>نتیجه عملیات ثبت‌نام به صورت IdentityResult</returns>
-        Task<IdentityResult> RegisterPatientAsync(RegisterPatientViewModel model, string userIp);
+        /// <returns>نتیجه عملیات ثبت‌نام به صورت ServiceResult</returns>
+        Task<ServiceResult> RegisterPatientAsync(RegisterPatientViewModel model, string userIp);
 
         /// <summary>
         /// جستجو و صفحه‌بندی بیماران با عملکرد بهینه برای محیط‌های پزشکی

@@ -1,0 +1,447 @@
+@model ClinicApp.ViewModels.ServiceCategoryDetailsViewModel
+@{
+    ViewBag.Title = $"جزئیات دسته‌بندی: {Model.Title}";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* استایل‌های اختصاصی برای صفحه جزئیات دسته‌بندی */
+        .hero-section {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            padding: 2.5rem 0;
+            margin: -15px -15px 25px -15px;
+            border-radius: 0 0 20px 20px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.1);
+            z-index: 1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .hero-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .hero-icon {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 15px;
+            font-size: 1.5rem;
+        }
+
+        .hero-text h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .hero-text p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .quick-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .stat-item {
+            background: rgba(255,255,255,0.15);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .details-container {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            color: #6c757d;
+            font-weight: 500;
+        }
+
+        .info-value {
+            color: #2c3e50;
+            font-weight: 600;
+        }
+
+        .actions-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+            height: fit-content;
+        }
+
+        .action-btn {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+            content: "◀";
+            color: #6c757d;
+        }
+
+        @@media (max-width: 768px) {
+            .hero-header {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .details-container {
+                grid-template-columns: 1fr;
+            }
+
+            .quick-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item">
+            <a href="@Url.Action("Index", "Home", new { area = "Admin" })">
+                <i class="fas fa-home"></i> داشبورد
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="@Url.Action("ServiceCategories")">دسته‌بندی خدمات</a>
+        </li>
+        <li class="breadcrumb-item active">@Model.Title</li>
+    </ol>
+</nav>
+
+<!-- Hero Section -->
+<div class="hero-section">
+    <div class="hero-content">
+        <div class="hero-header">
+            <div class="hero-title">
+                <div class="hero-icon">
+                    <i class="fas fa-layer-group"></i>
+                </div>
+                <div class="hero-text">
+                    <h1>@Model.Title</h1>
+                    <p>دسته‌بندی خدمات پزشکی</p>
+                </div>
+            </div>
+            <div class="hero-actions">
+                <a href="@Url.Action("Services", new { serviceCategoryId = Model.ServiceCategoryId })" 
+                   class="btn btn-light btn-lg">
+                    <i class="fas fa-list me-2"></i>مشاهده خدمات
+                </a>
+            </div>
+        </div>
+
+        <!-- آمار سریع -->
+        <div class="quick-stats">
+            <div class="stat-item">
+                <div class="stat-value">@Model.ServiceCount</div>
+                <div class="stat-label">خدمات</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">@(Model.IsActive ? "فعال" : "غیرفعال")</div>
+                <div class="stat-label">وضعیت</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">@Model.CreatedAtShamsi</div>
+                <div class="stat-label">تاریخ ایجاد</div>
+            </div>
+            @if (!string.IsNullOrEmpty(Model.UpdatedAtShamsi))
+            {
+                <div class="stat-item">
+                    <div class="stat-value">@Model.UpdatedAtShamsi</div>
+                    <div class="stat-label">آخرین بروزرسانی</div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- جزئیات و عملیات -->
+<div class="details-container">
+    <!-- اطلاعات کلی -->
+    <div class="info-section">
+        <h3 class="section-title">
+            <i class="fas fa-info-circle text-primary"></i>
+            اطلاعات کلی
+        </h3>
+        
+        <div class="info-item">
+            <span class="info-label">نام دسته‌بندی:</span>
+            <span class="info-value">@Model.Title</span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.Description))
+        {
+            <div class="info-item">
+                <span class="info-label">توضیحات:</span>
+                <span class="info-value">@Model.Description</span>
+            </div>
+        }
+
+        <div class="info-item">
+            <span class="info-label">تعداد خدمات:</span>
+            <span class="info-value">
+                <span class="badge bg-primary">@Model.ServiceCount خدمت</span>
+            </span>
+        </div>
+
+        <div class="info-item">
+            <span class="info-label">وضعیت:</span>
+            <span class="info-value">
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">فعال</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">غیرفعال</span>
+                }
+            </span>
+        </div>
+
+        <div class="info-item">
+            <span class="info-label">تاریخ ایجاد:</span>
+            <span class="info-value">@Model.CreatedAtShamsi</span>
+        </div>
+
+        <div class="info-item">
+            <span class="info-label">ایجاد شده توسط:</span>
+            <span class="info-value">@Model.CreatedByUser</span>
+        </div>
+
+        @if (!string.IsNullOrEmpty(Model.UpdatedAtShamsi))
+        {
+            <div class="info-item">
+                <span class="info-label">آخرین بروزرسانی:</span>
+                <span class="info-value">@Model.UpdatedAtShamsi</span>
+            </div>
+
+            <div class="info-item">
+                <span class="info-label">بروزرسانی توسط:</span>
+                <span class="info-value">@Model.UpdatedByUser</span>
+            </div>
+        }
+    </div>
+
+    <!-- عملیات -->
+    <div class="actions-section">
+        <h3 class="section-title">
+            <i class="fas fa-cogs text-success"></i>
+            عملیات
+        </h3>
+
+        <a href="@Url.Action("Services", new { serviceCategoryId = Model.ServiceCategoryId })" 
+           class="btn btn-primary action-btn">
+            <i class="fas fa-list me-2"></i>مشاهده خدمات
+        </a>
+
+        <a href="@Url.Action("CreateService", new { serviceCategoryId = Model.ServiceCategoryId })" 
+           class="btn btn-success action-btn">
+            <i class="fas fa-plus me-2"></i>افزودن خدمت جدید
+        </a>
+
+        <a href="@Url.Action("ServiceCategories")" 
+           class="btn btn-info action-btn">
+            <i class="fas fa-arrow-right me-2"></i>بازگشت به لیست
+        </a>
+
+        <hr class="my-3">
+
+        <button type="button" class="btn btn-outline-danger action-btn" 
+                onclick="confirmDelete(@Model.ServiceCategoryId, '@Model.Title')">
+            <i class="fas fa-trash me-2"></i>حذف دسته‌بندی
+        </button>
+    </div>
+</div>
+
+<!-- Modal تأیید حذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>هشدار:</strong> این عمل قابل بازگشت نیست!
+                </div>
+                <p>آیا از حذف دسته‌بندی "<span id="deleteItemName"></span>" اطمینان دارید؟</p>
+                <p class="text-danger">
+                    <i class="fas fa-info-circle me-2"></i>
+                    تمام خدمات مرتبط با این دسته‌بندی نیز حذف خواهند شد.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash me-2"></i>حذف قطعی
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // تأیید حذف
+        function confirmDelete(id, name) {
+            $('#deleteItemName').text(name);
+            $('#confirmDeleteBtn').off('click').on('click', function() {
+                deleteCategory(id);
+            });
+            $('#deleteModal').modal('show');
+        }
+
+        // حذف دسته‌بندی
+        function deleteCategory(id) {
+            $.ajax({
+                url: '@Url.Action("DeleteServiceCategory")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    $('#deleteModal').modal('hide');
+                    if (result.success) {
+                        showToast('موفقیت', result.message, 'success');
+                        setTimeout(() => {
+                            window.location.href = '@Url.Action("ServiceCategories")';
+                        }, 1500);
+                    } else {
+                        showToast('خطا', result.message, 'error');
+                    }
+                },
+                error: function() {
+                    $('#deleteModal').modal('hide');
+                    showToast('خطا', 'خطا در ارتباط با سرور', 'error');
+                }
+            });
+        }
+
+        // Toast notification
+        function showToast(title, message, type) {
+            const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            const toast = `
+                <div class="toast ${toastClass} text-white" role="alert">
+                    <div class="toast-header">
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            if (!$('#toastContainer').length) {
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+            }
+            
+            $('#toastContainer').append(toast);
+            $('.toast').last().toast('show');
+        }
+    </script>
+    
+    <!-- Anti-Forgery Token -->
+    @Html.AntiForgeryToken()
+}

@@ -5,7 +5,4 @@ namespace ClinicApp.ViewModels
     public class Class1
     {
     }
-
 }
-
-

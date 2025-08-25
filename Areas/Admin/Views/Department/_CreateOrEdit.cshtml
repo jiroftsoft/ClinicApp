@@ -1,0 +1,28 @@
+﻿@model ClinicApp.ViewModels.DepartmentCreateEditViewModel
+
+@Html.AntiForgeryToken()
+@Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
+
+@Html.HiddenFor(model => model.ClinicId)
+@if (Model.DepartmentId > 0)
+{
+    @Html.HiddenFor(model => model.DepartmentId)
+}
+
+<div class="alert alert-info">
+    <strong>Clinic:</strong> @Model.ClinicName
+</div>
+
+<div class="row g-3">
+    <div class="col-12">
+        @Html.LabelFor(model => model.Name, new { @class = "form-label" })
+        @Html.EditorFor(model => model.Name, new { htmlAttributes = new { @class = "form-control", placeholder = "e.g., Cardiology, Pediatrics" } })
+        @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger" })
+    </div>
+    <div class="col-12">
+        <div class="form-check form-switch">
+            @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
+            @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label" })
+        </div>
+    </div>
+</div>

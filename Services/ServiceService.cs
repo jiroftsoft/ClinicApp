@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.Services;
 
@@ -602,9 +603,9 @@ public class ServiceService : IServiceService
                 TotalRevenue = totalRevenue
             };
             // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
-            viewModel.CreatedAtShamsi = viewModel.CreatedAt.ToPersianDateTime();
+            viewModel.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(viewModel.CreatedAt);
             if (viewModel.UpdatedAt.HasValue)
-                viewModel.UpdatedAtShamsi = viewModel.UpdatedAt.Value.ToPersianDateTime();
+                viewModel.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(viewModel.UpdatedAt.Value);
             return ServiceResult<ServiceCreateEditViewModel>.Successful(viewModel);
         }
         catch (Exception ex)
@@ -731,20 +732,20 @@ public async Task<ServiceResult<ServiceDetailsViewModel>> GetServiceDetailsAsync
         details.DeletedBy = GetUserName(users, service.DeletedByUserId) ?? "";
 
         // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
-        details.CreatedAtShamsi = details.CreatedAt.ToPersianDateTime();
+        details.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.CreatedAt);
         if (details.UpdatedAt.HasValue)
-            details.UpdatedAtShamsi = details.UpdatedAt.Value.ToPersianDateTime();
+            details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt.Value);
         if (details.DeletedAt.HasValue)
-            details.DeletedAtShamsi = details.DeletedAt.Value.ToPersianDateTime();
+            details.DeletedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.DeletedAt.Value);
         if (details.LastUsageDate.HasValue)
-            details.LastUsageDateShamsi = details.LastUsageDate.Value.ToPersianDateTime();
+            details.LastUsageDateShamsi = DateTimeExtensions.ToPersianDateTime(details.LastUsageDate.Value);
 
         // افزودن اطلاعات اضافی برای گزارش‌گیری پزشکی
         details.UsageCount = usageCount;
         details.TotalRevenue = totalRevenue;
         details.LastUsageDate = lastUsageDate;
         details.LastUsageDateShamsi = details.LastUsageDate.HasValue ?
-            details.LastUsageDate.Value.ToPersianDateTime() : "نامشخص";
+            DateTimeExtensions.ToPersianDateTime(details.LastUsageDate.Value) : "نامشخص";
 
         _log.Information(
             "دریافت جزئیات خدمات با شناسه {ServiceId} با موفقیت انجام شد. User: {UserName} (Id: {UserId})",
@@ -893,7 +894,7 @@ private async Task<DateTime?> GetLastUsageDateAsync(int serviceId)
             // تبدیل تاریخ‌ها به شمسی
             foreach (var viewModel in viewModels)
             {
-                viewModel.CreatedAtShamsi = viewModel.CreatedAt.ToPersianDate();
+                viewModel.CreatedAtShamsi = DateTimeExtensions.ToPersianDate(viewModel.CreatedAt);
             }
 
             // ایجاد نتیجه صفحه‌بندی شده
@@ -1360,7 +1361,7 @@ private async Task<DateTime?> GetLastUsageDateAsync(int serviceId)
                     .SumAsync() ?? 0;
 
                 // تبدیل تاریخ به شمسی برای کلید دیکشنری
-                var persianDate = currentDate.ToPersianDate();
+                var persianDate = DateTimeExtensions.ToPersianDate(currentDate);
                 dailyUsage[persianDate] = usageCount;
                 dailyRevenue[persianDate] = revenue;
 

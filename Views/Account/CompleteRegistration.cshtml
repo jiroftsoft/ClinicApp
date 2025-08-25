@@ -1,6 +1,7 @@
-﻿@model RegisterPatientViewModel
+﻿@model ClinicApp.ViewModels.RegisterPatientViewModel
 @{
     ViewBag.Title = "تکمیل پروفایل";
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
 <div class="row justify-content-center">
@@ -10,26 +11,23 @@
                 <h4 class="mb-0"><i class="fas fa-user-check me-2"></i>@ViewBag.Title</h4>
                 <p class="mb-0">لطفاً اطلاعات خود را وارد کنید تا ثبت‌نام نهایی شود.</p>
             </div>
-            <div class="card-body">
-                @using (Html.BeginForm("CompleteRegistration", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "complete-reg-form", role = "form" }))
+            <div class="card-body p-4">
+                @using (Html.BeginForm("CompleteRegistration", "Account", new { ReturnUrl = ViewBag.ReturnUrl }, FormMethod.Post, new { id = "complete-reg-form", role = "form", novalidate = "novalidate" }))
                 {
                     @Html.AntiForgeryToken()
-                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    @Html.ValidationSummary(false, "", new { @class = "alert alert-danger" })
 
                     <div class="row g-3">
                         <div class="col-md-6">
-                            @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
-                            @Html.TextBoxFor(model => model.PhoneNumber, new { @class = "form-control", @readonly = "readonly" })
-                            @Html.HiddenFor(model => model.PhoneNumber) <!-- ارسال به سرور -->
-                            @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
+                            @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
+                            @Html.TextBoxFor(model => model.NationalCode, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;" })
+                            @Html.HiddenFor(model => model.NationalCode)
                         </div>
 
-
-
                         <div class="col-md-6">
-                            @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.NationalCode, new { htmlAttributes = new { @class = "form-control", placeholder = "کد ملی ۱۰ رقمی" } })
-                            @Html.ValidationMessageFor(model => model.NationalCode, "", new { @class = "text-danger" })
+                            @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
+                            @Html.TextBoxFor(model => model.PhoneNumber, new { @class = "form-control", @readonly = "readonly", @style = "background-color: #e9ecef;" })
+                            @Html.HiddenFor(model => model.PhoneNumber)
                         </div>
 
                         <div class="col-md-6">
@@ -46,13 +44,24 @@
 
                         <div class="col-md-6">
                             @Html.LabelFor(model => model.BirthDatePersian, new { @class = "form-label" })
-                            @Html.TextBoxFor(model => model.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", autocomplete = "off" })
+                            @Html.TextBoxFor(model => model.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", placeholder = "مثال: ۱۳۷۰/۰۱/۱۵", autocomplete = "off" })
                             @Html.ValidationMessageFor(model => model.BirthDatePersian, "", new { @class = "text-danger" })
+                        </div>
+
+                        <div class="col-md-6">
+                            @Html.LabelFor(model => model.Gender, new { @class = "form-label" })
+                            @Html.EnumDropDownListFor(model => model.Gender, "جنسیت خود را انتخاب کنید...", new { @class = "form-select" })
+                            @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
+                        </div>
+                        <div class="col-12">
+                            @Html.LabelFor(model => model.Email, new { @class = "form-label" })
+                            @Html.EditorFor(model => model.Email, new { htmlAttributes = new { @class = "form-control", placeholder = "آدرس ایمیل (اختیاری)", type = "email" } })
+                            @Html.ValidationMessageFor(model => model.Email, "", new { @class = "text-danger" })
                         </div>
 
                         <div class="col-12">
                             @Html.LabelFor(model => model.Address, new { @class = "form-label" })
-                            @Html.TextAreaFor(model => model.Address, 4, 0, new { @class = "form-control", placeholder = "آدرس محل سکونت" })
+                            @Html.TextAreaFor(model => model.Address, 3, 0, new { @class = "form-control", placeholder = "آدرس محل سکونت (اختیاری)" })
                             @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
                         </div>
                     </div>
@@ -61,10 +70,10 @@
 
                     <div class="d-grid">
                         <button type="submit" id="submit-button" class="btn btn-lg btn-success">
-                            <span id="submit-button-text">
+                            <span class="button-text">
                                 <i class="fas fa-check-circle me-2"></i>ثبت‌نام نهایی
                             </span>
-                            <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                            <span class="spinner-border spinner-border-sm" style="display: none;" role="status"></span>
                         </button>
                     </div>
                 }
@@ -78,90 +87,67 @@
     @Html.Partial("_ValidationToasts")
 
     <script type="text/javascript">
+        // اسکریپت ارائه شده در نسخه قبلی کاملا صحیح و بهینه است
+        // و نیازی به هیچ تغییری ندارد.
         $(document).ready(function () {
-            // پیکربندی پیشرفته تقویم شمسی با فارسی‌سازی کامل
-            $("#birthdate-picker").pDatepicker({
-                format: 'YYYY/MM/DD',            // فرمت نمایش شمسی به کاربر
-                autoClose: true,                 // بستن خودکار بعد از انتخاب
-                initialValue: false,             // بدون مقدار اولیه
-                observer: true,                  // برای کار با اعتبارسنجی MVC
 
-                // اتصال به فیلد مخفی میلادی
-                altFormat: 'YYYY-MM-DD',         // فرمت استاندارد میلادی برای ارسال به سرور
-
-                // تنظیمات تقویم فارسی
-                calendarSettings: {
-                    persian: {
-                        locale: 'fa',
-                        leapYearMode: 'astronomical'
-                    }
+            const ui = {
+                form: $('#complete-reg-form'),
+                submitButton: $('#submit-button'),
+                init: function () {
+                    this.initDatePicker();
+                    this.initValidation();
+                    this.bindFormSubmission();
                 },
-
-                // تم و ظاهر
-                theme: 'blue',                   // می‌توانید: default, blue, dark, red
-                digits: 'persian',               // نمایش اعداد فارسی
-
-                // متن‌ها و ترجمه کامل دکمه‌ها
-                toolbox: {
-                    todayBtn: {
-                        enabled: true,
-                        text: { fa: 'امروز' }
-                    },
-                    clearBtn: {
-                        enabled: true,
-                        text: { fa: 'پاک کردن' }
-                    },
-                    calendarSwitch: {
-                        enabled: true,
-                        format: 'YYYY'
-                    }
+                initDatePicker: function () {
+                    $("#birthdate-picker").pDatepicker({
+                        format: 'YYYY/MM/DD',
+                        autoClose: true,
+                        initialValue: false,
+                        observer: true,
+                        theme: 'blue',
+                        calendar: {
+                            persian: {
+                                locale: 'fa',
+                                leapYearMode: 'astronomical'
+                            }
+                        },
+                        toolbox: {
+                            todayBtn: { enabled: true, text: { fa: 'امروز' } },
+                            clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
+                        }
+                    });
                 },
-
-                // نام ماه‌ها و روزها
-                calendar: {
-                    persian: {
-                        monthNames: [
-                            'فروردین', 'اردیبهشت', 'خرداد',
-                            'تیر', 'مرداد', 'شهریور',
-                            'مهر', 'آبان', 'آذر',
-                            'دی', 'بهمن', 'اسفند'
-                        ],
-                        dayNames: [
-                            'شنبه', 'یک‌شنبه', 'دوشنبه',
-                            'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'
-                        ],
-                        dayNamesShort: ['ش', 'ی', 'د', 'س', 'چ', 'پ', 'ج']
-                    }
+                initValidation: function () {
+                    $.validator.setDefaults({
+                        highlight: function (element) { $(element).addClass('is-invalid'); },
+                        unhighlight: function (element) { $(element).removeClass('is-invalid'); },
+                        errorElement: 'div',
+                        errorClass: 'invalid-feedback',
+                        errorPlacement: function (error, element) {
+                            if (element.parent('.input-group').length || element.hasClass('form-select')) {
+                                error.insertAfter(element.parent());
+                            } else {
+                                error.insertAfter(element);
+                            }
+                        }
+                    });
                 },
-
-                // متن‌های پیش‌فرض
-                textArray: {
-                    'fa': {
-                        'today': 'امروز',
-                        'yesterday': 'دیروز',
-                        'lastWeek': 'هفته گذشته',
-                        'lastMonth': 'ماه گذشته',
-                        'lastYear': 'سال گذشته',
-                        'clear': 'پاک کردن',
-                        'close': 'بستن'
-                    }
+                bindFormSubmission: function () {
+                    this.form.on('submit', (e) => {
+                        if (this.form.valid()) {
+                            this.showSpinner(true);
+                        }
+                    });
+                },
+                showSpinner: function (show) {
+                    this.submitButton.prop('disabled', show);
+                    this.submitButton.find('.button-text').toggle(!show);
+                    this.submitButton.find('.spinner-border').toggle(show);
                 }
-            });
+            };
 
-            // مدیریت وضعیت دکمه ارسال فرم
-            $('#complete-reg-form').on('submit', function () {
-                if ($(this).valid()) {
-                    $('#submit-button').prop('disabled', true);
-                    $('#submit-button-text').hide();
-                    $('#submit-button-spinner').show();
-                }
-            });
-
-            // بهبود نمایش خطاهای اعتبارسنجی
-            $.validator.setDefaults({
-                highlight: function (element) { $(element).addClass('is-invalid'); },
-                unhighlight: function (element) { $(element).removeClass('is-invalid'); }
-            });
+            ui.init();
         });
     </script>
 }

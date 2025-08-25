@@ -1,357 +1,756 @@
 ﻿@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.ClinicIndexViewModel>
 @{
-    ViewBag.Title = "مدیریت کلینیک‌ها - بخش ادمین";
+    ViewBag.Title = "مدیریت کلینیک‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
-<style type="text/css">
-    /* استایل‌های حیاتی برای اولین رندر */
-    .clinics-container {
-        max-width: 100%;
-        margin: 0;
-        padding: 0;
-    }
-
-    .search-controls {
-        background: #f8f9fa;
-        padding: 15px;
-        border-radius: 4px;
-        margin-bottom: 20px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
-
-    .clinic-card {
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        margin-bottom: 12px;
-        transition: all 0.2s;
-        background: #fff;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        position: relative;
-    }
-
-        .clinic-card:hover {
-            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-            transform: translateY(-1px);
-            border-color: #c3e6cb;
+@section Styles {
+    <style>
+        :root {
+            --clinic-primary: #2c5aa0;
+            --clinic-success: #28a745;
+            --clinic-info: #17a2b8;
+            --clinic-warning: #ffc107;
+            --clinic-danger: #dc3545;
+            --clinic-light: #f8f9fa;
+            --clinic-dark: #343a40;
+            --clinic-secondary: #6c757d;
         }
 
-    .clinic-header {
-        padding: 12px 15px;
-        background: #f1f8ff;
-        border-bottom: 1px solid #d6e9f8;
-        border-radius: 3px 3px 0 0;
-    }
+        .medical-header {
+            background: linear-gradient(135deg, var(--clinic-primary) 0%, #3d6fb0 100%);
+            color: white;
+            border-radius: 10px 10px 0 0;
+            padding: 1.5rem;
+            border: none;
+        }
 
-    .clinic-content {
-        padding: 15px;
-    }
+        .medical-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(44, 90, 160, 0.08);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
 
-    .clinic-stats {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid #e9ecef;
-        font-size: 0.9em;
-        color: #6c757d;
-    }
+        .medical-card:hover {
+            box-shadow: 0 8px 30px rgba(44, 90, 160, 0.15);
+            transform: translateY(-2px);
+        }
 
-    .clinic-stats-item {
-        display: flex;
-        flex-direction: column;
-    }
+        .medical-search {
+            background: var(--clinic-light);
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            border: 1px solid rgba(44, 90, 160, 0.1);
+        }
 
-    .clinic-stats-value {
-        font-weight: bold;
-        font-size: 1.1em;
-        color: #007bff;
-    }
+        .search-input {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
 
-    .clinic-actions {
-        padding: 10px 15px;
-        background: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        border-radius: 0 0 4px 4px;
-        text-align: left;
-    }
+        .search-input:focus {
+            border-color: var(--clinic-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.15);
+        }
 
-    .pagination-container {
-        margin-top: 25px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
+        .btn-medical {
+            background: var(--clinic-primary);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
 
-    .pagination-info {
-        color: #6c757d;
-        font-size: 0.9em;
-    }
+        .btn-medical:hover {
+            background: #234a87;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.25);
+            color: white;
+        }
 
-    /* بهینه‌سازی برای دستگاه‌های پزشکی */
-    @@media (max-width: 768px) {
-        .clinic-actions {
+        .btn-medical-success {
+            background: linear-gradient(45deg, var(--clinic-success), #34ce57);
+            border: none;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-medical-success:hover {
+            background: linear-gradient(45deg, #218838, var(--clinic-success));
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.25);
+            color: white;
+        }
+
+        .medical-table {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .medical-table thead th {
+            background: linear-gradient(90deg, var(--clinic-light), #ffffff);
+            border: none;
+            font-weight: 600;
+            color: var(--clinic-dark);
+            padding: 1rem;
+            text-align: center;
+            border-bottom: 2px solid rgba(44, 90, 160, 0.1);
+        }
+
+        .medical-table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
             text-align: center;
         }
 
-        .action-btn {
-            margin: 5px 0;
-            width: 100%;
+        .medical-table tbody tr {
+            transition: all 0.2s ease;
         }
 
-        .clinic-stats {
-            flex-direction: column;
+        .medical-table tbody tr:hover {
+            background: rgba(44, 90, 160, 0.02);
+            transform: scale(1.005);
         }
-    }
 
-    /* وضعیت‌های پزشکی */
-    .status-active {
-        background: #d4edda;
-        color: #155724;
-    }
-
-    .status-inactive {
-        background: #f8d7da;
-        color: #721c24;
-    }
-
-    /* برای دستگاه‌های پزشکی با نور کم */
-    @@media (prefers-contrast: high) {
-        .clinic-card {
-            border: 2px solid #000;
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            align-items: center;
         }
-    }
 
-    /* افکت‌های تعاملی برای محیط‌های پزشکی */
-    .clinic-card {
-        touch-action: manipulation;
-    }
-
-        .clinic-card:active {
-            transform: scale(0.99);
+        .btn-action {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            font-size: 0.875rem;
         }
-</style>
 
-<div class="clinics-container">
-    <div class="page-header">
-        <h1 class="page-title">مدیریت کلینیک‌ها</h1>
-        <p class="page-description">لیست کلینیک‌های فعال در سیستم کلینیک شفا</p>
+        .btn-action:hover {
+            transform: translateY(-2px) scale(1.1);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, var(--clinic-warning), #ffcd39);
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #e0a800, var(--clinic-warning));
+            color: #212529;
+        }
+
+        .btn-view {
+            background: linear-gradient(135deg, var(--clinic-info), #20c997);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: linear-gradient(135deg, #138496, var(--clinic-info));
+            color: white;
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, var(--clinic-danger), #e74c3c);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c82333, var(--clinic-danger));
+            color: white;
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 500;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-active {
+            background: linear-gradient(45deg, var(--clinic-success), #20c997);
+            color: white;
+        }
+
+        .status-inactive {
+            background: linear-gradient(45deg, var(--clinic-danger), #e74c3c);
+            color: white;
+        }
+
+        .medical-stats {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .stat-card {
+            flex: 1;
+            background: white;
+            padding: 1.5rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            text-align: center;
+            border: 1px solid rgba(44, 90, 160, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(44, 90, 160, 0.15);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--clinic-primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: var(--clinic-secondary);
+            font-weight: 500;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: var(--clinic-secondary);
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        .loading-overlay {
+            position: relative;
+        }
+
+        .loading-overlay::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(255,255,255,0.8);
+            z-index: 1;
+            border-radius: 8px;
+        }
+
+        .loading-spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 2;
+        }
+
+        .pagination-modern {
+            display: flex;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 2rem;
+        }
+
+        .page-btn {
+            padding: 0.5rem 1rem;
+            border: 2px solid var(--clinic-primary);
+            background: white;
+            color: var(--clinic-primary);
+            border-radius: 6px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .page-btn:hover {
+            background: var(--clinic-primary);
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .page-btn.active {
+            background: var(--clinic-primary);
+            color: white;
+        }
+
+        @@media (max-width: 768px) {
+            .medical-stats {
+                flex-direction: column;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 0.25rem;
+            }
+            
+            .btn-action {
+                width: 100%;
+                height: 32px;
+            }
+        }
+    </style>
+}
+
+<!-- Header Section -->
+<div class="medical-card">
+    <div class="medical-header">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-1">
+                    <i class="fas fa-hospital-alt me-2"></i>@ViewBag.Title
+                </h2>
+                <p class="mb-0 opacity-75">مدیریت و نظارت بر کلینیک‌های مجموعه درمانی</p>
+            </div>
+            <a href="@Url.Action("Create")" class="btn btn-medical-success">
+                <i class="fas fa-plus"></i>
+                کلینیک جدید
+            </a>
+        </div>
     </div>
 
-    <div class="search-controls">
-        <div class="row">
-            <div class="col-md-8">
-                <div class="input-group">
-                    <input type="text" id="searchTerm" class="form-control"
-                           placeholder="جستجو در نام، آدرس یا شماره تلفن..."
-                           value="@ViewBag.SearchTerm"
-                           aria-label="جستجوی کلینیک‌ها">
-                    <div class="input-group-append">
-                        <button class="btn btn-primary" id="searchButton" type="button">
-                            <i class="fa fa-search"></i> جستجو
-                        </button>
+    <!-- Stats Section -->
+    <div class="p-3">
+        <div class="medical-stats">
+            <div class="stat-card">
+                <div class="stat-number" id="total-clinics">-</div>
+                <div class="stat-label">مجموع کلینیک‌ها</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="active-clinics">-</div>
+                <div class="stat-label">کلینیک‌های فعال</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="total-departments">-</div>
+                <div class="stat-label">مجموع دپارتمان‌ها</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="avg-departments">-</div>
+                <div class="stat-label">میانگین دپارتمان</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Section -->
+    <div class="p-3">
+        <div class="medical-search">
+            <form id="search-form" class="row g-3">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0">
+                            <i class="fas fa-search text-muted"></i>
+                        </span>
+                        <input type="search" id="search-term" name="searchTerm" 
+                               class="form-control search-input border-start-0" 
+                               placeholder="جستجو در نام کلینیک، آدرس یا شماره تلفن..." />
                     </div>
                 </div>
-            </div>
-            <div class="col-md-4 text-left">
-                <a href="@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Create" })"
-                   class="btn btn-success" id="createClinicBtn">
-                    <i class="fa fa-plus"></i> افزودن کلینیک جدید
-                </a>
+                <div class="col-md-4">
+                    <button class="btn btn-medical w-100" type="submit">
+                        <i class="fas fa-search"></i>
+                        جستجو
+                    </button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
 
-    <!-- نمایش پیام‌های وضعیت -->
-    <div id="statusMessages">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                @TempData["SuccessMessage"]
-                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        }
-
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                @TempData["ErrorMessage"]
-                <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-        }
-    </div>
-
-    <!-- لودر پیشرفته برای عملکرد بهتر -->
-    <div id="loadingIndicator" class="text-center" style="display: none; padding: 20px;">
-        <div class="spinner-border text-primary" role="status">
-            <span class="sr-only">در حال بارگذاری...</span>
+    <!-- Table Section -->
+    <div class="p-3">
+        <div class="medical-table" id="table-container">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>
+                            <i class="fas fa-clinic-medical me-1"></i>
+                            نام کلینیک
+                        </th>
+                        <th>
+                            <i class="fas fa-phone me-1"></i>
+                            تماس
+                        </th>
+                        <th>
+                            <i class="fas fa-building me-1"></i>
+                            دپارتمان‌ها
+                        </th>
+                        <th>
+                            <i class="fas fa-toggle-on me-1"></i>
+                            وضعیت
+                        </th>
+                        <th>
+                            <i class="fas fa-cogs me-1"></i>
+                            عملیات
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="clinics-table-body">
+                </tbody>
+            </table>
         </div>
-        <p style="margin-top: 10px;">در حال بارگذاری اطلاعات کلینیک‌ها</p>
-    </div>
-
-    <!-- محتوای اصلی با قابلیت به‌روزرسانی بدون رفرش -->
-    <div id="clinicsContent">
-        @Html.Partial("_ClinicsListPartial", Model)
+        
+        <!-- Pagination -->
+        <div id="pagination-container" class="pagination-modern">
+        </div>
     </div>
 </div>
 
-<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
-<script type="text/javascript">
-    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
-    (function() {
-        'use strict';
+<!-- Modal حذف کلینیک -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-danger text-white border-0">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    تأیید حذف کلینیک
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center py-4">
+                <div class="mb-3">
+                    <i class="fas fa-clinic-medical text-danger" style="font-size: 3rem; opacity: 0.7;"></i>
+                </div>
+                <h6 class="fw-bold mb-3">آیا از حذف کلینیک زیر اطمینان دارید؟</h6>
+                <div class="alert alert-warning border-0 bg-light">
+                    <strong id="clinic-name-to-delete" class="text-danger"></strong>
+                </div>
+                <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    این عملیات قابل بازگشت نیست و تمام اطلاعات مرتبط حذف خواهد شد.
+                </small>
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <form id="delete-form" method="post" class="d-flex gap-2">
+                    @Html.AntiForgeryToken()
+                    <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-1"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-danger px-4">
+                        <i class="fas fa-trash-alt me-1"></i>
+                        بله، حذف کن
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-        // بهینه‌سازی برای محیط‌های پزشکی
-        document.addEventListener('DOMContentLoaded', function() {
-            // تنظیمات اولیه
-            const searchTermInput = document.getElementById('searchTerm');
-            const searchButton = document.getElementById('searchButton');
-            const clinicsContent = document.getElementById('clinicsContent');
-            const loadingIndicator = document.getElementById('loadingIndicator');
+<style>
+    /* استایل‌های اضافی برای Modal */
+    .modal-content {
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .modal-header {
+        border-radius: 12px 12px 0 0;
+    }
+    
+    .modal-footer {
+        border-radius: 0 0 12px 12px;
+        background: #f8f9fa;
+    }
+    
+    .btn-close-white {
+        filter: invert(1) grayscale(100%) brightness(200%);
+    }
+</style>
 
-            // تنظیم تأخیر برای جلوگیری از درخواست‌های زیاد
-            let searchTimeout;
-            const SEARCH_DEBOUNCE = 300; // 300ms
 
-            // تابع اصلی جستجو
-            function performSearch() {
-                const searchTerm = searchTermInput.value;
-                const currentPage = 1; // همیشه از صفحه اول شروع می‌کنیم
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            const tableBody = $('#clinics-table-body');
+            const paginationContainer = $('#pagination-container');
+            const searchForm = $('#search-form');
+            const searchTermInput = $('#search-term');
+            const deleteModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+            const deleteForm = $('#delete-form');
+            const clinicNameToDelete = $('#clinic-name-to-delete');
+            const tableContainer = $('#table-container');
 
-                // نمایش لودر
-                loadingIndicator.style.display = 'block';
-                clinicsContent.style.opacity = '0.7';
+            let currentPage = 1;
+            let currentSearchTerm = "";
 
-                // پاک کردن تایمر قبلی
-                clearTimeout(searchTimeout);
+            // تابع اصلی برای دریافت و نمایش داده‌ها
+            function fetchClinics(page = 1, term = "") {
+                currentPage = page;
+                currentSearchTerm = term;
 
-                // ایجاد درخواست با تأخیر
-                searchTimeout = setTimeout(function() {
-                    // ایجاد URL برای درخواست
-                    const url = '@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Index" })' +
-                        '?searchTerm=' + encodeURIComponent(searchTerm) +
-                        '&page=' + currentPage +
-                        '&pageSize=10' +
-                        '&_=' + new Date().getTime(); // جلوگیری از کش مرورگر
+                // نمایش Loading Overlay
+                showLoading();
 
-                    // ایجاد درخواست AJAX
-                    const xhr = new XMLHttpRequest();
-                    xhr.open('GET', url, true);
-
-                    xhr.onload = function() {
-                        if (xhr.status >= 200 && xhr.status < 400) {
-                            // جایگزینی محتوا بدون رفرش کامل صفحه
-                            clinicsContent.innerHTML = xhr.responseText;
-                            clinicsContent.style.opacity = '1';
-
-                            // ریسیت کردن دکمه‌های صفحه‌بندی
-                            setupPagination();
-                        } else {
-                            // نمایش خطا
-                            clinicsContent.innerHTML = '<div class="alert alert-danger">خطا در بارگذاری اطلاعات. لطفاً مجدداً تلاش کنید.</div>';
-                            clinicsContent.style.opacity = '1';
-                        }
-
-                        // مخفی کردن لودر
-                        loadingIndicator.style.display = 'none';
-                    };
-
-                    xhr.onerror = function() {
-                        clinicsContent.innerHTML = '<div class="alert alert-danger">خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.</div>';
-                        clinicsContent.style.opacity = '1';
-                        loadingIndicator.style.display = 'none';
-                    };
-
-                    xhr.send();
-                }, SEARCH_DEBOUNCE);
-            }
-
-            // تنظیم رویدادها
-            if (searchButton) {
-                searchButton.addEventListener('click', performSearch);
-            }
-
-            if (searchTermInput) {
-                searchTermInput.addEventListener('keyup', function(e) {
-                    if (e.key === 'Enter') {
-                        performSearch();
+                $.ajax({
+                    url: '@Url.Action("Index")',
+                    type: 'GET',
+                    data: { 
+                        searchTerm: term, 
+                        pageNumber: page,
+                        isAjax: true
+                    },
+                    success: function (result) {
+                        hideLoading();
+                        renderTable(result);
+                        updateStats(result);
+                        renderPagination(result.TotalPages, result.PageNumber);
+                    },
+                    error: function () {
+                        hideLoading();
+                        showError();
                     }
                 });
             }
 
-            // تابع برای ریسیت کردن دکمه‌های صفحه‌بندی
-            function setupPagination() {
-                const paginationLinks = document.querySelectorAll('.pagination a.page-link');
-                paginationLinks.forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
+            // نمایش Loading
+            function showLoading() {
+                tableContainer.addClass('loading-overlay');
+                const spinner = `<div class="loading-spinner">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                </div>`;
+                tableContainer.append(spinner);
+            }
 
-                        const page = this.getAttribute('data-page');
-                        if (!page) return;
+            // مخفی کردن Loading
+            function hideLoading() {
+                tableContainer.removeClass('loading-overlay');
+                $('.loading-spinner').remove();
+            }
 
-                        // نمایش لودر
-                        loadingIndicator.style.display = 'block';
-                        clinicsContent.style.opacity = '0.7';
+            // رندر جدول
+            function renderTable(result) {
+                        tableBody.empty();
+                
+                        if (result.Items && result.Items.length > 0) {
+                            $.each(result.Items, function (index, clinic) {
+                        const statusBadge = clinic.IsActive 
+                            ? '<span class="status-badge status-active">فعال</span>' 
+                            : '<span class="status-badge status-inactive">غیرفعال</span>';
+                        
+                        const row = `<tr class="clinic-row" data-clinic-id="${clinic.ClinicId}">
+                            <td>
+                                <div class="fw-bold text-primary">${escapeHtml(clinic.Name)}</div>
+                                <small class="text-muted">${escapeHtml(clinic.Address || '')}</small>
+                            </td>
+                            <td>
+                                <span class="text-dark">${escapeHtml(clinic.PhoneNumber) || '-'}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark fs-6">${clinic.DepartmentCount}</span>
+                            </td>
+                            <td>${statusBadge}</td>
+                            <td>
+                                <div class="action-buttons">
+                                    <a href="/Admin/Clinic/Edit/${clinic.ClinicId}" 
+                                       class="btn btn-action btn-edit" 
+                                       title="ویرایش کلینیک" 
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="/Admin/Clinic/Details/${clinic.ClinicId}" 
+                                       class="btn btn-action btn-view" 
+                                       title="مشاهده جزئیات" 
+                                       data-bs-toggle="tooltip">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <button class="btn btn-action btn-delete" 
+                                            data-id="${clinic.ClinicId}" 
+                                            data-name="${escapeHtml(clinic.Name)}" 
+                                            title="حذف کلینیک" 
+                                            data-bs-toggle="tooltip">
+                                        <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                </div>
+                                    </td>
+                                </tr>`;
+                                tableBody.append(row);
+                            });
+                    
+                    // فعال‌سازی tooltips
+                    $('[data-bs-toggle="tooltip"]').tooltip();
+                    
+                        } else {
+                    showEmptyState();
+                }
+            }
 
-                        // ایجاد درخواست
-                        const url = '@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Index" })' +
-                            '?searchTerm=' + encodeURIComponent(searchTermInput.value) +
-                            '&page=' + page +
-                            '&pageSize=10' +
-                            '&_=' + new Date().getTime();
+            // نمایش وضعیت خالی
+            function showEmptyState() {
+                const emptyState = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-clinic-medical"></i>
+                                <h5>هیچ کلینیکی یافت نشد</h5>
+                                <p class="mb-3">در حال حاضر کلینیکی با معیارهای جستجوی شما وجود ندارد.</p>
+                                <a href="@Url.Action("Create")" class="btn btn-medical-success">
+                                    <i class="fas fa-plus me-1"></i> ایجاد کلینیک جدید
+                                </a>
+                            </div>
+                        </td>
+                    </tr>`;
+                tableBody.html(emptyState);
+            }
 
-                        const xhr = new XMLHttpRequest();
-                        xhr.open('GET', url, true);
+            // نمایش خطا
+            function showError() {
+                const errorState = `
+                    <tr>
+                        <td colspan="5">
+                            <div class="empty-state">
+                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                <h5>خطا در بارگذاری اطلاعات</h5>
+                                <p class="mb-3">متأسفانه امکان دریافت اطلاعات وجود ندارد. لطفاً دوباره تلاش کنید.</p>
+                                <button class="btn btn-medical" onclick="fetchClinics(${currentPage}, '${currentSearchTerm}')">
+                                    <i class="fas fa-redo me-1"></i> تلاش مجدد
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+                tableBody.html(errorState);
+            }
 
-                        xhr.onload = function() {
-                            if (xhr.status >= 200 && xhr.status < 400) {
-                                clinicsContent.innerHTML = xhr.responseText;
-                                clinicsContent.style.opacity = '1';
-                                setupPagination(); // ریسیت مجدد
-                            }
-                            loadingIndicator.style.display = 'none';
-                        };
+            // به‌روزرسانی آمار
+            function updateStats(result) {
+                const totalClinics = result.TotalItems || 0;
+                const activeClinics = result.Items ? result.Items.filter(c => c.IsActive).length : 0;
+                const totalDepartments = result.Items ? result.Items.reduce((sum, c) => sum + c.DepartmentCount, 0) : 0;
+                const avgDepartments = totalClinics > 0 ? Math.round(totalDepartments / totalClinics * 10) / 10 : 0;
 
-                        xhr.send();
-                    });
+                animateCounter('#total-clinics', totalClinics);
+                animateCounter('#active-clinics', activeClinics);
+                animateCounter('#total-departments', totalDepartments);
+                animateCounter('#avg-departments', avgDepartments);
+            }
+
+            // انیمیشن شمارنده
+            function animateCounter(selector, value) {
+                const element = $(selector);
+                const current = parseInt(element.text()) || 0;
+                
+                $({ count: current }).animate({ count: value }, {
+                    duration: 1000,
+                    step: function() {
+                        element.text(Math.floor(this.count));
+                    },
+                    complete: function() {
+                        element.text(value);
+                    }
                 });
             }
 
-            // ریسیت اولیه
-            setupPagination();
+            // رندر صفحه‌بندی
+            function renderPagination(totalPages, currentPageNum) {
+                paginationContainer.empty();
+                
+                if (totalPages <= 1) return;
 
-            // بهینه‌سازی برای دستگاه‌های پزشکی
-            if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-                document.body.style.transition = 'none';
+                let paginationHtml = '';
+                
+                // دکمه قبلی
+                if (currentPageNum > 1) {
+                    paginationHtml += `<button class="page-btn" data-page="${currentPageNum - 1}">
+                        <i class="fas fa-chevron-right me-1"></i> قبلی
+                    </button>`;
+                }
+
+                // شماره صفحات
+                for (let i = Math.max(1, currentPageNum - 2); i <= Math.min(totalPages, currentPageNum + 2); i++) {
+                    const activeClass = i === currentPageNum ? 'active' : '';
+                    paginationHtml += `<button class="page-btn ${activeClass}" data-page="${i}">${i}</button>`;
+                }
+
+                // دکمه بعدی
+                if (currentPageNum < totalPages) {
+                    paginationHtml += `<button class="page-btn" data-page="${currentPageNum + 1}">
+                        بعدی <i class="fas fa-chevron-left ms-1"></i>
+                    </button>`;
+                }
+
+                paginationContainer.html(paginationHtml);
             }
 
-            // کلیدهای میانبر پزشکی
-            document.addEventListener('keydown', function(e) {
-                // Alt + F برای فوکوس روی جستجو
-                if (e.altKey && e.key === 'f') {
-                    e.preventDefault();
-                    searchTermInput.focus();
-                }
-
-                // Alt + N برای افزودن کلینیک جدید
-                if (e.altKey && e.key === 'n') {
-                    e.preventDefault();
-                    window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Clinic", action = "Create" })';
-                }
+            // Event Handlers
+            
+            // جستجو
+            searchForm.on('submit', function(e) {
+                e.preventDefault();
+                fetchClinics(1, searchTermInput.val().trim());
             });
 
-            // بهینه‌سازی برای دستگاه‌های لمسی پزشکی
-            if ('ontouchstart' in window) {
-                const clinicCards = document.querySelectorAll('.clinic-card');
-                clinicCards.forEach(card => {
-                    card.style.touchAction = 'manipulation';
+            // جستجوی زنده
+            let searchTimeout;
+            searchTermInput.on('input', function() {
+                clearTimeout(searchTimeout);
+                searchTimeout = setTimeout(() => {
+                    const term = $(this).val().trim();
+                    if (term.length >= 2 || term.length === 0) {
+                        fetchClinics(1, term);
+                    }
+                }, 500);
+            });
+
+            // صفحه‌بندی
+            paginationContainer.on('click', '.page-btn', function() {
+                const page = $(this).data('page');
+                fetchClinics(page, currentSearchTerm);
+            });
+
+            // حذف کلینیک
+            tableBody.on('click', '.btn-delete', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                clinicNameToDelete.text(name);
+                const deleteUrl = `@Url.Action("Delete", "Clinic")/${id}`;
+                deleteForm.attr('action', deleteUrl);
+                deleteModal.show();
+            });
+
+            // تابع کمکی برای XSS Protection
+            function escapeHtml(string) {
+                if (!string) return '';
+                return String(string).replace(/[&<>"']/g, function (s) {
+                    return {
+                        '&': '&amp;',
+                        '<': '&lt;',
+                        '>': '&gt;',
+                        '"': '&quot;',
+                        "'": '&#39;'
+                    }[s];
                 });
             }
+
+            // بارگذاری اولیه
+            fetchClinics();
+
+            // تنظیم focus روی جستجو
+            searchTermInput.focus();
         });
-    })();
-</script>
+    </script>
+}

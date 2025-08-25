@@ -154,48 +154,24 @@ public static class IranianNationalCodeValidator
     /// - برای جلوگیری از ورود اطلاعات نادرست
     /// - برای افزایش دقت اعتبارسنجی
     /// </summary>
+    // این را به بالای کلاس اضافه کنید
+    private static readonly HashSet<string> _invalidPrefixes = new HashSet<string>
+    {
+        "420", "999", "000", "111", "222", "333", "555", "666", "777", "888"
+    };
+
+    // متد را به این صورت بازنویسی کنید
     private static bool IsSpecialInvalidPattern(string nationalCode)
     {
-        // بررسی کدهای ملی که با 420 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("420"))
-            return true;
-
-        // بررسی کدهای ملی که با 999 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("999"))
-            return true;
-
-        // بررسی کدهای ملی که با 000 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("000"))
-            return true;
-
-        // بررسی کدهای ملی که با 111 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("111"))
-            return true;
-
-        // بررسی کدهای ملی که با 222 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("222"))
-            return true;
-
-        // بررسی کدهای ملی که با 333 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("333"))
-            return true;
-
-        // بررسی کدهای ملی که با 555 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("555"))
-            return true;
-
-        // بررسی کدهای ملی که با 666 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("666"))
-            return true;
-
-        // بررسی کدهای ملی که با 777 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("777"))
-            return true;
-
-        // بررسی کدهای ملی که با 888 شروع می‌شوند (الگوی خاص نامعتبر)
-        if (nationalCode.StartsWith("888"))
-            return true;
-
+        // بررسی پیشوندهای نامعتبر
+        if (nationalCode.Length >= 3)
+        {
+            string prefix = nationalCode.Substring(0, 3);
+            if (_invalidPrefixes.Contains(prefix))
+            {
+                return true;
+            }
+        }
         return false;
     }
 

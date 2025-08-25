@@ -74,6 +74,7 @@ namespace ClinicApp.Helpers
         public bool EnableInsuranceValidation { get; set; }
         public int MaxPatientAge { get; set; }
         public int MinPatientAge { get; set; }
+        public int MaxRegisterAttempts { get; set; }
 
         #endregion
 

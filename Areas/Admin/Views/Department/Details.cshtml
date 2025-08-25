@@ -1,290 +1,81 @@
-﻿@using ClinicApp.ViewModels
-@model ClinicApp.ViewModels.DepartmentDetailsViewModel
+﻿@model ClinicApp.ViewModels.DepartmentDetailsViewModel
 @{
-    ViewBag.Title = "جزئیات دپارتمان";
+    ViewBag.Title = $"جزئیات دپارتمان: {Model.Name}";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
-<style type="text/css">
-    /* استایل‌های حیاتی برای اولین رندر - حداکثر 1KB */
-    .department-details {
-        max-width: 700px;
-        margin: 0 auto
-    }
-
-    .department-header {
-        background: #007bff;
-        color: white;
-        border-radius: 4px;
-        padding: 15px;
-        margin-bottom: 15px
-    }
-
-    .department-name {
-        font-size: 1.8rem;
-        margin: 0;
-        font-weight: 500
-    }
-
-    .clinic-badge {
-        background: rgba(255,255,255,0.3);
-        padding: 3px 10px;
-        border-radius: 3px;
-        font-size: 0.9rem;
-        margin-top: 5px;
-        display: inline-block
-    }
-
-    .stats-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 10px;
-        margin-bottom: 15px
-    }
-
-    .stat-card {
-        background: #fff;
-        border-radius: 4px;
-        padding: 10px;
-        border-left: 3px solid #007bff
-    }
-
-    .stat-value {
-        font-size: 1.6rem;
-        font-weight: 600;
-        color: #007bff;
-        margin: 5px 0
-    }
-
-    .stat-label {
-        font-size: 0.9rem;
-        color: #6c757d
-    }
-
-    .info-section {
-        background: #fff;
-        border-radius: 4px;
-        padding: 12px;
-        margin-bottom: 12px;
-        border: 1px solid #e9ecef
-    }
-
-    .section-title {
-        font-size: 1.1rem;
-        padding-bottom: 8px;
-        margin-bottom: 10px;
-        border-bottom: 1px solid #e9ecef;
-        font-weight: 500
-    }
-
-    .info-row {
-        padding: 8px 0;
-        border-bottom: 1px solid #f8f9fa
-    }
-
-    .info-label {
-        font-weight: 500;
-        color: #495057;
-        width: 140px;
-        display: inline-block
-    }
-
-    .status-badge {
-        padding: 3px 10px;
-        border-radius: 3px;
-        font-size: 0.85rem
-    }
-
-    .status-active {
-        background: #d4edda;
-        color: #155724
-    }
-
-    .status-inactive {
-        background: #f8d7da;
-        color: #721c24
-    }
-
-    .actions-bar {
-        display: flex;
-        justify-content: flex-end;
-        gap: 8px;
-        margin-top: 15px
-    }
-
-    /* بهینه‌سازی برای دستگاه‌های پزشکی */
-    @@media (max-width: 768px) {
-        .stats-grid {
-            grid-template-columns: 1fr
-        }
-
-        .actions-bar {
-            flex-direction: column
-        }
-
-        .btn {
-            width: 100%
-        }
-    }
-</style>
-
-<div class="department-details">
-    <div class="page-header mb-2">
-        <h1 class="page-title h5">جزئیات دپارتمان</h1>
-    </div>
-
-    <!-- هدر اصلی دپارتمان -->
-    <div class="department-header">
-        <h1 class="department-name">@Model.Name</h1>
-        <span class="clinic-badge">
-            <i class="fa fa-hospital"></i> @Model.ClinicName
-        </span>
-    </div>
-
-    <!-- آمار کلیدی -->
-    <div class="stats-grid">
-        <div class="stat-card">
-            <div class="stat-label">پزشکان</div>
-            <div class="stat-value">@Model.DoctorCount</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-label">خدمات</div>
-            <div class="stat-value">@Model.ServiceCount</div>
-        </div>
-
-        <div class="stat-card">
-            <div class="stat-label">وضعیت</div>
-            <div class="stat-value">
-                <span class="status-badge @(Model.IsActive ? "status-active" : "status-inactive")">
-                    @(Model.IsActive ? "فعال" : "غیرفعال")
-                </span>
-            </div>
-        </div>
-    </div>
-
-    <!-- اطلاعات اصلی -->
-    <div class="info-section">
-        <h2 class="section-title">اطلاعات اصلی</h2>
-
-        <div class="info-row">
-            <div class="info-label">نام دپارتمان:</div>
-            <div class="info-value">@Model.Name</div>
-        </div>
-
-        <div class="info-row">
-            <div class="info-label">کلینیک:</div>
-            <div class="info-value">@Model.ClinicName</div>
-        </div>
-
-        <div class="info-row">
-            <div class="info-label">پزشکان:</div>
-            <div class="info-value">@Model.DoctorCount پزشک فعال</div>
-        </div>
-    </div>
-
-    <!-- اطلاعات فنی -->
-    <div class="info-section">
-        <h2 class="section-title">اطلاعات فنی</h2>
-
-        <div class="info-row">
-            <div class="info-label">ایجاد شده:</div>
-            <div class="info-value">
-                @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm") توسط @Model.CreatedBy
-            </div>
-        </div>
-
-        @if (Model.UpdatedAt.HasValue)
-        {
-            <div class="info-row">
-                <div class="info-label">آخرین ویرایش:</div>
-                <div class="info-value">
-                    @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm") توسط @Model.UpdatedBy
-                </div>
-            </div>
-        }
-
-        @if (Model.DeletedAt.HasValue)
-        {
-            <div class="info-row">
-                <div class="info-label">حذف شده:</div>
-                <div class="info-value">
-                    @Model.DeletedAt.Value.ToString("yyyy/MM/dd HH:mm") توسط @Model.DeletedBy
-                </div>
-            </div>
-        }
-    </div>
-
-    <!-- نوار اقدامات -->
-    <div class="actions-bar">
-        <a href="javascript:window.print()" class="btn btn-sm btn-outline-secondary" accesskey="p">
-            <i class="fa fa-print me-1"></i> چاپ
-        </a>
-        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Index" })"
-           class="btn btn-sm btn-outline-secondary" accesskey="b">
-            <i class="fa fa-arrow-left me-1"></i> لیست
-        </a>
-        @if (!Model.DeletedAt.HasValue)
-        {
-            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Edit", id = Model.DepartmentId })"
-               class="btn btn-sm btn-primary" accesskey="e">
-                <i class="fa fa-edit me-1"></i> ویرایش
+<div class="card shadow-sm">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+            <i class="fas fa-info-circle me-2 text-info"></i>
+            جزئیات دپارتمان: <strong>@Model.Name</strong>
+            <span class="text-muted fs-6">(@Model.ClinicName)</span>
+        </h4>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.DepartmentId })" class="btn btn-warning">
+                <i class="fas fa-edit me-1"></i> ویرایش
             </a>
-            <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Delete", id = Model.DepartmentId })"
-               class="btn btn-sm btn-danger" accesskey="d">
-                <i class="fa fa-trash me-1"></i> حذف
+            <a href="@Url.Action("Index", new { clinicId = Model.ClinicId })" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i> بازگشت به لیست
             </a>
-        }
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5><i class="fas fa-sitemap me-2"></i>اطلاعات اصلی</h5>
+                <hr />
+                <dl class="row">
+                    <dt class="col-sm-4">نام دپارتمان</dt>
+                    <dd class="col-sm-8">@Model.Name</dd>
+
+                    <dt class="col-sm-4">کلینیک مربوطه</dt>
+                    <dd class="col-sm-8">@Model.ClinicName</dd>
+
+                    <dt class="col-sm-4">وضعیت</dt>
+                    <dd class="col-sm-8">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge bg-success">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger">غیرفعال</span>
+                        }
+                    </dd>
+                </dl>
+            </div>
+            <div class="col-md-6 border-start">
+                <h5><i class="fas fa-chart-bar me-2"></i>آمار</h5>
+                <hr />
+                <dl class="row">
+                    <dt class="col-sm-4">تعداد پزشکان فعال</dt>
+                    <dd class="col-sm-8">@Model.DoctorCount نفر</dd>
+                    
+                    <dt class="col-sm-4">تعداد دسته‌بندی خدمات</dt>
+                    <dd class="col-sm-8">@Model.ServiceCategoryCount مورد</dd>
+                </dl>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-12">
+                <h5><i class="fas fa-history me-2"></i>تاریخچه و ردیابی</h5>
+                <hr />
+                <dl class="row">
+                    <dt class="col-sm-3">ایجاد شده توسط</dt>
+                    <dd class="col-sm-3">@(Model.CreatedByUser ?? "---")</dd>
+
+                    <dt class="col-sm-3">تاریخ ایجاد</dt>
+                    <dd class="col-sm-3">@Model.CreatedAtShamsi</dd>
+
+                    <dt class="col-sm-3">آخرین ویرایش توسط</dt>
+                    <dd class="col-sm-3">@(Model.UpdatedByUser ?? "---")</dd>
+
+                    <dt class="col-sm-3">تاریخ آخرین ویرایش</dt>
+                    <dd class="col-sm-3">@(Model.UpdatedAtShamsi ?? "ویرایش نشده است")</dd>
+                </dl>
+            </div>
+        </div>
     </div>
 </div>
-
-<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
-<script type="text/javascript">
-    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
-    (function () {
-        'use strict';
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // تنظیم کلیدهای میانبر پزشکی
-            document.addEventListener('keydown', function (e) {
-                // Alt + P برای چاپ
-                if (e.altKey && e.key === 'p') {
-                    e.preventDefault();
-                    window.print();
-                }
-
-                // Alt + B برای بازگشت
-                if (e.altKey && e.key === 'b') {
-                    e.preventDefault();
-                    const backLink = document.querySelector('a[accesskey="b"]');
-                    if (backLink) window.location.href = backLink.href;
-                }
-
-                // Alt + E برای ویرایش
-                if (e.altKey && e.key === 'e' && document.querySelector('a[accesskey="e"]')) {
-                    e.preventDefault();
-                    document.querySelector('a[accesskey="e"]').click();
-                }
-
-                // Alt + D برای حذف
-                if (e.altKey && e.key === 'd' && document.querySelector('a[accesskey="d"]')) {
-                    e.preventDefault();
-                    document.querySelector('a[accesskey="d"]').click();
-                }
-            });
-
-            // راهنمای سریع برای کاربران جدید
-            if (!sessionStorage.getItem('departmentDetailsHelpShown')) {
-                setTimeout(() => {
-                    alert('راهنمای جزئیات دپارتمان:\n' +
-                        '- Alt+P: چاپ اطلاعات\n' +
-                        '- Alt+B: بازگشت به لیست\n' +
-                        '- Alt+E: ویرایش اطلاعات\n' +
-                        '- Alt+D: حذف دپارتمان');
-                    sessionStorage.setItem('departmentDetailsHelpShown', 'true');
-                }, 1000);
-            }
-        });
-    })();
-</script>

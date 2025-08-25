@@ -1,461 +1,571 @@
 ﻿@model ClinicApp.ViewModels.DepartmentIndexPageViewModel
 @{
-    ViewBag.Title = "مدیریت دپارتمان‌ها - بخش ادمین";
+    ViewBag.Title = "مدیریت دپارتمان‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var selectedClinicId = Model.SelectedClinicId ?? 0;
 }
 
-<!-- استایل‌های حیاتی برای عملکرد بالا (Inline برای کاهش درخواست‌ها) -->
-<style type="text/css">
-    /* استایل‌های حیاتی برای اولین رندر - حداکثر 1KB */
-    .departments-container {
-        max-width: 100%;
-        margin: 0;
-        padding: 0
-    }
-
-    .filters-bar {
-        background: #f8f9fa;
-        padding: 12px;
-        border-radius: 4px;
-        margin-bottom: 15px
-    }
-
-    .department-card {
-        border: 1px solid #e9ecef;
-        border-radius: 4px;
-        margin-bottom: 10px;
-        transition: all 0.15s ease;
-        background: #fff;
-        position: relative;
-        overflow: hidden
-    }
-
-        .department-card:hover {
-            box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-            transform: translateY(-2px);
-            border-color: #b8daff
-        }
-
-    .department-header {
-        padding: 10px 15px;
-        background: #f1f8ff;
-        border-bottom: 1px solid #d6e9f8;
-        font-weight: 500
-    }
-
-    .department-content {
-        padding: 12px 15px
-    }
-
-    .department-clinic {
-        background: #e9f7fe;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.85em;
-        display: inline-block;
-        margin-top: 4px
-    }
-
-    .department-stats {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 8px;
-        padding-top: 8px;
-        border-top: 1px solid #f1f1f1;
-        font-size: 0.85rem;
-        color: #6c757d
-    }
-
-    .department-stats-value {
-        font-weight: 600;
-        color: #007bff;
-        font-size: 1rem
-    }
-
-    .department-actions {
-        padding: 8px 15px;
-        background: #f8f9fa;
-        border-top: 1px solid #e9ecef;
-        text-align: left
-    }
-
-    .pagination-container {
-        margin-top: 20px;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 0.9rem
-    }
-
-    .clinic-filter {
-        margin-bottom: 8px
-    }
-
-    .status-badge {
-        display: inline-block;
-        padding: 2px 6px;
-        border-radius: 3px;
-        font-size: 0.8em;
-        font-weight: 500
-    }
-
-    .status-active {
-        background: #d4edda;
-        color: #155724
-    }
-
-    .status-inactive {
-        background: #f8d7da;
-        color: #721c24
-    }
-
-    .loading-spinner {
-        width: 24px;
-        height: 24px;
-        border: 3px solid #e9ecef;
-        border-top: 3px solid #007bff;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        display: inline-block;
-        margin-right: 8px
-    }
-
-    @@keyframes spin {
-        0% {
-            transform: rotate(0deg)
-        }
-
-        100% {
-            transform: rotate(360deg)
-        }
-    }
-
-    /* بهینه‌سازی برای دستگاه‌های پزشکی */
-    @@media (max-width: 768px) {
-        .department-stats {
-            flex-direction: column
-        }
-
-        .department-actions {
-            text-align: center
-        }
-
-        .action-btn {
-            width: 100%;
-            margin: 4px 0
-        }
-    }
-
-    /* بهینه‌سازی برای عملکرد بالا */
-    .department-card, .department-content {
-        will-change: transform, box-shadow
-    }
-
-        .department-card:hover {
-            will-change: auto
-        }
-</style>
-
-<div class="departments-container">
-    <div class="page-header">
-        <h1 class="page-title">مدیریت دپارتمان‌ها</h1>
-        <p class="page-description">لیست دپارتمان‌های فعال در سیستم کلینیک شفا</p>
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h4 class="mb-0">
+            <i class="fas fa-sitemap me-2"></i>@ViewBag.Title
+        </h4>
+        <a id="add-department-btn"
+           href="@Url.Action("Create", new { clinicId = selectedClinicId })"
+           class="btn btn-success @(selectedClinicId == 0 ? "disabled" : "")">
+            <i class="fas fa-plus me-1"></i> افزودن دپارتمان جدید
+        </a>
     </div>
-
-    <div class="filters-bar">
-        <div class="row g-2">
-            <div class="col-md-3 clinic-filter">
-                <select id="clinicFilter" class="form-control form-control-sm">
-                    <option value="">همه کلینیک‌ها</option>
-                    @foreach (var clinic in Model.Clinics)
-                    {
-                        <option value="@clinic.ClinicId" @(Model.ClinicId == clinic.ClinicId ? "selected" : "")>@clinic.Name</option>
-                    }
-                </select>
+    <div class="card-body">
+        <div class="row mb-3 align-items-end">
+            <div class="col-md-5">
+                <label for="clinic-selector" class="form-label">ابتدا کلینیک را انتخاب کنید:</label>
+                @Html.DropDownListFor(m => m.SelectedClinicId, Model.Clinics, "--- انتخاب کلینیک ---", new { @class = "form-select", id = "clinic-selector" })
             </div>
-            <div class="col-md-6">
-                <div class="input-group input-group-sm">
-                    <input type="text" id="searchTerm" class="form-control form-control-sm"
-                           placeholder="جستجو در نام یا نام کلینیک..."
-                           value="@Model.SearchTerm"
-                           aria-label="جستجوی دپارتمان‌ها">
-                    <button class="btn btn-sm btn-primary" id="searchButton" type="button">
-                        <i class="fa fa-search"></i>
-                    </button>
-                </div>
-            </div>
-            <div class="col-md-3 text-end">
-                <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Create" })"
-                   class="btn btn-sm btn-success" id="createDepartmentBtn">
-                    <i class="fa fa-plus"></i> افزودن
-                </a>
+            <div class="col-md-7">
+                <form id="search-form" class="@(selectedClinicId == 0 ? "d-none" : "")">
+                    <div class="input-group">
+                        @Html.TextBoxFor(m => m.SearchTerm, new { @class = "form-control", @id = "search-term", @type = "search", @placeholder = "جستجو در نام دپارتمان..." })
+                        <button class="btn btn-outline-primary" type="submit"><i class="fas fa-search"></i></button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
 
-    <!-- نمایش پیام‌های وضعیت -->
-    <div id="statusMessages">
-        @if (TempData["SuccessMessage"] != null)
-        {
-            <div class="alert alert-success alert-dismissible fade show small" role="alert">
-                @TempData["SuccessMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
-            </div>
-        }
-
-        @if (TempData["ErrorMessage"] != null)
-        {
-            <div class="alert alert-danger alert-dismissible fade show small" role="alert">
-                @TempData["ErrorMessage"]
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="بستن"></button>
-            </div>
-        }
-    </div>
-
-    <!-- لودر پیشرفته برای عملکرد بهتر -->
-    <div id="loadingIndicator" class="text-center p-3" style="display: none;">
-        <span class="loading-spinner"></span> در حال بارگذاری اطلاعات...
-    </div>
-
-    <!-- محتوای اصلی -->
-    <div id="departmentsContent">
-        @if (Model.Departments?.Items?.Any() == true)
-        {
-            foreach (var department in Model.Departments.Items)
-            {
-                <div class="department-card" data-department-id="@department.DepartmentId">
-                    <div class="department-header">
-                        @department.Name
-                    </div>
-                    <div class="department-content">
-                        <div class="department-clinic">
-                            <i class="fa fa-hospital"></i> @department.ClinicName
-                        </div>
-                        <div class="department-stats">
-                            <div class="department-stats-item">
-                                <span>پزشکان</span>
-                                <span class="department-stats-value">@department.DoctorCount</span>
-                            </div>
-                            <div class="department-stats-item">
-                                <span>خدمات</span>
-                                <span class="department-stats-value">@department.ServiceCount</span>
-                            </div>
-                            <div class="department-stats-item">
-                                <span>وضعیت</span>
-                                <span class="status-badge @(department.IsActive ? "status-active" : "status-inactive")">
-                                    @(department.IsActive ? "فعال" : "غیرفعال")
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="department-actions">
-                        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Details", id = department.DepartmentId })"
-                           class="btn btn-sm btn-outline-primary action-btn">
-                            <i class="fa fa-info-circle"></i> جزئیات
-                        </a>
-                        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Edit", id = department.DepartmentId })"
-                           class="btn btn-sm btn-outline-warning action-btn">
-                            <i class="fa fa-edit"></i> ویرایش
-                        </a>
-                        <a href="@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Delete", id = department.DepartmentId })"
-                           class="btn btn-sm btn-outline-danger action-btn">
-                            <i class="fa fa-trash"></i> حذف
-                        </a>
-                    </div>
-                </div>
-            }
-
-            <!-- صفحه‌بندی -->
-           if (Model.Departments.TotalItems > Model.PageSize)
-            {
-                <div class="pagination-container">
-                    <div class="pagination-info">
-                        نمایش @(Model.PageNumber * Model.PageSize - Model.PageSize + 1) تا
-                        @(Math.Min(Model.PageNumber * Model.PageSize, Model.Departments.TotalItems)) از
-                        @Model.Departments.TotalItems مورد
-                    </div>
-                    <ul class="pagination pagination-sm">
-                        @for (int i = 1; i <= Math.Ceiling((double)Model.Departments.TotalItems / Model.PageSize); i++)
+        <div class="table-responsive">
+            <table class="table table-striped table-hover">
+                <thead class="table-light">
+                    <tr>
+                        <th>نام دپارتمان</th>
+                        <th>تعداد پزشکان</th>
+                        <th>تعداد دسته‌بندی خدمات</th>
+                        <th>وضعیت</th>
+                        <th style="width: 150px;">عملیات</th>
+                    </tr>
+                </thead>
+                <tbody id="departments-table-body">
+                    @if (Model.Departments != null && Model.Departments.Items.Any())
+                    {
+                        foreach (var dept in Model.Departments.Items)
                         {
-                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
-                                <a class="page-link" href="#" data-page="@i">@i</a>
-                            </li>
+                            <tr>
+                                <td>@dept.Name</td>
+                                <td>@dept.DoctorCount</td>
+                                <td>@dept.ServiceCategoryCount</td>
+                                <td>
+                                    @if (dept.IsActive)
+                                    {
+                                        <span class="badge bg-success">فعال</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">غیرفعال</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Categories", "Service", new { departmentId = dept.DepartmentId })" class="btn btn-sm btn-outline-primary" title="مدیریت خدمات"><i class="fas fa-medical-kit"></i></a>
+                                        <a href="@Url.Action("Edit", new { id = dept.DepartmentId })" class="btn btn-sm btn-outline-warning" title="ویرایش"><i class="fas fa-edit"></i></a>
+                                        <a href="@Url.Action("Details", new { id = dept.DepartmentId })" class="btn btn-sm btn-outline-info" title="جزئیات"><i class="fas fa-info-circle"></i></a>
+                                        <button class="btn btn-sm btn-outline-danger btn-delete" data-id="@dept.DepartmentId" data-name="@dept.Name" title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
                         }
-                    </ul>
-                </div>
-            }
-        }
-        else
-        {
-            <div class="alert alert-info">
-                <i class="fa fa-info-circle"></i> هیچ دپارتمانی یافت نشد.
-            </div>
-        }
+                    }
+                    else if (Model.SelectedClinicId.HasValue)
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center">هیچ دپارتمانی برای این کلینیک یافت نشد.</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center text-muted">لطفاً ابتدا یک کلینیک برای مشاهده دپارتمان‌هایش انتخاب کنید.</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <nav>
+            <ul id="pagination-container" class="pagination justify-content-center mt-3">
+                @if (Model.Departments != null && Model.Departments.TotalPages > 1)
+                {
+                    <!-- Previous Page -->
+                    if (Model.Departments.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="@(Model.Departments.PageNumber - 1)">قبلی</a>
+                        </li>
+                    }
+
+                    <!-- Page Numbers -->
+                    for (int i = Math.Max(1, Model.Departments.PageNumber - 2); i <= Math.Min(Model.Departments.TotalPages, Model.Departments.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.Departments.PageNumber ? "active" : "")">
+                            <a class="page-link" href="#" data-page="@i">@i</a>
+                        </li>
+                    }
+
+                    <!-- Next Page -->
+                    if (Model.Departments.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" data-page="@(Model.Departments.PageNumber + 1)">بعدی</a>
+                        </li>
+                    }
+                }
+            </ul>
+        </nav>
     </div>
 </div>
 
-<!-- اسکریپت‌های حیاتی برای عملکرد بالا -->
-<script type="text/javascript">
-    // این اسکریپت‌ها به صورت inline برای کاهش تعداد درخواست‌ها اضافه شده‌اند
-    (function() {
-        'use strict';
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning me-2"></i>تأیید حذف
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="mb-3">آیا مطمئن هستید که می‌خواهید دپارتمان زیر را حذف کنید؟</p>
+                <div class="alert alert-warning">
+                    <strong id="department-name-to-delete"></strong>
+                </div>
+                <p class="text-muted small">
+                    <i class="fas fa-info-circle me-1"></i>
+                    این عمل قابل بازگشت نیست و تمام داده‌های مرتبط با این دپارتمان نیز متأثر خواهد شد.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>انصراف
+                </button>
+                <form id="delete-form" method="post" style="display: inline;">
+                    @Html.AntiForgeryToken()
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-1"></i>حذف دپارتمان
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            const searchTermInput = document.getElementById('searchTerm');
-            const searchButton = document.getElementById('searchButton');
-            const clinicFilter = document.getElementById('clinicFilter');
-            const departmentsContent = document.getElementById('departmentsContent');
-            const loadingIndicator = document.getElementById('loadingIndicator');
-            const statusMessages = document.getElementById('statusMessages');
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // --- Disable jQuery caching globally for this page ---
+            $.ajaxSetup({ cache: false });
+            
+            // --- UI ELEMENT REFERENCES ---
+            const ui = {
+                tableBody: $('#departments-table-body'),
+                paginationContainer: $('#pagination-container'),
+                clinicSelector: $('#clinic-selector'),
+                searchForm: $('#search-form'),
+                searchTermInput: $('#search-term'),
+                addDepartmentBtn: $('#add-department-btn'),
+                deleteModal: new bootstrap.Modal(document.getElementById('deleteConfirmModal')),
+                deleteForm: $('#delete-form'),
+                itemNameToDelete: $('#department-name-to-delete')
+            };
 
-            // تنظیمات اولیه
-            const SEARCH_DEBOUNCE = 300; // 300ms
-            let searchTimeout;
-            let currentPage = @Model.PageNumber;
-            let currentPageSize = @Model.PageSize;
-            let currentSearchTerm = '@(Model.SearchTerm ?? "")';
-            let currentClinicId = @(Model.ClinicId.HasValue ? Model.ClinicId.ToString() : "null");
+            // --- STATE MANAGEMENT ---
+            let state = {
+                clinicId: parseInt(@(Model.SelectedClinicId ?? 0)) || 0, // Force to number
+                page: @(Model.Departments?.PageNumber ?? 1),
+                term: "@(Model.SearchTerm ?? "")"
+            };
+            
+            console.log('Initial state:', state); // Debug log
 
-            // تابع اصلی جستجو
-            function performSearch(page = 1) {
-                const searchTerm = searchTermInput ? searchTermInput.value.trim() : '';
-                const clinicId = clinicFilter ? clinicFilter.value : '';
+            // --- CORE LOGIC ---
 
-                // به‌روزرسانی وضعیت
-                currentSearchTerm = searchTerm;
-                currentClinicId = clinicId;
-                currentPage = page;
-
-                // نمایش لودر
-                if (loadingIndicator) {
-                    loadingIndicator.style.display = 'block';
+            function fetchDepartments() {
+                console.log('🔬 === SCIENTIFIC DEBUGGING START ===');
+                console.log('📊 STEP 1: Function Called');
+                console.log('State:', state);
+                console.log('ClinicId:', state.clinicId, '(type:', typeof state.clinicId, ')');
+                
+                // STEP 1: Validate State
+                if (!state.clinicId || state.clinicId <= 0) {
+                    console.log('❌ STEP 1 FAILED: No clinic selected');
+                    ui.tableBody.html('<tr><td colspan="5" class="text-center text-muted">لطفاً ابتدا یک کلینیک برای مشاهده دپارتمان‌هایش انتخاب کنید.</td></tr>');
+                    ui.paginationContainer.empty();
+                    return;
                 }
+                console.log('✅ STEP 1 PASSED: Valid clinic ID');
 
-                // پاک کردن تایمر قبلی
-                clearTimeout(searchTimeout);
+                // STEP 2: Show Loading
+                console.log('📊 STEP 2: Setting loading state');
+                const loadingRow = '<tr><td colspan="5" class="text-center"><div class="spinner-border text-primary" role="status"><span class="visually-hidden">در حال بارگذاری...</span></div></td></tr>';
+                ui.tableBody.html(loadingRow);
+                console.log('✅ STEP 2 PASSED: Loading displayed');
 
-                // ایجاد درخواست با تأخیر
-                searchTimeout = setTimeout(function() {
-                    // ایجاد URL برای درخواست
-                    let url = '@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Index" })';
-                    const params = [];
+                // STEP 3: Prepare AJAX
+                const ajaxUrl = '@Url.Action("Index")';
+                const ajaxData = { 
+                    clinicId: state.clinicId, 
+                    searchTerm: state.term, 
+                    pageNumber: state.page,
+                    _t: new Date().getTime()
+                };
+                
+                console.log('📊 STEP 3: AJAX Preparation');
+                console.log('URL:', ajaxUrl);
+                console.log('Data:', ajaxData);
+                console.log('✅ STEP 3 PASSED: AJAX configured');
 
-                    if (clinicId) params.push(`clinicId=${encodeURIComponent(clinicId)}`);
-                    if (searchTerm) params.push(`searchTerm=${encodeURIComponent(searchTerm)}`);
-                    params.push(`page=${page}`);
-                    params.push(`pageSize=${currentPageSize}`);
-                    params.push(`_=${Date.now()}`);
-
-                    url += '?' + params.join('&');
-
-                    // ایجاد درخواست
-                    fetch(url, {
-                        headers: {
-                            'X-Requested-With': 'XMLHttpRequest',
-                            'Accept': 'text/html'
+                // STEP 4: Execute AJAX
+                console.log('📊 STEP 4: Starting AJAX request');
+                
+                $.ajax({
+                    url: ajaxUrl,
+                    type: 'GET',
+                    data: ajaxData,
+                    cache: false,
+                    dataType: 'json', // Force JSON parsing
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'Accept': 'application/json'
+                    },
+                    beforeSend: function(xhr, settings) {
+                        console.log('📊 STEP 4.1: AJAX beforeSend');
+                        console.log('XHR object:', xhr);
+                        console.log('Settings:', settings);
+                        console.log('Final URL:', settings.url);
+                    },
+                    success: function (result, textStatus, xhr) {
+                        console.log('✅ STEP 4.2: AJAX Success Handler Called');
+                        console.log('📊 STEP 5: Analyzing Response');
+                        console.log('HTTP Status:', xhr.status);
+                        console.log('Response Text Status:', textStatus);
+                        console.log('Raw Response:', result);
+                        console.log('Response Type:', typeof result);
+                        
+                        // CRITICAL FIX: Parse JSON if it's a string
+                        let parsedResult;
+                        try {
+                            if (typeof result === 'string') {
+                                console.log('📊 STEP 5.1: Parsing JSON string');
+                                parsedResult = JSON.parse(result);
+                                console.log('✅ STEP 5.1 PASSED: JSON parsed successfully');
+                            } else {
+                                console.log('📊 STEP 5.1: Already an object');
+                                parsedResult = result;
+                            }
+                            console.log('Parsed Response Object:', parsedResult);
+                            console.log('Parsed Response Type:', typeof parsedResult);
+                            console.log('Is Object:', typeof parsedResult === 'object');
+                            console.log('Has Items Property:', parsedResult && 'Items' in parsedResult);
+                        } catch (parseError) {
+                            console.error('❌ STEP 5.1 FAILED: JSON Parse Error:', parseError);
+                            ui.tableBody.html('<tr><td colspan="5" class="text-center text-danger">خطا در تجزیه داده‌ها</td></tr>');
+                            return;
                         }
-                    })
-                    .then(response => {
-                        if (!response.ok) throw new Error('Network response was not ok');
-                        return response.text();
-                    })
-                    .then(html => {
-                        // جایگزینی محتوا
-                        const parser = new DOMParser();
-                        const doc = parser.parseFromString(html, 'text/html');
-                        const newContent = doc.getElementById('departmentsContent');
-
-                        if (newContent) {
-                            departmentsContent.innerHTML = newContent.innerHTML;
-                            setupPagination();
-                            setupStatusMessages();
+                        // STEP 6: Clear Table
+                        console.log('📊 STEP 6: Clearing table');
+                        ui.tableBody.empty();
+                        console.log('✅ STEP 6 PASSED: Table cleared');
+                        
+                        // STEP 7: Process Response
+                        console.log('📊 STEP 7: Processing parsed response');
+                        try {
+                            console.log('📊 STEP 7.1: Checking parsed result structure');
+                            
+                            if (parsedResult && typeof parsedResult === 'object') {
+                                console.log('✅ STEP 7.1 PASSED: Valid parsed result object');
+                                
+                                console.log('📊 STEP 7.2: Checking Items property');
+                                if ('Items' in parsedResult) {
+                                    console.log('✅ STEP 7.2 PASSED: Items property exists');
+                                    console.log('Items content:', parsedResult.Items);
+                                    console.log('Items length:', parsedResult.Items?.length);
+                                    
+                                    console.log('📊 STEP 8: Rendering items');
+                                    for (let i = 0; i < parsedResult.Items.length; i++) {
+                                        const dept = parsedResult.Items[i];
+                                        console.log(`📊 STEP 8.${i+1}: Rendering department:`, dept.Name);
+                                        
+                                        const row = `<tr>
+                                            <td>${dept.Name || 'نامشخص'}</td>
+                                            <td>${dept.DoctorCount || 0}</td>
+                                            <td>${dept.ServiceCategoryCount || 0}</td>
+                                            <td>${dept.IsActive ? '<span class="badge bg-success">فعال</span>' : '<span class="badge bg-secondary">غیرفعال</span>'}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="/Admin/Service/Categories?departmentId=${dept.DepartmentId}" class="btn btn-sm btn-outline-primary" title="مدیریت خدمات"><i class="fas fa-medical-kit"></i></a>
+                                                    <a href="/Admin/Department/Edit/${dept.DepartmentId}" class="btn btn-sm btn-outline-warning" title="ویرایش"><i class="fas fa-edit"></i></a>
+                                                    <a href="/Admin/Department/Details/${dept.DepartmentId}" class="btn btn-sm btn-outline-info" title="جزئیات"><i class="fas fa-info-circle"></i></a>
+                                                    <button class="btn btn-sm btn-outline-danger btn-delete" data-id="${dept.DepartmentId}" data-name="${dept.Name}" title="حذف">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>`;
+                                        ui.tableBody.append(row);
+                                        console.log(`✅ STEP 8.${i+1} PASSED: Department rendered`);
+                                    }
+                                    
+                                    console.log('✅ STEP 8 COMPLETED: All departments rendered');
+                                    console.log('Final table HTML length:', ui.tableBody.html().length);
+                                    
+                                    // Handle empty results
+                                    if (parsedResult.Items.length === 0) {
+                                        console.log('📊 STEP 9: No items - showing empty message');
+                                        ui.tableBody.html('<tr><td colspan="5" class="text-center">هیچ دپارتمانی برای این کلینیک یافت نشد.</td></tr>');
+                                    }
+                                } else {
+                                    console.log('❌ STEP 7.2 FAILED: No Items property');
+                                    ui.tableBody.html('<tr><td colspan="5" class="text-center text-warning">خطا در ساختار داده‌ها</td></tr>');
+                                }
+                            } else {
+                                console.log('❌ STEP 7.1 FAILED: Invalid parsed result object');
+                                console.log('Parsed Result:', parsedResult);
+                                ui.tableBody.html('<tr><td colspan="5" class="text-center text-warning">خطا در دریافت داده‌ها</td></tr>');
+                            }
+                            
+                            // Handle pagination
+                            console.log('📊 STEP 10: Setting pagination');
+                            renderPagination(parsedResult?.TotalPages || 1, parsedResult?.PageNumber || 1);
+                            console.log('✅ STEP 10 PASSED: Pagination set');
+                            
+                        } catch (error) {
+                            console.error('🚨 STEP 7+ ERROR:', error);
+                            console.error('Error details:', error.message);
+                            console.error('Error stack:', error.stack);
+                            ui.tableBody.html('<tr><td colspan="5" class="text-center text-danger">خطای سیستم - لطفاً با مدیر تماس بگیرید</td></tr>');
                         }
-                    })
-                    .catch(error => {
-                        console.error('Search error:', error);
-                        if (departmentsContent) {
-                            departmentsContent.innerHTML =
-                                '<div class="alert alert-danger small">خطا در بارگذاری اطلاعات. لطفاً مجدداً تلاش کنید.</div>';
+                        
+                        console.log('🔬 === SCIENTIFIC DEBUGGING SUCCESS END ===');
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ STEP 4.3: AJAX Error Handler Called');
+                        console.error('🚨 AJAX FAILURE ANALYSIS:');
+                        console.error('XHR Object:', xhr);
+                        console.error('XHR Status:', xhr.status);
+                        console.error('XHR Status Text:', xhr.statusText);
+                        console.error('XHR Response Text:', xhr.responseText);
+                        console.error('Error Status:', status);
+                        console.error('Error Message:', error);
+                        console.error('Ready State:', xhr.readyState);
+                        
+                        // Analyze specific error types
+                        if (xhr.status === 0) {
+                            console.error('🚨 DIAGNOSIS: Network/CORS issue');
+                        } else if (xhr.status === 404) {
+                            console.error('🚨 DIAGNOSIS: URL not found');
+                        } else if (xhr.status === 500) {
+                            console.error('🚨 DIAGNOSIS: Server error');
+                        } else if (xhr.status === 403) {
+                            console.error('🚨 DIAGNOSIS: Forbidden/Authentication');
+                        } else {
+                            console.error('🚨 DIAGNOSIS: Unknown error');
                         }
-                    })
-                    .finally(() => {
-                        if (loadingIndicator) {
-                            loadingIndicator.style.display = 'none';
-                        }
-                    });
-                }, SEARCH_DEBOUNCE);
-            }
-
-            // تنظیم صفحه‌بندی
-            function setupPagination() {
-                document.querySelectorAll('.pagination .page-link').forEach(link => {
-                    link.addEventListener('click', function(e) {
-                        e.preventDefault();
-                        const page = this.getAttribute('data-page');
-                        if (page) performSearch(parseInt(page));
-                    });
+                        
+                        ui.tableBody.html(`<tr><td colspan="5" class="text-center text-danger">
+                            خطای ${xhr.status || 'نامشخص'}: ${xhr.statusText || error || 'خطا در ارتباط با سرور'}
+                            <br><small>لطفاً با مدیر سیستم تماس بگیرید</small>
+                        </td></tr>`);
+                        
+                        console.error('🔬 === SCIENTIFIC DEBUGGING ERROR END ===');
+                    }
                 });
             }
 
-            // تنظیم پیام‌های وضعیت
-            function setupStatusMessages() {
-                document.querySelectorAll('.alert .btn-close').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        this.closest('.alert').remove();
-                    });
-                });
-            }
+            function renderPagination(totalPages, currentPage) {
+                ui.paginationContainer.empty();
+                if (totalPages <= 1) return;
 
-            // تنظیم رویدادها
-            if (searchButton) {
-                searchButton.addEventListener('click', () => performSearch());
-            }
+                // Add Previous button
+                ui.paginationContainer.append(`<li class="page-item ${currentPage === 1 ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage - 1}">قبلی</a></li>`);
 
-            if (searchTermInput) {
-                searchTermInput.addEventListener('keyup', function(e) {
-                    if (e.key === 'Enter') performSearch();
-                });
-            }
-
-            if (clinicFilter) {
-                clinicFilter.addEventListener('change', () => performSearch());
-            }
-
-            // کلیدهای میانبر پزشکی
-            document.addEventListener('keydown', function(e) {
-                // Alt + F برای فوکوس روی جستجو
-                if (e.altKey && e.key === 'f' && searchTermInput) {
-                    e.preventDefault();
-                    searchTermInput.focus();
+                for (let i = 1; i <= totalPages; i++) {
+                    const liClass = (i === currentPage) ? 'page-item active' : 'page-item';
+                    const link = $(`<li class="${liClass}"><a class="page-link" href="#" data-page="${i}">${i}</a></li>`);
+                    ui.paginationContainer.append(link);
                 }
 
-                // Alt + N برای افزودن دپارتمان جدید
-                if (e.altKey && e.key === 'n') {
-                    e.preventDefault();
-                    window.location.href = '@Url.RouteUrl("Admin_default", new { controller = "Department", action = "Create" })';
-                }
+                // Add Next button
+                ui.paginationContainer.append(`<li class="page-item ${currentPage === totalPages ? 'disabled' : ''}"><a class="page-link" href="#" data-page="${currentPage + 1}">بعدی</a></li>`);
+            }
 
-                // Alt + C برای فوکوس روی فیلتر کلینیک
-                if (e.altKey && e.key === 'c' && clinicFilter) {
-                    e.preventDefault();
-                    clinicFilter.focus();
+            // --- EVENT BINDING ---
+
+            ui.clinicSelector.on('change', function() {
+                const selectedId = $(this).val();
+                if (selectedId && selectedId > 0) {
+                    const newUrl = '@Url.Action("Index", "Department")' + '?clinicId=' + selectedId;
+                    history.pushState({clinicId: selectedId}, '', newUrl);
+
+                    state.clinicId = selectedId;
+                    state.page = 1;
+                    state.term = "";
+                    ui.searchTermInput.val("");
+                    ui.searchForm.removeClass('d-none');
+                    ui.addDepartmentBtn.removeClass('disabled').attr('href', '@Url.Action("Create")' + '?clinicId=' + selectedId);
+
+                    const clinicName = $(this).find('option:selected').text();
+                    $('.card-header h4').find('small').remove();
+                    $('.card-header h4').append(` <small class="text-muted fs-6">- ${escapeHtml(clinicName)}</small>`);
+
+                    fetchDepartments();
+                } else {
+                    // Reset if "Select a Clinic" is chosen
+                    state.clinicId = 0;
+                    ui.searchForm.addClass('d-none');
+                    ui.addDepartmentBtn.addClass('disabled');
+                    fetchDepartments();
                 }
             });
 
-            // راهنمای سریع برای کاربران جدید
-            if (!sessionStorage.getItem('departmentsListHelpShown')) {
-                setTimeout(() => {
-                    alert('راهنمای لیست دپارتمان‌ها:\n' +
-                          '- Alt+F: فوکوس روی فیلد جستجو\n' +
-                          '- Alt+N: افزودن دپارتمان جدید\n' +
-                          '- Alt+C: فوکوس روی فیلتر کلینیک');
-                    sessionStorage.setItem('departmentsListHelpShown', 'true');
-                }, 1500);
+            ui.searchForm.on('submit', function(e) {
+                e.preventDefault();
+                state.page = 1;
+                state.term = ui.searchTermInput.val();
+                fetchDepartments();
+            });
+
+            ui.paginationContainer.on('click', 'a.page-link', function(e) {
+                e.preventDefault();
+                const page = $(this).data('page');
+                if(page && page !== state.page) {
+                    state.page = page;
+                    fetchDepartments();
+                }
+            });
+
+            ui.tableBody.on('click', '.btn-delete', function () {
+                const id = $(this).data('id');
+                const name = $(this).data('name');
+                ui.itemNameToDelete.text(name);
+                
+                // Set the correct action URL for the form
+                const deleteUrl = `@Url.Action("Delete", "Department")/${id}?clinicId=${state.clinicId}`;
+                ui.deleteForm.attr('action', deleteUrl);
+                
+                ui.deleteModal.show();
+            });
+
+            // AJAX Delete Confirmation
+            ui.deleteForm.on('submit', function(e) {
+                e.preventDefault();
+                
+                const form = $(this);
+                const url = form.attr('action');
+                const id = url.split('/').pop().split('?')[0]; // Extract ID from URL
+                
+                console.log('🏥 MEDICAL: Attempting to delete department with ID:', id);
+                
+                $.ajax({
+                    url: url,
+                    type: 'POST',
+                    dataType: 'json',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(result) {
+                        ui.deleteModal.hide();
+                        console.log('🏥 MEDICAL: Delete result:', result);
+                        
+                        if (result.success) {
+                            showToast('✅ موفقیت', result.message, 'success');
+                            // Remove the row from table
+                            $(`tr:has(button[data-id="${id}"])`).fadeOut();
+                            // Refresh the data
+                            setTimeout(function() {
+                                fetchDepartments();
+                            }, 1000);
+                        } else {
+                            showToast('⚠️ هشدار', result.message, 'warning');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        ui.deleteModal.hide();
+                        console.error('🏥 MEDICAL: Delete error:', {xhr, status, error});
+                        showToast('❌ خطا', 'خطا در ارتباط با سرور', 'error');
+                    }
+                });
+            });
+
+            // Toast notification function
+            function showToast(title, message, type) {
+                console.log('🏥 MEDICAL: Showing toast:', {title, message, type});
+                
+                let toastClass = 'bg-primary';
+                switch (type) {
+                    case 'success':
+                        toastClass = 'bg-success';
+                        break;
+                    case 'error':
+                        toastClass = 'bg-danger';
+                        break;
+                    case 'warning':
+                        toastClass = 'bg-warning text-dark';
+                        break;
+                    case 'info':
+                        toastClass = 'bg-info';
+                        break;
+                    default:
+                        toastClass = 'bg-primary';
+                }
+                
+                const toast = `
+                    <div class="toast ${toastClass}" role="alert" style="min-width: 300px;">
+                        <div class="toast-header">
+                            <strong class="me-auto">${title}</strong>
+                            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                        </div>
+                        <div class="toast-body">${message}</div>
+                    </div>
+                `;
+                
+                if (!$('#toastContainer').length) {
+                    $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+                }
+                
+                $('#toastContainer').append(toast);
+                $('.toast').last().toast('show');
+                
+                setTimeout(function() {
+                    $('.toast').last().toast('hide');
+                }, 5000);
             }
 
-            // راه‌اندازی اولیه
-            setupPagination();
-            setupStatusMessages();
+            function escapeHtml(string) {
+                if(!string) return "";
+                return String(string).replace(/[&<>"']/g, s => ({
+                    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+                }[s]));
+            }
+
+            // Initial data load on page start - همیشه لود کن
+            console.log('Page loaded, attempting initial data load...'); // Debug log
+            
+            // Medical Environment: Simple failsafe
+            setTimeout(function() {
+                console.log('🏥 MEDICAL FAILSAFE CHECK');
+                const tableHtml = ui.tableBody.html();
+                
+                if (!tableHtml || tableHtml.includes('spinner-border') || tableHtml.includes('خطا')) {
+                    console.log('🚨 FAILSAFE TRIGGERED - Reloading data');
+                    fetchDepartments();
+                } else {
+                    console.log('✅ FAILSAFE OK - Data loaded successfully');
+                }
+            }, 3000);
+            
+            fetchDepartments();
         });
-    })();
-</script>
+    </script>
+}

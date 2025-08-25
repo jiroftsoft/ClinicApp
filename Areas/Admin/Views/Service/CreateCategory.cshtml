@@ -1,0 +1,579 @@
+@model ClinicApp.ViewModels.ServiceCategoryCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد دسته‌بندی خدمات جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* استایل‌های اختصاصی برای فرم ایجاد دسته‌بندی */
+        .form-header {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -15px -15px 25px -15px;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .form-header .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .form-header h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .form-header p {
+            margin: 10px 0 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .form-container {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            border: 1px solid #e9ecef;
+            margin-bottom: 25px;
+        }
+
+        .form-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            color: #2c3e50;
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .form-control, .form-select {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #28a745;
+            box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .form-control.is-valid {
+            border-color: #28a745;
+        }
+
+        .invalid-feedback {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .valid-feedback {
+            color: #28a745;
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .form-actions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 25px;
+        }
+
+        .btn-action {
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-weight: 500;
+            border: none;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .required-indicator {
+            color: #dc3545;
+            margin-right: 3px;
+        }
+
+        .department-info {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .department-info h6 {
+            margin: 0 0 5px 0;
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        .department-info small {
+            color: #424242;
+        }
+
+        .character-counter {
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: left;
+            margin-top: 5px;
+        }
+
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+            content: "◀";
+            color: #6c757d;
+        }
+
+        @@media (max-width: 768px) {
+            .form-container {
+                margin: 0 -10px;
+                border-radius: 10px;
+                padding: 20px;
+            }
+
+            .form-actions {
+                flex-direction: column;
+                gap: 10px;
+                text-align: center;
+            }
+
+            .btn-action {
+                width: 100%;
+            }
+        }
+    </style>
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item">
+            <a href="@Url.Action("Index", "Home", new { area = "Admin" })">
+                <i class="fas fa-home"></i> داشبورد
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="@Url.Action("Categories")">دسته‌بندی خدمات</a>
+        </li>
+        <li class="breadcrumb-item active">ایجاد دسته‌بندی جدید</li>
+    </ol>
+</nav>
+
+<!-- Header -->
+<div class="form-header">
+    <div class="container">
+        <h1>
+            <i class="fas fa-plus-circle"></i>
+            ایجاد دسته‌بندی خدمات جدید
+        </h1>
+        <p>ایجاد دسته‌بندی جدید برای سازماندهی بهتر خدمات پزشکی</p>
+    </div>
+</div>
+
+<!-- فرم ایجاد -->
+<div class="form-container">
+    @using (Html.BeginForm("CreateCategory", "Service", FormMethod.Post, new { @class = "needs-validation", novalidate = "" }))
+    {
+        @Html.AntiForgeryToken()
+        
+        if (Model?.DepartmentId > 0)
+        {
+            @Html.HiddenFor(m => m.DepartmentId)
+        }
+
+        <!-- نمایش اطلاعات دپارتمان -->
+        if (!string.IsNullOrEmpty(Model?.DepartmentName))
+        {
+            <div class="department-info">
+                <h6><i class="fas fa-building me-2"></i>دپارتمان انتخاب شده</h6>
+                <small>@Model.DepartmentName</small>
+            </div>
+        }
+
+        <!-- اطلاعات اصلی -->
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-info-circle text-primary"></i>
+                اطلاعات اصلی
+            </h3>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Title, new { @class = "form-label" })
+                        <span class="required-indicator">*</span>
+                        @Html.TextBoxFor(m => m.Title, new { 
+                            @class = "form-control", 
+                            placeholder = "نام دسته‌بندی را وارد کنید...",
+                            maxlength = "200",
+                            data_counter = "#titleCounter"
+                        })
+                        @Html.ValidationMessageFor(m => m.Title, null, new { @class = "invalid-feedback" })
+                        <div class="character-counter">
+                            <span id="titleCounter">0</span> / 200 کاراکتر
+                        </div>
+                        <div class="help-text">
+                            نام دسته‌بندی باید واضح و قابل فهم باشد (مثل: تزریقات، معاینات تخصصی)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.DepartmentId, new { @class = "form-label" })
+                        <span class="required-indicator">*</span>
+                        @Html.DropDownListFor(m => m.DepartmentId, 
+                            ViewBag.Departments as IEnumerable<SelectListItem>,
+                            "انتخاب دپارتمان...",
+                            new { @class = "form-select", id = "departmentSelect", disabled = Model?.DepartmentId > 0 ? "disabled" : null })
+                        @Html.ValidationMessageFor(m => m.DepartmentId, null, new { @class = "invalid-feedback" })
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group">
+                @Html.LabelFor(m => m.Description, new { @class = "form-label" })
+                @Html.TextAreaFor(m => m.Description, new { 
+                    @class = "form-control", 
+                    rows = "4",
+                    placeholder = "توضیحات تکمیلی در مورد این دسته‌بندی...",
+                    maxlength = "1000",
+                    data_counter = "#descCounter"
+                })
+                @Html.ValidationMessageFor(m => m.Description, null, new { @class = "invalid-feedback" })
+                <div class="character-counter">
+                    <span id="descCounter">0</span> / 1000 کاراکتر
+                </div>
+                <div class="help-text">
+                    توضیحات اختیاری که به درک بهتر دسته‌بندی کمک می‌کند
+                </div>
+            </div>
+        </div>
+
+        <!-- تنظیمات -->
+        <div class="form-section">
+            <h3 class="section-title">
+                <i class="fas fa-cogs text-success"></i>
+                تنظیمات
+            </h3>
+
+            <div class="form-group">
+                <div class="form-check form-switch">
+                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "isActiveSwitch" })
+                    <label class="form-check-label" for="isActiveSwitch">
+                        <strong>فعال</strong>
+                        <small class="d-block text-muted">
+                            دسته‌بندی فعال در لیست‌ها و فرم‌ها نمایش داده می‌شود
+                        </small>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- دکمه‌های عملیات -->
+        <div class="form-actions">
+            <div class="action-buttons">
+                <button type="submit" class="btn btn-success btn-action" id="submitBtn">
+                    <i class="fas fa-save me-2"></i>
+                    <span class="btn-text">ایجاد دسته‌بندی</span>
+                </button>
+                
+                <button type="button" class="btn btn-outline-primary btn-action" id="saveAndAddBtn">
+                    <i class="fas fa-plus me-2"></i>
+                    ایجاد و افزودن خدمت
+                </button>
+            </div>
+
+            <div class="navigation-buttons">
+                <a href="@Url.Action("Categories", new { departmentId = Model?.DepartmentId })" 
+                   class="btn btn-outline-secondary btn-action">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    انصراف
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/select2/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2
+            $('#departmentSelect').select2({
+                placeholder: 'انتخاب دپارتمان...',
+                allowClear: false,
+                dir: 'rtl'
+            });
+
+            // Character counters
+            setupCharacterCounter('#Title', '#titleCounter');
+            setupCharacterCounter('#Description', '#descCounter');
+
+            // Real-time validation
+            setupRealTimeValidation();
+
+            // Form submission handlers
+            setupFormSubmission();
+
+            // Medical Environment: Fail-safe for form submission
+            setupMedicalFailSafe();
+        });
+
+        // Medical Environment: Fail-safe mechanism
+        function setupMedicalFailSafe() {
+            // اگر بعد از 3 ثانیه فرم submit نشد، force submit
+            setTimeout(function() {
+                const $submitBtn = $('#submitBtn');
+                if ($submitBtn.prop('disabled') && $submitBtn.find('.fa-spinner').length > 0) {
+                    console.log('🚨 MEDICAL EMERGENCY: Force submitting form');
+                    $('form').submit();
+                }
+            }, 3000);
+        }
+        });
+
+        // تنظیم شمارنده کاراکتر
+        function setupCharacterCounter(inputSelector, counterSelector) {
+            $(inputSelector).on('input', function() {
+                const currentLength = $(this).val().length;
+                const maxLength = $(this).attr('maxlength') || 0;
+                $(counterSelector).text(currentLength);
+                
+                // تغییر رنگ بر اساس طول
+                if (currentLength > maxLength * 0.8) {
+                    $(counterSelector).addClass('text-warning').removeClass('text-danger');
+                }
+                if (currentLength > maxLength * 0.95) {
+                    $(counterSelector).addClass('text-danger').removeClass('text-warning');
+                }
+                if (currentLength <= maxLength * 0.8) {
+                    $(counterSelector).removeClass('text-warning text-danger');
+                }
+            });
+        }
+
+        // اعتبارسنجی زمان واقعی
+        function setupRealTimeValidation() {
+            // عنوان
+            $('#Title').on('blur', function() {
+                validateTitle($(this));
+            });
+
+            // دپارتمان
+            $('#departmentSelect').on('change', function() {
+                validateDepartment($(this));
+            });
+        }
+
+        // اعتبارسنجی عنوان
+        function validateTitle($input) {
+            const value = $input.val().trim();
+            $input.removeClass('is-valid is-invalid');
+            
+            if (value.length === 0) {
+                $input.addClass('is-invalid');
+                return false;
+            }
+            
+            if (value.length < 2) {
+                $input.addClass('is-invalid');
+                return false;
+            }
+            
+            $input.addClass('is-valid');
+            return true;
+        }
+
+        // اعتبارسنجی دپارتمان
+        function validateDepartment($select) {
+            const value = $select.val();
+            $select.removeClass('is-valid is-invalid');
+            
+            if (!value || value === '') {
+                $select.addClass('is-invalid');
+                return false;
+            }
+            
+            $select.addClass('is-valid');
+            return true;
+        }
+
+        // تنظیم ارسال فرم
+        function setupFormSubmission() {
+            // دکمه معمولی
+            $('#submitBtn').on('click', function(e) {
+                const $btn = $(this);
+                const originalText = $btn.find('.btn-text').text();
+                
+                console.log('🏥 MEDICAL: Submit button clicked');
+                
+                if (!validateForm()) {
+                    console.log('❌ Validation failed, preventing submit');
+                    e.preventDefault();
+                    return false;
+                }
+                
+                console.log('✅ Validation passed, submitting form');
+                
+                // نمایش loading state
+                $btn.prop('disabled', true);
+                $btn.find('.btn-text').text('در حال ایجاد...');
+                $btn.find('i').removeClass('fa-save').addClass('fa-spinner fa-spin');
+                
+                // CRITICAL FIX: Submit the form
+                $('form').submit();
+                
+                // اگر فرم submit نشد، بعد از 5 ثانیه دکمه را فعال کن
+                setTimeout(function() {
+                    if ($btn.prop('disabled')) {
+                        $btn.prop('disabled', false);
+                        $btn.find('.btn-text').text(originalText);
+                        $btn.find('i').removeClass('fa-spinner fa-spin').addClass('fa-save');
+                        console.log('⚠️ MEDICAL: Submit timeout - re-enabled button');
+                    }
+                }, 5000);
+            });
+
+            // دکمه ایجاد و افزودن خدمت
+            $('#saveAndAddBtn').on('click', function() {
+                if (validateForm()) {
+                    // اضافه کردن فیلد مخفی برای redirect
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'redirectToService',
+                        value: 'true'
+                    }).appendTo('form');
+                    
+                    $(this).prop('disabled', true);
+                    $('form').submit();
+                }
+            });
+        }
+
+        // اعتبارسنجی کل فرم - Medical Environment
+        function validateForm() {
+            console.log('🔬 MEDICAL: Validating form...');
+            
+            // بررسی ساده عنوان
+            const titleValue = $('#Title').val().trim();
+            console.log('📊 Title value:', titleValue);
+            
+            if (!titleValue || titleValue.length < 2) {
+                console.log('❌ Title validation failed');
+                showToast('خطا', 'لطفاً عنوان دسته‌بندی را وارد کنید.', 'error');
+                $('#Title').focus();
+                return false;
+            }
+            
+            // بررسی دپارتمان (اگر visible باشد)
+            const $deptSelect = $('#departmentSelect');
+            if ($deptSelect.is(':visible') && !$deptSelect.prop('disabled')) {
+                const deptValue = $deptSelect.val();
+                console.log('📊 Department value:', deptValue);
+                
+                if (!deptValue || deptValue === '') {
+                    console.log('❌ Department validation failed');
+                    showToast('خطا', 'لطفاً دپارتمان را انتخاب کنید.', 'error');
+                    $deptSelect.focus();
+                    return false;
+                }
+            } else {
+                console.log('✅ Department field is hidden/disabled, using hidden value');
+            }
+            
+            console.log('✅ MEDICAL: Form validation passed');
+            return true;
+        }
+
+        // Toast notification
+        function showToast(title, message, type) {
+            const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            const toast = `
+                <div class="toast ${toastClass} text-white" role="alert">
+                    <div class="toast-header">
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            if (!$('#toastContainer').length) {
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+            }
+            
+            $('#toastContainer').append(toast);
+            $('.toast').last().toast('show');
+        }
+
+        // هشدار تغییرات ذخیره نشده
+        let formChanged = false;
+        $('form input, form textarea, form select').on('change input', function() {
+            formChanged = true;
+        });
+
+        $(window).on('beforeunload', function() {
+            if (formChanged) {
+                return 'تغییرات شما ذخیره نشده‌اند. آیا می‌خواهید صفحه را ترک کنید؟';
+            }
+        });
+
+        $('form').on('submit', function() {
+            formChanged = false;
+        });
+    </script>
+}

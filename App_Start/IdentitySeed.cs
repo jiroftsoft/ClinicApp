@@ -27,29 +27,32 @@ public static class IdentitySeed
     {
         var userManager = new UserManager<ApplicationUser>(new UserStore<ApplicationUser>(context));
 
-        // ایجاد کاربر ادمین بدون نیاز به پسورد
+        // Create the Admin user
         CreateUserIfNotExists(userManager, context, new ApplicationUser
         {
             UserName = "3020347998",
+            // ✅ The NationalCode property is now explicitly set to match the UserName.
+            NationalCode = "3020347998",
             Email = "admin@clinic.com",
-            PhoneNumber = "09136381995", // شماره تلفن برای دریافت OTP
-            PhoneNumberConfirmed = true, // تایید شماره برای لاگین اولیه
-            FirstName = "مدیر",
-            LastName = "سیستم"
+            PhoneNumber = "09136381995",
+            PhoneNumberConfirmed = true,
+            FirstName = "Admin",
+            LastName = "System"
         }, "Admin");
 
-        // ایجاد کاربر سیستم بدون نیاز به پسورد
+        // Create the System user
         CreateUserIfNotExists(userManager, context, new ApplicationUser
         {
             UserName = "3031945451",
+            // ✅ The NationalCode property is now explicitly set.
+            NationalCode = "3031945451",
             Email = "system@clinic.com",
             PhoneNumber = "09022487373",
             PhoneNumberConfirmed = true,
-            FirstName = "سیستم",
-            LastName = "کلینیک شفا"
-        }, "Admin");
+            FirstName = "System",
+            LastName = "Shefa Clinic"
+        }, "Admin"); // The "System" user is also given the "Admin" role for full permissions.
     }
-
     /// <summary>
     /// متد کمکی برای ایجاد کاربر در سیستم بدون پسورد
     /// </summary>

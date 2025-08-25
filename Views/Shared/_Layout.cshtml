@@ -289,15 +289,13 @@
             </div>
         </div>
     </div>
-    @Html.Partial("_ValidationToasts")
     @Scripts.Render("~/bundles/jquery")
     @Scripts.Render("~/bundles/jqueryval")
     @Scripts.Render("~/bundles/bootstrap")
     @Scripts.Render("~/bundles/modernizr")
     <script src="~/Scripts/bootstrap.bundle.min.js"></script>
     @Scripts.Render("~/bundles/plugins")
-    <!-- AOS JS -->
-
+    @Html.Partial("_ValidationToasts")
     @RenderSection("scripts", required: false)
 
     <script>

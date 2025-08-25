@@ -43,5 +43,7 @@ public interface IAppSettings
     bool EnableInsuranceValidation { get; }
     int MaxPatientAge { get; }
     int MinPatientAge { get; }
+    int MaxRegisterAttempts { get; set; }
+
     #endregion
 }

@@ -1,11 +1,17 @@
-﻿using System.Threading.Tasks;
-using System.Web;
-using System.Web.Mvc;
+﻿using ClinicApp.Core;
+using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
-using ClinicApp.ViewModels; // ViewModels
+using ClinicApp.Models;
+using ClinicApp.Models.Entities;
+using ClinicApp.ViewModels;
 using Microsoft.AspNet.Identity;
-using Microsoft.AspNet.Identity.Owin;
+using Microsoft.Owin.Security.DataProtection;
 using Serilog;
+using System;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Web.Mvc;
 
 namespace ClinicApp.Controllers
 {
@@ -14,192 +20,303 @@ namespace ClinicApp.Controllers
     {
         #region Dependencies & Constructor
 
-        private readonly ApplicationUserManager _userManager;
-        private readonly ApplicationSignInManager _signInManager;
         private readonly IAuthService _authService;
         private readonly IPatientService _patientService;
+        private readonly ApplicationUserManager _userManager;
         private readonly ILogger _log;
 
         public AccountController(
-            ApplicationUserManager userManager,
-            ApplicationSignInManager signInManager,
             IAuthService authService,
             IPatientService patientService,
+            ApplicationUserManager userManager,
             ILogger logger)
         {
-            _userManager = userManager;
-            _signInManager = signInManager;
             _authService = authService;
             _patientService = patientService;
+            _userManager = userManager;
             _log = logger.ForContext<AccountController>();
         }
 
-
-
         #endregion
 
-        #region OTP Login/Register Flow (جریان اصلی ورود و ثبت‌نام)
+        // -------------------------------------------------------------------
+        #region Login & Registration Flow (ورود و ثبت‌نام)
+        // -------------------------------------------------------------------
 
-        /// <summary>
-                /// (GET) نمایش فرم اولیه ورود که فقط شماره موبایل را می‌گیرد
-                /// این اکشن می‌تواند به صورت یک Partial View در مودال لود شود
-                /// </summary>
-                [AllowAnonymous]
-                public ActionResult Login(string returnUrl)
-                {
-                    if (User.Identity.IsAuthenticated)
-                    {
-                        return RedirectToAction("Index", "Dashboard");
-                    }
-                    ViewBag.ReturnUrl = returnUrl;
-
-                    // Pass a new ViewModel to the View
-                    return View(new EnterPhoneNumberViewModel());
-                }
-
-        /// <summary>
-        /// (POST) شماره موبایل را دریافت، اعتبارسنجی و کد OTP را ارسال می‌کند
-        /// </summary>
-        [HttpPost]
         [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> SendOtp(EnterPhoneNumberViewModel model)
+        public ActionResult Login(string returnUrl)
         {
-            if (!ModelState.IsValid)
+            if (_authService.IsAuthenticated)
             {
-                return Json(new { success = false, message = "فرمت شماره موبایل نامعتبر است." });
+                return RedirectToLocal(returnUrl);
             }
-
-            var result = await _authService.SendLoginOtpAsync(model.PhoneNumber);
-
-            if (result)
-            {
-                _log.Information("OTP sent to {PhoneNumber}", model.PhoneNumber);
-                return Json(new { success = true, message = "کد تایید با موفقیت ارسال شد." });
-            }
-
-            _log.Warning("Failed to send OTP to {PhoneNumber}", model.PhoneNumber);
-            return Json(new { success = false, message = "خطا در ارسال پیامک. لطفاً مجدداً تلاش کنید." });
+            ViewBag.ReturnUrl = returnUrl;
+            return View();
         }
 
-        /// <summary>
-        /// (POST) کد OTP را تایید می‌کند.
-        /// اگر کاربر وجود داشت، او را وارد می‌کند.
-        /// اگر کاربر جدید بود، به مرحله تکمیل ثبت‌نام هدایت می‌کند.
-        /// </summary>
-        [HttpPost]
-        [AllowAnonymous]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> VerifyOtp(VerifyOtpViewModel model)
-        {
-            if (!ModelState.IsValid)
-            {
-                return Json(new { success = false, message = "اطلاعات ورودی نامعتبر است." });
-            }
-
-            var signInStatus = await _authService.VerifyLoginOtpAndSignInAsync(model.PhoneNumber, model.OtpCode);
-
-            switch (signInStatus)
-            {
-                case SignInStatus.Success:
-                    _log.Information("User {PhoneNumber} logged in successfully via OTP.", model.PhoneNumber);
-                    return Json(new { success = true, redirectUrl = Url.Action("Index", "Dashboard") });
-
-                case SignInStatus.RequiresVerification: // به معنی این است که شماره تایید شده ولی کاربر وجود ندارد
-                    _log.Information("OTP for {PhoneNumber} verified. Redirecting to complete registration.", model.PhoneNumber);
-                    TempData["VerifiedPhoneNumber"] = model.PhoneNumber; // انتقال امن شماره به مرحله بعد
-                    return Json(new { success = true, redirectUrl = Url.Action("CompleteRegistration", "Account") });
-
-                default:
-                    _log.Warning("Invalid OTP for {PhoneNumber}. Code: {OtpCode}", model.PhoneNumber, model.OtpCode);
-                    return Json(new { success = false, message = "کد وارد شده نامعتبر یا منقضی شده است." });
-            }
-        }
-
-        /// <summary>
-        /// (GET) نمایش فرم تکمیل اطلاعات برای کاربر جدید
-        /// </summary>
-        [AllowAnonymous]
-        public ActionResult CompleteRegistration()
-        {
-            var phoneNumber = TempData["VerifiedPhoneNumber"] as string;
-            if (string.IsNullOrEmpty(phoneNumber))
-            {
-                // اگر کاربر بدون طی کردن مراحل قبلی وارد این صفحه شود، او را به صفحه ورود هدایت می‌کنیم
-                return RedirectToAction("Login");
-            }
-
-            var model = new RegisterPatientViewModel { PhoneNumber = phoneNumber };
-            return View(model);
-        }
-
-        /// <summary>
-        /// (POST) ثبت نهایی اطلاعات پروفایل بیمار
-        /// </summary>
         [HttpPost]
         [AllowAnonymous]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CompleteRegistration(RegisterPatientViewModel model)
+        public async Task<JsonResult> CheckUser(CheckNationalCodeViewModel model)
         {
-            if (!ModelState.IsValid)
+            if (!ModelState.IsValid) return CreateValidationErrorsJson();
+
+            try
             {
-                return View(model);
+                var result = await _authService.CheckUserExistsAsync(model.NationalCode);
+                // ✅ Use the generic helper to ensure the 'data' payload is always included
+                return CreateServiceResultJson(result);
             }
-
-            // دریافت IP کاربر
-            string userIp = Request.ServerVariables["HTTP_X_FORWARDED_FOR"] ?? Request.UserHostAddress;
-
-            var result = await _patientService.RegisterPatientAsync(model, userIp);
-
-            if (result.Succeeded)
+            catch (Exception ex)
             {
-                // ورود خودکار کاربر پس از ثبت‌نام موفق
-                var user = await _userManager.FindByNameAsync(model.NationalCode);
-                await _signInManager.SignInAsync(user, isPersistent: false, rememberBrowser: false);
-                _log.Information("کاربر جدید با موفقیت ثبت‌نام و وارد سیستم شد. کد ملی: {NationalCode}", model.NationalCode);
-
-                TempData["SuccessMessage"] = "ثبت‌نام شما با موفقیت انجام شد. به کلینیک شفا خوش آمدید!";
-                return RedirectToAction("Index", "Dashboard");
+                _log.Error(ex, "System error in CheckUser for {NationalCode}", model.NationalCode);
+                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
             }
-
-            AddErrors(result);
-            return View(model);
         }
 
-        #endregion
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> SendLoginOtp(EnterNationalCodeViewModel model)
+        {
+            if (!ModelState.IsValid) return CreateValidationErrorsJson();
 
-        #region LogOff
+            try
+            {
+                var result = await _authService.SendLoginOtpAsync(model.NationalCode);
+                return CreateServiceResultJson(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "System error in SendLoginOtp for {NationalCode}", model.NationalCode);
+                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+            }
+        }
 
-        /// <summary>
-        /// خروج کاربر از سیستم
-        /// </summary>
-        [HttpPost]
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> SendRegistrationOtp(SendRegistrationOtpViewModel model)
+        {
+            if (!ModelState.IsValid) return CreateValidationErrorsJson();
+
+            try
+            {
+                var result = await _authService.SendRegistrationOtpAsync(model.NationalCode, model.PhoneNumber);
+                return CreateServiceResultJson(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "System error in SendRegistrationOtp for {NationalCode}", model.NationalCode);
+                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> VerifyLoginOtp(VerifyLoginOtpViewModel model, string returnUrl)
+        {
+            if (!ModelState.IsValid) return CreateValidationErrorsJson();
+
+            try
+            {
+                var result = await _authService.VerifyLoginOtpAndSignInAsync(model.NationalCode, model.OtpCode);
+                return CreateServiceResultJson(result, result.Success ? GetSafeRedirectUrl(returnUrl) : null);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "System error in VerifyLoginOtp for {NationalCode}", model.NationalCode);
+                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> VerifyRegistrationOtp(VerifyRegistrationOtpViewModel model)
+        {
+            if (!ModelState.IsValid) return CreateValidationErrorsJson();
+
+            try
+            {
+                var result = await _authService.VerifyRegistrationOtpAsync(model.NationalCode, model.PhoneNumber, model.OtpCode);
+
+                if (result.Success)
+                {
+                    var provider = new DpapiDataProtectionProvider("ClinicApp");
+                    var dataProtector = provider.Create("RegistrationToken");
+                    string payload = $"{model.NationalCode}:{model.PhoneNumber}:{DateTime.UtcNow.AddMinutes(15).Ticks}";
+                    byte[] protectedBytes = dataProtector.Protect(Encoding.UTF8.GetBytes(payload));
+                    string urlSafeToken = Convert.ToBase64String(protectedBytes);
+
+                    return CreateServiceResultJson(result, Url.Action("CompleteRegistration", new { token = urlSafeToken }));
+                }
+
+                return CreateServiceResultJson(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "System error in VerifyRegistrationOtp for {NationalCode}", model.NationalCode);
+                return CreateServiceResultJson(ServiceResult.Failed("A system error occurred.", "SYSTEM_ERROR"));
+            }
+        }
+
+        [AllowAnonymous]
+        public ActionResult CompleteRegistration(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                TempData["ErrorMessage"] = "برای ثبت‌نام، لطفاً فرآیند را از ابتدا شروع کنید.";
+                return RedirectToAction("Login");
+            }
+
+            try
+            {
+                var provider = new DpapiDataProtectionProvider("ClinicApp");
+                var dataProtector = provider.Create("RegistrationToken");
+                byte[] protectedBytes = Convert.FromBase64String(token);
+                byte[] unprotectedBytes = dataProtector.Unprotect(protectedBytes);
+                string payload = Encoding.UTF8.GetString(unprotectedBytes);
+
+                var parts = payload.Split(':');
+                if (parts.Length != 3) throw new InvalidOperationException("Payload format is incorrect.");
+
+                var nationalCode = parts[0];
+                var phoneNumber = parts[1];
+                long expiryTicks = long.Parse(parts[2]);
+
+                if (DateTime.UtcNow.Ticks > expiryTicks)
+                {
+                    _log.Warning("Expired registration token was used.");
+                    TempData["ErrorMessage"] = "The registration link has expired. Please try again.";
+                    return RedirectToAction("Login");
+                }
+
+                var model = new RegisterPatientViewModel { NationalCode = nationalCode, PhoneNumber = phoneNumber };
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Invalid, tampered, or expired registration token was used.");
+                TempData["ErrorMessage"] = "The registration link is invalid. Please try again.";
+                return RedirectToAction("Login");
+            }
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> CompleteRegistration(RegisterPatientViewModel model, string returnUrl)
+        {
+            if (!ModelState.IsValid) return View(model);
+
+            try
+            {
+                var result = await _patientService.RegisterPatientAsync(model, Request.UserHostAddress);
+                if (result.Success)
+                {
+                    await _authService.SignInWithNationalCodeAsync(model.NationalCode);
+                    TempData["SuccessMessage"] = "Registration successful! Welcome to Shefa Clinic.";
+                    return RedirectToLocal(returnUrl);
+                }
+                AddErrorsToModelState(result);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "System error during final registration for {NationalCode}", model.NationalCode);
+                ModelState.AddModelError("", "An unexpected system error occurred. Please contact support.");
+                return View(model);
+            }
+        }
+
+        #endregion
+
+        // -------------------------------------------------------------------
+        #region LogOff & Helpers (خروج و متدهای کمکی)
+        // -------------------------------------------------------------------
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public ActionResult LogOff()
         {
-            HttpContext.GetOwinContext().Authentication.SignOut(DefaultAuthenticationTypes.ApplicationCookie);
+            var userId = User.Identity.GetUserId();
+            _authService.SignOut();
+            _log.Information("User {UserId} logged off.", userId);
             return RedirectToAction("Index", "Home");
-        }
-
-        #endregion
-
-        #region Helpers
-        private void AddErrors(IdentityResult result)
-        {
-            foreach (var error in result.Errors)
-            {
-                ModelState.AddModelError("", error);
-            }
         }
 
         private ActionResult RedirectToLocal(string returnUrl)
         {
-            if (Url.IsLocalUrl(returnUrl))
-            {
-                return Redirect(returnUrl);
-            }
-            return RedirectToAction("Index", "Home");
+            return Redirect(GetSafeRedirectUrl(returnUrl));
         }
-        #endregion
-    }
+
+        private string GetSafeRedirectUrl(string returnUrl)
+        {
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return returnUrl;
+            }
+            return Url.Action("Index", "Dashboard", new { area = "" });
+        }
+
+        private void AddErrorsToModelState(ServiceResult result)
+        {
+            if (result.ValidationErrors != null && result.ValidationErrors.Any())
+            {
+                foreach (var error in result.ValidationErrors)
+                {
+                    ModelState.AddModelError(error.Field ?? "", error.ErrorMessage);
+                }
+            }
+            else if (!string.IsNullOrEmpty(result.Message))
+            {
+                ModelState.AddModelError("", result.Message);
+            }
+        }
+
+        private JsonResult CreateServiceResultJson(ServiceResult result, string redirectUrl = null)
+        {
+            return Json(new
+            {
+                success = result.Success,
+                message = result.Message,
+                code = result.Code,
+                redirectUrl
+            });
+        }
+
+        private JsonResult CreateServiceResultJson<T>(ServiceResult<T> result, string redirectUrl = null)
+        {
+            return Json(new
+            {
+                success = result.Success,
+                message = result.Message,
+                code = result.Code,
+                redirectUrl,
+                data = result.Data
+            });
+        }
+
+        private JsonResult CreateValidationErrorsJson()
+        {
+            var errorPayload = ModelState
+                .Where(ms => ms.Value.Errors.Any())
+                .ToDictionary(
+                    kvp => kvp.Key,
+                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
+                );
+
+            return Json(new
+            {
+                success = false,
+                message = "The provided information is invalid.",
+                code = "VALIDATION_ERROR",
+                errors = errorPayload
+            });
+        }
+
+        #endregion
+    }
 }

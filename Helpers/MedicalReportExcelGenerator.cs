@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using System.Linq;
+using ClinicApp.Extensions;
 using ClosedXML.Excel;
 using ClinicApp.ViewModels;
 using Serilog;

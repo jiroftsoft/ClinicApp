@@ -22,6 +22,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using ClinicApp.Services;
 
 namespace ClinicApp.Models
 {
@@ -81,6 +82,9 @@ namespace ClinicApp.Models
         public DbSet<NotificationHistory> NotificationHistories { get; set; }
         public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
         public DbSet<DatabaseVersion> DatabaseVersions { get; set; }
+        public DbSet<OtpRequest> OtpRequests { get; set; }
+        public DbSet<DoctorDepartment> DoctorDepartments { get; set; }
+        public DbSet<DoctorServiceCategory> DoctorServiceCategories { get; set; }
 
         #endregion
 

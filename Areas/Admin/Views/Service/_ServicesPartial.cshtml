@@ -1,0 +1,279 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.ServiceIndexViewModel>
+
+<!-- نمایش خدمات -->
+@if (Model?.Items != null && Model.Items.Any())
+{
+    <!-- نمایش جدولی -->
+    <div id="tableView" class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>نام خدمت</th>
+                    <th>کد</th>
+                    <th>دسته‌بندی</th>
+                    <th>قیمت</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ ایجاد</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var service in Model.Items)
+                {
+                    <tr data-service-id="@service.ServiceId">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-stethoscope text-primary"></i>
+                                </div>
+                                <div>
+                                    <strong>@service.Title</strong>
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="service-code">@service.ServiceCode</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-info">@service.ServiceCategoryTitle</span>
+                        </td>
+                        <td>
+                            <span class="service-price">@service.PriceFormatted تومان</span>
+                        </td>
+                        <td>
+                            @if (service.IsActive)
+                            {
+                                <span class="badge bg-success">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">غیرفعال</span>
+                            }
+                        </td>
+                        <td>
+                            <small class="text-muted">@service.CreatedAtShamsi</small>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="@Url.Action("Details", new { id = service.ServiceId })" 
+                                   class="btn btn-sm btn-outline-info" title="مشاهده جزئیات">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="@Url.Action("Edit", new { id = service.ServiceId })" 
+                                   class="btn btn-sm btn-outline-warning" title="ویرایش">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete(@service.ServiceId, '@service.Title')" 
+                                        title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="pagination-container">
+            <nav aria-label="صفحه‌بندی">
+                <ul class="pagination justify-content-center mb-0">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber - 1))">قبلی</a>
+                        </li>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" href="#" onclick="changePage(@i)">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber + 1))">بعدی</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+                         <div class="text-center mt-2">
+                 <small class="text-muted">
+                     نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) از @Model.TotalItems مورد
+                 </small>
+             </div>
+        </div>
+    }
+}
+else
+{
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-stethoscope fa-4x text-muted mb-3" style="opacity: 0.3;"></i>
+        <h4 class="text-muted">هیچ خدمتی یافت نشد</h4>
+        <p class="text-muted">برای شروع، یک خدمت جدید ایجاد کنید.</p>
+        @if (ViewBag.ServiceCategoryId != null)
+        {
+            <a href="@Url.Action("Create", new { serviceCategoryId = ViewBag.ServiceCategoryId })" 
+               class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>ایجاد اولین خدمت
+            </a>
+        }
+        else
+        {
+            <a href="@Url.Action("Categories")" class="btn btn-info">
+                <i class="fas fa-layer-group me-2"></i>مدیریت دسته‌بندی‌ها
+            </a>
+        }
+    </div>
+}
+
+<!-- Anti-Forgery Token -->
+@Html.AntiForgeryToken()
+
+<!-- آمار سریع -->
+<script>
+    // بروزرسانی آمار در صفحه اصلی
+    if (typeof updateServicesStats === 'function') {
+                 const stats = {
+             totalServices: @(Model?.TotalItems ?? 0),
+             activeServices: @(Model?.Items?.Count(s => s.IsActive) ?? 0),
+             avgPrice: @(Model?.Items?.Any() == true ? Model.Items.Average(s => s.Price).ToString("N0") : "0"),
+             totalCategories: @(Model?.Items?.Select(s => s.ServiceCategoryId).Distinct().Count() ?? 0)
+         };
+        updateServicesStats(stats);
+    }
+
+    // تابع تأیید حذف خدمت
+    function confirmDelete(id, name) {
+        console.log('🏥 MEDICAL: Confirm delete service. ID:', id, 'Name:', name);
+        
+        // نمایش مودال تأیید
+        $('#deleteItemName').text(name || 'این خدمت');
+        $('#confirmDeleteBtn').off('click').on('click', function() {
+            deleteService(id);
+        });
+        $('#deleteModal').modal('show');
+    }
+
+    // تابع حذف خدمت
+    function deleteService(id) {
+        console.log('🏥 MEDICAL: Deleting service with ID:', id);
+        
+        // 🔒 اطمینان از وجود Anti-Forgery Token
+        var token = $('input[name="__RequestVerificationToken"]').val();
+        if (!token) {
+            console.error('🏥 MEDICAL: Anti-Forgery Token not found!');
+            showMedicalError('خطای امنیتی: توکن تأیید یافت نشد. لطفاً صفحه را رفرش کنید.');
+            return;
+        }
+        
+        console.log('🏥 MEDICAL: Anti-Forgery Token found:', token.substring(0, 10) + '...');
+        
+        $.ajax({
+            url: '@Url.Action("Delete")',
+            type: 'POST',
+            dataType: 'json',
+            contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+            data: {
+                id: id,
+                __RequestVerificationToken: token
+            },
+            success: function(result) {
+                $('#deleteModal').modal('hide');
+                console.log('🏥 MEDICAL: Delete result:', result);
+                
+                // اطمینان از وجود پیام
+                const message = result.message || 'پیام نامشخص';
+                const success = result.success === true;
+                
+                if (success) {
+                    showMedicalToast('✅ موفقیت', message, 'success');
+                    // حذف ردیف از جدول
+                    $(`tr[data-service-id="${id}"]`).fadeOut();
+                    // بروزرسانی آمار
+                    if (typeof updateStats === 'function') {
+                        updateStats();
+                    }
+                } else {
+                    showMedicalToast('❌ خطا', message, 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                $('#deleteModal').modal('hide');
+                console.error('🏥 MEDICAL: Delete error:', {xhr, status, error});
+                
+                // تلاش برای استخراج پیام خطا از پاسخ
+                let errorMessage = 'خطا در ارتباط با سرور';
+                try {
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        errorMessage = xhr.responseJSON.message;
+                    } else if (xhr.responseText) {
+                        const response = JSON.parse(xhr.responseText);
+                        if (response.message) {
+                            errorMessage = response.message;
+                        }
+                    }
+                } catch (e) {
+                    console.error('🏥 MEDICAL: Error parsing response:', e);
+                }
+                
+                showMedicalToast('❌ خطا', errorMessage, 'error');
+            }
+        });
+    }
+
+    // تابع نمایش پیام برای محیط درمانی
+    function showMedicalToast(title, message, type) {
+        console.log('🏥 MEDICAL: Showing toast:', {title, message, type});
+        
+        // اطمینان از وجود پیام
+        const displayMessage = message || 'پیام نامشخص';
+        const displayTitle = title || 'اطلاعیه';
+        
+        // ایجاد toast container اگر وجود نداشته باشد
+        if (!$('#medicalToastContainer').length) {
+            $('body').append('<div id="medicalToastContainer" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>');
+        }
+        
+        // تعیین کلاس بر اساس نوع
+        const toastClass = type === 'success' ? 'bg-success' : type === 'warning' ? 'bg-warning' : 'bg-danger';
+        const iconClass = type === 'success' ? 'fas fa-check-circle' : type === 'warning' ? 'fas fa-exclamation-triangle' : 'fas fa-times-circle';
+        
+        // ایجاد toast
+        const toast = `
+            <div class="toast ${toastClass} text-white border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="toast-header ${toastClass} text-white border-0">
+                    <i class="${iconClass} me-2"></i>
+                    <strong class="me-auto">${displayTitle}</strong>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+                <div class="toast-body">
+                    ${displayMessage}
+                </div>
+            </div>
+        `;
+        
+        // اضافه کردن toast به container
+        $('#medicalToastContainer').append(toast);
+        
+        // نمایش toast
+        const toastElement = $('#medicalToastContainer .toast').last();
+        const bsToast = new bootstrap.Toast(toastElement, {
+            autohide: true,
+            delay: type === 'success' ? 3000 : 5000
+        });
+        bsToast.show();
+        
+        // حذف toast بعد از نمایش
+        toastElement.on('hidden.bs.toast', function() {
+            $(this).remove();
+        });
+    }
+</script>

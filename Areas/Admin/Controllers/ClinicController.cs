@@ -1,348 +1,181 @@
-﻿using ClinicApp.Helpers;
+﻿using ClinicApp.Core;
+using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
-using ClinicApp.Models;
+using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
-using Microsoft.AspNet.Identity;
 using Serilog;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Web;
 using System.Web.Mvc;
-using System.Web.Routing;
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
-    /// <summary>
-    /// کنترلر مدیریت کلینیک‌ها در بخش ادمین سیستم‌های پزشکی
-    /// این کنترلر تمام عملیات مربوط به کلینیک‌ها از جمله ایجاد، ویرایش، حذف و جستجو را پشتیبانی می‌کند
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. رعایت کامل استانداردهای امنیتی سیستم‌های پزشکی (HIPAA, GDPR)
-    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
-    /// 3. سیستم ردیابی کامل (Audit Trail) با ثبت تمام عملیات حساس
-    /// 4. مدیریت صحیح دسترسی‌ها (فقط مدیران سیستم)
-    /// 5. پشتیبانی از جستجوی پیشرفته و صفحه‌بندی بهینه‌شده
-    /// 6. پشتیبانی از APIهای سریع برای عملیات‌های AJAX
-    /// 7. طراحی واکنش‌گرا برای تمام دستگاه‌ها (از جمله تبلت‌های پزشکی)
-    /// 8. کلیدهای میانبر پزشکی برای افزایش سرعت کار
-    /// </summary>
-    //[Authorize(Roles = AppRoles.Admin)]
-    //[RouteArea("Admin")]
-    [RoutePrefix("Clinic")]
+    //[Authorize(Roles = AppRoles.Admin)] // این کنترلر فقط برای کاربران با نقش ادمین قابل دسترس است
     public class ClinicController : Controller
     {
-        private readonly IClinicService _clinicService;
+        private readonly IClinicManagementService _clinicService;
         private readonly ILogger _log;
-        private readonly ICurrentUserService _currentUserService;
 
-        /// <summary>
-        /// سازنده اصلی کنترلر کلینیک‌ها
-        /// </summary>
-        public ClinicController(
-            IClinicService clinicService,
-            ILogger logger,
-            ICurrentUserService currentUserService)
+        public ClinicController(IClinicManagementService clinicService, ILogger logger)
         {
             _clinicService = clinicService;
             _log = logger.ForContext<ClinicController>();
-            _currentUserService = currentUserService;
         }
 
-        /// <summary>
-        /// سازنده برای تست‌های واحد
-        /// </summary>
-        public ClinicController(
-            IClinicService clinicService,
-            ILogger logger,
-            ICurrentUserService currentUserService,
-            HttpContextBase httpContext) : this(clinicService, logger, currentUserService)
+        // GET: Admin/Clinic
+        public async Task<ActionResult> Index(string searchTerm = "", int pageNumber = 1, bool isAjax = false)
         {
-            ControllerContext = new ControllerContext(httpContext, new RouteData(), this);
-        }
+            int pageSize = 10; // می‌توان این را از IAppSettings خواند
+            var result = await _clinicService.GetClinicsAsync(searchTerm, pageNumber, pageSize);
 
-        #region عملیات اصلی (Index, Create, Edit, Details, Delete)
-
-        /// <summary>
-        /// نمایش لیست کلینیک‌ها با قابلیت جستجو و صفحه‌بندی
-        /// </summary>
-        [Route("")]
-        [Route("Index")]
-        [Route("Index/{page:int=1}")]
-        public async Task<ActionResult> Index(string searchTerm = "", int page = 1, int pageSize = 10)
-        {
-            _log.Information("درخواست نمایش لیست کلینیک‌ها در بخش ادمین. User: {UserName} (Id: {UserId}), Search: {SearchTerm}, Page: {Page}",
-                User.Identity.Name,
-                _currentUserService.UserId,
-                searchTerm,
-                page);
-
-            try
+            if (!result.Success)
             {
-                var result = await _clinicService.SearchClinicsAsync(searchTerm, page, pageSize);
-
-                if (!result.Success)
+                // در صورت بروز خطا در سرویس، یک پیام خطا نمایش می‌دهیم
+                if (isAjax)
                 {
-                    _log.Warning("خطا در جستجوی کلینیک‌ها در بخش ادمین: {Message}", result.Message);
-                    ModelState.AddModelError("", result.Message);
-                    return View(new PagedResult<ClinicIndexViewModel>());
+                    return Json(new PagedResult<ClinicIndexViewModel>(), JsonRequestBehavior.AllowGet);
                 }
+                TempData["ErrorMessage"] = result.Message;
+                return View(new PagedResult<ClinicIndexViewModel>()); // یک مدل خالی به ویو پاس می‌دهیم
+            }
 
-                return View(result.Data);
-            }
-            catch (Exception ex)
+            // ✅ بازگرداندن JSON برای درخواست‌های AJAX
+            if (isAjax)
             {
-                _log.Error(ex, "خطای غیرمنتظره در نمایش لیست کلینیک‌ها در بخش ادمین");
-                ModelState.AddModelError("", "خطای سیستم رخ داده است. لطفاً مجدداً تلاش کنید.");
-                return View(new PagedResult<ClinicIndexViewModel>());
+                return Json(result.Data, JsonRequestBehavior.AllowGet);
             }
+
+            return View(result.Data);
         }
 
-        /// <summary>
-        /// نمایش فرم ایجاد کلینیک جدید
-        /// </summary>
-        [Route("Create")]
+        // GET: Admin/Clinic/Details/5
+        public async Task<ActionResult> Details(int id)
+        {
+            var result = await _clinicService.GetClinicDetailsAsync(id);
+            if (!result.Success)
+            {
+                if (result.Code == "NOT_FOUND") return HttpNotFound();
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction("Index");
+            }
+            return View(result.Data);
+        }
+
+        // GET: Admin/Clinic/Create
         public ActionResult Create()
         {
-            _log.Information("درخواست ایجاد کلینیک جدید در بخش ادمین. User: {UserName} (Id: {UserId})",
-                User.Identity.Name,
-                _currentUserService.UserId);
-
             return View(new ClinicCreateEditViewModel());
         }
 
-        /// <summary>
-        /// پردازش درخواست ایجاد کلینیک جدید
-        /// </summary>
+        // POST: Admin/Clinic/Create
         [HttpPost]
-        [Route("Create")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(ClinicCreateEditViewModel model)
         {
-            _log.Information("درخواست ایجاد کلینیک جدید با نام {Name} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                model.Name,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
             if (!ModelState.IsValid)
             {
-                _log.Warning("مدل نامعتبر برای ایجاد کلینیک در بخش ادمین. Errors: {Errors}",
-                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
                 return View(model);
             }
 
             var result = await _clinicService.CreateClinicAsync(model);
-
-            if (!result.Success)
+            if (result.Success)
             {
-                _log.Warning("خطا در ایجاد کلینیک در بخش ادمین: {Message}", result.Message);
-                ModelState.AddModelError("", result.Message);
-                return View(model);
-            }
-
-            _log.Information("کلینیک جدید با موفقیت ایجاد شد در بخش ادمین. ClinicId: {ClinicId}", result.Data);
-            TempData["SuccessMessage"] = "کلینیک با موفقیت ایجاد شد.";
-            return RedirectToAction("Index");
-        }
-
-        /// <summary>
-        /// نمایش فرم ویرایش کلینیک
-        /// </summary>
-        [Route("Edit/{id:int}")]
-        public async Task<ActionResult> Edit(int id)
-        {
-            _log.Information("درخواست ویرایش کلینیک با شناسه {ClinicId} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                id,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
-            var result = await _clinicService.GetClinicForEditAsync(id);
-
-            if (!result.Success)
-            {
-                _log.Warning("خطا در دریافت اطلاعات کلینیک برای ویرایش در بخش ادمین: {Message}", result.Message);
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("Index");
             }
 
+            // اگر خطا از سمت سرویس باشد (مانند نام تکراری)، آن را به ModelState اضافه می‌کنیم
+            AddServiceErrorsToModelState(result);
+            return View(model);
+        }
+
+        // GET: Admin/Clinic/Edit/5
+        public async Task<ActionResult> Edit(int id)
+        {
+            var result = await _clinicService.GetClinicForEditAsync(id);
+            if (!result.Success)
+            {
+                if (result.Code == "NOT_FOUND") return HttpNotFound();
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction("Index");
+            }
             return View(result.Data);
         }
 
-        /// <summary>
-        /// پردازش درخواست ویرایش کلینیک
-        /// </summary>
+        // POST: Admin/Clinic/Edit/5
+        // POST: Admin/Clinic/Edit/5
         [HttpPost]
-        [Route("Edit/{id:int}")]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Edit(ClinicCreateEditViewModel model)
+        public async Task<ActionResult> Update(ClinicCreateEditViewModel model)
         {
-            _log.Information("درخواست ویرایش کلینیک با شناسه {ClinicId} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                model.ClinicId,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
             if (!ModelState.IsValid)
             {
-                _log.Warning("مدل نامعتبر برای ویرایش کلینیک در بخش ادمین. Errors: {Errors}",
-                    string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
-                return View(model);
+                // ✅ **اصلاح کلیدی:** به صراحت نام View را "Edit" مشخص می‌کنیم
+                return View("Edit", model);
             }
 
             var result = await _clinicService.UpdateClinicAsync(model);
-
-            if (!result.Success)
+            if (result.Success)
             {
-                _log.Warning("خطا در ویرایش کلینیک در بخش ادمین: {Message}", result.Message);
-                ModelState.AddModelError("", result.Message);
-                return View(model);
-            }
-
-            _log.Information("کلینیک با شناسه {ClinicId} در بخش ادمین با موفقیت ویرایش شد.", model.ClinicId);
-            TempData["SuccessMessage"] = "اطلاعات کلینیک با موفقیت به‌روزرسانی شد.";
-            return RedirectToAction("Index");
-        }
-
-        /// <summary>
-        /// نمایش جزئیات کامل یک کلینیک
-        /// </summary>
-        [Route("Details/{id:int}")]
-        public async Task<ActionResult> Details(int id)
-        {
-            _log.Information("درخواست جزئیات کلینیک با شناسه {ClinicId} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                id,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
-            var result = await _clinicService.GetClinicDetailsAsync(id);
-
-            if (!result.Success)
-            {
-                _log.Warning("خطا در دریافت جزئیات کلینیک در بخش ادمین: {Message}", result.Message);
-                TempData["ErrorMessage"] = result.Message;
+                TempData["SuccessMessage"] = result.Message;
                 return RedirectToAction("Index");
             }
 
-            return View(result.Data);
+            AddServiceErrorsToModelState(result);
+
+            // ✅ **اصلاح کلیدی:** اینجا نیز نام View را "Edit" مشخص می‌کنیم
+            return View("Edit", model);
         }
 
-        /// <summary>
-        /// نمایش صفحه تأیید حذف کلینیک
-        /// </summary>
-        [Route("Delete/{id:int}")]
+        // POST: Admin/Clinic/Delete/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<ActionResult> Delete(int id)
         {
-            _log.Information("درخواست نمایش صفحه حذف کلینیک با شناسه {ClinicId} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                id,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
-            var result = await _clinicService.GetClinicDetailsAsync(id);
-
-            if (!result.Success)
+            var result = await _clinicService.SoftDeleteClinicAsync(id);
+            if (result.Success)
             {
-                _log.Warning("خطا در دریافت جزئیات کلینیک برای حذف در بخش ادمین: {Message}", result.Message);
-                TempData["ErrorMessage"] = result.Message;
-                return RedirectToAction("Index");
+                TempData["SuccessMessage"] = result.Message;
             }
-
-            return View(result.Data);
-        }
-
-        /// <summary>
-        /// پردازش درخواست حذف کلینیک
-        /// </summary>
-        [HttpPost]
-        [Route("Delete/{id:int}")]
-        [ActionName("Delete")]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> DeleteConfirmed(int id)
-        {
-            _log.Information("درخواست حذف کلینیک با شناسه {ClinicId} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                id,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
-            var result = await _clinicService.DeleteClinicAsync(id);
-
-            if (!result.Success)
+            else
             {
-                _log.Warning("خطا در حذف کلینیک در بخش ادمین: {Message}", result.Message);
                 TempData["ErrorMessage"] = result.Message;
-                return RedirectToAction("Details", new { id = id });
             }
-
-            _log.Information("کلینیک با شناسه {ClinicId} در بخش ادمین با موفقیت حذف شد.", id);
-            TempData["SuccessMessage"] = "کلینیک با موفقیت حذف شد.";
             return RedirectToAction("Index");
         }
 
-        #endregion
-
-        #region عملیات API و AJAX
-
         /// <summary>
-        /// دریافت اطلاعات کلینیک برای استفاده در APIها و کال‌های AJAX
+        /// دریافت Anti-Forgery Token برای درخواست‌های AJAX
         /// </summary>
         [HttpGet]
-        [Route("GetClinicDetailsJson/{id:int}")]
-        public async Task<ActionResult> GetClinicDetailsJson(int id)
+        public JsonResult GetAntiForgeryToken()
         {
-            _log.Information("درخواست JSON جزئیات کلینیک با شناسه {ClinicId} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                id,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
-            var result = await _clinicService.GetClinicDetailsAsync(id);
-
-            if (!result.Success)
-            {
-                _log.Warning("خطا در دریافت جزئیات کلینیک برای API در بخش ادمین: {Message}", result.Message);
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-
-            return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+            var tokenData = AntiForgeryHelper.GetTokenData();
+            return Json(tokenData, JsonRequestBehavior.AllowGet);
         }
 
+        #region Private Helpers
         /// <summary>
-        /// جستجوی پیشرفته کلینیک‌ها برای استفاده در کامبو باکس‌ها
+        /// متد کمکی برای افزودن خطاهای بازگشتی از سرویس به ModelState
         /// </summary>
-        [HttpGet]
-        [Route("SearchClinicsJson")]
-        public async Task<ActionResult> SearchClinicsJson(string term)
+        private void AddServiceErrorsToModelState(ServiceResult result)
         {
-            _log.Information("درخواست جستجوی کلینیک‌ها با عبارت {SearchTerm} در بخش ادمین. User: {UserName} (Id: {UserId})",
-                term,
-                User.Identity.Name,
-                _currentUserService.UserId);
-
-            try
+            if (result.ValidationErrors != null && result.ValidationErrors.Any())
             {
-                var result = await _clinicService.SearchClinicsAsync(term, 1, 10);
-
-                if (!result.Success)
+                foreach (var error in result.ValidationErrors)
                 {
-                    _log.Warning("خطا در جستجوی کلینیک‌ها برای API در بخش ادمین: {Message}", result.Message);
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    // FluentValidation خطاها را با نام پراپرتی برمی‌گرداند
+                    ModelState.AddModelError(error.Field ?? "", error.ErrorMessage);
                 }
-
-                var items = result.Data.Items.Select(c => new
-                {
-                    id = c.ClinicId,
-                    text = c.Name,
-                    address = c.Address,
-                    phoneNumber = c.PhoneNumber
-                });
-
-                return Json(new { success = true, items = items }, JsonRequestBehavior.AllowGet);
             }
-            catch (Exception ex)
+            else if (!string.IsNullOrEmpty(result.Message))
             {
-                _log.Error(ex, "خطای غیرمنتظره در جستجوی کلینیک‌ها برای API در بخش ادمین");
-                return Json(new { success = false, message = "خطای سیستم رخ داده است." }, JsonRequestBehavior.AllowGet);
+                // برای خطاهای عمومی که به فیلد خاصی مرتبط نیستند
+                ModelState.AddModelError("", result.Message);
             }
         }
-
         #endregion
     }
 }

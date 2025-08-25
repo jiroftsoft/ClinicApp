@@ -13,6 +13,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web.WebPages.Html;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.Services;
 
@@ -467,9 +468,9 @@ public class ServiceCategoryService : IServiceCategoryService
             };
 
             // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
-            viewModel.CreatedAtShamsi = viewModel.CreatedAt.ToPersianDateTime();
+            viewModel.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(viewModel.CreatedAt);
             if (viewModel.UpdatedAt.HasValue)
-                viewModel.UpdatedAtShamsi = viewModel.UpdatedAt.Value.ToPersianDateTime();
+                viewModel.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(viewModel.UpdatedAt.Value);
 
             return ServiceResult<ServiceCategoryCreateEditViewModel>.Successful(viewModel);
         }
@@ -554,11 +555,11 @@ public class ServiceCategoryService : IServiceCategoryService
             };
 
             // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
-            details.CreatedAtShamsi = details.CreatedAt.ToPersianDateTime();
+            details.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.CreatedAt);
             if (details.UpdatedAt.HasValue)
-                details.UpdatedAtShamsi = details.UpdatedAt.Value.ToPersianDateTime();
+                details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt.Value);
             if (details.DeletedAt.HasValue)
-                details.DeletedAtShamsi = details.DeletedAt.Value.ToPersianDateTime();
+                details.DeletedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.DeletedAt.Value);
 
             return ServiceResult<ServiceCategoryDetailsViewModel>.Successful(details);
         }
@@ -670,9 +671,9 @@ public class ServiceCategoryService : IServiceCategoryService
             // تبدیل تاریخ‌ها به شمسی برای محیط‌های پزشکی ایرانی
             foreach (var viewModel in viewModels)
             {
-                viewModel.CreatedAtShamsi = viewModel.CreatedAt.ToPersianDateTime();
+                viewModel.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(viewModel.CreatedAt);
                 if (viewModel.UpdatedAt.HasValue)
-                    viewModel.UpdatedAtShamsi = viewModel.UpdatedAt.Value.ToPersianDateTime();
+                    viewModel.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(viewModel.UpdatedAt.Value);
             }
 
             // ایجاد نتیجه صفحه‌بندی شده

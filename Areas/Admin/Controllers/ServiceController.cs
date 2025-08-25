@@ -1,11 +1,11 @@
-﻿using ClinicApp.Helpers;
+﻿using ClinicApp.Filters;
+using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
-using ClinicApp.Models.Entities;
+using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.ViewModels;
 using Serilog;
 using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -13,1277 +13,1332 @@ using System.Web.Mvc;
 namespace ClinicApp.Areas.Admin.Controllers
 {
     /// <summary>
-    /// کنترلر مدیریت خدمات پزشکی با رعایت کامل استانداردهای سیستم‌های پزشکی و امنیت اطلاعات
-    /// این کنترلر تمام عملیات مربوط به خدمات پزشکی را پشتیبانی می‌کند
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. رعایت کامل اصول Soft Delete برای حفظ اطلاعات پزشکی (مطابق استانداردهای قانونی ایران)
-    /// 2. پیاده‌سازی سیستم ردیابی کامل (Audit Trail) با ذخیره اطلاعات کاربر انجام‌دهنده عملیات
-    /// 3. استفاده از زمان UTC برای تمام تاریخ‌ها به منظور رعایت استانداردهای بین‌المللی
-    /// 4. مدیریت تراکنش‌های پایگاه داده برای اطمینان از یکپارچگی داده‌ها
-    /// 5. اعمال قوانین کسب‌وکار پزشکی در تمام سطوح
-    /// 6. پشتیبانی کامل از Dependency Injection برای افزایش قابلیت تست و نگهداری
-    /// 7. مدیریت خطاها با پیام‌های کاربرپسند و لاگ‌گیری حرفه‌ای
-    /// 8. پشتیبانی کامل از محیط‌های ایرانی با تبدیل تاریخ‌ها به شمسی
-    /// 9. ارائه امکانات پیشرفته برای سیستم‌های پزشکی ایرانی
-    /// 10. حذف کامل استفاده از AJAX برای عملیات اصلی (برای کاهش خطا در محیط عملیاتی)
+    /// کنترلر مدیریت خدمات - محیط درمانی با اطمینان 100%
+    /// Medical Environment Service Management Controller with 100% Reliability
     /// </summary>
-    //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
-    [Route("Admin/Service")]
     public class ServiceController : Controller
     {
-        private readonly IServiceService _serviceService;
-        private readonly IServiceCategoryService _serviceCategoryService;
+        #region Dependencies and Constructor
+
+        private readonly IServiceManagementService _serviceManagementService;
+        private readonly IDepartmentManagementService _departmentService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _log;
 
         public ServiceController(
-            IServiceService serviceService,
-            IServiceCategoryService serviceCategoryService,
+            IServiceManagementService serviceManagementService,
+            IDepartmentManagementService departmentService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
-            _serviceService = serviceService;
-            _serviceCategoryService = serviceCategoryService;
+            _serviceManagementService = serviceManagementService;
+            _departmentService = departmentService;
             _currentUserService = currentUserService;
             _log = logger.ForContext<ServiceController>();
         }
 
+        #endregion
+
+        #region Medical Environment Validation Models
+
         /// <summary>
-        /// نمایش لیست خدمات با قابلیت جستجو، فیلتر و صفحه‌بندی
-        /// این متد برای محیط‌های پزشکی با ترافیک بالا بهینه‌شده است
+        /// نتیجه اعتبارسنجی پزشکی
         /// </summary>
-        [HttpGet]
-        [Route("")]
-        public async Task<ActionResult> Index(string searchTerm = "", int? serviceCategoryId = null, int page = 1)
+        public class MedicalValidationResult
         {
-            _log.Information(
-                "درخواست نمایش لیست خدمات. Term: {SearchTerm}, ServiceCategoryId: {ServiceCategoryId}, Page: {Page}. User: {UserName} (Id: {UserId})",
-                searchTerm,
-                serviceCategoryId,
-                page,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
+            public bool IsValid { get; set; }
+            public List<MedicalValidationError> Errors { get; set; } = new List<MedicalValidationError>();
+        }
+
+        /// <summary>
+        /// خطای اعتبارسنجی پزشکی
+        /// </summary>
+        public class MedicalValidationError
+        {
+            public string Field { get; set; }
+            public string Message { get; set; }
+
+            public MedicalValidationError(string field, string message)
+            {
+                Field = field;
+                Message = message;
+            }
+        }
+
+        #endregion
+
+        #region Medical Environment Validation Methods
+
+        /// <summary>
+        /// اعتبارسنجی کامل خدمت برای محیط پزشکی - با اطمینان 100%
+        /// </summary>
+        private Task<MedicalValidationResult> ValidateServiceForMedicalEnvironment(ServiceCreateEditViewModel model)
+        {
+            var result = new MedicalValidationResult { IsValid = true, Errors = new List<MedicalValidationError>() };
 
             try
             {
-                // اعتبارسنجی ورودی‌ها
-                page = page < 1 ? 1 : page;
-                const int pageSize = 10;
+                _log.Information("🏥 MEDICAL: شروع اعتبارسنجی خدمت. Title: {Title}, Price: {Price}", 
+                    model?.Title, model?.Price);
 
-                // پر کردن لیست دسته‌بندی‌های خدمات برای فیلتر
-                ViewBag.ServiceCategories = await GetActiveServiceCategories();
-                ViewBag.SelectedServiceCategoryId = serviceCategoryId;
-                ViewBag.SearchTerm = searchTerm;
-                ViewBag.CurrentPage = page;
+                // 🔒 1. اعتبارسنجی عنوان
+                if (string.IsNullOrWhiteSpace(model?.Title))
+                {
+                    result.Errors.Add(new MedicalValidationError("Title", "عنوان خدمت الزامی است"));
+                    result.IsValid = false;
+                }
+                else if (model.Title.Length > 250)
+                {
+                    result.Errors.Add(new MedicalValidationError("Title", "عنوان خدمت نمی‌تواند بیشتر از 250 کاراکتر باشد"));
+                    result.IsValid = false;
+                }
+                else if (model.Title.Length < 3)
+                {
+                    result.Errors.Add(new MedicalValidationError("Title", "عنوان خدمت باید حداقل 3 کاراکتر باشد"));
+                    result.IsValid = false;
+                }
 
-                var result = await _serviceService.SearchServicesAsync(
-                    searchTerm,
-                    serviceCategoryId,
-                    page,
-                    pageSize);
+                // 🔒 2. اعتبارسنجی کد خدمت - Medical Environment (فقط اعداد)
+                if (string.IsNullOrWhiteSpace(model?.ServiceCode))
+                {
+                    result.Errors.Add(new MedicalValidationError("ServiceCode", "کد خدمت الزامی است"));
+                    result.IsValid = false;
+                }
+                else if (!System.Text.RegularExpressions.Regex.IsMatch(model.ServiceCode.Trim(), @"^\d+$"))
+                {
+                    result.Errors.Add(new MedicalValidationError("ServiceCode", "کد خدمت باید فقط شامل اعداد باشد"));
+                    result.IsValid = false;
+                }
+                else if (model.ServiceCode.Trim().Length < 3 || model.ServiceCode.Trim().Length > 10)
+                {
+                    result.Errors.Add(new MedicalValidationError("ServiceCode", "کد خدمت باید بین 3 تا 10 رقم باشد"));
+                    result.IsValid = false;
+                }
+
+                // 🔒 3. اعتبارسنجی قیمت - با دقت 100%
+                if (model.Price <= 0)
+                {
+                    result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت باید بزرگتر از صفر باشد"));
+                    result.IsValid = false;
+                }
+                else if (model.Price > 999999999) // حداکثر 999 میلیون تومان
+                {
+                    result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت نمی‌تواند بیشتر از 999,999,999 تومان باشد"));
+                    result.IsValid = false;
+                }
+                else if (model.Price % 1000 != 0) // باید مضرب 1000 باشد
+                {
+                    result.Errors.Add(new MedicalValidationError("Price", "قیمت خدمت باید مضرب 1000 تومان باشد"));
+                    result.IsValid = false;
+                }
+
+                // 🔒 4. اعتبارسنجی دسته‌بندی
+                if (model.ServiceCategoryId <= 0)
+                {
+                    result.Errors.Add(new MedicalValidationError("ServiceCategoryId", "انتخاب دسته‌بندی الزامی است"));
+                    result.IsValid = false;
+                }
+
+                // 🔒 5. اعتبارسنجی توضیحات
+                if (!string.IsNullOrWhiteSpace(model?.Description) && model.Description.Length > 1000)
+                {
+                    result.Errors.Add(new MedicalValidationError("Description", "توضیحات خدمت نمی‌تواند بیشتر از 1000 کاراکتر باشد"));
+                    result.IsValid = false;
+                }
+
+                if (result.IsValid)
+                {
+                    _log.Information("🏥 MEDICAL: اعتبارسنجی خدمت موفق. Title: {Title}, Price: {Price}", 
+                        model.Title, model.Price);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: اعتبارسنجی خدمت ناموفق. تعداد خطاها: {ErrorCount}", 
+                        result.Errors.Count);
+                }
+
+                return Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی خدمت");
+                result.IsValid = false;
+                result.Errors.Add(new MedicalValidationError("", "خطا در اعتبارسنجی داده‌ها"));
+                return Task.FromResult(result);
+            }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی کامل دسته‌بندی برای محیط پزشکی - با اطمینان 100%
+        /// </summary>
+        private Task<MedicalValidationResult> ValidateServiceCategoryForMedicalEnvironment(ServiceCategoryCreateEditViewModel model)
+        {
+            var result = new MedicalValidationResult { IsValid = true, Errors = new List<MedicalValidationError>() };
+
+            try
+            {
+                _log.Information("🏥 MEDICAL: شروع اعتبارسنجی دسته‌بندی. Title: {Title}, DepartmentId: {DepartmentId}", 
+                    model?.Title, model?.DepartmentId);
+
+                // 🔒 1. اعتبارسنجی عنوان
+                if (string.IsNullOrWhiteSpace(model?.Title))
+                {
+                    result.Errors.Add(new MedicalValidationError("Title", "عنوان دسته‌بندی الزامی است"));
+                    result.IsValid = false;
+                }
+                else if (model.Title.Length > 250)
+                {
+                    result.Errors.Add(new MedicalValidationError("Title", "عنوان دسته‌بندی نمی‌تواند بیشتر از 250 کاراکتر باشد"));
+                    result.IsValid = false;
+                }
+                else if (model.Title.Length < 3)
+                {
+                    result.Errors.Add(new MedicalValidationError("Title", "عنوان دسته‌بندی باید حداقل 3 کاراکتر باشد"));
+                    result.IsValid = false;
+                }
+
+                // 🔒 2. اعتبارسنجی دپارتمان
+                if (model.DepartmentId <= 0)
+                {
+                    result.Errors.Add(new MedicalValidationError("DepartmentId", "انتخاب دپارتمان الزامی است"));
+                    result.IsValid = false;
+                }
+
+                // 🔒 3. اعتبارسنجی توضیحات
+                if (!string.IsNullOrWhiteSpace(model?.Description) && model.Description.Length > 1000)
+                {
+                    result.Errors.Add(new MedicalValidationError("Description", "توضیحات دسته‌بندی نمی‌تواند بیشتر از 1000 کاراکتر باشد"));
+                    result.IsValid = false;
+                }
+
+                if (result.IsValid)
+                {
+                    _log.Information("🏥 MEDICAL: اعتبارسنجی دسته‌بندی موفق. Title: {Title}", 
+                        model.Title);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: اعتبارسنجی دسته‌بندی ناموفق. تعداد خطاها: {ErrorCount}", 
+                        result.Errors.Count);
+                }
+
+                return Task.FromResult(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی دسته‌بندی");
+                result.IsValid = false;
+                result.Errors.Add(new MedicalValidationError("", "خطا در اعتبارسنجی داده‌ها"));
+                return Task.FromResult(result);
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// تنظیم ViewBag.Departments برای DropDownList
+        /// </summary>
+        private async Task SetDepartmentsViewBag(int selectedDepartmentId = 0)
+        {
+            try
+            {
+                var departmentsResult = await _departmentService.GetActiveDepartmentsForLookupAsync(1); // فعلاً کلینیک پیش‌فرض
+                if (departmentsResult.Success)
+                {
+                    ViewBag.Departments = new SelectList(departmentsResult.Data, "Id", "Name", selectedDepartmentId);
+                }
+                else
+                {
+                    ViewBag.Departments = new SelectList(new List<LookupItemViewModel>(), "Id", "Name");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تنظیم ViewBag.Departments");
+                ViewBag.Departments = new SelectList(new List<LookupItemViewModel>(), "Id", "Name");
+            }
+        }
+
+        /// <summary>
+        /// تنظیم ViewBag.ServiceCategories برای Medical Environment - با اطمینان 100%
+        /// </summary>
+        private async Task SetServiceCategoriesViewBagForMedicalEnvironment(int departmentId, int selectedCategoryId = 0)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: تنظیم ViewBag.ServiceCategories. DepartmentId: {DepartmentId}, SelectedId: {SelectedId}",
+                    departmentId, selectedCategoryId);
+
+                var categoriesResult = await _serviceManagementService.GetActiveServiceCategoriesForLookupAsync(departmentId);
+                if (categoriesResult.Success && categoriesResult.Data?.Count > 0)
+                {
+                    // ایجاد SelectList با اطمینان از انتخاب صحیح
+                    var selectList = new SelectList(categoriesResult.Data, "Id", "Title", selectedCategoryId);
+                    ViewBag.ServiceCategories = selectList;
+
+                    _log.Information("🏥 MEDICAL: ViewBag.ServiceCategories تنظیم شد. تعداد آیتم‌ها: {Count}, انتخاب شده: {SelectedId}",
+                        categoriesResult.Data.Count, selectedCategoryId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: هیچ دسته‌بندی فعالی یافت نشد. DepartmentId: {DepartmentId}", departmentId);
+                    ViewBag.ServiceCategories = new SelectList(new List<LookupItemViewModel>(), "Id", "Title");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در تنظیم ViewBag.ServiceCategories. DepartmentId: {DepartmentId}", departmentId);
+                ViewBag.ServiceCategories = new SelectList(new List<LookupItemViewModel>(), "Id", "Title");
+            }
+        }
+
+        /// <summary>
+        /// تنظیم ViewBag.ServiceCategories برای Create Service - Medical Environment
+        /// </summary>
+        private async Task SetServiceCategoriesViewBagForCreate(int selectedCategoryId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: تنظیم ViewBag.ServiceCategories برای Create. SelectedId: {SelectedId}", selectedCategoryId);
+                
+                // ابتدا اطلاعات ServiceCategory را دریافت کنیم تا departmentId را بدانیم
+                var categoryResult = await _serviceManagementService.GetServiceCategoryDetailsAsync(selectedCategoryId);
+                if (categoryResult.Success)
+                {
+                    await SetServiceCategoriesViewBagForMedicalEnvironment(categoryResult.Data.DepartmentId, selectedCategoryId);
+                    
+                    _log.Information("🏥 MEDICAL: ViewBag.ServiceCategories برای Create تنظیم شد. DepartmentId: {DepartmentId}, SelectedId: {SelectedId}",
+                        categoryResult.Data.DepartmentId, selectedCategoryId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی یافت نشد. SelectedId: {SelectedId}", selectedCategoryId);
+                    ViewBag.ServiceCategories = new SelectList(new List<LookupItemViewModel>(), "Id", "Title");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در تنظیم ViewBag.ServiceCategories برای Create. SelectedId: {SelectedId}", selectedCategoryId);
+                ViewBag.ServiceCategories = new SelectList(new List<LookupItemViewModel>(), "Id", "Title");
+            }
+        }
+
+        /// <summary>
+        /// تنظیم ViewBag.ServiceCategories برای Edit Service - Medical Environment
+        /// </summary>
+        private async Task SetServiceCategoriesViewBagForEdit(int serviceCategoryId, int selectedCategoryId = 0)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: تنظیم ViewBag.ServiceCategories برای Edit. ServiceCategoryId: {ServiceCategoryId}, SelectedId: {SelectedId}", 
+                    serviceCategoryId, selectedCategoryId);
+                
+                // ابتدا اطلاعات ServiceCategory را دریافت کنیم تا departmentId را بدانیم
+                var categoryResult = await _serviceManagementService.GetServiceCategoryDetailsAsync(serviceCategoryId);
+                if (categoryResult.Success)
+                {
+                    await SetServiceCategoriesViewBagForMedicalEnvironment(categoryResult.Data.DepartmentId, selectedCategoryId);
+                    
+                    _log.Information("🏥 MEDICAL: ViewBag.ServiceCategories برای Edit تنظیم شد. DepartmentId: {DepartmentId}, SelectedId: {SelectedId}",
+                        categoryResult.Data.DepartmentId, selectedCategoryId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی یافت نشد. ServiceCategoryId: {ServiceCategoryId}", serviceCategoryId);
+                    ViewBag.ServiceCategories = new SelectList(new List<LookupItemViewModel>(), "Id", "Title");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در تنظیم ViewBag.ServiceCategories برای Edit. ServiceCategoryId: {ServiceCategoryId}", serviceCategoryId);
+                ViewBag.ServiceCategories = new SelectList(new List<LookupItemViewModel>(), "Id", "Title");
+            }
+        }
+
+        #endregion
+
+        #region Service Category Management
+
+        /// <summary>
+        /// نمایش لیست دسته‌بندی‌های خدمات
+        /// </summary>
+        public async Task<ActionResult> Categories(int? departmentId, string searchTerm = "", int page = 1, int pageSize = 10, bool isAjax = false)
+        {
+            try
+            {
+                _log.Information("درخواست لیست دسته‌بندی‌های خدمات. DepartmentId: {DepartmentId}, Page: {Page}, User: {UserId}",
+                    departmentId, page, _currentUserService.UserId);
+
+                // اگر departmentId مشخص نشده، تمام دسته‌بندی‌ها را نمایش بده
+                if (!departmentId.HasValue)
+                {
+                    return await ShowAllCategories(searchTerm, page, pageSize, isAjax);
+                }
+
+                var result = await _serviceManagementService.GetServiceCategoriesAsync(
+                    departmentId.Value, searchTerm, page, pageSize);
 
                 if (!result.Success)
                 {
-                    _log.Warning(
-                        "عملیات جستجوی خدمات با خطا مواجه شد. Message: {Message}. User: {UserName} (Id: {UserId})",
-                        result.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
+                    if (isAjax)
+                    {
+                        return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    }
                     TempData["ErrorMessage"] = result.Message;
-                    return View(new PagedResult<ServiceIndexViewModel>());
+                    return View("Error");
                 }
 
-                // محاسبه آمارهای سریع با استفاده از روش‌های موجود
-                ViewBag.TotalServices = await GetTotalServicesCount();
-                ViewBag.ActiveServices = await GetActiveServicesCount();
-                ViewBag.ServiceCategoriesCount = await GetActiveServiceCategoriesCount();
+                // آماده‌سازی ViewBag برای UI
+                ViewBag.DepartmentId = departmentId.Value;
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
 
-                return View(result.Data);
+                if (isAjax)
+                {
+                    return PartialView("_CategoriesPartial", result.Data);
+                }
+
+                return View("Categories", result.Data);
             }
             catch (Exception ex)
             {
-                _log.Error(
-                    ex,
-                    "خطا در نمایش لیست خدمات. Term: {SearchTerm}, ServiceCategoryId: {ServiceCategoryId}, Page: {Page}. User: {UserName} (Id: {UserId})",
-                    searchTerm,
-                    serviceCategoryId,
-                    page,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                _log.Error(ex, "خطای غیرمنتظره در لیست دسته‌بندی‌ها. DepartmentId: {DepartmentId}, User: {UserId}",
+                    departmentId, _currentUserService.UserId);
 
-                TempData["ErrorMessage"] = "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
-                return View(new PagedResult<ServiceIndexViewModel>());
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                }
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return View("Error");
             }
         }
 
         /// <summary>
-        /// نمایش فرم ایجاد خدمات جدید
-        /// این متد بدون استفاده از AJAX طراحی شده است (برای کاهش خطا در محیط عملیاتی)
+        /// نمایش تمام دسته‌بندی‌های خدمات (Medical Environment)
         /// </summary>
-        [HttpGet]
-        [Route("Create")]
-        public async Task<ActionResult> Create()
+        private async Task<ActionResult> ShowAllCategories(string searchTerm = "", int page = 1, int pageSize = 10, bool isAjax = false)
         {
-            _log.Information(
-                "درخواست نمایش فرم ایجاد خدمات. User: {UserName} (Id: {UserId})",
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
             try
             {
-                ViewBag.ServiceCategories = await GetActiveServiceCategories();
-                return View(new ServiceCreateEditViewModel());
+                _log.Information("درخواست لیست تمام دسته‌بندی‌های خدمات. Page: {Page}, User: {UserId}",
+                    page, _currentUserService.UserId);
+
+                var result = await _serviceManagementService.GetAllServiceCategoriesAsync(searchTerm, page, pageSize);
+
+                if (!result.Success)
+                {
+                    if (isAjax)
+                    {
+                        return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    }
+                    TempData["ErrorMessage"] = result.Message;
+                    return View("Error");
+                }
+
+                // آماده‌سازی ViewBag برای UI
+                ViewBag.DepartmentId = null; // نشان‌دهنده نمایش تمام دسته‌بندی‌ها
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
+
+                if (isAjax)
+                {
+                    return PartialView("_CategoriesPartial", result.Data);
+                }
+
+                return View("Categories", result.Data);
             }
             catch (Exception ex)
             {
-                _log.Error(
-                    ex,
-                    "خطا در نمایش فرم ایجاد خدمات. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName,
+                _log.Error(ex, "خطای غیرمنتظره در لیست تمام دسته‌بندی‌ها. User: {UserId}",
                     _currentUserService.UserId);
 
-                TempData["ErrorMessage"] = "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
-                return RedirectToAction("Index");
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                }
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return View("Error");
             }
         }
 
         /// <summary>
-        /// ایجاد خدمات جدید
-        /// این متد بدون استفاده از AJAX طراحی شده است (برای کاهش خطا در محیط عملیاتی)
+        /// نمایش فرم ایجاد دسته‌بندی خدمات
+        /// </summary>
+        public async Task<ActionResult> CreateCategory(int departmentId)
+        {
+            try
+            {
+                _log.Information("درخواست فرم ایجاد دسته‌بندی. DepartmentId: {DepartmentId}, User: {UserId}",
+                    departmentId, _currentUserService.UserId);
+
+                var model = new ServiceCategoryCreateEditViewModel
+                {
+                    DepartmentId = departmentId,
+                    IsActive = true
+                };
+
+                // تنظیم ViewBag برای DropDownList
+                await SetDepartmentsViewBag(departmentId);
+
+                return View("CreateCategory", model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در نمایش فرم ایجاد دسته‌بندی. DepartmentId: {DepartmentId}, User: {UserId}",
+                    departmentId, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد.";
+                return RedirectToAction("Categories");
+            }
+        }
+
+        /// <summary>
+        /// پردازش فرم ایجاد دسته‌بندی خدمات - Medical Environment
         /// </summary>
         [HttpPost]
-        [Route("Create")]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> CreateCategory(ServiceCategoryCreateEditViewModel model)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: پردازش ایجاد دسته‌بندی. Title: {Title}, DepartmentId: {DepartmentId}, User: {UserId}",
+                    model?.Title, model?.DepartmentId, _currentUserService.UserId);
+
+                // 🔒 اعتبارسنجی چندلایه - Medical Environment
+                var validationResult = ValidateServiceCategoryForMedicalEnvironment(model).Result;
+                if (!validationResult.IsValid)
+                {
+                    _log.Warning("🏥 MEDICAL: اعتبارسنجی ناموفق. خطاها: {Errors}", 
+                        string.Join(", ", validationResult.Errors.Select(e => e.Message)));
+                    
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.Field, error.Message);
+                    }
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا
+                    await SetDepartmentsViewBag(model.DepartmentId);
+                    return View("CreateCategory", model);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _log.Warning("🏥 MEDICAL: ModelState نامعتبر. خطاها: {Errors}", 
+                        string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا
+                    await SetDepartmentsViewBag(model.DepartmentId);
+                    return View("CreateCategory", model);
+                }
+
+                var result = await _serviceManagementService.CreateServiceCategoryAsync(model);
+
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: دسته‌بندی با موفقیت ایجاد شد. Title: {Title}, User: {UserId}",
+                        model.Title, _currentUserService.UserId);
+
+                    TempData["SuccessMessage"] = result.Message;
+                    return RedirectToAction("Categories", new { departmentId = model.DepartmentId });
+                }
+
+                // مدیریت خطاهای Validation
+                if (result.ValidationErrors?.Count > 0)
+                {
+                    foreach (var error in result.ValidationErrors)
+                    {
+                        ModelState.AddModelError(error.Field, error.ErrorMessage);
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("", result.Message);
+                }
+
+                // تنظیم مجدد ViewBag در صورت خطا
+                await SetDepartmentsViewBag(model.DepartmentId);
+
+                return View("CreateCategory", model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد دسته‌بندی. Title: {Title}, User: {UserId}",
+                    model?.Title, _currentUserService.UserId);
+
+                ModelState.AddModelError("", "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.");
+                
+                // تنظیم مجدد ViewBag در صورت خطا
+                if (model?.DepartmentId > 0)
+                {
+                    await SetDepartmentsViewBag(model.DepartmentId);
+                }
+
+                return View("CreateCategory", model);
+            }
+        }
+
+        /// <summary>
+        /// نمایش فرم ویرایش دسته‌بندی خدمات - Medical Environment
+        /// </summary>
+        public async Task<ActionResult> EditCategory(int id)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست فرم ویرایش دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                // دریافت اطلاعات دسته‌بندی
+                var result = await _serviceManagementService.GetServiceCategoryForEditAsync(id);
+                if (!result.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی یافت نشد. CategoryId: {CategoryId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Categories");
+                }
+
+                var model = result.Data;
+                
+                // تنظیم ViewBag برای DropDownList
+                await SetDepartmentsViewBag(model.DepartmentId);
+
+                _log.Information("🏥 MEDICAL: فرم ویرایش دسته‌بندی آماده شد. Title: {Title}, DepartmentId: {DepartmentId}, User: {UserId}",
+                    model.Title, model.DepartmentId, _currentUserService.UserId);
+
+                return View("EditCategory", model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در نمایش فرم ویرایش دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Categories");
+            }
+        }
+
+        /// <summary>
+        /// پردازش فرم ویرایش دسته‌بندی خدمات - Medical Environment با اطمینان 100%
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> EditCategory(ServiceCategoryCreateEditViewModel model)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: پردازش ویرایش دسته‌بندی. CategoryId: {CategoryId}, Title: {Title}, DepartmentId: {DepartmentId}, User: {UserId}",
+                    model?.ServiceCategoryId, model?.Title, model?.DepartmentId, _currentUserService.UserId);
+
+                // 🔒 اعتبارسنجی چندلایه - Medical Environment
+                var validationResult = ValidateServiceCategoryForMedicalEnvironment(model).Result;
+                if (!validationResult.IsValid)
+                {
+                    _log.Warning("🏥 MEDICAL: اعتبارسنجی ناموفق. خطاها: {Errors}", 
+                        string.Join(", ", validationResult.Errors.Select(e => e.Message)));
+                    
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.Field, error.Message);
+                    }
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا
+                    await SetDepartmentsViewBag(model.DepartmentId);
+                    return View("EditCategory", model);
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    _log.Warning("🏥 MEDICAL: ModelState نامعتبر. خطاها: {Errors}", 
+                        string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا
+                    await SetDepartmentsViewBag(model.DepartmentId);
+                    return View("EditCategory", model);
+                }
+
+                var result = await _serviceManagementService.UpdateServiceCategoryAsync(model);
+
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: دسته‌بندی با موفقیت ویرایش شد. CategoryId: {CategoryId}, Title: {Title}, User: {UserId}",
+                        model.ServiceCategoryId, model.Title, _currentUserService.UserId);
+
+                    TempData["SuccessMessage"] = result.Message;
+                    return RedirectToAction("Categories", new { departmentId = model.DepartmentId });
+                }
+
+                // مدیریت خطاهای Validation
+                if (result.ValidationErrors?.Count > 0)
+                {
+                    foreach (var error in result.ValidationErrors)
+                    {
+                        ModelState.AddModelError(error.Field, error.ErrorMessage);
+                    }
+                }
+                else
+                {
+                    ModelState.AddModelError("", result.Message);
+                }
+
+                // تنظیم مجدد ViewBag در صورت خطا
+                await SetDepartmentsViewBag(model.DepartmentId);
+
+                return View("EditCategory", model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در ویرایش دسته‌بندی. CategoryId: {CategoryId}, Title: {Title}, User: {UserId}",
+                    model?.ServiceCategoryId, model?.Title, _currentUserService.UserId);
+
+                ModelState.AddModelError("", "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.");
+                
+                // تنظیم مجدد ViewBag در صورت خطا
+                if (model?.DepartmentId > 0)
+                {
+                    await SetDepartmentsViewBag(model.DepartmentId);
+                }
+
+                return View("EditCategory", model);
+            }
+        }
+
+        #endregion
+
+        #region Service Management
+
+        /// <summary>
+        /// نمایش لیست خدمات یک دسته‌بندی
+        /// </summary>
+        public async Task<ActionResult> Index(int? serviceCategoryId, string searchTerm = "", int page = 1, int pageSize = 10, bool isAjax = false)
+        {
+            try
+            {
+                _log.Information("درخواست لیست خدمات. CategoryId: {CategoryId}, Page: {Page}, User: {UserId}",
+                    serviceCategoryId, page, _currentUserService.UserId);
+
+                // اگر serviceCategoryId مشخص نشده، به صفحه انتخاب دسته‌بندی هدایت کن
+                if (!serviceCategoryId.HasValue)
+                {
+                    return RedirectToAction("Categories");
+                }
+
+                var result = await _serviceManagementService.GetServicesAsync(
+                    serviceCategoryId.Value, searchTerm, page, pageSize);
+
+                if (!result.Success)
+                {
+                    if (isAjax)
+                    {
+                        return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    }
+                    TempData["ErrorMessage"] = result.Message;
+                    return View("Error");
+                }
+
+                ViewBag.ServiceCategoryId = serviceCategoryId.Value;
+                ViewBag.SearchTerm = searchTerm;
+                ViewBag.CurrentPage = page;
+                ViewBag.PageSize = pageSize;
+
+                if (isAjax)
+                {
+                    return PartialView("_ServicesPartial", result.Data);
+                }
+
+                return View("Index", result.Data);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطای غیرمنتظره در لیست خدمات. CategoryId: {CategoryId}, User: {UserId}",
+                    serviceCategoryId, _currentUserService.UserId);
+
+                if (isAjax)
+                {
+                    return Json(new { success = false, message = "خطای سیستمی رخ داد." }, JsonRequestBehavior.AllowGet);
+                }
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return View("Error");
+            }
+        }
+
+        /// <summary>
+        /// نمایش فرم ایجاد خدمت - Medical Environment
+        /// </summary>
+        public async Task<ActionResult> Create(int serviceCategoryId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست فرم ایجاد خدمت. CategoryId: {CategoryId}, User: {UserId}",
+                    serviceCategoryId, _currentUserService.UserId);
+
+                // ابتدا اطلاعات ServiceCategory را دریافت کنیم تا departmentId را بدانیم
+                var categoryResult = await _serviceManagementService.GetServiceCategoryDetailsAsync(serviceCategoryId);
+                if (!categoryResult.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی خدمات یافت نشد. CategoryId: {CategoryId}", serviceCategoryId);
+                    TempData["ErrorMessage"] = "دسته‌بندی خدمات مورد نظر یافت نشد.";
+                    return RedirectToAction("Categories");
+                }
+
+                var model = new ServiceCreateEditViewModel
+                {
+                    ServiceCategoryId = serviceCategoryId,
+                    IsActive = true
+                };
+
+                // تنظیم ViewBag برای DropDownList - Medical Environment
+                await SetServiceCategoriesViewBagForMedicalEnvironment(categoryResult.Data.DepartmentId, serviceCategoryId);
+
+                // اضافه کردن اطلاعات اضافی برای UI
+                ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+                ViewBag.ServiceCategoryName = categoryResult.Data.Title;
+                ViewBag.DepartmentName = categoryResult.Data.DepartmentName;
+
+                _log.Information("🏥 MEDICAL: فرم ایجاد خدمت آماده شد. CategoryId: {CategoryId}, DepartmentId: {DepartmentId}",
+                    serviceCategoryId, categoryResult.Data.DepartmentId);
+
+                return View("Create", model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در نمایش فرم ایجاد خدمت. CategoryId: {CategoryId}, User: {UserId}",
+                    serviceCategoryId, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index", new { serviceCategoryId });
+            }
+        }
+
+        /// <summary>
+        /// پردازش فرم ایجاد خدمت - Medical Environment با اطمینان 100%
+        /// </summary>
+        [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(ServiceCreateEditViewModel model)
         {
-            _log.Information(
-                "درخواست ایجاد خدمات با نام {Title}. User: {UserName} (Id: {UserId})",
-                model.Title,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
             try
             {
-                // اعتبارسنجی ورودی‌ها
-                var validationErrors = new List<string>();
+                _log.Information("🏥 MEDICAL: پردازش ایجاد خدمت. Title: {Title}, CategoryId: {CategoryId}, User: {UserId}",
+                    model?.Title, model?.ServiceCategoryId, _currentUserService.UserId);
 
-                if (string.IsNullOrWhiteSpace(model.Title))
+                // 🔒 اعتبارسنجی چندلایه - Medical Environment
+                var validationResult = ValidateServiceForMedicalEnvironment(model).Result;
+                if (!validationResult.IsValid)
                 {
-                    validationErrors.Add("عنوان خدمات الزامی است.");
-                }
-                else if (model.Title.Length > 250)
-                {
-                    validationErrors.Add("عنوان خدمات نمی‌تواند بیشتر از 250 کاراکتر باشد.");
-                }
-
-                if (string.IsNullOrWhiteSpace(model.ServiceCode))
-                {
-                    validationErrors.Add("کد خدمات الزامی است.");
-                }
-                else if (model.ServiceCode.Length > 50)
-                {
-                    validationErrors.Add("کد خدمات نمی‌تواند بیشتر از 50 کاراکتر باشد.");
-                }
-                else if (!RegexHelper.IsValidServiceCode(model.ServiceCode))
-                {
-                    validationErrors.Add("کد خدمات فقط می‌تواند شامل حروف، اعداد و زیرخط باشد.");
+                    _log.Warning("🏥 MEDICAL: اعتبارسنجی ناموفق. خطاها: {Errors}", 
+                        string.Join(", ", validationResult.Errors.Select(e => e.Message)));
+                    
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.Field, error.Message);
+                    }
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا - Medical Environment
+                    await SetServiceCategoriesViewBagForMedicalEnvironment(model.ServiceCategoryId, model.ServiceCategoryId);
+                    ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+                    
+                    return View("Create", model);
                 }
 
-                if (model.Price < 0)
+                if (!ModelState.IsValid)
                 {
-                    validationErrors.Add("قیمت نمی‌تواند منفی باشد.");
+                    _log.Warning("🏥 MEDICAL: ModelState نامعتبر. خطاها: {Errors}", 
+                        string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا - Medical Environment
+                    await SetServiceCategoriesViewBagForMedicalEnvironment(model.ServiceCategoryId, model.ServiceCategoryId);
+                    ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+                    
+                    return View("Create", model);
                 }
 
-                if (model.ServiceCategoryId <= 0)
+                var result = await _serviceManagementService.CreateServiceAsync(model);
+
+                if (result.Success)
                 {
-                    validationErrors.Add("دسته‌بندی خدمات انتخاب شده معتبر نیست.");
+                    _log.Information("🏥 MEDICAL: خدمت با موفقیت ایجاد شد. Title: {Title}, User: {UserId}",
+                        model.Title, _currentUserService.UserId);
+
+                    TempData["SuccessMessage"] = result.Message;
+                    return RedirectToAction("Index", new { serviceCategoryId = model.ServiceCategoryId });
+                }
+
+                // مدیریت خطاهای Validation
+                if (result.ValidationErrors?.Count > 0)
+                {
+                    foreach (var error in result.ValidationErrors)
+                    {
+                        ModelState.AddModelError(error.Field, error.ErrorMessage);
+                    }
                 }
                 else
                 {
-                    // بررسی وجود دسته‌بندی خدمات معتبر
-                    if (!await _serviceCategoryService.IsActiveServiceCategoryExistsAsync(model.ServiceCategoryId))
-                    {
-                        validationErrors.Add("دسته‌بندی خدمات انتخاب شده معتبر نیست یا حذف شده است.");
-                    }
-
-                    // بررسی وجود کد خدمات تکراری
-                    if (await _serviceService.IsDuplicateServiceCodeAsync(model.ServiceCode))
-                    {
-                        validationErrors.Add("خدماتی با این کد از قبل وجود دارد.");
-                    }
-                }
-
-                // بررسی وجود خطاهای اعتبارسنجی
-                if (validationErrors.Count > 0)
-                {
-                    _log.Warning(
-                        "مدل ایجاد خدمات نامعتبر است. Errors: {Errors}. User: {UserName} (Id: {UserId})",
-                        string.Join(", ", validationErrors),
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    ViewBag.ServiceCategories = await GetActiveServiceCategories();
-
-                    foreach (var error in validationErrors)
-                    {
-                        ModelState.AddModelError("", error);
-                    }
-
-                    return View(model);
-                }
-
-                // ایجاد خدمات
-                var result = await _serviceService.CreateServiceAsync(model);
-
-                if (!result.Success)
-                {
-                    _log.Warning(
-                        "عملیات ایجاد خدمات با خطا مواجه شد. Message: {Message}. User: {UserName} (Id: {UserId})",
-                        result.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    ViewBag.ServiceCategories = await GetActiveServiceCategories();
                     ModelState.AddModelError("", result.Message);
-                    return View(model);
                 }
 
-                _log.Information(
-                    "خدمات با موفقیت ایجاد شد. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                    result.Data,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                // تنظیم مجدد ViewBag در صورت خطا
+                await SetServiceCategoriesViewBagForMedicalEnvironment(model.ServiceCategoryId, model.ServiceCategoryId);
+                ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
 
-                TempData["SuccessMessage"] = "خدمات با موفقیت ایجاد شد.";
-                return RedirectToAction("Index");
+                return View("Create", model);
             }
             catch (Exception ex)
             {
-                _log.Error(
-                    ex,
-                    "خطا در ایجاد خدمات. Title: {Title}. User: {UserName} (Id: {UserId})",
-                    model.Title,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد خدمت. Title: {Title}, User: {UserId}",
+                    model?.Title, _currentUserService.UserId);
 
-                ViewBag.ServiceCategories = await GetActiveServiceCategories();
-                ModelState.AddModelError("", "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید.");
-                return View(model);
+                ModelState.AddModelError("", "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.");
+                
+                // تنظیم مجدد ViewBag در صورت خطا
+                if (model?.ServiceCategoryId > 0)
+                {
+                    await SetServiceCategoriesViewBagForMedicalEnvironment(model.ServiceCategoryId, model.ServiceCategoryId);
+                }
+                ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+
+                return View("Create", model);
             }
         }
 
         /// <summary>
-        /// نمایش فرم ویرایش خدمات
-        /// این متد بدون استفاده از AJAX طراحی شده است (برای کاهش خطا در محیط عملیاتی)
+        /// نمایش جزئیات دسته‌بندی خدمات
         /// </summary>
-        [HttpGet]
-        [Route("Edit/{id:int}")]
-        public async Task<ActionResult> Edit(int id)
+        public async Task<ActionResult> CategoryDetails(int id)
         {
-            _log.Information(
-                "درخواست نمایش فرم ویرایش خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                id,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
             try
             {
-                // اعتبارسنجی ورودی
-                if (id <= 0)
-                {
-                    _log.Warning(
-                        "درخواست ویرایش خدمات با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
+                _log.Information("درخواست جزئیات دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
 
-                    TempData["ErrorMessage"] = "شناسه خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                var result = await _serviceService.GetServiceForEditAsync(id);
-
+                var result = await _serviceManagementService.GetServiceCategoryDetailsAsync(id);
                 if (!result.Success)
                 {
-                    _log.Warning(
-                        "عملیات دریافت اطلاعات خدمات برای ویرایش با خطا مواجه شد. Message: {Message}. User: {UserName} (Id: {UserId})",
-                        result.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
+                    _log.Warning("دسته‌بندی یافت نشد. CategoryId: {CategoryId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Categories");
+                }
 
+                return View("CategoryDetails", result.Data);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در نمایش جزئیات دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Categories");
+            }
+        }
+
+        /// <summary>
+        /// حذف نرم دسته‌بندی خدمات - Medical Environment
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> DeleteCategory(int id)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست حذف دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                var result = await _serviceManagementService.SoftDeleteServiceCategoryAsync(id);
+
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: دسته‌بندی با موفقیت حذف شد. CategoryId: {CategoryId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+
+                    return Json(new { success = true, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                _log.Warning("🏥 MEDICAL: حذف دسته‌بندی ناموفق. CategoryId: {CategoryId}, Message: {Message}, User: {UserId}",
+                    id, result.Message, _currentUserService.UserId);
+
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در حذف دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                return Json(new { success = false, message = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید." }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// تغییر وضعیت دسته‌بندی خدمات - Medical Environment
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ToggleServiceCategoryStatus(int id)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست تغییر وضعیت دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                // ابتدا اطلاعات دسته‌بندی را دریافت کنیم
+                var categoryResult = await _serviceManagementService.GetServiceCategoryForEditAsync(id);
+                if (!categoryResult.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: دسته‌بندی یافت نشد. CategoryId: {CategoryId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+
+                    return Json(new { success = false, message = "دسته‌بندی مورد نظر یافت نشد." });
+                }
+
+                var model = categoryResult.Data;
+                model.IsActive = !model.IsActive; // تغییر وضعیت
+
+                var result = await _serviceManagementService.UpdateServiceCategoryAsync(model);
+
+                if (result.Success)
+                {
+                    var statusText = model.IsActive ? "فعال" : "غیرفعال";
+                    _log.Information("🏥 MEDICAL: وضعیت دسته‌بندی با موفقیت تغییر کرد. CategoryId: {CategoryId}, Status: {Status}, User: {UserId}",
+                        id, statusText, _currentUserService.UserId);
+
+                    return Json(new { success = true, message = $"دسته‌بندی با موفقیت {statusText} شد." });
+                }
+
+                _log.Warning("🏥 MEDICAL: تغییر وضعیت دسته‌بندی ناموفق. CategoryId: {CategoryId}, Message: {Message}, User: {UserId}",
+                    id, result.Message, _currentUserService.UserId);
+
+                return Json(new { success = false, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در تغییر وضعیت دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                return Json(new { success = false, message = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید." });
+            }
+        }
+
+        #endregion
+
+        #region Service Management
+
+        /// <summary>
+        /// نمایش جزئیات خدمت
+        /// </summary>
+        public async Task<ActionResult> Details(int id)
+        {
+            try
+            {
+                _log.Information("درخواست جزئیات خدمت. ServiceId: {ServiceId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                var result = await _serviceManagementService.GetServiceDetailsAsync(id);
+                if (!result.Success)
+                {
+                    _log.Warning("خدمت یافت نشد. ServiceId: {ServiceId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+                    
                     TempData["ErrorMessage"] = result.Message;
                     return RedirectToAction("Index");
                 }
 
-                ViewBag.ServiceCategories = await GetActiveServiceCategories();
-                return View(result.Data);
+                return View("Details", result.Data);
             }
             catch (Exception ex)
             {
-                _log.Error(
-                    ex,
-                    "خطا در نمایش فرم ویرایش خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                _log.Error(ex, "خطا در نمایش جزئیات خدمت. ServiceId: {ServiceId}, User: {UserId}",
+                    id, _currentUserService.UserId);
 
-                TempData["ErrorMessage"] = "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
                 return RedirectToAction("Index");
             }
         }
 
         /// <summary>
-        /// به‌روزرسانی خدمات
-        /// این متد بدون استفاده از AJAX طراحی شده است (برای کاهش خطا در محیط عملیاتی)
+        /// نمایش فرم ویرایش خدمت - Medical Environment
+        /// </summary>
+        public async Task<ActionResult> Edit(int id)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست فرم ویرایش خدمت. ServiceId: {ServiceId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                var result = await _serviceManagementService.GetServiceForEditAsync(id);
+                if (!result.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: خدمت یافت نشد. ServiceId: {ServiceId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Index");
+                }
+
+                var model = result.Data;
+                
+                // تنظیم ViewBag برای DropDownList - Medical Environment
+                await SetServiceCategoriesViewBagForEdit(model.ServiceCategoryId, model.ServiceCategoryId);
+
+                // اضافه کردن اطلاعات اضافی برای UI
+                ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+
+                _log.Information("🏥 MEDICAL: فرم ویرایش خدمت آماده شد. ServiceId: {ServiceId}, Title: {Title}, User: {UserId}",
+                    id, model.Title, _currentUserService.UserId);
+
+                return View("Edit", model);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در نمایش فرم ویرایش خدمت. ServiceId: {ServiceId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// پردازش فرم ویرایش خدمت - Medical Environment با اطمینان 100%
         /// </summary>
         [HttpPost]
-        [Route("Edit/{id:int}")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(ServiceCreateEditViewModel model)
         {
-            _log.Information(
-                "درخواست ویرایش خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                model.ServiceId,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
             try
             {
-                // اعتبارسنجی ورودی
-                if (model.ServiceId <= 0)
-                {
-                    _log.Warning(
-                        "درخواست ویرایش خدمات با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        model.ServiceId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: پردازش ویرایش خدمت. ServiceId: {ServiceId}, Title: {Title}, User: {UserId}",
+                    model?.ServiceId, model?.Title, _currentUserService.UserId);
 
-                    TempData["ErrorMessage"] = "شناسه خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                // اعتبارسنجی ورودی‌ها
-                var validationErrors = new List<string>();
-
-                if (string.IsNullOrWhiteSpace(model.Title))
+                // 🔒 اعتبارسنجی چندلایه - Medical Environment
+                var validationResult = ValidateServiceForMedicalEnvironment(model).Result;
+                if (!validationResult.IsValid)
                 {
-                    validationErrors.Add("عنوان خدمات الزامی است.");
-                }
-                else if (model.Title.Length > 250)
-                {
-                    validationErrors.Add("عنوان خدمات نمی‌تواند بیشتر از 250 کاراکتر باشد.");
+                    _log.Warning("🏥 MEDICAL: اعتبارسنجی ناموفق. خطاها: {Errors}", 
+                        string.Join(", ", validationResult.Errors.Select(e => e.Message)));
+                    
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.Field, error.Message);
+                    }
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا - Medical Environment
+                    await SetServiceCategoriesViewBagForEdit(model.ServiceCategoryId, model.ServiceCategoryId);
+                    ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+                    
+                    return View("Edit", model);
                 }
 
-                if (string.IsNullOrWhiteSpace(model.ServiceCode))
+                if (!ModelState.IsValid)
                 {
-                    validationErrors.Add("کد خدمات الزامی است.");
-                }
-                else if (model.ServiceCode.Length > 50)
-                {
-                    validationErrors.Add("کد خدمات نمی‌تواند بیشتر از 50 کاراکتر باشد.");
-                }
-                else if (!RegexHelper.IsValidServiceCode(model.ServiceCode))
-                {
-                    validationErrors.Add("کد خدمات فقط می‌تواند شامل حروف، اعداد و زیرخط باشد.");
-                }
-
-                if (model.Price < 0)
-                {
-                    validationErrors.Add("قیمت نمی‌تواند منفی باشد.");
+                    _log.Warning("🏥 MEDICAL: ModelState نامعتبر. خطاها: {Errors}", 
+                        string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                    
+                    // تنظیم مجدد ViewBag در صورت خطا - Medical Environment
+                    await SetServiceCategoriesViewBagForEdit(model.ServiceCategoryId, model.ServiceCategoryId);
+                    ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+                    
+                    return View("Edit", model);
                 }
 
-                if (model.ServiceCategoryId <= 0)
+                var result = await _serviceManagementService.UpdateServiceAsync(model);
+
+                if (result.Success)
                 {
-                    validationErrors.Add("دسته‌بندی خدمات انتخاب شده معتبر نیست.");
+                    _log.Information("🏥 MEDICAL: خدمت با موفقیت ویرایش شد. ServiceId: {ServiceId}, Title: {Title}, User: {UserId}",
+                        model.ServiceId, model.Title, _currentUserService.UserId);
+
+                    TempData["SuccessMessage"] = result.Message;
+                    return RedirectToAction("Index", new { serviceCategoryId = model.ServiceCategoryId });
+                }
+
+                // مدیریت خطاهای Validation
+                if (result.ValidationErrors?.Count > 0)
+                {
+                    foreach (var error in result.ValidationErrors)
+                    {
+                        ModelState.AddModelError(error.Field, error.ErrorMessage);
+                    }
                 }
                 else
                 {
-                    // بررسی وجود دسته‌بندی خدمات معتبر
-                    if (!await _serviceCategoryService.IsActiveServiceCategoryExistsAsync(model.ServiceCategoryId))
-                    {
-                        validationErrors.Add("دسته‌بندی خدمات انتخاب شده معتبر نیست یا حذف شده است.");
-                    }
-
-                    // بررسی وجود کد خدمات تکراری
-                    if (await _serviceService.IsDuplicateServiceCodeAsync(model.ServiceCode, model.ServiceId))
-                    {
-                        validationErrors.Add("خدماتی با این کد از قبل وجود دارد.");
-                    }
-                }
-
-                // بررسی وجود خطاهای اعتبارسنجی
-                if (validationErrors.Count > 0)
-                {
-                    _log.Warning(
-                        "مدل ویرایش خدمات نامعتبر است. Errors: {Errors}. User: {UserName} (Id: {UserId})",
-                        string.Join(", ", validationErrors),
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    ViewBag.ServiceCategories = await GetActiveServiceCategories();
-
-                    foreach (var error in validationErrors)
-                    {
-                        ModelState.AddModelError("", error);
-                    }
-
-                    return View(model);
-                }
-
-                // به‌روزرسانی خدمات
-                var result = await _serviceService.UpdateServiceAsync(model);
-
-                if (!result.Success)
-                {
-                    _log.Warning(
-                        "عملیات به‌روزرسانی خدمات با خطا مواجه شد. Message: {Message}. User: {UserName} (Id: {UserId})",
-                        result.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    ViewBag.ServiceCategories = await GetActiveServiceCategories();
                     ModelState.AddModelError("", result.Message);
-                    return View(model);
                 }
 
-                _log.Information(
-                    "خدمات با موفقیت به‌روزرسانی شد. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                    model.ServiceId,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                // تنظیم مجدد ViewBag در صورت خطا
+                await SetServiceCategoriesViewBagForEdit(model.ServiceCategoryId, model.ServiceCategoryId);
+                ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
 
-                TempData["SuccessMessage"] = "اطلاعات خدمات با موفقیت به‌روزرسانی شد.";
-                return RedirectToAction("Index");
+                return View("Edit", model);
             }
             catch (Exception ex)
             {
-                _log.Error(
-                    ex,
-                    "خطا در ویرایش خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    model.ServiceId,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                _log.Error(ex, "🏥 MEDICAL: خطا در ویرایش خدمت. ServiceId: {ServiceId}, Title: {Title}, User: {UserId}",
+                    model?.ServiceId, model?.Title, _currentUserService.UserId);
 
-                ViewBag.ServiceCategories = await GetActiveServiceCategories();
-                ModelState.AddModelError("", "خطای سیستم در حین ذخیره تغییرات رخ داده است.");
-                return View(model);
+                ModelState.AddModelError("", "خطای سیستمی رخ داد. لطفاً مجدداً تلاش کنید.");
+                
+                // تنظیم مجدد ViewBag در صورت خطا
+                if (model?.ServiceCategoryId > 0)
+                {
+                    await SetServiceCategoriesViewBagForEdit(model.ServiceCategoryId, model.ServiceCategoryId);
+                }
+                ViewBag.CurrentUserName = _currentUserService.UserName ?? "کاربر سیستم";
+
+                return View("Edit", model);
             }
         }
 
         /// <summary>
-        /// حذف خدمات
-        /// این متد بدون استفاده از AJAX طراحی شده است (برای کاهش خطا در محیط عملیاتی)
+        /// بررسی یکتا بودن کد خدمت - Medical Environment
         /// </summary>
         [HttpPost]
-        [Route("Delete/{id:int}")]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> Delete(int id)
-        {
-            _log.Information(
-                "درخواست حذف خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                id,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی
-                if (id <= 0)
-                {
-                    _log.Warning(
-                        "درخواست حذف خدمات با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    // بررسی آیا درخواست AJAX است یا خیر
-                    if (Request.IsAjaxRequest())
-                    {
-                        return Json(new
-                        {
-                            success = false,
-                            message = "شناسه خدمات معتبر نیست."
-                        });
-                    }
-
-                    TempData["ErrorMessage"] = "شناسه خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                // بررسی امکان حذف
-                var canDeleteResult = await _serviceService.CanDeleteServiceAsync(id);
-                if (!canDeleteResult.Success)
-                {
-                    _log.Warning(
-                        "حذف خدمات با شناسه {Id} امکان‌پذیر نیست. Reason: {Reason}. User: {UserName} (Id: {UserId})",
-                        id,
-                        canDeleteResult.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    // بررسی آیا درخواست AJAX است یا خیر
-                    if (Request.IsAjaxRequest())
-                    {
-                        return Json(new
-                        {
-                            success = false,
-                            message = canDeleteResult.Message
-                        });
-                    }
-
-                    TempData["ErrorMessage"] = canDeleteResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                // حذف خدمات
-                var result = await _serviceService.DeleteServiceAsync(id);
-
-                if (!result.Success)
-                {
-                    _log.Warning(
-                        "عملیات حذف خدمات با خطا مواجه شد. Message: {Message}. User: {UserName} (Id: {UserId})",
-                        result.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    // بررسی آیا درخواست AJAX است یا خیر
-                    if (Request.IsAjaxRequest())
-                    {
-                        return Json(new
-                        {
-                            success = false,
-                            message = result.Message
-                        });
-                    }
-
-                    TempData["ErrorMessage"] = result.Message;
-                    return RedirectToAction("Index");
-                }
-
-                _log.Information(
-                    "خدمات با موفقیت حذف شد. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                // بررسی آیا درخواست AJAX است یا خیر
-                if (Request.IsAjaxRequest())
-                {
-                    return Json(new
-                    {
-                        success = true,
-                        message = "خدمات با موفقیت حذف شد."
-                    });
-                }
-
-                TempData["SuccessMessage"] = "خدمات با موفقیت حذف شد.";
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در حذف خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                // بررسی آیا درخواست AJAX است یا خیر
-                if (Request.IsAjaxRequest())
-                {
-                    return Json(new
-                    {
-                        success = false,
-                        message = "خطای سیستم در حین حذف خدمات رخ داده است."
-                    });
-                }
-
-                TempData["ErrorMessage"] = "خطای سیستم در حین حذف خدمات رخ داده است.";
-                return RedirectToAction("Index");
-            }
-        }
-
-        /// <summary>
-        /// نمایش جزئیات خدمات
-        /// </summary>
-        [HttpGet]
-        [Route("Details/{id:int}")]
-        public async Task<ActionResult> Details(int id)
-        {
-            _log.Information(
-                "درخواست نمایش جزئیات خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                id,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی
-                if (id <= 0)
-                {
-                    _log.Warning(
-                        "درخواست جزئیات خدمات با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "شناسه خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                var result = await _serviceService.GetServiceDetailsAsync(id);
-
-                if (!result.Success)
-                {
-                    _log.Warning(
-                        "عملیات دریافت جزئیات خدمات با خطا مواجه شد. Message: {Message}. User: {UserName} (Id: {UserId})",
-                        result.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = result.Message;
-                    return RedirectToAction("Index");
-                }
-
-                return View(result.Data);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در نمایش جزئیات خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                TempData["ErrorMessage"] = "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
-                return RedirectToAction("Index");
-            }
-        }
-
-        /// <summary>
-        /// دریافت لیست دسته‌بندی‌های خدمات فعال برای استفاده در فرم‌ها
-        /// این متد برای محیط‌های پزشکی بهینه‌شده است
-        /// </summary>
-        private async Task<IEnumerable<SelectListItem>> GetActiveServiceCategories()
+        public async Task<ActionResult> CheckServiceCode(string serviceCode, int? serviceCategoryId = null, int? excludeServiceId = null)
         {
             try
             {
-                var serviceCategories = await _serviceCategoryService.GetActiveServiceCategoriesAsync();
-                return serviceCategories.Select(sc => new SelectListItem
-                {
-                    Value = sc.ServiceCategoryId.ToString(),
-                    Text = $@"{sc.Title} - {sc.DepartmentName}"
-                });
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در دریافت لیست دسته‌بندی‌های خدمات فعال. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: بررسی کد خدمت. ServiceCode: {ServiceCode}, CategoryId: {CategoryId}, ExcludeId: {ExcludeId}, User: {UserId}",
+                    serviceCode, serviceCategoryId, excludeServiceId, _currentUserService.UserId);
 
-                return new List<SelectListItem>();
-            }
-        }
-
-        /// <summary>
-        /// بررسی امکان حذف سرویس قبل از نمایش مودال تأیید حذف
-        /// این متد برای پاسخ به درخواست‌های AJAX استفاده می‌شود
-        /// </summary>
-        /// <param name="id">شناسه سرویس مورد نظر</param>
-        /// <returns>پاسخ JSON با اطلاعات امکان حذف</returns>
-        [HttpGet]
-        [Route("CanDelete/{id:int}")]
-        public async Task<ActionResult> CanDelete(int id)
-        {
-            _log.Information(
-                "درخواست بررسی امکان حذف سرویس با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                id,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی
-                if (id <= 0)
-                {
-                    _log.Warning(
-                        "درخواست بررسی امکان حذف سرویس با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    return Json(new
-                    {
-                        success = false,
-                        message = "شناسه سرویس معتبر نیست."
-                    }, JsonRequestBehavior.AllowGet);
-                }
-
-                // بررسی امکان حذف
-                var canDeleteResult = await _serviceService.CanDeleteServiceAsync(id);
-
-                if (!canDeleteResult.Success)
-                {
-                    _log.Warning(
-                        "بررسی امکان حذف سرویس با شناسه {Id} امکان‌پذیر نیست. Reason: {Reason}. User: {UserName} (Id: {UserId})",
-                        id,
-                        canDeleteResult.Message,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    return Json(new
-                    {
-                        success = false,
-                        message = canDeleteResult.Message
-                    }, JsonRequestBehavior.AllowGet);
-                }
-
-                // دریافت تعداد استفاده‌ها
-                var usageCount = await _serviceService.GetUsageCountAsync(id);
-
-                // دریافت درآمد کل
-                var totalRevenue = await _serviceService.GetTotalRevenueAsync(id);
-
-                _log.Information(
-                    "بررسی امکان حذف سرویس با شناسه {Id} انجام شد. UsageCount: {UsageCount}, TotalRevenue: {TotalRevenue}. User: {UserName} (Id: {UserId})",
-                    id,
-                    usageCount,
-                    totalRevenue,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                return Json(new
-                {
-                    success = true,
-                    message = "سرویس قابل حذف است.",
-                    usageCount = usageCount,
-                    totalRevenue = totalRevenue,
-                    formattedRevenue = totalRevenue.ToString("N0")
-                }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در بررسی امکان حذف سرویس با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                return Json(new
-                {
-                    success = false,
-                    message = "خطای سیستم در حین بررسی امکان حذف رخ داده است."
-                }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        /// <summary>
-        /// دریافت آمار استفاده از خدمات در بازه زمانی مشخص
-        /// این متد برای گزارش‌گیری پزشکی طراحی شده است و تمام استانداردهای سیستم‌های پزشکی را رعایت می‌کند
-        /// </summary>
-        [HttpGet]
-        [Route("Report/{id:int}")]
-        public async Task<ActionResult> Report(int id, string startDateShamsi = null, string endDateShamsi = null)
-        {
-            _log.Information(
-                "درخواست دریافت گزارش استفاده از خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                id,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی
-                if (id <= 0)
-                {
-                    _log.Warning(
-                        "درخواست دریافت گزارش با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "شناسه خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                // تنظیم بازه زمانی پیش‌فرض (30 روز گذشته)
-                var defaultEndDate = DateTime.Now;
-                var defaultStartDate = defaultEndDate.AddDays(-30);
-
-                // تبدیل تاریخ‌های فارسی به میلادی
-                DateTime? actualStartDate = null;
-                DateTime? actualEndDate = null;
-
-                if (!string.IsNullOrEmpty(startDateShamsi) && PersianDateHelper.IsValidPersianDate(startDateShamsi))
-                {
-                    try
-                    {
-                        actualStartDate = PersianDateHelper.ToGregorianDate(startDateShamsi);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning(
-                            ex,
-                            "تاریخ شمسی شروع نامعتبر. Value: {StartDateShamsi}. User: {UserName} (Id: {UserId})",
-                            startDateShamsi,
-                            _currentUserService.UserName,
-                            _currentUserService.UserId);
-                    }
-                }
-
-                if (!string.IsNullOrEmpty(endDateShamsi) && PersianDateHelper.IsValidPersianDate(endDateShamsi))
-                {
-                    try
-                    {
-                        actualEndDate = PersianDateHelper.ToGregorianDate(endDateShamsi);
-                    }
-                    catch (Exception ex)
-                    {
-                        _log.Warning(
-                            ex,
-                            "تاریخ شمسی پایان نامعتبر. Value: {EndDateShamsi}. User: {UserName} (Id: {UserId})",
-                            endDateShamsi,
-                            _currentUserService.UserName,
-                            _currentUserService.UserId);
-                    }
-                }
-
-                // استفاده از تاریخ‌های پیش‌فرض در صورت نامعتبر بودن تاریخ‌های ورودی
-                actualStartDate = actualStartDate ?? defaultStartDate;
-                actualEndDate = actualEndDate ?? defaultEndDate;
-
-                // اطمینان از صحت بازه زمانی
-                if (actualEndDate < actualStartDate)
-                {
-                    _log.Warning(
-                        "درخواست دریافت گزارش با بازه زمانی معکوس. StartDate: {StartDate}, EndDate: {EndDate}. User: {UserName} (Id: {UserId})",
-                        actualStartDate,
-                        actualEndDate,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    // تبدیل تاریخ‌ها برای جلوگیری از خطا
-                    var temp = actualStartDate;
-                    actualStartDate = actualEndDate;
-                    actualEndDate = temp;
-                }
-
-                // دریافت اطلاعات خدمات
-                var serviceDetails = await _serviceService.GetServiceDetailsAsync(id);
-                if (!serviceDetails.Success)
-                {
-                    _log.Warning(
-                        "دریافت اطلاعات خدمات برای گزارش با خطا مواجه شد. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "خدمات مورد نظر یافت نشد.";
-                    return RedirectToAction("Index");
-                }
-
-                // دریافت آمار استفاده
-                var statistics = await _serviceService.GetUsageStatisticsAsync(id, actualStartDate.Value, actualEndDate.Value);
-
-                // ساخت مدل گزارش
-                var reportModel = new ServiceReportViewModel
-                {
-                    ServiceId = id,
-                    ServiceTitle = serviceDetails.Data.Title,
-                    ServiceCode = serviceDetails.Data.ServiceCode,
-                    ServiceCategoryTitle = serviceDetails.Data.ServiceCategoryTitle,
-                    StartDate = actualStartDate.Value,
-                    EndDate = actualEndDate.Value,
-                    TotalUsage = statistics.TotalUsage,
-                    TotalRevenue = statistics.TotalRevenue,
-                    DailyUsage = statistics.DailyUsage,
-                    DailyRevenue = statistics.DailyRevenue
-                };
-
-                // تبدیل تاریخ‌ها به شمسی
-                reportModel.StartDateShamsi = PersianDateHelper.ToPersianDate(reportModel.StartDate);
-                reportModel.EndDateShamsi = PersianDateHelper.ToPersianDate(reportModel.EndDate);
-
-                // افزودن اطلاعات اضافی برای گزارش‌گیری پزشکی
-                reportModel.CreatedBy = serviceDetails.Data.CreatedBy;
-                reportModel.CreatedAtShamsi = serviceDetails.Data.CreatedAtShamsi;
-
-                // محاسبه تاریخ آخرین استفاده
-                var lastUsageDate = statistics.DailyUsage
-                    .Where(d => d.Value > 0)
-                    .OrderByDescending(d =>
-                    {
-                        try
-                        {
-                            return PersianDateHelper.ToGregorianDate(d.Key);
-                        }
-                        catch
-                        {
-                            return DateTime.MinValue;
-                        }
-                    })
-                    .Select(d => d.Key)
-                    .FirstOrDefault();
-
-                reportModel.LastUsageDateShamsi = !string.IsNullOrEmpty(lastUsageDate) ? lastUsageDate : "نامشخص";
-
-                _log.Information(
-                    "گزارش استفاده از خدمات با شناسه {Id} برای بازه {StartDate} تا {EndDate} با موفقیت تولید شد. TotalUsage: {TotalUsage}, TotalRevenue: {TotalRevenue}. User: {UserName} (Id: {UserId})",
-                    id,
-                    actualStartDate,
-                    actualEndDate,
-                    statistics.TotalUsage,
-                    statistics.TotalRevenue,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                return View(reportModel);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در دریافت گزارش استفاده از خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                TempData["ErrorMessage"] = "خطای سیستم در حین تهیه گزارش رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
-                return RedirectToAction("Index");
-            }
-        }
-
-        /// <summary>
-        /// خروجی گرفتن از گزارش به فرمت Excel
-        /// این متد برای استفاده در محیط‌های پزشکی طراحی شده است
-        /// </summary>
-        [HttpGet]
-        [Route("ExportReport/{id:int}")]
-        public async Task<ActionResult> ExportReport(int id, DateTime? startDate = null, DateTime? endDate = null)
-        {
-            _log.Information(
-                "درخواست خروجی گرفتن از گزارش خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                id,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی
-                if (id <= 0)
-                {
-                    _log.Warning(
-                        "درخواست خروجی گزارش با شناسه نامعتبر. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "شناسه خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                // تنظیم بازه زمانی پیش‌فرض (30 روز گذشته)
-                var defaultEndDate = DateTime.Now;
-                var defaultStartDate = defaultEndDate.AddDays(-30);
-
-                var actualStartDate = startDate ?? defaultStartDate;
-                var actualEndDate = endDate ?? defaultEndDate;
-
-                // دریافت آمار استفاده
-                var statistics = await _serviceService.GetUsageStatisticsAsync(id, actualStartDate, actualEndDate);
-
-                // دریافت اطلاعات خدمات
-                var serviceDetails = await _serviceService.GetServiceDetailsAsync(id);
-                if (!serviceDetails.Success)
-                {
-                    _log.Warning(
-                        "دریافت اطلاعات خدمات برای خروجی گزارش با خطا مواجه شد. Id: {Id}. User: {UserName} (Id: {UserId})",
-                        id,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "خدمات مورد نظر یافت نشد.";
-                    return RedirectToAction("Index");
-                }
-
-                // ساخت نام فایل
-                var fileName = $"گزارش_استفاده_از_{serviceDetails.Data.Title}_{DateTime.Now.ToPersianDateTime().Replace("/", "-")}.xlsx";
-
-                // ایجاد فایل اکسل با استفاده از ExcelHelper
-                var excelFile = MedicalReportExcelGenerator.GenerateServiceUsageReport(
-                    serviceDetails.Data,
-                    statistics,
-                    actualStartDate,
-                    actualEndDate);
-
-                _log.Information(
-                    "خروجی گزارش خدمات با شناسه {Id} با موفقیت ایجاد شد. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                return File(excelFile, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در خروجی گرفتن از گزارش خدمات با شناسه {Id}. User: {UserName} (Id: {UserId})",
-                    id,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                TempData["ErrorMessage"] = "خطای سیستم در حین تهیه خروجی گزارش رخ داده است.";
-                return RedirectToAction("Index");
-            }
-        }
-
-        /// <summary>
-        /// نمایش لیست خدمات برای یک دسته‌بندی خاص
-        /// این متد برای استفاده در محیط‌های پزشکی طراحی شده است
-        /// </summary>
-        [HttpGet]
-        [Route("ByCategory/{serviceCategoryId:int}")]
-        public async Task<ActionResult> ByCategory(int serviceCategoryId)
-        {
-            _log.Information(
-                "درخواست نمایش لیست خدمات برای دسته‌بندی {ServiceCategoryId}. User: {UserName} (Id: {UserId})",
-                serviceCategoryId,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی
-                if (serviceCategoryId <= 0)
-                {
-                    _log.Warning(
-                        "درخواست نمایش لیست خدمات با شناسه دسته‌بندی نامعتبر. ServiceCategoryId: {ServiceCategoryId}. User: {UserName} (Id: {UserId})",
-                        serviceCategoryId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "شناسه دسته‌بندی خدمات معتبر نیست.";
-                    return RedirectToAction("Index");
-                }
-
-                // دریافت اطلاعات دسته‌بندی
-                var categoryResult = await _serviceCategoryService.GetServiceCategoryDetailsAsync(serviceCategoryId);
-                if (!categoryResult.Success)
-                {
-                    _log.Warning(
-                        "دریافت اطلاعات دسته‌بندی برای نمایش خدمات با خطا مواجه شد. ServiceCategoryId: {ServiceCategoryId}. User: {UserName} (Id: {UserId})",
-                        serviceCategoryId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = "دسته‌بندی مورد نظر یافت نشد.";
-                    return RedirectToAction("Index");
-                }
-
-                // دریافت لیست خدمات
-                var servicesResult = await _serviceService.SearchServicesAsync("", serviceCategoryId, 1, 100);
-                if (!servicesResult.Success)
-                {
-                    _log.Warning(
-                        "دریافت لیست خدمات برای دسته‌بندی با خطا مواجه شد. ServiceCategoryId: {ServiceCategoryId}. User: {UserName} (Id: {UserId})",
-                        serviceCategoryId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    TempData["ErrorMessage"] = servicesResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                // ساخت مدل نمایش
-                var model = new ServiceCategoryServicesViewModel
-                {
-                    ServiceCategoryId = serviceCategoryId,
-                    ServiceCategoryTitle = categoryResult.Data.Title,
-                    DepartmentName = categoryResult.Data.DepartmentName,
-                    Services = servicesResult.Data.Items
-                };
-
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطا در نمایش لیست خدمات برای دسته‌بندی {ServiceCategoryId}. User: {UserName} (Id: {UserId})",
-                    serviceCategoryId,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
-
-                TempData["ErrorMessage"] = "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
-                return RedirectToAction("Index");
-            }
-        }
-
-        #region روش‌های کمکی برای رفع خطاهای گزارش شده
-        /// <summary>
-        /// محاسبه تعداد کل خدمات
-        /// </summary>
-        private async Task<int> GetTotalServicesCount()
-        {
-            var result = await _serviceService.SearchServicesAsync("", null, 1, int.MaxValue);
-            return result.Success ? result.Data.TotalItems : 0;
-        }
-
-        /// <summary>
-        /// محاسبه تعداد خدمات فعال
-        /// </summary>
-        private async Task<int> GetActiveServicesCount()
-        {
-            var result = await _serviceService.SearchServicesAsync("", null, 1, int.MaxValue);
-            return result.Success ? result.Data.TotalItems : 0;
-        }
-
-        /// <summary>
-        /// محاسبه تعداد دسته‌بندی‌های خدمات فعال
-        /// </summary>
-        private async Task<int> GetActiveServiceCategoriesCount()
-        {
-            var categories = await _serviceCategoryService.GetActiveServiceCategoriesAsync();
-            return categories.Count();
-        }
-        #endregion
-
-        /// <summary>
-        /// بررسی در دسترس بودن کد خدمات پزشکی
-        /// این متد برای اعتبارسنجی کد خدمات به صورت آسینکرون در فرم ایجاد/ویرایش استفاده می‌شود
-        /// </summary>
-        /// <param name="serviceCode">کد خدمات مورد بررسی</param>
-        /// <param name="serviceId">شناسه خدمات (در حالت ویرایش)</param>
-        /// <returns>پاسخ JSON با اطلاعات در دسترس بودن کد</returns>
-        [HttpPost]
-        [Route("CheckServiceCode")]
-        public async Task<ActionResult> CheckServiceCode(string serviceCode, int serviceId = 0)
-        {
-            _log.Information(
-                "درخواست بررسی کد خدمات. ServiceCode: {ServiceCode}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                serviceCode,
-                serviceId,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-
-            try
-            {
-                // اعتبارسنجی ورودی‌ها
+                // 🔒 اعتبارسنجی اولیه کد خدمت - Medical Environment
                 if (string.IsNullOrWhiteSpace(serviceCode))
                 {
-                    _log.Warning(
-                        "درخواست بررسی کد خدمات با کد خالی. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        serviceId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    return Json(new
-                    {
-                        isAvailable = false,
-                        message = "کد خدمات نمی‌تواند خالی باشد."
-                    });
+                    return Json(new { isAvailable = false, message = "کد خدمت الزامی است" });
                 }
 
-                if (serviceCode.Length > 50)
+                // 🔒 اعتبارسنجی الگوی کد خدمت - فقط اعداد برای محیط درمانی
+                if (!System.Text.RegularExpressions.Regex.IsMatch(serviceCode.Trim(), @"^\d+$"))
                 {
-                    _log.Warning(
-                        "درخواست بررسی کد خدمات با کد طولانی. Length: {Length}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        serviceCode.Length,
-                        serviceId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    return Json(new
-                    {
-                        isAvailable = false,
-                        message = "کد خدمات نمی‌تواند بیشتر از 50 کاراکتر باشد."
-                    });
+                    return Json(new { isAvailable = false, message = "کد خدمت باید فقط شامل اعداد باشد" });
                 }
 
-                if (!RegexHelper.IsValidServiceCode(serviceCode))
+                // 🔒 اعتبارسنجی طول کد خدمت - Medical Environment
+                if (serviceCode.Trim().Length < 3 || serviceCode.Trim().Length > 10)
                 {
-                    _log.Warning(
-                        "درخواست بررسی کد خدمات با کد نامعتبر. ServiceCode: {ServiceCode}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        serviceCode,
-                        serviceId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-
-                    return Json(new
-                    {
-                        isAvailable = false,
-                        message = "کد خدمات فقط می‌تواند شامل حروف، اعداد و زیرخط باشد."
-                    });
+                    return Json(new { isAvailable = false, message = "کد خدمت باید بین 3 تا 10 رقم باشد" });
                 }
 
-                // بررسی تکراری بودن کد خدمات
-                bool isDuplicate = await _serviceService.IsDuplicateServiceCodeAsync(serviceCode, serviceId);
+                // 🔒 بررسی یکتا بودن کد خدمت
+                var isDuplicate = await _serviceManagementService.IsServiceCodeDuplicateAsync(serviceCode.Trim(), serviceCategoryId, excludeServiceId);
 
                 if (isDuplicate)
                 {
-                    _log.Information(
-                        "کد خدمات تکراری است. ServiceCode: {ServiceCode}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        serviceCode,
-                        serviceId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
-                }
-                else
-                {
-                    _log.Information(
-                        "کد خدمات در دسترس است. ServiceCode: {ServiceCode}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        serviceCode,
-                        serviceId,
-                        _currentUserService.UserName,
-                        _currentUserService.UserId);
+                    _log.Warning("🏥 MEDICAL: کد خدمت تکراری. ServiceCode: {ServiceCode}, User: {UserId}",
+                        serviceCode, _currentUserService.UserId);
+                    return Json(new { isAvailable = false, message = "این کد خدمت قبلاً استفاده شده است" });
                 }
 
-                return Json(new
-                {
-                    isAvailable = !isDuplicate,
-                    message = isDuplicate ? "این کد خدمات قبلاً استفاده شده است." : "کد خدمات در دسترس است."
-                });
+                _log.Information("🏥 MEDICAL: کد خدمت در دسترس. ServiceCode: {ServiceCode}, User: {UserId}",
+                    serviceCode, _currentUserService.UserId);
+                return Json(new { isAvailable = true, message = "کد خدمت در دسترس است" });
             }
             catch (Exception ex)
             {
-                _log.Error(
-                    ex,
-                    "خطا در بررسی کد خدمات. ServiceCode: {ServiceCode}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                    serviceCode,
-                    serviceId,
-                    _currentUserService.UserName,
-                    _currentUserService.UserId);
+                _log.Error(ex, "🏥 MEDICAL: خطا در بررسی کد خدمت. ServiceCode: {ServiceCode}, User: {UserId}",
+                    serviceCode, _currentUserService.UserId);
+                return Json(new { isAvailable = false, message = "خطا در بررسی کد خدمت" });
+            }
+        }
 
-                return Json(new
+        /// <summary>
+        /// حذف نرم خدمت - Medical Environment
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Delete(int id)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست حذف خدمت. ServiceId: {ServiceId}, User: {UserId}, RequestMethod: {Method}",
+                    id, _currentUserService.UserId, Request.HttpMethod);
+
+                // 🔒 اعتبارسنجی ورودی
+                if (id <= 0)
                 {
-                    isAvailable = false,
-                    message = "خطای سیستم در حین بررسی کد خدمات رخ داده است."
+                    _log.Warning("🏥 MEDICAL: شناسه خدمت نامعتبر. ServiceId: {ServiceId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+                    return Json(new { success = false, message = "شناسه خدمت معتبر نیست." });
+                }
+
+                _log.Information("🏥 MEDICAL: فراخوانی سرویس حذف. ServiceId: {ServiceId}, User: {UserId}",
+                    id, _currentUserService.UserId);
+
+                var result = await _serviceManagementService.SoftDeleteServiceAsync(id);
+
+                _log.Information("🏥 MEDICAL: نتیجه حذف. ServiceId: {ServiceId}, Success: {Success}, Message: {Message}, User: {UserId}",
+                    id, result.Success, result.Message, _currentUserService.UserId);
+
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: خدمت با موفقیت حذف شد. ServiceId: {ServiceId}, User: {UserId}",
+                        id, _currentUserService.UserId);
+
+                    return Json(new { success = true, message = result.Message });
+                }
+
+                _log.Warning("🏥 MEDICAL: حذف خدمت ناموفق. ServiceId: {ServiceId}, Message: {Message}, User: {UserId}",
+                    id, result.Message, _currentUserService.UserId);
+
+                return Json(new { success = false, message = result.Message });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در حذف خدمت. ServiceId: {ServiceId}, User: {UserId}, ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}",
+                    id, _currentUserService.UserId, ex.GetType().Name, ex.Message, ex.StackTrace);
+
+                // 🔒 بررسی نوع خطا برای پیام مناسب
+                string errorMessage = "خطای سیستمی در حذف خدمت رخ داد.";
+                string errorCode = "UNKNOWN_ERROR";
+                
+                if (ex is System.Data.SqlClient.SqlException sqlEx)
+                {
+                    errorMessage = "خطای پایگاه داده رخ داد. لطفاً مجدداً تلاش کنید.";
+                    errorCode = "DB_ERROR";
+                    _log.Error("🏥 MEDICAL: SQL Error Details - Number: {ErrorNumber}, State: {State}, Message: {Message}",
+                        sqlEx.Number, sqlEx.State, sqlEx.Message);
+                }
+                else if (ex is System.Data.Entity.Infrastructure.DbUpdateException dbEx)
+                {
+                    errorMessage = "خطای به‌روزرسانی پایگاه داده رخ داد.";
+                    errorCode = "DB_UPDATE_ERROR";
+                    _log.Error("🏥 MEDICAL: DbUpdateException Details - InnerException: {InnerException}",
+                        dbEx.InnerException?.Message);
+                }
+                else if (ex is System.InvalidOperationException)
+                {
+                    errorMessage = "خطای عملیاتی رخ داد. لطفاً مجدداً تلاش کنید.";
+                    errorCode = "INVALID_OPERATION";
+                }
+                else if (ex is System.ArgumentNullException)
+                {
+                    errorMessage = "خطای پارامتر ورودی رخ داد.";
+                    errorCode = "ARGUMENT_NULL";
+                }
+
+                // 🔒 در محیط توسعه، جزئیات بیشتری ارائه دهید
+                if (System.Web.HttpContext.Current?.IsDebuggingEnabled == true)
+                {
+                    errorMessage += $" (خطا: {ex.GetType().Name})";
+                }
+
+                return Json(new { 
+                    success = false, 
+                    message = errorMessage,
+                    errorCode = errorCode,
+                    exceptionType = ex.GetType().Name
                 });
             }
         }
+
+        #endregion
     }
-
-    #region مدل‌های ویو مورد نیاز برای رفع خطاهای گزارش شده
-
-
-    /// <summary>
-    /// مدل ویو برای نمایش لیست خدمات یک دسته‌بندی
-    /// </summary>
-    public class ServiceCategoryServicesViewModel
-    {
-        public int ServiceCategoryId { get; set; }
-        public string ServiceCategoryTitle { get; set; }
-        public string DepartmentName { get; set; }
-        public IEnumerable<ServiceIndexViewModel> Services { get; set; }
-    }
-    #endregion
-
-
 }

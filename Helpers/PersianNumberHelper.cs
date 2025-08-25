@@ -1,7 +1,8 @@
-﻿using System;
+﻿using Serilog;
+using System;
+using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Serilog;
 
 namespace ClinicApp.Helpers;
 
@@ -25,7 +26,7 @@ namespace ClinicApp.Helpers;
 /// </summary>
 public static class PersianNumberHelper
 {
-    private static readonly ILogger _log = Log.ForContext(typeof(IranianNationalCodeValidator));
+    private static readonly ILogger _log = Log.ForContext(typeof(PersianNumberHelper));
 
     #region Constants and Lookup Tables
 
@@ -331,43 +332,8 @@ public static class PersianNumberHelper
     /// <returns>در صورت معتبر بودن true برمی‌گرداند</returns>
     public static bool IsValidNationalCode(string nationalCode)
     {
-        if (string.IsNullOrWhiteSpace(nationalCode))
-            return false;
-
-        // نرمال‌سازی اعداد فارسی و عربی به انگلیسی
-        nationalCode = ToEnglishNumbers(nationalCode).Trim();
-
-        // باید دقیقا ۱۰ رقم باشد
-        if (nationalCode.Length != 10 || !IsNumeric(nationalCode))
-            return false;
-
-        // جلوگیری از کدهای تکراری مثل 1111111111
-        string[] invalidPatterns = {
-            "0000000000", "1111111111", "2222222222", "3333333333",
-            "4444444444", "5555555555", "6666666666", "7777777777",
-            "8888888888", "9999999999"
-        };
-
-        if (Array.IndexOf(invalidPatterns, nationalCode) >= 0)
-            return false;
-
-        // بررسی خاص کدهای ملی
-        if (nationalCode.StartsWith("420") || nationalCode.StartsWith("999"))
-            return false;
-
-        // اعتبارسنجی نهایی
-        int[] coefficients = { 10, 9, 8, 7, 6, 5, 4, 3, 2 };
-        int sum = 0;
-
-        for (int i = 0; i < 9; i++)
-        {
-            sum += (nationalCode[i] - '0') * coefficients[i];
-        }
-
-        int remainder = sum % 11;
-        int controlDigit = nationalCode[9] - '0';
-
-        return remainder < 2 ? controlDigit == remainder : controlDigit == 11 - remainder;
+        // تمام منطق اعتبارسنجی به کلاس تخصصی آن واگذار می‌شود
+        return IranianNationalCodeValidator.IsValid(nationalCode);
     }
 
     /// <summary>
@@ -384,18 +350,14 @@ public static class PersianNumberHelper
         if (string.IsNullOrWhiteSpace(phoneNumber))
             return false;
 
-        // نرمال‌سازی و استخراج اعداد
-        phoneNumber = ExtractDigits(phoneNumber);
+        // First, normalize to get rid of Persian digits and non-numeric characters
+        string normalized = ExtractDigits(phoneNumber);
 
-        // بررسی طول
-        if (phoneNumber.Length != 11)
-            return false;
+        // ✅ Check for both valid formats
+        bool isStandardFormat = normalized.StartsWith("09") && normalized.Length == 11;
+        bool isInternationalFormat = normalized.StartsWith("989") && normalized.Length == 12;
 
-        // بررسی پیشوند
-        string[] validPrefixes = { "090", "091", "092", "093", "094", "095", "099", "098", "096", "097" };
-        string prefix = phoneNumber.Substring(0, 3);
-
-        return Array.IndexOf(validPrefixes, prefix) >= 0;
+        return isStandardFormat || isInternationalFormat;
     }
 
     /// <summary>
@@ -455,4 +417,22 @@ public static class PersianNumberHelper
     }
 
     #endregion
+
+    /// <summary>
+    /// A general validation for any type of phone number (landline or mobile).
+    /// Checks for a reasonable length and numeric format.
+    /// </summary>
+    public static bool IsValidGeneralPhoneNumber(string phoneNumber)
+    {
+        if (string.IsNullOrWhiteSpace(phoneNumber))
+        {
+            return true; // Optional fields are valid if empty
+        }
+
+        // Normalize the number to only digits
+        var digitsOnly = new string(phoneNumber.Where(char.IsDigit).ToArray());
+
+        // Check for a reasonable length (e.g., between 8 and 11 digits for Iranian numbers)
+        return digitsOnly.Length >= 8 && digitsOnly.Length <= 11;
+    }
 }

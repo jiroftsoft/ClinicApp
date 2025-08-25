@@ -1,0 +1,146 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.ServiceCategoryIndexViewModel>
+
+<!-- جدول دسته‌بندی‌ها -->
+@if (Model?.Items != null && Model.Items.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>نام دسته‌بندی</th>
+                    <th>تعداد خدمات</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ ایجاد</th>
+                    <th>ایجاد شده توسط</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody id="categoriesTableBody">
+                @foreach (var category in Model.Items)
+                {
+                    <tr data-category-id="@category.ServiceCategoryId">
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <i class="fas fa-layer-group text-info"></i>
+                                </div>
+                                <div>
+                                    <strong>@category.Title</strong>
+                                    @if (!string.IsNullOrEmpty(category.Description))
+                                    {
+                                        <br><small class="text-muted">@category.Description</small>
+                                    }
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">@category.ServiceCount خدمت</span>
+                        </td>
+                        <td>
+                            @if (category.IsActive)
+                            {
+                                <span class="badge bg-success">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">غیرفعال</span>
+                            }
+                        </td>
+                        <td>
+                            <small class="text-muted">@category.CreatedAtShamsi</small>
+                        </td>
+                        <td>
+                            <small class="text-muted">@category.CreatedBy</small>
+                        </td>
+                        <td>
+                            <div class="action-buttons">
+                                <a href="@Url.Action("CategoryDetails", new { id = category.ServiceCategoryId })" 
+                                   class="btn btn-sm btn-outline-info" title="مشاهده جزئیات">
+                                    👁️
+                                </a>
+                                <a href="@Url.Action("EditCategory", new { id = category.ServiceCategoryId })" 
+                                   class="btn btn-sm btn-outline-warning" title="ویرایش دسته‌بندی">
+                                    ✏️
+                                </a>
+                                <a href="@Url.Action("Index", new { serviceCategoryId = category.ServiceCategoryId })" 
+                                   class="btn btn-sm btn-outline-primary" title="مشاهده خدمات">
+                                    📋
+                                </a>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete(@category.ServiceCategoryId, '@category.Title')" 
+                                        title="حذف">
+                                    🗑️
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    if (Model.TotalPages > 1)
+    {
+        <div class="pagination-container">
+            <nav aria-label="صفحه‌بندی">
+                <ul class="pagination justify-content-center mb-0">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber - 1))">قبلی</a>
+                        </li>
+                    }
+
+                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                            <a class="page-link" href="#" onclick="changePage(@i)">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber + 1))">بعدی</a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+                         <div class="text-center mt-2">
+                 <small class="text-muted">
+                     نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) از @Model.TotalItems مورد
+                 </small>
+             </div>
+        </div>
+    }
+}
+else
+{
+    <div class="empty-state text-center py-5">
+        <i class="fas fa-layer-group fa-4x text-muted mb-3" style="opacity: 0.3;"></i>
+        <h4 class="text-muted">هیچ دسته‌بندی‌ای یافت نشد</h4>
+        <p class="text-muted">برای شروع، یک دسته‌بندی جدید ایجاد کنید.</p>
+        @if (ViewBag.DepartmentId != null)
+        {
+            <a href="@Url.Action("CreateCategory", new { departmentId = ViewBag.DepartmentId })" 
+               class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>ایجاد اولین دسته‌بندی
+            </a>
+        }
+    </div>
+}
+
+<!-- آمار سریع -->
+<script>
+    // بروزرسانی آمار در صفحه اصلی
+    if (typeof updateStats === 'function') {
+                 const stats = {
+             totalCategories: @(Model?.TotalItems ?? 0),
+             activeCategories: @(Model?.Items?.Count(c => c.IsActive) ?? 0),
+             totalServices: @(Model?.Items?.Sum(c => c.ServiceCount) ?? 0),
+             avgServices: @(Model?.Items?.Any() == true ? Model.Items.Average(c => c.ServiceCount).ToString("F1") : "0")
+         };
+        updateStats(stats);
+    }
+</script>

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.Services
 {
@@ -60,7 +61,7 @@ namespace ClinicApp.Services
         public bool IsPatient => false;
         public DateTime UtcNow => DateTime.UtcNow;
         public DateTime Now => DateTime.Now;
-        public string PersianDate => DateTime.Now.ToPersianDateTime();
+        public string PersianDate => DateTimeExtensions.ToPersianDateTime(DateTime.Now);
         public ClaimsPrincipal ClaimsPrincipal => CreateClaimsPrincipal();
 
         #endregion
@@ -183,6 +184,49 @@ namespace ClinicApp.Services
         public string GetSystemUserId()
         {
             return _systemUserId;
+        }
+
+        public async Task<List<Department>> GetDoctorActiveDepartmentsAsync()
+        {
+            _log.Warning("تلاش برای دریافت دپارتمان‌های فعال پزشک توسط BackgroundCurrentUserService");
+            return new List<Department>();
+        }
+
+        public async Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync()
+        {
+            _log.Warning("تلاش برای دریافت دسته‌بندی خدمات مجاز پزشک توسط BackgroundCurrentUserService");
+            return new List<ServiceCategory>();
+        }
+
+        public async Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId)
+        {
+            _log.Warning("تلاش برای بررسی فعالیت پزشک در دپارتمان {DepartmentId} توسط BackgroundCurrentUserService", departmentId);
+            return false;
+        }
+
+        public async Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId)
+        {
+            _log.Warning("تلاش برای بررسی مجوز پزشک برای دسته‌بندی خدمات {ServiceCategoryId} توسط BackgroundCurrentUserService", serviceCategoryId);
+            return false;
+        }
+
+        public async Task<string> GetDoctorRoleInDepartmentAsync(int departmentId)
+        {
+            _log.Warning("تلاش برای دریافت نقش پزشک در دپارتمان {DepartmentId} توسط BackgroundCurrentUserService", departmentId);
+            return null;
+        }
+
+        public string[] GetUserRoles()
+        {
+            try
+            {
+                return _isSystemAdmin ? new string[] { AppRoles.Admin } : new string[0];
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت نقش‌های کاربر سیستم");
+                return new string[0];
+            }
         }
 
         #endregion

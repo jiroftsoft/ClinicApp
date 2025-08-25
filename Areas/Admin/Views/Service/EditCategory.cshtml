@@ -1,0 +1,366 @@
+@using ClinicApp.Extensions
+@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.ServiceCategoryCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش دسته‌بندی خدمات";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- بسته‌های CSS مورد نیاز -->
+@section Styles {
+    <style>
+        /* استایل‌های اختصاصی برای فرم ویرایش دسته‌بندی پزشکی */
+        .form-section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            color: #1a6dcc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+            .form-section-title i {
+                margin-left: 8px;
+                font-size: 1.1rem;
+            }
+
+        .required:after {
+            content: " *";
+            color: #d32f2f;
+            margin-right: 2px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+
+            .btn-submit:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 5px 15px rgba(26, 109, 204, 0.4);
+            }
+
+            .btn-submit i {
+                margin-left: 8px;
+            }
+
+        .btn-cancel {
+            background-color: #f1f3f5;
+            color: #495057;
+            border-radius: 25px;
+            padding: 10px 25px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+
+            .btn-cancel:hover {
+                background-color: #e9ecef;
+                transform: translateY(-2px);
+            }
+
+            .btn-cancel i {
+                margin-left: 8px;
+            }
+
+        .form-control:focus {
+            border-color: #1a6dcc;
+            box-shadow: 0 0 0 0.2rem rgba(26, 109, 204, 0.25);
+        }
+
+        .form-note {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .validation-summary-errors {
+            background-color: #ffebee;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-right: 3px solid #d32f2f;
+        }
+
+            .validation-summary-errors ul {
+                margin-bottom: 0;
+                padding-left: 20px;
+            }
+
+            .validation-summary-errors li {
+                margin-bottom: 4px;
+            }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .medical-highlight {
+            background-color: #e3f2fd;
+            border-left: 3px solid #1a6dcc;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 15px;
+        }
+
+            .medical-highlight h5 {
+                margin-top: 0;
+                color: #1a6dcc;
+            }
+
+            .medical-highlight ul {
+                padding-right: 20px;
+            }
+
+            .medical-highlight li {
+                margin-bottom: 8px;
+            }
+
+        /* استایل‌های موبایل */
+        @@media (max-width: 768px) {
+            .form-section {
+                padding: 15px;
+            }
+
+            .btn-submit, .btn-cancel {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+
+            .form-note {
+                font-size: 0.8rem;
+            }
+
+            .form-actions {
+                flex-direction: column;
+            }
+
+            .medical-highlight {
+                padding: 12px;
+            }
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- هدر صفحه - Medical Environment -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-edit text-primary me-2"></i>
+                    🏥 ویرایش دسته‌بندی خدمات
+                </h1>
+                <p class="text-muted mb-0">ویرایش اطلاعات دسته‌بندی: <strong>@Model.Title</strong></p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <a href="@Url.Action("Categories", "Service")" class="btn btn-cancel">
+                    <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
+                </a>
+            </div>
+        </div>
+
+        <!-- هشدارهای امنیتی پزشکی -->
+        <div class="alert alert-info mb-4">
+            <div class="d-flex align-items-center">
+                <i class="fas fa-shield-alt fa-2x me-3 text-primary"></i>
+                <div>
+                    <h5 class="mb-1">رعایت استانداردهای امنیتی پزشکی</h5>
+                    <p class="mb-0">در هنگام ویرایش دسته‌بندی‌های خدمات پزشکی، لطفاً اطلاعات را با دقت بررسی کنید. تمام تغییرات در سیستم ردیابی خواهند شد.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- فرم ویرایش دسته‌بندی -->
+        <div class="row">
+            <div class="col-lg-8">
+                @using (Html.BeginForm("EditCategory", "Service", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(model => model.ServiceCategoryId)
+
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-edit"></i> اطلاعات اصلی دسته‌بندی
+                        </h5>
+
+                        @Html.ValidationSummary(false, "", new { @class = "validation-summary-errors" })
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Title, new { @class = "form-label required" })
+                            @Html.TextBoxFor(model => model.Title, new { @class = "form-control form-control-lg", placeholder = "عنوان دسته‌بندی را وارد کنید", autofocus = "autofocus" })
+                            @Html.ValidationMessageFor(model => model.Title, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">مثال: "تزریقات و واکسیناسیون"، "معاینات اولیه"</div>
+                        </div>
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.DepartmentId, new { @class = "form-label required" })
+                            @Html.DropDownListFor(model => model.DepartmentId, (IEnumerable<SelectListItem>)ViewBag.Departments, "انتخاب دپارتمان", new { @class = "form-control form-control-lg" })
+                            @Html.ValidationMessageFor(model => model.DepartmentId, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">دپارتمان مربوط به این دسته‌بندی را انتخاب کنید</div>
+                        </div>
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Description, new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control form-control-lg", rows = "4", placeholder = "توضیحات دسته‌بندی را وارد کنید" })
+                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">توضیحات تکمیلی درباره این دسته‌بندی (اختیاری)</div>
+                        </div>
+
+                        <div class="mb-4">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
+                                @Html.LabelFor(model => model.IsActive, new { @class = "form-check-label" })
+                            </div>
+                            <div class="form-note">اگر فعال باشد، این دسته‌بندی در سیستم قابل استفاده خواهد بود</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit">
+                                <i class="fas fa-save"></i> به‌روزرسانی دسته‌بندی
+                            </button>
+                            <a href="@Url.Action("Categories", "Service")" class="btn btn-cancel">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- بخش راهنمای سریع برای محیط پزشکی -->
+                    <div class="medical-highlight">
+                        <h5><i class="fas fa-lightbulb"></i> راهنمای سریع برای محیط پزشکی</h5>
+                        <ul>
+                            <li>برای افزایش سرعت در محیط پزشکی، از کلیدهای میانبر استفاده کنید: <strong>Tab</strong> برای حرکت بین فیلدها و <strong>Ctrl + Enter</strong> برای ذخیره سریع</li>
+                            <li>عنوان دسته‌بندی باید واضح و قابل فهم باشد تا کارکنان پزشکی به راحتی بتوانند خدمات مناسب را پیدا کنند</li>
+                            <li>توضیحات باید شامل نکات مهم و پروتکل‌های مربوط به آن دسته‌بندی باشد</li>
+                            <li>تغییر وضعیت دسته‌بندی از فعال به غیرفعال، تمام خدمات آن را نیز غیرفعال می‌کند</li>
+                        </ul>
+                    </div>
+                }
+            </div>
+
+            <div class="col-lg-4">
+                <!-- راهنمای استفاده -->
+                <div class="form-section">
+                    <h5 class="form-section-title">
+                        <i class="fas fa-info-circle"></i> راهنمای استفاده
+                    </h5>
+                    <div class="text-muted">
+                        <p class="mb-3">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            دسته‌بندی‌های خدمات برای سازماندهی خدمات کلینیک شما استفاده می‌شوند.
+                        </p>
+                        <p class="mb-3">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            مثال‌هایی از دسته‌بندی‌ها: "معاینات اولیه"، "تزریقات و واکسیناسیون"، "آزمایش‌های تشخیصی"
+                        </p>
+                        <p class="mb-3">
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                            عنوان دسته‌بندی نباید تکراری باشد و حداکثر 250 کاراکتر می‌تواند باشد.
+                        </p>
+                        <p class="mb-3">
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                            تغییر دپارتمان دسته‌بندی، تمام خدمات آن را نیز به دپارتمان جدید منتقل می‌کند.
+                        </p>
+                        <p class="mb-0">
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                            غیرفعال کردن دسته‌بندی، تمام خدمات آن را نیز غیرفعال می‌کند.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- اطلاعات سیستم -->
+                <div class="form-section">
+                    <h5 class="form-section-title">
+                        <i class="fas fa-history"></i> اطلاعات سیستم
+                    </h5>
+                    <div class="text-muted">
+                        <div class="medical-environment">
+                            <div class="info-item">
+                                <i class="fas fa-calendar-alt"></i>
+                                <span class="info-value">@DateTime.Now.ToPersianDateTime()</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-clock"></i>
+                                <span class="info-value">@DateTime.Now.ToString("HH:mm")</span>
+                            </div>
+                            <div class="info-item">
+                                <i class="fas fa-info-circle"></i>
+                                <span class="info-value">آخرین ویرایش توسط شما انجام خواهد شد</span>
+                            </div>
+                        </div>
+
+                        <div class="sensitive-data">
+                            <h6><i class="fas fa-lock"></i> امنیت اطلاعات پزشکی</h6>
+                            <p class="mb-0">تمام تغییرات ایجاد شده در این صفحه تحت پوشش قانون حفظ حریم خصوصی ایران قرار دارند و در سیستم ردیابی دقیق خواهند شد.</p>
+                        </div>
+
+                        <div class="d-flex align-items-center mt-3">
+                            <i class="fas fa-shield-alt text-success me-2"></i>
+                            <span class="security-badge">داده‌های پزشکی رمزگذاری شده</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            console.log('🏥 MEDICAL: شروع راه‌اندازی فرم ویرایش دسته‌بندی');
+            
+            // اعتبارسنجی فرم
+            (function () {
+                'use strict';
+                window.addEventListener('load', function () {
+                    var forms = document.getElementsByClassName('needs-validation');
+                    Array.prototype.filter.call(forms, function (form) {
+                        form.addEventListener('submit', function (event) {
+                            if (form.checkValidity() === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            form.classList.add('was-validated');
+                        }, false);
+                    });
+                }, false);
+            })();
+
+            // افزودن کلیدهای میانبر برای محیط پزشکی
+            $(document).keydown(function(e) {
+                // کلیدهای میانبر برای محیط پزشکی
+                if (e.ctrlKey && e.key === 'Enter') {
+                    // ذخیره سریع با Ctrl + Enter
+                    $('form button[type="submit"]').click();
+                    return false;
+                }
+            });
+        });
+    </script>
+}

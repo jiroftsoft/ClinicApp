@@ -1,0 +1,693 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.ServiceIndexViewModel>
+@{
+    ViewBag.Title = "مدیریت خدمات";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* استایل‌های اختصاصی برای مدیریت خدمات */
+        .header-section {
+            background: linear-gradient(135deg, #6f42c1 0%, #563d7c 100%);
+            color: white;
+            padding: 2rem 0;
+            margin: -15px -15px 20px -15px;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .header-info h1 {
+            margin: 0;
+            font-size: 1.8rem;
+            font-weight: 600;
+        }
+
+        .header-info p {
+            margin: 5px 0 0 0;
+            opacity: 0.9;
+            font-size: 1rem;
+        }
+
+        .category-info {
+            background: #e7e3ff;
+            border: 1px solid #d1c4e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .category-info h6 {
+            margin: 0 0 5px 0;
+            color: #6f42c1;
+            font-weight: 600;
+        }
+
+        .stats-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .stats-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-left: 4px solid #6f42c1;
+            transition: all 0.3s ease;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+        }
+
+        .stats-card h3 {
+            margin: 0 0 5px 0;
+            font-size: 1.4rem;
+            color: #2c3e50;
+        }
+
+        .stats-card p {
+            margin: 0;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+
+        .search-filters {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .table thead th {
+            background: #f8f9fa;
+            border: none;
+            font-weight: 600;
+            color: #2c3e50;
+            padding: 15px;
+        }
+
+        .table tbody tr {
+            transition: background-color 0.2s;
+        }
+
+        .table tbody tr:hover {
+            background-color: #f8f9fa;
+        }
+
+        .service-card {
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        .service-card:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+
+        .service-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 10px;
+        }
+
+        .service-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin: 0;
+        }
+
+        .service-code {
+            background: #e9ecef;
+            color: #495057;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        .service-price {
+            font-weight: 600;
+            color: #28a745;
+            font-size: 1.1rem;
+        }
+
+        .service-meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+        }
+
+        .action-buttons .btn {
+            margin: 0 2px;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.85rem;
+        }
+
+        .pagination-container {
+            background: white;
+            padding: 15px;
+            border-radius: 0 0 10px 10px;
+            border-top: 1px solid #dee2e6;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        .view-toggle {
+            background: white;
+            border-radius: 8px;
+            padding: 5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .view-toggle .btn {
+            border: none;
+            border-radius: 6px;
+            padding: 8px 15px;
+        }
+
+        .breadcrumb-custom {
+            background: transparent;
+            padding: 0;
+            margin-bottom: 20px;
+        }
+
+        .breadcrumb-custom .breadcrumb-item + .breadcrumb-item::before {
+            content: "◀";
+            color: #6c757d;
+        }
+
+        @@media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                text-align: center;
+                gap: 15px;
+            }
+
+            .stats-cards {
+                grid-template-columns: 1fr;
+            }
+
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .service-header {
+                flex-direction: column;
+                gap: 10px;
+            }
+        }
+    </style>
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb breadcrumb-custom">
+        <li class="breadcrumb-item">
+            <a href="@Url.Action("Index", "Home", new { area = "Admin" })">
+                <i class="fas fa-home"></i> داشبورد
+            </a>
+        </li>
+        <li class="breadcrumb-item">
+            <a href="@Url.Action("ServiceCategories")">دسته‌بندی خدمات</a>
+        </li>
+        <li class="breadcrumb-item active">خدمات</li>
+    </ol>
+</nav>
+
+<!-- Header Section -->
+<div class="header-section">
+    <div class="header-content">
+        <div class="header-info">
+            <h1><i class="fas fa-stethoscope me-2"></i>مدیریت خدمات</h1>
+            <p>مدیریت و سازماندهی خدمات پزشکی</p>
+        </div>
+        <div class="header-actions">
+            @if (ViewBag.ServiceCategoryId != null)
+            {
+                <a href="@Url.Action("CreateService", new { serviceCategoryId = ViewBag.ServiceCategoryId })" 
+                   class="btn btn-light btn-lg">
+                    <i class="fas fa-plus me-2"></i>خدمت جدید
+                </a>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- نمایش اطلاعات دسته‌بندی انتخاب شده -->
+@if (ViewBag.ServiceCategoryId != null)
+{
+    <div class="category-info">
+        <h6><i class="fas fa-layer-group me-2"></i>دسته‌بندی انتخاب شده</h6>
+        <small>شناسه دسته‌بندی: @ViewBag.ServiceCategoryId</small>
+    </div>
+}
+
+<!-- آمار کلی -->
+<div class="stats-cards">
+    <div class="stats-card">
+        <h3 id="totalServices">@(Model?.TotalItems ?? 0)</h3>
+        <p>کل خدمات</p>
+    </div>
+    <div class="stats-card">
+        <h3 id="activeServices">@(Model?.Items?.Count(s => s.IsActive) ?? 0)</h3>
+        <p>خدمات فعال</p>
+    </div>
+    <div class="stats-card">
+        <h3 id="avgPrice">@(Model?.Items?.Any() == true ? Model.Items.Average(s => s.Price).ToString("N0") : "0")</h3>
+        <p>میانگین قیمت (تومان)</p>
+    </div>
+    <div class="stats-card">
+        <h3 id="totalRevenue">@(Model?.Items?.Sum(s => s.Price).ToString("N0") ?? "0")</h3>
+        <p>مجموع قیمت‌ها (تومان)</p>
+    </div>
+</div>
+
+<!-- فیلترها و جستجو -->
+<div class="search-filters">
+    <form method="get" id="searchForm">
+        @if (ViewBag.ServiceCategoryId != null)
+        {
+            <input type="hidden" name="serviceCategoryId" value="@ViewBag.ServiceCategoryId" />
+        }
+        
+        <div class="row g-3">
+            <div class="col-md-5">
+                <label class="form-label">جستجو:</label>
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="جستجو در خدمات..." 
+                           name="searchTerm" value="@ViewBag.SearchTerm" id="searchInput">
+                    <button class="btn btn-outline-secondary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">تعداد نمایش:</label>
+                <select class="form-select" name="pageSize" id="pageSizeSelect">
+                    <option value="10" @(ViewBag.PageSize == 10 ? "selected" : "")>10</option>
+                    <option value="25" @(ViewBag.PageSize == 25 ? "selected" : "")>25</option>
+                    <option value="50" @(ViewBag.PageSize == 50 ? "selected" : "")>50</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">نمایش:</label>
+                <div class="view-toggle btn-group w-100" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="tableViewBtn">
+                        <i class="fas fa-table"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="cardViewBtn">
+                        <i class="fas fa-th-large"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">&nbsp;</label>
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <input type="hidden" name="page" value="1" id="pageInput">
+    </form>
+</div>
+
+<!-- نمایش خدمات -->
+<div id="servicesContainer">
+    @if (Model?.Items != null && Model.Items.Any())
+    {
+        <!-- نمایش جدولی -->
+        <div id="tableView" class="table-container">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>نام خدمت</th>
+                        <th>کد خدمت</th>
+                        <th>قیمت</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ ایجاد</th>
+                        <th>عملیات</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var service in Model.Items)
+                    {
+                        <tr data-service-id="@service.ServiceId">
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="me-3">
+                                        <i class="fas fa-stethoscope text-primary"></i>
+                                    </div>
+                                    <div>
+                                        <strong>@service.Title</strong>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <span class="service-code">@service.ServiceCode</span>
+                            </td>
+                            <td>
+                                <span class="service-price">@service.PriceFormatted تومان</span>
+                            </td>
+                            <td>
+                                @if (service.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">غیرفعال</span>
+                                }
+                            </td>
+                            <td>
+                                <small class="text-muted">@service.CreatedAtShamsi</small>
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button type="button" class="btn btn-sm btn-outline-info" 
+                                            onclick="viewServiceDetails(@service.ServiceId)" title="مشاهده جزئیات">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" 
+                                            onclick="confirmDelete(@service.ServiceId, '@service.Title')" 
+                                            title="حذف">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- نمایش کارتی -->
+        <div id="cardView" class="row" style="display: none;">
+            @foreach (var service in Model.Items)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="service-card" data-service-id="@service.ServiceId">
+                        <div class="service-header">
+                            <div>
+                                <h6 class="service-title">@service.Title</h6>
+                                <span class="service-code">@service.ServiceCode</span>
+                            </div>
+                            <div class="text-end">
+                                <div class="service-price">@service.PriceFormatted تومان</div>
+                                @if (service.IsActive)
+                                {
+                                    <span class="badge bg-success">فعال</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger">غیرفعال</span>
+                                }
+                            </div>
+                        </div>
+                        <div class="service-meta">
+                            <span><i class="fas fa-calendar me-1"></i>@service.CreatedAtShamsi</span>
+                            <span><i class="fas fa-user me-1"></i>@service.CreatedBy</span>
+                        </div>
+                        <div class="service-actions mt-3">
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-sm btn-outline-info" 
+                                        onclick="viewServiceDetails(@service.ServiceId)">
+                                    <i class="fas fa-eye me-1"></i>جزئیات
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="confirmDelete(@service.ServiceId, '@service.Title')">
+                                    <i class="fas fa-trash me-1"></i>حذف
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="table-container">
+            <div class="empty-state">
+                <i class="fas fa-stethoscope"></i>
+                <h4>هیچ خدمتی یافت نشد</h4>
+                <p>برای شروع، یک خدمت جدید ایجاد کنید.</p>
+                @if (ViewBag.ServiceCategoryId != null)
+                {
+                    <a href="@Url.Action("CreateService", new { serviceCategoryId = ViewBag.ServiceCategoryId })" 
+                       class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>ایجاد اولین خدمت
+                    </a>
+                }
+                else
+                {
+                    <a href="@Url.Action("ServiceCategories")" class="btn btn-info">
+                        <i class="fas fa-layer-group me-2"></i>انتخاب دسته‌بندی
+                    </a>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Pagination -->
+@if (Model?.TotalPages > 1)
+{
+    <div class="pagination-container">
+        <nav aria-label="صفحه‌بندی">
+            <ul class="pagination justify-content-center mb-0">
+                @if (Model.HasPreviousPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber - 1))">قبلی</a>
+                    </li>
+                }
+
+                @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                {
+                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                        <a class="page-link" href="#" onclick="changePage(@i)">@i</a>
+                    </li>
+                }
+
+                @if (Model.HasNextPage)
+                {
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber + 1))">بعدی</a>
+                    </li>
+                }
+            </ul>
+        </nav>
+        <div class="text-center mt-2">
+            <small class="text-muted">
+                نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) از @Model.TotalItems مورد
+            </small>
+        </div>
+    </div>
+}
+
+<!-- Modal حذف -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">تأیید حذف</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>آیا از حذف خدمت "<span id="deleteItemName"></span>" اطمینان دارید؟</p>
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>توجه:</strong> این عمل قابل بازگشت نیست.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">حذف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Auto-submit on page size change
+            $('#pageSizeSelect').on('change', function() {
+                $('#pageInput').val(1);
+                $('#searchForm').submit();
+            });
+
+            // Search with Enter key
+            $('#searchInput').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#pageInput').val(1);
+                    $('#searchForm').submit();
+                }
+            });
+
+            // View toggle
+            $('#tableViewBtn').on('click', function() {
+                $(this).addClass('active');
+                $('#cardViewBtn').removeClass('active');
+                $('#tableView').show();
+                $('#cardView').hide();
+                localStorage.setItem('servicesViewMode', 'table');
+            });
+
+            $('#cardViewBtn').on('click', function() {
+                $(this).addClass('active');
+                $('#tableViewBtn').removeClass('active');
+                $('#tableView').hide();
+                $('#cardView').show();
+                localStorage.setItem('servicesViewMode', 'card');
+            });
+
+            // Restore view mode
+            const savedViewMode = localStorage.getItem('servicesViewMode') || 'table';
+            if (savedViewMode === 'card') {
+                $('#cardViewBtn').click();
+            }
+        });
+
+        // تغییر صفحه
+        function changePage(page) {
+            $('#pageInput').val(page);
+            $('#searchForm').submit();
+        }
+
+        // مشاهده جزئیات خدمت
+        function viewServiceDetails(id) {
+            // پیاده‌سازی نمایش جزئیات خدمت
+            $.ajax({
+                url: '@Url.Action("GetActiveServices")',
+                type: 'GET',
+                data: { serviceCategoryId: @(ViewBag.ServiceCategoryId ?? 0) },
+                success: function(result) {
+                    if (result.success && result.data) {
+                        const service = result.data.find(s => s.Value == id);
+                        if (service) {
+                            alert(`جزئیات خدمت: ${service.Text}`);
+                        }
+                    }
+                },
+                error: function() {
+                    showToast('خطا', 'خطا در دریافت اطلاعات خدمت', 'error');
+                }
+            });
+        }
+
+        // تأیید حذف
+        function confirmDelete(id, name) {
+            $('#deleteItemName').text(name);
+            $('#confirmDeleteBtn').off('click').on('click', function() {
+                deleteService(id);
+            });
+            $('#deleteModal').modal('show');
+        }
+
+        // حذف خدمت
+        function deleteService(id) {
+            $.ajax({
+                url: '@Url.Action("DeleteService")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(result) {
+                    $('#deleteModal').modal('hide');
+                    if (result.success) {
+                        showToast('موفقیت', result.message, 'success');
+                        // حذف از هر دو نمایش
+                        $(`tr[data-service-id="${id}"]`).fadeOut();
+                        $(`.service-card[data-service-id="${id}"]`).fadeOut();
+                        // بروزرسانی آمار
+                        updateStats();
+                    } else {
+                        showToast('خطا', result.message, 'error');
+                    }
+                },
+                error: function() {
+                    $('#deleteModal').modal('hide');
+                    showToast('خطا', 'خطا در ارتباط با سرور', 'error');
+                }
+            });
+        }
+
+        // بروزرسانی آمار
+        function updateStats() {
+            setTimeout(function() {
+                location.reload();
+            }, 1000);
+        }
+
+        // Toast notification
+        function showToast(title, message, type) {
+            const toastClass = type === 'success' ? 'bg-success' : 'bg-danger';
+            const toast = `
+                <div class="toast ${toastClass} text-white" role="alert">
+                    <div class="toast-header">
+                        <strong class="me-auto">${title}</strong>
+                        <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+                    </div>
+                    <div class="toast-body">${message}</div>
+                </div>
+            `;
+            
+            if (!$('#toastContainer').length) {
+                $('body').append('<div id="toastContainer" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+            }
+            
+            $('#toastContainer').append(toast);
+            $('.toast').last().toast('show');
+        }
+    </script>
+    
+    <!-- Anti-Forgery Token -->
+    @Html.AntiForgeryToken()
+}

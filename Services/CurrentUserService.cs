@@ -5,6 +5,7 @@ using ClinicApp.Models.Entities;
 using Microsoft.AspNet.Identity;
 using Serilog;
 using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Security.Claims;
@@ -177,6 +178,8 @@ namespace ClinicApp.Services
                 {
                     // دریافت پزشک مربوط به کاربر
                     var doctor = await _context.Doctors
+                        .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
+                        .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
                         .FirstOrDefaultAsync(d => d.ApplicationUserId == userId && !d.IsDeleted);
 
                     if (doctor == null)
@@ -187,7 +190,7 @@ namespace ClinicApp.Services
 
                     // دریافت خدمات
                     var service = await _context.Services
-                        .Include(s => s.ServiceCategory)
+                        .Include(s => s.ServiceCategory.Department)
                         .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
 
                     if (service == null || service.ServiceCategory == null)
@@ -196,25 +199,28 @@ namespace ClinicApp.Services
                         return false;
                     }
 
-                    // دریافت Department مربوطه
-                    var serviceCategory = await _context.ServiceCategories
-                        .Include(sc => sc.Department)
-                        .FirstOrDefaultAsync(sc => sc.ServiceCategoryId == service.ServiceCategoryId);
+                    // ✅ بررسی دسترسی بر اساس معماری جدید Many-to-Many
+                    
+                    // 1. بررسی دسترسی بر اساس کلینیک
+                    bool hasClinicAccess = doctor.ClinicId.HasValue &&
+                                         service.ServiceCategory.Department.ClinicId == doctor.ClinicId;
 
-                    if (serviceCategory?.Department == null)
-                    {
-                        _logger.Warning("دپارتمان مربوط به خدمات {ServiceId} یافت نشد", serviceId);
-                        return false;
-                    }
+                    // 2. بررسی دسترسی بر اساس دپارتمان‌های پزشک
+                    bool hasDepartmentAccess = doctor.DoctorDepartments
+                        .Any(dd => dd.IsActive && 
+                                  dd.DepartmentId == service.ServiceCategory.DepartmentId);
 
-                    // بررسی دسترسی بر اساس کلینیک یا دپارتمان
-                    bool hasAccess = (doctor.ClinicId.HasValue &&
-                                    serviceCategory.Department.ClinicId == doctor.ClinicId) ||
-                                   (doctor.DepartmentId.HasValue &&
-                                    serviceCategory.DepartmentId == doctor.DepartmentId);
+                    // 3. بررسی دسترسی مستقیم به دسته‌بندی خدمات
+                    bool hasServiceCategoryAccess = doctor.DoctorServiceCategories
+                        .Any(dsc => dsc.IsActive && 
+                                   dsc.ServiceCategoryId == service.ServiceCategoryId);
 
-                    _logger.Information("پزشک {UserId} به خدمات {ServiceId} دسترسی {AccessStatus}",
-                        userId, serviceId, hasAccess ? "دارد" : "ندارد");
+                    bool hasAccess = hasClinicAccess || hasDepartmentAccess || hasServiceCategoryAccess;
+
+                    _logger.Information("پزشک {UserId} به خدمات {ServiceId} دسترسی {AccessStatus} - کلینیک: {ClinicAccess}, دپارتمان: {DepartmentAccess}, دسته‌بندی: {ServiceCategoryAccess}",
+                        userId, serviceId, hasAccess ? "دارد" : "ندارد", 
+                        hasClinicAccess, hasDepartmentAccess, hasServiceCategoryAccess);
+                    
                     return hasAccess;
                 }
 
@@ -333,6 +339,7 @@ namespace ClinicApp.Services
                 if (IsDoctor)
                 {
                     var doctor = await _context.Doctors
+                        .Include(d => d.DoctorDepartments)
                         .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
 
                     if (doctor == null)
@@ -340,9 +347,30 @@ namespace ClinicApp.Services
                         return false;
                     }
 
-                    // پزشک فقط به دپارتمان خود دسترسی دارد
-                    return doctor.DepartmentId.HasValue &&
-                           doctor.DepartmentId.Value == departmentId;
+                    // ✅ بررسی دسترسی بر اساس معماری جدید Many-to-Many
+                    
+                    // 1. بررسی دسترسی بر اساس کلینیک (اگر دپارتمان در همان کلینیک پزشک باشد)
+                    bool hasClinicAccess = false;
+                    if (doctor.ClinicId.HasValue)
+                    {
+                        var department = await _context.Departments
+                            .FirstOrDefaultAsync(d => d.DepartmentId == departmentId && !d.IsDeleted);
+                        
+                        hasClinicAccess = department != null && 
+                                        department.ClinicId == doctor.ClinicId.Value;
+                    }
+
+                    // 2. بررسی دسترسی مستقیم به دپارتمان (پزشک در آن دپارتمان عضو است)
+                    bool hasDepartmentAccess = doctor.DoctorDepartments
+                        .Any(dd => dd.IsActive && dd.DepartmentId == departmentId);
+
+                    bool hasAccess = hasClinicAccess || hasDepartmentAccess;
+
+                    _logger.Information("پزشک {UserId} به دپارتمان {DepartmentId} دسترسی {AccessStatus} - کلینیک: {ClinicAccess}, دپارتمان: {DepartmentAccess}",
+                        UserId, departmentId, hasAccess ? "دارد" : "ندارد", 
+                        hasClinicAccess, hasDepartmentAccess);
+
+                    return hasAccess;
                 }
 
                 // 3. اگر کاربر نقش منشی دارد
@@ -378,7 +406,8 @@ namespace ClinicApp.Services
                 return await _context.Doctors
                     .Include(d => d.ApplicationUser)
                     .Include(d => d.Clinic)
-                    .Include(d => d.Department)
+                    .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
+                    .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
                     .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
             }
             catch (Exception ex)
@@ -412,6 +441,178 @@ namespace ClinicApp.Services
         public string GetSystemUserId()
         {
             return SystemUsers.SystemUserId;
+        }
+
+        /// <summary>
+        /// دریافت لیست دپارتمان‌هایی که پزشک فعلی در آن‌ها فعال است
+        /// </summary>
+        public async Task<List<Department>> GetDoctorActiveDepartmentsAsync()
+        {
+            try
+            {
+                if (!IsDoctor)
+                {
+                    return new List<Department>();
+                }
+
+                var doctor = await _context.Doctors
+                    .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
+                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+
+                if (doctor == null)
+                {
+                    return new List<Department>();
+                }
+
+                return doctor.DoctorDepartments
+                    .Where(dd => dd.IsActive)
+                    .Select(dd => dd.Department)
+                    .Where(d => d != null && !d.IsDeleted && d.IsActive)
+                    .OrderBy(d => d.Name)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت دپارتمان‌های فعال پزشک برای کاربر {UserId}.", UserId);
+                return new List<Department>();
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی خدماتی که پزشک فعلی مجاز به ارائه آن‌ها است
+        /// </summary>
+        public async Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync()
+        {
+            try
+            {
+                if (!IsDoctor)
+                {
+                    return new List<ServiceCategory>();
+                }
+
+                var doctor = await _context.Doctors
+                    .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory.Department))
+                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+
+                if (doctor == null)
+                {
+                    return new List<ServiceCategory>();
+                }
+
+                return doctor.DoctorServiceCategories
+                    .Where(dsc => dsc.IsActive && 
+                                 (dsc.ExpiryDate == null || dsc.ExpiryDate > DateTime.Now))
+                    .Select(dsc => dsc.ServiceCategory)
+                    .Where(sc => sc != null && !sc.IsDeleted && sc.IsActive)
+                    .OrderBy(sc => sc.Title)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت دسته‌بندی خدمات مجاز پزشک برای کاربر {UserId}.", UserId);
+                return new List<ServiceCategory>();
+            }
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا پزشک فعلی در دپارتمان مشخص شده فعال است یا خیر
+        /// </summary>
+        public async Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId)
+        {
+            try
+            {
+                if (!IsDoctor)
+                {
+                    return false;
+                }
+
+                var doctor = await _context.Doctors
+                    .Include(d => d.DoctorDepartments)
+                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+
+                if (doctor == null)
+                {
+                    return false;
+                }
+
+                return doctor.DoctorDepartments
+                    .Any(dd => dd.IsActive && 
+                              dd.DepartmentId == departmentId &&
+                              (dd.EndDate == null || dd.EndDate > DateTime.Now));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی فعالیت پزشک در دپارتمان {DepartmentId} برای کاربر {UserId}.", departmentId, UserId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// بررسی اینکه آیا پزشک فعلی مجاز به دسته‌بندی خدمات مشخص شده است یا خیر
+        /// </summary>
+        public async Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId)
+        {
+            try
+            {
+                if (!IsDoctor)
+                {
+                    return false;
+                }
+
+                var doctor = await _context.Doctors
+                    .Include(d => d.DoctorServiceCategories)
+                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+
+                if (doctor == null)
+                {
+                    return false;
+                }
+
+                return doctor.DoctorServiceCategories
+                    .Any(dsc => dsc.IsActive && 
+                               dsc.ServiceCategoryId == serviceCategoryId &&
+                               (dsc.ExpiryDate == null || dsc.ExpiryDate > DateTime.Now));
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی مجوز پزشک برای دسته‌بندی خدمات {ServiceCategoryId} برای کاربر {UserId}.", serviceCategoryId, UserId);
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت نقش پزشک در دپارتمان مشخص شده
+        /// </summary>
+        public async Task<string> GetDoctorRoleInDepartmentAsync(int departmentId)
+        {
+            try
+            {
+                if (!IsDoctor)
+                {
+                    return null;
+                }
+
+                var doctor = await _context.Doctors
+                    .Include(d => d.DoctorDepartments)
+                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+
+                if (doctor == null)
+                {
+                    return null;
+                }
+
+                var doctorDepartment = doctor.DoctorDepartments
+                    .FirstOrDefault(dd => dd.IsActive && 
+                                         dd.DepartmentId == departmentId &&
+                                         (dd.EndDate == null || dd.EndDate > DateTime.Now));
+
+                return doctorDepartment?.Role;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت نقش پزشک در دپارتمان {DepartmentId} برای کاربر {UserId}.", departmentId, UserId);
+                return null;
+            }
         }
 
         #endregion

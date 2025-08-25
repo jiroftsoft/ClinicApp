@@ -20,6 +20,11 @@ namespace ClinicApp
     {
         protected void Application_Start()
         {
+            // تنظیمات Culture برای پشتیبانی بهتر از فارسی
+            // در .NET Framework 4.8 نیازی به RegisterProvider نیست
+            System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("fa-IR");
+            System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("fa-IR");
+            
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
@@ -31,7 +36,7 @@ namespace ClinicApp
             using (var context = new ApplicationDbContext())
             {
                 // مرحله ۱: اجرای فرآیند Seed برای اطمینان از وجود کاربران سیستمی
-                IdentitySeed.SeedDefaultData(context);
+               IdentitySeed.SeedDefaultData(context);
 
                 // مرحله ۲: مقداردهی اولیه و کش کردن شناسه‌های کاربران سیستمی
                 SystemUsers.Initialize(context);

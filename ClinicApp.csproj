@@ -95,6 +95,15 @@
     <Reference Include="ExcelNumberFormat, Version=1.1.0.0, Culture=neutral, PublicKeyToken=23c6f5d73be07eca, processorArchitecture=MSIL">
       <HintPath>packages\ExcelNumberFormat.1.1.0\lib\net20\ExcelNumberFormat.dll</HintPath>
     </Reference>
+    <Reference Include="FluentValidation, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0, processorArchitecture=MSIL">
+      <HintPath>packages\FluentValidation.8.6.1\lib\net45\FluentValidation.dll</HintPath>
+    </Reference>
+    <Reference Include="FluentValidation.Mvc, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0, processorArchitecture=MSIL">
+      <HintPath>packages\FluentValidation.Mvc5.8.6.1\lib\net45\FluentValidation.Mvc.dll</HintPath>
+    </Reference>
+    <Reference Include="FluentValidation.ValidatorAttribute, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7de548da2fbae0f0, processorArchitecture=MSIL">
+      <HintPath>packages\FluentValidation.ValidatorAttribute.8.6.1\lib\net45\FluentValidation.ValidatorAttribute.dll</HintPath>
+    </Reference>
     <Reference Include="MailKit, Version=4.11.0.0, Culture=neutral, PublicKeyToken=4e064fe7c44a8f1b, processorArchitecture=MSIL">
       <HintPath>packages\MailKit.4.11.0\lib\net48\MailKit.dll</HintPath>
     </Reference>
@@ -267,6 +276,9 @@
     <Reference Include="System.ClientModel, Version=1.0.0.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
       <HintPath>packages\System.ClientModel.1.0.0\lib\netstandard2.0\System.ClientModel.dll</HintPath>
     </Reference>
+    <Reference Include="System.ComponentModel.Annotations, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>packages\System.ComponentModel.Annotations.4.4.1\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
+    </Reference>
     <Reference Include="System.Configuration.ConfigurationManager, Version=9.0.0.8, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Configuration.ConfigurationManager.9.0.8\lib\net462\System.Configuration.ConfigurationManager.dll</HintPath>
     </Reference>
@@ -423,31 +435,74 @@
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
-    <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
-    <Compile Include="Areas\Admin\Controllers\InsuranceController - Copy.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
     <Compile Include="Core\Class1.cs" />
+    <Compile Include="Core\ErrorCategory.cs" />
+    <Compile Include="Core\Gender.cs" />
+    <Compile Include="Core\OperationStatus.cs" />
+    <Compile Include="Core\SecurityLevel.cs" />
+    <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
+    <Compile Include="Extensions\Class1.cs" />
+    <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Filters\CultureFilter.cs" />
+    <Compile Include="Filters\PersianDateAttribute.cs" />
+    <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
+    <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
+    <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\Class1.cs" />
     <Compile Include="Infrastructure\DatabaseMigrationManager.cs" />
+    <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\Class1.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDepartmentManagementService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDepartmentRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IServiceCategoryRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IServiceManagementService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IServiceRepository.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IInsuranceService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
     <Compile Include="Interfaces\INotificationTemplateService.cs" />
-    <Compile Include="Migrations\202508211944096_CreateDataBase.cs" />
-    <Compile Include="Migrations\202508211944096_CreateDataBase.Designer.cs">
-      <DependentUpon>202508211944096_CreateDataBase.cs</DependentUpon>
+    <Compile Include="Interfaces\OTP\OTPSystem.cs" />
+    <Compile Include="Migrations\202508232210329_CreateDataBaseClinic.cs" />
+    <Compile Include="Migrations\202508232210329_CreateDataBaseClinic.Designer.cs">
+      <DependentUpon>202508232210329_CreateDataBaseClinic.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202508241019241_Chnage14040602.cs" />
+    <Compile Include="Migrations\202508241019241_Chnage14040602.Designer.cs">
+      <DependentUpon>202508241019241_Chnage14040602.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Entities\Notifications.cs" />
+    <Compile Include="Repositories\Class1.cs" />
+    <Compile Include="Repositories\ClinicRepository.cs" />
+    <Compile Include="Repositories\DepartmentRepository.cs" />
+    <Compile Include="Repositories\ServiceCategoryRepository.cs" />
+    <Compile Include="Repositories\ServiceRepository.cs" />
+    <Compile Include="Services\AsanakSmsService.cs" />
+    <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\BackgroundCurrentUserService.cs" />
+    <Compile Include="Services\Class1.cs" />
+    <Compile Include="Services\ClinicManagementService.cs" />
+    <Compile Include="Services\CurrentUserService.cs" />
+    <Compile Include="Services\DepartmentManagementService.cs" />
     <Compile Include="Services\InsuranceService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
+    <Compile Include="Services\PatientService.cs" />
+    <Compile Include="Services\ServiceCategoryService.cs" />
+    <Compile Include="Services\ServiceManagementService.cs" />
+    <Compile Include="Services\ServiceService.cs" />
+    <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
+    <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
     <Compile Include="Areas\Receptionist\ReceptionistAreaRegistration.cs" />
@@ -455,8 +510,6 @@
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\PatientController.cs" />
-    <Compile Include="Areas\Admin\Controllers\ServiceCategoryController.cs" />
-    <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Filters\CheckProfileCompletionAttribute.cs" />
     <Compile Include="Filters\Class1.cs" />
     <Compile Include="Filters\ReceptionExportHelper.cs" />
@@ -478,11 +531,8 @@
     <Compile Include="Interfaces\IAuthService.cs" />
     <Compile Include="Interfaces\IClinicService.cs" />
     <Compile Include="Interfaces\ICurrentUserService.cs" />
-    <Compile Include="Interfaces\IDepartmentService.cs" />
-    <Compile Include="Interfaces\IDoctorService.cs" />
     <Compile Include="Interfaces\IPatientService.cs" />
     <Compile Include="Interfaces\IReceptionService.cs" />
-    <Compile Include="Interfaces\ISafeMapper.cs" />
     <Compile Include="Interfaces\IServiceCategoryService.cs" />
     <Compile Include="Interfaces\IServiceService.cs" />
     <Compile Include="Interfaces\PagedResult.cs" />
@@ -497,27 +547,20 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Services\AsanakSmsService.cs" />
-    <Compile Include="Services\AuthService.cs" />
-    <Compile Include="Services\Class1.cs" />
-    <Compile Include="Services\ClinicService.cs" />
-    <Compile Include="Services\CurrentUserService.cs" />
-    <Compile Include="Services\DepartmentService.cs" />
-    <Compile Include="Services\DoctorService.cs" />
-    <Compile Include="Services\PatientService.cs" />
-    <Compile Include="Services\SafeMapper.cs" />
-    <Compile Include="Services\ServiceCategoryService.cs" />
-    <Compile Include="Services\ServiceService.cs" />
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\BreadcrumbItem.cs" />
     <Compile Include="ViewModels\Class1.cs" />
     <Compile Include="ViewModels\ClinicViewModels.cs" />
-    <Compile Include="ViewModels\DepartmentViewModel.cs" />
     <Compile Include="ViewModels\DoctorViewModels.cs" />
     <Compile Include="ViewModels\OtpViewModels.cs" />
     <Compile Include="ViewModels\PatientViewModel.cs" />
     <Compile Include="ViewModels\ReceptionViewModel.cs" />
-    <Compile Include="ViewModels\ServiceCategoryViewModels.cs" />
+    <Compile Include="ViewModels\ServiceViewModels.cs" />
+    <Compile Include="ViewModels\Validators\Class1.cs" />
+    <Compile Include="ViewModels\Validators\ClinicCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\ServiceCategoryCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\ServiceCreateEditViewModelValidator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\aos.css" />
@@ -538,6 +581,8 @@
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
     <Content Include="Content\Images\shafa-logo.png" />
+    <Content Include="Content\js\medical-debug.js" />
+    <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
     <Content Include="Content\plugins\select2\css\select2.css" />
     <Content Include="Content\plugins\select2\css\select2.min.css" />
@@ -2823,22 +2868,10 @@
     <Content Include="Areas\Receptionist\Views\web.config" />
     <Content Include="Areas\Receptionist\Views\Shared\_ReceiptPrintPartial.cshtml" />
     <Content Include="Areas\Admin\Views\web.config" />
-    <Content Include="Areas\Admin\Views\Doctors\Index.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_DoctorsListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Doctors\Create.cshtml" />
-    <Content Include="Areas\Admin\Views\Clinic\Index.cshtml" />
     <Content Include="Areas\Admin\Views\_ViewStart.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_ClinicsListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Clinic\Create.cshtml" />
-    <Content Include="Areas\Admin\Views\Clinic\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\Clinic\Delete.cshtml" />
-    <Content Include="Areas\Admin\Views\Department\Index.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_DepartmentsListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Department\Create.cshtml" />
-    <Content Include="Areas\Admin\Views\Department\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\Department\Delete.cshtml" />
-    <Content Include="Areas\Admin\Views\Department\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\Clinic\Details.cshtml" />
     <Content Include="Content\plugins\DataTables\css\common.scss" />
     <Content Include="Content\plugins\DataTables\css\mixins.scss" />
     <Content Include="Content\plugins\DataTables\css\semanticui.scss" />
@@ -2946,102 +2979,95 @@
     <Content Include="Content\Fonts\shabnam-font-v2.4.0\Without-Latin\Shabnam-WOL.ttf" />
     <Content Include="Content\Fonts\shabnam-font-v2.4.0\Without-Latin\Shabnam-WOL.woff" />
     <Content Include="Content\Fonts\shabnam-font-v2.4.0\Without-Latin\Shabnam-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\CHANGELOG.md" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-FD-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-FD-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-FD-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-FD-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Bold-FD.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Bold-FD.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Bold-FD.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Bold-FD.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-FD.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-FD.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-FD.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-FD.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Light-FD.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Light-FD.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Light-FD.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Light-FD.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Medium-FD.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Medium-FD.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Medium-FD.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Medium-FD.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Thin-FD.eot" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Thin-FD.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Thin-FD.woff" />
-    <Content Include="Content\Fonts\vazir-font\Farsi-Digits\Vazir-Thin-FD.woff2" />
-    <Content Include="Content\Fonts\vazir-font\LICENSE" />
-    <Content Include="Content\Fonts\vazir-font\README.md" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Bold.eot" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Bold.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Bold.woff" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Bold.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Light.eot" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Light.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Light.woff" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Light.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Medium.eot" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Medium.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Medium.woff" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Medium.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Thin.eot" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Thin.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Thin.woff" />
-    <Content Include="Content\Fonts\vazir-font\Vazir-Thin.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Vazir.eot" />
-    <Content Include="Content\Fonts\vazir-font\Vazir.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Vazir.woff" />
-    <Content Include="Content\Fonts\vazir-font\Vazir.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Bold-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Bold-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Bold-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Bold-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Light-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Light-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Light-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Light-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Medium-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Medium-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Medium-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Medium-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Thin-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Thin-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Thin-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-Thin-WOL.woff2" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-WOL.eot" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-WOL.ttf" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-WOL.woff" />
-    <Content Include="Content\Fonts\vazir-font\Without-Latin\Vazir-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\CHANGELOG.md" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Bold-FD-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-FD-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-FD-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-FD-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-FD-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Light-FD-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Medium-FD-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits-Without-Latin\Vazir-Thin-FD-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Bold-FD.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Bold-FD.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Bold-FD.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Bold-FD.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-FD.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-FD.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-FD.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-FD.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Light-FD.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Light-FD.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Light-FD.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Light-FD.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Medium-FD.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Medium-FD.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Medium-FD.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Medium-FD.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Thin-FD.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Thin-FD.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Thin-FD.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Farsi-Digits\Vazir-Thin-FD.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\LICENSE" />
+    <Content Include="Content\Fonts\vazirmatn\README.md" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Bold.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Bold.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Bold.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Bold.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Light.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Light.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Light.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Light.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Medium.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Medium.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Medium.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Medium.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Thin.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Thin.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Thin.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir-Thin.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Vazir.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Bold-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Bold-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Bold-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Bold-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Light-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Light-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Light-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Light-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Medium-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Medium-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Medium-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Medium-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Thin-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Thin-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Thin-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-Thin-WOL.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-WOL.eot" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-WOL.ttf" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-WOL.woff" />
+    <Content Include="Content\Fonts\vazirmatn\Without-Latin\Vazir-WOL.woff2" />
     <Content Include="Content\Fonts\yekan-font\yekan-regular.eot" />
     <Content Include="Content\Fonts\yekan-font\yekan-regular.ttf" />
     <Content Include="Content\Fonts\yekan-font\yekan-regular.woff" />
     <Content Include="Content\Fonts\yekan-font\Yekan.eot" />
     <Content Include="Content\Fonts\yekan-font\Yekan.ttf" />
     <Content Include="Content\Fonts\yekan-font\Yekan.woff" />
-    <Content Include="Areas\Admin\Views\ServiceCategory\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\ServiceCategory\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\Service\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\Service\Create.cshtml" />
-    <Content Include="Areas\Admin\Views\Service\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\Service\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\Service\Report.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_InsuranceListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_InsuranceTariffsListPartial.cshtml" />
@@ -3053,8 +3079,43 @@
     <Content Include="Areas\Admin\Views\Shared\_ErrorPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_SuccessPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\_EditTariffPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Shared\_AdminLayout - Copy.cshtml" />
-    <Content Include="Areas\Admin\Views\Shared\_AdminLayout - Copy %282%29.cshtml" />
+    <Content Include="Areas\Admin\Views\Clinic\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Clinic\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Clinic\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Clinic\_CreateOrEdit.cshtml" />
+    <Content Include="Areas\Admin\Views\Clinic\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Department\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Department\_CreateOrEdit.cshtml" />
+    <Content Include="Areas\Admin\Views\Department\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Department\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Department\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\Categories.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\CategoryDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\CreateCategory.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\CreateServiceCategory.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\ServiceCategories.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\ServiceCategoryDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\Services.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\_CategoriesPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\_ServicesPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\_CategoriesPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\_ServicesPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceManagement\CreateService.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Service\Index.cshtml" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-Black.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-Bold.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-ExtraBold.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-ExtraLight.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-Light.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-Medium.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-Regular.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-SemiBold.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn-Thin.woff2" />
+    <Content Include="Content\Fonts\vazirmatn\Vazirmatn[wght].woff2" />
+    <Content Include="Areas\Admin\Views\Service\EditCategory.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3253,7 +3314,6 @@
     <Content Include="Views\Web.config" />
     <Content Include="Views\_ViewStart.cshtml" />
     <Content Include="Views\Shared\Error.cshtml" />
-    <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Home\About.cshtml" />
     <Content Include="Views\Home\Contact.cshtml" />
     <Content Include="Views\Home\Index.cshtml" />
@@ -3266,10 +3326,6 @@
     <Content Include="Areas\Admin\Views\Shared\_AdminLayout.cshtml" />
     <Content Include="Scripts\jquery-3.7.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.7.1.min.map" />
-    <Content Include="Views\Shared\_Layout - Copy.cshtml" />
-    <Content Include="Views\Shared\_Layout - Copy %282%29.cshtml" />
-    <Content Include="Views\Shared\_Layout - Copy %283%29.cshtml" />
-    <Content Include="Views\Shared\_Layout - Copy %284%29.cshtml" />
     <Content Include="Views\Shared\_LoginPartial.cshtml" />
     <Content Include="Views\Account\ConfirmEmail.cshtml" />
     <Content Include="Views\Account\ExternalLoginConfirmation.cshtml" />
@@ -3290,11 +3346,9 @@
     <Content Include="Views\Manage\SetPassword.cshtml" />
     <Content Include="Views\Manage\VerifyPhoneNumber.cshtml" />
     <Content Include="Views\Patient\Details.cshtml" />
-    <Content Include="Views\Patient\Create - Copy.cshtml" />
     <Content Include="Views\Shared\_ValidationToasts.cshtml" />
     <Content Include="Views\Account\CompleteRegistration.cshtml" />
-    <Content Include="Areas\Admin\Views\ServiceCategory\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\ServiceCategory\Create.cshtml" />
+    <Content Include="Views\Shared\_Layout.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -3328,8 +3382,11 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202508211944096_CreateDataBase.resx">
-      <DependentUpon>202508211944096_CreateDataBase.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202508232210329_CreateDataBaseClinic.resx">
+      <DependentUpon>202508232210329_CreateDataBaseClinic.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202508241019241_Chnage14040602.resx">
+      <DependentUpon>202508241019241_Chnage14040602.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>
@@ -3337,7 +3394,7 @@
     <VSToolsPath Condition="'$(VSToolsPath)' == ''">$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)</VSToolsPath>
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != ''" />
+  <Import Project="$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets" Condition="'$(VSToolsPath)' != '' and Exists('$(VSToolsPath)\WebApplications\Microsoft.WebApplication.targets')" />
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v10.0\WebApplications\Microsoft.WebApplication.targets" Condition="false" />
   <Target Name="MvcBuildViews" AfterTargets="AfterBuild" Condition="'$(MvcBuildViews)'=='true'">
     <AspNetCompiler VirtualPath="temp" PhysicalPath="$(WebProjectOutputDir)" />
