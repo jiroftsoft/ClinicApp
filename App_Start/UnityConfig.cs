@@ -21,6 +21,9 @@ using System.Configuration;
 using System.Data.Entity;
 using System.Security.Claims;
 using System.Web;
+using ClinicApp.Repositories.ClinicAdmin;
+using ClinicApp.Services.ClinicAdmin;
+using ClinicApp.ViewModels.DoctorManagementVM;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -316,11 +319,31 @@ namespace ClinicApp
                 // Register Service Management services
                 container.RegisterType<IServiceManagementService, ServiceManagementService>(new PerRequestLifetimeManager());
 
+                // Register Doctor Management Repositories
+                container.RegisterType<IDoctorCrudRepository, DoctorCrudRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorDepartmentRepository, DoctorDepartmentRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorServiceCategoryRepository, DoctorServiceCategoryRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorScheduleRepository, DoctorScheduleRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorReportingRepository, DoctorReportingRepository>(new PerRequestLifetimeManager());
+
+                // Register Doctor Management Services
+                container.RegisterType<IDoctorCrudService, DoctorCrudService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorDepartmentService, DoctorDepartmentService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorServiceCategoryService, DoctorServiceCategoryService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorScheduleService, DoctorScheduleService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorAssignmentService, DoctorAssignmentService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorReportingService, DoctorReportingService>(new PerRequestLifetimeManager());
+
                 // ثبت Validator برای FluentValidation
                 container.RegisterType<IValidator<ClinicCreateEditViewModel>, ClinicCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DepartmentCreateEditViewModel>, DepartmentCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<ServiceCategoryCreateEditViewModel>, ServiceCategoryCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<ServiceCreateEditViewModel>, ServiceCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorCreateEditViewModel>, DoctorCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorDepartmentViewModel>, DoctorDepartmentViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorServiceCategoryViewModel>, DoctorServiceCategoryViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorScheduleViewModel>, DoctorScheduleViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorAssignmentsViewModel>, DoctorAssignmentsViewModelValidator>(new PerRequestLifetimeManager());
 
                 _log.Information("سرویس‌های پزشکی با موفقیت ثبت شدند");
             }

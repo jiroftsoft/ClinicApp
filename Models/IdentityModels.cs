@@ -123,7 +123,8 @@ namespace ClinicApp.Models
             modelBuilder.Filter("ActiveDoctorSchedules", (DoctorSchedule ds) => ds.IsActive, true);
             modelBuilder.Filter("ActiveDoctorWorkDays", (DoctorWorkDay wd) => wd.IsActive, true);
             modelBuilder.Filter("ActiveDoctorTimeRanges", (DoctorTimeRange tr) => tr.IsActive, true);
-            modelBuilder.Filter("AvailableDoctorTimeSlots", (DoctorTimeSlot ts) => ts.Status == AppointmentStatus.Available, true);
+            // حذف filter مشکل‌ساز برای DoctorTimeSlots - به جای آن از query filter استفاده می‌کنیم
+
 
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس
             modelBuilder.Entity<DatabaseVersion>()

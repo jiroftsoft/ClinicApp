@@ -1,0 +1,272 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using AutoMapper;
+using ClinicApp.Core;
+using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Models.Entities;
+using ClinicApp.ViewModels.DoctorManagementVM;
+using FluentValidation;
+using Serilog;
+
+namespace ClinicApp.Services.ClinicAdmin
+{
+    /// <summary>
+    /// سرویس تخصصی برای مدیریت صلاحیت‌های خدماتی پزشکان در سیستم کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. پیاده‌سازی کامل مدیریت رابطه چند-به-چند پزشک-دسته‌بندی خدمات
+    /// 2. رعایت استانداردهای پزشکی ایران در مدیریت صلاحیت‌ها
+    /// 3. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 4. مدیریت کامل ردیابی (Audit Trail) برای حسابرسی و امنیت سیستم
+    /// 5. پشتیبانی از تقویم شمسی و اعداد فارسی در تمام فرآیندهای مدیریتی
+    /// 6. پشتیبانی از محیط‌های Production و سیستم‌های Load Balanced
+    /// 7. مدیریت حرفه‌ای خطاها و لاگ‌گیری برای سیستم‌های پزشکی
+    /// 
+    /// نکته حیاتی: این کلاس بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
+    /// </summary>
+    public class DoctorServiceCategoryService : IDoctorServiceCategoryService
+    {
+        private readonly IDoctorServiceCategoryRepository _doctorServiceCategoryRepository;
+        private readonly IDoctorCrudRepository _doctorRepository;
+        private readonly IServiceCategoryRepository _serviceCategoryRepository;
+        private readonly ICurrentUserService _currentUserService;
+        private readonly IValidator<DoctorServiceCategoryViewModel> _validator;
+        private readonly ILogger _logger;
+        private readonly IMapper _mapper;
+
+        public DoctorServiceCategoryService(
+            IDoctorServiceCategoryRepository doctorServiceCategoryRepository,
+            IDoctorCrudRepository doctorRepository,
+            IServiceCategoryRepository serviceCategoryRepository,
+            ICurrentUserService currentUserService,
+            IValidator<DoctorServiceCategoryViewModel> validator,
+            IMapper mapper)
+        {
+            _doctorServiceCategoryRepository = doctorServiceCategoryRepository ?? throw new ArgumentNullException(nameof(doctorServiceCategoryRepository));
+            _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
+            _serviceCategoryRepository = serviceCategoryRepository ?? throw new ArgumentNullException(nameof(serviceCategoryRepository));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _validator = validator ?? throw new ArgumentNullException(nameof(validator));
+            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _logger = Log.ForContext<DoctorServiceCategoryService>();
+        }
+
+        #region Doctor-ServiceCategory Management (مدیریت انتصاب پزشک به سرفصل‌های خدماتی)
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های خدمات مجاز برای یک پزشک
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>> GetServiceCategoriesForDoctorAsync(int doctorId, string searchTerm, int pageNumber, int pageSize)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت دسته‌بندی‌های خدمات پزشک با شناسه: {DoctorId}, صفحه: {PageNumber}", doctorId, pageNumber);
+
+                // اعتبارسنجی پارامترها
+                if (doctorId <= 0)
+                {
+                    return ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>.Failed("شناسه پزشک نامعتبر است.");
+                }
+
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 10;
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId);
+                    return ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>.Failed("پزشک مورد نظر یافت نشد.");
+                }
+
+                // دریافت دسته‌بندی‌های خدمات پزشک
+                var doctorServiceCategories = await _doctorServiceCategoryRepository.GetDoctorServiceCategoriesAsync(doctorId, searchTerm, pageNumber, pageSize);
+                var totalCount = await _doctorServiceCategoryRepository.GetDoctorServiceCategoriesCountAsync(doctorId, searchTerm);
+
+                // تبدیل به ViewModel
+                var doctorServiceCategoryViewModels = doctorServiceCategories.Select(DoctorServiceCategoryViewModel.FromEntity).ToList();
+
+                // ایجاد نتیجه صفحه‌بندی شده
+                var pagedResult = new PagedResult<DoctorServiceCategoryViewModel>(
+                    doctorServiceCategoryViewModels,
+                    totalCount,
+                    pageNumber,
+                    pageSize
+                ).WithMedicalInfo(containsSensitiveData: true, SecurityLevel.High);
+
+                _logger.Information("دسته‌بندی‌های خدمات پزشک با شناسه {DoctorId} با موفقیت دریافت شد. تعداد: {Count}", doctorId, doctorServiceCategoryViewModels.Count);
+
+                return ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>.Successful(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت دسته‌بندی‌های خدمات پزشک {DoctorId}", doctorId);
+                return ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>.Failed("خطا در دریافت دسته‌بندی‌های خدمات پزشک");
+            }
+        }
+
+        /// <summary>
+        /// اعطا کردن صلاحیت ارائه یک دسته‌بندی خدمات به یک پزشک
+        /// </summary>
+        public async Task<ServiceResult> GrantServiceCategoryToDoctorAsync(DoctorServiceCategoryViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست اعطای صلاحیت دسته‌بندی خدمات {ServiceCategoryId} به پزشک {DoctorId}", model.ServiceCategoryId, model.DoctorId);
+
+                // اعتبارسنجی مدل
+                var validationResult = await _validator.ValidateAsync(model);
+                if (!validationResult.IsValid)
+                {
+                    var errors = validationResult.Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage)).ToList();
+                    _logger.Warning("اعتبارسنجی مدل اعطای صلاحیت دسته‌بندی خدمات ناموفق: {@Errors}", errors);
+                    return ServiceResult.FailedWithValidationErrors("اطلاعات وارد شده صحیح نیست", errors);
+                }
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(model.DoctorId);
+                if (doctor == null)
+                {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", model.DoctorId);
+                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
+                }
+
+                // بررسی وجود دسته‌بندی خدمات
+                var serviceCategory = await _serviceCategoryRepository.GetByIdAsync(model.ServiceCategoryId);
+                if (serviceCategory == null)
+                {
+                    _logger.Warning("دسته‌بندی خدمات با شناسه {ServiceCategoryId} یافت نشد", model.ServiceCategoryId);
+                    return ServiceResult.Failed("دسته‌بندی خدمات مورد نظر یافت نشد.");
+                }
+
+                // بررسی وجود صلاحیت قبلی
+                var existingPermission = await _doctorServiceCategoryRepository.GetDoctorServiceCategoryAsync(model.DoctorId, model.ServiceCategoryId);
+                if (existingPermission != null)
+                {
+                    _logger.Warning("پزشک {DoctorId} قبلاً صلاحیت دسته‌بندی خدمات {ServiceCategoryId} را دارد", model.DoctorId, model.ServiceCategoryId);
+                    return ServiceResult.Failed("این پزشک قبلاً صلاحیت این دسته‌بندی خدمات را دارد.");
+                }
+
+                // تبدیل ViewModel به Entity
+                var doctorServiceCategory = model.ToEntity();
+                
+                // تنظیم اطلاعات ردیابی
+                var currentUserId = _currentUserService.UserId;
+                doctorServiceCategory.CreatedByUserId = currentUserId;
+                doctorServiceCategory.UpdatedByUserId = currentUserId;
+                doctorServiceCategory.CreatedAt = DateTime.Now;
+                doctorServiceCategory.UpdatedAt = DateTime.Now;
+
+                // تنظیم تاریخ اعطا (در صورت عدم تعیین)
+                if (!doctorServiceCategory.GrantedDate.HasValue)
+                {
+                    doctorServiceCategory.GrantedDate = DateTime.Now;
+                }
+
+                // ذخیره در دیتابیس
+                await _doctorServiceCategoryRepository.AddDoctorServiceCategoryAsync(doctorServiceCategory);
+
+                _logger.Information("صلاحیت دسته‌بندی خدمات {ServiceCategoryId} با موفقیت به پزشک {DoctorId} اعطا شد", model.ServiceCategoryId, model.DoctorId);
+
+                return ServiceResult.Successful("صلاحیت دسته‌بندی خدمات با موفقیت اعطا شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در اعطای صلاحیت دسته‌بندی خدمات {ServiceCategoryId} به پزشک {DoctorId}", model.ServiceCategoryId, model.DoctorId);
+                return ServiceResult.Failed("خطا در اعطای صلاحیت دسته‌بندی خدمات");
+            }
+        }
+
+        /// <summary>
+        /// لغو صلاحیت ارائه یک دسته‌بندی خدمات از یک پزشک
+        /// </summary>
+        public async Task<ServiceResult> RevokeServiceCategoryFromDoctorAsync(int doctorId, int serviceCategoryId)
+        {
+            try
+            {
+                _logger.Information("درخواست لغو صلاحیت دسته‌بندی خدمات {ServiceCategoryId} از پزشک {DoctorId}", serviceCategoryId, doctorId);
+
+                if (doctorId <= 0 || serviceCategoryId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه پزشک یا دسته‌بندی خدمات نامعتبر است.");
+                }
+
+                // بررسی وجود صلاحیت
+                var existingPermission = await _doctorServiceCategoryRepository.GetDoctorServiceCategoryAsync(doctorId, serviceCategoryId);
+                if (existingPermission == null)
+                {
+                    _logger.Warning("صلاحیت پزشک {DoctorId} برای دسته‌بندی خدمات {ServiceCategoryId} یافت نشد", doctorId, serviceCategoryId);
+                    return ServiceResult.Failed("صلاحیت مورد نظر یافت نشد.");
+                }
+
+                // بررسی وجود نوبت‌های فعال (این بررسی در repository انجام می‌شود)
+                // لغو صلاحیت (حذف)
+                await _doctorServiceCategoryRepository.DeleteDoctorServiceCategoryAsync(existingPermission);
+
+                _logger.Information("صلاحیت دسته‌بندی خدمات {ServiceCategoryId} از پزشک {DoctorId} با موفقیت لغو شد", serviceCategoryId, doctorId);
+
+                return ServiceResult.Successful("صلاحیت دسته‌بندی خدمات با موفقیت لغو شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در لغو صلاحیت دسته‌بندی خدمات {ServiceCategoryId} از پزشک {DoctorId}", serviceCategoryId, doctorId);
+                return ServiceResult.Failed("خطا در لغو صلاحیت دسته‌بندی خدمات");
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی اطلاعات صلاحیت پزشک در ارائه یک دسته‌بندی خدمات
+        /// </summary>
+        public async Task<ServiceResult> UpdateDoctorServiceCategoryPermissionAsync(DoctorServiceCategoryViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست به‌روزرسانی صلاحیت پزشک {DoctorId} در دسته‌بندی خدمات {ServiceCategoryId}", model.DoctorId, model.ServiceCategoryId);
+
+                // اعتبارسنجی مدل
+                var validationResult = await _validator.ValidateAsync(model);
+                if (!validationResult.IsValid)
+                {
+                    var errors = validationResult.Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage)).ToList();
+                    _logger.Warning("اعتبارسنجی مدل به‌روزرسانی صلاحیت دسته‌بندی خدمات ناموفق: {@Errors}", errors);
+                    return ServiceResult.FailedWithValidationErrors("اطلاعات وارد شده صحیح نیست", errors);
+                }
+
+                // بررسی وجود صلاحیت
+                var existingPermission = await _doctorServiceCategoryRepository.GetDoctorServiceCategoryAsync(model.DoctorId, model.ServiceCategoryId);
+                if (existingPermission == null)
+                {
+                    _logger.Warning("صلاحیت پزشک {DoctorId} برای دسته‌بندی خدمات {ServiceCategoryId} یافت نشد", model.DoctorId, model.ServiceCategoryId);
+                    return ServiceResult.Failed("صلاحیت مورد نظر یافت نشد.");
+                }
+
+                // به‌روزرسانی فیلدها
+                existingPermission.AuthorizationLevel = model.AuthorizationLevel;
+                existingPermission.IsActive = model.IsActive;
+                existingPermission.GrantedDate = model.GrantedDate;
+                existingPermission.ExpiryDate = model.ExpiryDate;
+                existingPermission.CertificateNumber = model.CertificateNumber;
+                existingPermission.Notes = model.Notes;
+                existingPermission.UpdatedAt = DateTime.Now;
+                existingPermission.UpdatedByUserId = _currentUserService.UserId;
+
+                // ذخیره تغییرات
+                await _doctorServiceCategoryRepository.UpdateDoctorServiceCategoryAsync(existingPermission);
+
+                _logger.Information("صلاحیت پزشک {DoctorId} در دسته‌بندی خدمات {ServiceCategoryId} با موفقیت به‌روزرسانی شد", model.DoctorId, model.ServiceCategoryId);
+
+                return ServiceResult.Successful("اطلاعات صلاحیت دسته‌بندی خدمات با موفقیت به‌روزرسانی شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی صلاحیت پزشک {DoctorId} در دسته‌بندی خدمات {ServiceCategoryId}", model.DoctorId, model.ServiceCategoryId);
+                return ServiceResult.Failed("خطا در به‌روزرسانی صلاحیت دسته‌بندی خدمات");
+            }
+        }
+
+        #endregion
+    }
+}

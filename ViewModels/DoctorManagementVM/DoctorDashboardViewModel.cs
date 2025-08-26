@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using ClinicApp.Extensions;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
 using FluentValidation;
@@ -153,16 +154,16 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 ThisWeekAppointmentsCount = appointments.Count(a => a.AppointmentDate >= weekStart && a.AppointmentDate < weekStart.AddDays(7)),
                 ThisMonthAppointmentsCount = appointments.Count(a => a.AppointmentDate >= monthStart),
                 TodayRevenue = appointments.Where(a => a.AppointmentDate.Date == today && a.Status == AppointmentStatus.Completed)
-                    .Sum(a => a.TotalAmount),
+                    .Sum(a => a.Price),
                 ThisWeekRevenue = appointments.Where(a => a.AppointmentDate >= weekStart && a.AppointmentDate < weekStart.AddDays(7) && a.Status == AppointmentStatus.Completed)
-                    .Sum(a => a.TotalAmount),
+                    .Sum(a => a.Price),
                 ThisMonthRevenue = appointments.Where(a => a.AppointmentDate >= monthStart && a.Status == AppointmentStatus.Completed)
-                    .Sum(a => a.TotalAmount),
+                    .Sum(a => a.Price),
                 LastMonthRevenue = appointments.Where(a => a.AppointmentDate >= lastMonthStart && a.AppointmentDate < monthStart && a.Status == AppointmentStatus.Completed)
-                    .Sum(a => a.TotalAmount),
+                    .Sum(a => a.Price),
                 RevenueChangePercentage = CalculateRevenueChangePercentage(
-                    appointments.Where(a => a.AppointmentDate >= monthStart && a.Status == AppointmentStatus.Completed).Sum(a => a.TotalAmount),
-                    appointments.Where(a => a.AppointmentDate >= lastMonthStart && a.AppointmentDate < monthStart && a.Status == AppointmentStatus.Completed).Sum(a => a.TotalAmount)
+                    appointments.Where(a => a.AppointmentDate >= monthStart && a.Status == AppointmentStatus.Completed).Sum(a => a.Price),
+                    appointments.Where(a => a.AppointmentDate >= lastMonthStart && a.AppointmentDate < monthStart && a.Status == AppointmentStatus.Completed).Sum(a => a.Price)
                 ),
                 NewPatientsToday = appointments.Where(a => a.AppointmentDate.Date == today && a.IsNewPatient).Count(),
                 NewPatientsThisWeek = appointments.Where(a => a.AppointmentDate >= weekStart && a.AppointmentDate < weekStart.AddDays(7) && a.IsNewPatient).Count(),
@@ -243,7 +244,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             return status switch
             {
                 AppointmentStatus.Available => "در دسترس",
-                AppointmentStatus.Booked => "رزرو شده",
+                AppointmentStatus.Scheduled => "رزرو شده",
                 AppointmentStatus.Completed => "تکمیل شده",
                 AppointmentStatus.Cancelled => "لغو شده",
                 AppointmentStatus.NoShow => "عدم حضور",
@@ -306,7 +307,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             return status switch
             {
                 AppointmentStatus.Available => "در دسترس",
-                AppointmentStatus.Booked => "رزرو شده",
+                AppointmentStatus.Scheduled => "رزرو شده",
                 AppointmentStatus.Completed => "تکمیل شده",
                 AppointmentStatus.Cancelled => "لغو شده",
                 AppointmentStatus.NoShow => "عدم حضور",

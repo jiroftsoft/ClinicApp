@@ -52,6 +52,21 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// فیلتر بر اساس وضعیت حذف شده/عدم حذف شده
         /// </summary>
         public bool? IsDeleted { get; set; }
+
+        /// <summary>
+        /// فیلتر بر اساس تخصص پزشک
+        /// </summary>
+        public string Specialization { get; set; }
+
+        /// <summary>
+        /// فیلد مرتب‌سازی
+        /// </summary>
+        public string SortBy { get; set; }
+
+        /// <summary>
+        /// ترتیب مرتب‌سازی (asc/desc)
+        /// </summary>
+        public string SortOrder { get; set; } = "asc";
     }
 
     /// <summary>

@@ -143,15 +143,16 @@ namespace ClinicApp.Models.Entities
 
     public enum AppointmentStatus : byte
     {
+        [Display(Name = "در دسترس")]
+        Available = 0,
         [Display(Name = "ثبت شده")]
-        Scheduled = 0,
+        Scheduled = 1,
         [Display(Name = "انجام شده")]
-        Completed = 1,
+        Completed = 2,
         [Display(Name = "لغو شده")]
-        Cancelled = 2,
+        Cancelled = 3,
         [Display(Name = "عدم حضور")]
-        NoShow = 3,
-        Available
+        NoShow = 4
     }
     #endregion
 
@@ -859,6 +860,7 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public virtual ICollection<ServiceCategory> ServiceCategories { get; set; } = new HashSet<ServiceCategory>();
 
+        public string Description { get; set; }
 
         #endregion
     }
@@ -2443,6 +2445,25 @@ namespace ClinicApp.Models.Entities
         public string PhoneNumber { get; set; }
 
         /// <summary>
+        /// کد ملی پزشک
+        /// </summary>
+        [MaxLength(10, ErrorMessage = "کد ملی نمی‌تواند بیش از 10 کاراکتر باشد.")]
+        public string NationalCode { get; set; }
+
+        /// <summary>
+        /// کد نظام پزشکی
+        /// </summary>
+        [MaxLength(20, ErrorMessage = "کد نظام پزشکی نمی‌تواند بیش از 20 کاراکتر باشد.")]
+        public string MedicalCouncilCode { get; set; }
+
+        /// <summary>
+        /// ایمیل پزشک
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است.")]
+        public string Email { get; set; }
+
+        /// <summary>
         /// شناسه کلینیک مربوطه (اختیاری)
         /// این فیلد برای مشخص کردن کلینیک اصلی پزشک استفاده می‌شود
         /// </summary>
@@ -2454,6 +2475,19 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         [MaxLength(2000, ErrorMessage = "توضیحات نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         public string Bio { get; set; }
+
+        /// <summary>
+        /// نام کامل پزشک
+        /// این ویژگی برای نمایش در UI بسیار مفید است
+        /// </summary>
+        [NotMapped]
+        public string FullName
+        {
+            get
+            {
+                return $"{FirstName} {LastName}".Trim();
+            }
+        }
 
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>
@@ -2948,8 +2982,7 @@ namespace ClinicApp.Models.Entities
             // ایندکس منحصر به فرد برای هر پزشک فقط یک برنامه کاری فعال
             HasIndex(ds => new { ds.DoctorId, ds.IsActive, ds.IsDeleted })
                 .HasName("IX_DoctorSchedule_DoctorId_IsActive_IsDeleted_Unique")
-                .IsUnique()
-                .HasAnnotation("IndexAnnotation", new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+                .IsUnique();
         }
     }
 
@@ -3413,8 +3446,7 @@ namespace ClinicApp.Models.Entities
             // ایندکس منحصر به فرد برای جلوگیری از تداخل زمانی
             HasIndex(ts => new { ts.DoctorId, ts.AppointmentDate, ts.StartTime, ts.EndTime, ts.IsDeleted })
                 .HasName("IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_EndTime_IsDeleted_Unique")
-                .IsUnique()
-                .HasAnnotation("IndexAnnotation", new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+                .IsUnique();
         }
     }
 
@@ -3620,8 +3652,7 @@ namespace ClinicApp.Models.Entities
             // ایندکس منحصر به فرد برای هر برنامه کاری فقط یک روز کاری برای هر روز هفته
             HasIndex(wd => new { wd.ScheduleId, wd.DayOfWeek, wd.IsDeleted })
                 .HasName("IX_DoctorWorkDay_ScheduleId_DayOfWeek_IsDeleted_Unique")
-                .IsUnique()
-                .HasAnnotation("IndexAnnotation", new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+                .IsUnique();
         }
     }
 
@@ -3732,6 +3763,12 @@ namespace ClinicApp.Models.Entities
         /// برای دسترسی مستقیم به اطلاعات کاربری که این ارتباط را ویرایش کرده
         /// </summary>
         public virtual ApplicationUser UpdatedByUser { get; set; }
+
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public string DeletedByUserId { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+
         #endregion
     }
 
@@ -3745,61 +3782,61 @@ namespace ClinicApp.Models.Entities
         {
             // تنظیمات جدول
             ToTable("DoctorDepartments");
-            
+
             // کلید ترکیبی (Composite Key)
             HasKey(dd => new { dd.DoctorId, dd.DepartmentId });
 
             // تنظیمات Property ها
             Property(dd => dd.DoctorId)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_DoctorId")));
 
             Property(dd => dd.DepartmentId)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_DepartmentId")));
 
             Property(dd => dd.Role)
                 .IsOptional()
                 .HasMaxLength(100)
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_Role")));
 
             Property(dd => dd.IsActive)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_IsActive")));
 
             Property(dd => dd.StartDate)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_StartDate")));
 
             Property(dd => dd.EndDate)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_EndDate")));
 
             // تنظیمات ITrackable
             Property(dd => dd.CreatedAt)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_CreatedAt")));
 
             Property(dd => dd.CreatedByUserId)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_CreatedByUserId")));
 
             Property(dd => dd.UpdatedAt)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_UpdatedAt")));
 
             Property(dd => dd.UpdatedByUserId)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorDepartment_UpdatedByUserId")));
 
             // روابط اصلی
@@ -3822,6 +3859,11 @@ namespace ClinicApp.Models.Entities
             HasOptional(dd => dd.UpdatedByUser)
                 .WithMany()
                 .HasForeignKey(dd => dd.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(dd => dd.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(dd => dd.DeletedByUserId)
                 .WillCascadeOnDelete(false);
 
             // ایندکس‌های ترکیبی برای بهبود کارایی
@@ -3958,6 +4000,9 @@ namespace ClinicApp.Models.Entities
         /// برای دسترسی مستقیم به اطلاعات کاربری که این صلاحیت را ویرایش کرده
         /// </summary>
         public virtual ApplicationUser UpdatedByUser { get; set; }
+
+        public bool IsDeleted { get; set; }
+
         #endregion
     }
 
@@ -3971,46 +4016,46 @@ namespace ClinicApp.Models.Entities
         {
             // تنظیمات جدول
             ToTable("DoctorServiceCategories");
-            
+
             // کلید ترکیبی (Composite Key)
             HasKey(dsc => new { dsc.DoctorId, dsc.ServiceCategoryId });
 
             // تنظیمات Property ها
             Property(dsc => dsc.DoctorId)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_DoctorId")));
 
             Property(dsc => dsc.ServiceCategoryId)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_ServiceCategoryId")));
 
             Property(dsc => dsc.AuthorizationLevel)
                 .IsOptional()
                 .HasMaxLength(50)
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_AuthorizationLevel")));
 
             Property(dsc => dsc.IsActive)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_IsActive")));
 
             Property(dsc => dsc.GrantedDate)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_GrantedDate")));
 
             Property(dsc => dsc.ExpiryDate)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_ExpiryDate")));
 
             Property(dsc => dsc.CertificateNumber)
                 .IsOptional()
                 .HasMaxLength(100)
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_CertificateNumber")));
 
             Property(dsc => dsc.Notes)
@@ -4020,22 +4065,22 @@ namespace ClinicApp.Models.Entities
             // تنظیمات ITrackable
             Property(dsc => dsc.CreatedAt)
                 .IsRequired()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_CreatedAt")));
 
             Property(dsc => dsc.CreatedByUserId)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_CreatedByUserId")));
 
             Property(dsc => dsc.UpdatedAt)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_UpdatedAt")));
 
             Property(dsc => dsc.UpdatedByUserId)
                 .IsOptional()
-                .HasColumnAnnotation("Index", 
+                .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_UpdatedByUserId")));
 
             // روابط اصلی
@@ -5100,6 +5145,28 @@ namespace ClinicApp.Models.Entities
         [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
         public string Description { get; set; }
 
+        /// <summary>
+        /// آیا بیمار جدید است؟
+        /// </summary>
+        public bool IsNewPatient { get; set; } = false;
+
+        /// <summary>
+        /// نام بیمار (برای نوبت‌های بدون ثبت نام)
+        /// </summary>
+        [MaxLength(200, ErrorMessage = "نام بیمار نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        public string PatientName { get; set; }
+
+        /// <summary>
+        /// شماره تلفن بیمار (برای نوبت‌های بدون ثبت نام)
+        /// </summary>
+        [MaxLength(20, ErrorMessage = "شماره تلفن بیمار نمی‌تواند بیش از 20 کاراکتر باشد.")]
+        public string PatientPhone { get; set; }
+
+        /// <summary>
+        /// شناسه دسته‌بندی خدمت
+        /// </summary>
+        public int? ServiceCategoryId { get; set; }
+
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>
         /// نشان‌دهنده وضعیت حذف شدن نوبت
@@ -5170,6 +5237,11 @@ namespace ClinicApp.Models.Entities
         /// ارجاع به تراکنش پرداخت
         /// </summary>
         public virtual PaymentTransaction PaymentTransaction { get; set; }
+
+        /// <summary>
+        /// ارجاع به دسته‌بندی خدمت
+        /// </summary>
+        public virtual ServiceCategory ServiceCategory { get; set; }
         #endregion
     }
 

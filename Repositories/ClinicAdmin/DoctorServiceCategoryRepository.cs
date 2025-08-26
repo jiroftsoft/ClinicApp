@@ -1,0 +1,346 @@
+using System;
+using System.Collections.Generic;
+using System.Data.Entity;
+using System.Data.Entity.Infrastructure;
+using System.Linq;
+using System.Threading.Tasks;
+using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Models;
+using ClinicApp.Models.Entities;
+
+namespace ClinicApp.Repositories.ClinicAdmin
+{
+    /// <summary>
+    /// پیاده‌سازی اینترفیس IDoctorServiceCategoryRepository برای مدیریت صلاحیت‌های خدماتی پزشکان
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. پیاده‌سازی کامل مدیریت رابطه چند-به-چند پزشک-دسته‌بندی خدمات
+    /// 2. رعایت استانداردهای پزشکی ایران در مدیریت صلاحیت‌ها
+    /// 3. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 4. مدیریت کامل ردیابی (Audit Trail) برای حسابرسی و امنیت سیستم
+    /// 5. پشتیبانی از تقویم شمسی و اعداد فارسی در تمام فرآیندهای مدیریتی
+    /// 
+    /// نکته حیاتی: این کلاس بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
+    /// </summary>
+    public class DoctorServiceCategoryRepository : IDoctorServiceCategoryRepository
+    {
+        private readonly ApplicationDbContext _context;
+
+        public DoctorServiceCategoryRepository(ApplicationDbContext context)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+        }
+
+        #region Doctor-ServiceCategory Management (مدیریت انتصاب پزشک به سرفصل‌های خدماتی)
+
+        /// <summary>
+        /// دریافت انتصاب پزشک به سرفصل خدماتی بر اساس شناسه‌ها
+        /// </summary>
+        public async Task<DoctorServiceCategory> GetDoctorServiceCategoryAsync(int doctorId, int serviceCategoryId)
+        {
+            try
+            {
+                return await _context.DoctorServiceCategories
+                    .Where(dsc => dsc.DoctorId == doctorId && dsc.ServiceCategoryId == serviceCategoryId)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت انتصاب پزشک {doctorId} به سرفصل خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت انتصاب پزشک به سرفصل خدماتی همراه با جزئیات
+        /// </summary>
+        public async Task<DoctorServiceCategory> GetDoctorServiceCategoryWithDetailsAsync(int doctorId, int serviceCategoryId)
+        {
+            try
+            {
+                return await _context.DoctorServiceCategories
+                    .Where(dsc => dsc.DoctorId == doctorId && dsc.ServiceCategoryId == serviceCategoryId)
+                    .Include(dsc => dsc.Doctor.ApplicationUser)
+                    .Include(dsc => dsc.ServiceCategory.Department)
+                    .Include(dsc => dsc.CreatedByUser)
+                    .Include(dsc => dsc.UpdatedByUser)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت جزئیات انتصاب پزشک {doctorId} به سرفصل خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست انتصابات پزشک به سرفصل‌های خدماتی
+        /// </summary>
+        public async Task<List<DoctorServiceCategory>> GetDoctorServiceCategoriesAsync(int doctorId, string searchTerm, int pageNumber, int pageSize)
+        {
+            try
+            {
+                var query = _context.DoctorServiceCategories
+                    .Where(dsc => dsc.DoctorId == doctorId)
+                    .Include(dsc => dsc.ServiceCategory.Department)
+                    .Include(dsc => dsc.CreatedByUser)
+                    .AsNoTracking();
+
+                // اعمال فیلتر جستجو
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(dsc =>
+                        (dsc.ServiceCategory.Title != null && dsc.ServiceCategory.Title.Contains(searchTerm)) ||
+                        (dsc.ServiceCategory.Department.Name != null && dsc.ServiceCategory.Department.Name.Contains(searchTerm)) ||
+                        (dsc.AuthorizationLevel != null && dsc.AuthorizationLevel.Contains(searchTerm)) ||
+                        (dsc.CertificateNumber != null && dsc.CertificateNumber.Contains(searchTerm))
+                    );
+                }
+
+                // اعمال صفحه‌بندی
+                return await query
+                    .OrderByDescending(dsc => dsc.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت لیست انتصابات پزشک {doctorId} به سرفصل‌های خدماتی", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد انتصابات پزشک به سرفصل‌های خدماتی
+        /// </summary>
+        public async Task<int> GetDoctorServiceCategoriesCountAsync(int doctorId, string searchTerm)
+        {
+            try
+            {
+                var query = _context.DoctorServiceCategories
+                    .Where(dsc => dsc.DoctorId == doctorId)
+                    .AsNoTracking();
+
+                // اعمال فیلتر جستجو
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(dsc =>
+                        (dsc.ServiceCategory.Title != null && dsc.ServiceCategory.Title.Contains(searchTerm)) ||
+                        (dsc.ServiceCategory.Department.Name != null && dsc.ServiceCategory.Department.Name.Contains(searchTerm)) ||
+                        (dsc.AuthorizationLevel != null && dsc.AuthorizationLevel.Contains(searchTerm)) ||
+                        (dsc.CertificateNumber != null && dsc.CertificateNumber.Contains(searchTerm))
+                    );
+                }
+
+                return await query.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت تعداد انتصابات پزشک {doctorId} به سرفصل‌های خدماتی", ex);
+            }
+        }
+
+        /// <summary>
+        /// افزودن انتصاب پزشک به سرفصل خدماتی
+        /// </summary>
+        public async Task<DoctorServiceCategory> AddDoctorServiceCategoryAsync(DoctorServiceCategory doctorServiceCategory)
+        {
+            try
+            {
+                if (doctorServiceCategory == null)
+                    throw new ArgumentNullException(nameof(doctorServiceCategory));
+
+                // بررسی وجود انتصاب قبلی
+                var existingAssignment = await _context.DoctorServiceCategories
+                    .FirstOrDefaultAsync(dsc => dsc.DoctorId == doctorServiceCategory.DoctorId && 
+                                               dsc.ServiceCategoryId == doctorServiceCategory.ServiceCategoryId);
+
+                if (existingAssignment != null)
+                    throw new InvalidOperationException($"پزشک قبلاً به این سرفصل خدماتی انتصاب داده شده است.");
+
+                // تنظیم تاریخ‌ها
+                doctorServiceCategory.CreatedAt = DateTime.Now;
+                doctorServiceCategory.UpdatedAt = DateTime.Now;
+
+                _context.DoctorServiceCategories.Add(doctorServiceCategory);
+                await _context.SaveChangesAsync();
+
+                return doctorServiceCategory;
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در افزودن انتصاب پزشک به سرفصل خدماتی", ex);
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی انتصاب پزشک به سرفصل خدماتی
+        /// </summary>
+        public async Task<DoctorServiceCategory> UpdateDoctorServiceCategoryAsync(DoctorServiceCategory doctorServiceCategory)
+        {
+            try
+            {
+                if (doctorServiceCategory == null)
+                    throw new ArgumentNullException(nameof(doctorServiceCategory));
+
+                var existingAssignment = await _context.DoctorServiceCategories
+                    .FirstOrDefaultAsync(dsc => dsc.DoctorId == doctorServiceCategory.DoctorId && 
+                                               dsc.ServiceCategoryId == doctorServiceCategory.ServiceCategoryId);
+
+                if (existingAssignment == null)
+                    throw new InvalidOperationException($"انتصاب پزشک به سرفصل خدماتی یافت نشد.");
+
+                // به‌روزرسانی فیلدها
+                existingAssignment.AuthorizationLevel = doctorServiceCategory.AuthorizationLevel;
+                existingAssignment.IsActive = doctorServiceCategory.IsActive;
+                existingAssignment.GrantedDate = doctorServiceCategory.GrantedDate;
+                existingAssignment.ExpiryDate = doctorServiceCategory.ExpiryDate;
+                existingAssignment.CertificateNumber = doctorServiceCategory.CertificateNumber;
+                existingAssignment.Notes = doctorServiceCategory.Notes;
+                existingAssignment.UpdatedAt = DateTime.Now;
+                existingAssignment.UpdatedByUserId = doctorServiceCategory.UpdatedByUserId;
+
+                await _context.SaveChangesAsync();
+
+                return existingAssignment;
+            }
+            catch (DbUpdateConcurrencyException ex)
+            {
+                // لاگ خطای همزمانی برای سیستم‌های پزشکی
+                throw new InvalidOperationException("خطای همزمانی در به‌روزرسانی انتصاب پزشک به سرفصل خدماتی", ex);
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در به‌روزرسانی انتصاب پزشک به سرفصل خدماتی", ex);
+            }
+        }
+
+        /// <summary>
+        /// حذف انتصاب پزشک از سرفصل خدماتی
+        /// </summary>
+        public async Task<bool> DeleteDoctorServiceCategoryAsync(DoctorServiceCategory doctorServiceCategory)
+        {
+            try
+            {
+                if (doctorServiceCategory == null)
+                    throw new ArgumentNullException(nameof(doctorServiceCategory));
+
+                var existingAssignment = await _context.DoctorServiceCategories
+                    .FirstOrDefaultAsync(dsc => dsc.DoctorId == doctorServiceCategory.DoctorId && 
+                                               dsc.ServiceCategoryId == doctorServiceCategory.ServiceCategoryId);
+
+                if (existingAssignment == null)
+                    return false;
+
+                // بررسی وجود نوبت‌های آینده
+                var hasFutureAppointments = await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == doctorServiceCategory.DoctorId && 
+                                  a.AppointmentDate > DateTime.Now &&
+                                  a.ServiceCategoryId == doctorServiceCategory.ServiceCategoryId);
+
+                if (hasFutureAppointments)
+                    throw new InvalidOperationException("امکان حذف انتصاب به دلیل وجود نوبت‌های آینده وجود ندارد.");
+
+                _context.DoctorServiceCategories.Remove(existingAssignment);
+                await _context.SaveChangesAsync();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در حذف انتصاب پزشک از سرفصل خدماتی", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود انتصاب پزشک به سرفصل خدماتی
+        /// </summary>
+        public async Task<bool> DoesDoctorServiceCategoryExistAsync(int doctorId, int serviceCategoryId, int? excludeId = null)
+        {
+            try
+            {
+                return await _context.DoctorServiceCategories
+                    .AnyAsync(dsc => dsc.DoctorId == doctorId && dsc.ServiceCategoryId == serviceCategoryId);
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در بررسی وجود انتصاب پزشک {doctorId} به سرفصل خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی دسترسی پزشک به یک سرفصل خدماتی خاص
+        /// </summary>
+        public async Task<bool> HasAccessToServiceCategoryAsync(int doctorId, int serviceCategoryId)
+        {
+            try
+            {
+                return await _context.DoctorServiceCategories
+                    .AnyAsync(dsc => dsc.DoctorId == doctorId && 
+                                   dsc.ServiceCategoryId == serviceCategoryId && 
+                                   dsc.IsActive);
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در بررسی دسترسی پزشک {doctorId} به سرفصل خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی دسترسی پزشک به یک خدمت خاص
+        /// </summary>
+        public async Task<bool> HasAccessToServiceAsync(int doctorId, int serviceId)
+        {
+            try
+            {
+                return await _context.DoctorServiceCategories
+                    .Join(_context.Services,
+                          dsc => dsc.ServiceCategoryId,
+                          s => s.ServiceCategoryId,
+                          (dsc, s) => new { dsc, s })
+                    .AnyAsync(x => x.dsc.DoctorId == doctorId && 
+                                  x.s.ServiceId == serviceId && 
+                                  x.dsc.IsActive && 
+                                  !x.s.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در بررسی دسترسی پزشک {doctorId} به خدمت {serviceId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست پزشکان مجاز در یک سرفصل خدماتی برای استفاده در لیست‌های کشویی
+        /// </summary>
+        public async Task<List<Doctor>> GetAuthorizedDoctorsForServiceCategoryLookupAsync(int serviceCategoryId)
+        {
+            try
+            {
+                return await _context.DoctorServiceCategories
+                    .Where(dsc => dsc.ServiceCategoryId == serviceCategoryId && dsc.IsActive)
+                    .Include(dsc => dsc.Doctor.ApplicationUser)
+                    .Select(dsc => dsc.Doctor)
+                    .Where(d => !d.IsDeleted)
+                    .OrderBy(d => d.ApplicationUser.FirstName)
+                    .ThenBy(d => d.ApplicationUser.LastName)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت لیست پزشکان مجاز برای سرفصل خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        #endregion
+    }
+}

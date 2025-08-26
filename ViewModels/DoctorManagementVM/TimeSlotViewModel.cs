@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
+using ClinicApp.Extensions;
 using FluentValidation;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
@@ -161,46 +162,17 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         {
             return status switch
             {
-                AppointmentStatus.Available => "در دسترس",
-                AppointmentStatus.Booked => "رزرو شده",
-                AppointmentStatus.Completed => "تکمیل شده",
+                AppointmentStatus.Scheduled => "ثبت شده",
+                AppointmentStatus.Completed => "انجام شده",
                 AppointmentStatus.Cancelled => "لغو شده",
                 AppointmentStatus.NoShow => "عدم حضور",
+                AppointmentStatus.Available => "در دسترس",
                 _ => "نامشخص"
             };
         }
     }
 
-    /// <summary>
-    /// وضعیت نوبت پزشکی
-    /// </summary>
-    public enum AppointmentStatus
-    {
-        /// <summary>
-        /// در دسترس
-        /// </summary>
-        Available = 1,
 
-        /// <summary>
-        /// رزرو شده
-        /// </summary>
-        Booked = 2,
-
-        /// <summary>
-        /// تکمیل شده
-        /// </summary>
-        Completed = 3,
-
-        /// <summary>
-        /// لغو شده
-        /// </summary>
-        Cancelled = 4,
-
-        /// <summary>
-        /// عدم حضور
-        /// </summary>
-        NoShow = 5
-    }
 
     /// <summary>
     /// ولیدیتور برای مدل بازه زمانی

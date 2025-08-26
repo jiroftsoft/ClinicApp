@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using ClinicApp.Extensions;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
 using FluentValidation;

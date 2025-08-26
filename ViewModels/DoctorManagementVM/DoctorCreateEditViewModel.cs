@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
+using ClinicApp.Extensions;
 using FluentValidation;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
