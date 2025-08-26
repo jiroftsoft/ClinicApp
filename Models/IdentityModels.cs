@@ -85,6 +85,10 @@ namespace ClinicApp.Models
         public DbSet<OtpRequest> OtpRequests { get; set; }
         public DbSet<DoctorDepartment> DoctorDepartments { get; set; }
         public DbSet<DoctorServiceCategory> DoctorServiceCategories { get; set; }
+        public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
+        public DbSet<DoctorWorkDay> DoctorWorkDays { get; set; }
+        public DbSet<DoctorTimeRange> DoctorTimeRanges { get; set; }
+        public DbSet<DoctorTimeSlot> DoctorTimeSlots { get; set; }
 
         #endregion
 
@@ -116,6 +120,10 @@ namespace ClinicApp.Models
             modelBuilder.Filter("ActiveDepartments", (Department d) => d.IsActive, true);
             modelBuilder.Filter("ActiveInsurances", (Insurance i) => i.IsActive, true);
             modelBuilder.Filter("ActiveDoctors", (Doctor d) => d.IsActive, true);
+            modelBuilder.Filter("ActiveDoctorSchedules", (DoctorSchedule ds) => ds.IsActive, true);
+            modelBuilder.Filter("ActiveDoctorWorkDays", (DoctorWorkDay wd) => wd.IsActive, true);
+            modelBuilder.Filter("ActiveDoctorTimeRanges", (DoctorTimeRange tr) => tr.IsActive, true);
+            modelBuilder.Filter("AvailableDoctorTimeSlots", (DoctorTimeSlot ts) => ts.Status == AppointmentStatus.Available, true);
 
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس
             modelBuilder.Entity<DatabaseVersion>()

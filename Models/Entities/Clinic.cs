@@ -150,7 +150,8 @@ namespace ClinicApp.Models.Entities
         [Display(Name = "لغو شده")]
         Cancelled = 2,
         [Display(Name = "عدم حضور")]
-        NoShow = 3
+        NoShow = 3,
+        Available
     }
     #endregion
 
@@ -2563,6 +2564,18 @@ namespace ClinicApp.Models.Entities
         /// مثال: دکتر احمدی مجاز به "تزریقات عضلانی" است ولی مجاز به "تزریق بوتاکس" نیست
         /// </summary>
         public virtual ICollection<DoctorServiceCategory> DoctorServiceCategories { get; set; } = new HashSet<DoctorServiceCategory>();
+
+        /// <summary>
+        /// لیست برنامه‌های کاری پزشک
+        /// این رابطه برای مدیریت برنامه کاری هفتگی پزشک استفاده می‌شود
+        /// </summary>
+        public virtual ICollection<DoctorSchedule> Schedules { get; set; } = new HashSet<DoctorSchedule>();
+
+        /// <summary>
+        /// لیست اسلات‌های زمانی نوبت‌دهی پزشک
+        /// این رابطه برای مدیریت اسلات‌های قابل رزرو استفاده می‌شود
+        /// </summary>
+        public virtual ICollection<DoctorTimeSlot> TimeSlots { get; set; } = new HashSet<DoctorTimeSlot>();
         #endregion
     }
 
@@ -2720,6 +2733,899 @@ namespace ClinicApp.Models.Entities
                 .HasName("IX_Doctor_Specialization_IsActive_IsDeleted");
         }
     }
+
+    #endregion
+
+    #region DoctorSchedule
+    /// <summary>
+    /// مدل برنامه کاری پزشک - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت برنامه کاری هفتگی پزشکان
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
+    /// 5. پشتیبانی از برنامه‌ریزی نوبت‌دهی هوشمند
+    /// </summary>
+    public class DoctorSchedule : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه برنامه کاری
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int ScheduleId { get; set; }
+
+        /// <summary>
+        /// شناسه پزشک
+        /// </summary>
+        [Required(ErrorMessage = "پزشک الزامی است.")]
+        public int DoctorId { get; set; }
+
+        /// <summary>
+        /// مدت زمان هر نوبت (به دقیقه)
+        /// </summary>
+        [Range(5, 120, ErrorMessage = "مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")]
+        public int AppointmentDuration { get; set; } = 30;
+
+        /// <summary>
+        /// زمان شروع پیش‌فرض روز کاری
+        /// </summary>
+        public TimeSpan? DefaultStartTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان پیش‌فرض روز کاری
+        /// </summary>
+        public TimeSpan? DefaultEndTime { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال/غیرفعال بودن برنامه کاری
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// وضعیت حذف نرم
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ حذف
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر حذف کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ ایجاد
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر ایجاد کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین ویرایش
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر آخرین ویرایش کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+
+        // Navigation Properties
+        public virtual Doctor Doctor { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        public virtual ICollection<DoctorWorkDay> WorkDays { get; set; } = new List<DoctorWorkDay>();
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل DoctorSchedule
+    /// </summary>
+    public class DoctorScheduleConfiguration : EntityTypeConfiguration<DoctorSchedule>
+    {
+        public DoctorScheduleConfiguration()
+        {
+            // نام جدول
+            ToTable("DoctorSchedules");
+
+            // کلید اصلی
+            HasKey(ds => ds.ScheduleId);
+
+            // پراپرتی‌های اصلی
+            Property(ds => ds.ScheduleId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_ScheduleId")));
+
+            Property(ds => ds.DoctorId)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_DoctorId")));
+
+            Property(ds => ds.AppointmentDuration)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_AppointmentDuration")));
+
+            Property(ds => ds.DefaultStartTime)
+                .IsOptional();
+
+            Property(ds => ds.DefaultEndTime)
+                .IsOptional();
+
+            Property(ds => ds.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_IsActive")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(ds => ds.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_IsDeleted")));
+
+            Property(ds => ds.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_DeletedAt")));
+
+            Property(ds => ds.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_DeletedByUserId")));
+
+            // پیاده‌سازی ITrackable
+            Property(ds => ds.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_CreatedAt")));
+
+            Property(ds => ds.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_CreatedByUserId")));
+
+            Property(ds => ds.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_UpdatedAt")));
+
+            Property(ds => ds.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorSchedule_UpdatedByUserId")));
+
+            // روابط
+            HasRequired(ds => ds.Doctor)
+                .WithMany(d => d.Schedules)
+                .HasForeignKey(ds => ds.DoctorId)
+                .WillCascadeOnDelete(false); // حتماً false برای رعایت استانداردهای پزشکی
+
+            HasOptional(ds => ds.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(ds => ds.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ds => ds.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(ds => ds.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ds => ds.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(ds => ds.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // روابط با WorkDays
+            HasMany(ds => ds.WorkDays)
+                .WithRequired(wd => wd.Schedule)
+                .HasForeignKey(wd => wd.ScheduleId)
+                .WillCascadeOnDelete(true); // حذف cascade برای WorkDays
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
+            HasIndex(ds => new { ds.DoctorId, ds.IsActive })
+                .HasName("IX_DoctorSchedule_DoctorId_IsActive");
+
+            HasIndex(ds => new { ds.DoctorId, ds.IsDeleted })
+                .HasName("IX_DoctorSchedule_DoctorId_IsDeleted");
+
+            HasIndex(ds => new { ds.CreatedAt, ds.IsDeleted })
+                .HasName("IX_DoctorSchedule_CreatedAt_IsDeleted");
+
+            // ایندکس منحصر به فرد برای هر پزشک فقط یک برنامه کاری فعال
+            HasIndex(ds => new { ds.DoctorId, ds.IsActive, ds.IsDeleted })
+                .HasName("IX_DoctorSchedule_DoctorId_IsActive_IsDeleted_Unique")
+                .IsUnique()
+                .HasAnnotation("IndexAnnotation", new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+        }
+    }
+
+
+    #endregion
+
+    #region DoctorTimeRange
+    /// <summary>
+    /// مدل بازه زمانی کاری پزشک - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت بازه‌های زمانی کاری در هر روز
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
+    /// </summary>
+    public class DoctorTimeRange : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه بازه زمانی
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int TimeRangeId { get; set; }
+
+        /// <summary>
+        /// شناسه روز کاری
+        /// </summary>
+        [Required(ErrorMessage = "روز کاری الزامی است.")]
+        public int WorkDayId { get; set; }
+
+        /// <summary>
+        /// زمان شروع بازه
+        /// </summary>
+        [Required(ErrorMessage = "زمان شروع الزامی است.")]
+        public TimeSpan StartTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان بازه
+        /// </summary>
+        [Required(ErrorMessage = "زمان پایان الزامی است.")]
+        public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// نشان‌دهنده فعال بودن بازه زمانی
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// وضعیت حذف نرم
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ حذف
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر حذف کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ ایجاد
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر ایجاد کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین ویرایش
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر آخرین ویرایش کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+
+        // Navigation Properties
+        public virtual DoctorWorkDay WorkDay { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل DoctorTimeRange
+    /// </summary>
+    public class DoctorTimeRangeConfiguration : EntityTypeConfiguration<DoctorTimeRange>
+    {
+        public DoctorTimeRangeConfiguration()
+        {
+            // نام جدول
+            ToTable("DoctorTimeRanges");
+
+            // کلید اصلی
+            HasKey(tr => tr.TimeRangeId);
+
+            // پراپرتی‌های اصلی
+            Property(tr => tr.TimeRangeId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_TimeRangeId")));
+
+            Property(tr => tr.WorkDayId)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_WorkDayId")));
+
+            Property(tr => tr.StartTime)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_StartTime")));
+
+            Property(tr => tr.EndTime)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_EndTime")));
+
+            Property(tr => tr.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_IsActive")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(tr => tr.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_IsDeleted")));
+
+            Property(tr => tr.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_DeletedAt")));
+
+            Property(tr => tr.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_DeletedByUserId")));
+
+            // پیاده‌سازی ITrackable
+            Property(tr => tr.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_CreatedAt")));
+
+            Property(tr => tr.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_CreatedByUserId")));
+
+            Property(tr => tr.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_UpdatedAt")));
+
+            Property(tr => tr.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeRange_UpdatedByUserId")));
+
+            // روابط
+            HasRequired(tr => tr.WorkDay)
+                .WithMany(wd => wd.TimeRanges)
+                .HasForeignKey(tr => tr.WorkDayId)
+                .WillCascadeOnDelete(true); // حذف cascade با WorkDay
+
+            HasOptional(tr => tr.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(tr => tr.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(tr => tr.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(tr => tr.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(tr => tr.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(tr => tr.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
+            HasIndex(tr => new { tr.WorkDayId, tr.StartTime })
+                .HasName("IX_DoctorTimeRange_WorkDayId_StartTime");
+
+            HasIndex(tr => new { tr.WorkDayId, tr.IsActive })
+                .HasName("IX_DoctorTimeRange_WorkDayId_IsActive");
+
+            HasIndex(tr => new { tr.WorkDayId, tr.IsDeleted })
+                .HasName("IX_DoctorTimeRange_WorkDayId_IsDeleted");
+
+            HasIndex(tr => new { tr.CreatedAt, tr.IsDeleted })
+                .HasName("IX_DoctorTimeRange_CreatedAt_IsDeleted");
+
+            // ایندکس برای جستجوی بازه‌های زمانی همپوشان
+            HasIndex(tr => new { tr.WorkDayId, tr.StartTime, tr.EndTime })
+                .HasName("IX_DoctorTimeRange_WorkDayId_StartTime_EndTime");
+        }
+    }
+
+
+    #endregion
+
+    #region DoctorTimeSlot
+    /// <summary>
+    /// مدل اسلات زمانی نوبت‌دهی پزشک - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت اسلات‌های زمانی قابل رزرو برای نوبت‌دهی
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
+    /// 5. پشتیبانی از وضعیت‌های مختلف نوبت (در دسترس، رزرو شده، تکمیل شده)
+    /// </summary>
+    public class DoctorTimeSlot : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه اسلات زمانی
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int TimeSlotId { get; set; }
+
+        /// <summary>
+        /// شناسه پزشک
+        /// </summary>
+        [Required(ErrorMessage = "پزشک الزامی است.")]
+        public int DoctorId { get; set; }
+
+        /// <summary>
+        /// تاریخ نوبت
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ نوبت الزامی است.")]
+        public DateTime AppointmentDate { get; set; }
+
+        /// <summary>
+        /// زمان شروع اسلات
+        /// </summary>
+        [Required(ErrorMessage = "زمان شروع الزامی است.")]
+        public TimeSpan StartTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان اسلات
+        /// </summary>
+        [Required(ErrorMessage = "زمان پایان الزامی است.")]
+        public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// مدت زمان اسلات (به دقیقه)
+        /// </summary>
+        [Range(5, 120, ErrorMessage = "مدت زمان اسلات باید بین 5 تا 120 دقیقه باشد.")]
+        public int Duration { get; set; }
+
+        /// <summary>
+        /// وضعیت اسلات (Available, Booked, Completed, Cancelled, NoShow)
+        /// </summary>
+        [Required(ErrorMessage = "وضعیت اسلات الزامی است.")]
+        public AppointmentStatus Status { get; set; } = AppointmentStatus.Available;
+
+        /// <summary>
+        /// شناسه نوبت (در صورت رزرو شده بودن)
+        /// </summary>
+        public int? AppointmentId { get; set; }
+
+        /// <summary>
+        /// وضعیت حذف نرم
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ حذف
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر حذف کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ ایجاد
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر ایجاد کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین ویرایش
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر آخرین ویرایش کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+
+        // Navigation Properties
+        public virtual Doctor Doctor { get; set; }
+        public virtual Appointment Appointment { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل DoctorTimeSlot
+    /// </summary>
+    public class DoctorTimeSlotConfiguration : EntityTypeConfiguration<DoctorTimeSlot>
+    {
+        public DoctorTimeSlotConfiguration()
+        {
+            // نام جدول
+            ToTable("DoctorTimeSlots");
+
+            // کلید اصلی
+            HasKey(ts => ts.TimeSlotId);
+
+            // پراپرتی‌های اصلی
+            Property(ts => ts.TimeSlotId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_TimeSlotId")));
+
+            Property(ts => ts.DoctorId)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_DoctorId")));
+
+            Property(ts => ts.AppointmentDate)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_AppointmentDate")));
+
+            Property(ts => ts.StartTime)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_StartTime")));
+
+            Property(ts => ts.EndTime)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_EndTime")));
+
+            Property(ts => ts.Duration)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_Duration")));
+
+            Property(ts => ts.Status)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_Status")));
+
+            Property(ts => ts.AppointmentId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_AppointmentId")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(ts => ts.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_IsDeleted")));
+
+            Property(ts => ts.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_DeletedAt")));
+
+            Property(ts => ts.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_DeletedByUserId")));
+
+            // پیاده‌سازی ITrackable
+            Property(ts => ts.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_CreatedAt")));
+
+            Property(ts => ts.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_CreatedByUserId")));
+
+            Property(ts => ts.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_UpdatedAt")));
+
+            Property(ts => ts.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorTimeSlot_UpdatedByUserId")));
+
+            // روابط
+            HasRequired(ts => ts.Doctor)
+                .WithMany(d => d.TimeSlots)
+                .HasForeignKey(ts => ts.DoctorId)
+                .WillCascadeOnDelete(false); // حتماً false برای رعایت استانداردهای پزشکی
+
+            HasOptional(ts => ts.Appointment)
+                .WithMany()
+                .HasForeignKey(ts => ts.AppointmentId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ts => ts.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(ts => ts.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ts => ts.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(ts => ts.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ts => ts.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(ts => ts.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
+            HasIndex(ts => new { ts.DoctorId, ts.AppointmentDate })
+                .HasName("IX_DoctorTimeSlot_DoctorId_AppointmentDate");
+
+            HasIndex(ts => new { ts.DoctorId, ts.AppointmentDate, ts.Status })
+                .HasName("IX_DoctorTimeSlot_DoctorId_AppointmentDate_Status");
+
+            HasIndex(ts => new { ts.DoctorId, ts.IsDeleted })
+                .HasName("IX_DoctorTimeSlot_DoctorId_IsDeleted");
+
+            HasIndex(ts => new { ts.AppointmentDate, ts.Status, ts.IsDeleted })
+                .HasName("IX_DoctorTimeSlot_AppointmentDate_Status_IsDeleted");
+
+            HasIndex(ts => new { ts.CreatedAt, ts.IsDeleted })
+                .HasName("IX_DoctorTimeSlot_CreatedAt_IsDeleted");
+
+            // ایندکس برای جستجوی اسلات‌های خالی
+            HasIndex(ts => new { ts.DoctorId, ts.AppointmentDate, ts.StartTime, ts.Status })
+                .HasName("IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_Status");
+
+            // ایندکس منحصر به فرد برای جلوگیری از تداخل زمانی
+            HasIndex(ts => new { ts.DoctorId, ts.AppointmentDate, ts.StartTime, ts.EndTime, ts.IsDeleted })
+                .HasName("IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_EndTime_IsDeleted_Unique")
+                .IsUnique()
+                .HasAnnotation("IndexAnnotation", new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+        }
+    }
+
+
+    #endregion
+
+
+    #region DoctorWorkDay
+    /// <summary>
+    /// مدل روز کاری پزشک - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت روزهای کاری هفتگی پزشکان
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
+    /// </summary>
+    public class DoctorWorkDay : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه روز کاری
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int WorkDayId { get; set; }
+
+        /// <summary>
+        /// شناسه برنامه کاری پزشک
+        /// </summary>
+        [Required(ErrorMessage = "برنامه کاری الزامی است.")]
+        public int ScheduleId { get; set; }
+
+        /// <summary>
+        /// شماره روز هفته (0 = یکشنبه، 1 = دوشنبه، ...، 6 = شنبه)
+        /// </summary>
+        [Range(0, 6, ErrorMessage = "شماره روز هفته باید بین 0 تا 6 باشد.")]
+        public int DayOfWeek { get; set; }
+
+        /// <summary>
+        /// نشان‌دهنده فعال بودن روز کاری
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// وضعیت حذف نرم
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ حذف
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر حذف کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ ایجاد
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر ایجاد کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین ویرایش
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر آخرین ویرایش کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+
+        // Navigation Properties
+        public virtual DoctorSchedule Schedule { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        public virtual ICollection<DoctorTimeRange> TimeRanges { get; set; } = new List<DoctorTimeRange>();
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل DoctorWorkDay
+    /// </summary>
+    public class DoctorWorkDayConfiguration : EntityTypeConfiguration<DoctorWorkDay>
+    {
+        public DoctorWorkDayConfiguration()
+        {
+            // نام جدول
+            ToTable("DoctorWorkDays");
+
+            // کلید اصلی
+            HasKey(wd => wd.WorkDayId);
+
+            // پراپرتی‌های اصلی
+            Property(wd => wd.WorkDayId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_WorkDayId")));
+
+            Property(wd => wd.ScheduleId)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_ScheduleId")));
+
+            Property(wd => wd.DayOfWeek)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_DayOfWeek")));
+
+            Property(wd => wd.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_IsActive")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(wd => wd.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_IsDeleted")));
+
+            Property(wd => wd.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_DeletedAt")));
+
+            Property(wd => wd.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_DeletedByUserId")));
+
+            // پیاده‌سازی ITrackable
+            Property(wd => wd.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_CreatedAt")));
+
+            Property(wd => wd.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_CreatedByUserId")));
+
+            Property(wd => wd.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_UpdatedAt")));
+
+            Property(wd => wd.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorWorkDay_UpdatedByUserId")));
+
+            // روابط
+            HasRequired(wd => wd.Schedule)
+                .WithMany(ds => ds.WorkDays)
+                .HasForeignKey(wd => wd.ScheduleId)
+                .WillCascadeOnDelete(true); // حذف cascade با Schedule
+
+            HasOptional(wd => wd.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(wd => wd.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(wd => wd.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(wd => wd.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(wd => wd.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(wd => wd.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // روابط با TimeRanges
+            HasMany(wd => wd.TimeRanges)
+                .WithRequired(tr => tr.WorkDay)
+                .HasForeignKey(tr => tr.WorkDayId)
+                .WillCascadeOnDelete(true); // حذف cascade برای TimeRanges
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
+            HasIndex(wd => new { wd.ScheduleId, wd.DayOfWeek })
+                .HasName("IX_DoctorWorkDay_ScheduleId_DayOfWeek");
+
+            HasIndex(wd => new { wd.ScheduleId, wd.IsActive })
+                .HasName("IX_DoctorWorkDay_ScheduleId_IsActive");
+
+            HasIndex(wd => new { wd.ScheduleId, wd.IsDeleted })
+                .HasName("IX_DoctorWorkDay_ScheduleId_IsDeleted");
+
+            HasIndex(wd => new { wd.CreatedAt, wd.IsDeleted })
+                .HasName("IX_DoctorWorkDay_CreatedAt_IsDeleted");
+
+            // ایندکس منحصر به فرد برای هر برنامه کاری فقط یک روز کاری برای هر روز هفته
+            HasIndex(wd => new { wd.ScheduleId, wd.DayOfWeek, wd.IsDeleted })
+                .HasName("IX_DoctorWorkDay_ScheduleId_DayOfWeek_IsDeleted_Unique")
+                .IsUnique()
+                .HasAnnotation("IndexAnnotation", new IndexAnnotation(new IndexAttribute { IsUnique = true }));
+        }
+    }
+
+
 
     #endregion
 
@@ -3174,6 +4080,421 @@ namespace ClinicApp.Models.Entities
 
     #endregion
 
+    #region Notification
+
+    #region Enums
+    /// <summary>
+    /// انواع کانال‌های اطلاع‌رسانی در سیستم کلینیک
+    /// </summary>
+    public enum NotificationChannelType
+    {
+        /// <summary>
+        /// ارسال از طریق پیامک
+        /// </summary>
+        Sms = 1,
+
+        /// <summary>
+        /// ارسال از طریق ایمیل
+        /// </summary>
+        Email = 2,
+
+        /// <summary>
+        /// ارسال از طریق پوش‌نوتیفیکیشن موبایل
+        /// </summary>
+        AppPush = 3,
+
+        /// <summary>
+        /// ارسال داخلی از طریق پنل کاربری
+        /// </summary>
+        InApp = 4
+    }
+
+    /// <summary>
+    /// وضعیت‌های ارسال پیام در سیستم کلینیک
+    /// </summary>
+    public enum NotificationStatus
+    {
+        /// <summary>
+        /// پیام در صف ارسال قرار دارد
+        /// </summary>
+        Queued = 1,
+
+        /// <summary>
+        /// در حال ارسال به سرویس‌دهنده
+        /// </summary>
+        Sending = 2,
+
+        /// <summary>
+        /// ارسال با موفقیت انجام شده
+        /// </summary>
+        Sent = 3,
+
+        /// <summary>
+        /// ارسال با خطا مواجه شده
+        /// </summary>
+        Failed = 4,
+
+        /// <summary>
+        /// ارسال لغو شده است
+        /// </summary>
+        Canceled = 5,
+
+        /// <summary>
+        /// ارسال به صورت زمان‌بندی شده
+        /// </summary>
+        Scheduled = 6
+    }
+    #endregion
+
+    #region Entities
+    /// <summary>
+    /// تاریخچه اطلاع‌رسانی برای سیستم کلینیک شفا
+    /// این موجودیت برای ذخیره تاریخچه ارسال پیام‌ها و اعلان‌ها استفاده می‌شود
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. پشتیبانی از چندین کانال ارسال (پیامک، ایمیل، اپلیکیشن)
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای رعایت استانداردهای پزشکی
+    /// 3. مدیریت کامل وضعیت‌های ارسال (در صف، در حال ارسال، موفق، ناموفق)
+    /// 4. ارتباط با موجودیت‌های سیستم (نوبت، پذیرش، بیمار و غیره)
+    /// 5. پشتیبانی از ردیابی کامل برای سیستم‌های پزشکی
+    /// </summary>
+    public class NotificationHistory : ITrackable, ISoftDelete
+    {
+        /// <summary>
+        /// شناسه یکتای تاریخچه
+        /// </summary>
+        [Key]
+        public Guid HistoryId { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// شناسه یکتای اطلاع‌رسانی
+        /// </summary>
+        [Required]
+        public Guid NotificationId { get; set; } = Guid.NewGuid();
+
+        /// <summary>
+        /// نوع کانال ارسال
+        /// </summary>
+        [Required]
+        public NotificationChannelType ChannelType { get; set; }
+
+        /// <summary>
+        /// شماره/ایمیل گیرنده
+        /// </summary>
+        [Required, MaxLength(50)]
+        public string Recipient { get; set; }
+
+        /// <summary>
+        /// موضوع پیام
+        /// </summary>
+        [MaxLength(200)]
+        public string Subject { get; set; }
+
+        /// <summary>
+        /// متن اصلی پیام
+        /// </summary>
+        [Required, MaxLength(1000)]
+        public string Message { get; set; }
+
+        /// <summary>
+        /// زمان ارسال به سرویس‌دهنده
+        /// </summary>
+        [Required]
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>
+        /// وضعیت فعلی ارسال
+        /// </summary>
+        [Required]
+        public NotificationStatus Status { get; set; } = NotificationStatus.Queued;
+
+        /// <summary>
+        /// توضیحات تکمیلی وضعیت
+        /// </summary>
+        [MaxLength(500)]
+        public string StatusDescription { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر ارسال‌کننده
+        /// </summary>
+        [MaxLength(128)]
+        public string SenderUserId { get; set; }
+
+        /// <summary>
+        /// شناسه موجودیت سیستمی مرتبط
+        /// </summary>
+        [MaxLength(50)]
+        public string RelatedEntityId { get; set; }
+
+        /// <summary>
+        /// نوع موجودیت مرتبط (نوبت، پذیرش، بیمار و...)
+        /// </summary>
+        [MaxLength(100)]
+        public string RelatedEntityType { get; set; }
+
+        /// <summary>
+        /// تعداد تلاش‌های ارسال
+        /// </summary>
+        [Required]
+        public int AttemptCount { get; set; } = 0;
+
+        /// <summary>
+        /// شناسه پیام در سرویس‌دهنده خارجی
+        /// </summary>
+        [MaxLength(100)]
+        public string ExternalMessageId { get; set; }
+
+        // پیاده‌سازی ISoftDelete
+        [Required]
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+
+        // پیاده‌سازی ITrackable
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+
+        // روابط
+        public virtual ApplicationUser SenderUser { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+    }
+
+    /// <summary>
+    /// الگوی اطلاع‌رسانی برای سیستم کلینیک شفا
+    /// این موجودیت برای ذخیره الگوهای پیام‌های استاندارد استفاده می‌شود
+    /// </summary>
+    public class NotificationTemplate : ITrackable
+    {
+        /// <summary>
+        /// کلید یکتای الگو (مقدار ثابت از NotificationTemplates)
+        /// </summary>
+        [Key, MaxLength(50)]
+        public string Key { get; set; }
+
+        /// <summary>
+        /// عنوان نمایشی الگو
+        /// </summary>
+        [Required, MaxLength(200)]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// توضیحات تکمیلی الگو
+        /// </summary>
+        [MaxLength(500)]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// نوع کانال مورد استفاده
+        /// </summary>
+        [Required]
+        public NotificationChannelType ChannelType { get; set; }
+
+        /// <summary>
+        /// متن الگو برای زبان فارسی
+        /// </summary>
+        [Required, MaxLength(1000)]
+        public string PersianTemplate { get; set; }
+
+        /// <summary>
+        /// متن الگو برای زبان انگلیسی
+        /// </summary>
+        [MaxLength(1000)]
+        public string EnglishTemplate { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال/غیرفعال بودن الگو
+        /// </summary>
+        [Required]
+        public bool IsActive { get; set; } = true;
+
+        // پیاده‌سازی ITrackable
+        [Required]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+    }
+    #endregion
+
+    #region Configurations
+    /// <summary>
+    /// پیکربندی مدل تاریخچه اطلاع‌رسانی برای Entity Framework
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class NotificationHistoryConfig : EntityTypeConfiguration<NotificationHistory>
+    {
+        public NotificationHistoryConfig()
+        {
+            ToTable("NotificationHistories");
+            HasKey(h => h.HistoryId);
+
+            // تنظیمات ویژگی‌های اصلی
+            Property(h => h.NotificationId).IsRequired();
+            Property(h => h.Recipient).IsRequired().HasMaxLength(50);
+            Property(h => h.Subject).HasMaxLength(200);
+            Property(h => h.Message).IsRequired().HasMaxLength(1000);
+            Property(h => h.SentAt).IsRequired();
+            Property(h => h.Status).IsRequired();
+            Property(h => h.StatusDescription).HasMaxLength(500);
+            Property(h => h.SenderUserId).HasMaxLength(128);
+            Property(h => h.RelatedEntityId).HasMaxLength(50);
+            Property(h => h.RelatedEntityType).HasMaxLength(100);
+            Property(h => h.AttemptCount).IsRequired();
+            Property(h => h.ExternalMessageId).HasMaxLength(100);
+
+            // تنظیمات Soft Delete
+            Property(h => h.IsDeleted).IsRequired();
+            Property(h => h.DeletedAt).IsOptional();
+            Property(h => h.DeletedByUserId).HasMaxLength(128);
+
+            // تنظیمات ردیابی
+            Property(h => h.CreatedAt).IsRequired();
+            Property(h => h.CreatedByUserId).HasMaxLength(128);
+            Property(h => h.UpdatedAt).IsOptional();
+            Property(h => h.UpdatedByUserId).HasMaxLength(128);
+
+            // ایجاد ایندکس‌ها برای بهینه‌سازی پرس‌وجوها
+            HasIndex(h => h.SentAt).IsClustered(false).HasName("IX_NotificationHistory_SentAt");
+            HasIndex(h => h.Status).IsClustered(false).HasName("IX_NotificationHistory_Status");
+            HasIndex(h => h.Recipient).IsClustered(false).HasName("IX_NotificationHistory_Recipient");
+            HasIndex(h => h.RelatedEntityType).IsClustered(false).HasName("IX_NotificationHistory_RelatedEntityType");
+            HasIndex(h => h.IsDeleted).IsClustered(false).HasName("IX_NotificationHistory_IsDeleted");
+            HasIndex(h => h.CreatedByUserId).IsClustered(false).HasName("IX_NotificationHistory_CreatedByUserId");
+            HasIndex(h => h.UpdatedByUserId).IsClustered(false).HasName("IX_NotificationHistory_UpdatedByUserId");
+
+            // ایجاد ایندکس‌های ترکیبی برای پرس‌وجوهای رایج
+            HasIndex(h => new { h.SentAt, h.Status, h.IsDeleted })
+                .IsClustered(false)
+                .HasName("IX_NotificationHistory_SentAt_Status_IsDeleted");
+
+            HasIndex(h => new { h.Recipient, h.Status, h.SentAt })
+                .IsClustered(false)
+                .HasName("IX_NotificationHistory_Recipient_Status_SentAt");
+
+            // تنظیمات روابط
+            HasOptional(h => h.SenderUser)
+                .WithMany()
+                .HasForeignKey(h => h.SenderUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(h => h.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(h => h.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(h => h.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(h => h.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+        }
+    }
+
+    /// <summary>
+    /// پیکربندی مدل الگوی اطلاع‌رسانی برای Entity Framework
+    /// </summary>
+    public class NotificationTemplateConfig : EntityTypeConfiguration<NotificationTemplate>
+    {
+        public NotificationTemplateConfig()
+        {
+            ToTable("NotificationTemplates");
+            HasKey(t => t.Key);
+
+            // تنظیمات ویژگی‌های اصلی
+            Property(t => t.Key).IsRequired().HasMaxLength(50);
+            Property(t => t.Title).IsRequired().HasMaxLength(200);
+            Property(t => t.Description).HasMaxLength(500);
+            Property(t => t.ChannelType).IsRequired();
+            Property(t => t.PersianTemplate).IsRequired().HasMaxLength(1000);
+            Property(t => t.EnglishTemplate).HasMaxLength(1000);
+            Property(t => t.IsActive).IsRequired();
+
+            // تنظیمات ردیابی
+            Property(t => t.CreatedAt).IsRequired();
+            Property(t => t.CreatedByUserId).HasMaxLength(128);
+            Property(t => t.UpdatedAt).IsOptional();
+            Property(t => t.UpdatedByUserId).HasMaxLength(128);
+
+            // ایجاد ایندکس‌ها برای بهینه‌سازی
+            HasIndex(t => t.ChannelType).IsClustered(false).HasName("IX_NotificationTemplate_ChannelType");
+            HasIndex(t => t.IsActive).IsClustered(false).HasName("IX_NotificationTemplate_IsActive");
+            HasIndex(t => t.CreatedByUserId).IsClustered(false).HasName("IX_NotificationTemplate_CreatedByUserId");
+            HasIndex(t => t.UpdatedByUserId).IsClustered(false).HasName("IX_NotificationTemplate_UpdatedByUserId");
+
+            // تنظیمات روابط
+            HasOptional(t => t.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(t => t.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(t => t.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(t => t.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+        }
+    }
+    #endregion
+
+    #region Constants
+    /// <summary>
+    /// کلیدهای ثابت برای الگوهای اطلاع‌رسانی در سیستم کلینیک
+    /// </summary>
+    public static class NotificationTemplates
+    {
+        /// <summary>
+        /// الگوی ثبت‌نام بیمار جدید
+        /// </summary>
+        public const string Registration = "Patient_Registration";
+
+        /// <summary>
+        /// الگوی تأیید نوبت
+        /// </summary>
+        public const string AppointmentConfirmation = "Appointment_Confirmation";
+
+        /// <summary>
+        /// الگوی یادآوری نوبت
+        /// </summary>
+        public const string AppointmentReminder = "Appointment_Reminder";
+
+        /// <summary>
+        /// الگوی تبریک تولد
+        /// </summary>
+        public const string BirthdayWish = "Birthday_Wish";
+
+        /// <summary>
+        /// الگوی تأیید پرداخت
+        /// </summary>
+        public const string PaymentConfirmation = "Payment_Confirmation";
+
+        /// <summary>
+        /// الگوی تبلیغات خدمات
+        /// </summary>
+        public const string ServicePromotion = "Service_Promotion";
+
+        /// <summary>
+        /// الگوی تغییر برنامه کاری پزشک
+        /// </summary>
+        public const string DoctorScheduleChange = "Doctor_Schedule_Change";
+    }
+    #endregion
+
+    #endregion
 
 
     #region Reception

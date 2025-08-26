@@ -464,6 +464,8 @@
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDoctorManagementService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDoctorRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceCategoryRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceRepository.cs" />
@@ -483,7 +485,7 @@
       <DependentUpon>202508241019241_Chnage14040602.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
-    <Compile Include="Models\Entities\Notifications.cs" />
+    <Compile Include="Models\DoctorDependencyInfo.cs" />
     <Compile Include="Repositories\Class1.cs" />
     <Compile Include="Repositories\ClinicRepository.cs" />
     <Compile Include="Repositories\DepartmentRepository.cs" />
@@ -503,6 +505,18 @@
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\ActiveDoctorsReportViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorDashboardViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorDepartmentViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorDetailsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorScheduleViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorSearchViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorServiceCategoryViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\TimeSlotViewModel.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
