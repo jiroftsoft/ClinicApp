@@ -424,7 +424,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                var hasAccess = result.Data?.Any(permission => 
+                var hasAccess = result.Data?.Items?.Any(permission => 
                     permission.ServiceCategoryId == serviceCategoryId && permission.IsActive) ?? false;
 
                 return Json(new { success = true, hasAccess = hasAccess }, JsonRequestBehavior.AllowGet);
