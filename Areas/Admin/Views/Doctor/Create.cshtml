@@ -169,27 +169,18 @@
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
-                        <label for="Specialization" class="required-field">تخصص</label>
-                        @Html.DropDownListFor(m => m.Specialization, new SelectList(new[]
-                        {
-                            new { Value = "", Text = "انتخاب تخصص" },
-                            new { Value = "داخلی", Text = "داخلی" },
-                            new { Value = "جراحی", Text = "جراحی" },
-                            new { Value = "قلب", Text = "قلب" },
-                            new { Value = "عصب", Text = "عصب" },
-                            new { Value = "کودکان", Text = "کودکان" },
-                            new { Value = "زنان", Text = "زنان" },
-                            new { Value = "چشم", Text = "چشم" },
-                            new { Value = "گوش و حلق و بینی", Text = "گوش و حلق و بینی" },
-                            new { Value = "پوست", Text = "پوست" },
-                            new { Value = "روانپزشکی", Text = "روانپزشکی" },
-                            new { Value = "ارتوپدی", Text = "ارتوپدی" },
-                            new { Value = "اورولوژی", Text = "اورولوژی" },
-                            new { Value = "رادیولوژی", Text = "رادیولوژی" },
-                            new { Value = "آسیب‌شناسی", Text = "آسیب‌شناسی" },
-                            new { Value = "سایر", Text = "سایر" }
-                        }, "Value", "Text"), new { @class = "form-control" })
-                        @Html.ValidationMessageFor(m => m.Specialization, "", new { @class = "text-danger" })
+                        <label for="SelectedSpecializationIds" class="required-field">تخصص‌ها</label>
+                        <select id="SelectedSpecializationIds" name="SelectedSpecializationIds" multiple class="form-control" size="5">
+                            @if (ViewBag.Specializations != null)
+                            {
+                                foreach (var specialization in ViewBag.Specializations)
+                                {
+                                    <option value="@specialization.SpecializationId">@specialization.Name</option>
+                                }
+                            }
+                        </select>
+                        <div class="help-text">برای انتخاب چند تخصص، کلید Ctrl را نگه دارید</div>
+                        @Html.ValidationMessageFor(m => m.SelectedSpecializationIds, "", new { @class = "text-danger" })
                     </div>
                 </div>
                 <div class="col-md-6">

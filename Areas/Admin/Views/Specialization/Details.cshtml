@@ -1,0 +1,197 @@
+@model ClinicApp.ViewModels.SpecializationManagementVM.SpecializationDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات تخصص: " + Model.Name;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">جزئیات تخصص: @Model.Name</h1>
+        <div>
+            <a href="@Url.Action("Edit", new { id = Model.SpecializationId })" class="d-none d-sm-inline-block btn btn-warning shadow-sm mr-2">
+                <i class="fas fa-edit fa-sm text-white-50"></i> ویرایش
+            </a>
+            <a href="@Url.Action("Index")" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-right fa-sm text-white-50"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <!-- Basic Information Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-info-circle"></i> اطلاعات پایه
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>نام تخصص:</strong></td>
+                            <td>@Model.Name</td>
+                        </tr>
+                        <tr>
+                            <td><strong>وضعیت:</strong></td>
+                            <td>
+                                @if (Model.StatusText == "فعال")
+                                {
+                                    <span class="badge badge-success">@Model.StatusText</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-warning">@Model.StatusText</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>ترتیب نمایش:</strong></td>
+                            <td>@Model.DisplayOrder</td>
+                        </tr>
+                    </table>
+                </div>
+                <div class="col-md-6">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>تعداد پزشکان:</strong></td>
+                            <td>
+                                <span class="badge badge-info">@Model.DoctorCount</span>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><strong>تاریخ ایجاد:</strong></td>
+                            <td>@Model.CreatedAtShamsi</td>
+                        </tr>
+                        <tr>
+                            <td><strong>ایجاد کننده:</strong></td>
+                            <td>@Model.CreatedBy</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6 class="font-weight-bold">توضیحات:</h6>
+                        <p class="text-muted">@Model.Description</p>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Related Doctors Card -->
+    @if (Model.Doctors.Any())
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-user-md"></i> پزشکان مرتبط (@Model.DoctorCount)
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>نام پزشک</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doctor in Model.Doctors)
+                            {
+                                <tr>
+                                    <td>@doctor.FullName</td>
+                                    <td>
+                                        @if (doctor.IsActive)
+                                        {
+                                            <span class="badge badge-success">@doctor.StatusText</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">@doctor.StatusText</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <a href="@Url.Action("Details", "Doctor", new { id = doctor.DoctorId })" 
+                                           class="btn btn-info btn-sm" title="مشاهده">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-user-md"></i> پزشکان مرتبط
+                </h6>
+            </div>
+            <div class="card-body text-center py-4">
+                <i class="fas fa-user-md fa-3x text-gray-300 mb-3"></i>
+                <h5 class="text-gray-500">هیچ پزشکی به این تخصص اختصاص داده نشده است</h5>
+                <p class="text-gray-400">برای اختصاص پزشک به این تخصص، از بخش مدیریت پزشکان استفاده کنید.</p>
+                <a href="@Url.Action("Index", "Doctor")" class="btn btn-primary">
+                    <i class="fas fa-users"></i> مدیریت پزشکان
+                </a>
+            </div>
+        </div>
+    }
+
+    <!-- Audit Trail Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-info">
+                <i class="fas fa-history"></i> تاریخچه تغییرات
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="font-weight-bold">اطلاعات ایجاد:</h6>
+                    <ul class="list-unstyled">
+                        <li><strong>تاریخ:</strong> @Model.CreatedAtShamsi</li>
+                        <li><strong>ایجاد کننده:</strong> @Model.CreatedBy</li>
+                    </ul>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.UpdatedAtShamsi))
+                {
+                    <div class="col-md-6">
+                        <h6 class="font-weight-bold">آخرین ویرایش:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>تاریخ:</strong> @Model.UpdatedAtShamsi</li>
+                            <li><strong>ویرایش کننده:</strong> @Model.UpdatedBy</li>
+                        </ul>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="row">
+        <div class="col-md-6">
+            <a href="@Url.Action("Edit", new { id = Model.SpecializationId })" class="btn btn-warning btn-block">
+                <i class="fas fa-edit"></i> ویرایش تخصص
+            </a>
+        </div>
+        <div class="col-md-6">
+            <a href="@Url.Action("Index")" class="btn btn-secondary btn-block">
+                <i class="fas fa-arrow-right"></i> بازگشت به لیست
+            </a>
+        </div>
+    </div>
+</div>

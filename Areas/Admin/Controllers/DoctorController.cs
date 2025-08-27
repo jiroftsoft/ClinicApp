@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
 using AutoMapper;
@@ -20,6 +22,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     public class DoctorController : Controller
     {
         private readonly IDoctorCrudService _doctorCrudService;
+        private readonly ISpecializationService _specializationService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorCreateEditViewModel> _createEditValidator;
         private readonly ILogger _logger;
@@ -27,11 +30,13 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         public DoctorController(
             IDoctorCrudService doctorCrudService,
+            ISpecializationService specializationService,
             ICurrentUserService currentUserService,
             IValidator<DoctorCreateEditViewModel> createEditValidator,
             IMapper mapper)
         {
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
+            _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _createEditValidator = createEditValidator ?? throw new ArgumentNullException(nameof(createEditValidator));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
@@ -53,22 +58,45 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (searchModel.PageNumber <= 0) searchModel.PageNumber = 1;
                 if (searchModel.PageSize <= 0) searchModel.PageSize = 10;
 
+                // بارگذاری تخصص‌های فعال برای فیلتر
+                var specializationsResult = await _specializationService.GetActiveSpecializationsAsync();
+                if (specializationsResult.Success)
+                {
+                    ViewBag.Specializations = specializationsResult.Data;
+                }
+                else
+                {
+                    _logger.Warning("خطا در بارگذاری تخصص‌ها: {Error}", specializationsResult.Message);
+                    ViewBag.Specializations = new System.Collections.Generic.List<ClinicApp.Models.Entities.Specialization>();
+                }
+
                 var result = await _doctorCrudService.GetDoctorsAsync(searchModel);
 
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست پزشکان: {ErrorMessage}", result.Message);
                     TempData["Error"] = result.Message;
-                    return View(new DoctorIndexViewModel());
+                    return View(new DoctorIndexPageViewModel());
                 }
 
-                return View(result.Data);
+                // ایجاد DoctorIndexPageViewModel
+                var pageViewModel = new DoctorIndexPageViewModel
+                {
+                    Doctors = result.Data,
+                    SearchModel = searchModel,
+                    TotalCount = result.Data.TotalItems,
+                    ActiveCount = result.Data.Items?.Where(d => d.IsActive).Count() ?? 0,
+                    InactiveCount = result.Data.Items?.Where(d => !d.IsActive).Count() ?? 0,
+                    TodayCount = result.Data.Items?.Where(d => d.CreatedAt.Date == DateTime.Today).Count() ?? 0
+                };
+
+                return View(pageViewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش لیست پزشکان");
                 TempData["Error"] = "خطا در بارگذاری لیست پزشکان";
-                return View(new DoctorIndexViewModel());
+                return View(new DoctorIndexPageViewModel());
             }
         }
 
@@ -77,7 +105,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         #region Create
 
         [HttpGet]
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
             try
             {
@@ -86,6 +114,18 @@ namespace ClinicApp.Areas.Admin.Controllers
                     IsActive = true,
                     CreatedAt = DateTime.Now
                 };
+
+                // بارگذاری تخصص‌های فعال
+                var specializationsResult = await _specializationService.GetActiveSpecializationsAsync();
+                if (specializationsResult.Success)
+                {
+                    ViewBag.Specializations = specializationsResult.Data;
+                }
+                else
+                {
+                    _logger.Warning("خطا در بارگذاری تخصص‌ها: {Error}", specializationsResult.Message);
+                    ViewBag.Specializations = new System.Collections.Generic.List<ClinicApp.Models.Entities.Specialization>();
+                }
 
                 return View(createModel);
             }
@@ -156,6 +196,18 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     TempData["Error"] = result.Message ?? "پزشک مورد نظر یافت نشد.";
                     return RedirectToAction("Index");
+                }
+
+                // بارگذاری تخصص‌های فعال
+                var specializationsResult = await _specializationService.GetActiveSpecializationsAsync();
+                if (specializationsResult.Success)
+                {
+                    ViewBag.Specializations = specializationsResult.Data;
+                }
+                else
+                {
+                    _logger.Warning("خطا در بارگذاری تخصص‌ها: {Error}", specializationsResult.Message);
+                    ViewBag.Specializations = new System.Collections.Generic.List<ClinicApp.Models.Entities.Specialization>();
                 }
 
                 return View(result.Data);

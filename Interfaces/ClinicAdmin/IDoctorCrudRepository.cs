@@ -36,6 +36,13 @@ public interface IDoctorCrudRepository
     Task<Doctor> GetByIdWithDetailsAsync(int doctorId);
 
     /// <summary>
+    /// دریافت پزشک بر اساس شناسه همراه با تخصص‌ها
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <returns>پزشک مورد نظر همراه با تخصص‌ها</returns>
+    Task<Doctor> GetByIdWithSpecializationsAsync(int doctorId);
+
+    /// <summary>
     /// بررسی وجود پزشک
     /// </summary>
     /// <param name="doctorId">شناسه پزشک</param>

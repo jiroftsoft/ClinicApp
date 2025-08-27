@@ -19,6 +19,7 @@ public static class IdentitySeed
         SeedAdminUser(context);
         SeedDefaultInsurance(context);
         SeedDefaultClinic(context);
+        SeedSpecializations(context);
         SeedNotificationTemplates(context);
         Log.Information("فرآیند سیدینگ با موفقیت پایان یافت.");
     }
@@ -244,6 +245,147 @@ public static class IdentitySeed
         catch (Exception ex)
         {
             Log.Error(ex, "خطا در ایجاد الگوهای اطلاع‌رسانی");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// ایجاد تخصص‌های پیش‌فرض برای سیستم کلینیک شفا
+    /// این متد به صورت ایمن از کاربر ادمین استفاده می‌کند و از ایجاد تکراری جلوگیری می‌کند
+    /// </summary>
+    public static void SeedSpecializations(ApplicationDbContext context)
+    {
+        try
+        {
+            // دریافت کاربر ادمین
+            var adminUser = context.Users.FirstOrDefault(u => u.UserName == "3020347998");
+            if (adminUser == null)
+            {
+                Log.Error("کاربر ادمین برای ایجاد تخصص‌ها یافت نشد.");
+                throw new Exception("کاربر ادمین برای ایجاد تخصص‌ها یافت نشد.");
+            }
+
+            // لیست تخصص‌های پیش‌فرض
+            var specializations = new List<Specialization>
+            {
+                new Specialization
+                {
+                    Name = "قلب و عروق",
+                    Description = "متخصص قلب و عروق - تشخیص و درمان بیماری‌های قلبی و عروقی",
+                    IsActive = true,
+                    DisplayOrder = 1,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "داخلی",
+                    Description = "متخصص داخلی - تشخیص و درمان بیماری‌های داخلی",
+                    IsActive = true,
+                    DisplayOrder = 2,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "جراحی عمومی",
+                    Description = "جراح عمومی - انجام اعمال جراحی عمومی",
+                    IsActive = true,
+                    DisplayOrder = 3,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "اورتوپدی",
+                    Description = "متخصص ارتوپدی - تشخیص و درمان بیماری‌های استخوان و مفاصل",
+                    IsActive = true,
+                    DisplayOrder = 4,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "نورولوژی",
+                    Description = "متخصص مغز و اعصاب - تشخیص و درمان بیماری‌های عصبی",
+                    IsActive = true,
+                    DisplayOrder = 5,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "پزشکی خانواده",
+                    Description = "پزشک خانواده - مراقبت‌های اولیه و جامع خانواده",
+                    IsActive = true,
+                    DisplayOrder = 6,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "پزشکی عمومی",
+                    Description = "پزشک عمومی - مراقبت‌های اولیه و عمومی",
+                    IsActive = true,
+                    DisplayOrder = 7,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "دندانپزشکی",
+                    Description = "دندانپزشک - تشخیص و درمان بیماری‌های دهان و دندان",
+                    IsActive = true,
+                    DisplayOrder = 8,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "داروسازی",
+                    Description = "داروساز - مشاوره دارویی و تجویز دارو",
+                    IsActive = true,
+                    DisplayOrder = 9,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+                new Specialization
+                {
+                    Name = "پزشکی ورزشی",
+                    Description = "متخصص پزشکی ورزشی - مراقبت از ورزشکاران و آسیب‌های ورزشی",
+                    IsActive = true,
+                    DisplayOrder = 10,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                }
+            };
+
+            // افزودن تخصص‌های جدید (در صورت عدم وجود)
+            foreach (var specialization in specializations)
+            {
+                if (!context.Specializations.Any(s => s.Name == specialization.Name))
+                {
+                    context.Specializations.Add(specialization);
+                    Log.Information("تخصص '{Name}' ایجاد شد", specialization.Name);
+                }
+            }
+
+            context.SaveChanges();
+            Log.Information("تخصص‌های پیش‌فرض با موفقیت ایجاد شدند");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "خطا در ایجاد تخصص‌های پیش‌فرض");
             throw;
         }
     }

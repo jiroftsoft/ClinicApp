@@ -1,0 +1,138 @@
+@model ClinicApp.ViewModels.SpecializationManagementVM.SpecializationCreateEditViewModel
+@{
+    ViewBag.Title = "افزودن تخصص جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">افزودن تخصص جدید</h1>
+        <a href="@Url.Action("Index")" class="d-none d-sm-inline-block btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-right fa-sm text-white-50"></i> بازگشت به لیست
+        </a>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">اطلاعات تخصص</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Create", "Specialization", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+            {
+                @Html.AntiForgeryToken()
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Name, new { @class = "control-label" })
+                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "مثال: قلب و عروق" })
+                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.DisplayOrder, new { @class = "control-label" })
+                            @Html.TextBoxFor(m => m.DisplayOrder, new { @class = "form-control", type = "number", min = "0", max = "1000", placeholder = "مثال: 1" })
+                            @Html.ValidationMessageFor(m => m.DisplayOrder, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    @Html.LabelFor(m => m.Description, new { @class = "control-label" })
+                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "4", placeholder = "توضیحات مربوط به این تخصص..." })
+                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                </div>
+
+                <div class="form-group">
+                    <div class="custom-control custom-switch">
+                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input" })
+                        <label class="custom-control-label" for="@Html.IdFor(m => m.IsActive)">
+                            @Html.DisplayNameFor(m => m.IsActive)
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-save"></i> ذخیره
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-block">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Help Card -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-info">
+                <i class="fas fa-info-circle"></i> راهنما
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h6 class="font-weight-bold">نام تخصص:</h6>
+                    <ul class="list-unstyled">
+                        <li>• باید به فارسی وارد شود</li>
+                        <li>• حداکثر 100 کاراکتر</li>
+                        <li>• مثال: قلب و عروق، مغز و اعصاب</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h6 class="font-weight-bold">ترتیب نمایش:</h6>
+                    <ul class="list-unstyled">
+                        <li>• عدد بین 0 تا 1000</li>
+                        <li>• برای تعیین ترتیب نمایش در لیست‌ها</li>
+                        <li>• عدد کمتر = نمایش بالاتر</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Real-time validation
+            $('#@Html.IdFor(m => m.Name)').on('input', function () {
+                var value = $(this).val();
+                if (value.length > 100) {
+                    $(this).addClass('is-invalid');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+
+            // Form validation
+            $('form').submit(function (e) {
+                var isValid = true;
+                
+                // Check required fields
+                if (!$('#@Html.IdFor(m => m.Name)').val().trim()) {
+                    $('#@Html.IdFor(m => m.Name)').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#@Html.IdFor(m => m.Name)').removeClass('is-invalid');
+                }
+
+                if (!isValid) {
+                    e.preventDefault();
+                    toastr.error('لطفاً خطاهای فرم را برطرف کنید');
+                }
+            });
+        });
+    </script>
+}

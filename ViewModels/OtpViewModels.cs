@@ -2,6 +2,7 @@
 using ClinicApp.Extensions;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
+using ClinicApp.Models.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;

@@ -32,6 +32,7 @@ namespace ClinicApp.Services.ClinicAdmin
     public class DoctorCrudService : IDoctorCrudService
     {
         private readonly IDoctorCrudRepository _doctorRepository;
+        private readonly ISpecializationService _specializationService;
         private readonly IDoctorReportingRepository _doctorReportingRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorCreateEditViewModel> _validator;
@@ -40,12 +41,14 @@ namespace ClinicApp.Services.ClinicAdmin
 
         public DoctorCrudService(
             IDoctorCrudRepository doctorRepository,
+            ISpecializationService specializationService,
             IDoctorReportingRepository doctorReportingRepository,
             ICurrentUserService currentUserService,
             IValidator<DoctorCreateEditViewModel> validator,
             IMapper mapper)
         {
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
+            _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));
             _doctorReportingRepository = doctorReportingRepository ?? throw new ArgumentNullException(nameof(doctorReportingRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
@@ -209,6 +212,16 @@ namespace ClinicApp.Services.ClinicAdmin
                 // ذخیره در دیتابیس
                 var createdDoctor = await _doctorRepository.AddAsync(doctor);
 
+                // به‌روزرسانی تخصص‌ها
+                if (model.SelectedSpecializationIds != null && model.SelectedSpecializationIds.Any())
+                {
+                    var updateResult = await _specializationService.UpdateDoctorSpecializationsAsync(createdDoctor.DoctorId, model.SelectedSpecializationIds);
+                    if (!updateResult.Success)
+                    {
+                        _logger.Warning("خطا در به‌روزرسانی تخصص‌های پزشک: {Error}", updateResult.Message);
+                    }
+                }
+
                 _logger.Information("پزشک جدید با شناسه {DoctorId} با موفقیت ایجاد شد", createdDoctor.DoctorId);
 
                 return ServiceResult<Doctor>.Successful(createdDoctor);
@@ -252,8 +265,20 @@ namespace ClinicApp.Services.ClinicAdmin
                 // به‌روزرسانی فیلدها
                 existingDoctor.FirstName = model.FirstName;
                 existingDoctor.LastName = model.LastName;
-                existingDoctor.Specialization = model.Specialization;
+                existingDoctor.Degree = model.Degree;
+                existingDoctor.GraduationYear = model.GraduationYear;
+                existingDoctor.University = model.University;
+                existingDoctor.Gender = model.Gender;
+                existingDoctor.DateOfBirth = model.DateOfBirth;
+                existingDoctor.HomeAddress = model.HomeAddress;
+                existingDoctor.OfficeAddress = model.OfficeAddress;
+                existingDoctor.ConsultationFee = model.ConsultationFee;
+                existingDoctor.ExperienceYears = model.ExperienceYears;
+                existingDoctor.ProfileImageUrl = model.ProfileImageUrl;
                 existingDoctor.PhoneNumber = model.PhoneNumber;
+                existingDoctor.NationalCode = model.NationalCode;
+                existingDoctor.MedicalCouncilCode = model.MedicalCouncilCode;
+                existingDoctor.Email = model.Email;
                 existingDoctor.Bio = model.Bio;
                 existingDoctor.IsActive = model.IsActive;
                 existingDoctor.UpdatedAt = DateTime.Now;
@@ -261,6 +286,16 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 // ذخیره تغییرات
                 var updatedDoctor = await _doctorRepository.UpdateAsync(existingDoctor);
+
+                // به‌روزرسانی تخصص‌ها
+                if (model.SelectedSpecializationIds != null)
+                {
+                    var updateResult = await _specializationService.UpdateDoctorSpecializationsAsync(model.DoctorId, model.SelectedSpecializationIds);
+                    if (!updateResult.Success)
+                    {
+                        _logger.Warning("خطا در به‌روزرسانی تخصص‌های پزشک: {Error}", updateResult.Message);
+                    }
+                }
 
                 _logger.Information("پزشک با شناسه {DoctorId} با موفقیت به‌روزرسانی شد", model.DoctorId);
 
@@ -358,6 +393,38 @@ namespace ClinicApp.Services.ClinicAdmin
             {
                 _logger.Error(ex, "خطا در بازیابی پزشک {DoctorId}", doctorId);
                 return ServiceResult.Failed("خطا در بازیابی پزشک");
+            }
+        }
+
+        #endregion
+
+        #region Specialization Operations
+
+        /// <summary>
+        /// دریافت لیست تخصص‌های فعال برای نمایش در فرم‌ها
+        /// </summary>
+        public async Task<ServiceResult<List<Specialization>>> GetActiveSpecializationsAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت لیست تخصص‌های فعال");
+
+                var specializationsResult = await _specializationService.GetActiveSpecializationsAsync();
+                if (!specializationsResult.Success)
+                {
+                    _logger.Error("خطا در دریافت تخصص‌های فعال: {Error}", specializationsResult.Message);
+                    return ServiceResult<List<Specialization>>.Failed("خطا در دریافت لیست تخصص‌های فعال");
+                }
+                var specializations = specializationsResult.Data;
+                
+                _logger.Information("لیست تخصص‌های فعال با موفقیت دریافت شد. تعداد: {Count}", specializations.Count);
+
+                return ServiceResult<List<Specialization>>.Successful(specializations);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست تخصص‌های فعال");
+                return ServiceResult<List<Specialization>>.Failed("خطا در دریافت لیست تخصص‌های فعال");
             }
         }
 

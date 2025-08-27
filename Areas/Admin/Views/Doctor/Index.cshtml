@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.DoctorManagementVM.DoctorIndexViewModel
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorIndexPageViewModel
 @{
     ViewBag.Title = "مدیریت پزشکان";
     Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
@@ -80,11 +80,13 @@
                         <label for="Specialization" class="text-white">تخصص</label>
                         <select class="form-control" id="Specialization" name="Specialization">
                             <option value="">همه تخصص‌ها</option>
-                            <option value="داخلی" @(Model.SearchModel.Specialization == "داخلی" ? "selected" : "")>داخلی</option>
-                            <option value="جراحی" @(Model.SearchModel.Specialization == "جراحی" ? "selected" : "")>جراحی</option>
-                            <option value="قلب" @(Model.SearchModel.Specialization == "قلب" ? "selected" : "")>قلب</option>
-                            <option value="عصب" @(Model.SearchModel.Specialization == "عصب" ? "selected" : "")>عصب</option>
-                            <option value="کودکان" @(Model.SearchModel.Specialization == "کودکان" ? "selected" : "")>کودکان</option>
+                            @if (ViewBag.Specializations != null)
+                            {
+                                foreach (var specialization in ViewBag.Specializations)
+                                {
+                                    <option value="@specialization.SpecializationId" @(Model.SearchModel.Specialization == specialization.SpecializationId.ToString() ? "selected" : "")>@specialization.Name</option>
+                                }
+                            }
                         </select>
                     </div>
                 </div>
@@ -228,7 +230,7 @@
             </div>
         </div>
         <div class="card-body">
-            @if (Model.Doctors != null && Model.Doctors.Any())
+            @if (Model.Doctors != null && Model.Doctors.Items != null && Model.Doctors.Items.Any())
             {
                 <div class="table-responsive">
                     <table class="table table-bordered table-hover" id="doctorsTable">
@@ -248,14 +250,14 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var doctor in Model.Doctors)
+                            @foreach (var doctor in Model.Doctors.Items)
                             {
                                 <tr>
                                     <td>
                                         <input type="checkbox" class="doctor-checkbox" value="@doctor.Id" />
                                     </td>
                                     <td>
-                                        <img src="@(string.IsNullOrEmpty(doctor.ProfileImageUrl) ? "/Content/Images/default-avatar.png" : doctor.ProfileImageUrl)" 
+                                        <img src="@(string.IsNullOrEmpty(doctor.ProfileImageUrl) ? "/Content/Images/default-avatar.png" : doctor.ProfileImageUrl)"
                                              class="doctor-avatar" alt="@doctor.FullName" />
                                     </td>
                                     <td>
@@ -295,23 +297,23 @@
                                     </td>
                                     <td>
                                         <div class="btn-group" role="group">
-                                            <a href="@Url.Action("Details", "Doctor", new { id = doctor.Id })" 
+                                            <a href="@Url.Action("Details", "Doctor", new { id = doctor.Id })"
                                                class="btn btn-info btn-action" title="جزئیات">
                                                 <i class="fas fa-eye"></i>
                                             </a>
-                                            <a href="@Url.Action("Edit", "Doctor", new { id = doctor.Id })" 
+                                            <a href="@Url.Action("Edit", "Doctor", new { id = doctor.Id })"
                                                class="btn btn-warning btn-action" title="ویرایش">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="@Url.Action("Assignments", "DoctorAssignment", new { doctorId = doctor.Id })" 
+                                            <a href="@Url.Action("Assignments", "DoctorAssignment", new { doctorId = doctor.Id })"
                                                class="btn btn-primary btn-action" title="انتصابات">
                                                 <i class="fas fa-link"></i>
                                             </a>
-                                            <a href="@Url.Action("Schedule", "DoctorSchedule", new { doctorId = doctor.Id })" 
+                                            <a href="@Url.Action("Schedule", "DoctorSchedule", new { doctorId = doctor.Id })"
                                                class="btn btn-success btn-action" title="برنامه کاری">
                                                 <i class="fas fa-calendar"></i>
                                             </a>
-                                            <button type="button" class="btn btn-danger btn-action" 
+                                            <button type="button" class="btn btn-danger btn-action"
                                                     onclick="deleteDoctor(@doctor.Id, '@doctor.FullName')" title="حذف">
                                                 <i class="fas fa-trash"></i>
                                             </button>
@@ -324,13 +326,13 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.TotalPages > 1)
+                @if (Model.Doctors.TotalPages > 1)
                 {
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <div class="pagination-info">
-                            نمایش @((Model.SearchModel.PageNumber - 1) * Model.SearchModel.PageSize + 1) 
-                            تا @Math.Min(Model.SearchModel.PageNumber * Model.SearchModel.PageSize, Model.TotalCount) 
-                            از @Model.TotalCount رکورد
+                            نمایش @((Model.SearchModel.PageNumber - 1) * Model.SearchModel.PageSize + 1)
+                            تا @Math.Min(Model.SearchModel.PageNumber * Model.SearchModel.PageSize, Model.Doctors.TotalItems)
+                            از @Model.Doctors.TotalItems رکورد
                         </div>
                         <nav aria-label="صفحه‌بندی">
                             <ul class="pagination">
@@ -343,7 +345,7 @@
                                     </li>
                                 }
 
-                                @for (int i = Math.Max(1, Model.SearchModel.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.SearchModel.PageNumber + 2); i++)
+                                @for (int i = Math.Max(1, Model.SearchModel.PageNumber - 2); i <= Math.Min(Model.Doctors.TotalPages, Model.SearchModel.PageNumber + 2); i++)
                                 {
                                     <li class="page-item @(i == Model.SearchModel.PageNumber ? "active" : "")">
                                         <a class="page-link" href="@Url.Action("Index", new { page = i, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
@@ -352,7 +354,7 @@
                                     </li>
                                 }
 
-                                @if (Model.SearchModel.PageNumber < Model.TotalPages)
+                                @if (Model.SearchModel.PageNumber < Model.Doctors.TotalPages)
                                 {
                                     <li class="page-item">
                                         <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber + 1, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">

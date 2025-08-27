@@ -24,6 +24,7 @@ using System.Web;
 using ClinicApp.Repositories.ClinicAdmin;
 using ClinicApp.Services.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
+using ClinicApp.ViewModels.SpecializationManagementVM;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -334,6 +335,10 @@ namespace ClinicApp
                 container.RegisterType<IDoctorAssignmentService, DoctorAssignmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorReportingService, DoctorReportingService>(new PerRequestLifetimeManager());
 
+                // Register Specialization Management Repositories and Services
+                container.RegisterType<ISpecializationRepository, SpecializationRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<ISpecializationService, SpecializationService>(new PerRequestLifetimeManager());
+
                 // ثبت Validator برای FluentValidation
                 container.RegisterType<IValidator<ClinicCreateEditViewModel>, ClinicCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DepartmentCreateEditViewModel>, DepartmentCreateEditViewModelValidator>(new PerRequestLifetimeManager());
@@ -344,6 +349,9 @@ namespace ClinicApp
                 container.RegisterType<IValidator<DoctorServiceCategoryViewModel>, DoctorServiceCategoryViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DoctorScheduleViewModel>, DoctorScheduleViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DoctorAssignmentsViewModel>, DoctorAssignmentsViewModelValidator>(new PerRequestLifetimeManager());
+
+                // Register Specialization Validators
+                container.RegisterType<IValidator<SpecializationCreateEditViewModel>, SpecializationCreateEditViewModelValidator>(new PerRequestLifetimeManager());
 
                 _log.Information("سرویس‌های پزشکی با موفقیت ثبت شدند");
             }

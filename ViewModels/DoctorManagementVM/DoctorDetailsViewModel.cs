@@ -194,7 +194,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 FirstName = doctor.FirstName,
                 LastName = doctor.LastName,
                 FullName = $"{doctor.FirstName} {doctor.LastName}",
-                Specialization = doctor.Specialization,
+                Specialization = doctor.University,
                 PhoneNumber = doctor.PhoneNumber,
                 Bio = doctor.Bio,
                 IsActive = doctor.IsActive,

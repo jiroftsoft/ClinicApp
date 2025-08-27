@@ -178,7 +178,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             {
                 DoctorId = doctor.DoctorId,
                 FullName = $"{doctor.FirstName} {doctor.LastName}",
-                Specialization = doctor.Specialization,
+                Specialization = doctor.University,
                 PhoneNumber = doctor.PhoneNumber,
                 ActiveDepartmentCount = doctor.DoctorDepartments?.Count(dd => 
                     dd.Department != null && 

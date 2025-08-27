@@ -1,11 +1,13 @@
 ﻿using ClinicApp.Core;
 using ClinicApp.Filters;
 using ClinicApp.Helpers;
+using ClinicApp.Models.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Web.Mvc;
+using ClinicApp.Models.Entities;
 
 namespace ClinicApp.ViewModels
 {

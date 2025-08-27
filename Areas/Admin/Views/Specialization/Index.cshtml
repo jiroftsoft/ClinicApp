@@ -1,0 +1,313 @@
+@model ClinicApp.ViewModels.SpecializationManagementVM.SpecializationIndexPageViewModel
+@{
+    ViewBag.Title = "مدیریت تخصص‌ها";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">مدیریت تخصص‌ها</h1>
+        <a href="@Url.Action("Create")" class="d-none d-sm-inline-block btn btn-primary shadow-sm">
+            <i class="fas fa-plus fa-sm text-white-50"></i> افزودن تخصص جدید
+        </a>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">کل تخصص‌ها</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Statistics.TotalCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">فعال</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Statistics.ActiveCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">غیرفعال</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Statistics.InactiveCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-pause-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-right-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">امروز</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.Statistics.TodayCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-clock fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">جستجو و فیلتر</h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Index", "Specialization", FormMethod.Get, new { @class = "form-inline" }))
+            {
+                <div class="form-group mx-sm-3 mb-2">
+                    @Html.TextBoxFor(m => m.SearchModel.SearchTerm, new { @class = "form-control", placeholder = "جستجو در نام یا توضیحات..." })
+                </div>
+                <div class="form-group mx-sm-3 mb-2">
+                    @Html.DropDownListFor(m => m.SearchModel.IsActive, 
+                        new SelectList(new[] { 
+                            new { Value = "", Text = "همه وضعیت‌ها" },
+                            new { Value = "true", Text = "فعال" },
+                            new { Value = "false", Text = "غیرفعال" }
+                        }, "Value", "Text"), 
+                        new { @class = "form-control" })
+                </div>
+                <div class="form-group mx-sm-3 mb-2">
+                    @Html.DropDownListFor(m => m.SearchModel.SortBy,
+                        new SelectList(new[] {
+                            new { Value = "DisplayOrder", Text = "ترتیب نمایش" },
+                            new { Value = "Name", Text = "نام" },
+                            new { Value = "CreatedAt", Text = "تاریخ ایجاد" },
+                            new { Value = "DoctorCount", Text = "تعداد پزشکان" }
+                        }, "Value", "Text"),
+                        new { @class = "form-control" })
+                </div>
+                <div class="form-group mx-sm-3 mb-2">
+                    @Html.DropDownListFor(m => m.SearchModel.SortOrder,
+                        new SelectList(new[] {
+                            new { Value = "asc", Text = "صعودی" },
+                            new { Value = "desc", Text = "نزولی" }
+                        }, "Value", "Text"),
+                        new { @class = "form-control" })
+                </div>
+                <button type="submit" class="btn btn-primary mb-2">جستجو</button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary mb-2 mr-2">پاک کردن</a>
+            }
+        </div>
+    </div>
+
+    <!-- Specializations Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">لیست تخصص‌ها</h6>
+        </div>
+        <div class="card-body">
+            @if (Model.Specializations.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>نام تخصص</th>
+                                <th>توضیحات</th>
+                                <th>وضعیت</th>
+                                <th>ترتیب نمایش</th>
+                                <th>تعداد پزشکان</th>
+                                <th>تاریخ ایجاد</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var specialization in Model.Specializations)
+                            {
+                                <tr>
+                                    <td>@specialization.Name</td>
+                                    <td>@(string.IsNullOrEmpty(specialization.Description) ? "-" : specialization.Description)</td>
+                                    <td>
+                                        @if (specialization.IsActive)
+                                        {
+                                            <span class="badge badge-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">غیرفعال</span>
+                                        }
+                                    </td>
+                                    <td>@specialization.DisplayOrder</td>
+                                    <td>@specialization.DoctorCount</td>
+                                    <td>@specialization.CreatedAtShamsi</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", new { id = specialization.SpecializationId })" 
+                                               class="btn btn-info btn-sm" title="مشاهده">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", new { id = specialization.SpecializationId })" 
+                                               class="btn btn-warning btn-sm" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            @if (!specialization.IsDeleted)
+                                            {
+                                                <button type="button" class="btn btn-danger btn-sm delete-btn" 
+                                                        data-id="@specialization.SpecializationId" 
+                                                        data-name="@specialization.Name" title="حذف">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="button" class="btn btn-success btn-sm restore-btn" 
+                                                        data-id="@specialization.SpecializationId" 
+                                                        data-name="@specialization.Name" title="بازیابی">
+                                                    <i class="fas fa-undo"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                if (Model.PagedResult != null && Model.PagedResult.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.PagedResult.HasPreviousPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { 
+                                        pageNumber = Model.PagedResult.PageNumber - 1,
+                                        searchTerm = Model.SearchModel.SearchTerm,
+                                        isActive = Model.SearchModel.IsActive,
+                                        sortBy = Model.SearchModel.SortBy,
+                                        sortOrder = Model.SearchModel.SortOrder
+                                    })">قبلی</a>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= Model.PagedResult.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.PagedResult.PageNumber ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { 
+                                        pageNumber = i,
+                                        searchTerm = Model.SearchModel.SearchTerm,
+                                        isActive = Model.SearchModel.IsActive,
+                                        sortBy = Model.SearchModel.SortBy,
+                                        sortOrder = Model.SearchModel.SortOrder
+                                    })">@i</a>
+                                </li>
+                            }
+
+                            @if (Model.PagedResult.HasNextPage)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { 
+                                        pageNumber = Model.PagedResult.PageNumber + 1,
+                                        searchTerm = Model.SearchModel.SearchTerm,
+                                        isActive = Model.SearchModel.IsActive,
+                                        sortBy = Model.SearchModel.SortBy,
+                                        sortOrder = Model.SearchModel.SortOrder
+                                    })">بعدی</a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+                    <h5 class="text-gray-500">هیچ تخصصی یافت نشد</h5>
+                    <p class="text-gray-400">برای شروع، یک تخصص جدید ایجاد کنید.</p>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> افزودن تخصص جدید
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Delete confirmation
+            $('.delete-btn').click(function () {
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                
+                if (confirm('آیا از حذف تخصص "' + name + '" اطمینان دارید؟')) {
+                    $.post('@Url.Action("Delete")', { id: id })
+                        .done(function (result) {
+                            if (result.success) {
+                                toastr.success(result.message);
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                toastr.error(result.message);
+                            }
+                        })
+                        .fail(function () {
+                            toastr.error('خطا در حذف تخصص');
+                        });
+                }
+            });
+
+            // Restore confirmation
+            $('.restore-btn').click(function () {
+                var id = $(this).data('id');
+                var name = $(this).data('name');
+                
+                if (confirm('آیا از بازیابی تخصص "' + name + '" اطمینان دارید؟')) {
+                    $.post('@Url.Action("Restore")', { id: id })
+                        .done(function (result) {
+                            if (result.success) {
+                                toastr.success(result.message);
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 1000);
+                            } else {
+                                toastr.error(result.message);
+                            }
+                        })
+                        .fail(function () {
+                            toastr.error('خطا در بازیابی تخصص');
+                        });
+                }
+            });
+        });
+    </script>
+}

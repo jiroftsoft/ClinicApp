@@ -444,9 +444,9 @@
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SpecializationController.cs" />
     <Compile Include="Core\Class1.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
-    <Compile Include="Core\Gender.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
@@ -463,7 +463,6 @@
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\Class1.cs" />
-    <Compile Include="Infrastructure\DatabaseMigrationManager.cs" />
     <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
     <Compile Include="Interfaces\ClinicAdmin\Class1.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
@@ -485,6 +484,8 @@
     <Compile Include="Interfaces\ClinicAdmin\IServiceCategoryRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\ISpecializationRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\ISpecializationService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IInsuranceService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
@@ -504,6 +505,10 @@
     <Compile Include="Migrations\202508260514024_DoctorModule.Designer.cs">
       <DependentUpon>202508260514024_DoctorModule.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202508271558514_MakeDocotorMoreEfficient.cs" />
+    <Compile Include="Migrations\202508271558514_MakeDocotorMoreEfficient.Designer.cs">
+      <DependentUpon>202508271558514_MakeDocotorMoreEfficient.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
     <Compile Include="Repositories\Class1.cs" />
@@ -512,6 +517,7 @@
     <Compile Include="Repositories\ClinicAdmin\DoctorReportingRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorScheduleRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorServiceCategoryRepository.cs" />
+    <Compile Include="Repositories\ClinicAdmin\SpecializationRepository.cs" />
     <Compile Include="Repositories\ClinicRepository.cs" />
     <Compile Include="Repositories\DepartmentRepository.cs" />
     <Compile Include="Repositories\ServiceCategoryRepository.cs" />
@@ -526,6 +532,7 @@
     <Compile Include="Services\ClinicAdmin\DoctorReportingService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorScheduleService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorServiceCategoryService.cs" />
+    <Compile Include="Services\ClinicAdmin\SpecializationService.cs" />
     <Compile Include="Services\ClinicManagementService.cs" />
     <Compile Include="Services\CurrentUserService.cs" />
     <Compile Include="Services\DepartmentManagementService.cs" />
@@ -536,6 +543,7 @@
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexPageViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ActiveDoctorsReportViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentsViewModel.cs" />
@@ -603,6 +611,11 @@
     <Compile Include="ViewModels\PatientViewModel.cs" />
     <Compile Include="ViewModels\ReceptionViewModel.cs" />
     <Compile Include="ViewModels\ServiceViewModels.cs" />
+    <Compile Include="ViewModels\SpecializationManagementVM\SpecializationCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\SpecializationManagementVM\SpecializationDetailsViewModel.cs" />
+    <Compile Include="ViewModels\SpecializationManagementVM\SpecializationIndexPageViewModel.cs" />
+    <Compile Include="ViewModels\SpecializationManagementVM\SpecializationIndexViewModel.cs" />
+    <Compile Include="ViewModels\SpecializationManagementVM\SpecializationSearchViewModel.cs" />
     <Compile Include="ViewModels\Validators\Class1.cs" />
     <Compile Include="ViewModels\Validators\ClinicCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
@@ -3168,6 +3181,12 @@
     <Content Include="MEDICAL_TROUBLESHOOTING.md" />
     <Content Include="Areas\Admin\Views\Doctor\Index.cshtml" />
     <Content Include="Areas\Admin\Views\Doctor\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Doctor\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Doctor\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Specialization\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Specialization\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\Specialization\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\Specialization\Edit.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3451,6 +3470,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202508260514024_DoctorModule.resx">
       <DependentUpon>202508260514024_DoctorModule.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202508271558514_MakeDocotorMoreEfficient.resx">
+      <DependentUpon>202508271558514_MakeDocotorMoreEfficient.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

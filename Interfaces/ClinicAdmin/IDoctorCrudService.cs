@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
@@ -42,6 +43,12 @@ public interface IDoctorCrudService
     /// <param name="doctorId">شناسه پزشک.</param>
     /// <returns>نتیجه حاوی اطلاعات پزشک برای ویرایش.</returns>
     Task<ServiceResult<DoctorCreateEditViewModel>> GetDoctorForEditAsync(int doctorId);
+
+    /// <summary>
+    /// دریافت لیست تخصص‌های فعال برای نمایش در فرم‌ها.
+    /// </summary>
+    /// <returns>نتیجه حاوی لیست تخصص‌های فعال.</returns>
+    Task<ServiceResult<List<Specialization>>> GetActiveSpecializationsAsync();
 
     /// <summary>
     /// ایجاد یک پزشک جدید بر اساس اطلاعات ورودی.

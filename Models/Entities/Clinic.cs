@@ -108,6 +108,34 @@ namespace ClinicApp.Models.Entities
     }
 
     /// <summary>
+    /// جنسیت
+    /// </summary>
+    public enum Gender : byte
+    {
+        [Display(Name = "مرد")]
+        Male = 1,
+        [Display(Name = "زن")]
+        Female = 2
+    }
+
+    /// <summary>
+    /// مدرک تحصیلی
+    /// </summary>
+    public enum Degree : byte
+    {
+        [Display(Name = "پزشک عمومی")]
+        GeneralPhysician = 1,
+        [Display(Name = "متخصص")]
+        Specialist = 2,
+        [Display(Name = "فوق تخصص")]
+        SubSpecialist = 3,
+        [Display(Name = "دندانپزشک")]
+        Dentist = 4,
+        [Display(Name = "داروساز")]
+        Pharmacist = 5
+
+    }
+    /// <summary>
     /// نوع ارائه‌دهنده پوز
     /// </summary>
     public enum PosProviderType
@@ -153,6 +181,163 @@ namespace ClinicApp.Models.Entities
         Cancelled = 3,
         [Display(Name = "عدم حضور")]
         NoShow = 4
+    }
+    #endregion
+
+    #region Specialization Entity
+    /// <summary>
+    /// مدل تخصص‌های پزشکی - طراحی شده برای مدیریت تخصص‌ها در کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت متمرکز تخصص‌های پزشکی
+    /// 2. امکان فعال/غیرفعال کردن تخصص‌ها
+    /// 3. ردیابی کامل تغییرات برای امنیت سیستم
+    /// 4. پشتیبانی از سیستم حذف نرم
+    /// </summary>
+    public class Specialization : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه تخصص
+        /// </summary>
+        public int SpecializationId { get; set; }
+
+        /// <summary>
+        /// نام تخصص
+        /// مثال: "متخصص داخلی", "متخصص پوست", "متخصص قلب"
+        /// </summary>
+        [Required(ErrorMessage = "نام تخصص الزامی است.")]
+        [MaxLength(100, ErrorMessage = "نام تخصص نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// توضیحات تخصص
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// وضعیت فعال/غیرفعال بودن تخصص
+        /// </summary>
+        [Required(ErrorMessage = "وضعیت فعال بودن الزامی است.")]
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// ترتیب نمایش تخصص
+        /// </summary>
+        public int DisplayOrder { get; set; } = 0;
+
+        #region پیاده‌سازی ISoftDelete
+        public bool IsDeleted { get; set; }
+        public DateTime? DeletedAt { get; set; }
+        public string DeletedByUserId { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public string CreatedByUserId { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        public string UpdatedByUserId { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        #region روابط
+        /// <summary>
+        /// لیست پزشکان دارای این تخصص
+        /// </summary>
+        public virtual ICollection<Doctor> Doctors { get; set; } = new HashSet<Doctor>();
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی مدل تخصص‌ها برای Entity Framework
+    /// </summary>
+    public class SpecializationConfig : EntityTypeConfiguration<Specialization>
+    {
+        public SpecializationConfig()
+        {
+            ToTable("Specializations");
+            HasKey(s => s.SpecializationId);
+
+            Property(s => s.Name)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_Name")));
+
+            Property(s => s.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_IsActive")));
+
+            Property(s => s.DisplayOrder)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_DisplayOrder")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(s => s.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_IsDeleted")));
+
+            Property(s => s.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(s => s.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_CreatedAt")));
+
+            Property(s => s.CreatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_CreatedByUserId")));
+
+            Property(s => s.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_UpdatedAt")));
+
+            Property(s => s.UpdatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_UpdatedByUserId")));
+
+            Property(s => s.DeletedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Specialization_DeletedByUserId")));
+
+            // روابط
+            HasMany(s => s.Doctors)
+                .WithMany(d => d.Specializations)
+                .Map(m =>
+                {
+                    m.ToTable("DoctorSpecializations");
+                    m.MapLeftKey("SpecializationId");
+                    m.MapRightKey("DoctorId");
+                });
+
+            HasOptional(s => s.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(s => s.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(s => s.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(s => s.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(s => s.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(s => s.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+        }
     }
     #endregion
 
@@ -2432,28 +2617,83 @@ namespace ClinicApp.Models.Entities
         public bool IsActive { get; set; } = true;
 
         /// <summary>
-        /// تخصص پزشک
-        /// مثال: "متخصص داخلی", "پزشک عمومی", "متخصص پوست"
+        /// مدرک تحصیلی پزشک
         /// </summary>
-        [MaxLength(250, ErrorMessage = "تخصص نمی‌تواند بیش از 250 کاراکتر باشد.")]
-        public string Specialization { get; set; }
+        [Required(ErrorMessage = "مدرک تحصیلی الزامی است.")]
+        public Degree Degree { get; set; }
+
+        /// <summary>
+        /// سال فارغ‌التحصیلی
+        /// </summary>
+        [Range(1350, 1410, ErrorMessage = "سال فارغ‌التحصیلی باید بین 1350 تا 1410 باشد.")]
+        public int? GraduationYear { get; set; }
+
+        /// <summary>
+        /// دانشگاه محل تحصیل
+        /// </summary>
+        [MaxLength(200, ErrorMessage = "نام دانشگاه نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        public string University { get; set; }
+
+        /// <summary>
+        /// جنسیت پزشک
+        /// </summary>
+        [Required(ErrorMessage = "جنسیت الزامی است.")]
+        public Gender Gender { get; set; }
+
+        /// <summary>
+        /// تاریخ تولد پزشک
+        /// </summary>
+        public DateTime? DateOfBirth { get; set; }
+
+        /// <summary>
+        /// آدرس منزل پزشک
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "آدرس منزل نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string HomeAddress { get; set; }
+
+        /// <summary>
+        /// آدرس مطب/کلینیک پزشک
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "آدرس مطب نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string OfficeAddress { get; set; }
+
+        /// <summary>
+        /// تعرفه ویزیت پزشک (به تومان)
+        /// </summary>
+        [Range(0, 10000000, ErrorMessage = "تعرفه ویزیت باید بین 0 تا 10,000,000 تومان باشد.")]
+        public decimal? ConsultationFee { get; set; }
+
+        /// <summary>
+        /// سابقه کاری پزشک (به سال)
+        /// </summary>
+        [Range(0, 50, ErrorMessage = "سابقه کاری باید بین 0 تا 50 سال باشد.")]
+        public int? ExperienceYears { get; set; }
+
+        /// <summary>
+        /// عکس پروفایل پزشک
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "آدرس عکس نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string ProfileImageUrl { get; set; }
 
         /// <summary>
         /// شماره تلفن پزشک
         /// </summary>
         [MaxLength(50, ErrorMessage = "شماره تلفن نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        [RegularExpression(@"^(\+98|0)?9\d{9}$", ErrorMessage = "شماره تلفن باید در فرمت صحیح وارد شود.")]
         public string PhoneNumber { get; set; }
 
         /// <summary>
         /// کد ملی پزشک
         /// </summary>
         [MaxLength(10, ErrorMessage = "کد ملی نمی‌تواند بیش از 10 کاراکتر باشد.")]
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "کد ملی باید 10 رقم باشد.")]
         public string NationalCode { get; set; }
 
         /// <summary>
         /// کد نظام پزشکی
         /// </summary>
         [MaxLength(20, ErrorMessage = "کد نظام پزشکی نمی‌تواند بیش از 20 کاراکتر باشد.")]
+        [RegularExpression(@"^\d{6,8}$", ErrorMessage = "کد نظام پزشکی باید 6 تا 8 رقم باشد.")]
         public string MedicalCouncilCode { get; set; }
 
         /// <summary>
@@ -2610,6 +2850,12 @@ namespace ClinicApp.Models.Entities
         /// این رابطه برای مدیریت اسلات‌های قابل رزرو استفاده می‌شود
         /// </summary>
         public virtual ICollection<DoctorTimeSlot> TimeSlots { get; set; } = new HashSet<DoctorTimeSlot>();
+
+        /// <summary>
+        /// لیست تخصص‌های پزشک (Many-to-Many)
+        /// این رابطه برای مشخص کردن تخصص‌های پزشک استفاده می‌شود
+        /// </summary>
+        public virtual ICollection<Specialization> Specializations { get; set; } = new HashSet<Specialization>();
         #endregion
     }
 
@@ -2642,17 +2888,78 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Doctor_IsActive")));
 
-            Property(d => d.Specialization)
-                .IsOptional()
-                .HasMaxLength(250)
+            Property(d => d.Degree)
+                .IsRequired()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Doctor_Specialization")));
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_Degree")));
+
+            Property(d => d.GraduationYear)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_GraduationYear")));
+
+            Property(d => d.University)
+                .IsOptional()
+                .HasMaxLength(200)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_University")));
+
+            Property(d => d.Gender)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_Gender")));
+
+            Property(d => d.DateOfBirth)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_DateOfBirth")));
+
+            Property(d => d.HomeAddress)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            Property(d => d.OfficeAddress)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            Property(d => d.ConsultationFee)
+                .IsOptional()
+                .HasPrecision(18, 0)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_ConsultationFee")));
+
+            Property(d => d.ExperienceYears)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_ExperienceYears")));
+
+            Property(d => d.ProfileImageUrl)
+                .IsOptional()
+                .HasMaxLength(500);
 
             Property(d => d.PhoneNumber)
                 .IsOptional()
                 .HasMaxLength(50)
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Doctor_PhoneNumber")));
+
+            Property(d => d.NationalCode)
+                .IsOptional()
+                .HasMaxLength(10)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_NationalCode")));
+
+            Property(d => d.MedicalCouncilCode)
+                .IsOptional()
+                .HasMaxLength(20)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_MedicalCouncilCode")));
+
+            Property(d => d.Email)
+                .IsOptional()
+                .HasMaxLength(100)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Doctor_Email")));
 
             Property(d => d.Bio)
                 .IsOptional()
@@ -2763,8 +3070,8 @@ namespace ClinicApp.Models.Entities
             HasIndex(d => new { d.ClinicId, d.IsActive, d.IsDeleted })
                 .HasName("IX_Doctor_ClinicId_IsActive_IsDeleted");
 
-            HasIndex(d => new { d.Specialization, d.IsActive, d.IsDeleted })
-                .HasName("IX_Doctor_Specialization_IsActive_IsDeleted");
+            HasIndex(d => new { d.University, d.IsActive, d.IsDeleted })
+                .HasName("IX_Doctor_University_IsActive_IsDeleted");
         }
     }
 

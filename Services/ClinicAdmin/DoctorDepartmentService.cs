@@ -73,7 +73,7 @@ namespace ClinicApp.Services.ClinicAdmin
                 var lookupItems = doctors.Select(doctor => LookupItemViewModel.FromEntity(
                     doctor.DoctorId,
                     $"{doctor.FirstName} {doctor.LastName}",
-                    doctor.Specialization
+                    doctor.University
                 )).ToList();
 
                 _logger.Information("لیست پزشکان فعال برای lookup با موفقیت دریافت شد. تعداد: {Count}", lookupItems.Count);

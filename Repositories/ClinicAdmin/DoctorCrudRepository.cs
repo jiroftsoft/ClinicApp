@@ -42,6 +42,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.Doctors
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
+                    .Include(d => d.Specializations)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -69,6 +70,25 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 // لاگ خطا برای سیستم‌های پزشکی
                 throw new InvalidOperationException($"خطا در دریافت جزئیات پزشک با شناسه {doctorId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت پزشک بر اساس شناسه همراه با تخصص‌ها
+        /// </summary>
+        public async Task<Doctor> GetByIdWithSpecializationsAsync(int doctorId)
+        {
+            try
+            {
+                return await _context.Doctors
+                    .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
+                    .Include(d => d.Specializations)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت پزشک با تخصص‌ها برای شناسه {doctorId}", ex);
             }
         }
 
@@ -189,7 +209,18 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 existingDoctor.MedicalCouncilCode = doctor.MedicalCouncilCode;
                 existingDoctor.PhoneNumber = doctor.PhoneNumber;
                 existingDoctor.Email = doctor.Email;
-                existingDoctor.Specialization = doctor.Specialization;
+                existingDoctor.Degree = doctor.Degree;
+                existingDoctor.GraduationYear = doctor.GraduationYear;
+                existingDoctor.University = doctor.University;
+                existingDoctor.Gender = doctor.Gender;
+                existingDoctor.DateOfBirth = doctor.DateOfBirth;
+                existingDoctor.HomeAddress = doctor.HomeAddress;
+                existingDoctor.OfficeAddress = doctor.OfficeAddress;
+                existingDoctor.ConsultationFee = doctor.ConsultationFee;
+                existingDoctor.ExperienceYears = doctor.ExperienceYears;
+                existingDoctor.ProfileImageUrl = doctor.ProfileImageUrl;
+                existingDoctor.NationalCode = doctor.NationalCode;
+                existingDoctor.MedicalCouncilCode = doctor.MedicalCouncilCode;
                 existingDoctor.IsActive = doctor.IsActive;
                 existingDoctor.UpdatedAt = DateTime.Now;
                 existingDoctor.UpdatedByUserId = doctor.UpdatedByUserId;
@@ -276,6 +307,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 var query = _context.Doctors
                     .Where(d => !d.IsDeleted)
+                    .Include(d => d.Specializations)
                     .AsQueryable();
 
                 // اعمال فیلترهای جستجو
@@ -287,7 +319,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         d.LastName.Contains(searchTerm) ||
                         (d.NationalCode != null && d.NationalCode.Contains(searchTerm)) ||
                         (d.MedicalCouncilCode != null && d.MedicalCouncilCode.Contains(searchTerm)) ||
-                        (d.Specialization != null && d.Specialization.Contains(searchTerm))
+                        (d.University != null && d.University.Contains(searchTerm)) ||
+                        d.Specializations.Any(s => s.Name.Contains(searchTerm))
                     );
                 }
 
@@ -298,7 +331,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 if (!string.IsNullOrWhiteSpace(filter.Specialization))
                 {
-                    query = query.Where(d => d.Specialization != null && d.Specialization.Contains(filter.Specialization));
+                    query = query.Where(d => d.Specializations.Any(s => s.Name.Contains(filter.Specialization)));
                 }
 
                 // مرتب‌سازی
@@ -316,8 +349,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         break;
                     case "specialization":
                         query = filter.SortOrder == "desc" 
-                            ? query.OrderByDescending(d => d.Specialization)
-                            : query.OrderBy(d => d.Specialization);
+                            ? query.OrderByDescending(d => d.Specializations.FirstOrDefault().Name)
+                            : query.OrderBy(d => d.Specializations.FirstOrDefault().Name);
                         break;
                     case "createdat":
                         query = filter.SortOrder == "desc" 
@@ -365,7 +398,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         d.LastName.Contains(searchTerm) ||
                         (d.NationalCode != null && d.NationalCode.Contains(searchTerm)) ||
                         (d.MedicalCouncilCode != null && d.MedicalCouncilCode.Contains(searchTerm)) ||
-                        (d.Specialization != null && d.Specialization.Contains(searchTerm))
+                        (d.University != null && d.University.Contains(searchTerm)) ||
+                        d.Specializations.Any(s => s.Name.Contains(searchTerm))
                     );
                 }
 
@@ -376,7 +410,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 if (!string.IsNullOrWhiteSpace(filter.Specialization))
                 {
-                    query = query.Where(d => d.Specialization != null && d.Specialization.Contains(filter.Specialization));
+                    query = query.Where(d => d.Specializations.Any(s => s.Name.Contains(filter.Specialization)));
                 }
 
                 return await query.CountAsync();
