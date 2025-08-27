@@ -1,0 +1,641 @@
+/* 🏥 Medical Forms CSS - استانداردهای فرم‌های درمانی کلینیک شفا */
+
+:root {
+    /* رنگ‌های استاندارد درمانی */
+    --medical-primary: #2c6e7d;
+    --medical-secondary: #4a9da9;
+    --medical-success: #28a745;
+    --medical-danger: #dc3545;
+    --medical-warning: #ffc107;
+    --medical-info: #17a2b8;
+    --medical-light: #f8f9fa;
+    --medical-dark: #2d3748;
+    --medical-border: #dee2e6;
+    --medical-focus: rgba(44, 110, 125, 0.25);
+    --medical-shadow: 0 4px 20px rgba(44, 110, 125, 0.15);
+    
+    /* اندازه‌های استاندارد */
+    --form-font-size: 16px;
+    --form-line-height: 1.7;
+    --form-border-radius: 10px;
+    --form-padding: 1rem;
+    --form-margin: 1.5rem;
+    
+    /* انیمیشن‌ها */
+    --form-transition: all 0.3s ease-in-out;
+}
+
+/* ===== کانتینر اصلی فرم‌های درمانی ===== */
+.medical-form-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    box-shadow: var(--medical-shadow);
+    border: 1px solid var(--medical-border);
+    margin-bottom: var(--form-margin);
+}
+
+.medical-form-header {
+    background: linear-gradient(135deg, var(--medical-primary), var(--medical-secondary));
+    color: white;
+    padding: 1.5rem;
+    border-radius: 10px 10px 0 0;
+    margin: -2rem -2rem 2rem -2rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.medical-form-header h3 {
+    margin: 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+}
+
+.medical-form-header .icon {
+    font-size: 1.8rem;
+    opacity: 0.9;
+}
+
+/* ===== گروه‌بندی فیلدها ===== */
+.form-section {
+    background: var(--medical-light);
+    border-radius: var(--form-border-radius);
+    padding: 1.5rem;
+    margin-bottom: var(--form-margin);
+    border: 1px solid var(--medical-border);
+}
+
+.form-section-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid var(--medical-primary);
+}
+
+.form-section-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: var(--medical-primary);
+}
+
+.form-section-header .icon {
+    color: var(--medical-primary);
+    font-size: 1.3rem;
+}
+
+/* ===== فیلدهای فرم ===== */
+.form-group-medical {
+    margin-bottom: 1.5rem;
+    position: relative;
+}
+
+.form-label-medical {
+    font-weight: 600;
+    color: var(--medical-dark);
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: var(--form-font-size);
+    line-height: var(--form-line-height);
+}
+
+.form-label-medical .required {
+    color: var(--medical-danger);
+    font-weight: bold;
+}
+
+.form-label-medical .icon {
+    width: 20px;
+    text-align: center;
+    color: var(--medical-primary);
+}
+
+.form-control-medical {
+    border: 2px solid var(--medical-border);
+    border-radius: var(--form-border-radius);
+    padding: 0.875rem 1rem;
+    font-size: var(--form-font-size);
+    line-height: var(--form-line-height);
+    transition: var(--form-transition);
+    background: white;
+    width: 100%;
+    position: relative;
+}
+
+.form-control-medical:focus {
+    border-color: var(--medical-primary);
+    box-shadow: 0 0 0 0.2rem var(--medical-focus);
+    outline: none;
+    transform: translateY(-1px);
+}
+
+.form-control-medical:valid {
+    border-color: var(--medical-success);
+}
+
+.form-control-medical.is-invalid {
+    border-color: var(--medical-danger);
+    box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+}
+
+.form-control-medical::placeholder {
+    color: #6c757d;
+    opacity: 0.7;
+    font-style: italic;
+}
+
+/* ===== گروه‌های ورودی ===== */
+.input-group-medical {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+}
+
+.input-group-medical .form-control-medical {
+    border-radius: 0 var(--form-border-radius) var(--form-border-radius) 0;
+}
+
+.input-group-medical .input-group-text {
+    background: var(--medical-light);
+    border: 2px solid var(--medical-border);
+    border-right: none;
+    border-radius: var(--form-border-radius) 0 0 var(--form-border-radius);
+    padding: 0.875rem 1rem;
+    color: var(--medical-primary);
+    font-weight: 600;
+}
+
+/* ===== اعتبارسنجی ===== */
+.validation-message {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.validation-message.error {
+    color: var(--medical-danger);
+}
+
+.validation-message.success {
+    color: var(--medical-success);
+}
+
+.validation-message.warning {
+    color: var(--medical-warning);
+}
+
+.validation-summary {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    border-radius: var(--form-border-radius);
+    padding: 1rem;
+    margin-bottom: var(--form-margin);
+}
+
+.validation-summary.error {
+    background: #f8d7da;
+    border-color: #f5c6cb;
+}
+
+.validation-summary h6 {
+    color: var(--medical-danger);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.validation-summary ul {
+    margin: 0;
+    padding-right: 1.5rem;
+}
+
+/* ===== دکمه‌های استاندارد درمانی ===== */
+.btn-medical {
+    border-radius: var(--form-border-radius);
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    font-size: var(--form-font-size);
+    transition: var(--form-transition);
+    border: 2px solid transparent;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-medical-primary {
+    background: var(--medical-primary);
+    color: white;
+    border-color: var(--medical-primary);
+}
+
+.btn-medical-primary:hover {
+    background: var(--medical-secondary);
+    border-color: var(--medical-secondary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--medical-shadow);
+}
+
+.btn-medical-success {
+    background: var(--medical-success);
+    color: white;
+    border-color: var(--medical-success);
+}
+
+.btn-medical-success:hover {
+    background: #218838;
+    border-color: #218838;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--medical-shadow);
+}
+
+.btn-medical-danger {
+    background: var(--medical-danger);
+    color: white;
+    border-color: var(--medical-danger);
+}
+
+.btn-medical-danger:hover {
+    background: #c82333;
+    border-color: #c82333;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--medical-shadow);
+}
+
+.btn-medical-secondary {
+    background: #6c757d;
+    color: white;
+    border-color: #6c757d;
+}
+
+.btn-medical-secondary:hover {
+    background: #5a6268;
+    border-color: #5a6268;
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--medical-shadow);
+}
+
+.btn-medical:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* ===== دکمه‌های عملیات ===== */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--medical-border);
+    margin-top: 2rem;
+}
+
+.form-actions .btn-medical {
+    min-width: 120px;
+    justify-content: center;
+}
+
+/* ===== آیکون‌های کمک ===== */
+.help-icon {
+    color: var(--medical-info);
+    cursor: help;
+    margin-right: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.help-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+    font-style: italic;
+}
+
+/* ===== مودال‌های درمانی ===== */
+.modal-medical .modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: var(--medical-shadow);
+}
+
+.modal-medical .modal-header {
+    background: linear-gradient(135deg, var(--medical-primary), var(--medical-secondary));
+    color: white;
+    border-radius: 15px 15px 0 0;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-medical .modal-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.modal-medical .modal-body {
+    padding: 2rem;
+}
+
+.modal-medical .modal-footer {
+    border-top: 1px solid var(--medical-border);
+    padding: 1.5rem;
+    background: var(--medical-light);
+    border-radius: 0 0 15px 15px;
+}
+
+/* ===== آکاردئون برای اطلاعات پیشرفته ===== */
+.accordion-medical .accordion-item {
+    border: 1px solid var(--medical-border);
+    border-radius: var(--form-border-radius);
+    margin-bottom: 1rem;
+}
+
+.accordion-medical .accordion-header {
+    background: var(--medical-light);
+}
+
+.accordion-medical .accordion-button {
+    background: var(--medical-light);
+    border: none;
+    color: var(--medical-primary);
+    font-weight: 600;
+    padding: 1rem 1.5rem;
+}
+
+.accordion-medical .accordion-button:not(.collapsed) {
+    background: var(--medical-primary);
+    color: white;
+}
+
+.accordion-medical .accordion-body {
+    padding: 1.5rem;
+    background: white;
+}
+
+/* ===== لودینگ و وضعیت‌ها ===== */
+.loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: var(--form-border-radius);
+    z-index: 10;
+}
+
+.spinner-medical {
+    width: 40px;
+    height: 40px;
+    border: 4px solid var(--medical-border);
+    border-top: 4px solid var(--medical-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== ریسپانسیو ===== */
+@media (max-width: 768px) {
+    .medical-form-container {
+        padding: 1rem;
+        margin: 0;
+        border-radius: 0;
+    }
+    
+    .medical-form-header {
+        margin: -1rem -1rem 1rem -1rem;
+        padding: 1rem;
+        border-radius: 0;
+    }
+    
+    .form-section {
+        padding: 1rem;
+    }
+    
+    .form-actions {
+        flex-direction: column;
+    }
+    
+    .form-actions .btn-medical {
+        width: 100%;
+    }
+    
+    .modal-medical .modal-body {
+        padding: 1rem;
+    }
+}
+
+/* ===== دسترسی‌پذیری ===== */
+.form-control-medical:focus-visible {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 2px;
+}
+
+.btn-medical:focus-visible {
+    outline: 2px solid var(--medical-primary);
+    outline-offset: 2px;
+}
+
+/* ===== حالت‌های مختلف ===== */
+.form-control-medical[readonly] {
+    background: var(--medical-light);
+    cursor: not-allowed;
+}
+
+.form-control-medical[disabled] {
+    background: var(--medical-light);
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* ===== انیمیشن‌های ورود ===== */
+.form-group-medical {
+    animation: slideInUp 0.3s ease-out;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===== استایل‌های خاص برای فیلدهای مختلف ===== */
+.form-control-medical[type="date"] {
+    font-family: inherit;
+}
+
+.form-control-medical[type="number"] {
+    text-align: left;
+}
+
+.form-control-medical[type="tel"] {
+    direction: ltr;
+    text-align: left;
+}
+
+/* ===== استایل برای Select2 ===== */
+.select2-container--medical .select2-selection--single {
+    border: 2px solid var(--medical-border);
+    border-radius: var(--form-border-radius);
+    height: auto;
+    padding: 0.875rem 1rem;
+    font-size: var(--form-font-size);
+}
+
+.select2-container--medical .select2-selection--single:focus {
+    border-color: var(--medical-primary);
+    box-shadow: 0 0 0 0.2rem var(--medical-focus);
+}
+
+.select2-container--medical .select2-selection__rendered {
+    color: var(--medical-dark);
+    padding: 0;
+}
+
+.select2-container--medical .select2-selection__placeholder {
+    color: #6c757d;
+    opacity: 0.7;
+    font-style: italic;
+}
+
+/* ===== استایل برای DataTables ===== */
+.dataTables_wrapper .dataTables_filter input {
+    border: 2px solid var(--medical-border);
+    border-radius: var(--form-border-radius);
+    padding: 0.5rem 1rem;
+    font-size: var(--form-font-size);
+}
+
+.dataTables_wrapper .dataTables_filter input:focus {
+    border-color: var(--medical-primary);
+    box-shadow: 0 0 0 0.2rem var(--medical-focus);
+    outline: none;
+}
+
+/* ===== استایل برای Toast Notifications ===== */
+.toast-medical {
+    border-radius: var(--form-border-radius);
+    border: none;
+    box-shadow: var(--medical-shadow);
+}
+
+.toast-medical .toast-header {
+    background: var(--medical-primary);
+    color: white;
+    border-bottom: none;
+}
+
+.toast-medical .toast-body {
+    padding: 1rem;
+    font-size: var(--form-font-size);
+}
+
+/* ===== استایل برای Tooltips ===== */
+.tooltip-medical .tooltip-inner {
+    background: var(--medical-dark);
+    border-radius: var(--form-border-radius);
+    font-size: 0.875rem;
+    padding: 0.5rem 1rem;
+}
+
+.tooltip-medical .tooltip-arrow::before {
+    border-top-color: var(--medical-dark);
+}
+
+/* ===== استایل برای Progress Bars ===== */
+.progress-medical {
+    height: 8px;
+    border-radius: 4px;
+    background: var(--medical-light);
+    overflow: hidden;
+}
+
+.progress-medical .progress-bar {
+    background: linear-gradient(90deg, var(--medical-primary), var(--medical-secondary));
+    transition: width 0.3s ease;
+}
+
+/* ===== استایل برای Badges ===== */
+.badge-medical {
+    font-size: 0.75rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 20px;
+    font-weight: 600;
+}
+
+.badge-medical-primary {
+    background: var(--medical-primary);
+    color: white;
+}
+
+.badge-medical-success {
+    background: var(--medical-success);
+    color: white;
+}
+
+.badge-medical-danger {
+    background: var(--medical-danger);
+    color: white;
+}
+
+.badge-medical-warning {
+    background: var(--medical-warning);
+    color: var(--medical-dark);
+}
+
+/* ===== استایل برای Alerts ===== */
+.alert-medical {
+    border-radius: var(--form-border-radius);
+    border: none;
+    padding: 1rem 1.5rem;
+    margin-bottom: var(--form-margin);
+}
+
+.alert-medical-primary {
+    background: rgba(44, 110, 125, 0.1);
+    color: var(--medical-primary);
+    border-left: 4px solid var(--medical-primary);
+}
+
+.alert-medical-success {
+    background: rgba(40, 167, 69, 0.1);
+    color: var(--medical-success);
+    border-left: 4px solid var(--medical-success);
+}
+
+.alert-medical-danger {
+    background: rgba(220, 53, 69, 0.1);
+    color: var(--medical-danger);
+    border-left: 4px solid var(--medical-danger);
+}
+
+.alert-medical-warning {
+    background: rgba(255, 193, 7, 0.1);
+    color: var(--medical-warning);
+    border-left: 4px solid var(--medical-warning);
+}

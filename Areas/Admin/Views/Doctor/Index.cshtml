@@ -1,0 +1,498 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorIndexViewModel
+@{
+    ViewBag.Title = "مدیریت پزشکان";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/datatables/dataTables.bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/plugins/datatables/responsive.bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert/sweetalert.css" rel="stylesheet" />
+    <style>
+        .doctor-card {
+            border: 1px solid #e3e6f0;
+            border-radius: 0.35rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: all 0.3s ease;
+        }
+        .doctor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        .doctor-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #4e73df;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .search-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .btn-action {
+            margin: 0.125rem;
+            font-size: 0.875rem;
+        }
+        .table-responsive {
+            border-radius: 0.35rem;
+            overflow: hidden;
+        }
+        .pagination-info {
+            font-size: 0.875rem;
+            color: #858796;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-md text-primary"></i>
+            مدیریت پزشکان
+        </h1>
+        <a href="@Url.Action("Create", "Doctor")" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus"></i>
+            افزودن پزشک جدید
+        </a>
+    </div>
+
+    <!-- Search Panel -->
+    <div class="search-panel">
+        <form method="get" id="searchForm">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="SearchTerm" class="text-white">جستجو</label>
+                        <input type="text" class="form-control" id="SearchTerm" name="SearchTerm" 
+                               value="@Model.SearchModel.SearchTerm" placeholder="نام، کد ملی، شماره نظام پزشکی...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="Specialization" class="text-white">تخصص</label>
+                        <select class="form-control" id="Specialization" name="Specialization">
+                            <option value="">همه تخصص‌ها</option>
+                            <option value="داخلی" @(Model.SearchModel.Specialization == "داخلی" ? "selected" : "")>داخلی</option>
+                            <option value="جراحی" @(Model.SearchModel.Specialization == "جراحی" ? "selected" : "")>جراحی</option>
+                            <option value="قلب" @(Model.SearchModel.Specialization == "قلب" ? "selected" : "")>قلب</option>
+                            <option value="عصب" @(Model.SearchModel.Specialization == "عصب" ? "selected" : "")>عصب</option>
+                            <option value="کودکان" @(Model.SearchModel.Specialization == "کودکان" ? "selected" : "")>کودکان</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="Status" class="text-white">وضعیت</label>
+                        <select class="form-control" id="Status" name="Status">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="true" @(Model.SearchModel.IsActive == true ? "selected" : "")>فعال</option>
+                            <option value="false" @(Model.SearchModel.IsActive == false ? "selected" : "")>غیرفعال</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="form-group">
+                        <label for="SortBy" class="text-white">مرتب‌سازی</label>
+                        <select class="form-control" id="SortBy" name="SortBy">
+                            <option value="Name" @(Model.SearchModel.SortBy == "Name" ? "selected" : "")>نام</option>
+                            <option value="Specialization" @(Model.SearchModel.SortBy == "Specialization" ? "selected" : "")>تخصص</option>
+                            <option value="CreatedAt" @(Model.SearchModel.SortBy == "CreatedAt" ? "selected" : "")>تاریخ ثبت</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="text-white">&nbsp;</label>
+                        <div class="d-flex">
+                            <button type="submit" class="btn btn-light btn-block">
+                                <i class="fas fa-search"></i>
+                                جستجو
+                            </button>
+                            <button type="button" class="btn btn-outline-light ml-2" onclick="resetSearch()">
+                                <i class="fas fa-undo"></i>
+                                پاک کردن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                کل پزشکان
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TotalCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                پزشکان فعال
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.ActiveCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                پزشکان غیرفعال
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.InactiveCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-pause-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                پزشکان جدید (امروز)
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">@Model.TodayCount</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-day fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctors Table -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list"></i>
+                لیست پزشکان
+            </h6>
+            <div class="dropdown no-arrow">
+                <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" 
+                   data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fas fa-ellipsis-v fa-sm fa-fw text-gray-400"></i>
+                </a>
+                <div class="dropdown-menu dropdown-menu-right shadow animated--fade-in" aria-labelledby="dropdownMenuLink">
+                    <div class="dropdown-header">عملیات:</div>
+                    <a class="dropdown-item" href="#" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel fa-sm fa-fw mr-2 text-gray-400"></i>
+                        خروجی Excel
+                    </a>
+                    <a class="dropdown-item" href="#" onclick="printTable()">
+                        <i class="fas fa-print fa-sm fa-fw mr-2 text-gray-400"></i>
+                        چاپ
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model.Doctors != null && Model.Doctors.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="doctorsTable">
+                        <thead class="thead-light">
+                            <tr>
+                                <th width="50">
+                                    <input type="checkbox" id="selectAll" />
+                                </th>
+                                <th>تصویر</th>
+                                <th>نام و نام خانوادگی</th>
+                                <th>کد ملی</th>
+                                <th>شماره نظام پزشکی</th>
+                                <th>تخصص</th>
+                                <th>وضعیت</th>
+                                <th>تاریخ ثبت</th>
+                                <th width="200">عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var doctor in Model.Doctors)
+                            {
+                                <tr>
+                                    <td>
+                                        <input type="checkbox" class="doctor-checkbox" value="@doctor.Id" />
+                                    </td>
+                                    <td>
+                                        <img src="@(string.IsNullOrEmpty(doctor.ProfileImageUrl) ? "/Content/Images/default-avatar.png" : doctor.ProfileImageUrl)" 
+                                             class="doctor-avatar" alt="@doctor.FullName" />
+                                    </td>
+                                    <td>
+                                        <strong>@doctor.FullName</strong>
+                                        @if (!string.IsNullOrEmpty(doctor.Email))
+                                        {
+                                            <br />
+                                            <small class="text-muted">
+                                                <i class="fas fa-envelope"></i>
+                                                @doctor.Email
+                                            </small>
+                                        }
+                                    </td>
+                                    <td>@doctor.NationalCode</td>
+                                    <td>@doctor.MedicalCouncilCode</td>
+                                    <td>
+                                        <span class="badge badge-info">@doctor.Specialization</span>
+                                    </td>
+                                    <td>
+                                        @if (doctor.IsActive)
+                                        {
+                                            <span class="badge badge-success status-badge">
+                                                <i class="fas fa-check"></i>
+                                                فعال
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger status-badge">
+                                                <i class="fas fa-times"></i>
+                                                غیرفعال
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <small>@doctor.CreatedAtShamsi</small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", "Doctor", new { id = doctor.Id })" 
+                                               class="btn btn-info btn-action" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <a href="@Url.Action("Edit", "Doctor", new { id = doctor.Id })" 
+                                               class="btn btn-warning btn-action" title="ویرایش">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <a href="@Url.Action("Assignments", "DoctorAssignment", new { doctorId = doctor.Id })" 
+                                               class="btn btn-primary btn-action" title="انتصابات">
+                                                <i class="fas fa-link"></i>
+                                            </a>
+                                            <a href="@Url.Action("Schedule", "DoctorSchedule", new { doctorId = doctor.Id })" 
+                                               class="btn btn-success btn-action" title="برنامه کاری">
+                                                <i class="fas fa-calendar"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-danger btn-action" 
+                                                    onclick="deleteDoctor(@doctor.Id, '@doctor.FullName')" title="حذف">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination -->
+                @if (Model.TotalPages > 1)
+                {
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="pagination-info">
+                            نمایش @((Model.SearchModel.PageNumber - 1) * Model.SearchModel.PageSize + 1) 
+                            تا @Math.Min(Model.SearchModel.PageNumber * Model.SearchModel.PageSize, Model.TotalCount) 
+                            از @Model.TotalCount رکورد
+                        </div>
+                        <nav aria-label="صفحه‌بندی">
+                            <ul class="pagination">
+                                @if (Model.SearchModel.PageNumber > 1)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber - 1, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </a>
+                                    </li>
+                                }
+
+                                @for (int i = Math.Max(1, Model.SearchModel.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.SearchModel.PageNumber + 2); i++)
+                                {
+                                    <li class="page-item @(i == Model.SearchModel.PageNumber ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
+                                            @i
+                                        </a>
+                                    </li>
+                                }
+
+                                @if (Model.SearchModel.PageNumber < Model.TotalPages)
+                                {
+                                    <li class="page-item">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber + 1, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+                        </nav>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-user-md fa-3x text-gray-300 mb-3"></i>
+                    <h5 class="text-gray-500">هیچ پزشکی یافت نشد</h5>
+                    <p class="text-gray-400">برای شروع، یک پزشک جدید اضافه کنید.</p>
+                    <a href="@Url.Action("Create", "Doctor")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        افزودن پزشک جدید
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Content/plugins/datatables/dataTables.bootstrap.min.js"></script>
+    <script src="~/Content/plugins/sweetalert/sweetalert.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize DataTable
+            $('#doctorsTable').DataTable({
+                "language": {
+                    "url": "/Content/plugins/datatables/Persian.json"
+                },
+                "pageLength": 25,
+                "order": [[2, "asc"]],
+                "responsive": true,
+                "dom": '<"top"lf>rt<"bottom"ip><"clear">'
+            });
+
+            // Select All functionality
+            $('#selectAll').change(function () {
+                $('.doctor-checkbox').prop('checked', $(this).is(':checked'));
+            });
+
+            // Update select all when individual checkboxes change
+            $('.doctor-checkbox').change(function () {
+                if (!$(this).is(':checked')) {
+                    $('#selectAll').prop('checked', false);
+                } else {
+                    var allChecked = $('.doctor-checkbox:checked').length === $('.doctor-checkbox').length;
+                    $('#selectAll').prop('checked', allChecked);
+                }
+            });
+        });
+
+        function resetSearch() {
+            $('#SearchTerm').val('');
+            $('#Specialization').val('');
+            $('#Status').val('');
+            $('#SortBy').val('Name');
+            $('#searchForm').submit();
+        }
+
+        function deleteDoctor(id, name) {
+            swal({
+                title: "آیا مطمئن هستید؟",
+                text: `پزشک "${name}" حذف خواهد شد. این عملیات قابل بازگشت نیست.`,
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "بله، حذف کن!",
+                cancelButtonText: "انصراف",
+                closeOnConfirm: false,
+                closeOnCancel: false
+            }, function (isConfirm) {
+                if (isConfirm) {
+                    $.ajax({
+                        url: '@Url.Action("Delete", "Doctor")',
+                        type: 'POST',
+                        data: { id: id },
+                        success: function (result) {
+                            if (result.success) {
+                                swal("حذف شد!", "پزشک با موفقیت حذف شد.", "success");
+                                setTimeout(function () {
+                                    location.reload();
+                                }, 1500);
+                            } else {
+                                swal("خطا!", result.message, "error");
+                            }
+                        },
+                        error: function () {
+                            swal("خطا!", "خطا در ارتباط با سرور.", "error");
+                        }
+                    });
+                }
+            });
+        }
+
+        function exportToExcel() {
+            var searchParams = $('#searchForm').serialize();
+            window.open('@Url.Action("ExportToExcel", "Doctor")?' + searchParams, '_blank');
+        }
+
+        function printTable() {
+            window.print();
+        }
+
+        // Bulk operations
+        function bulkDelete() {
+            var selectedIds = $('.doctor-checkbox:checked').map(function () {
+                return $(this).val();
+            }).get();
+
+            if (selectedIds.length === 0) {
+                swal("هشدار!", "لطفاً حداقل یک پزشک را انتخاب کنید.", "warning");
+                return;
+            }
+
+            swal({
+                title: "آیا مطمئن هستید؟",
+                text: `${selectedIds.length} پزشک انتخاب شده حذف خواهند شد.`,
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#d33",
+                cancelButtonColor: "#3085d6",
+                confirmButtonText: "بله، حذف کن!",
+                cancelButtonText: "انصراف"
+            }, function (isConfirm) {
+                if (isConfirm) {
+                    // Implement bulk delete
+                    console.log('Bulk delete:', selectedIds);
+                }
+            });
+        }
+    </script>
+}

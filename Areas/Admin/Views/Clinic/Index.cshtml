@@ -372,9 +372,9 @@
                 </div>
                 <div class="col-md-4">
                     <button class="btn btn-medical w-100" type="submit">
-                        <i class="fas fa-search"></i>
+                            <i class="fas fa-search"></i>
                         جستجو
-                    </button>
+                        </button>
                     </div>
                 </form>
             </div>
@@ -928,8 +928,8 @@
                                 // ✅ امکان حذف وجود دارد
                                 clinicNameToDelete.text(clinicName);
                                 const deleteUrl = `@Url.Action("Delete", "Clinic")/${clinicId}`;
-                                deleteForm.attr('action', deleteUrl);
-                                deleteModal.show();
+                deleteForm.attr('action', deleteUrl);
+                deleteModal.show();
                             } else {
                                 console.log('🏥 MEDICAL: امکان حذف وجود ندارد - نمایش هشدار');
                                 // ❌ امکان حذف وجود ندارد - نمایش جزئیات وابستگی‌ها
@@ -1111,7 +1111,7 @@
             @if (Model?.Items == null || !Model.Items.Any())
             {
                 <text>
-                fetchClinics();
+            fetchClinics();
                 </text>
             }
             else

@@ -3166,6 +3166,8 @@
     <Content Include="Areas\Admin\Views\Service\Report.cshtml" />
     <Content Include="FINAL_FIX_SUMMARY.md" />
     <Content Include="MEDICAL_TROUBLESHOOTING.md" />
+    <Content Include="Areas\Admin\Views\Doctor\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Doctor\Create.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3407,7 +3409,11 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Admin\Views\Doctor\" />
+    <Folder Include="Areas\Admin\Views\DoctorAssignment\" />
+    <Folder Include="Areas\Admin\Views\DoctorDepartment\" />
+    <Folder Include="Areas\Admin\Views\DoctorReporting\" />
+    <Folder Include="Areas\Admin\Views\DoctorSchedule\" />
+    <Folder Include="Areas\Admin\Views\DoctorServiceCategory\" />
     <Folder Include="Areas\Receptionist\Data\" />
     <Folder Include="Areas\Receptionist\Views\Reception\" />
     <Folder Include="Constants\" />

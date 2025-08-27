@@ -1,0 +1,385 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .doctor-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 0.35rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .doctor-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        .info-card {
+            background: #f8f9fc;
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e3e6f0;
+        }
+        .info-card h5 {
+            color: #4e73df;
+            border-bottom: 2px solid #4e73df;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .info-item {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: white;
+            border-radius: 0.25rem;
+            border-right: 4px solid #4e73df;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #5a5c69;
+            margin-left: 0.5rem;
+        }
+        .info-value {
+            color: #858796;
+        }
+        .status-badge {
+            font-size: 0.875rem;
+            padding: 0.5rem 1rem;
+        }
+        .stats-card {
+            background: white;
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border: 1px solid #e3e6f0;
+        }
+        .stats-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #4e73df;
+        }
+        .stats-label {
+            color: #858796;
+            font-size: 0.875rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-md text-primary"></i>
+            جزئیات پزشک
+        </h1>
+        <div>
+            <a href="@Url.Action("Edit", "Doctor", new { id = Model.Id })" class="btn btn-warning btn-sm">
+                <i class="fas fa-edit"></i>
+                ویرایش
+            </a>
+            <a href="@Url.Action("Assignments", "DoctorAssignment", new { doctorId = Model.Id })" class="btn btn-primary btn-sm">
+                <i class="fas fa-link"></i>
+                انتصابات
+            </a>
+            <a href="@Url.Action("Schedule", "DoctorSchedule", new { doctorId = Model.Id })" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar"></i>
+                برنامه کاری
+            </a>
+            <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right"></i>
+                بازگشت به لیست
+            </a>
+        </div>
+    </div>
+
+    <!-- Doctor Header -->
+    <div class="doctor-header">
+        <div class="row align-items-center">
+            <div class="col-md-2 text-center">
+                <img src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/Content/Images/default-avatar.png" : Model.ProfileImageUrl)" 
+                     class="doctor-avatar" alt="@Model.FullName" />
+            </div>
+            <div class="col-md-8">
+                <h2 class="mb-2">@Model.FullName</h2>
+                <p class="mb-1">
+                    <i class="fas fa-stethoscope"></i>
+                    <span class="info-label">تخصص:</span>
+                    <span class="info-value">@Model.Specialization</span>
+                </p>
+                <p class="mb-1">
+                    <i class="fas fa-id-card"></i>
+                    <span class="info-label">کد ملی:</span>
+                    <span class="info-value">@Model.NationalCode</span>
+                </p>
+                <p class="mb-1">
+                    <i class="fas fa-phone"></i>
+                    <span class="info-label">تلفن:</span>
+                    <span class="info-value">@Model.PhoneNumber</span>
+                </p>
+            </div>
+            <div class="col-md-2 text-center">
+                @if (Model.IsActive)
+                {
+                    <span class="badge badge-success status-badge">
+                        <i class="fas fa-check"></i>
+                        فعال
+                    </span>
+                }
+                else
+                {
+                    <span class="badge badge-danger status-badge">
+                        <i class="fas fa-times"></i>
+                        غیرفعال
+                    </span>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="text-center">
+                    <div class="stats-number">@Model.TotalAppointments</div>
+                    <div class="stats-label">کل نوبت‌ها</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="text-center">
+                    <div class="stats-number">@Model.TodayAppointments</div>
+                    <div class="stats-label">نوبت‌های امروز</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="text-center">
+                    <div class="stats-number">@Model.DepartmentCount</div>
+                    <div class="stats-label">تعداد بخش‌ها</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="text-center">
+                    <div class="stats-number">@Model.ServiceCategoryCount</div>
+                    <div class="stats-label">تعداد خدمات</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Personal Information -->
+        <div class="col-md-6">
+            <div class="info-card">
+                <h5>
+                    <i class="fas fa-user"></i>
+                    اطلاعات شخصی
+                </h5>
+                <div class="info-item">
+                    <i class="fas fa-user"></i>
+                    <span class="info-label">نام و نام خانوادگی:</span>
+                    <span class="info-value">@Model.FullName</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-id-card"></i>
+                    <span class="info-label">کد ملی:</span>
+                    <span class="info-value">@Model.NationalCode</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-envelope"></i>
+                    <span class="info-label">ایمیل:</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.Email) ? "ثبت نشده" : Model.Email)</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-phone"></i>
+                    <span class="info-label">شماره تلفن:</span>
+                    <span class="info-value">@Model.PhoneNumber</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-map-marker-alt"></i>
+                    <span class="info-label">آدرس:</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.Address) ? "ثبت نشده" : Model.Address)</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-phone-square"></i>
+                    <span class="info-label">تماس اضطراری:</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.EmergencyContact) ? "ثبت نشده" : Model.EmergencyContact)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Information -->
+        <div class="col-md-6">
+            <div class="info-card">
+                <h5>
+                    <i class="fas fa-stethoscope"></i>
+                    اطلاعات حرفه‌ای
+                </h5>
+                <div class="info-item">
+                    <i class="fas fa-stethoscope"></i>
+                    <span class="info-label">تخصص:</span>
+                    <span class="info-value">@Model.Specialization</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-certificate"></i>
+                    <span class="info-label">شماره نظام پزشکی:</span>
+                    <span class="info-value">@Model.MedicalCouncilCode</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-id-badge"></i>
+                    <span class="info-label">شماره پروانه:</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.LicenseNumber) ? "ثبت نشده" : Model.LicenseNumber)</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-graduation-cap"></i>
+                    <span class="info-label">تحصیلات:</span>
+                    <span class="info-value">@(string.IsNullOrEmpty(Model.Education) ? "ثبت نشده" : Model.Education)</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <span class="info-label">سال‌های تجربه:</span>
+                    <span class="info-value">@(Model.ExperienceYears.HasValue ? Model.ExperienceYears.Value.ToString() + " سال" : "ثبت نشده")</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span class="info-label">سطح امنیتی:</span>
+                    <span class="info-value">@Model.SecurityLevel</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Biography -->
+    @if (!string.IsNullOrEmpty(Model.Biography))
+    {
+        <div class="info-card">
+            <h5>
+                <i class="fas fa-file-alt"></i>
+                بیوگرافی
+            </h5>
+            <div class="info-item">
+                <p class="mb-0">@Model.Biography</p>
+            </div>
+        </div>
+    }
+
+    <!-- Departments -->
+    @if (Model.Departments != null && Model.Departments.Any())
+    {
+        <div class="info-card">
+            <h5>
+                <i class="fas fa-hospital"></i>
+                بخش‌های مرتبط
+            </h5>
+            <div class="row">
+                @foreach (var dept in Model.Departments)
+                {
+                    <div class="col-md-4 mb-2">
+                        <div class="info-item">
+                            <i class="fas fa-hospital"></i>
+                            <span class="info-value">@dept.Name</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Service Categories -->
+    @if (Model.ServiceCategories != null && Model.ServiceCategories.Any())
+    {
+        <div class="info-card">
+            <h5>
+                <i class="fas fa-list-alt"></i>
+                خدمات مجاز
+            </h5>
+            <div class="row">
+                @foreach (var service in Model.ServiceCategories)
+                {
+                    <div class="col-md-4 mb-2">
+                        <div class="info-item">
+                            <i class="fas fa-list-alt"></i>
+                            <span class="info-value">@service.Name</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+
+    <!-- Audit Information -->
+    <div class="info-card">
+        <h5>
+            <i class="fas fa-history"></i>
+            اطلاعات ثبت
+        </h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-item">
+                    <i class="fas fa-calendar-plus"></i>
+                    <span class="info-label">تاریخ ایجاد:</span>
+                    <span class="info-value">@Model.CreatedAtShamsi</span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="info-item">
+                    <i class="fas fa-user-plus"></i>
+                    <span class="info-label">ایجاد کننده:</span>
+                    <span class="info-value">@Model.CreatedBy</span>
+                </div>
+            </div>
+        </div>
+        @if (Model.UpdatedAt.HasValue)
+        {
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <i class="fas fa-calendar-check"></i>
+                        <span class="info-label">آخرین ویرایش:</span>
+                        <span class="info-value">@Model.UpdatedAtShamsi</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <i class="fas fa-user-edit"></i>
+                        <span class="info-label">ویرایش کننده:</span>
+                        <span class="info-value">@Model.UpdatedBy</span>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-center mt-4">
+        <a href="@Url.Action("Edit", "Doctor", new { id = Model.Id })" class="btn btn-warning">
+            <i class="fas fa-edit"></i>
+            ویرایش پزشک
+        </a>
+        <a href="@Url.Action("Assignments", "DoctorAssignment", new { doctorId = Model.Id })" class="btn btn-primary">
+            <i class="fas fa-link"></i>
+            مدیریت انتصابات
+        </a>
+        <a href="@Url.Action("Schedule", "DoctorSchedule", new { doctorId = Model.Id })" class="btn btn-success">
+            <i class="fas fa-calendar"></i>
+            مدیریت برنامه کاری
+        </a>
+        <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary">
+            <i class="fas fa-arrow-right"></i>
+            بازگشت به لیست
+        </a>
+    </div>
+</div>

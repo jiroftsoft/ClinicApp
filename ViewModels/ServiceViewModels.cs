@@ -35,7 +35,7 @@ namespace ClinicApp.ViewModels
         // For context in the view
         public string DepartmentName { get; set; }
         public int ClinicId { get; set; }
-        
+
         // اطلاعات ردیابی (فقط برای خواندن)
         public DateTime CreatedAt { get; set; }
         public string CreatedBy { get; set; }

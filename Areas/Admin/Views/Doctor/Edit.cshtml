@@ -1,0 +1,227 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-edit text-primary"></i>
+            ویرایش پزشک
+        </h1>
+        <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-right"></i>
+            بازگشت به لیست
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger">
+            @Html.ValidationSummary(false)
+        </div>
+    }
+
+    <form method="post" enctype="multipart/form-data">
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.Id)
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">اطلاعات شخصی</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="FirstName">نام *</label>
+                            @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="LastName">نام خانوادگی *</label>
+                            @Html.TextBoxFor(m => m.LastName, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="NationalCode">کد ملی *</label>
+                            @Html.TextBoxFor(m => m.NationalCode, new { @class = "form-control", @readonly = "readonly" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="MedicalCouncilCode">شماره نظام پزشکی *</label>
+                            @Html.TextBoxFor(m => m.MedicalCouncilCode, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.MedicalCouncilCode, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="Email">ایمیل</label>
+                            @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email" })
+                            @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="PhoneNumber">شماره تلفن *</label>
+                            @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">اطلاعات حرفه‌ای</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="Specialization">تخصص *</label>
+                            @Html.DropDownListFor(m => m.Specialization, new SelectList(new[]
+                            {
+                                new { Value = "", Text = "انتخاب تخصص" },
+                                new { Value = "داخلی", Text = "داخلی" },
+                                new { Value = "جراحی", Text = "جراحی" },
+                                new { Value = "قلب", Text = "قلب" },
+                                new { Value = "عصب", Text = "عصب" },
+                                new { Value = "کودکان", Text = "کودکان" },
+                                new { Value = "زنان", Text = "زنان" },
+                                new { Value = "چشم", Text = "چشم" },
+                                new { Value = "گوش و حلق و بینی", Text = "گوش و حلق و بینی" },
+                                new { Value = "پوست", Text = "پوست" },
+                                new { Value = "روانپزشکی", Text = "روانپزشکی" },
+                                new { Value = "ارتوپدی", Text = "ارتوپدی" },
+                                new { Value = "اورولوژی", Text = "اورولوژی" },
+                                new { Value = "رادیولوژی", Text = "رادیولوژی" },
+                                new { Value = "آسیب‌شناسی", Text = "آسیب‌شناسی" },
+                                new { Value = "سایر", Text = "سایر" }
+                            }, "Value", "Text"), new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Specialization, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="LicenseNumber">شماره پروانه</label>
+                            @Html.TextBoxFor(m => m.LicenseNumber, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.LicenseNumber, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ExperienceYears">سال‌های تجربه</label>
+                            @Html.TextBoxFor(m => m.ExperienceYears, new { @class = "form-control", type = "number", min = "0", max = "50" })
+                            @Html.ValidationMessageFor(m => m.ExperienceYears, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="Education">تحصیلات</label>
+                            @Html.DropDownListFor(m => m.Education, new SelectList(new[]
+                            {
+                                new { Value = "", Text = "انتخاب تحصیلات" },
+                                new { Value = "پزشک عمومی", Text = "پزشک عمومی" },
+                                new { Value = "متخصص", Text = "متخصص" },
+                                new { Value = "فوق تخصص", Text = "فوق تخصص" },
+                                new { Value = "استاد", Text = "استاد" }
+                            }, "Value", "Text"), new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Education, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="form-group">
+                            <label for="Biography">بیوگرافی</label>
+                            @Html.TextAreaFor(m => m.Biography, new { @class = "form-control", rows = "4" })
+                            @Html.ValidationMessageFor(m => m.Biography, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">اطلاعات تماس</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="Address">آدرس</label>
+                            @Html.TextAreaFor(m => m.Address, new { @class = "form-control", rows = "3" })
+                            @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="EmergencyContact">شماره تماس اضطراری</label>
+                            @Html.TextBoxFor(m => m.EmergencyContact, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.EmergencyContact, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">تنظیمات</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="IsActive">وضعیت فعال</label>
+                            <div class="custom-control custom-switch">
+                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "IsActive" })
+                                <label class="custom-control-label" for="IsActive">
+                                    پزشک فعال است و می‌تواند نوبت‌دهی کند
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="SecurityLevel">سطح امنیتی</label>
+                            @Html.DropDownListFor(m => m.SecurityLevel, new SelectList(new[]
+                            {
+                                new { Value = "Normal", Text = "عادی" },
+                                new { Value = "High", Text = "بالا" },
+                                new { Value = "VeryHigh", Text = "خیلی بالا" }
+                            }, "Value", "Text"), new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.SecurityLevel, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary">
+                <i class="fas fa-times"></i>
+                انصراف
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i>
+                ذخیره تغییرات
+            </button>
+        </div>
+    </form>
+</div>

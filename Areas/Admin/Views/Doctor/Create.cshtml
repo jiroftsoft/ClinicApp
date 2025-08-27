@@ -1,0 +1,565 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorCreateEditViewModel
+@{
+    ViewBag.Title = "افزودن پزشک جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/dropzone/dropzone.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert/sweetalert.css" rel="stylesheet" />
+    <style>
+        .form-section {
+            background: #f8f9fc;
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e3e6f0;
+        }
+        .form-section h5 {
+            color: #4e73df;
+            border-bottom: 2px solid #4e73df;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .required-field::after {
+            content: " *";
+            color: #e74a3b;
+        }
+        .profile-image-container {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #4e73df;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        .dropzone {
+            border: 2px dashed #4e73df;
+            border-radius: 0.35rem;
+            background: #f8f9fc;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .dropzone:hover {
+            background: #eaecf4;
+            border-color: #2e59d9;
+        }
+        .validation-summary {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 0.35rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .validation-summary ul {
+            margin-bottom: 0;
+            padding-right: 1.5rem;
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #5a5c69;
+        }
+        .help-text {
+            font-size: 0.875rem;
+            color: #858796;
+            margin-top: 0.25rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Page Heading -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-plus text-primary"></i>
+            افزودن پزشک جدید
+        </h1>
+        <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-right"></i>
+            بازگشت به لیست
+        </a>
+    </div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="validation-summary">
+            <h6 class="text-danger">
+                <i class="fas fa-exclamation-triangle"></i>
+                خطاهای اعتبارسنجی:
+            </h6>
+            @Html.ValidationSummary(false, "", new { @class = "text-danger" })
+        </div>
+    }
+
+    <form method="post" enctype="multipart/form-data" id="doctorForm">
+        @Html.AntiForgeryToken()
+
+        <!-- Personal Information Section -->
+        <div class="form-section">
+            <h5>
+                <i class="fas fa-user"></i>
+                اطلاعات شخصی
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="FirstName" class="required-field">نام</label>
+                        @Html.TextBoxFor(m => m.FirstName, new { @class = "form-control", placeholder = "نام پزشک" })
+                        @Html.ValidationMessageFor(m => m.FirstName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="LastName" class="required-field">نام خانوادگی</label>
+                        @Html.TextBoxFor(m => m.LastName, new { @class = "form-control", placeholder = "نام خانوادگی پزشک" })
+                        @Html.ValidationMessageFor(m => m.LastName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="NationalCode" class="required-field">کد ملی</label>
+                        @Html.TextBoxFor(m => m.NationalCode, new { @class = "form-control", placeholder = "کد ملی 10 رقمی", maxlength = "10" })
+                        @Html.ValidationMessageFor(m => m.NationalCode, "", new { @class = "text-danger" })
+                        <div class="help-text">کد ملی باید 10 رقم باشد</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="MedicalCouncilCode" class="required-field">شماره نظام پزشکی</label>
+                        @Html.TextBoxFor(m => m.MedicalCouncilCode, new { @class = "form-control", placeholder = "شماره نظام پزشکی" })
+                        @Html.ValidationMessageFor(m => m.MedicalCouncilCode, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="Email">ایمیل</label>
+                        @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email", placeholder = "example@email.com" })
+                        @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="PhoneNumber" class="required-field">شماره تلفن</label>
+                        @Html.TextBoxFor(m => m.PhoneNumber, new { @class = "form-control", placeholder = "شماره تلفن" })
+                        @Html.ValidationMessageFor(m => m.PhoneNumber, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Professional Information Section -->
+        <div class="form-section">
+            <h5>
+                <i class="fas fa-stethoscope"></i>
+                اطلاعات حرفه‌ای
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="Specialization" class="required-field">تخصص</label>
+                        @Html.DropDownListFor(m => m.Specialization, new SelectList(new[]
+                        {
+                            new { Value = "", Text = "انتخاب تخصص" },
+                            new { Value = "داخلی", Text = "داخلی" },
+                            new { Value = "جراحی", Text = "جراحی" },
+                            new { Value = "قلب", Text = "قلب" },
+                            new { Value = "عصب", Text = "عصب" },
+                            new { Value = "کودکان", Text = "کودکان" },
+                            new { Value = "زنان", Text = "زنان" },
+                            new { Value = "چشم", Text = "چشم" },
+                            new { Value = "گوش و حلق و بینی", Text = "گوش و حلق و بینی" },
+                            new { Value = "پوست", Text = "پوست" },
+                            new { Value = "روانپزشکی", Text = "روانپزشکی" },
+                            new { Value = "ارتوپدی", Text = "ارتوپدی" },
+                            new { Value = "اورولوژی", Text = "اورولوژی" },
+                            new { Value = "رادیولوژی", Text = "رادیولوژی" },
+                            new { Value = "آسیب‌شناسی", Text = "آسیب‌شناسی" },
+                            new { Value = "سایر", Text = "سایر" }
+                        }, "Value", "Text"), new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Specialization, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="LicenseNumber">شماره پروانه</label>
+                        @Html.TextBoxFor(m => m.LicenseNumber, new { @class = "form-control", placeholder = "شماره پروانه پزشکی" })
+                        @Html.ValidationMessageFor(m => m.LicenseNumber, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="ExperienceYears">سال‌های تجربه</label>
+                        @Html.TextBoxFor(m => m.ExperienceYears, new { @class = "form-control", type = "number", min = "0", max = "50", placeholder = "تعداد سال‌های تجربه" })
+                        @Html.ValidationMessageFor(m => m.ExperienceYears, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="Education">تحصیلات</label>
+                        @Html.DropDownListFor(m => m.Education, new SelectList(new[]
+                        {
+                            new { Value = "", Text = "انتخاب تحصیلات" },
+                            new { Value = "پزشک عمومی", Text = "پزشک عمومی" },
+                            new { Value = "متخصص", Text = "متخصص" },
+                            new { Value = "فوق تخصص", Text = "فوق تخصص" },
+                            new { Value = "استاد", Text = "استاد" }
+                        }, "Value", "Text"), new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.Education, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="form-group">
+                        <label for="Biography">بیوگرافی</label>
+                        @Html.TextAreaFor(m => m.Biography, new { @class = "form-control", rows = "4", placeholder = "توضیحات مختصر درباره سوابق و تخصص‌های پزشک..." })
+                        @Html.ValidationMessageFor(m => m.Biography, "", new { @class = "text-danger" })
+                        <div class="help-text">حداکثر 500 کاراکتر</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contact Information Section -->
+        <div class="form-section">
+            <h5>
+                <i class="fas fa-address-book"></i>
+                اطلاعات تماس
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="Address">آدرس</label>
+                        @Html.TextAreaFor(m => m.Address, new { @class = "form-control", rows = "3", placeholder = "آدرس کامل محل کار یا منزل" })
+                        @Html.ValidationMessageFor(m => m.Address, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="EmergencyContact">شماره تماس اضطراری</label>
+                        @Html.TextBoxFor(m => m.EmergencyContact, new { @class = "form-control", placeholder = "شماره تماس اضطراری" })
+                        @Html.ValidationMessageFor(m => m.EmergencyContact, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Image Section -->
+        <div class="form-section">
+            <h5>
+                <i class="fas fa-camera"></i>
+                تصویر پروفایل
+            </h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="profile-image-container">
+                        <img id="profilePreview" src="/Content/Images/default-avatar.png" class="profile-image" alt="تصویر پروفایل" />
+                    </div>
+                    <div class="dropzone" id="imageDropzone">
+                        <div class="dz-message">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                            <p>برای آپلود تصویر کلیک کنید یا فایل را اینجا بکشید</p>
+                            <small class="text-muted">فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 2MB)</small>
+                        </div>
+                    </div>
+                    <input type="file" id="ProfileImage" name="ProfileImage" accept="image/*" style="display: none;" />
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="IsActive">وضعیت فعال</label>
+                        <div class="custom-control custom-switch">
+                            @Html.CheckBoxFor(m => m.IsActive, new { @class = "custom-control-input", id = "IsActive" })
+                            <label class="custom-control-label" for="IsActive">
+                                پزشک فعال است و می‌تواند نوبت‌دهی کند
+                            </label>
+                        </div>
+                        @Html.ValidationMessageFor(m => m.IsActive, "", new { @class = "text-danger" })
+                    </div>
+                    <div class="form-group">
+                        <label for="SecurityLevel">سطح امنیتی</label>
+                        @Html.DropDownListFor(m => m.SecurityLevel, new SelectList(new[]
+                        {
+                            new { Value = "Normal", Text = "عادی" },
+                            new { Value = "High", Text = "بالا" },
+                            new { Value = "VeryHigh", Text = "خیلی بالا" }
+                        }, "Value", "Text"), new { @class = "form-control" })
+                        @Html.ValidationMessageFor(m => m.SecurityLevel, "", new { @class = "text-danger" })
+                        <div class="help-text">سطح دسترسی به اطلاعات حساس</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-section">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="d-flex justify-content-between">
+                        <a href="@Url.Action("Index", "Doctor")" class="btn btn-secondary">
+                            <i class="fas fa-times"></i>
+                            انصراف
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-info" onclick="previewDoctor()">
+                                <i class="fas fa-eye"></i>
+                                پیش‌نمایش
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i>
+                                ذخیره پزشک
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Preview Modal -->
+<div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="previewModalLabel">
+                    <i class="fas fa-eye"></i>
+                    پیش‌نمایش اطلاعات پزشک
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- Preview content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-primary" onclick="submitForm()">
+                    <i class="fas fa-save"></i>
+                    تایید و ذخیره
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/plugins/dropzone/dropzone.min.js"></script>
+    <script src="~/Content/plugins/sweetalert/sweetalert.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true
+            });
+
+            // Initialize Dropzone
+            Dropzone.autoDiscover = false;
+            var myDropzone = new Dropzone("#imageDropzone", {
+                url: "#",
+                autoProcessQueue: false,
+                maxFiles: 1,
+                maxFilesize: 2, // MB
+                acceptedFiles: "image/*",
+                addRemoveLinks: true,
+                dictDefaultMessage: "برای آپلود تصویر کلیک کنید یا فایل را اینجا بکشید",
+                dictFileTooBig: "فایل خیلی بزرگ است ({{filesize}}MB). حداکثر اندازه: {{maxFilesize}}MB.",
+                dictInvalidFileType: "نوع فایل مجاز نیست.",
+                dictRemoveFile: "حذف",
+                init: function () {
+                    this.on("addedfile", function (file) {
+                        if (file.type.match(/image.*/)) {
+                            var reader = new FileReader();
+                            reader.onload = function (e) {
+                                $('#profilePreview').attr('src', e.target.result);
+                            };
+                            reader.readAsDataURL(file);
+                        }
+                    });
+                    this.on("removedfile", function (file) {
+                        $('#profilePreview').attr('src', '/Content/Images/default-avatar.png');
+                    });
+                }
+            });
+
+            // Form validation
+            $('#doctorForm').validate({
+                rules: {
+                    FirstName: {
+                        required: true,
+                        minlength: 2
+                    },
+                    LastName: {
+                        required: true,
+                        minlength: 2
+                    },
+                    NationalCode: {
+                        required: true,
+                        minlength: 10,
+                        maxlength: 10,
+                        digits: true
+                    },
+                    MedicalCouncilCode: {
+                        required: true
+                    },
+                    PhoneNumber: {
+                        required: true
+                    },
+                    Specialization: {
+                        required: true
+                    },
+                    Email: {
+                        email: true
+                    }
+                },
+                messages: {
+                    FirstName: {
+                        required: "نام الزامی است",
+                        minlength: "نام باید حداقل 2 کاراکتر باشد"
+                    },
+                    LastName: {
+                        required: "نام خانوادگی الزامی است",
+                        minlength: "نام خانوادگی باید حداقل 2 کاراکتر باشد"
+                    },
+                    NationalCode: {
+                        required: "کد ملی الزامی است",
+                        minlength: "کد ملی باید 10 رقم باشد",
+                        maxlength: "کد ملی باید 10 رقم باشد",
+                        digits: "کد ملی باید فقط شامل اعداد باشد"
+                    },
+                    MedicalCouncilCode: {
+                        required: "شماره نظام پزشکی الزامی است"
+                    },
+                    PhoneNumber: {
+                        required: "شماره تلفن الزامی است"
+                    },
+                    Specialization: {
+                        required: "انتخاب تخصص الزامی است"
+                    },
+                    Email: {
+                        email: "فرمت ایمیل صحیح نیست"
+                    }
+                },
+                errorElement: 'span',
+                errorClass: 'text-danger',
+                highlight: function (element) {
+                    $(element).closest('.form-group').addClass('has-error');
+                },
+                unhighlight: function (element) {
+                    $(element).closest('.form-group').removeClass('has-error');
+                }
+            });
+
+            // National Code validation
+            $('#NationalCode').on('input', function () {
+                var value = $(this).val();
+                if (value.length === 10) {
+                    if (!isValidNationalCode(value)) {
+                        $(this).addClass('is-invalid');
+                        if (!$(this).next('.invalid-feedback').length) {
+                            $(this).after('<div class="invalid-feedback">کد ملی وارد شده صحیح نیست</div>');
+                        }
+                    } else {
+                        $(this).removeClass('is-invalid');
+                        $(this).next('.invalid-feedback').remove();
+                    }
+                }
+            });
+        });
+
+        function isValidNationalCode(code) {
+            if (code.length !== 10) return false;
+            
+            var sum = 0;
+            for (var i = 0; i < 9; i++) {
+                sum += parseInt(code[i]) * (10 - i);
+            }
+            var remainder = sum % 11;
+            var checkDigit = parseInt(code[9]);
+            
+            if (remainder < 2) {
+                return checkDigit === remainder;
+            } else {
+                return checkDigit === (11 - remainder);
+            }
+        }
+
+        function previewDoctor() {
+            if (!$('#doctorForm').valid()) {
+                swal("خطا!", "لطفاً خطاهای فرم را برطرف کنید.", "error");
+                return;
+            }
+
+            var formData = new FormData($('#doctorForm')[0]);
+            
+            $.ajax({
+                url: '@Url.Action("Preview", "Doctor")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    if (result.success) {
+                        $('#previewContent').html(result.data);
+                        $('#previewModal').modal('show');
+                    } else {
+                        swal("خطا!", result.message, "error");
+                    }
+                },
+                error: function () {
+                    swal("خطا!", "خطا در بارگذاری پیش‌نمایش.", "error");
+                }
+            });
+        }
+
+        function submitForm() {
+            $('#previewModal').modal('hide');
+            $('#doctorForm').submit();
+        }
+
+        // Auto-save draft
+        var autoSaveTimer;
+        $('input, textarea, select').on('change', function () {
+            clearTimeout(autoSaveTimer);
+            autoSaveTimer = setTimeout(function () {
+                saveDraft();
+            }, 2000);
+        });
+
+        function saveDraft() {
+            var formData = new FormData($('#doctorForm')[0]);
+            formData.append('isDraft', 'true');
+            
+            $.ajax({
+                url: '@Url.Action("Create", "Doctor")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function (result) {
+                    if (result.success) {
+                        console.log('Draft saved successfully');
+                    }
+                }
+            });
+        }
+    </script>
+}

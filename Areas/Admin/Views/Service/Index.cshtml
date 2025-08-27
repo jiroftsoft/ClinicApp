@@ -147,8 +147,8 @@
             gap: 15px;
             align-items: center;
             color: #6c757d;
-            font-size: 0.9rem;
-        }
+                font-size: 0.9rem;
+            }
 
         .badge {
             font-size: 0.75rem;
@@ -237,7 +237,7 @@
         <div class="header-info">
             <h1><i class="fas fa-stethoscope me-2"></i>مدیریت خدمات پزشکی</h1>
             <p>مدیریت و سازماندهی خدمات پزشکی ارائه شده</p>
-        </div>
+            </div>
         <div class="header-actions">
             @if (ViewBag.ServiceCategoryId != null)
             {
@@ -247,28 +247,28 @@
                 </a>
             }
         </div>
-    </div>
-</div>
+            </div>
+        </div>
 
 <!-- آمار کلی -->
 <div class="stats-cards">
-    <div class="stats-card">
+                <div class="stats-card">
         <h3 id="totalServices">@(Model?.TotalItems ?? 0)</h3>
         <p>کل خدمات</p>
-    </div>
-    <div class="stats-card">
+            </div>
+                <div class="stats-card">
         <h3 id="activeServices">@(Model?.Items?.Count(s => s.IsActive) ?? 0)</h3>
         <p>خدمات فعال</p>
-    </div>
-    <div class="stats-card">
+            </div>
+                <div class="stats-card">
         <h3 id="avgPrice">@(Model?.Items?.Any() == true ? Model.Items.Average(s => s.Price).ToString("N0") : "0")</h3>
         <p>میانگین قیمت (تومان)</p>
-    </div>
-    <div class="stats-card">
+            </div>
+                <div class="stats-card">
         <h3 id="totalCategories">@(Model?.Items?.Select(s => s.ServiceCategoryId).Distinct().Count() ?? 0)</h3>
         <p>دسته‌بندی‌ها</p>
-    </div>
-</div>
+            </div>
+        </div>
 
 <!-- نمایش اطلاعات دسته‌بندی انتخاب شده -->
 @if (!string.IsNullOrEmpty(ViewBag.ServiceCategoryName))
@@ -296,7 +296,7 @@
                     }
                 </select>
             </div>
-            <div class="col-md-4">
+                <div class="col-md-4">
                 <label class="form-label">جستجو:</label>
                 <div class="input-group">
                     <input type="text" class="form-control" placeholder="جستجو در خدمات..." 
@@ -306,16 +306,16 @@
                         <i class="fas fa-search"></i>
                     </button>
                 </div>
-            </div>
-            <div class="col-md-3">
+                </div>
+                <div class="col-md-3">
                 <label class="form-label">تعداد نمایش:</label>
                 <select class="form-select" name="pageSize" id="pageSizeSelect">
                     <option value="10" @(ViewBag.PageSize == 10 ? "selected" : "")>10</option>
                     <option value="25" @(ViewBag.PageSize == 25 ? "selected" : "")>25</option>
                     <option value="50" @(ViewBag.PageSize == 50 ? "selected" : "")>50</option>
                 </select>
-            </div>
-            <div class="col-md-2">
+                </div>
+                <div class="col-md-2">
                 <label class="form-label">نمایش:</label>
                 <div class="view-toggle btn-group w-100" role="group">
                     <button type="button" class="btn btn-outline-primary active" id="tableViewBtn">
@@ -326,14 +326,14 @@
                     </button>
                 </div>
             </div>
-        </div>
+                </div>
         <input type="hidden" name="page" value="1" id="pageInput">
         <!-- 🔒 اطمینان از حفظ serviceCategoryId - Medical Environment -->
         <input type="hidden" name="serviceCategoryId" value="@ViewBag.ServiceCategoryId" id="serviceCategoryIdInput">
         <!-- 🔒 امنیت و ردیابی - Medical Environment -->
         <input type="hidden" name="timestamp" value="@DateTime.Now.Ticks" id="timestampInput">
     </form>
-</div>
+        </div>
 
 <!-- نمایش خدمات -->
 <div id="servicesContainer">
@@ -341,19 +341,19 @@
     {
         <!-- نمایش جدولی -->
         <div id="tableView" class="table-container">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
                         <th>نام خدمت</th>
                         <th>کد</th>
-                        <th>دسته‌بندی</th>
+                            <th>دسته‌بندی</th>
                         <th>قیمت</th>
-                        <th>وضعیت</th>
-                        <th>تاریخ ایجاد</th>
-                        <th>عملیات</th>
-                    </tr>
-                </thead>
-                <tbody>
+                            <th>وضعیت</th>
+                            <th>تاریخ ایجاد</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     @foreach (var service in Model.Items)
                     {
                         <tr data-service-id="@service.ServiceId">
@@ -380,37 +380,37 @@
                                 @if (service.IsActive)
                                 {
                                     <span class="badge bg-success">فعال</span>
-                                }
-                                else
-                                {
+                                        }
+                                        else
+                                        {
                                     <span class="badge bg-danger">غیرفعال</span>
-                                }
-                            </td>
+                                        }
+                                    </td>
                             <td>
                                 <small class="text-muted">@service.CreatedAtShamsi</small>
                             </td>
-                            <td>
-                                <div class="action-buttons">
+                                    <td>
+                                        <div class="action-buttons">
                                     <a href="@Url.Action("Details", new { id = service.ServiceId })" 
                                        class="btn btn-sm btn-outline-info" title="مشاهده جزئیات">
-                                        <i class="fas fa-eye"></i>
-                                    </a>
+                                                <i class="fas fa-eye"></i>
+                                            </a>
                                     <a href="@Url.Action("Edit", new { id = service.ServiceId })" 
                                        class="btn btn-sm btn-outline-warning" title="ویرایش">
-                                        <i class="fas fa-edit"></i>
-                                    </a>
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                     <button type="button" class="btn btn-sm btn-outline-danger" 
                                             onclick="confirmDelete(@service.ServiceId, '@service.Title')" 
-                                            title="حذف">
-                                        <i class="fas fa-trash"></i>
+                                               title="حذف">
+                                                <i class="fas fa-trash"></i>
                                     </button>
-                                </div>
-                            </td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
 
         <!-- نمایش کارتی -->
         <div id="cardView" class="row" style="display: none;">
@@ -483,7 +483,7 @@
             </div>
         </div>
     }
-</div>
+        </div>
 
 <!-- Pagination -->
 @if (Model?.TotalPages > 1)
@@ -492,33 +492,33 @@
         <nav aria-label="صفحه‌بندی">
             <ul class="pagination justify-content-center mb-0">
                 @if (Model.HasPreviousPage)
-                {
-                    <li class="page-item">
+                    {
+                        <li class="page-item">
                         <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber - 1))">قبلی</a>
-                    </li>
-                }
+                        </li>
+                    }
 
-                @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
-                {
-                    <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                    @for (int i = Math.Max(1, Model.PageNumber - 2); i <= Math.Min(Model.TotalPages, Model.PageNumber + 2); i++)
+                    {
+                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
                         <a class="page-link" href="#" onclick="changePage(@i)">@i</a>
-                    </li>
-                }
+                        </li>
+                    }
 
                 @if (Model.HasNextPage)
-                {
-                    <li class="page-item">
+                    {
+                        <li class="page-item">
                         <a class="page-link" href="#" onclick="changePage(@(Model.PageNumber + 1))">بعدی</a>
-                    </li>
-                }
-            </ul>
-        </nav>
+                        </li>
+                    }
+                </ul>
+            </nav>
         <div class="text-center mt-2">
             <small class="text-muted">
                 نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) از @Model.TotalItems مورد
             </small>
-        </div>
     </div>
+</div>
 }
 
 <!-- Modal حذف -->
@@ -556,7 +556,7 @@
                     placeholder: 'انتخاب دسته‌بندی...',
                     allowClear: true,
                     dir: 'rtl',
-                    width: '100%',
+                width: '100%',
                     minimumResultsForSearch: 10
                 });
                 console.log('🏥 MEDICAL: Select2 initialized successfully');
@@ -760,13 +760,13 @@
             }
             
             console.log('🏥 MEDICAL: Anti-Forgery Token found:', token.substring(0, 10) + '...');
-            
-            $.ajax({
+
+                $.ajax({
                 url: '@Url.Action("Delete")',
-                type: 'POST',
+                    type: 'POST',
                 dataType: 'json',
                 contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
-                data: {
+                    data: {
                     id: id,
                     __RequestVerificationToken: token
                 },
@@ -798,7 +798,7 @@
                         $(`.service-card[data-service-id="${id}"]`).fadeOut();
                         // بروزرسانی آمار
                         updateStats();
-                    } else {
+                            } else {
                         console.log('🏥 MEDICAL: Calling showMedicalToast with error...');
                         showMedicalToast('❌ خطا', message, 'error');
                     }
@@ -817,8 +817,8 @@
                             if (response.message) {
                                 errorMessage = response.message;
                             }
-                        }
-                    } catch (e) {
+                            }
+                        } catch (e) {
                         console.error('🏥 MEDICAL: Error parsing response:', e);
                     }
                     

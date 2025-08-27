@@ -948,9 +948,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 return View("CategoryDetails", result.Data);
-            }
-            catch (Exception ex)
-            {
+                    }
+                    catch (Exception ex)
+                    {
                 _log.Error(ex, "خطا در نمایش جزئیات دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
                     id, _currentUserService.UserId);
 
@@ -965,9 +965,9 @@ namespace ClinicApp.Areas.Admin.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteCategory(int id)
-        {
-            try
-            {
+                {
+                    try
+                    {
                 _log.Information("🏥 MEDICAL: درخواست حذف دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
                     id, _currentUserService.UserId);
 
@@ -985,9 +985,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                     id, result.Message, _currentUserService.UserId);
 
                 return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
+                    }
+                    catch (Exception ex)
+                    {
                 _log.Error(ex, "🏥 MEDICAL: خطا در حذف دسته‌بندی. CategoryId: {CategoryId}, User: {UserId}",
                     id, _currentUserService.UserId);
 
@@ -1053,9 +1053,9 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// نمایش جزئیات خدمت
         /// </summary>
         public async Task<ActionResult> Details(int id)
-        {
-            try
-            {
+                    {
+                        try
+                        {
                 _log.Information("درخواست جزئیات خدمت. ServiceId: {ServiceId}, User: {UserId}",
                     id, _currentUserService.UserId);
 
