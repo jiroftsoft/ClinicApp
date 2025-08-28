@@ -463,10 +463,7 @@
                             انصراف
                         </a>
                         <div>
-                            <button type="button" class="btn btn-info" onclick="previewDoctor()">
-                                <i class="fas fa-eye"></i>
-                                پیش‌نمایش
-                            </button>
+                            
                             <button type="submit" class="btn btn-primary" id="submitBtn">
                                 <i class="fas fa-save"></i>
                                 ذخیره پزشک
@@ -479,32 +476,7 @@
     </form>
 </div>
 
-<!-- Preview Modal -->
-<div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="previewModalLabel">
-                    <i class="fas fa-eye"></i>
-                    پیش‌نمایش اطلاعات پزشک
-                </h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="previewContent">
-                <!-- Preview content will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
-                <button type="button" class="btn btn-primary" onclick="submitForm()">
-                    <i class="fas fa-save"></i>
-                    تایید و ذخیره
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 @section Scripts {
     <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
@@ -767,41 +739,7 @@
             }
         }
 
-        function previewDoctor() {
-            if (!$('#doctorForm').valid()) {
-                swal("خطا!", "لطفاً خطاهای فرم را برطرف کنید.", "error");
-                return;
-            }
 
-            var formData = new FormData($('#doctorForm')[0]);
-
-            $.ajax({
-                url: '@Url.Action("Preview", "Doctor")',
-                type: 'POST',
-                data: formData,
-                processData: false,
-                contentType: false,
-                beforeSend: function() {
-                    $('#previewContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin fa-2x"></i><p>در حال بارگذاری...</p></div>');
-                    $('#previewModal').modal('show');
-                },
-                success: function (result) {
-                    if (result.success) {
-                        $('#previewContent').html(result.data);
-                    } else {
-                        $('#previewContent').html('<div class="alert alert-danger">خطا در بارگذاری پیش‌نمایش: ' + result.message + '</div>');
-                    }
-                },
-                error: function () {
-                    $('#previewContent').html('<div class="alert alert-danger">خطا در ارتباط با سرور</div>');
-                }
-            });
-        }
-
-        function submitForm() {
-            $('#previewModal').modal('hide');
-            $('#doctorForm').submit();
-        }
 
         // Enhanced Image Upload Functionality
         function initializeImageUpload() {

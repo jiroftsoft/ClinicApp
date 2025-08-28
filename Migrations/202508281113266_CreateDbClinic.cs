@@ -5,7 +5,7 @@
     using System.Data.Entity.Infrastructure.Annotations;
     using System.Data.Entity.Migrations;
     
-    public partial class InitialCreateDateBase : DbMigration
+    public partial class CreateDbClinic : DbMigration
     {
         public override void Up()
         {
@@ -856,18 +856,12 @@
                     {
                         SpecializationId = c.Int(nullable: false),
                         DoctorId = c.Int(nullable: false),
-                        Specialization_SpecializationId = c.Int(),
-                        Doctor_DoctorId = c.Int(),
                     })
                 .PrimaryKey(t => new { t.SpecializationId, t.DoctorId })
                 .ForeignKey("dbo.Doctors", t => t.DoctorId)
-                .ForeignKey("dbo.Specializations", t => t.Specialization_SpecializationId)
                 .ForeignKey("dbo.Specializations", t => t.SpecializationId)
-                .ForeignKey("dbo.Doctors", t => t.Doctor_DoctorId)
                 .Index(t => t.SpecializationId)
-                .Index(t => t.DoctorId)
-                .Index(t => t.Specialization_SpecializationId)
-                .Index(t => t.Doctor_DoctorId);
+                .Index(t => t.DoctorId);
             
             CreateTable(
                 "dbo.Specializations",
@@ -1278,10 +1272,8 @@
             DropForeignKey("dbo.DoctorSchedules", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.DoctorSchedules", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Receptions", "DoctorId", "dbo.Doctors");
-            DropForeignKey("dbo.DoctorSpecializations", "Doctor_DoctorId", "dbo.Doctors");
             DropForeignKey("dbo.DoctorSpecializations", "SpecializationId", "dbo.Specializations");
             DropForeignKey("dbo.Specializations", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.DoctorSpecializations", "Specialization_SpecializationId", "dbo.Specializations");
             DropForeignKey("dbo.Specializations", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Specializations", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.DoctorSpecializations", "DoctorId", "dbo.Doctors");
@@ -1464,8 +1456,6 @@
             DropIndex("dbo.Specializations", "IX_Specialization_DisplayOrder");
             DropIndex("dbo.Specializations", "IX_Specialization_IsActive");
             DropIndex("dbo.Specializations", "IX_Specialization_Name");
-            DropIndex("dbo.DoctorSpecializations", new[] { "Doctor_DoctorId" });
-            DropIndex("dbo.DoctorSpecializations", new[] { "Specialization_SpecializationId" });
             DropIndex("dbo.DoctorSpecializations", new[] { "DoctorId" });
             DropIndex("dbo.DoctorSpecializations", new[] { "SpecializationId" });
             DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedByUserId");

@@ -128,7 +128,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 Gender = doctor.Gender,
 
                 ExperienceYears = doctor.ExperienceYears,
-                SpecializationNames = doctor.DoctorSpecializations?.Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
+                SpecializationNames = doctor.DoctorSpecializations?.Where(ds => ds.Specialization != null).Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
                 PhoneNumber = doctor.PhoneNumber,
                 IsActive = doctor.IsActive,
                 CreatedAt = doctor.CreatedAt,

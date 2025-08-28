@@ -375,14 +375,16 @@ namespace ClinicApp.Models.Entities
             // تعریف کلید مرکب
             HasKey(ds => new { ds.SpecializationId, ds.DoctorId });
 
-            // روابط
+            // روابط - تنظیم صحیح Foreign Keys
             HasRequired(ds => ds.Specialization)
-                .WithMany()
-                .HasForeignKey(ds => ds.SpecializationId);
+                .WithMany(s => s.DoctorSpecializations)
+                .HasForeignKey(ds => ds.SpecializationId)
+                .WillCascadeOnDelete(false);
 
             HasRequired(ds => ds.Doctor)
-                .WithMany()
-                .HasForeignKey(ds => ds.DoctorId);
+                .WithMany(d => d.DoctorSpecializations)
+                .HasForeignKey(ds => ds.DoctorId)
+                .WillCascadeOnDelete(false);
         }
     }
     #endregion

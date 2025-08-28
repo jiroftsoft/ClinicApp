@@ -283,7 +283,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 UpdatedBy = doctor.UpdatedByUser?.FullName ?? doctor.UpdatedByUserId,
                 CreatedAtShamsi = doctor.CreatedAt.ToPersianDateTime(),
                 UpdatedAtShamsi = doctor.UpdatedAt?.ToPersianDateTime(),
-                SelectedSpecializationIds = doctor.DoctorSpecializations?.Select(ds => ds.SpecializationId).ToList() ?? new List<int>()
+                SelectedSpecializationIds = doctor.DoctorSpecializations?.Where(ds => ds.Specialization != null).Select(ds => ds.SpecializationId).ToList() ?? new List<int>()
             };
         }
 

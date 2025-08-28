@@ -191,9 +191,26 @@ namespace ClinicApp
         {
             try
             {
+                _log.Information("شروع ثبت CurrentUserService...");
+                
                 // بررسی محیط اجرایی و انتخاب پیاده‌سازی مناسب
                 if (HttpContext.Current != null)
                 {
+                    _log.Information("HttpContext.Current موجود است - استفاده از CurrentUserService");
+                    
+                    // بررسی احراز هویت
+                    bool isAuthenticated = HttpContext.Current.User?.Identity?.IsAuthenticated ?? false;
+                    _log.Information("وضعیت احراز هویت: {IsAuthenticated}", isAuthenticated);
+                    
+                    if (isAuthenticated)
+                    {
+                        _log.Information("کاربر احراز هویت شده - استفاده از CurrentUserService");
+                    }
+                    else
+                    {
+                        _log.Information("کاربر احراز هویت نشده - استفاده از CurrentUserService با پشتیبانی از محیط توسعه");
+                    }
+                    
                     // در محیط وب، از CurrentUserService استفاده می‌کنیم
                     container.RegisterType<ICurrentUserService, CurrentUserService>(
                         new PerRequestLifetimeManager(),
@@ -208,7 +225,7 @@ namespace ClinicApp
                 else
                 {
                     // در محیط‌های غیر-وب، از BackgroundCurrentUserService استفاده می‌کنیم
-                    _log.Information("در حال استفاده از BackgroundCurrentUserService برای محیط غیر-وب");
+                    _log.Information("HttpContext.Current موجود نیست - استفاده از BackgroundCurrentUserService برای محیط غیر-وب");
 
                     string systemUserId = SystemUsers.SystemUserId;
                     bool isSystemAdmin = true; // یا منطق خاص خودتان
@@ -222,6 +239,8 @@ namespace ClinicApp
                         )
                     );
                 }
+                
+                _log.Information("CurrentUserService با موفقیت ثبت شد");
             }
             catch (Exception ex)
             {

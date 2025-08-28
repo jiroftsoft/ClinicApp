@@ -40,11 +40,15 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
-                return await _context.Doctors
+                var doctor = await _context.Doctors
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
                     .Include(d => d.DoctorSpecializations)
                     .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .FirstOrDefaultAsync();
+
+
+
+                return doctor;
             }
             catch (Exception ex)
             {
@@ -62,9 +66,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.Doctors
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
+                    .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
                     .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
                     .Include(d => d.Schedules)
+                    .Include(d => d.CreatedByUser)
+                    .Include(d => d.UpdatedByUser)
+                    .Include(d => d.DeletedByUser)
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)

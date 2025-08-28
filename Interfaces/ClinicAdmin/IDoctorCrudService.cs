@@ -92,5 +92,19 @@ public interface IDoctorCrudService
     /// <returns>نتیجه حاوی اطلاعات پزشک</returns>
     Task<ServiceResult<Doctor>> GetDoctorByMedicalCouncilCodeAsync(string medicalCouncilCode);
 
+    /// <summary>
+    /// فعال کردن یک پزشک
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <returns>نتیجه عملیات فعال‌سازی</returns>
+    Task<ServiceResult> ActivateDoctorAsync(int doctorId);
+
+    /// <summary>
+    /// غیرفعال کردن یک پزشک
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <returns>نتیجه عملیات غیرفعال‌سازی</returns>
+    Task<ServiceResult> DeactivateDoctorAsync(int doctorId);
+
     #endregion
 }

@@ -268,6 +268,8 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         public List<DoctorServiceCategoryViewModel> ServiceCategories => DoctorServiceCategories;
 
+        public int? ExperienceYears { get; set; }
+
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
@@ -292,13 +294,14 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 Education = $"{doctor.Degree} - {doctor.University} ({doctor.GraduationYear})",
                 SecurityLevel = "متوسط", // این فیلد نیاز به پیاده‌سازی دارد
                 Biography = doctor.Bio,
-                SpecializationNames = doctor.DoctorSpecializations?.Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
+                SpecializationNames = doctor.DoctorSpecializations?.Where(ds => ds.Specialization != null).Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
                 IsActive = doctor.IsActive,
                 IsDeleted = doctor.IsDeleted,
                 CreatedAt = doctor.CreatedAt,
                 CreatedBy = doctor.CreatedByUser?.FullName ?? doctor.CreatedByUserId,
                 CreatedAtShamsi = doctor.CreatedAt.ToPersianDateTime(),
                 UpdatedAt = doctor.UpdatedAt,
+                ExperienceYears = doctor.ExperienceYears,
                 UpdatedBy = doctor.UpdatedByUser?.FullName ?? doctor.UpdatedByUserId,
                 UpdatedAtShamsi = doctor.UpdatedAt?.ToPersianDateTime(),
                 DeletedAt = doctor.DeletedAt,

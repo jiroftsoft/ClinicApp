@@ -314,7 +314,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 await _context.SaveChangesAsync();
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
                 return false;
             }

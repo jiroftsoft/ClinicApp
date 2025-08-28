@@ -49,15 +49,22 @@ namespace ClinicApp.Services
         {
             get
             {
+                _logger.Information("=== شروع UserId Property ===");
+                
                 var userId = GetUserId();
+                _logger.Information("GetUserId() برگرداند: {UserId}", userId);
                 
                 // اطمینان از اینکه هرگز null برنمی‌گرداند
                 if (string.IsNullOrEmpty(userId))
                 {
                     _logger.Error("GetUserId() مقدار null یا خالی برگرداند. استفاده از کاربر Admin توسعه");
-                    return GetDevelopmentAdminUserId();
+                    var fallbackUserId = GetDevelopmentAdminUserId();
+                    _logger.Information("GetDevelopmentAdminUserId() برگرداند: {UserId}", fallbackUserId);
+                    _logger.Information("=== پایان UserId Property - Fallback - بازگشت: {UserId} ===", fallbackUserId);
+                    return fallbackUserId;
                 }
                 
+                _logger.Information("=== پایان UserId Property - Normal - بازگشت: {UserId} ===", userId);
                 return userId;
             }
         }
@@ -732,30 +739,33 @@ namespace ClinicApp.Services
         {
             try
             {
-                // شناسه کاربر Admin که در محیط توسعه استفاده می‌شود
-                const string developmentAdminUserId = "f2914576-6d9b-46f4-9f87-dfe691d4dd63";
+                _logger.Information("=== شروع GetDevelopmentAdminUserId() ===");
                 
+                // شناسه کاربر Admin که در محیط توسعه استفاده می‌شود
+                const string developmentAdminUserId = "6f999f4d-24b8-4142-a97e-20077850278b"; // شناسه کاربر شما
+
                 _logger.Information("درخواست کاربر Admin توسعه. شناسه: {UserId}", developmentAdminUserId);
                 
-                // بررسی وجود کاربر در دیتابیس
-                if (UserExistsInDatabase(developmentAdminUserId))
+                // تست ساده - اطمینان از اینکه مقدار خالی نیست
+                if (string.IsNullOrEmpty(developmentAdminUserId))
                 {
-                    _logger.Information("کاربر Admin توسعه با شناسه {UserId} در دیتابیس یافت شد", developmentAdminUserId);
-                    return developmentAdminUserId;
+                    _logger.Error("developmentAdminUserId خالی است!");
+                    throw new InvalidOperationException("developmentAdminUserId نمی‌تواند خالی باشد");
                 }
-                else
-                {
-                    _logger.Warning("کاربر Admin توسعه با شناسه {UserId} در دیتابیس یافت نشد. اما در محیط توسعه از آن استفاده می‌کنیم", developmentAdminUserId);
-                    // در محیط توسعه، حتی اگر کاربر در دیتابیس نباشد، از شناسه Admin استفاده می‌کنیم
-                    return developmentAdminUserId;
-                }
+                
+                // در محیط توسعه، همیشه از شناسه Admin استفاده می‌کنیم
+                // بررسی دیتابیس را حذف کردیم تا عملکرد سریع‌تر باشد
+                _logger.Information("استفاده از کاربر Admin توسعه با شناسه: {UserId}", developmentAdminUserId);
+                _logger.Information("=== پایان GetDevelopmentAdminUserId() - بازگشت: {UserId} ===", developmentAdminUserId);
+                return developmentAdminUserId;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی کاربر Admin توسعه. استفاده از شناسه پیش‌فرض");
+                _logger.Error(ex, "خطا در GetDevelopmentAdminUserId. استفاده از شناسه پیش‌فرض");
                 // در صورت خطا، از شناسه Admin استفاده می‌کنیم
-                const string fallbackUserId = "f2914576-6d9b-46f4-9f87-dfe691d4dd63";
+                const string fallbackUserId = "6f999f4d-24b8-4142-a97e-20077850278b";
                 _logger.Information("استفاده از شناسه پیش‌فرض: {UserId}", fallbackUserId);
+                _logger.Information("=== پایان GetDevelopmentAdminUserId() - خطا - بازگشت: {UserId} ===", fallbackUserId);
                 return fallbackUserId;
             }
         }
@@ -884,16 +894,25 @@ namespace ClinicApp.Services
         {
             try
             {
+                _logger.Debug("=== شروع UserExistsInDatabase() برای شناسه: {UserId} ===", userId);
+                
                 if (string.IsNullOrEmpty(userId))
                 {
+                    _logger.Debug("شناسه کاربر خالی است");
+                    _logger.Debug("=== پایان UserExistsInDatabase() - شناسه خالی - بازگشت: false ===");
                     return false;
                 }
 
-                return _context.Users.Any(u => u.Id == userId);
+                _logger.Debug("بررسی وجود کاربر در دیتابیس...");
+                bool userExists = _context.Users.Any(u => u.Id == userId);
+                _logger.Debug("نتیجه بررسی: {UserExists}", userExists);
+                _logger.Debug("=== پایان UserExistsInDatabase() - بازگشت: {UserExists} ===", userExists);
+                return userExists;
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بررسی وجود کاربر در پایگاه داده برای شناسه {UserId}.", userId);
+                _logger.Debug("=== پایان UserExistsInDatabase() - خطا - بازگشت: false ===");
                 return false;
             }
         }

@@ -493,9 +493,9 @@
     <Compile Include="Interfaces\INotificationService.cs" />
     <Compile Include="Interfaces\INotificationTemplateService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
-    <Compile Include="Migrations\202508272050560_Initial-CreateDateBase.cs" />
-    <Compile Include="Migrations\202508272050560_Initial-CreateDateBase.Designer.cs">
-      <DependentUpon>202508272050560_Initial-CreateDateBase.cs</DependentUpon>
+    <Compile Include="Migrations\202508281113266_CreateDbClinic.cs" />
+    <Compile Include="Migrations\202508281113266_CreateDbClinic.Designer.cs">
+      <DependentUpon>202508281113266_CreateDbClinic.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
@@ -3473,8 +3473,8 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202508272050560_Initial-CreateDateBase.resx">
-      <DependentUpon>202508272050560_Initial-CreateDateBase.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202508281113266_CreateDbClinic.resx">
+      <DependentUpon>202508281113266_CreateDbClinic.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

@@ -1,7 +1,7 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel
 @{
     ViewBag.Title = "جزئیات پزشک";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 @section Styles {
@@ -290,7 +290,7 @@
                     <div class="col-md-4 mb-2">
                         <div class="info-item">
                             <i class="fas fa-hospital"></i>
-                            <span class="info-value">@dept.Name</span>
+                            <span class="info-value">@dept.DepartmentName</span>
                         </div>
                     </div>
                 }
@@ -312,7 +312,7 @@
                     <div class="col-md-4 mb-2">
                         <div class="info-item">
                             <i class="fas fa-list-alt"></i>
-                            <span class="info-value">@service.Name</span>
+                            <span class="info-value">@service.ServiceCategoryTitle</span>
                         </div>
                     </div>
                 }
