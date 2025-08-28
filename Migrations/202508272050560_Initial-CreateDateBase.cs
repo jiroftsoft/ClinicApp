@@ -5,7 +5,7 @@
     using System.Data.Entity.Infrastructure.Annotations;
     using System.Data.Entity.Migrations;
     
-    public partial class CreateDataBaseClinic : DbMigration
+    public partial class InitialCreateDateBase : DbMigration
     {
         public override void Up()
         {
@@ -21,6 +21,10 @@
                         Price = c.Decimal(nullable: false, precision: 18, scale: 2),
                         PaymentTransactionId = c.Int(),
                         Description = c.String(maxLength: 500),
+                        IsNewPatient = c.Boolean(nullable: false),
+                        PatientName = c.String(maxLength: 200),
+                        PatientPhone = c.String(maxLength: 20),
+                        ServiceCategoryId = c.Int(),
                         IsDeleted = c.Boolean(nullable: false),
                         DeletedAt = c.DateTime(),
                         DeletedByUserId = c.String(maxLength: 128),
@@ -39,6 +43,7 @@
                 .ForeignKey("dbo.Doctors", t => t.DoctorId)
                 .ForeignKey("dbo.Patients", t => t.PatientId)
                 .ForeignKey("dbo.PaymentTransactions", t => t.PaymentTransactionId)
+                .ForeignKey("dbo.ServiceCategories", t => t.ServiceCategoryId)
                 .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
                 .Index(t => t.DoctorId, name: "IX_Appointment_DoctorId")
                 .Index(t => new { t.DoctorId, t.AppointmentDate, t.Status }, name: "IX_Appointment_DoctorId_Date_Status")
@@ -47,6 +52,7 @@
                 .Index(t => t.AppointmentDate, name: "IX_Appointment_AppointmentDate")
                 .Index(t => t.Status, name: "IX_Appointment_Status")
                 .Index(t => t.PaymentTransactionId, name: "IX_Appointment_PaymentTransactionId")
+                .Index(t => t.ServiceCategoryId)
                 .Index(t => t.IsDeleted, name: "IX_Appointment_IsDeleted")
                 .Index(t => t.DeletedAt, name: "IX_Appointment_DeletedAt")
                 .Index(t => t.DeletedByUserId, name: "IX_Appointment_DeletedByUserId")
@@ -73,7 +79,7 @@
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
                         LastLoginDate = c.DateTime(),
-                        Gender = c.Int(nullable: false),
+                        Gender = c.Byte(nullable: false),
                         Address = c.String(maxLength: 500),
                         Email = c.String(maxLength: 256),
                         EmailConfirmed = c.Boolean(nullable: false),
@@ -132,10 +138,26 @@
                         FirstName = c.String(nullable: false, maxLength: 100),
                         LastName = c.String(nullable: false, maxLength: 100),
                         IsActive = c.Boolean(nullable: false),
-                        Specialization = c.String(maxLength: 250),
+                        Degree = c.Byte(nullable: false),
+                        GraduationYear = c.Int(),
+                        University = c.String(maxLength: 200),
+                        Gender = c.Byte(nullable: false),
+                        DateOfBirth = c.DateTime(),
+                        HomeAddress = c.String(maxLength: 500),
+                        OfficeAddress = c.String(maxLength: 500),
+                        ExperienceYears = c.Int(),
+                        ProfileImageUrl = c.String(maxLength: 500),
                         PhoneNumber = c.String(maxLength: 50),
+                        NationalCode = c.String(maxLength: 10),
+                        MedicalCouncilCode = c.String(maxLength: 20),
+                        Email = c.String(maxLength: 100),
                         ClinicId = c.Int(),
                         Bio = c.String(maxLength: 2000),
+                        Address = c.String(maxLength: 500),
+                        EmergencyContact = c.String(maxLength: 50),
+                        SecurityLevel = c.String(maxLength: 20),
+                        Education = c.String(maxLength: 100),
+                        LicenseNumber = c.String(maxLength: 50),
                         IsDeleted = c.Boolean(nullable: false),
                         DeletedAt = c.DateTime(),
                         DeletedByUserId = c.String(maxLength: 128),
@@ -161,9 +183,17 @@
                 .Index(t => t.LastName, name: "IX_Doctor_LastName")
                 .Index(t => t.IsActive, name: "IX_Doctor_IsActive")
                 .Index(t => new { t.ClinicId, t.IsActive, t.IsDeleted }, name: "IX_Doctor_ClinicId_IsActive_IsDeleted")
-                .Index(t => new { t.Specialization, t.IsActive, t.IsDeleted }, name: "IX_Doctor_Specialization_IsActive_IsDeleted")
-                .Index(t => t.Specialization, name: "IX_Doctor_Specialization")
+                .Index(t => new { t.University, t.IsActive, t.IsDeleted }, name: "IX_Doctor_University_IsActive_IsDeleted")
+                .Index(t => t.Degree, name: "IX_Doctor_Degree")
+                .Index(t => t.GraduationYear, name: "IX_Doctor_GraduationYear")
+                .Index(t => t.University, name: "IX_Doctor_University")
+                .Index(t => t.Gender, name: "IX_Doctor_Gender")
+                .Index(t => t.DateOfBirth, name: "IX_Doctor_DateOfBirth")
+                .Index(t => t.ExperienceYears, name: "IX_Doctor_ExperienceYears")
                 .Index(t => t.PhoneNumber, name: "IX_Doctor_PhoneNumber")
+                .Index(t => t.NationalCode, name: "IX_Doctor_NationalCode")
+                .Index(t => t.MedicalCouncilCode, name: "IX_Doctor_MedicalCouncilCode")
+                .Index(t => t.Email, name: "IX_Doctor_Email")
                 .Index(t => t.ClinicId, name: "IX_Doctor_ClinicId")
                 .Index(t => t.IsDeleted, name: "IX_Doctor_IsDeleted")
                 .Index(t => t.DeletedAt, name: "IX_Doctor_DeletedAt")
@@ -226,6 +256,7 @@
                         CreatedByUserId = c.String(maxLength: 128),
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
+                        Description = c.String(),
                     },
                 annotations: new Dictionary<string, object>
                 {
@@ -264,9 +295,13 @@
                         CreatedByUserId = c.String(maxLength: 128),
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
                     })
                 .PrimaryKey(t => new { t.DoctorId, t.DepartmentId })
                 .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
                 .ForeignKey("dbo.Doctors", t => t.DoctorId)
                 .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
                 .ForeignKey("dbo.Departments", t => t.DepartmentId)
@@ -283,7 +318,8 @@
                 .Index(t => t.CreatedAt, name: "IX_DoctorDepartment_CreatedAt")
                 .Index(t => t.CreatedByUserId, name: "IX_DoctorDepartment_CreatedByUserId")
                 .Index(t => t.UpdatedAt, name: "IX_DoctorDepartment_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_DoctorDepartment_UpdatedByUserId");
+                .Index(t => t.UpdatedByUserId, name: "IX_DoctorDepartment_UpdatedByUserId")
+                .Index(t => t.DeletedByUserId);
             
             CreateTable(
                 "dbo.ServiceCategories",
@@ -300,6 +336,7 @@
                         CreatedByUserId = c.String(maxLength: 128),
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
+                        Description = c.String(),
                     },
                 annotations: new Dictionary<string, object>
                 {
@@ -338,6 +375,7 @@
                         CreatedByUserId = c.String(maxLength: 128),
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
+                        IsDeleted = c.Boolean(nullable: false),
                     })
                 .PrimaryKey(t => new { t.DoctorId, t.ServiceCategoryId })
                 .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
@@ -378,6 +416,8 @@
                         CreatedByUserId = c.String(maxLength: 128),
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
+                        IsActive = c.Boolean(nullable: false),
+                        Notes = c.String(),
                     },
                 annotations: new Dictionary<string, object>
                 {
@@ -543,7 +583,7 @@
                         BirthDate = c.DateTime(),
                         Address = c.String(maxLength: 500),
                         PhoneNumber = c.String(maxLength: 50),
-                        Gender = c.Int(nullable: false),
+                        Gender = c.Byte(nullable: false),
                         InsuranceId = c.Int(nullable: false),
                         LastLoginDate = c.DateTime(),
                         IsDeleted = c.Boolean(nullable: false),
@@ -811,6 +851,246 @@
                 .Index(t => t.UpdatedByUserId, name: "IX_PosTerminal_UpdatedByUserId");
             
             CreateTable(
+                "dbo.DoctorSpecializations",
+                c => new
+                    {
+                        SpecializationId = c.Int(nullable: false),
+                        DoctorId = c.Int(nullable: false),
+                        Specialization_SpecializationId = c.Int(),
+                        Doctor_DoctorId = c.Int(),
+                    })
+                .PrimaryKey(t => new { t.SpecializationId, t.DoctorId })
+                .ForeignKey("dbo.Doctors", t => t.DoctorId)
+                .ForeignKey("dbo.Specializations", t => t.Specialization_SpecializationId)
+                .ForeignKey("dbo.Specializations", t => t.SpecializationId)
+                .ForeignKey("dbo.Doctors", t => t.Doctor_DoctorId)
+                .Index(t => t.SpecializationId)
+                .Index(t => t.DoctorId)
+                .Index(t => t.Specialization_SpecializationId)
+                .Index(t => t.Doctor_DoctorId);
+            
+            CreateTable(
+                "dbo.Specializations",
+                c => new
+                    {
+                        SpecializationId = c.Int(nullable: false, identity: true),
+                        Name = c.String(nullable: false, maxLength: 100),
+                        Description = c.String(maxLength: 500),
+                        IsActive = c.Boolean(nullable: false),
+                        DisplayOrder = c.Int(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Specialization_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.SpecializationId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.Name, name: "IX_Specialization_Name")
+                .Index(t => t.IsActive, name: "IX_Specialization_IsActive")
+                .Index(t => t.DisplayOrder, name: "IX_Specialization_DisplayOrder")
+                .Index(t => t.IsDeleted, name: "IX_Specialization_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_Specialization_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_Specialization_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_Specialization_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_Specialization_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_Specialization_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_Specialization_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.DoctorSchedules",
+                c => new
+                    {
+                        ScheduleId = c.Int(nullable: false, identity: true),
+                        DoctorId = c.Int(nullable: false),
+                        AppointmentDuration = c.Int(nullable: false),
+                        DefaultStartTime = c.Time(precision: 7),
+                        DefaultEndTime = c.Time(precision: 7),
+                        IsActive = c.Boolean(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorSchedule_ActiveDoctorSchedules", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_DoctorSchedule_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.ScheduleId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.Doctors", t => t.DoctorId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.ScheduleId, name: "IX_DoctorSchedule_ScheduleId")
+                .Index(t => t.DoctorId, name: "IX_DoctorSchedule_DoctorId")
+                .Index(t => new { t.DoctorId, t.IsActive }, name: "IX_DoctorSchedule_DoctorId_IsActive")
+                .Index(t => new { t.DoctorId, t.IsDeleted }, name: "IX_DoctorSchedule_DoctorId_IsDeleted")
+                .Index(t => new { t.DoctorId, t.IsActive, t.IsDeleted }, unique: true, name: "IX_DoctorSchedule_DoctorId_IsActive_IsDeleted_Unique")
+                .Index(t => t.AppointmentDuration, name: "IX_DoctorSchedule_AppointmentDuration")
+                .Index(t => t.IsActive, name: "IX_DoctorSchedule_IsActive")
+                .Index(t => t.IsDeleted, name: "IX_DoctorSchedule_IsDeleted")
+                .Index(t => new { t.CreatedAt, t.IsDeleted }, name: "IX_DoctorSchedule_CreatedAt_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_DoctorSchedule_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_DoctorSchedule_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_DoctorSchedule_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_DoctorSchedule_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_DoctorSchedule_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_DoctorSchedule_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.DoctorWorkDays",
+                c => new
+                    {
+                        WorkDayId = c.Int(nullable: false, identity: true),
+                        ScheduleId = c.Int(nullable: false),
+                        DayOfWeek = c.Int(nullable: false),
+                        IsActive = c.Boolean(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorWorkDay_ActiveDoctorWorkDays", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_DoctorWorkDay_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.WorkDayId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .ForeignKey("dbo.DoctorSchedules", t => t.ScheduleId, cascadeDelete: true)
+                .Index(t => t.WorkDayId, name: "IX_DoctorWorkDay_WorkDayId")
+                .Index(t => t.ScheduleId, name: "IX_DoctorWorkDay_ScheduleId")
+                .Index(t => new { t.ScheduleId, t.DayOfWeek }, name: "IX_DoctorWorkDay_ScheduleId_DayOfWeek")
+                .Index(t => new { t.ScheduleId, t.IsActive }, name: "IX_DoctorWorkDay_ScheduleId_IsActive")
+                .Index(t => new { t.ScheduleId, t.IsDeleted }, name: "IX_DoctorWorkDay_ScheduleId_IsDeleted")
+                .Index(t => new { t.ScheduleId, t.DayOfWeek, t.IsDeleted }, unique: true, name: "IX_DoctorWorkDay_ScheduleId_DayOfWeek_IsDeleted_Unique")
+                .Index(t => t.DayOfWeek, name: "IX_DoctorWorkDay_DayOfWeek")
+                .Index(t => t.IsActive, name: "IX_DoctorWorkDay_IsActive")
+                .Index(t => t.IsDeleted, name: "IX_DoctorWorkDay_IsDeleted")
+                .Index(t => new { t.CreatedAt, t.IsDeleted }, name: "IX_DoctorWorkDay_CreatedAt_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_DoctorWorkDay_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_DoctorWorkDay_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_DoctorWorkDay_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_DoctorWorkDay_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_DoctorWorkDay_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_DoctorWorkDay_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.DoctorTimeRanges",
+                c => new
+                    {
+                        TimeRangeId = c.Int(nullable: false, identity: true),
+                        WorkDayId = c.Int(nullable: false),
+                        StartTime = c.Time(nullable: false, precision: 7),
+                        EndTime = c.Time(nullable: false, precision: 7),
+                        IsActive = c.Boolean(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorTimeRange_ActiveDoctorTimeRanges", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_DoctorTimeRange_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.TimeRangeId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .ForeignKey("dbo.DoctorWorkDays", t => t.WorkDayId, cascadeDelete: true)
+                .Index(t => t.TimeRangeId, name: "IX_DoctorTimeRange_TimeRangeId")
+                .Index(t => t.WorkDayId, name: "IX_DoctorTimeRange_WorkDayId")
+                .Index(t => new { t.WorkDayId, t.StartTime }, name: "IX_DoctorTimeRange_WorkDayId_StartTime")
+                .Index(t => new { t.WorkDayId, t.IsActive }, name: "IX_DoctorTimeRange_WorkDayId_IsActive")
+                .Index(t => new { t.WorkDayId, t.IsDeleted }, name: "IX_DoctorTimeRange_WorkDayId_IsDeleted")
+                .Index(t => new { t.WorkDayId, t.StartTime, t.EndTime }, name: "IX_DoctorTimeRange_WorkDayId_StartTime_EndTime")
+                .Index(t => t.StartTime, name: "IX_DoctorTimeRange_StartTime")
+                .Index(t => t.EndTime, name: "IX_DoctorTimeRange_EndTime")
+                .Index(t => t.IsActive, name: "IX_DoctorTimeRange_IsActive")
+                .Index(t => t.IsDeleted, name: "IX_DoctorTimeRange_IsDeleted")
+                .Index(t => new { t.CreatedAt, t.IsDeleted }, name: "IX_DoctorTimeRange_CreatedAt_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_DoctorTimeRange_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_DoctorTimeRange_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_DoctorTimeRange_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_DoctorTimeRange_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_DoctorTimeRange_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_DoctorTimeRange_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.DoctorTimeSlots",
+                c => new
+                    {
+                        TimeSlotId = c.Int(nullable: false, identity: true),
+                        DoctorId = c.Int(nullable: false),
+                        AppointmentDate = c.DateTime(nullable: false),
+                        StartTime = c.Time(nullable: false, precision: 7),
+                        EndTime = c.Time(nullable: false, precision: 7),
+                        Duration = c.Int(nullable: false),
+                        Status = c.Byte(nullable: false),
+                        AppointmentId = c.Int(),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorTimeSlot_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.TimeSlotId)
+                .ForeignKey("dbo.Appointments", t => t.AppointmentId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.Doctors", t => t.DoctorId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.TimeSlotId, name: "IX_DoctorTimeSlot_TimeSlotId")
+                .Index(t => t.DoctorId, name: "IX_DoctorTimeSlot_DoctorId")
+                .Index(t => new { t.DoctorId, t.AppointmentDate }, name: "IX_DoctorTimeSlot_DoctorId_AppointmentDate")
+                .Index(t => new { t.DoctorId, t.AppointmentDate, t.Status }, name: "IX_DoctorTimeSlot_DoctorId_AppointmentDate_Status")
+                .Index(t => new { t.DoctorId, t.IsDeleted }, name: "IX_DoctorTimeSlot_DoctorId_IsDeleted")
+                .Index(t => new { t.DoctorId, t.AppointmentDate, t.StartTime, t.Status }, name: "IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_Status")
+                .Index(t => new { t.DoctorId, t.AppointmentDate, t.StartTime, t.EndTime, t.IsDeleted }, unique: true, name: "IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_EndTime_IsDeleted_Unique")
+                .Index(t => t.AppointmentDate, name: "IX_DoctorTimeSlot_AppointmentDate")
+                .Index(t => new { t.AppointmentDate, t.Status, t.IsDeleted }, name: "IX_DoctorTimeSlot_AppointmentDate_Status_IsDeleted")
+                .Index(t => t.StartTime, name: "IX_DoctorTimeSlot_StartTime")
+                .Index(t => t.EndTime, name: "IX_DoctorTimeSlot_EndTime")
+                .Index(t => t.Duration, name: "IX_DoctorTimeSlot_Duration")
+                .Index(t => t.Status, name: "IX_DoctorTimeSlot_Status")
+                .Index(t => t.AppointmentId, name: "IX_DoctorTimeSlot_AppointmentId")
+                .Index(t => t.IsDeleted, name: "IX_DoctorTimeSlot_IsDeleted")
+                .Index(t => new { t.CreatedAt, t.IsDeleted }, name: "IX_DoctorTimeSlot_CreatedAt_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_DoctorTimeSlot_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_DoctorTimeSlot_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_DoctorTimeSlot_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_DoctorTimeSlot_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_DoctorTimeSlot_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_DoctorTimeSlot_UpdatedByUserId");
+            
+            CreateTable(
                 "dbo.AspNetUserLogins",
                 c => new
                     {
@@ -966,6 +1246,7 @@
             DropForeignKey("dbo.NotificationTemplates", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.NotificationTemplates", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Appointments", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Appointments", "ServiceCategoryId", "dbo.ServiceCategories");
             DropForeignKey("dbo.Appointments", "PaymentTransactionId", "dbo.PaymentTransactions");
             DropForeignKey("dbo.Appointments", "PatientId", "dbo.Patients");
             DropForeignKey("dbo.Appointments", "DoctorId", "dbo.Doctors");
@@ -979,7 +1260,31 @@
             DropForeignKey("dbo.NotificationHistories", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.AspNetUserLogins", "UserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Doctors", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeSlots", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeSlots", "DoctorId", "dbo.Doctors");
+            DropForeignKey("dbo.DoctorTimeSlots", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeSlots", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeSlots", "AppointmentId", "dbo.Appointments");
+            DropForeignKey("dbo.DoctorWorkDays", "ScheduleId", "dbo.DoctorSchedules");
+            DropForeignKey("dbo.DoctorWorkDays", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeRanges", "WorkDayId", "dbo.DoctorWorkDays");
+            DropForeignKey("dbo.DoctorTimeRanges", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeRanges", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorTimeRanges", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorWorkDays", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorWorkDays", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorSchedules", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorSchedules", "DoctorId", "dbo.Doctors");
+            DropForeignKey("dbo.DoctorSchedules", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorSchedules", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Receptions", "DoctorId", "dbo.Doctors");
+            DropForeignKey("dbo.DoctorSpecializations", "Doctor_DoctorId", "dbo.Doctors");
+            DropForeignKey("dbo.DoctorSpecializations", "SpecializationId", "dbo.Specializations");
+            DropForeignKey("dbo.Specializations", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorSpecializations", "Specialization_SpecializationId", "dbo.Specializations");
+            DropForeignKey("dbo.Specializations", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Specializations", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.DoctorSpecializations", "DoctorId", "dbo.Doctors");
             DropForeignKey("dbo.DoctorServiceCategories", "DoctorId", "dbo.Doctors");
             DropForeignKey("dbo.Doctors", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Doctors", "CreatedByUserId", "dbo.AspNetUsers");
@@ -1042,6 +1347,7 @@
             DropForeignKey("dbo.DoctorDepartments", "DepartmentId", "dbo.Departments");
             DropForeignKey("dbo.DoctorDepartments", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.DoctorDepartments", "DoctorId", "dbo.Doctors");
+            DropForeignKey("dbo.DoctorDepartments", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.DoctorDepartments", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Departments", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Departments", "CreatedByUserId", "dbo.AspNetUsers");
@@ -1078,6 +1384,90 @@
             DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Recipient_Status_SentAt");
             DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Recipient");
             DropIndex("dbo.AspNetUserLogins", new[] { "UserId" });
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_UpdatedByUserId");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_UpdatedAt");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_CreatedByUserId");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_CreatedAt");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DeletedByUserId");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DeletedAt");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_CreatedAt_IsDeleted");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_IsDeleted");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_AppointmentId");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_Status");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_Duration");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_EndTime");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_StartTime");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_AppointmentDate_Status_IsDeleted");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_AppointmentDate");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_EndTime_IsDeleted_Unique");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DoctorId_AppointmentDate_StartTime_Status");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DoctorId_IsDeleted");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DoctorId_AppointmentDate_Status");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DoctorId_AppointmentDate");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_DoctorId");
+            DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_TimeSlotId");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_UpdatedByUserId");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_UpdatedAt");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_CreatedByUserId");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_CreatedAt");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_DeletedByUserId");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_DeletedAt");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_CreatedAt_IsDeleted");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_IsDeleted");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_IsActive");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_EndTime");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_StartTime");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_WorkDayId_StartTime_EndTime");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_WorkDayId_IsDeleted");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_WorkDayId_IsActive");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_WorkDayId_StartTime");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_WorkDayId");
+            DropIndex("dbo.DoctorTimeRanges", "IX_DoctorTimeRange_TimeRangeId");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_UpdatedByUserId");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_UpdatedAt");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_CreatedByUserId");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_CreatedAt");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_DeletedByUserId");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_DeletedAt");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_CreatedAt_IsDeleted");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_IsDeleted");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_IsActive");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_DayOfWeek");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_ScheduleId_DayOfWeek_IsDeleted_Unique");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_ScheduleId_IsDeleted");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_ScheduleId_IsActive");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_ScheduleId_DayOfWeek");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_ScheduleId");
+            DropIndex("dbo.DoctorWorkDays", "IX_DoctorWorkDay_WorkDayId");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_UpdatedByUserId");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_UpdatedAt");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_CreatedByUserId");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_CreatedAt");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_DeletedByUserId");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_DeletedAt");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_CreatedAt_IsDeleted");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_IsDeleted");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_IsActive");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_AppointmentDuration");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_DoctorId_IsActive_IsDeleted_Unique");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_DoctorId_IsDeleted");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_DoctorId_IsActive");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_DoctorId");
+            DropIndex("dbo.DoctorSchedules", "IX_DoctorSchedule_ScheduleId");
+            DropIndex("dbo.Specializations", "IX_Specialization_UpdatedByUserId");
+            DropIndex("dbo.Specializations", "IX_Specialization_UpdatedAt");
+            DropIndex("dbo.Specializations", "IX_Specialization_CreatedByUserId");
+            DropIndex("dbo.Specializations", "IX_Specialization_CreatedAt");
+            DropIndex("dbo.Specializations", "IX_Specialization_DeletedByUserId");
+            DropIndex("dbo.Specializations", "IX_Specialization_DeletedAt");
+            DropIndex("dbo.Specializations", "IX_Specialization_IsDeleted");
+            DropIndex("dbo.Specializations", "IX_Specialization_DisplayOrder");
+            DropIndex("dbo.Specializations", "IX_Specialization_IsActive");
+            DropIndex("dbo.Specializations", "IX_Specialization_Name");
+            DropIndex("dbo.DoctorSpecializations", new[] { "Doctor_DoctorId" });
+            DropIndex("dbo.DoctorSpecializations", new[] { "Specialization_SpecializationId" });
+            DropIndex("dbo.DoctorSpecializations", new[] { "DoctorId" });
+            DropIndex("dbo.DoctorSpecializations", new[] { "SpecializationId" });
             DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedByUserId");
             DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedAt");
             DropIndex("dbo.PosTerminals", "IX_PosTerminal_CreatedByUserId");
@@ -1245,6 +1635,7 @@
             DropIndex("dbo.ServiceCategories", "IX_ServiceCategory_DepartmentId_IsActive_IsDeleted");
             DropIndex("dbo.ServiceCategories", "IX_ServiceCategory_DepartmentId");
             DropIndex("dbo.ServiceCategories", "IX_ServiceCategory_Title");
+            DropIndex("dbo.DoctorDepartments", new[] { "DeletedByUserId" });
             DropIndex("dbo.DoctorDepartments", "IX_DoctorDepartment_UpdatedByUserId");
             DropIndex("dbo.DoctorDepartments", "IX_DoctorDepartment_UpdatedAt");
             DropIndex("dbo.DoctorDepartments", "IX_DoctorDepartment_CreatedByUserId");
@@ -1290,9 +1681,17 @@
             DropIndex("dbo.Doctors", "IX_Doctor_DeletedAt");
             DropIndex("dbo.Doctors", "IX_Doctor_IsDeleted");
             DropIndex("dbo.Doctors", "IX_Doctor_ClinicId");
+            DropIndex("dbo.Doctors", "IX_Doctor_Email");
+            DropIndex("dbo.Doctors", "IX_Doctor_MedicalCouncilCode");
+            DropIndex("dbo.Doctors", "IX_Doctor_NationalCode");
             DropIndex("dbo.Doctors", "IX_Doctor_PhoneNumber");
-            DropIndex("dbo.Doctors", "IX_Doctor_Specialization");
-            DropIndex("dbo.Doctors", "IX_Doctor_Specialization_IsActive_IsDeleted");
+            DropIndex("dbo.Doctors", "IX_Doctor_ExperienceYears");
+            DropIndex("dbo.Doctors", "IX_Doctor_DateOfBirth");
+            DropIndex("dbo.Doctors", "IX_Doctor_Gender");
+            DropIndex("dbo.Doctors", "IX_Doctor_University");
+            DropIndex("dbo.Doctors", "IX_Doctor_GraduationYear");
+            DropIndex("dbo.Doctors", "IX_Doctor_Degree");
+            DropIndex("dbo.Doctors", "IX_Doctor_University_IsActive_IsDeleted");
             DropIndex("dbo.Doctors", "IX_Doctor_ClinicId_IsActive_IsDeleted");
             DropIndex("dbo.Doctors", "IX_Doctor_IsActive");
             DropIndex("dbo.Doctors", "IX_Doctor_LastName");
@@ -1322,6 +1721,7 @@
             DropIndex("dbo.Appointments", "IX_Appointment_DeletedByUserId");
             DropIndex("dbo.Appointments", "IX_Appointment_DeletedAt");
             DropIndex("dbo.Appointments", "IX_Appointment_IsDeleted");
+            DropIndex("dbo.Appointments", new[] { "ServiceCategoryId" });
             DropIndex("dbo.Appointments", "IX_Appointment_PaymentTransactionId");
             DropIndex("dbo.Appointments", "IX_Appointment_Status");
             DropIndex("dbo.Appointments", "IX_Appointment_AppointmentDate");
@@ -1340,6 +1740,35 @@
                     { "DynamicFilter_NotificationHistory_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 });
             DropTable("dbo.AspNetUserLogins");
+            DropTable("dbo.DoctorTimeSlots",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorTimeSlot_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.DoctorTimeRanges",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorTimeRange_ActiveDoctorTimeRanges", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_DoctorTimeRange_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.DoctorWorkDays",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorWorkDay_ActiveDoctorWorkDays", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_DoctorWorkDay_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.DoctorSchedules",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_DoctorSchedule_ActiveDoctorSchedules", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_DoctorSchedule_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.Specializations",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Specialization_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.DoctorSpecializations");
             DropTable("dbo.PosTerminals",
                 removedAnnotations: new Dictionary<string, object>
                 {

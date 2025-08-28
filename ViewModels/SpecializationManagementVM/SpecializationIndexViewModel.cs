@@ -103,7 +103,7 @@ namespace ClinicApp.ViewModels.SpecializationManagementVM
                 Description = specialization.Description,
                 IsActive = specialization.IsActive,
                 DisplayOrder = specialization.DisplayOrder,
-                DoctorCount = specialization.Doctors?.Count ?? 0,
+                DoctorCount = specialization.DoctorSpecializations?.Count ?? 0,
                 CreatedAt = specialization.CreatedAt,
                 CreatedAtShamsi = specialization.CreatedAt.ToPersianDateTime(),
                 CreatedBy = specialization.CreatedByUser?.FullName ?? specialization.CreatedByUserId,

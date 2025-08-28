@@ -244,9 +244,9 @@ namespace ClinicApp.Models.Entities
 
         #region روابط
         /// <summary>
-        /// لیست پزشکان دارای این تخصص
+        /// لیست روابط پزشک-تخصص
         /// </summary>
-        public virtual ICollection<Doctor> Doctors { get; set; } = new HashSet<Doctor>();
+        public virtual ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new HashSet<DoctorSpecialization>();
         #endregion
     }
 
@@ -313,15 +313,7 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Specialization_DeletedByUserId")));
 
-            // روابط
-            HasMany(s => s.Doctors)
-                .WithMany(d => d.Specializations)
-                .Map(m =>
-                {
-                    m.ToTable("DoctorSpecializations");
-                    m.MapLeftKey("SpecializationId");
-                    m.MapRightKey("DoctorId");
-                });
+            // روابط - حذف شده به دلیل تداخل با DoctorSpecialization entity
 
             HasOptional(s => s.CreatedByUser)
                 .WithMany()
@@ -337,6 +329,60 @@ namespace ClinicApp.Models.Entities
                 .WithMany()
                 .HasForeignKey(s => s.DeletedByUserId)
                 .WillCascadeOnDelete(false);
+        }
+    }
+    #endregion
+
+    #region DoctorSpecialization Entity (رابطه Many-to-Many)
+    /// <summary>
+    /// مدل رابطه Many-to-Many بین پزشکان و تخصص‌ها
+    /// این کلاس برای مدیریت رابطه بین پزشکان و تخصص‌های آن‌ها استفاده می‌شود
+    /// </summary>
+    public class DoctorSpecialization
+    {
+        /// <summary>
+        /// شناسه تخصص
+        /// </summary>
+        public int SpecializationId { get; set; }
+
+        /// <summary>
+        /// شناسه پزشک
+        /// </summary>
+        public int DoctorId { get; set; }
+
+        #region روابط
+        /// <summary>
+        /// تخصص مرتبط
+        /// </summary>
+        public virtual Specialization Specialization { get; set; }
+
+        /// <summary>
+        /// پزشک مرتبط
+        /// </summary>
+        public virtual Doctor Doctor { get; set; }
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی مدل رابطه پزشک-تخصص برای Entity Framework
+    /// </summary>
+    public class DoctorSpecializationConfig : EntityTypeConfiguration<DoctorSpecialization>
+    {
+        public DoctorSpecializationConfig()
+        {
+            ToTable("DoctorSpecializations");
+            
+            // تعریف کلید مرکب
+            HasKey(ds => new { ds.SpecializationId, ds.DoctorId });
+
+            // روابط
+            HasRequired(ds => ds.Specialization)
+                .WithMany()
+                .HasForeignKey(ds => ds.SpecializationId);
+
+            HasRequired(ds => ds.Doctor)
+                .WithMany()
+                .HasForeignKey(ds => ds.DoctorId);
         }
     }
     #endregion
@@ -2657,11 +2703,7 @@ namespace ClinicApp.Models.Entities
         [MaxLength(500, ErrorMessage = "آدرس مطب نمی‌تواند بیش از 500 کاراکتر باشد.")]
         public string OfficeAddress { get; set; }
 
-        /// <summary>
-        /// تعرفه ویزیت پزشک (به تومان)
-        /// </summary>
-        [Range(0, 10000000, ErrorMessage = "تعرفه ویزیت باید بین 0 تا 10,000,000 تومان باشد.")]
-        public decimal? ConsultationFee { get; set; }
+        
 
         /// <summary>
         /// سابقه کاری پزشک (به سال)
@@ -2693,7 +2735,7 @@ namespace ClinicApp.Models.Entities
         /// کد نظام پزشکی
         /// </summary>
         [MaxLength(20, ErrorMessage = "کد نظام پزشکی نمی‌تواند بیش از 20 کاراکتر باشد.")]
-        [RegularExpression(@"^\d{6,8}$", ErrorMessage = "کد نظام پزشکی باید 6 تا 8 رقم باشد.")]
+        [RegularExpression(@"^[0-9\-]{6,8}$", ErrorMessage = "کد نظام پزشکی باید 6 تا 8 کاراکتر (اعداد و خط تیره) باشد.")]
         public string MedicalCouncilCode { get; set; }
 
         /// <summary>
@@ -2715,6 +2757,36 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         [MaxLength(2000, ErrorMessage = "توضیحات نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         public string Bio { get; set; }
+
+        /// <summary>
+        /// آدرس پزشک
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// شماره تماس اضطراری
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "شماره تماس اضطراری نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string EmergencyContact { get; set; }
+
+        /// <summary>
+        /// سطح امنیتی پزشک
+        /// </summary>
+        [MaxLength(20, ErrorMessage = "سطح امنیتی نمی‌تواند بیش از 20 کاراکتر باشد.")]
+        public string SecurityLevel { get; set; } = "Normal";
+
+        /// <summary>
+        /// تحصیلات پزشک
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "تحصیلات نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string Education { get; set; }
+
+        /// <summary>
+        /// شماره پروانه پزشکی
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "شماره پروانه نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string LicenseNumber { get; set; }
 
         /// <summary>
         /// نام کامل پزشک
@@ -2852,10 +2924,10 @@ namespace ClinicApp.Models.Entities
         public virtual ICollection<DoctorTimeSlot> TimeSlots { get; set; } = new HashSet<DoctorTimeSlot>();
 
         /// <summary>
-        /// لیست تخصص‌های پزشک (Many-to-Many)
+        /// لیست روابط پزشک-تخصص (Many-to-Many)
         /// این رابطه برای مشخص کردن تخصص‌های پزشک استفاده می‌شود
         /// </summary>
-        public virtual ICollection<Specialization> Specializations { get; set; } = new HashSet<Specialization>();
+        public virtual ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new HashSet<DoctorSpecialization>();
         #endregion
     }
 
@@ -2922,12 +2994,6 @@ namespace ClinicApp.Models.Entities
                 .IsOptional()
                 .HasMaxLength(500);
 
-            Property(d => d.ConsultationFee)
-                .IsOptional()
-                .HasPrecision(18, 0)
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Doctor_ConsultationFee")));
-
             Property(d => d.ExperienceYears)
                 .IsOptional()
                 .HasColumnAnnotation("Index",
@@ -2964,6 +3030,26 @@ namespace ClinicApp.Models.Entities
             Property(d => d.Bio)
                 .IsOptional()
                 .HasMaxLength(2000);
+
+            Property(d => d.Address)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            Property(d => d.EmergencyContact)
+                .IsOptional()
+                .HasMaxLength(50);
+
+            Property(d => d.SecurityLevel)
+                .IsOptional()
+                .HasMaxLength(20);
+
+            Property(d => d.Education)
+                .IsOptional()
+                .HasMaxLength(100);
+
+            Property(d => d.LicenseNumber)
+                .IsOptional()
+                .HasMaxLength(50);
 
             // ApplicationUserId - Required
             Property(d => d.ApplicationUserId)

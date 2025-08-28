@@ -1,7 +1,134 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorCreateEditViewModel
 @{
     ViewBag.Title = "ویرایش پزشک";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        .form-section {
+            background: #f8f9fc;
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid #e3e6f0;
+        }
+
+        .form-section h5 {
+            color: #4e73df;
+            border-bottom: 2px solid #4e73df;
+            padding-bottom: 0.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .required-field::after {
+            content: " *";
+            color: #e74a3b;
+        }
+
+        .profile-image-container {
+            text-align: center;
+            margin-bottom: 1rem;
+        }
+
+        .profile-image {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid #4e73df;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+
+        .dropzone {
+            border: 2px dashed #4e73df;
+            border-radius: 0.35rem;
+            background: #f8f9fc;
+            min-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .dropzone:hover {
+            background: #eaecf4;
+            border-color: #2e59d9;
+        }
+
+        .dropzone.dragover {
+            background: #e3f2fd;
+            border-color: #2196f3;
+            transform: scale(1.02);
+        }
+
+        .dropzone.upload-success {
+            background: #e8f5e8;
+            border-color: #28a745;
+            animation: successPulse 0.5s ease-in-out;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .profile-image {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .profile-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.25);
+        }
+
+        .validation-summary {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 0.35rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .validation-summary ul {
+            margin-bottom: 0;
+            padding-right: 1.5rem;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            color: #5a5c69;
+        }
+
+        .help-text {
+            font-size: 0.875rem;
+            color: #858796;
+            margin-top: 0.25rem;
+        }
+
+        .audit-info {
+            background: #e8f4fd;
+            border: 1px solid #bee5eb;
+            border-radius: 0.35rem;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .audit-info h6 {
+            color: #0c5460;
+            margin-bottom: 0.5rem;
+        }
+
+        .audit-info p {
+            margin-bottom: 0.25rem;
+            font-size: 0.875rem;
+        }
+    </style>
 }
 
 <div class="container-fluid">
@@ -23,9 +150,9 @@
         </div>
     }
 
-    <form method="post" enctype="multipart/form-data">
+    <form id="doctorForm" method="post" enctype="multipart/form-data">
         @Html.AntiForgeryToken()
-        @Html.HiddenFor(m => m.Id)
+        @Html.HiddenFor(m => m.DoctorId)
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
@@ -66,6 +193,28 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
+                            <label for="Gender">جنسیت *</label>
+                            @Html.DropDownListFor(m => m.Gender, new SelectList(new[]
+                            {
+                                new { Value = "", Text = "انتخاب جنسیت" },
+                                new { Value = "1", Text = "مرد" },
+                                new { Value = "2", Text = "زن" }
+                            }, "Value", "Text"), new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Gender, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                                            <div class="form-group">
+                        <label for="DateOfBirthShamsi">تاریخ تولد</label>
+                        @Html.TextBoxFor(m => m.DateOfBirthShamsi, new { @class = "form-control", placeholder = "مثال: 1369/03/27", autocomplete = "off" })
+                        @Html.ValidationMessageFor(m => m.DateOfBirthShamsi, "", new { @class = "text-danger" })
+                        <div class="help-text">تاریخ تولد را به صورت شمسی وارد کنید (مثال: 1369/03/27)</div>
+                    </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
                             <label for="Email">ایمیل</label>
                             @Html.TextBoxFor(m => m.Email, new { @class = "form-control", type = "email" })
                             @Html.ValidationMessageFor(m => m.Email, "", new { @class = "text-danger" })
@@ -87,6 +236,46 @@
                 <h6 class="m-0 font-weight-bold text-primary">اطلاعات حرفه‌ای</h6>
             </div>
             <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="Degree">مدرک تحصیلی *</label>
+                            @Html.DropDownListFor(m => m.Degree, new SelectList(new[]
+                            {
+                                new { Value = "", Text = "انتخاب مدرک تحصیلی" },
+                                new { Value = "1", Text = "پزشک عمومی" },
+                                new { Value = "2", Text = "متخصص" },
+                                new { Value = "3", Text = "فوق تخصص" },
+                                new { Value = "4", Text = "دندانپزشک" },
+                                new { Value = "5", Text = "داروساز" }
+                            }, "Value", "Text"), new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Degree, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="GraduationYear">سال فارغ‌التحصیلی</label>
+                            @Html.TextBoxFor(m => m.GraduationYear, new { @class = "form-control", type = "number", min = "1350", max = "1410" })
+                            @Html.ValidationMessageFor(m => m.GraduationYear, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="University">دانشگاه</label>
+                            @Html.TextBoxFor(m => m.University, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.University, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="ExperienceYears">سال‌های تجربه</label>
+                            @Html.TextBoxFor(m => m.ExperienceYears, new { @class = "form-control", type = "number", min = "0", max = "50" })
+                            @Html.ValidationMessageFor(m => m.ExperienceYears, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -116,32 +305,30 @@
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="ExperienceYears">سال‌های تجربه</label>
-                            @Html.TextBoxFor(m => m.ExperienceYears, new { @class = "form-control", type = "number", min = "0", max = "50" })
-                            @Html.ValidationMessageFor(m => m.ExperienceYears, "", new { @class = "text-danger" })
+                            <label for="Education">تحصیلات تکمیلی</label>
+                            @Html.TextBoxFor(m => m.Education, new { @class = "form-control" })
+                            @Html.ValidationMessageFor(m => m.Education, "", new { @class = "text-danger" })
                         </div>
                     </div>
                     <div class="col-md-6">
                         <div class="form-group">
-                            <label for="Education">تحصیلات</label>
-                            @Html.DropDownListFor(m => m.Education, new SelectList(new[]
+                            <label for="SecurityLevel">سطح امنیتی</label>
+                            @Html.DropDownListFor(m => m.SecurityLevel, new SelectList(new[]
                             {
-                                new { Value = "", Text = "انتخاب تحصیلات" },
-                                new { Value = "پزشک عمومی", Text = "پزشک عمومی" },
-                                new { Value = "متخصص", Text = "متخصص" },
-                                new { Value = "فوق تخصص", Text = "فوق تخصص" },
-                                new { Value = "استاد", Text = "استاد" }
+                                new { Value = "Normal", Text = "عادی" },
+                                new { Value = "High", Text = "بالا" },
+                                new { Value = "VeryHigh", Text = "خیلی بالا" }
                             }, "Value", "Text"), new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.Education, "", new { @class = "text-danger" })
+                            @Html.ValidationMessageFor(m => m.SecurityLevel, "", new { @class = "text-danger" })
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                            <label for="Biography">بیوگرافی</label>
-                            @Html.TextAreaFor(m => m.Biography, new { @class = "form-control", rows = "4" })
-                            @Html.ValidationMessageFor(m => m.Biography, "", new { @class = "text-danger" })
+                                                    <label for="Bio">بیوگرافی</label>
+                        @Html.TextAreaFor(m => m.Bio, new { @class = "form-control", rows = "4" })
+                        @Html.ValidationMessageFor(m => m.Bio, "", new { @class = "text-danger" })
                         </div>
                     </div>
                 </div>
@@ -153,6 +340,22 @@
                 <h6 class="m-0 font-weight-bold text-primary">اطلاعات تماس</h6>
             </div>
             <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="HomeAddress">آدرس منزل</label>
+                            @Html.TextAreaFor(m => m.HomeAddress, new { @class = "form-control", rows = "3", placeholder = "آدرس منزل پزشک" })
+                            @Html.ValidationMessageFor(m => m.HomeAddress, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="OfficeAddress">آدرس مطب</label>
+                            @Html.TextAreaFor(m => m.OfficeAddress, new { @class = "form-control", rows = "3", placeholder = "آدرس مطب یا کلینیک" })
+                            @Html.ValidationMessageFor(m => m.OfficeAddress, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
                 <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
@@ -174,10 +377,23 @@
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">تنظیمات</h6>
+                <h6 class="m-0 font-weight-bold text-primary">تصویر پروفایل</h6>
             </div>
             <div class="card-body">
                 <div class="row">
+                    <div class="col-md-6">
+                        <div class="profile-image-container">
+                            <img id="profilePreview" src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/Content/Images/default-avatar.jpg" : Model.ProfileImageUrl)" class="profile-image" alt="تصویر پروفایل" />
+                        </div>
+                        <div class="dropzone" id="imageDropzone">
+                            <div class="dz-message">
+                                <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                                <p>برای آپلود تصویر کلیک کنید یا فایل را اینجا بکشید</p>
+                                <small class="text-muted">فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 2MB)</small>
+                            </div>
+                        </div>
+                        <input type="file" id="ProfileImage" name="ProfileImage" accept="image/*" style="display: none;" />
+                    </div>
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="IsActive">وضعیت فعال</label>
@@ -189,6 +405,16 @@
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">تنظیمات</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="SecurityLevel">سطح امنیتی</label>
@@ -201,6 +427,25 @@
                             @Html.ValidationMessageFor(m => m.SecurityLevel, "", new { @class = "text-danger" })
                         </div>
                     </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Audit Trail Section -->
+        <div class="audit-info">
+            <h6><i class="fas fa-history"></i> اطلاعات ردیابی</h6>
+            <div class="row">
+                <div class="col-md-6">
+                    <p><strong>تاریخ ایجاد:</strong> @Model.CreatedAtShamsi</p>
+                    <p><strong>ایجاد کننده:</strong> @Model.CreatedBy</p>
+                </div>
+                <div class="col-md-6">
+                    @if (!string.IsNullOrEmpty(Model.UpdatedAtShamsi))
+                    {
+                        <p><strong>آخرین ویرایش:</strong> @Model.UpdatedAtShamsi</p>
+                        <p><strong>ویرایش کننده:</strong> @Model.UpdatedBy</p>
+                    }
                 </div>
             </div>
         </div>
@@ -217,3 +462,280 @@
         </div>
     </form>
 </div>
+
+@section Scripts {
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/jquery-validation/jquery.validate.min.js"></script>
+    <script src="~/Content/plugins/jquery-validation/localization/messages_fa.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize Persian DatePicker for DateOfBirthShamsi
+            $('#DateOfBirthShamsi').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                onSelect: function(unix) {
+                    // Convert to Persian date format
+                    var date = new Date(unix);
+                    var persianDate = date.getFullYear() + '/' + 
+                        String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+                        String(date.getDate()).padStart(2, '0');
+                    $('#DateOfBirthShamsi').val(persianDate);
+                }
+            });
+
+            // Enhanced form validation
+            $('#doctorForm').validate({
+                rules: {
+                    FirstName: {
+                        required: true,
+                        minlength: 2,
+                        maxlength: 100,
+                        pattern: /^[\u0600-\u06FF\s]+$/
+                    },
+                    LastName: {
+                        required: true,
+                        minlength: 2,
+                        maxlength: 100,
+                        pattern: /^[\u0600-\u06FF\s]+$/
+                    },
+                    MedicalCouncilCode: {
+                        required: true,
+                        minlength: 1,
+                        maxlength: 20
+                    },
+                    PhoneNumber: {
+                        required: true,
+                        pattern: /^0\d{10}$/
+                    },
+                    SelectedSpecializationIds: {
+                        required: true
+                    },
+                    Email: {
+                        email: true,
+                        maxlength: 100
+                    },
+                    Degree: {
+                        required: true
+                    },
+                    Gender: {
+                        required: true
+                    }
+                },
+                messages: {
+                    FirstName: {
+                        required: "نام پزشک الزامی است",
+                        minlength: "نام باید حداقل 2 کاراکتر باشد",
+                        maxlength: "نام نمی‌تواند بیش از 100 کاراکتر باشد",
+                        pattern: "نام باید به فارسی وارد شود"
+                    },
+                    LastName: {
+                        required: "نام خانوادگی پزشک الزامی است",
+                        minlength: "نام خانوادگی باید حداقل 2 کاراکتر باشد",
+                        maxlength: "نام خانوادگی نمی‌تواند بیش از 100 کاراکتر باشد",
+                        pattern: "نام خانوادگی باید به فارسی وارد شود"
+                    },
+                    MedicalCouncilCode: {
+                        required: "شماره نظام پزشکی الزامی است",
+                        minlength: "شماره نظام پزشکی باید حداقل 1 کاراکتر باشد",
+                        maxlength: "شماره نظام پزشکی نمی‌تواند بیش از 20 کاراکتر باشد"
+                    },
+                    PhoneNumber: {
+                        required: "شماره تلفن الزامی است",
+                        pattern: "شماره تلفن باید با 0 شروع شود و 11 رقم باشد"
+                    },
+                    SelectedSpecializationIds: {
+                        required: "انتخاب حداقل یک تخصص الزامی است"
+                    },
+                    Email: {
+                        email: "فرمت ایمیل نامعتبر است",
+                        maxlength: "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد"
+                    },
+                    Degree: {
+                        required: "انتخاب مدرک تحصیلی الزامی است"
+                    },
+                    Gender: {
+                        required: "انتخاب جنسیت الزامی است"
+                    }
+                },
+                errorElement: 'span',
+                errorClass: 'text-danger',
+                highlight: function (element) {
+                    $(element).closest('.form-group').addClass('has-error');
+                    $(element).addClass('field-error');
+                },
+                unhighlight: function (element) {
+                    $(element).closest('.form-group').removeClass('has-error');
+                    $(element).removeClass('field-error');
+                    if ($(element).val().length > 0) {
+                        $(element).addClass('field-success');
+                    }
+                },
+                submitHandler: function(form) {
+                    // بررسی انتخاب تخصص‌ها
+                    var selectedSpecializations = $('#SelectedSpecializationIds').val();
+                    if (!selectedSpecializations || selectedSpecializations.length === 0) {
+                        swal("خطا!", "لطفاً حداقل یک تخصص انتخاب کنید.", "error");
+                        return false;
+                    }
+
+                    // Show loading state
+                    $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...');
+                    $(form).addClass('form-loading');
+
+                    return true;
+                }
+            });
+
+            // Real-time validation
+            $('input, select, textarea').on('blur', function () {
+                if ($(this).hasClass('required-field') || $(this).attr('required')) {
+                    if (!$(this).val()) {
+                        $(this).addClass('is-invalid');
+                    } else {
+                        $(this).removeClass('is-invalid');
+                    }
+                }
+            });
+
+            // Phone number formatting
+            $('#PhoneNumber').on('input', function () {
+                var value = $(this).val().replace(/\D/g, '');
+                if (value.length > 0 && !value.startsWith('0')) {
+                    value = '0' + value;
+                }
+                $(this).val(value);
+            });
+
+            // National code validation
+            $('#NationalCode').on('input', function () {
+                var value = $(this).val().replace(/\D/g, '');
+                if (value.length > 10) {
+                    value = value.substring(0, 10);
+                }
+                $(this).val(value);
+            });
+
+            // Medical council code validation
+            $('#MedicalCouncilCode').on('input', function () {
+                var value = $(this).val().replace(/\D/g, '');
+                if (value.length > 8) {
+                    value = value.substring(0, 8);
+                }
+                $(this).val(value);
+            });
+
+            // Enhanced Image Upload Functionality
+            initializeImageUpload();
+
+            // Success message on page load
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'موفقیت',
+                    text: '@TempData["Success"]',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+
+            // Error message on page load
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا',
+                    text: '@TempData["Error"]',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+
+            // Enhanced Image Upload Functionality
+            function initializeImageUpload() {
+                // Initialize custom file upload
+                $('#imageDropzone').on('click', function() {
+                    $('#ProfileImage').click();
+                });
+
+                $('#ProfileImage').on('change', function() {
+                    var file = this.files[0];
+                    if (file) {
+                        // Validate file type
+                        if (!file.type.match(/image.*/)) {
+                            swal("خطا!", "فقط فایل‌های تصویری مجاز هستند.", "error");
+                            return;
+                        }
+                        
+                        // Validate file size (2MB)
+                        if (file.size > 2 * 1024 * 1024) {
+                            swal("خطا!", "حجم فایل نباید بیشتر از 2 مگابایت باشد.", "error");
+                            return;
+                        }
+
+                        // Show loading state
+                        $('#imageDropzone .dz-message').html('<i class="fas fa-spinner fa-spin fa-2x text-primary mb-2"></i><p>در حال پردازش...</p>');
+
+                        var reader = new FileReader();
+                        reader.onload = function (e) {
+                            $('#profilePreview').attr('src', e.target.result);
+                            $('#imageDropzone .dz-message').html('<i class="fas fa-check fa-2x text-success mb-2"></i><p>تصویر انتخاب شد</p><small class="text-success">' + file.name + '</small>');
+                            
+                            // Add success animation
+                            $('#imageDropzone').addClass('upload-success');
+                            setTimeout(function() {
+                                $('#imageDropzone').removeClass('upload-success');
+                            }, 2000);
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                });
+
+                // Drag and drop functionality
+                $('#imageDropzone').on('dragover', function(e) {
+                    e.preventDefault();
+                    $(this).addClass('dragover');
+                });
+
+                $('#imageDropzone').on('dragleave', function(e) {
+                    e.preventDefault();
+                    $(this).removeClass('dragover');
+                });
+
+                $('#imageDropzone').on('drop', function(e) {
+                    e.preventDefault();
+                    $(this).removeClass('dragover');
+                    
+                    var files = e.originalEvent.dataTransfer.files;
+                    if (files.length > 0) {
+                        $('#ProfileImage')[0].files = files;
+                        $('#ProfileImage').trigger('change');
+                    }
+                });
+
+                // Remove image functionality
+                $('#profilePreview').on('click', function() {
+                    if ($('#ProfileImage')[0].files.length > 0) {
+                        swal({
+                            title: "حذف تصویر",
+                            text: "آیا می‌خواهید تصویر انتخاب شده را حذف کنید؟",
+                            icon: "warning",
+                            buttons: ["انصراف", "حذف"],
+                            dangerMode: true,
+                        }).then((willDelete) => {
+                            if (willDelete) {
+                                $('#ProfileImage').val('');
+                                $('#profilePreview').attr('src', '/Content/Images/default-avatar.jpg');
+                                $('#imageDropzone .dz-message').html('<i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i><p>برای آپلود تصویر کلیک کنید یا فایل را اینجا بکشید</p><small class="text-muted">فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 2MB)</small>');
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    </script>
+}

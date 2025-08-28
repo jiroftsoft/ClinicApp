@@ -92,13 +92,13 @@ namespace ClinicApp.ViewModels.SpecializationManagementVM
                 Description = specialization.Description,
                 StatusText = specialization.IsActive ? "فعال" : "غیرفعال",
                 DisplayOrder = specialization.DisplayOrder,
-                DoctorCount = specialization.Doctors?.Count ?? 0,
-                Doctors = specialization.Doctors?.Select(d => new DoctorListItemViewModel
+                DoctorCount = specialization.DoctorSpecializations?.Count ?? 0,
+                Doctors = specialization.DoctorSpecializations?.Select(ds => new DoctorListItemViewModel
                 {
-                    DoctorId = d.DoctorId,
-                    FullName = $"{d.FirstName} {d.LastName}",
-                    IsActive = d.IsActive,
-                    StatusText = d.IsActive ? "فعال" : "غیرفعال"
+                    DoctorId = ds.Doctor.DoctorId,
+                    FullName = $"{ds.Doctor.FirstName} {ds.Doctor.LastName}",
+                    IsActive = ds.Doctor.IsActive,
+                    StatusText = ds.Doctor.IsActive ? "فعال" : "غیرفعال"
                 }).ToList() ?? new List<DoctorListItemViewModel>(),
                 CreatedAtShamsi = specialization.CreatedAt.ToPersianDateTime(),
                 CreatedBy = specialization.CreatedByUser?.FullName ?? specialization.CreatedByUserId,

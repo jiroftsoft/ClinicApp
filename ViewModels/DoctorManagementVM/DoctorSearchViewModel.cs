@@ -54,9 +54,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public bool? IsDeleted { get; set; }
 
         /// <summary>
-        /// فیلتر بر اساس تخصص پزشک
+        /// فیلتر بر اساس شناسه تخصص پزشک
         /// </summary>
-        public string Specialization { get; set; }
+        public int? SpecializationId { get; set; }
 
         /// <summary>
         /// فیلد مرتب‌سازی
@@ -67,6 +67,16 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// ترتیب مرتب‌سازی (asc/desc)
         /// </summary>
         public string SortOrder { get; set; } = "asc";
+
+        /// <summary>
+        /// فیلتر بر اساس وضعیت (برای backward compatibility)
+        /// </summary>
+        public string Status { get; set; }
+
+        /// <summary>
+        /// شماره صفحه (برای backward compatibility)
+        /// </summary>
+        public int Page { get; set; } = 1;
     }
 
     /// <summary>

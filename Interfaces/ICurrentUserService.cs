@@ -76,6 +76,12 @@ public interface ICurrentUserService
     /// </summary>
     ClaimsPrincipal ClaimsPrincipal { get; }
 
+    /// <summary>
+    /// بررسی اینکه آیا در محیط توسعه هستیم یا نه
+    /// برای تشخیص خودکار محیط توسعه و استفاده از کاربر Admin
+    /// </summary>
+    bool IsDevelopmentEnvironment();
+
     #endregion
 
     #region Security Methods (روش‌های امنیتی)

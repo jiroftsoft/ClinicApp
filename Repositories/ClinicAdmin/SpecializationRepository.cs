@@ -108,20 +108,38 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(name))
-                    return false;
-
                 var query = _context.Specializations
                     .Where(s => s.Name == name && !s.IsDeleted);
 
                 if (excludeSpecializationId.HasValue)
+                {
                     query = query.Where(s => s.SpecializationId != excludeSpecializationId.Value);
+                }
 
                 return await query.AnyAsync();
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"خطا در بررسی وجود نام تخصص {name}", ex);
+                throw new InvalidOperationException($"خطا در بررسی وجود نام تخصص: {name}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد پزشکان فعال مرتبط با تخصص
+        /// </summary>
+        public async Task<int> GetActiveDoctorsCountAsync(int specializationId)
+        {
+            try
+            {
+                return await _context.DoctorSpecializations
+                    .Where(ds => ds.SpecializationId == specializationId)
+                    .Include(ds => ds.Doctor)
+                    .Where(ds => ds.Doctor.IsActive && !ds.Doctor.IsDeleted)
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در دریافت تعداد پزشکان فعال برای تخصص {specializationId}", ex);
             }
         }
 
@@ -252,12 +270,14 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
-                var doctor = await _context.Doctors
-                    .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
-                    .Include(d => d.Specializations)
-                    .FirstOrDefaultAsync();
+                var specializations = await _context.DoctorSpecializations
+                    .Where(ds => ds.DoctorId == doctorId)
+                    .Include(ds => ds.Specialization)
+                    .Select(ds => ds.Specialization)
+                    .Where(s => !s.IsDeleted)
+                    .ToListAsync();
 
-                return doctor?.Specializations?.ToList() ?? new List<Specialization>();
+                return specializations ?? new List<Specialization>();
             }
             catch (Exception ex)
             {
@@ -272,37 +292,50 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
-                var doctor = await _context.Doctors
-                    .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
-                    .Include(d => d.Specializations)
-                    .FirstOrDefaultAsync();
+                // حذف تخصص‌های قبلی
+                var existingSpecializations = await _context.DoctorSpecializations
+                    .Where(ds => ds.DoctorId == doctorId)
+                    .ToListAsync();
 
-                if (doctor == null)
-                    return false;
+                _context.DoctorSpecializations.RemoveRange(existingSpecializations);
 
-                // پاک کردن تخصص‌های فعلی
-                doctor.Specializations.Clear();
-
-                // اضافه کردن تخصص‌های جدید
+                // افزودن تخصص‌های جدید
                 if (specializationIds != null && specializationIds.Any())
                 {
-                    var specializations = await _context.Specializations
-                        .Where(s => specializationIds.Contains(s.SpecializationId) && s.IsActive && !s.IsDeleted)
-                        .ToListAsync();
-
-                    foreach (var specialization in specializations)
+                    var newSpecializations = specializationIds.Select(specializationId => new DoctorSpecialization
                     {
-                        doctor.Specializations.Add(specialization);
-                    }
+                        DoctorId = doctorId,
+                        SpecializationId = specializationId
+                    });
+
+                    _context.DoctorSpecializations.AddRange(newSpecializations);
                 }
 
                 await _context.SaveChangesAsync();
-
                 return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تخصص‌ها بر اساس لیست شناسه‌ها
+        /// </summary>
+        public async Task<List<Specialization>> GetSpecializationsByIdsAsync(List<int> specializationIds)
+        {
+            try
+            {
+                return await _context.Specializations
+                    .Where(s => specializationIds.Contains(s.SpecializationId) && !s.IsDeleted)
+                    .OrderBy(s => s.DisplayOrder)
+                    .ThenBy(s => s.Name)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"خطا در به‌روزرسانی تخصص‌های پزشک با شناسه {doctorId}", ex);
+                throw new InvalidOperationException("خطا در دریافت تخصص‌ها بر اساس شناسه‌ها", ex);
             }
         }
 

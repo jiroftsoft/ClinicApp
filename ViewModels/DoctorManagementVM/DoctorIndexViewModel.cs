@@ -20,6 +20,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "نام خانوادگی")]
         public string LastName { get; set; }
 
+        /// <summary>
+        /// نام کامل پزشک (ترکیب نام و نام خانوادگی)
+        /// </summary>
         [Display(Name = "نام کامل")]
         public string FullName { get; set; }
 
@@ -41,8 +44,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "نام جنسیت")]
         public string GenderName => Gender.ToString();
 
-        [Display(Name = "تعرفه ویزیت")]
-        public decimal? ConsultationFee { get; set; }
+
 
         [Display(Name = "سابقه کاری")]
         public int? ExperienceYears { get; set; }
@@ -59,6 +61,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
 
+        /// <summary>
+        /// تاریخ ایجاد به فرمت شمسی
+        /// </summary>
         [Display(Name = "تاریخ ایجاد (شمسی)")]
         public string CreatedAtShamsi { get; set; }
 
@@ -74,19 +79,33 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "تعداد دسته‌بندی‌های خدماتی")]
         public int ServiceCategoryCount { get; set; }
 
-        // Properties جدید مورد نیاز View
-        [Display(Name = "شناسه")]
-        public int Id => DoctorId; // Alias برای View
+        /// <summary>
+        /// شناسه پزشک (برای استفاده در view)
+        /// </summary>
+        public int Id => DoctorId;
 
+        /// <summary>
+        /// کد ملی پزشک
+        /// </summary>
         [Display(Name = "کد ملی")]
         public string NationalCode { get; set; }
 
-        [Display(Name = "کد نظام پزشکی")]
+        /// <summary>
+        /// شماره نظام پزشکی
+        /// </summary>
+        [Display(Name = "شماره نظام پزشکی")]
         public string MedicalCouncilCode { get; set; }
 
+        /// <summary>
+        /// آدرس ایمیل پزشک
+        /// </summary>
         [Display(Name = "ایمیل")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است.")]
         public string Email { get; set; }
 
+        /// <summary>
+        /// آدرس تصویر پروفایل پزشک
+        /// </summary>
         [Display(Name = "تصویر پروفایل")]
         public string ProfileImageUrl { get; set; }
 
@@ -107,9 +126,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 GraduationYear = doctor.GraduationYear,
                 University = doctor.University,
                 Gender = doctor.Gender,
-                ConsultationFee = doctor.ConsultationFee,
+
                 ExperienceYears = doctor.ExperienceYears,
-                SpecializationNames = doctor.Specializations?.Select(s => s.Name).ToList() ?? new List<string>(),
+                SpecializationNames = doctor.DoctorSpecializations?.Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
                 PhoneNumber = doctor.PhoneNumber,
                 IsActive = doctor.IsActive,
                 CreatedAt = doctor.CreatedAt,

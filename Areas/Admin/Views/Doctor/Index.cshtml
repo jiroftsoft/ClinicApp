@@ -1,13 +1,13 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorIndexPageViewModel
 @{
     ViewBag.Title = "مدیریت پزشکان";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 @section Styles {
-    <link href="~/Content/plugins/datatables/dataTables.bootstrap.css" rel="stylesheet" />
-    <link href="~/Content/plugins/datatables/responsive.bootstrap.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/sweetalert/sweetalert.css" rel="stylesheet" />
+    <link href="~/Content/plugins/datatables/css/dataTables.bootstrap.css" rel="stylesheet" />
+    <link href="~/Content/plugins/datatables/css/responsive.bootstrap.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <style>
         .doctor-card {
             border: 1px solid #e3e6f0;
@@ -77,14 +77,14 @@
                 </div>
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label for="Specialization" class="text-white">تخصص</label>
-                        <select class="form-control" id="Specialization" name="Specialization">
+                        <label for="SpecializationId" class="text-white">تخصص</label>
+                        <select class="form-control" id="SpecializationId" name="SpecializationId">
                             <option value="">همه تخصص‌ها</option>
                             @if (ViewBag.Specializations != null)
                             {
                                 foreach (var specialization in ViewBag.Specializations)
                                 {
-                                    <option value="@specialization.SpecializationId" @(Model.SearchModel.Specialization == specialization.SpecializationId.ToString() ? "selected" : "")>@specialization.Name</option>
+                                    <option value="@specialization.SpecializationId" @(Model.SearchModel.SpecializationId == specialization.SpecializationId ? "selected" : "")>@specialization.Name</option>
                                 }
                             }
                         </select>
@@ -110,7 +110,16 @@
                         </select>
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-1">
+                    <div class="form-group">
+                        <label for="SortOrder" class="text-white">ترتیب</label>
+                        <select class="form-control" id="SortOrder" name="SortOrder">
+                            <option value="asc" @(Model.SearchModel.SortOrder == "asc" ? "selected" : "")>صعودی</option>
+                            <option value="desc" @(Model.SearchModel.SortOrder == "desc" ? "selected" : "")>نزولی</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-2">
                     <div class="form-group">
                         <label class="text-white">&nbsp;</label>
                         <div class="d-flex">
@@ -274,7 +283,7 @@
                                     <td>@doctor.NationalCode</td>
                                     <td>@doctor.MedicalCouncilCode</td>
                                     <td>
-                                        <span class="badge badge-info">@doctor.Specialization</span>
+                                        <span class="badge badge-info">@doctor.SpecializationNames</span>
                                     </td>
                                     <td>
                                         @if (doctor.IsActive)
@@ -326,7 +335,7 @@
                 </div>
 
                 <!-- Pagination -->
-                @if (Model.Doctors.TotalPages > 1)
+                if (Model.Doctors.TotalPages > 1)
                 {
                     <div class="d-flex justify-content-between align-items-center mt-3">
                         <div class="pagination-info">
@@ -339,7 +348,7 @@
                                 @if (Model.SearchModel.PageNumber > 1)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber - 1, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber - 1, SearchTerm = Model.SearchModel.SearchTerm, SpecializationId = Model.SearchModel.SpecializationId, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
                                             <i class="fas fa-chevron-right"></i>
                                         </a>
                                     </li>
@@ -348,7 +357,7 @@
                                 @for (int i = Math.Max(1, Model.SearchModel.PageNumber - 2); i <= Math.Min(Model.Doctors.TotalPages, Model.SearchModel.PageNumber + 2); i++)
                                 {
                                     <li class="page-item @(i == Model.SearchModel.PageNumber ? "active" : "")">
-                                        <a class="page-link" href="@Url.Action("Index", new { page = i, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = i, SearchTerm = Model.SearchModel.SearchTerm, SpecializationId = Model.SearchModel.SpecializationId, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
                                             @i
                                         </a>
                                     </li>
@@ -357,7 +366,7 @@
                                 @if (Model.SearchModel.PageNumber < Model.Doctors.TotalPages)
                                 {
                                     <li class="page-item">
-                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber + 1, SearchTerm = Model.SearchModel.SearchTerm, Specialization = Model.SearchModel.Specialization, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
+                                        <a class="page-link" href="@Url.Action("Index", new { page = Model.SearchModel.PageNumber + 1, SearchTerm = Model.SearchModel.SearchTerm, SpecializationId = Model.SearchModel.SpecializationId, IsActive = Model.SearchModel.IsActive, SortBy = Model.SearchModel.SortBy, SortOrder = Model.SearchModel.SortOrder })">
                                             <i class="fas fa-chevron-left"></i>
                                         </a>
                                     </li>
@@ -384,9 +393,9 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Content/plugins/datatables/dataTables.bootstrap.min.js"></script>
-    <script src="~/Content/plugins/sweetalert/sweetalert.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/dataTables.bootstrap.min.js"></script>
+    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
     <script>
         $(document).ready(function () {
             // Initialize DataTable
@@ -418,9 +427,10 @@
 
         function resetSearch() {
             $('#SearchTerm').val('');
-            $('#Specialization').val('');
+            $('#SpecializationId').val('');
             $('#Status').val('');
             $('#SortBy').val('Name');
+            $('#SortOrder').val('asc');
             $('#searchForm').submit();
         }
 

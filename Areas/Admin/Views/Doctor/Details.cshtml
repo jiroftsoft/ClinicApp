@@ -112,7 +112,7 @@
                 <p class="mb-1">
                     <i class="fas fa-stethoscope"></i>
                     <span class="info-label">تخصص‌ها:</span>
-                    <span class="info-value">@(string.IsNullOrEmpty(Model.SpecializationNames) ? "ثبت نشده" : string.Join("، ", Model.SpecializationNames))</span>
+                    <span class="info-value">@(Model.SpecializationNames == null || !Model.SpecializationNames.Any() ? "ثبت نشده" : string.Join("، ", Model.SpecializationNames))</span>
                 </p>
                 <p class="mb-1">
                     <i class="fas fa-id-card"></i>
@@ -231,7 +231,7 @@
                 <div class="info-item">
                     <i class="fas fa-stethoscope"></i>
                     <span class="info-label">تخصص‌ها:</span>
-                    <span class="info-value">@(string.IsNullOrEmpty(Model.SpecializationNames) ? "ثبت نشده" : string.Join("، ", Model.SpecializationNames))</span>
+                    <span class="info-value">@(Model.SpecializationNames == null || !Model.SpecializationNames.Any() ? "ثبت نشده" : string.Join("، ", Model.SpecializationNames))</span>
                 </div>
                 <div class="info-item">
                     <i class="fas fa-certificate"></i>

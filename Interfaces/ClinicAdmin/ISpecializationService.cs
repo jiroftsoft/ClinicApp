@@ -84,6 +84,13 @@ public interface ISpecializationService
     /// <returns>نتیجه عملیات به‌روزرسانی</returns>
     Task<ServiceResult> UpdateDoctorSpecializationsAsync(int doctorId, List<int> specializationIds);
 
+    /// <summary>
+    /// دریافت تخصص‌ها بر اساس لیست شناسه‌ها
+    /// </summary>
+    /// <param name="specializationIds">لیست شناسه‌های تخصص‌ها</param>
+    /// <returns>نتیجه حاوی لیست تخصص‌ها</returns>
+    Task<ServiceResult<List<Specialization>>> GetSpecializationsByIdsAsync(List<int> specializationIds);
+
     #endregion
 
     #region Validation
@@ -95,6 +102,13 @@ public interface ISpecializationService
     /// <param name="excludeSpecializationId">شناسه تخصص برای استثنا (در حالت ویرایش)</param>
     /// <returns>نتیجه بررسی</returns>
     Task<ServiceResult<bool>> DoesSpecializationNameExistAsync(string name, int? excludeSpecializationId = null);
+
+    /// <summary>
+    /// دریافت تعداد پزشکان فعال مرتبط با تخصص
+    /// </summary>
+    /// <param name="specializationId">شناسه تخصص</param>
+    /// <returns>نتیجه حاوی تعداد پزشکان فعال</returns>
+    Task<ServiceResult<int>> GetActiveDoctorsCountAsync(int specializationId);
 
     #endregion
 }

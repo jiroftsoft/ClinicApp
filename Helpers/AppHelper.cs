@@ -308,6 +308,12 @@ namespace ClinicApp.Helpers
 
             public string[] GetUserRoles() =>
                 new string[0];
+
+            public bool IsDevelopmentEnvironment()
+            {
+                // در این پیاده‌سازی، اگر HttpContext موجود باشد، محیط تولید فرض می‌شود
+                return false;
+            }
         }
 
         private class ThreadPrincipalCurrentUserService : ICurrentUserService
@@ -381,6 +387,12 @@ namespace ClinicApp.Helpers
 
             public string[] GetUserRoles() =>
                 new string[0];
+
+            public bool IsDevelopmentEnvironment()
+            {
+                // در این پیاده‌سازی، اگر Principal موجود باشد، محیط تولید فرض می‌شود
+                return false;
+            }
         }
 
         private class SystemCurrentUserService : ICurrentUserService
@@ -441,6 +453,12 @@ namespace ClinicApp.Helpers
 
             public string[] GetUserRoles() =>
                 new string[] { AppRoles.Admin };
+
+            public bool IsDevelopmentEnvironment()
+            {
+                // SystemCurrentUserService معمولاً در محیط توسعه استفاده می‌شود
+                return true;
+            }
         }
 
         #endregion

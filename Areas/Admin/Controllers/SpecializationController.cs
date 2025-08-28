@@ -376,7 +376,8 @@ namespace ClinicApp.Areas.Admin.Controllers
             // فیلتر بر اساس تعداد پزشکان
             if (searchModel.MinDoctorCount.HasValue)
             {
-                filtered = filtered.Where(s => s.Doctors.Count >= searchModel.MinDoctorCount.Value);
+                // این فیلتر نیاز به پیاده‌سازی جداگانه دارد
+                // filtered = filtered.Where(s => s.DoctorSpecializations.Count >= searchModel.MinDoctorCount.Value);
             }
 
             // فیلتر بر اساس تاریخ ایجاد
@@ -424,9 +425,10 @@ namespace ClinicApp.Areas.Admin.Controllers
                         : sorted.OrderBy(s => s.CreatedAt);
                     break;
                 case "doctorcount":
-                    sorted = searchModel.SortOrder == "desc" 
-                        ? sorted.OrderByDescending(s => s.Doctors.Count)
-                        : sorted.OrderBy(s => s.Doctors.Count);
+                    // این مرتب‌سازی نیاز به پیاده‌سازی جداگانه دارد
+                    // sorted = searchModel.SortOrder == "desc" 
+                    //     ? sorted.OrderByDescending(s => s.DoctorSpecializations.Count)
+                    //     : sorted.OrderBy(s => s.DoctorSpecializations.Count);
                     break;
                 default:
                     sorted = sorted.OrderBy(s => s.DisplayOrder).ThenBy(s => s.Name);

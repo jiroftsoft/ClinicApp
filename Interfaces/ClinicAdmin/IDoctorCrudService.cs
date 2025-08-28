@@ -78,5 +78,19 @@ public interface IDoctorCrudService
     /// <returns>نتیجه عملیات بازیابی.</returns>
     Task<ServiceResult> RestoreDoctorAsync(int doctorId);
 
+    /// <summary>
+    /// دریافت پزشک بر اساس کد ملی
+    /// </summary>
+    /// <param name="nationalCode">کد ملی پزشک</param>
+    /// <returns>نتیجه حاوی اطلاعات پزشک</returns>
+    Task<ServiceResult<Doctor>> GetDoctorByNationalCodeAsync(string nationalCode);
+
+    /// <summary>
+    /// دریافت پزشک بر اساس کد نظام پزشکی
+    /// </summary>
+    /// <param name="medicalCouncilCode">کد نظام پزشکی</param>
+    /// <returns>نتیجه حاوی اطلاعات پزشک</returns>
+    Task<ServiceResult<Doctor>> GetDoctorByMedicalCouncilCodeAsync(string medicalCouncilCode);
+
     #endregion
 }

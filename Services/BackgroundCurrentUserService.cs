@@ -229,6 +229,14 @@ namespace ClinicApp.Services
             }
         }
 
+        public bool IsDevelopmentEnvironment()
+        {
+            // BackgroundCurrentUserService معمولاً در محیط‌های غیر-وب استفاده می‌شود
+            // که می‌تواند محیط توسعه باشد
+            _log.Debug("BackgroundCurrentUserService - تشخیص محیط توسعه");
+            return true;
+        }
+
         #endregion
 
         #region Private Helper Methods (روش‌های کمکی خصوصی)

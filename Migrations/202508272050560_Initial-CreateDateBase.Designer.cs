@@ -7,13 +7,13 @@ namespace ClinicApp.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class DoctorModule : IMigrationMetadata
+    public sealed partial class InitialCreateDateBase : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(DoctorModule));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(InitialCreateDateBase));
         
         string IMigrationMetadata.Id
         {
-            get { return "202508260514024_DoctorModule"; }
+            get { return "202508272050560_Initial-CreateDateBase"; }
         }
         
         string IMigrationMetadata.Source

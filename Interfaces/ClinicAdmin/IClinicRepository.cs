@@ -22,6 +22,11 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         Task<Clinic> GetByIdAsync(int clinicId);
 
         /// <summary>
+        /// دریافت یک کلینیک با نام آن به صورت غیرهمگام.
+        /// </summary>
+        Task<Clinic> GetByNameAsync(string name);
+
+        /// <summary>
         /// بررسی وجود کلینیک با نام تکراری به صورت غیرهمگام.
         /// </summary>
         Task<bool> DoesClinicExistAsync(string name, int? excludeId = null);

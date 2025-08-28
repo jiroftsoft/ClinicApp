@@ -95,6 +95,20 @@ public interface IDoctorCrudRepository
     /// <returns>درست اگر بازیابی موفقیت‌آمیز باشد</returns>
     Task<bool> RestoreAsync(int doctorId, string restoredByUserId);
 
+    /// <summary>
+    /// دریافت پزشک بر اساس کد ملی
+    /// </summary>
+    /// <param name="nationalCode">کد ملی</param>
+    /// <returns>پزشک مورد نظر یا null</returns>
+    Task<Doctor> GetByNationalCodeAsync(string nationalCode);
+
+    /// <summary>
+    /// دریافت پزشک بر اساس کد نظام پزشکی
+    /// </summary>
+    /// <param name="medicalCouncilCode">کد نظام پزشکی</param>
+    /// <returns>پزشک مورد نظر یا null</returns>
+    Task<Doctor> GetByMedicalCouncilCodeAsync(string medicalCouncilCode);
+
     #endregion
 
     #region Lookup & Search (جستجو و لیست‌ها)

@@ -42,7 +42,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.Doctors
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
-                    .Include(d => d.Specializations)
+                    .Include(d => d.DoctorSpecializations)
+                    .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -82,7 +83,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.Doctors
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
-                    .Include(d => d.Specializations)
+                    .Include(d => d.DoctorSpecializations)
+                    .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -216,7 +218,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 existingDoctor.DateOfBirth = doctor.DateOfBirth;
                 existingDoctor.HomeAddress = doctor.HomeAddress;
                 existingDoctor.OfficeAddress = doctor.OfficeAddress;
-                existingDoctor.ConsultationFee = doctor.ConsultationFee;
+
                 existingDoctor.ExperienceYears = doctor.ExperienceYears;
                 existingDoctor.ProfileImageUrl = doctor.ProfileImageUrl;
                 existingDoctor.NationalCode = doctor.NationalCode;
@@ -271,11 +273,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
-                var doctor = await _context.Doctors
-                    .FirstOrDefaultAsync(d => d.DoctorId == doctorId && d.IsDeleted);
-
-                if (doctor == null)
+                var doctor = await _context.Doctors.FindAsync(doctorId);
+                if (doctor == null || !doctor.IsDeleted)
+                {
                     return false;
+                }
 
                 doctor.IsDeleted = false;
                 doctor.DeletedAt = null;
@@ -284,14 +286,30 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 doctor.UpdatedByUserId = restoredByUserId;
 
                 await _context.SaveChangesAsync();
-
                 return true;
             }
-            catch (Exception ex)
+            catch
             {
-                // لاگ خطا برای سیستم‌های پزشکی
-                throw new InvalidOperationException($"خطا در بازیابی پزشک با شناسه {doctorId}", ex);
+                return false;
             }
+        }
+
+        /// <summary>
+        /// دریافت پزشک بر اساس کد ملی
+        /// </summary>
+        public async Task<Doctor> GetByNationalCodeAsync(string nationalCode)
+        {
+            return await _context.Doctors
+                .FirstOrDefaultAsync(d => d.NationalCode == nationalCode && !d.IsDeleted);
+        }
+
+        /// <summary>
+        /// دریافت پزشک بر اساس کد نظام پزشکی
+        /// </summary>
+        public async Task<Doctor> GetByMedicalCouncilCodeAsync(string medicalCouncilCode)
+        {
+            return await _context.Doctors
+                .FirstOrDefaultAsync(d => d.MedicalCouncilCode == medicalCouncilCode && !d.IsDeleted);
         }
 
         #endregion
@@ -307,7 +325,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 var query = _context.Doctors
                     .Where(d => !d.IsDeleted)
-                    .Include(d => d.Specializations)
+                    .Include(d => d.DoctorSpecializations)
+                    .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
                     .AsQueryable();
 
                 // اعمال فیلترهای جستجو
@@ -320,7 +339,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         (d.NationalCode != null && d.NationalCode.Contains(searchTerm)) ||
                         (d.MedicalCouncilCode != null && d.MedicalCouncilCode.Contains(searchTerm)) ||
                         (d.University != null && d.University.Contains(searchTerm)) ||
-                        d.Specializations.Any(s => s.Name.Contains(searchTerm))
+                        d.DoctorSpecializations.Any(ds => ds.Specialization.Name.Contains(searchTerm))
                     );
                 }
 
@@ -329,9 +348,9 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     query = query.Where(d => d.IsActive == filter.IsActive.Value);
                 }
 
-                if (!string.IsNullOrWhiteSpace(filter.Specialization))
+                if (filter.SpecializationId.HasValue)
                 {
-                    query = query.Where(d => d.Specializations.Any(s => s.Name.Contains(filter.Specialization)));
+                    query = query.Where(d => d.DoctorSpecializations.Any(ds => ds.SpecializationId == filter.SpecializationId.Value));
                 }
 
                 // مرتب‌سازی
@@ -349,8 +368,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         break;
                     case "specialization":
                         query = filter.SortOrder == "desc" 
-                            ? query.OrderByDescending(d => d.Specializations.FirstOrDefault().Name)
-                            : query.OrderBy(d => d.Specializations.FirstOrDefault().Name);
+                            ? query.OrderByDescending(d => d.DoctorSpecializations.FirstOrDefault().Specialization.Name)
+                            : query.OrderBy(d => d.DoctorSpecializations.FirstOrDefault().Specialization.Name);
                         break;
                     case "createdat":
                         query = filter.SortOrder == "desc" 
@@ -399,7 +418,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                         (d.NationalCode != null && d.NationalCode.Contains(searchTerm)) ||
                         (d.MedicalCouncilCode != null && d.MedicalCouncilCode.Contains(searchTerm)) ||
                         (d.University != null && d.University.Contains(searchTerm)) ||
-                        d.Specializations.Any(s => s.Name.Contains(searchTerm))
+                        d.DoctorSpecializations.Any(ds => ds.Specialization.Name.Contains(searchTerm))
                     );
                 }
 
@@ -408,9 +427,9 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     query = query.Where(d => d.IsActive == filter.IsActive.Value);
                 }
 
-                if (!string.IsNullOrWhiteSpace(filter.Specialization))
+                if (filter.SpecializationId.HasValue)
                 {
-                    query = query.Where(d => d.Specializations.Any(s => s.Name.Contains(filter.Specialization)));
+                    query = query.Where(d => d.DoctorSpecializations.Any(ds => ds.SpecializationId == filter.SpecializationId.Value));
                 }
 
                 return await query.CountAsync();

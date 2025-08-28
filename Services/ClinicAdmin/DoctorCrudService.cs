@@ -38,6 +38,7 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly IValidator<DoctorCreateEditViewModel> _validator;
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
+        private readonly IClinicRepository _clinicRepository; // اضافه کردن repository کلینیک
 
         public DoctorCrudService(
             IDoctorCrudRepository doctorRepository,
@@ -45,7 +46,8 @@ namespace ClinicApp.Services.ClinicAdmin
             IDoctorReportingRepository doctorReportingRepository,
             ICurrentUserService currentUserService,
             IValidator<DoctorCreateEditViewModel> validator,
-            IMapper mapper)
+            IMapper mapper,
+            IClinicRepository clinicRepository) // اضافه کردن dependency
         {
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
             _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));
@@ -53,6 +55,7 @@ namespace ClinicApp.Services.ClinicAdmin
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
+            _clinicRepository = clinicRepository ?? throw new ArgumentNullException(nameof(clinicRepository)); // تخصیص dependency
             _logger = Log.ForContext<DoctorCrudService>();
         }
 
@@ -198,16 +201,67 @@ namespace ClinicApp.Services.ClinicAdmin
                 // بررسی تکراری نبودن پزشک (بر اساس نام و نام خانوادگی)
                 // این بررسی در repository انجام می‌شود
 
+                // بررسی تکراری نبودن پزشک (بر اساس کد ملی و کد نظام پزشکی)
+                var nationalCodeExists = await _doctorRepository.DoesNationalCodeExistAsync(model.NationalCode);
+                if (nationalCodeExists)
+                {
+                    _logger.Warning("تلاش برای ایجاد پزشک تکراری با کد ملی: {NationalCode}", model.NationalCode);
+                    return ServiceResult<Doctor>.Failed("پزشکی با این کد ملی قبلاً ثبت شده است.");
+                }
+
+                var medicalCouncilCodeExists = await _doctorRepository.DoesMedicalCouncilCodeExistAsync(model.MedicalCouncilCode);
+                if (medicalCouncilCodeExists)
+                {
+                    _logger.Warning("تلاش برای ایجاد پزشک تکراری با کد نظام پزشکی: {MedicalCouncilCode}", model.MedicalCouncilCode);
+                    return ServiceResult<Doctor>.Failed("پزشکی با این کد نظام پزشکی قبلاً ثبت شده است.");
+                }
+
                 // تبدیل ViewModel به Entity
                 var doctor = model.ToEntity();
                 
                 // تنظیم اطلاعات ردیابی
                 var currentUserId = _currentUserService.UserId;
+                
+                // بررسی معتبر بودن کاربر فعلی
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _logger.Error("شناسه کاربر خالی است. UserId: {UserId}", currentUserId);
+                    return ServiceResult<Doctor>.Failed("خطا در دریافت اطلاعات کاربر. لطفاً دوباره تلاش کنید.");
+                }
+                
+                // بررسی محیط توسعه
+                if (_currentUserService.IsDevelopmentEnvironment())
+                {
+                    _logger.Information("محیط توسعه تشخیص داده شد. استفاده از کاربر Admin توسعه با شناسه: {UserId}", currentUserId);
+                }
+                else
+                {
+                    _logger.Information("محیط تولید تشخیص داده شد. استفاده از کاربر احراز هویت شده با شناسه: {UserId}", currentUserId);
+                }
+                
                 doctor.CreatedByUserId = currentUserId;
                 doctor.UpdatedByUserId = currentUserId;
+                doctor.ApplicationUserId = currentUserId; // تنظیم کاربر مرتبط
                 doctor.CreatedAt = DateTime.Now;
                 doctor.UpdatedAt = DateTime.Now;
                 doctor.IsDeleted = false;
+
+                // تنظیم کلینیک پیش‌فرض (شفا) اگر انتخاب نشده باشد
+                if (!doctor.ClinicId.HasValue)
+                {
+                    // در اینجا باید شناسه کلینیک شفا را تنظیم کنیم
+                    // برای حال حاضر، از مقدار 1 استفاده می‌کنیم (فرض بر این است که شفا اولین کلینیک است)
+                    var shifaClinic = await _clinicRepository.GetByNameAsync("کلینیک شفا");
+                    if (shifaClinic != null)
+                    {
+                        doctor.ClinicId = shifaClinic.ClinicId;
+                        _logger.Information("پزشک جدید به کلینیک شفا (شناسه: {ClinicId}) تخصیص داده شد", doctor.ClinicId);
+                    }
+                    else
+                    {
+                        _logger.Warning("کلینیک شفا پیدا نشد. پزشک به کلینیک شفا تخصیص داده نشد.");
+                    }
+                }
 
                 // ذخیره در دیتابیس
                 var createdDoctor = await _doctorRepository.AddAsync(doctor);
@@ -260,8 +314,38 @@ namespace ClinicApp.Services.ClinicAdmin
                 }
 
                 // بررسی تکراری نبودن پزشک (به جز خودش)
-                // این بررسی در repository انجام می‌شود
+                var nationalCodeExists = await _doctorRepository.DoesNationalCodeExistAsync(model.NationalCode, model.DoctorId);
+                if (nationalCodeExists)
+                {
+                    _logger.Warning("تلاش برای به‌روزرسانی پزشک تکراری با کد ملی: {NationalCode}", model.NationalCode);
+                    return ServiceResult<Doctor>.Failed("پزشکی با این کد ملی قبلاً ثبت شده است.");
+                }
 
+                var medicalCouncilCodeExists = await _doctorRepository.DoesMedicalCouncilCodeExistAsync(model.MedicalCouncilCode, model.DoctorId);
+                if (medicalCouncilCodeExists)
+                {
+                    _logger.Warning("تلاش برای به‌روزرسانی پزشک تکراری با کد نظام پزشکی: {MedicalCouncilCode}", model.MedicalCouncilCode);
+                    return ServiceResult<Doctor>.Failed("پزشکی با این کد نظام پزشکی قبلاً ثبت شده است.");
+                }
+
+                // بررسی معتبر بودن کاربر فعلی
+                var currentUserId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _logger.Error("شناسه کاربر خالی است. UserId: {UserId}", currentUserId);
+                    return ServiceResult<Doctor>.Failed("خطا در دریافت اطلاعات کاربر. لطفاً دوباره تلاش کنید.");
+                }
+                
+                // بررسی محیط توسعه
+                if (_currentUserService.IsDevelopmentEnvironment())
+                {
+                    _logger.Information("محیط توسعه تشخیص داده شد. استفاده از کاربر Admin توسعه با شناسه: {UserId} برای ویرایش پزشک", currentUserId);
+                }
+                else
+                {
+                    _logger.Information("محیط تولید تشخیص داده شد. استفاده از کاربر احراز هویت شده با شناسه: {UserId} برای ویرایش پزشک", currentUserId);
+                }
+                
                 // به‌روزرسانی فیلدها
                 existingDoctor.FirstName = model.FirstName;
                 existingDoctor.LastName = model.LastName;
@@ -272,7 +356,6 @@ namespace ClinicApp.Services.ClinicAdmin
                 existingDoctor.DateOfBirth = model.DateOfBirth;
                 existingDoctor.HomeAddress = model.HomeAddress;
                 existingDoctor.OfficeAddress = model.OfficeAddress;
-                existingDoctor.ConsultationFee = model.ConsultationFee;
                 existingDoctor.ExperienceYears = model.ExperienceYears;
                 existingDoctor.ProfileImageUrl = model.ProfileImageUrl;
                 existingDoctor.PhoneNumber = model.PhoneNumber;
@@ -282,7 +365,7 @@ namespace ClinicApp.Services.ClinicAdmin
                 existingDoctor.Bio = model.Bio;
                 existingDoctor.IsActive = model.IsActive;
                 existingDoctor.UpdatedAt = DateTime.Now;
-                existingDoctor.UpdatedByUserId = _currentUserService.UserId;
+                existingDoctor.UpdatedByUserId = currentUserId;
 
                 // ذخیره تغییرات
                 var updatedDoctor = await _doctorRepository.UpdateAsync(existingDoctor);
@@ -340,6 +423,22 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 // حذف نرم
                 var currentUserId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    _logger.Error("شناسه کاربر خالی است. UserId: {UserId}", currentUserId);
+                    return ServiceResult.Failed("خطا در دریافت اطلاعات کاربر. لطفاً دوباره تلاش کنید.");
+                }
+                
+                // بررسی محیط توسعه
+                if (_currentUserService.IsDevelopmentEnvironment())
+                {
+                    _logger.Information("محیط توسعه تشخیص داده شد. استفاده از کاربر Admin توسعه با شناسه: {UserId} برای حذف پزشک", currentUserId);
+                }
+                else
+                {
+                    _logger.Information("محیط تولید تشخیص داده شد. استفاده از کاربر احراز هویت شده با شناسه: {UserId} برای حذف پزشک", currentUserId);
+                }
+                
                 await _doctorRepository.SoftDeleteAsync(doctorId, currentUserId);
 
                 _logger.Information("پزشک با شناسه {DoctorId} با موفقیت حذف شد", doctorId);
@@ -362,37 +461,74 @@ namespace ClinicApp.Services.ClinicAdmin
             {
                 _logger.Information("درخواست بازیابی پزشک با شناسه: {DoctorId}", doctorId);
 
-                if (doctorId <= 0)
+                var restored = await _doctorRepository.RestoreAsync(doctorId, _currentUserService.UserId);
+                if (!restored)
                 {
-                    return ServiceResult.Failed("شناسه پزشک نامعتبر است.");
+                    _logger.Warning("بازیابی پزشک با شناسه {DoctorId} ناموفق بود", doctorId);
+                    return ServiceResult.Failed("بازیابی پزشک ناموفق بود");
                 }
-
-                // بررسی وجود پزشک
-                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
-                if (doctor == null)
-                {
-                    _logger.Warning("پزشک با شناسه {DoctorId} برای بازیابی یافت نشد", doctorId);
-                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
-                }
-
-                if (!doctor.IsDeleted)
-                {
-                    _logger.Warning("پزشک با شناسه {DoctorId} قبلاً حذف نشده است", doctorId);
-                    return ServiceResult.Failed("پزشک مورد نظر قبلاً حذف نشده است.");
-                }
-
-                // بازیابی
-                var currentUserId = _currentUserService.UserId;
-                await _doctorRepository.RestoreAsync(doctorId, currentUserId);
 
                 _logger.Information("پزشک با شناسه {DoctorId} با موفقیت بازیابی شد", doctorId);
-
                 return ServiceResult.Successful();
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بازیابی پزشک {DoctorId}", doctorId);
                 return ServiceResult.Failed("خطا در بازیابی پزشک");
+            }
+        }
+
+        /// <summary>
+        /// دریافت پزشک بر اساس کد ملی
+        /// </summary>
+        public async Task<ServiceResult<Doctor>> GetDoctorByNationalCodeAsync(string nationalCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(nationalCode))
+                {
+                    return ServiceResult<Doctor>.Failed("کد ملی نمی‌تواند خالی باشد");
+                }
+
+                var doctor = await _doctorRepository.GetByNationalCodeAsync(nationalCode);
+                if (doctor == null)
+                {
+                    return ServiceResult<Doctor>.Successful(null);
+                }
+
+                return ServiceResult<Doctor>.Successful(doctor);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پزشک با کد ملی: {NationalCode}", nationalCode);
+                return ServiceResult<Doctor>.Failed("خطا در دریافت اطلاعات پزشک");
+            }
+        }
+
+        /// <summary>
+        /// دریافت پزشک بر اساس کد نظام پزشکی
+        /// </summary>
+        public async Task<ServiceResult<Doctor>> GetDoctorByMedicalCouncilCodeAsync(string medicalCouncilCode)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(medicalCouncilCode))
+                {
+                    return ServiceResult<Doctor>.Failed("کد نظام پزشکی نمی‌تواند خالی باشد");
+                }
+
+                var doctor = await _doctorRepository.GetByMedicalCouncilCodeAsync(medicalCouncilCode);
+                if (doctor == null)
+                {
+                    return ServiceResult<Doctor>.Successful(null);
+                }
+
+                return ServiceResult<Doctor>.Successful(doctor);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پزشک با کد نظام پزشکی: {MedicalCouncilCode}", medicalCouncilCode);
+                return ServiceResult<Doctor>.Failed("خطا در دریافت اطلاعات پزشک");
             }
         }
 

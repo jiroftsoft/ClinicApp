@@ -54,6 +54,15 @@ namespace ClinicApp.Repositories
                 .FirstOrDefaultAsync(c => c.ClinicId == clinicId);
         }
 
+        public Task<Clinic> GetByNameAsync(string name)
+        {
+            // ✅ CRITICAL FIX: Add IsDeleted filter to exclude soft-deleted clinics
+            return _context.Clinics
+                .AsNoTracking() // Performance optimization for read-only operations
+                .Where(c => c.Name == name && !c.IsDeleted) // 🏥 MEDICAL: Only show non-deleted clinics
+                .FirstOrDefaultAsync();
+        }
+
         public Task<bool> DoesClinicExistAsync(string name, int? excludeId = null)
         {
             var query = _context.Clinics.AsNoTracking() // ✅ Performance optimization

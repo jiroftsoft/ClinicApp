@@ -61,11 +61,10 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public bool IsDeleted { get; set; }
 
         /// <summary>
-        /// تخصص پزشک
+        /// تخصص‌های پزشک
         /// </summary>
-        [MaxLength(250, ErrorMessage = "تخصص نمی‌تواند بیش از 250 کاراکتر باشد.")]
-        [Display(Name = "تخصص")]
-        public string Specialization { get; set; }
+        [Display(Name = "تخصص‌ها")]
+        public List<string> SpecializationNames { get; set; } = new List<string>();
 
         /// <summary>
         /// شماره تلفن پزشک
@@ -182,6 +181,94 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         #endregion
 
         /// <summary>
+        /// شناسه پزشک (برای استفاده در view)
+        /// </summary>
+        public int Id => DoctorId;
+
+        /// <summary>
+        /// کد ملی پزشک
+        /// </summary>
+        [Display(Name = "کد ملی")]
+        public string NationalCode { get; set; }
+
+        /// <summary>
+        /// شماره نظام پزشکی
+        /// </summary>
+        [Display(Name = "شماره نظام پزشکی")]
+        public string MedicalCouncilCode { get; set; }
+
+        /// <summary>
+        /// آدرس ایمیل پزشک
+        /// </summary>
+        [Display(Name = "ایمیل")]
+        [EmailAddress(ErrorMessage = "فرمت ایمیل نامعتبر است.")]
+        public string Email { get; set; }
+
+        /// <summary>
+        /// آدرس تصویر پروفایل پزشک
+        /// </summary>
+        [Display(Name = "تصویر پروفایل")]
+        public string ProfileImageUrl { get; set; }
+
+        /// <summary>
+        /// آدرس منزل پزشک
+        /// </summary>
+        [Display(Name = "آدرس منزل")]
+        public string Address { get; set; }
+
+        /// <summary>
+        /// شماره تماس اضطراری
+        /// </summary>
+        [Display(Name = "تماس اضطراری")]
+        public string EmergencyContact { get; set; }
+
+        /// <summary>
+        /// شماره پروانه پزشکی
+        /// </summary>
+        [Display(Name = "شماره پروانه")]
+        public string LicenseNumber { get; set; }
+
+        /// <summary>
+        /// اطلاعات تحصیلی پزشک
+        /// </summary>
+        [Display(Name = "تحصیلات")]
+        public string Education { get; set; }
+
+        /// <summary>
+        /// سطح امنیتی پزشک
+        /// </summary>
+        [Display(Name = "سطح امنیتی")]
+        public string SecurityLevel { get; set; }
+
+        /// <summary>
+        /// بیوگرافی پزشک
+        /// </summary>
+        [Display(Name = "بیوگرافی")]
+        public string Biography { get; set; }
+
+        /// <summary>
+        /// تعداد کل نوبت‌های پزشک
+        /// </summary>
+        [Display(Name = "کل نوبت‌ها")]
+        public int TotalAppointments { get; set; }
+
+        /// <summary>
+        /// تعداد نوبت‌های امروز پزشک
+        /// </summary>
+        [Display(Name = "نوبت‌های امروز")]
+        public int TodayAppointments { get; set; }
+
+        /// <summary>
+        /// دپارتمان‌ها (برای backward compatibility)
+        /// </summary>
+        public List<DoctorDepartmentViewModel> Departments => DoctorDepartments;
+
+        /// <summary>
+        /// دسته‌بندی‌های خدماتی (برای backward compatibility)
+        /// </summary>
+        public List<DoctorServiceCategoryViewModel> ServiceCategories => DoctorServiceCategories;
+
+        /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
         public static DoctorDetailsViewModel FromEntity(Doctor doctor)
@@ -194,9 +281,18 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 FirstName = doctor.FirstName,
                 LastName = doctor.LastName,
                 FullName = $"{doctor.FirstName} {doctor.LastName}",
-                Specialization = doctor.University,
+                NationalCode = doctor.NationalCode,
+                MedicalCouncilCode = doctor.MedicalCouncilCode,
+                Email = doctor.Email,
                 PhoneNumber = doctor.PhoneNumber,
-                Bio = doctor.Bio,
+                ProfileImageUrl = doctor.ProfileImageUrl,
+                Address = doctor.HomeAddress,
+                EmergencyContact = doctor.EmergencyContact,
+                LicenseNumber = doctor.LicenseNumber,
+                Education = $"{doctor.Degree} - {doctor.University} ({doctor.GraduationYear})",
+                SecurityLevel = "متوسط", // این فیلد نیاز به پیاده‌سازی دارد
+                Biography = doctor.Bio,
+                SpecializationNames = doctor.DoctorSpecializations?.Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
                 IsActive = doctor.IsActive,
                 IsDeleted = doctor.IsDeleted,
                 CreatedAt = doctor.CreatedAt,
@@ -215,7 +311,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 ServiceCategoryCount = doctor.DoctorServiceCategories?.Count(dsc => 
                     dsc.ServiceCategory != null && 
                     !dsc.ServiceCategory.IsDeleted && 
-                    dsc.IsActive) ?? 0
+                    dsc.IsActive) ?? 0,
+                TotalAppointments = 0, // این فیلد نیاز به پیاده‌سازی دارد
+                TodayAppointments = 0 // این فیلد نیاز به پیاده‌سازی دارد
             };
             
             // پر کردن لیست دپارتمان‌ها
@@ -235,9 +333,6 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                     .Select(DoctorServiceCategoryViewModel.FromEntity)
                     .ToList();
             }
-            
-            // پر کردن برنامه کاری
-            // این بخش نیاز به پیاده‌سازی دارد (بسته به ساختار واقعی)
             
             return viewModel;
         }
@@ -266,9 +361,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .MaximumLength(100)
                 .WithMessage("نام خانوادگی پزشک نمی‌تواند بیش از 100 کاراکتر باشد.");
                 
-            RuleFor(x => x.Specialization)
-                .MaximumLength(250)
-                .WithMessage("تخصص پزشک نمی‌تواند بیش از 250 کاراکتر باشد.");
+            RuleFor(x => x.SpecializationNames)
+                .NotEmpty()
+                .WithMessage("تخصص‌های پزشک الزامی است.");
                 
             RuleFor(x => x.PhoneNumber)
                 .Must(PersianNumberHelper.IsValidPhoneNumber)

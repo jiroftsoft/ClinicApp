@@ -4,6 +4,8 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@Html.AntiForgeryToken()
+
 <div class="container-fluid">
     <!-- Header -->
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
@@ -263,14 +265,23 @@
 @section Scripts {
     <script>
         $(document).ready(function () {
+            // Get anti-forgery token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            
             // Delete confirmation
             $('.delete-btn').click(function () {
                 var id = $(this).data('id');
                 var name = $(this).data('name');
                 
                 if (confirm('آیا از حذف تخصص "' + name + '" اطمینان دارید؟')) {
-                    $.post('@Url.Action("Delete")', { id: id })
-                        .done(function (result) {
+                    $.ajax({
+                        url: '@Url.Action("Delete")',
+                        type: 'POST',
+                        data: { 
+                            id: id,
+                            __RequestVerificationToken: token
+                        },
+                        success: function (result) {
                             if (result.success) {
                                 toastr.success(result.message);
                                 setTimeout(function () {
@@ -279,10 +290,11 @@
                             } else {
                                 toastr.error(result.message);
                             }
-                        })
-                        .fail(function () {
+                        },
+                        error: function () {
                             toastr.error('خطا در حذف تخصص');
-                        });
+                        }
+                    });
                 }
             });
 
@@ -292,8 +304,14 @@
                 var name = $(this).data('name');
                 
                 if (confirm('آیا از بازیابی تخصص "' + name + '" اطمینان دارید؟')) {
-                    $.post('@Url.Action("Restore")', { id: id })
-                        .done(function (result) {
+                    $.ajax({
+                        url: '@Url.Action("Restore")',
+                        type: 'POST',
+                        data: { 
+                            id: id,
+                            __RequestVerificationToken: token
+                        },
+                        success: function (result) {
                             if (result.success) {
                                 toastr.success(result.message);
                                 setTimeout(function () {
@@ -302,10 +320,11 @@
                             } else {
                                 toastr.error(result.message);
                             }
-                        })
-                        .fail(function () {
+                        },
+                        error: function () {
                             toastr.error('خطا در بازیابی تخصص');
-                        });
+                        }
+                    });
                 }
             });
         });

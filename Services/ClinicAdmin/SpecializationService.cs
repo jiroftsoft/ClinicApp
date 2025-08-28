@@ -238,6 +238,14 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult.Failed("تخصص مورد نظر یافت نشد.");
                 }
 
+                // بررسی پزشکان فعال مرتبط با این تخصص
+                var activeDoctorsCount = await _specializationRepository.GetActiveDoctorsCountAsync(specializationId);
+                if (activeDoctorsCount > 0)
+                {
+                    _logger.Warning("تلاش برای حذف تخصص {SpecializationId} که {DoctorCount} پزشک فعال دارد", specializationId, activeDoctorsCount);
+                    return ServiceResult.Failed($"این تخصص قابل حذف نیست زیرا {activeDoctorsCount} پزشک فعال به آن متصل است. ابتدا پزشکان را از این تخصص جدا کنید.");
+                }
+
                 var currentUserId = _currentUserService.UserId;
                 var result = await _specializationRepository.SoftDeleteAsync(specializationId, currentUserId);
 
@@ -356,6 +364,28 @@ namespace ClinicApp.Services.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// دریافت تخصص‌ها بر اساس لیست شناسه‌ها
+        /// </summary>
+        public async Task<ServiceResult<List<Specialization>>> GetSpecializationsByIdsAsync(List<int> specializationIds)
+        {
+            try
+            {
+                if (specializationIds == null || !specializationIds.Any())
+                {
+                    return ServiceResult<List<Specialization>>.Successful(new List<Specialization>());
+                }
+
+                var specializations = await _specializationRepository.GetSpecializationsByIdsAsync(specializationIds);
+                return ServiceResult<List<Specialization>>.Successful(specializations);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تخصص‌ها بر اساس شناسه‌ها");
+                return ServiceResult<List<Specialization>>.Failed("خطا در دریافت تخصص‌ها");
+            }
+        }
+
         #endregion
 
         #region Validation
@@ -373,13 +403,34 @@ namespace ClinicApp.Services.ClinicAdmin
                 }
 
                 var exists = await _specializationRepository.DoesSpecializationNameExistAsync(name, excludeSpecializationId);
-
                 return ServiceResult<bool>.Successful(exists);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در بررسی وجود نام تخصص {Name}", name);
+                _logger.Error(ex, "خطا در بررسی وجود نام تخصص: {Name}", name);
                 return ServiceResult<bool>.Failed("خطا در بررسی وجود نام تخصص");
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد پزشکان فعال مرتبط با تخصص
+        /// </summary>
+        public async Task<ServiceResult<int>> GetActiveDoctorsCountAsync(int specializationId)
+        {
+            try
+            {
+                if (specializationId <= 0)
+                {
+                    return ServiceResult<int>.Failed("شناسه تخصص نامعتبر است.");
+                }
+
+                var count = await _specializationRepository.GetActiveDoctorsCountAsync(specializationId);
+                return ServiceResult<int>.Successful(count);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعداد پزشکان فعال برای تخصص {SpecializationId}", specializationId);
+                return ServiceResult<int>.Failed("خطا در دریافت تعداد پزشکان فعال");
             }
         }
 

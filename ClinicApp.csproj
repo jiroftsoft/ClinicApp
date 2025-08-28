@@ -493,21 +493,9 @@
     <Compile Include="Interfaces\INotificationService.cs" />
     <Compile Include="Interfaces\INotificationTemplateService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
-    <Compile Include="Migrations\202508232210329_CreateDataBaseClinic.cs" />
-    <Compile Include="Migrations\202508232210329_CreateDataBaseClinic.Designer.cs">
-      <DependentUpon>202508232210329_CreateDataBaseClinic.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202508241019241_Chnage14040602.cs" />
-    <Compile Include="Migrations\202508241019241_Chnage14040602.Designer.cs">
-      <DependentUpon>202508241019241_Chnage14040602.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202508260514024_DoctorModule.cs" />
-    <Compile Include="Migrations\202508260514024_DoctorModule.Designer.cs">
-      <DependentUpon>202508260514024_DoctorModule.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202508271558514_MakeDocotorMoreEfficient.cs" />
-    <Compile Include="Migrations\202508271558514_MakeDocotorMoreEfficient.Designer.cs">
-      <DependentUpon>202508271558514_MakeDocotorMoreEfficient.cs</DependentUpon>
+    <Compile Include="Migrations\202508272050560_Initial-CreateDateBase.cs" />
+    <Compile Include="Migrations\202508272050560_Initial-CreateDateBase.Designer.cs">
+      <DependentUpon>202508272050560_Initial-CreateDateBase.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
@@ -640,10 +628,25 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
+    <Content Include="Content\Images\default-avatar.jpg" />
     <Content Include="Content\Images\shafa-logo.png" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
+    <Content Include="Content\plugins\dropzone\basic.css" />
+    <Content Include="Content\plugins\dropzone\basic.min.css" />
+    <Content Include="Content\plugins\dropzone\dropzone-amd-module.js" />
+    <Content Include="Content\plugins\dropzone\dropzone-amd-module.min.js" />
+    <Content Include="Content\plugins\dropzone\dropzone.css" />
+    <Content Include="Content\plugins\dropzone\dropzone.js" />
+    <Content Include="Content\plugins\dropzone\dropzone.min.css" />
+    <Content Include="Content\plugins\dropzone\dropzone.min.js" />
+    <Content Include="Content\plugins\persian-datepicker\jquery-ui.css" />
+    <Content Include="Content\plugins\persian-datepicker\jquery-ui.min.js" />
+    <Content Include="Content\plugins\persian-datepicker\persian-date.min.js" />
+    <Content Include="Content\plugins\persian-datepicker\persian-datepicker-helper.js" />
+    <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.css" />
+    <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.js" />
     <Content Include="Content\plugins\select2\css\select2.css" />
     <Content Include="Content\plugins\select2\css\select2.min.css" />
     <Content Include="Content\plugins\DataTables\css\autoFill.bootstrap.css" />
@@ -3274,6 +3277,14 @@
     <Content Include="Content\plugins\DataTables\js\responsive.semanticui.min.js" />
     <Content Include="Scripts\chart.js" />
     <Content Include="Scripts\chart.min.js" />
+    <Content Include="Scripts\dropzone\basic.css" />
+    <Content Include="Scripts\dropzone\basic.min.css" />
+    <Content Include="Scripts\dropzone\dropzone-amd-module.js" />
+    <Content Include="Scripts\dropzone\dropzone-amd-module.min.js" />
+    <Content Include="Scripts\dropzone\dropzone.css" />
+    <Content Include="Scripts\dropzone\dropzone.js" />
+    <Content Include="Scripts\dropzone\dropzone.min.css" />
+    <Content Include="Scripts\dropzone\dropzone.min.js" />
     <Content Include="Scripts\FinalDatePicker\jquery-ui.css" />
     <Content Include="Scripts\FinalDatePicker\jquery-ui.min.js" />
     <Content Include="Scripts\FinalDatePicker\persian-date.min.js" />
@@ -3462,17 +3473,8 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202508232210329_CreateDataBaseClinic.resx">
-      <DependentUpon>202508232210329_CreateDataBaseClinic.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202508241019241_Chnage14040602.resx">
-      <DependentUpon>202508241019241_Chnage14040602.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202508260514024_DoctorModule.resx">
-      <DependentUpon>202508260514024_DoctorModule.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202508271558514_MakeDocotorMoreEfficient.resx">
-      <DependentUpon>202508271558514_MakeDocotorMoreEfficient.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202508272050560_Initial-CreateDateBase.resx">
+      <DependentUpon>202508272050560_Initial-CreateDateBase.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

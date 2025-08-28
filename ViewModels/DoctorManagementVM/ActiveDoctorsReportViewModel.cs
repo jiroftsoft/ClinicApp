@@ -85,9 +85,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string FullName { get; set; }
 
         /// <summary>
-        /// تخصص پزشک
+        /// تخصص‌های پزشک
         /// </summary>
-        public string Specialization { get; set; }
+        public List<string> SpecializationNames { get; set; } = new List<string>();
 
         /// <summary>
         /// شماره تلفن پزشک
@@ -178,7 +178,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             {
                 DoctorId = doctor.DoctorId,
                 FullName = $"{doctor.FirstName} {doctor.LastName}",
-                Specialization = doctor.University,
+                SpecializationNames = doctor.DoctorSpecializations?.Select(ds => ds.Specialization.Name).ToList() ?? new List<string>(),
                 PhoneNumber = doctor.PhoneNumber,
                 ActiveDepartmentCount = doctor.DoctorDepartments?.Count(dd => 
                     dd.Department != null && 
@@ -383,10 +383,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .MaximumLength(200)
                 .WithMessage("نام کامل پزشک نمی‌تواند بیش از 200 کاراکتر باشد.");
 
-            RuleFor(x => x.Specialization)
-                .MaximumLength(250)
-                .WithMessage("تخصص پزشک نمی‌تواند بیش از 250 کاراکتر باشد.")
-                .When(x => !string.IsNullOrEmpty(x.Specialization));
+            RuleFor(x => x.SpecializationNames)
+                .NotNull()
+                .WithMessage("تخصص‌های پزشک باید تعریف شود.");
 
             RuleFor(x => x.PhoneNumber)
                 .Must(PersianNumberHelper.IsValidPhoneNumber)
