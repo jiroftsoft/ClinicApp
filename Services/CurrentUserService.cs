@@ -203,10 +203,11 @@ namespace ClinicApp.Services
                 if (await _userManager.IsInRoleAsync(user.Id, AppRoles.Doctor))
                 {
                     // دریافت پزشک مربوط به کاربر
+                    // توجه: پزشک دیگر ApplicationUserId ندارد، بنابراین باید از طریق نام کاربری پیدا کنیم
                     var doctor = await _context.Doctors
                         .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
                         .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
-                        .FirstOrDefaultAsync(d => d.ApplicationUserId == userId && !d.IsDeleted);
+                        .FirstOrDefaultAsync(d => (d.FirstName + " " + d.LastName).Contains(user.UserName) && !d.IsDeleted);
 
                     if (doctor == null)
                     {
@@ -325,9 +326,10 @@ namespace ClinicApp.Services
                     // دریافت پزشک یا منشی مربوطه
                     if (IsDoctor)
                     {
-                        var doctor = await _context.Doctors
-                            .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
-                        return doctor != null;
+                        // توجه: پزشک دیگر ApplicationUserId ندارد
+                        // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                        // فعلاً false برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                        return false;
                     }
                     else if (IsReceptionist)
                     {
@@ -364,39 +366,10 @@ namespace ClinicApp.Services
                 // 2. اگر کاربر نقش پزشک دارد
                 if (IsDoctor)
                 {
-                    var doctor = await _context.Doctors
-                        .Include(d => d.DoctorDepartments)
-                        .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
-
-                    if (doctor == null)
-                    {
-                        return false;
-                    }
-
-                    // ✅ بررسی دسترسی بر اساس معماری جدید Many-to-Many
-                    
-                    // 1. بررسی دسترسی بر اساس کلینیک (اگر دپارتمان در همان کلینیک پزشک باشد)
-                    bool hasClinicAccess = false;
-                    if (doctor.ClinicId.HasValue)
-                    {
-                        var department = await _context.Departments
-                            .FirstOrDefaultAsync(d => d.DepartmentId == departmentId && !d.IsDeleted);
-                        
-                        hasClinicAccess = department != null && 
-                                        department.ClinicId == doctor.ClinicId.Value;
-                    }
-
-                    // 2. بررسی دسترسی مستقیم به دپارتمان (پزشک در آن دپارتمان عضو است)
-                    bool hasDepartmentAccess = doctor.DoctorDepartments
-                        .Any(dd => dd.IsActive && dd.DepartmentId == departmentId);
-
-                    bool hasAccess = hasClinicAccess || hasDepartmentAccess;
-
-                    _logger.Information("پزشک {UserId} به دپارتمان {DepartmentId} دسترسی {AccessStatus} - کلینیک: {ClinicAccess}, دپارتمان: {DepartmentAccess}",
-                        UserId, departmentId, hasAccess ? "دارد" : "ندارد", 
-                        hasClinicAccess, hasDepartmentAccess);
-
-                    return hasAccess;
+                    // توجه: پزشک دیگر ApplicationUserId ندارد
+                    // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                    // فعلاً false برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                    return false;
                 }
 
                 // 3. اگر کاربر نقش منشی دارد
@@ -429,12 +402,10 @@ namespace ClinicApp.Services
                     return null;
                 }
 
-                return await _context.Doctors
-                    .Include(d => d.ApplicationUser)
-                    .Include(d => d.Clinic)
-                    .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
-                    .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
-                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+                // توجه: پزشک دیگر ApplicationUserId ندارد
+                // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                // فعلاً null برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                return null;
             }
             catch (Exception ex)
             {
@@ -481,9 +452,10 @@ namespace ClinicApp.Services
                     return new List<Department>();
                 }
 
-                var doctor = await _context.Doctors
-                    .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
-                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+                // توجه: پزشک دیگر ApplicationUserId ندارد
+                // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                // فعلاً null برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                var doctor = null as Doctor;
 
                 if (doctor == null)
                 {
@@ -516,9 +488,10 @@ namespace ClinicApp.Services
                     return new List<ServiceCategory>();
                 }
 
-                var doctor = await _context.Doctors
-                    .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory.Department))
-                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
+                // توجه: پزشک دیگر ApplicationUserId ندارد
+                // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                // فعلاً null برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                var doctor = null as Doctor;
 
                 if (doctor == null)
                 {
@@ -552,19 +525,10 @@ namespace ClinicApp.Services
                     return false;
                 }
 
-                var doctor = await _context.Doctors
-                    .Include(d => d.DoctorDepartments)
-                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
-
-                if (doctor == null)
-                {
-                    return false;
-                }
-
-                return doctor.DoctorDepartments
-                    .Any(dd => dd.IsActive && 
-                              dd.DepartmentId == departmentId &&
-                              (dd.EndDate == null || dd.EndDate > DateTime.Now));
+                // توجه: پزشک دیگر ApplicationUserId ندارد
+                // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                // فعلاً false برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                return false;
             }
             catch (Exception ex)
             {
@@ -585,19 +549,10 @@ namespace ClinicApp.Services
                     return false;
                 }
 
-                var doctor = await _context.Doctors
-                    .Include(d => d.DoctorServiceCategories)
-                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
-
-                if (doctor == null)
-                {
-                    return false;
-                }
-
-                return doctor.DoctorServiceCategories
-                    .Any(dsc => dsc.IsActive && 
-                               dsc.ServiceCategoryId == serviceCategoryId &&
-                               (dsc.ExpiryDate == null || dsc.ExpiryDate > DateTime.Now));
+                // توجه: پزشک دیگر ApplicationUserId ندارد
+                // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                // فعلاً false برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                return false;
             }
             catch (Exception ex)
             {
@@ -618,21 +573,10 @@ namespace ClinicApp.Services
                     return null;
                 }
 
-                var doctor = await _context.Doctors
-                    .Include(d => d.DoctorDepartments)
-                    .FirstOrDefaultAsync(d => d.ApplicationUserId == UserId && !d.IsDeleted);
-
-                if (doctor == null)
-                {
-                    return null;
-                }
-
-                var doctorDepartment = doctor.DoctorDepartments
-                    .FirstOrDefault(dd => dd.IsActive && 
-                                         dd.DepartmentId == departmentId &&
-                                         (dd.EndDate == null || dd.EndDate > DateTime.Now));
-
-                return doctorDepartment?.Role;
+                // توجه: پزشک دیگر ApplicationUserId ندارد
+                // در اینجا باید منطق جدیدی برای پیدا کردن پزشک پیاده‌سازی شود
+                // فعلاً null برمی‌گردانیم تا نیاز به پیاده‌سازی منطق جدید باشد
+                return null;
             }
             catch (Exception ex)
             {

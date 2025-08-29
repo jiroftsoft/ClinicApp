@@ -6,69 +6,118 @@
 
 @section Styles {
     <style>
+        /* Medical Environment Color Scheme - Minimal Design */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        /* Base Styles - Clean and Minimal */
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--medical-text);
+            background-color: #ffffff;
+        }
+
+        /* Doctor Header - Simple Design */
         .doctor-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: var(--medical-primary);
             color: white;
-            border-radius: 0.35rem;
+            border-radius: 8px;
             padding: 2rem;
             margin-bottom: 2rem;
         }
+
         .doctor-avatar {
-            width: 120px;
-            height: 120px;
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid white;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border: 3px solid white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
+
+        /* Info Cards - Minimal Design */
         .info-card {
-            background: #f8f9fc;
-            border-radius: 0.35rem;
+            background: var(--medical-light);
+            border-radius: 8px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            border: 1px solid #e3e6f0;
+            border: 1px solid var(--medical-border);
         }
+
         .info-card h5 {
-            color: #4e73df;
-            border-bottom: 2px solid #4e73df;
+            color: var(--medical-primary);
+            border-bottom: 2px solid var(--medical-primary);
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
         }
+
         .info-item {
-            margin-bottom: 1rem;
+            margin-bottom: 0.75rem;
             padding: 0.75rem;
             background: white;
-            border-radius: 0.25rem;
-            border-right: 4px solid #4e73df;
+            border-radius: 6px;
+            border-right: 3px solid var(--medical-primary);
         }
+
         .info-label {
             font-weight: 600;
-            color: #5a5c69;
+            color: var(--medical-text);
             margin-left: 0.5rem;
         }
+
         .info-value {
-            color: #858796;
+            color: var(--medical-text-muted);
         }
+
         .status-badge {
             font-size: 0.875rem;
             padding: 0.5rem 1rem;
+            border-radius: 6px;
         }
+
+        /* Stats Cards - Simple Design */
         .stats-card {
             background: white;
-            border-radius: 0.35rem;
+            border-radius: 8px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
-            border: 1px solid #e3e6f0;
+            border: 1px solid var(--medical-border);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
+
         .stats-number {
-            font-size: 2rem;
+            font-size: 1.75rem;
             font-weight: bold;
-            color: #4e73df;
+            color: var(--medical-primary);
         }
+
         .stats-label {
-            color: #858796;
+            color: var(--medical-text-muted);
             font-size: 0.875rem;
+        }
+
+        /* Buttons - Touch Friendly */
+        .btn {
+            font-size: 14px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
+            margin: 0.25rem;
         }
     </style>
 }

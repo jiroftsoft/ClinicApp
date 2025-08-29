@@ -41,7 +41,6 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 var query = _context.Doctors
                     .Where(d => !d.IsDeleted && d.IsActive)
-                    .Include(d => d.ApplicationUser)
                     .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
                     .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
                     .Include(d => d.Schedules)
@@ -66,8 +65,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     !a.IsDeleted));
 
                 return await query
-                    .OrderBy(d => d.ApplicationUser.FirstName)
-                    .ThenBy(d => d.ApplicationUser.LastName)
+                    .OrderBy(d => d.FirstName)
+                    .ThenBy(d => d.LastName)
                     .ToListAsync();
             }
             catch (Exception ex)
@@ -86,7 +85,6 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.Doctors
                     .Where(d => d.DoctorId == doctorId && !d.IsDeleted)
-                    .Include(d => d.ApplicationUser)
                     .Include(d => d.DoctorDepartments.Select(dd => dd.Department))
                     .Include(d => d.DoctorServiceCategories.Select(dsc => dsc.ServiceCategory))
                     .Include(d => d.Schedules)
@@ -148,28 +146,35 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                var today = DateTime.Today;
+                var now = DateTime.Now;
+
                 // بررسی وجود نوبت‌های آینده
                 var hasFutureAppointments = await _context.Appointments
                     .AnyAsync(a => a.DoctorId == doctorId && 
-                                 a.AppointmentDate > DateTime.Now && 
+                                 a.AppointmentDate > now && 
                                  a.Status != AppointmentStatus.Cancelled && 
                                  !a.IsDeleted);
 
                 if (hasFutureAppointments)
                     return false;
 
-                // بررسی وجود انتصابات فعال به دپارتمان‌ها
-                var hasActiveDepartmentAssignments = await _context.DoctorDepartments
-                    .AnyAsync(dd => dd.DoctorId == doctorId && dd.IsActive && !dd.IsDeleted);
+                // بررسی وجود نوبت‌های امروز که هنوز انجام نشده‌اند
+                // استفاده از DbFunctions.TruncateTime برای مقایسه تاریخ بدون زمان
+                var hasTodayActiveAppointments = await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == doctorId && 
+                                 System.Data.Entity.DbFunctions.TruncateTime(a.AppointmentDate) == today && 
+                                 a.Status == AppointmentStatus.Scheduled && 
+                                 !a.IsDeleted);
 
-                if (hasActiveDepartmentAssignments)
+                if (hasTodayActiveAppointments)
                     return false;
 
-                // بررسی وجود انتصابات فعال به سرفصل‌های خدماتی
-                var hasActiveServiceCategoryAssignments = await _context.DoctorServiceCategories
-                    .AnyAsync(dsc => dsc.DoctorId == doctorId && dsc.IsActive);
+                // بررسی وجود پذیرش‌های فعال (در صورت وجود جدول پذیرش)
+                // فعلاً مقدار پیش‌فرض قرار می‌دهیم
+                var hasActiveReceptions = false; // این بخش نیاز به پیاده‌سازی دارد
 
-                if (hasActiveServiceCategoryAssignments)
+                if (hasActiveReceptions)
                     return false;
 
                 return true;

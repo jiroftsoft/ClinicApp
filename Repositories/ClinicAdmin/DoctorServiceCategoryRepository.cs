@@ -60,7 +60,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.DoctorServiceCategories
                     .Where(dsc => dsc.DoctorId == doctorId && dsc.ServiceCategoryId == serviceCategoryId)
-                    .Include(dsc => dsc.Doctor.ApplicationUser)
+                    .Include(dsc => dsc.Doctor)
                     .Include(dsc => dsc.ServiceCategory.Department)
                     .Include(dsc => dsc.CreatedByUser)
                     .Include(dsc => dsc.UpdatedByUser)
@@ -326,11 +326,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.DoctorServiceCategories
                     .Where(dsc => dsc.ServiceCategoryId == serviceCategoryId && dsc.IsActive)
-                    .Include(dsc => dsc.Doctor.ApplicationUser)
+                    .Include(dsc => dsc.Doctor)
                     .Select(dsc => dsc.Doctor)
                     .Where(d => !d.IsDeleted)
-                    .OrderBy(d => d.ApplicationUser.FirstName)
-                    .ThenBy(d => d.ApplicationUser.LastName)
+                    .OrderBy(d => d.FirstName)
+                    .ThenBy(d => d.LastName)
                     .AsNoTracking()
                     .ToListAsync();
             }

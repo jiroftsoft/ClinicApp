@@ -4,20 +4,43 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@Html.AntiForgeryToken()
+
 @section Styles {
-    <link href="~/Content/plugins/datatables/css/dataTables.bootstrap.css" rel="stylesheet" />
-    <link href="~/Content/plugins/datatables/css/responsive.bootstrap.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <style>
+        /* Medical Environment Color Scheme */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        /* Base Styles */
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--medical-text);
+            background-color: #ffffff;
+        }
+
         .doctor-card {
-            border: 1px solid #e3e6f0;
-            border-radius: 0.35rem;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
         .doctor-card:hover {
             transform: translateY(-2px);
-            box-shadow: 0 0.5rem 2rem 0 rgba(58, 59, 69, 0.2);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
         }
         .doctor-avatar {
             width: 50px;
@@ -521,58 +544,23 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
-    <script src="~/Content/plugins/datatables/js/dataTables.bootstrap.min.js"></script>
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
     <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script>
         $(document).ready(function () {
-                         // Initialize DataTable with better performance
-             $('#doctorsTable').DataTable({
-                 "language": {
-                     "sProcessing": "در حال پردازش...",
-                     "sLengthMenu": "نمایش _MENU_ رکورد",
-                     "sZeroRecords": "رکوردی یافت نشد",
-                     "sInfo": "نمایش _START_ تا _END_ از _TOTAL_ رکورد",
-                     "sInfoEmpty": "نمایش 0 تا 0 از 0 رکورد",
-                     "sInfoFiltered": "(فیلتر شده از _MAX_ رکورد)",
-                     "sInfoPostFix": "",
-                     "sSearch": "جستجو:",
-                     "sUrl": "",
-                     "sEmptyTable": "جدولی برای نمایش وجود ندارد",
-                     "sLoadingRecords": "در حال بارگذاری...",
-                     "sInfoThousands": ",",
-                     "oPaginate": {
-                         "sFirst": "ابتدا",
-                         "sPrevious": "قبلی",
-                         "sNext": "بعدی",
-                         "sLast": "انتها"
-                     },
-                     "oAria": {
-                         "sSortAscending": ": فعال سازی نمایش به صورت صعودی",
-                         "sSortDescending": ": فعال سازی نمایش به صورت نزولی"
-                     }
-                 },
-                 "pageLength": 25,
-                 "order": [[2, "asc"]],
-                 "responsive": true,
-                 "dom": '<"top"lf>rt<"bottom"ip><"clear">',
-                 "processing": true,
-                 "deferRender": true,
-                 "scrollX": true,
-                 "autoWidth": false,
-                 "columnDefs": [
-                     { "orderable": false, "targets": [0, 1, 8] }, // Disable sorting for checkbox, image, and actions columns
-                     { "width": "50px", "targets": 0 },
-                     { "width": "80px", "targets": 1 },
-                     { "width": "120px", "targets": 3 },
-                     { "width": "140px", "targets": 4 },
-                     { "width": "200px", "targets": 5 },
-                     { "width": "100px", "targets": 6 },
-                     { "width": "120px", "targets": 7 },
-                     { "width": "180px", "targets": 8 }
-                 ]
-             });
+            // Initialize Select2 for better dropdown experience
+            $('#SpecializationId').select2({
+                placeholder: 'انتخاب تخصص...',
+                allowClear: true,
+                language: 'fa',
+                width: '100%'
+            });
+
+            // بهبود عملکرد Select2 در محیط پزشکی
+            $('#SpecializationId').on('select2:clear', function() {
+                // وقتی تخصص پاک می‌شود، فرم را submit نکنیم
+                return false;
+            });
 
             // Initialize tooltips
             $('[data-toggle="tooltip"]').tooltip();
@@ -598,6 +586,11 @@
 
             // Initialize bulk actions
             updateBulkActions();
+            
+            // بررسی خطاهای احتمالی در بارگذاری صفحه
+            setTimeout(function() {
+                handlePageLoadError();
+            }, 1000);
         });
 
         function updateBulkActions() {
@@ -612,17 +605,30 @@
         }
 
         function resetSearch() {
+            // نمایش loading
+            showLoading();
+            
+            // پاک کردن تمام فیلترها
             $('#SearchTerm').val('');
-            $('#SpecializationId').val('');
+            $('#SpecializationId').val('').trigger('change'); // برای Select2
             $('#Status').val('');
             $('#SortBy').val('Name');
             $('#SortOrder').val('asc');
-            $('#searchForm').submit();
+            
+            // انتقال به صفحه اصلی بدون پارامترهای جستجو و با timestamp برای پاک کردن کش
+            var baseUrl = '@Url.Action("Index", "Doctor")';
+            var timestamp = new Date().getTime();
+            window.location.href = baseUrl + '?_t=' + timestamp;
         }
 
         function refreshTable() {
             showLoading();
-            location.reload();
+            
+            // پاک کردن کش مرورگر و بروزرسانی صفحه
+            var currentUrl = window.location.href;
+            var separator = currentUrl.indexOf('?') !== -1 ? '&' : '?';
+            var timestamp = new Date().getTime();
+            window.location.href = currentUrl + separator + '_t=' + timestamp;
         }
 
         function showLoading() {
@@ -633,6 +639,25 @@
         function hideLoading() {
             $('#loadingSpinner').hide();
             $('#doctorsTable').show();
+        }
+
+        // تابع برای بررسی و نمایش خطاهای احتمالی
+        function handlePageLoadError() {
+            // اگر صفحه خالی است، پیام مناسب نمایش دهیم
+            if ($('#doctorsTable tbody tr').length === 0 && !$('.text-center.py-5').length) {
+                Swal.fire({
+                    title: 'خطا در بارگذاری',
+                    text: 'مشکلی در بارگذاری لیست پزشکان رخ داده است. لطفاً صفحه را بروزرسانی کنید.',
+                    icon: 'error',
+                    confirmButtonText: 'بروزرسانی',
+                    showCancelButton: true,
+                    cancelButtonText: 'انصراف'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        refreshTable();
+                    }
+                });
+            }
         }
 
         function toggleDoctorStatus(id, activate) {
@@ -653,28 +678,54 @@
                     $.ajax({
                         url: '@Url.Action("ToggleStatus", "Doctor")',
                         type: 'POST',
-                        data: { id: id, activate: activate },
+                        data: { 
+                            id: id, 
+                            activate: activate,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
                         beforeSend: function() {
                             showLoading();
                         },
-                        success: function (result) {
+                        success: function (response) {
                             hideLoading();
-                            if (result.success) {
+                            console.log('Server response:', response); // برای دیباگ
+                            
+                            // بررسی نوع پاسخ
+                            if (typeof response === 'string') {
+                                try {
+                                    response = JSON.parse(response);
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    Swal.fire("خطا!", "پاسخ نامعتبر از سرور دریافت شد.", "error");
+                                    return;
+                                }
+                            }
+                            
+                            if (response && response.success === true) {
                                 Swal.fire({
                                     title: 'موفق!',
-                                    text: `پزشک با موفقیت ${action} شد.`,
+                                    text: response.message || `پزشک با موفقیت ${action} شد.`,
                                     icon: 'success',
                                     timer: 2000,
                                     showConfirmButton: false
                                 }).then(() => {
-                                    location.reload();
+                                    // پاک کردن کش مرورگر و بروزرسانی صفحه
+                                    var currentUrl = window.location.href;
+                                    var separator = currentUrl.indexOf('?') !== -1 ? '&' : '?';
+                                    var timestamp = new Date().getTime();
+                                    window.location.href = currentUrl + separator + '_t=' + timestamp;
                                 });
                             } else {
-                                Swal.fire('خطا!', result.message, 'error');
+                                Swal.fire({
+                                    title: 'خطا!',
+                                    text: response.message || `خطا در ${actionText} پزشک`,
+                                    icon: 'error'
+                                });
                             }
                         },
-                        error: function () {
+                        error: function (xhr, status, error) {
                             hideLoading();
+                            console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
                             Swal.fire('خطا!', 'خطا در ارتباط با سرور.', 'error');
                         }
                     });
@@ -697,28 +748,53 @@
                     $.ajax({
                         url: '@Url.Action("Delete", "Doctor")',
                         type: 'POST',
-                        data: { id: id },
+                        data: { 
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
                         beforeSend: function() {
                             showLoading();
                         },
-                        success: function (result) {
+                        success: function (response) {
                             hideLoading();
-                            if (result.success) {
+                            console.log('Server response:', response); // برای دیباگ
+                            
+                            // بررسی نوع پاسخ
+                            if (typeof response === 'string') {
+                                try {
+                                    response = JSON.parse(response);
+                                } catch (e) {
+                                    console.error('Error parsing response:', e);
+                                    Swal.fire("خطا!", "پاسخ نامعتبر از سرور دریافت شد.", "error");
+                                    return;
+                                }
+                            }
+                            
+                            if (response && response.success === true) {
                                 Swal.fire({
                                     title: "حذف شد!",
-                                    text: "پزشک با موفقیت حذف شد.",
+                                    text: response.message || "پزشک با موفقیت حذف شد.",
                                     icon: "success",
                                     timer: 2000,
                                     showConfirmButton: false
                                 }).then(() => {
-                                    location.reload();
+                                    // پاک کردن کش مرورگر و بروزرسانی صفحه
+                                    var currentUrl = window.location.href;
+                                    var separator = currentUrl.indexOf('?') !== -1 ? '&' : '?';
+                                    var timestamp = new Date().getTime();
+                                    window.location.href = currentUrl + separator + '_t=' + timestamp;
                                 });
                             } else {
-                                Swal.fire("خطا!", result.message, "error");
+                                Swal.fire({
+                                    title: "خطا!",
+                                    text: response.message || "خطا در حذف پزشک",
+                                    icon: "error"
+                                });
                             }
                         },
-                        error: function () {
+                        error: function (xhr, status, error) {
                             hideLoading();
+                            console.error('AJAX Error:', {xhr: xhr, status: status, error: error});
                             Swal.fire("خطا!", "خطا در ارتباط با سرور.", "error");
                         }
                     });
@@ -779,7 +855,22 @@
                 refreshTable();
             }
             
+            // Escape key for reset search
+            if (e.keyCode === 27) {
+                e.preventDefault();
+                resetSearch();
+            }
+        });
 
+        // بهبود تجربه کاربری در محیط پزشکی
+        $(window).on('beforeunload', function() {
+            // نمایش loading هنگام خروج از صفحه
+            showLoading();
+        });
+
+        // بهبود عملکرد فرم جستجو
+        $('#searchForm').on('submit', function(e) {
+            showLoading();
         });
     </script>
 }

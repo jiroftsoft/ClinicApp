@@ -493,9 +493,13 @@
     <Compile Include="Interfaces\INotificationService.cs" />
     <Compile Include="Interfaces\INotificationTemplateService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
-    <Compile Include="Migrations\202508281113266_CreateDbClinic.cs" />
-    <Compile Include="Migrations\202508281113266_CreateDbClinic.Designer.cs">
-      <DependentUpon>202508281113266_CreateDbClinic.cs</DependentUpon>
+    <Compile Include="Migrations\202508281413337_CreateClinicDataBase.cs" />
+    <Compile Include="Migrations\202508281413337_CreateClinicDataBase.Designer.cs">
+      <DependentUpon>202508281413337_CreateClinicDataBase.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202508282054043_OneMigration.cs" />
+    <Compile Include="Migrations\202508282054043_OneMigration.Designer.cs">
+      <DependentUpon>202508282054043_OneMigration.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
@@ -628,7 +632,7 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
-    <Content Include="Content\Images\default-avatar.jpg" />
+    <Content Include="Content\Images\default-avatar.png" />
     <Content Include="Content\Images\shafa-logo.png" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />
@@ -3473,8 +3477,11 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202508281113266_CreateDbClinic.resx">
-      <DependentUpon>202508281113266_CreateDbClinic.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202508281413337_CreateClinicDataBase.resx">
+      <DependentUpon>202508281413337_CreateClinicDataBase.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202508282054043_OneMigration.resx">
+      <DependentUpon>202508282054043_OneMigration.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

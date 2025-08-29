@@ -60,7 +60,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.DoctorSchedules
                     .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted)
-                    .Include(ds => ds.Doctor.ApplicationUser)
+                    .Include(ds => ds.Doctor)
                     .Include(ds => ds.WorkDays)
                     .Include(ds => ds.CreatedByUser)
                     .Include(ds => ds.UpdatedByUser)

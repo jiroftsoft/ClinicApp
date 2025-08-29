@@ -7,13 +7,13 @@ namespace ClinicApp.Migrations
     using System.Resources;
     
     [GeneratedCode("EntityFramework.Migrations", "6.5.1")]
-    public sealed partial class CreateDbClinic : IMigrationMetadata
+    public sealed partial class OneMigration : IMigrationMetadata
     {
-        private readonly ResourceManager Resources = new ResourceManager(typeof(CreateDbClinic));
+        private readonly ResourceManager Resources = new ResourceManager(typeof(OneMigration));
         
         string IMigrationMetadata.Id
         {
-            get { return "202508281113266_CreateDbClinic"; }
+            get { return "202508282054043_OneMigration"; }
         }
         
         string IMigrationMetadata.Source

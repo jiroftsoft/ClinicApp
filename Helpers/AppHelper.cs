@@ -279,9 +279,7 @@ namespace ClinicApp.Helpers
                 Task.FromResult(true);
 
             public Task<Doctor> GetDoctorInfoAsync() =>
-                Task.FromResult(IsDoctor ?
-                    _userManager.FindById(UserId)?.Doctors?.FirstOrDefault() :
-                    null);
+                Task.FromResult<Doctor>(null);
 
             public Task<Patient> GetPatientInfoAsync() =>
                 Task.FromResult(IsPatient ?
@@ -358,9 +356,7 @@ namespace ClinicApp.Helpers
                 Task.FromResult(true);
 
             public Task<Doctor> GetDoctorInfoAsync() =>
-                Task.FromResult(IsDoctor ?
-                    _userManager.FindById(UserId)?.Doctors?.FirstOrDefault() :
-                    null);
+                Task.FromResult<Doctor>(null);
 
             public Task<Patient> GetPatientInfoAsync() =>
                 Task.FromResult(IsPatient ?

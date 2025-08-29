@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -7,6 +8,7 @@ using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.DoctorManagementVM;
@@ -39,6 +41,7 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly ILogger _logger;
         private readonly IMapper _mapper;
         private readonly IClinicRepository _clinicRepository; // اضافه کردن repository کلینیک
+        private readonly ApplicationDbContext _context; // اضافه کردن context برای دسترسی مستقیم به دیتابیس
 
         public DoctorCrudService(
             IDoctorCrudRepository doctorRepository,
@@ -47,7 +50,8 @@ namespace ClinicApp.Services.ClinicAdmin
             ICurrentUserService currentUserService,
             IValidator<DoctorCreateEditViewModel> validator,
             IMapper mapper,
-            IClinicRepository clinicRepository) // اضافه کردن dependency
+            IClinicRepository clinicRepository,
+            ApplicationDbContext context) // اضافه کردن dependency
         {
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
             _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));
@@ -56,6 +60,7 @@ namespace ClinicApp.Services.ClinicAdmin
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _clinicRepository = clinicRepository ?? throw new ArgumentNullException(nameof(clinicRepository)); // تخصیص dependency
+            _context = context ?? throw new ArgumentNullException(nameof(context)); // تخصیص dependency
             _logger = Log.ForContext<DoctorCrudService>();
         }
 
@@ -220,50 +225,10 @@ namespace ClinicApp.Services.ClinicAdmin
                 var doctor = model.ToEntity();
                 
                 // تنظیم اطلاعات ردیابی
-                _logger.Information("=== شروع تنظیم اطلاعات ردیابی ===");
-                
-                // بررسی CurrentUserService
-                _logger.Information("بررسی CurrentUserService...");
-                _logger.Information("نوع CurrentUserService: {Type}", _currentUserService.GetType().Name);
-                
-                var currentUserId = _currentUserService.UserId;
-                _logger.Information("دریافت شناسه کاربر فعلی: {UserId}", currentUserId);
-                _logger.Information("نوع شناسه کاربر: {Type}", currentUserId?.GetType().Name ?? "null");
-                _logger.Information("طول شناسه کاربر: {Length}", currentUserId?.Length ?? 0);
-                
-                // بررسی معتبر بودن کاربر فعلی
-                if (string.IsNullOrEmpty(currentUserId))
-                {
-                    _logger.Error("شناسه کاربر خالی است. UserId: {UserId}", currentUserId);
-                    _logger.Error("CurrentUserService نوع: {Type}", _currentUserService.GetType().Name);
-                    _logger.Error("IsDevelopmentEnvironment: {IsDev}", _currentUserService.IsDevelopmentEnvironment());
-                    _logger.Error("IsAuthenticated: {IsAuth}", _currentUserService.IsAuthenticated);
-                    
-                    // Fallback: استفاده از شناسه Admin توسعه
-                    _logger.Warning("استفاده از شناسه Admin توسعه به عنوان fallback");
-                    currentUserId = "6f999f4d-24b8-4142-a97e-20077850278b";
-                    _logger.Information("شناسه کاربر fallback: {UserId}", currentUserId);
-                }
-                
-                // بررسی محیط توسعه
-                _logger.Information("بررسی محیط توسعه...");
-                bool isDevelopment = _currentUserService.IsDevelopmentEnvironment();
-                _logger.Information("نتیجه بررسی محیط توسعه: {IsDevelopment}", isDevelopment);
-                
-                if (isDevelopment)
-                {
-                    _logger.Information("محیط توسعه تشخیص داده شد. استفاده از کاربر Admin توسعه با شناسه: {UserId}", currentUserId);
-                }
-                else
-                {
-                    _logger.Information("محیط تولید تشخیص داده شد. استفاده از کاربر احراز هویت شده با شناسه: {UserId}", currentUserId);
-                }
-                
-                _logger.Information("=== پایان تنظیم اطلاعات ردیابی ===");
+                var currentUserId = await GetValidUserIdAsync();
                 
                 doctor.CreatedByUserId = currentUserId;
                 doctor.UpdatedByUserId = currentUserId;
-                doctor.ApplicationUserId = currentUserId; // تنظیم کاربر مرتبط
                 doctor.CreatedAt = DateTime.Now;
                 doctor.UpdatedAt = DateTime.Now;
                 doctor.IsDeleted = false;
@@ -356,10 +321,20 @@ namespace ClinicApp.Services.ClinicAdmin
                 {
                     _logger.Error("شناسه کاربر خالی است. UserId: {UserId}", currentUserId);
                     
-                    // Fallback: استفاده از شناسه Admin توسعه
-                    _logger.Warning("استفاده از شناسه Admin توسعه به عنوان fallback");
-                    currentUserId = "6f999f4d-24b8-4142-a97e-20077850278b";
-                    _logger.Information("شناسه کاربر fallback: {UserId}", currentUserId);
+                    // Fallback: استفاده از شناسه Admin واقعی از دیتابیس
+                    _logger.Warning("استفاده از شناسه Admin واقعی از دیتابیس به عنوان fallback");
+                    var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3020347998");
+                    if (adminUser != null)
+                    {
+                        currentUserId = adminUser.Id;
+                        _logger.Information("شناسه کاربر Admin از دیتابیس: {UserId}", currentUserId);
+                    }
+                    else
+                    {
+                        _logger.Error("کاربر Admin در دیتابیس یافت نشد. استفاده از شناسه System");
+                        currentUserId = "System";
+                        _logger.Information("شناسه کاربر System: {UserId}", currentUserId);
+                    }
                 }
                 
                 // بررسی محیط توسعه
@@ -383,7 +358,18 @@ namespace ClinicApp.Services.ClinicAdmin
                 existingDoctor.HomeAddress = model.HomeAddress;
                 existingDoctor.OfficeAddress = model.OfficeAddress;
                 existingDoctor.ExperienceYears = model.ExperienceYears;
-                existingDoctor.ProfileImageUrl = model.ProfileImageUrl;
+                
+                // به‌روزرسانی تصویر پروفایل فقط اگر مقدار جدید ارائه شده باشد
+                if (!string.IsNullOrEmpty(model.ProfileImageUrl))
+                {
+                    existingDoctor.ProfileImageUrl = model.ProfileImageUrl;
+                    _logger.Information("تصویر پروفایل پزشک {DoctorId} به‌روزرسانی شد", model.DoctorId);
+                }
+                else
+                {
+                    _logger.Information("تصویر پروفایل پزشک {DoctorId} تغییر نکرده، مقدار قبلی حفظ می‌شود", model.DoctorId);
+                }
+                
                 existingDoctor.PhoneNumber = model.PhoneNumber;
                 existingDoctor.NationalCode = model.NationalCode;
                 existingDoctor.MedicalCouncilCode = model.MedicalCouncilCode;
@@ -453,10 +439,20 @@ namespace ClinicApp.Services.ClinicAdmin
                 {
                     _logger.Error("شناسه کاربر خالی است. UserId: {UserId}", currentUserId);
                     
-                    // Fallback: استفاده از شناسه Admin توسعه
-                    _logger.Warning("استفاده از شناسه Admin توسعه به عنوان fallback");
-                    currentUserId = "6f999f4d-24b8-4142-a97e-20077850278b";
-                    _logger.Information("شناسه کاربر fallback: {UserId}", currentUserId);
+                    // Fallback: استفاده از شناسه Admin واقعی از دیتابیس
+                    _logger.Warning("استفاده از شناسه Admin واقعی از دیتابیس به عنوان fallback");
+                    var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3020347998");
+                    if (adminUser != null)
+                    {
+                        currentUserId = adminUser.Id;
+                        _logger.Information("شناسه کاربر Admin از دیتابیس: {UserId}", currentUserId);
+                    }
+                    else
+                    {
+                        _logger.Error("کاربر Admin در دیتابیس یافت نشد. استفاده از شناسه System");
+                        currentUserId = "System";
+                        _logger.Information("شناسه کاربر System: {UserId}", currentUserId);
+                    }
                 }
                 
                 // بررسی محیط توسعه
@@ -469,6 +465,33 @@ namespace ClinicApp.Services.ClinicAdmin
                     _logger.Information("محیط تولید تشخیص داده شد. استفاده از کاربر احراز هویت شده با شناسه: {UserId} برای حذف پزشک", currentUserId);
                 }
                 
+                // حذف انتصابات فعال به دپارتمان‌ها
+                var departmentAssignments = await _context.DoctorDepartments
+                    .Where(dd => dd.DoctorId == doctorId && dd.IsActive && !dd.IsDeleted)
+                    .ToListAsync();
+                
+                foreach (var assignment in departmentAssignments)
+                {
+                    assignment.IsActive = false;
+                    assignment.IsDeleted = true;
+                    assignment.DeletedAt = DateTime.Now;
+                    assignment.DeletedByUserId = currentUserId;
+                }
+                
+                // حذف انتصابات فعال به سرفصل‌های خدماتی
+                var serviceCategoryAssignments = await _context.DoctorServiceCategories
+                    .Where(dsc => dsc.DoctorId == doctorId && dsc.IsActive)
+                    .ToListAsync();
+                
+                foreach (var assignment in serviceCategoryAssignments)
+                {
+                    assignment.IsActive = false;
+                    assignment.IsDeleted = true;
+                    assignment.DeletedAt = DateTime.Now;
+                    assignment.DeletedByUserId = currentUserId;
+                }
+                
+                // حذف نرم پزشک
                 await _doctorRepository.SoftDeleteAsync(doctorId, currentUserId);
 
                 _logger.Information("پزشک با شناسه {DoctorId} با موفقیت حذف شد", doctorId);
@@ -491,7 +514,15 @@ namespace ClinicApp.Services.ClinicAdmin
             {
                 _logger.Information("درخواست بازیابی پزشک با شناسه: {DoctorId}", doctorId);
 
-                var restored = await _doctorRepository.RestoreAsync(doctorId, _currentUserService.UserId);
+                // بررسی معتبر بودن کاربر فعلی
+                var currentUserId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3020347998");
+                    currentUserId = adminUser?.Id ?? "System";
+                }
+                
+                var restored = await _doctorRepository.RestoreAsync(doctorId, currentUserId);
                 if (!restored)
                 {
                     _logger.Warning("بازیابی پزشک با شناسه {DoctorId} ناموفق بود", doctorId);
@@ -593,7 +624,15 @@ namespace ClinicApp.Services.ClinicAdmin
                 // فعال‌سازی پزشک
                 doctor.IsActive = true;
                 doctor.UpdatedAt = DateTime.Now;
-                doctor.UpdatedByUserId = _currentUserService.UserId;
+                
+                // بررسی معتبر بودن کاربر فعلی
+                var currentUserId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3020347998");
+                    currentUserId = adminUser?.Id ?? "System";
+                }
+                doctor.UpdatedByUserId = currentUserId;
 
                 await _doctorRepository.UpdateAsync(doctor);
 
@@ -646,7 +685,15 @@ namespace ClinicApp.Services.ClinicAdmin
                 // غیرفعال‌سازی پزشک
                 doctor.IsActive = false;
                 doctor.UpdatedAt = DateTime.Now;
-                doctor.UpdatedByUserId = _currentUserService.UserId;
+                
+                // بررسی معتبر بودن کاربر فعلی
+                var currentUserId = _currentUserService.UserId;
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3020347998");
+                    currentUserId = adminUser?.Id ?? "System";
+                }
+                doctor.UpdatedByUserId = currentUserId;
 
                 await _doctorRepository.UpdateAsync(doctor);
 
@@ -690,6 +737,62 @@ namespace ClinicApp.Services.ClinicAdmin
                 _logger.Error(ex, "خطا در دریافت لیست تخصص‌های فعال");
                 return ServiceResult<List<Specialization>>.Failed("خطا در دریافت لیست تخصص‌های فعال");
             }
+        }
+
+        #endregion
+
+        #region Helper Methods (روش‌های کمکی)
+
+        /// <summary>
+        /// دریافت شناسه کاربر معتبر برای عملیات‌های ردیابی
+        /// </summary>
+        private async Task<string> GetValidUserIdAsync()
+        {
+            var currentUserId = _currentUserService.UserId;
+            if (!string.IsNullOrEmpty(currentUserId))
+            {
+                return currentUserId;
+            }
+
+            // Fallback: استفاده از شناسه Admin واقعی از دیتابیس
+            _logger.Warning("استفاده از شناسه Admin واقعی از دیتابیس به عنوان fallback");
+            var adminUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3020347998");
+            if (adminUser != null)
+            {
+                _logger.Information("شناسه کاربر Admin از دیتابیس: {UserId}", adminUser.Id);
+                return adminUser.Id;
+            }
+
+            // Fallback: بررسی کاربر System
+            _logger.Error("کاربر Admin در دیتابیس یافت نشد. بررسی کاربر System");
+            var systemUser = await _context.Users.FirstOrDefaultAsync(u => u.UserName == "3031945451");
+            if (systemUser != null)
+            {
+                _logger.Information("شناسه کاربر System از دیتابیس: {UserId}", systemUser.Id);
+                return systemUser.Id;
+            }
+
+            // Fallback: ایجاد کاربر System
+            _logger.Error("هیچ کاربر Admin یا System در دیتابیس یافت نشد. ایجاد کاربر System");
+            var newSystemUser = new ApplicationUser
+            {
+                UserName = "3031945451",
+                NationalCode = "3031945451",
+                Email = "system@clinic.com",
+                PhoneNumber = "09022487373",
+                PhoneNumberConfirmed = true,
+                FirstName = "System",
+                LastName = "Shefa Clinic",
+                IsActive = true,
+                CreatedAt = DateTime.Now,
+                CreatedByUserId = "System" // خودش
+            };
+            
+            _context.Users.Add(newSystemUser);
+            await _context.SaveChangesAsync();
+            
+            _logger.Information("کاربر System ایجاد شد با شناسه: {UserId}", newSystemUser.Id);
+            return newSystemUser.Id;
         }
 
         #endregion

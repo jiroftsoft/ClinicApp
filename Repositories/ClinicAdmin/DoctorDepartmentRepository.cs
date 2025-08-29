@@ -80,7 +80,6 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                 dd.DepartmentId == departmentId && 
                                 !dd.IsDeleted)
                     .Include(dd => dd.Doctor)
-                    .Include(dd => dd.Doctor.ApplicationUser)
                     .Include(dd => dd.Doctor.Clinic)
                     .Include(dd => dd.Department)
                     .Include(dd => dd.Department.Clinic)
@@ -407,7 +406,6 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 var doctors = await _context.DoctorDepartments
                     .Include(dd => dd.Doctor)
-                    .Include(dd => dd.Doctor.ApplicationUser)
                     .Where(dd => dd.DepartmentId == departmentId && 
                                 dd.IsActive && 
                                 !dd.IsDeleted &&

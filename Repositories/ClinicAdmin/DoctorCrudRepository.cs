@@ -396,7 +396,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                                 .Take(filter.PageSize);
                 }
 
-                return await query.ToListAsync();
+                return await query.AsNoTracking().ToListAsync();
             }
             catch (Exception ex)
             {

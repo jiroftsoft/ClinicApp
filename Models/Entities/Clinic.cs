@@ -512,12 +512,6 @@ namespace ClinicApp.Models.Entities
 
         #region روابط
         /// <summary>
-        /// لیست پزشکان مرتبط با این کاربر
-        /// این لیست برای نمایش تمام پزشکانی که با این حساب کاربری مرتبط هستند استفاده می‌شود
-        /// </summary>
-        public virtual ICollection<Doctor> Doctors { get; set; } = new HashSet<Doctor>();
-
-        /// <summary>
         /// لیست بیماران مرتبط با این کاربر
         /// این لیست برای نمایش تمام بیمارانی که با این حساب کاربری مرتبط هستند استفاده می‌شود
         /// </summary>
@@ -661,12 +655,6 @@ namespace ClinicApp.Models.Entities
                 .HasMaxLength(20)
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_ApplicationUser_PhoneNumber") { IsUnique = true }));
-
-            // روابط
-            HasMany(u => u.Doctors)
-                .WithRequired(d => d.ApplicationUser)
-                .HasForeignKey(d => d.ApplicationUserId)
-                .WillCascadeOnDelete(false);
 
             HasMany(u => u.Patients)
                 .WithRequired(p => p.ApplicationUser)
@@ -2868,20 +2856,7 @@ namespace ClinicApp.Models.Entities
         #endregion
 
         #region روابط
-        /// <summary>
-        /// شناسه کاربر مرتبط با این پزشک
-        /// هر پزشک باید یک حساب کاربری در سیستم داشته باشد
-        /// </summary>
-        [Required(ErrorMessage = "کاربر مرتبط الزامی است.")]
-        public string ApplicationUserId { get; set; }
-
-        /// <summary>
-        /// ارجاع به کاربر مرتبط با این پزشک
-        /// این ارتباط برای احراز هویت و دسترسی به سیستم ضروری است
-        /// </summary>
-        public virtual ApplicationUser ApplicationUser { get; set; }
-
-        /// <summary>
+     /// <summary>
         /// ارجاع به کلینیک مرتبط با این پزشک
         /// این ارتباط برای نمایش اطلاعات کلینیک در سیستم‌های پزشکی ضروری است
         /// </summary>
@@ -3053,12 +3028,6 @@ namespace ClinicApp.Models.Entities
                 .IsOptional()
                 .HasMaxLength(50);
 
-            // ApplicationUserId - Required
-            Property(d => d.ApplicationUserId)
-                .IsRequired()
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Doctor_ApplicationUserId")));
-
             // پیاده‌سازی ISoftDelete
             Property(d => d.IsDeleted)
                 .IsRequired()
@@ -3103,10 +3072,6 @@ namespace ClinicApp.Models.Entities
                     new IndexAnnotation(new IndexAttribute("IX_Doctor_ClinicId")));
 
             // روابط
-            HasRequired(d => d.ApplicationUser)
-                .WithMany(u => u.Doctors)
-                .HasForeignKey(d => d.ApplicationUserId)
-                .WillCascadeOnDelete(false);
 
             HasOptional(d => d.Clinic)
                 .WithMany(c => c.Doctors)
@@ -4396,7 +4361,25 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public virtual ApplicationUser UpdatedByUser { get; set; }
 
+        /// <summary>
+        /// ارجاع به کاربر حذف کننده صلاحیت
+        /// برای دسترسی مستقیم به اطلاعات کاربری که این صلاحیت را حذف کرده
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+
         public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان حذف این صلاحیت
+        /// مهم برای ردیابی زمان حذف صلاحیت از پزشک
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که این صلاحیت را حذف کرده
+        /// مهم برای سیستم‌های پزشکی - چه کسی صلاحیت را حذف کرده
+        /// </summary>
+        public string DeletedByUserId { get; set; }
 
         #endregion
     }
@@ -4478,6 +4461,22 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_UpdatedByUserId")));
 
+            // تنظیمات ISoftDelete
+            Property(dsc => dsc.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_IsDeleted")));
+
+            Property(dsc => dsc.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_DeletedAt")));
+
+            Property(dsc => dsc.DeletedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_DoctorServiceCategory_DeletedByUserId")));
+
             // روابط اصلی
             HasRequired(dsc => dsc.Doctor)
                 .WithMany(d => d.DoctorServiceCategories)
@@ -4498,6 +4497,11 @@ namespace ClinicApp.Models.Entities
             HasOptional(dsc => dsc.UpdatedByUser)
                 .WithMany()
                 .HasForeignKey(dsc => dsc.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(dsc => dsc.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(dsc => dsc.DeletedByUserId)
                 .WillCascadeOnDelete(false);
 
             // ایندکس‌های ترکیبی برای بهبود کارایی

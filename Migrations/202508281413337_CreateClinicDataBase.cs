@@ -5,7 +5,7 @@
     using System.Data.Entity.Infrastructure.Annotations;
     using System.Data.Entity.Migrations;
     
-    public partial class CreateDbClinic : DbMigration
+    public partial class CreateClinicDataBase : DbMigration
     {
         public override void Up()
         {
@@ -131,6 +131,202 @@
                 .Index(t => t.UserId);
             
             CreateTable(
+                "dbo.AspNetUserLogins",
+                c => new
+                    {
+                        LoginProvider = c.String(nullable: false, maxLength: 128),
+                        ProviderKey = c.String(nullable: false, maxLength: 128),
+                        UserId = c.String(nullable: false, maxLength: 128),
+                    })
+                .PrimaryKey(t => new { t.LoginProvider, t.ProviderKey, t.UserId })
+                .ForeignKey("dbo.AspNetUsers", t => t.UserId)
+                .Index(t => t.UserId);
+            
+            CreateTable(
+                "dbo.NotificationHistories",
+                c => new
+                    {
+                        HistoryId = c.Guid(nullable: false),
+                        NotificationId = c.Guid(nullable: false),
+                        ChannelType = c.Int(nullable: false),
+                        Recipient = c.String(nullable: false, maxLength: 50),
+                        Subject = c.String(maxLength: 200),
+                        Message = c.String(nullable: false, maxLength: 1000),
+                        SentAt = c.DateTime(nullable: false),
+                        Status = c.Int(nullable: false),
+                        StatusDescription = c.String(maxLength: 500),
+                        SenderUserId = c.String(nullable: false, maxLength: 128),
+                        RelatedEntityId = c.String(maxLength: 50),
+                        RelatedEntityType = c.String(maxLength: 100),
+                        AttemptCount = c.Int(nullable: false),
+                        ExternalMessageId = c.String(maxLength: 100),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_NotificationHistory_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.HistoryId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.SenderUserId)
+                .Index(t => t.Recipient, name: "IX_NotificationHistory_Recipient")
+                .Index(t => new { t.Recipient, t.Status, t.SentAt }, name: "IX_NotificationHistory_Recipient_Status_SentAt")
+                .Index(t => t.SentAt, name: "IX_NotificationHistory_SentAt")
+                .Index(t => new { t.SentAt, t.Status, t.IsDeleted }, name: "IX_NotificationHistory_SentAt_Status_IsDeleted")
+                .Index(t => t.Status, name: "IX_NotificationHistory_Status")
+                .Index(t => t.SenderUserId)
+                .Index(t => t.RelatedEntityType, name: "IX_NotificationHistory_RelatedEntityType")
+                .Index(t => t.IsDeleted, name: "IX_NotificationHistory_IsDeleted")
+                .Index(t => t.DeletedByUserId)
+                .Index(t => t.CreatedByUserId, name: "IX_NotificationHistory_CreatedByUserId")
+                .Index(t => t.UpdatedByUserId, name: "IX_NotificationHistory_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.Patients",
+                c => new
+                    {
+                        PatientId = c.Int(nullable: false, identity: true),
+                        NationalCode = c.String(nullable: false, maxLength: 10),
+                        FirstName = c.String(nullable: false, maxLength: 100),
+                        LastName = c.String(nullable: false, maxLength: 100),
+                        BirthDate = c.DateTime(),
+                        Address = c.String(maxLength: 500),
+                        PhoneNumber = c.String(maxLength: 50),
+                        Gender = c.Byte(nullable: false),
+                        InsuranceId = c.Int(nullable: false),
+                        LastLoginDate = c.DateTime(),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                        ApplicationUserId = c.String(nullable: false, maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Patient_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.PatientId)
+                .ForeignKey("dbo.AspNetUsers", t => t.ApplicationUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.Insurances", t => t.InsuranceId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.NationalCode, unique: true, name: "IX_Patient_NationalCode")
+                .Index(t => t.FirstName, name: "IX_Patient_FirstName")
+                .Index(t => new { t.LastName, t.FirstName }, name: "IX_Patient_LastName_FirstName")
+                .Index(t => t.LastName, name: "IX_Patient_LastName")
+                .Index(t => t.BirthDate, name: "IX_Patient_BirthDate")
+                .Index(t => t.PhoneNumber, name: "IX_Patient_PhoneNumber")
+                .Index(t => t.InsuranceId, name: "IX_Patient_InsuranceId")
+                .Index(t => new { t.InsuranceId, t.LastLoginDate }, name: "IX_Patient_InsuranceId_LastLoginDate")
+                .Index(t => t.LastLoginDate, name: "IX_Patient_LastLoginDate")
+                .Index(t => t.IsDeleted, name: "IX_Patient_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_Patient_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_Patient_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_Patient_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_Patient_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_Patient_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_Patient_UpdatedByUserId")
+                .Index(t => t.ApplicationUserId);
+            
+            CreateTable(
+                "dbo.Insurances",
+                c => new
+                    {
+                        InsuranceId = c.Int(nullable: false, identity: true),
+                        Name = c.String(nullable: false, maxLength: 250),
+                        Description = c.String(maxLength: 1000),
+                        DefaultPatientShare = c.Decimal(nullable: false, precision: 5, scale: 2),
+                        DefaultInsurerShare = c.Decimal(nullable: false, precision: 5, scale: 2),
+                        IsActive = c.Boolean(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(nullable: false, maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Insurance_ActiveInsurances", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_Insurance_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.InsuranceId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.Name, name: "IX_Insurance_Name")
+                .Index(t => t.IsActive, name: "IX_Insurance_IsActive")
+                .Index(t => new { t.IsActive, t.IsDeleted }, name: "IX_Insurance_IsActive_IsDeleted")
+                .Index(t => t.IsDeleted, name: "IX_Insurance_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_Insurance_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_Insurance_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_Insurance_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_Insurance_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_Insurance_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_Insurance_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.Receptions",
+                c => new
+                    {
+                        ReceptionId = c.Int(nullable: false, identity: true),
+                        PatientId = c.Int(nullable: false),
+                        DoctorId = c.Int(nullable: false),
+                        InsuranceId = c.Int(nullable: false),
+                        ReceptionDate = c.DateTime(nullable: false),
+                        TotalAmount = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        PatientCoPay = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        InsurerShareAmount = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        Status = c.Byte(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Reception_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.ReceptionId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.Doctors", t => t.DoctorId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .ForeignKey("dbo.Insurances", t => t.InsuranceId)
+                .ForeignKey("dbo.Patients", t => t.PatientId)
+                .Index(t => t.PatientId, name: "IX_Reception_PatientId")
+                .Index(t => new { t.PatientId, t.ReceptionDate, t.Status }, name: "IX_Reception_PatientId_Date_Status")
+                .Index(t => t.DoctorId, name: "IX_Reception_DoctorId")
+                .Index(t => new { t.DoctorId, t.ReceptionDate, t.Status }, name: "IX_Reception_DoctorId_Date_Status")
+                .Index(t => t.InsuranceId, name: "IX_Reception_InsuranceId")
+                .Index(t => new { t.InsuranceId, t.ReceptionDate, t.Status }, name: "IX_Reception_InsuranceId_Date_Status")
+                .Index(t => t.ReceptionDate, name: "IX_Reception_ReceptionDate")
+                .Index(t => t.Status, name: "IX_Reception_Status")
+                .Index(t => t.IsDeleted, name: "IX_Reception_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_Reception_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_Reception_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_Reception_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_Reception_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_Reception_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_Reception_UpdatedByUserId");
+            
+            CreateTable(
                 "dbo.Doctors",
                 c => new
                     {
@@ -165,7 +361,6 @@
                         CreatedByUserId = c.String(maxLength: 128),
                         UpdatedAt = c.DateTime(),
                         UpdatedByUserId = c.String(maxLength: 128),
-                        ApplicationUserId = c.String(nullable: false, maxLength: 128),
                     },
                 annotations: new Dictionary<string, object>
                 {
@@ -173,7 +368,6 @@
                     { "DynamicFilter_Doctor_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 })
                 .PrimaryKey(t => t.DoctorId)
-                .ForeignKey("dbo.AspNetUsers", t => t.ApplicationUserId)
                 .ForeignKey("dbo.Clinics", t => t.ClinicId)
                 .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
                 .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
@@ -201,8 +395,7 @@
                 .Index(t => t.CreatedAt, name: "IX_Doctor_CreatedAt")
                 .Index(t => t.CreatedByUserId, name: "IX_Doctor_CreatedByUserId")
                 .Index(t => t.UpdatedAt, name: "IX_Doctor_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_Doctor_UpdatedByUserId")
-                .Index(t => t.ApplicationUserId, name: "IX_Doctor_ApplicationUserId");
+                .Index(t => t.UpdatedByUserId, name: "IX_Doctor_UpdatedByUserId");
             
             CreateTable(
                 "dbo.Clinics",
@@ -487,143 +680,6 @@
                 .Index(t => t.UpdatedByUserId, name: "IX_ReceptionItem_UpdatedByUserId");
             
             CreateTable(
-                "dbo.Receptions",
-                c => new
-                    {
-                        ReceptionId = c.Int(nullable: false, identity: true),
-                        PatientId = c.Int(nullable: false),
-                        DoctorId = c.Int(nullable: false),
-                        InsuranceId = c.Int(nullable: false),
-                        ReceptionDate = c.DateTime(nullable: false),
-                        TotalAmount = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        PatientCoPay = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        InsurerShareAmount = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        Status = c.Byte(nullable: false),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_Reception_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.ReceptionId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.Patients", t => t.PatientId)
-                .ForeignKey("dbo.Insurances", t => t.InsuranceId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .ForeignKey("dbo.Doctors", t => t.DoctorId)
-                .Index(t => t.PatientId, name: "IX_Reception_PatientId")
-                .Index(t => new { t.PatientId, t.ReceptionDate, t.Status }, name: "IX_Reception_PatientId_Date_Status")
-                .Index(t => t.DoctorId, name: "IX_Reception_DoctorId")
-                .Index(t => new { t.DoctorId, t.ReceptionDate, t.Status }, name: "IX_Reception_DoctorId_Date_Status")
-                .Index(t => t.InsuranceId, name: "IX_Reception_InsuranceId")
-                .Index(t => new { t.InsuranceId, t.ReceptionDate, t.Status }, name: "IX_Reception_InsuranceId_Date_Status")
-                .Index(t => t.ReceptionDate, name: "IX_Reception_ReceptionDate")
-                .Index(t => t.Status, name: "IX_Reception_Status")
-                .Index(t => t.IsDeleted, name: "IX_Reception_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_Reception_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_Reception_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_Reception_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_Reception_CreatedByUserId")
-                .Index(t => t.UpdatedAt, name: "IX_Reception_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_Reception_UpdatedByUserId");
-            
-            CreateTable(
-                "dbo.Insurances",
-                c => new
-                    {
-                        InsuranceId = c.Int(nullable: false, identity: true),
-                        Name = c.String(nullable: false, maxLength: 250),
-                        Description = c.String(maxLength: 1000),
-                        DefaultPatientShare = c.Decimal(nullable: false, precision: 5, scale: 2),
-                        DefaultInsurerShare = c.Decimal(nullable: false, precision: 5, scale: 2),
-                        IsActive = c.Boolean(nullable: false),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(nullable: false, maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_Insurance_ActiveInsurances", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                    { "DynamicFilter_Insurance_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.InsuranceId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .Index(t => t.Name, name: "IX_Insurance_Name")
-                .Index(t => t.IsActive, name: "IX_Insurance_IsActive")
-                .Index(t => new { t.IsActive, t.IsDeleted }, name: "IX_Insurance_IsActive_IsDeleted")
-                .Index(t => t.IsDeleted, name: "IX_Insurance_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_Insurance_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_Insurance_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_Insurance_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_Insurance_CreatedByUserId")
-                .Index(t => t.UpdatedAt, name: "IX_Insurance_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_Insurance_UpdatedByUserId");
-            
-            CreateTable(
-                "dbo.Patients",
-                c => new
-                    {
-                        PatientId = c.Int(nullable: false, identity: true),
-                        NationalCode = c.String(nullable: false, maxLength: 10),
-                        FirstName = c.String(nullable: false, maxLength: 100),
-                        LastName = c.String(nullable: false, maxLength: 100),
-                        BirthDate = c.DateTime(),
-                        Address = c.String(maxLength: 500),
-                        PhoneNumber = c.String(maxLength: 50),
-                        Gender = c.Byte(nullable: false),
-                        InsuranceId = c.Int(nullable: false),
-                        LastLoginDate = c.DateTime(),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                        ApplicationUserId = c.String(nullable: false, maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_Patient_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.PatientId)
-                .ForeignKey("dbo.AspNetUsers", t => t.ApplicationUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .ForeignKey("dbo.Insurances", t => t.InsuranceId)
-                .Index(t => t.NationalCode, unique: true, name: "IX_Patient_NationalCode")
-                .Index(t => t.FirstName, name: "IX_Patient_FirstName")
-                .Index(t => new { t.LastName, t.FirstName }, name: "IX_Patient_LastName_FirstName")
-                .Index(t => t.LastName, name: "IX_Patient_LastName")
-                .Index(t => t.BirthDate, name: "IX_Patient_BirthDate")
-                .Index(t => t.PhoneNumber, name: "IX_Patient_PhoneNumber")
-                .Index(t => t.InsuranceId, name: "IX_Patient_InsuranceId")
-                .Index(t => new { t.InsuranceId, t.LastLoginDate }, name: "IX_Patient_InsuranceId_LastLoginDate")
-                .Index(t => t.LastLoginDate, name: "IX_Patient_LastLoginDate")
-                .Index(t => t.IsDeleted, name: "IX_Patient_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_Patient_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_Patient_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_Patient_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_Patient_CreatedByUserId")
-                .Index(t => t.UpdatedAt, name: "IX_Patient_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_Patient_UpdatedByUserId")
-                .Index(t => t.ApplicationUserId);
-            
-            CreateTable(
                 "dbo.InsuranceTariffs",
                 c => new
                     {
@@ -664,191 +720,6 @@
                 .Index(t => t.CreatedByUserId, name: "IX_InsuranceTariff_CreatedByUserId")
                 .Index(t => t.UpdatedAt, name: "IX_InsuranceTariff_UpdatedAt")
                 .Index(t => t.UpdatedByUserId, name: "IX_InsuranceTariff_UpdatedByUserId");
-            
-            CreateTable(
-                "dbo.ReceiptPrints",
-                c => new
-                    {
-                        ReceiptPrintId = c.Int(nullable: false, identity: true),
-                        ReceptionId = c.Int(nullable: false),
-                        ReceiptContent = c.String(nullable: false, maxLength: 1000),
-                        ReceiptHash = c.String(nullable: false, maxLength: 64),
-                        PrintDate = c.DateTime(nullable: false),
-                        PrintedBy = c.String(maxLength: 250),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(maxLength: 128),
-                        PrintedByUserId = c.String(maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_ReceiptPrint_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.ReceiptPrintId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.PrintedByUserId)
-                .ForeignKey("dbo.Receptions", t => t.ReceptionId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .Index(t => new { t.ReceptionId, t.PrintDate }, name: "IX_ReceiptPrint_ReceptionId_PrintDate")
-                .Index(t => t.ReceiptContent, name: "IX_ReceiptPrint_ReceiptContent")
-                .Index(t => t.ReceiptHash, unique: true, name: "IX_ReceiptPrint_ReceiptHash")
-                .Index(t => t.PrintDate, name: "IX_ReceiptPrint_PrintDate")
-                .Index(t => new { t.PrintDate, t.IsDeleted }, name: "IX_ReceiptPrint_PrintDate_IsDeleted")
-                .Index(t => t.PrintedBy, name: "IX_ReceiptPrint_PrintedBy")
-                .Index(t => t.IsDeleted, name: "IX_ReceiptPrint_IsDeleted")
-                .Index(t => new { t.CreatedAt, t.IsDeleted }, name: "IX_ReceiptPrint_CreatedAt_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_ReceiptPrint_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_ReceiptPrint_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_ReceiptPrint_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_ReceiptPrint_CreatedByUserId")
-                .Index(t => t.PrintedByUserId)
-                .Index(t => t.UpdatedAt, name: "IX_ReceiptPrint_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_ReceiptPrint_UpdatedByUserId");
-            
-            CreateTable(
-                "dbo.PaymentTransactions",
-                c => new
-                    {
-                        PaymentTransactionId = c.Int(nullable: false, identity: true),
-                        ReceptionId = c.Int(nullable: false),
-                        PosTerminalId = c.Int(),
-                        CashSessionId = c.Int(nullable: false),
-                        Amount = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        Method = c.Byte(nullable: false),
-                        Status = c.Int(nullable: false),
-                        TransactionId = c.String(maxLength: 100),
-                        ReferenceCode = c.String(maxLength: 100),
-                        ReceiptNo = c.String(maxLength: 50),
-                        Description = c.String(maxLength: 500),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_PaymentTransaction_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.PaymentTransactionId)
-                .ForeignKey("dbo.CashSessions", t => t.CashSessionId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.PosTerminals", t => t.PosTerminalId)
-                .ForeignKey("dbo.Receptions", t => t.ReceptionId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .Index(t => t.ReceptionId, name: "IX_PaymentTransaction_ReceptionId")
-                .Index(t => new { t.ReceptionId, t.Status }, name: "IX_PaymentTransaction_ReceptionId_Status")
-                .Index(t => t.PosTerminalId, name: "IX_PaymentTransaction_PosTerminalId")
-                .Index(t => t.CashSessionId, name: "IX_PaymentTransaction_CashSessionId")
-                .Index(t => new { t.CashSessionId, t.Status, t.CreatedAt }, name: "IX_PaymentTransaction_CashSessionId_Status_CreatedAt")
-                .Index(t => t.Amount, name: "IX_PaymentTransaction_Amount")
-                .Index(t => t.Method, name: "IX_PaymentTransaction_Method")
-                .Index(t => t.Status, name: "IX_PaymentTransaction_Status")
-                .Index(t => t.TransactionId, name: "IX_PaymentTransaction_TransactionId")
-                .Index(t => t.ReferenceCode, name: "IX_PaymentTransaction_ReferenceCode")
-                .Index(t => t.ReceiptNo, name: "IX_PaymentTransaction_ReceiptNo")
-                .Index(t => t.IsDeleted, name: "IX_PaymentTransaction_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_PaymentTransaction_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_PaymentTransaction_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_PaymentTransaction_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_PaymentTransaction_CreatedByUserId")
-                .Index(t => t.UpdatedAt, name: "IX_PaymentTransaction_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_PaymentTransaction_UpdatedByUserId");
-            
-            CreateTable(
-                "dbo.CashSessions",
-                c => new
-                    {
-                        CashSessionId = c.Int(nullable: false, identity: true),
-                        UserId = c.String(nullable: false, maxLength: 128),
-                        OpenedAt = c.DateTime(nullable: false),
-                        ClosedAt = c.DateTime(),
-                        OpeningBalance = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        CashBalance = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        PosBalance = c.Decimal(nullable: false, precision: 18, scale: 2),
-                        Status = c.Int(nullable: false),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_CashSession_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.CashSessionId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UserId)
-                .Index(t => t.UserId, name: "IX_CashSession_UserId")
-                .Index(t => new { t.UserId, t.Status, t.OpenedAt }, name: "IX_CashSession_UserId_Status_OpenedAt")
-                .Index(t => t.OpenedAt, name: "IX_CashSession_OpenedAt")
-                .Index(t => t.ClosedAt, name: "IX_CashSession_ClosedAt")
-                .Index(t => t.Status, name: "IX_CashSession_Status")
-                .Index(t => t.IsDeleted, name: "IX_CashSession_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_CashSession_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_CashSession_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_CashSession_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_CashSession_CreatedByUserId")
-                .Index(t => t.UpdatedAt, name: "IX_CashSession_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_CashSession_UpdatedByUserId");
-            
-            CreateTable(
-                "dbo.PosTerminals",
-                c => new
-                    {
-                        PosTerminalId = c.Int(nullable: false, identity: true),
-                        Title = c.String(nullable: false, maxLength: 100),
-                        TerminalId = c.String(nullable: false, maxLength: 50),
-                        MerchantId = c.String(nullable: false, maxLength: 50),
-                        SerialNumber = c.String(maxLength: 100),
-                        IpAddress = c.String(maxLength: 50),
-                        MacAddress = c.String(maxLength: 50),
-                        Provider = c.Int(nullable: false),
-                        IsActive = c.Boolean(nullable: false),
-                        Protocol = c.Int(nullable: false),
-                        Port = c.Int(),
-                        IsDeleted = c.Boolean(nullable: false),
-                        DeletedAt = c.DateTime(),
-                        DeletedByUserId = c.String(maxLength: 128),
-                        CreatedAt = c.DateTime(nullable: false),
-                        CreatedByUserId = c.String(maxLength: 128),
-                        UpdatedAt = c.DateTime(),
-                        UpdatedByUserId = c.String(maxLength: 128),
-                    },
-                annotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_PosTerminal_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                })
-                .PrimaryKey(t => t.PosTerminalId)
-                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .Index(t => t.Title, name: "IX_PosTerminal_Title")
-                .Index(t => t.TerminalId, name: "IX_PosTerminal_TerminalId")
-                .Index(t => t.MerchantId, name: "IX_PosTerminal_MerchantId")
-                .Index(t => t.Provider, name: "IX_PosTerminal_Provider")
-                .Index(t => new { t.IsActive, t.Provider }, name: "IX_PosTerminal_IsActive_Provider")
-                .Index(t => t.IsActive, name: "IX_PosTerminal_IsActive")
-                .Index(t => t.IsDeleted, name: "IX_PosTerminal_IsDeleted")
-                .Index(t => t.DeletedAt, name: "IX_PosTerminal_DeletedAt")
-                .Index(t => t.DeletedByUserId, name: "IX_PosTerminal_DeletedByUserId")
-                .Index(t => t.CreatedAt, name: "IX_PosTerminal_CreatedAt")
-                .Index(t => t.CreatedByUserId, name: "IX_PosTerminal_CreatedByUserId")
-                .Index(t => t.UpdatedAt, name: "IX_PosTerminal_UpdatedAt")
-                .Index(t => t.UpdatedByUserId, name: "IX_PosTerminal_UpdatedByUserId");
             
             CreateTable(
                 "dbo.DoctorSpecializations",
@@ -1085,35 +956,65 @@
                 .Index(t => t.UpdatedByUserId, name: "IX_DoctorTimeSlot_UpdatedByUserId");
             
             CreateTable(
-                "dbo.AspNetUserLogins",
+                "dbo.ReceiptPrints",
                 c => new
                     {
-                        LoginProvider = c.String(nullable: false, maxLength: 128),
-                        ProviderKey = c.String(nullable: false, maxLength: 128),
-                        UserId = c.String(nullable: false, maxLength: 128),
-                    })
-                .PrimaryKey(t => new { t.LoginProvider, t.ProviderKey, t.UserId })
-                .ForeignKey("dbo.AspNetUsers", t => t.UserId)
-                .Index(t => t.UserId);
+                        ReceiptPrintId = c.Int(nullable: false, identity: true),
+                        ReceptionId = c.Int(nullable: false),
+                        ReceiptContent = c.String(nullable: false, maxLength: 1000),
+                        ReceiptHash = c.String(nullable: false, maxLength: 64),
+                        PrintDate = c.DateTime(nullable: false),
+                        PrintedBy = c.String(maxLength: 250),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        PrintedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_ReceiptPrint_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.ReceiptPrintId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.PrintedByUserId)
+                .ForeignKey("dbo.Receptions", t => t.ReceptionId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => new { t.ReceptionId, t.PrintDate }, name: "IX_ReceiptPrint_ReceptionId_PrintDate")
+                .Index(t => t.ReceiptContent, name: "IX_ReceiptPrint_ReceiptContent")
+                .Index(t => t.ReceiptHash, unique: true, name: "IX_ReceiptPrint_ReceiptHash")
+                .Index(t => t.PrintDate, name: "IX_ReceiptPrint_PrintDate")
+                .Index(t => new { t.PrintDate, t.IsDeleted }, name: "IX_ReceiptPrint_PrintDate_IsDeleted")
+                .Index(t => t.PrintedBy, name: "IX_ReceiptPrint_PrintedBy")
+                .Index(t => t.IsDeleted, name: "IX_ReceiptPrint_IsDeleted")
+                .Index(t => new { t.CreatedAt, t.IsDeleted }, name: "IX_ReceiptPrint_CreatedAt_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_ReceiptPrint_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_ReceiptPrint_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_ReceiptPrint_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_ReceiptPrint_CreatedByUserId")
+                .Index(t => t.PrintedByUserId)
+                .Index(t => t.UpdatedAt, name: "IX_ReceiptPrint_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_ReceiptPrint_UpdatedByUserId");
             
             CreateTable(
-                "dbo.NotificationHistories",
+                "dbo.PaymentTransactions",
                 c => new
                     {
-                        HistoryId = c.Guid(nullable: false),
-                        NotificationId = c.Guid(nullable: false),
-                        ChannelType = c.Int(nullable: false),
-                        Recipient = c.String(nullable: false, maxLength: 50),
-                        Subject = c.String(maxLength: 200),
-                        Message = c.String(nullable: false, maxLength: 1000),
-                        SentAt = c.DateTime(nullable: false),
+                        PaymentTransactionId = c.Int(nullable: false, identity: true),
+                        ReceptionId = c.Int(nullable: false),
+                        PosTerminalId = c.Int(),
+                        CashSessionId = c.Int(nullable: false),
+                        Amount = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        Method = c.Byte(nullable: false),
                         Status = c.Int(nullable: false),
-                        StatusDescription = c.String(maxLength: 500),
-                        SenderUserId = c.String(nullable: false, maxLength: 128),
-                        RelatedEntityId = c.String(maxLength: 50),
-                        RelatedEntityType = c.String(maxLength: 100),
-                        AttemptCount = c.Int(nullable: false),
-                        ExternalMessageId = c.String(maxLength: 100),
+                        TransactionId = c.String(maxLength: 100),
+                        ReferenceCode = c.String(maxLength: 100),
+                        ReceiptNo = c.String(maxLength: 50),
+                        Description = c.String(maxLength: 500),
                         IsDeleted = c.Boolean(nullable: false),
                         DeletedAt = c.DateTime(),
                         DeletedByUserId = c.String(maxLength: 128),
@@ -1124,24 +1025,120 @@
                     },
                 annotations: new Dictionary<string, object>
                 {
-                    { "DynamicFilter_NotificationHistory_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_PaymentTransaction_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 })
-                .PrimaryKey(t => t.HistoryId)
+                .PrimaryKey(t => t.PaymentTransactionId)
+                .ForeignKey("dbo.CashSessions", t => t.CashSessionId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.PosTerminals", t => t.PosTerminalId)
+                .ForeignKey("dbo.Receptions", t => t.ReceptionId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.ReceptionId, name: "IX_PaymentTransaction_ReceptionId")
+                .Index(t => new { t.ReceptionId, t.Status }, name: "IX_PaymentTransaction_ReceptionId_Status")
+                .Index(t => t.PosTerminalId, name: "IX_PaymentTransaction_PosTerminalId")
+                .Index(t => t.CashSessionId, name: "IX_PaymentTransaction_CashSessionId")
+                .Index(t => new { t.CashSessionId, t.Status, t.CreatedAt }, name: "IX_PaymentTransaction_CashSessionId_Status_CreatedAt")
+                .Index(t => t.Amount, name: "IX_PaymentTransaction_Amount")
+                .Index(t => t.Method, name: "IX_PaymentTransaction_Method")
+                .Index(t => t.Status, name: "IX_PaymentTransaction_Status")
+                .Index(t => t.TransactionId, name: "IX_PaymentTransaction_TransactionId")
+                .Index(t => t.ReferenceCode, name: "IX_PaymentTransaction_ReferenceCode")
+                .Index(t => t.ReceiptNo, name: "IX_PaymentTransaction_ReceiptNo")
+                .Index(t => t.IsDeleted, name: "IX_PaymentTransaction_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_PaymentTransaction_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_PaymentTransaction_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_PaymentTransaction_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_PaymentTransaction_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_PaymentTransaction_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_PaymentTransaction_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.CashSessions",
+                c => new
+                    {
+                        CashSessionId = c.Int(nullable: false, identity: true),
+                        UserId = c.String(nullable: false, maxLength: 128),
+                        OpenedAt = c.DateTime(nullable: false),
+                        ClosedAt = c.DateTime(),
+                        OpeningBalance = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        CashBalance = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        PosBalance = c.Decimal(nullable: false, precision: 18, scale: 2),
+                        Status = c.Int(nullable: false),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_CashSession_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.CashSessionId)
                 .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
                 .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
                 .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
-                .ForeignKey("dbo.AspNetUsers", t => t.SenderUserId)
-                .Index(t => t.Recipient, name: "IX_NotificationHistory_Recipient")
-                .Index(t => new { t.Recipient, t.Status, t.SentAt }, name: "IX_NotificationHistory_Recipient_Status_SentAt")
-                .Index(t => t.SentAt, name: "IX_NotificationHistory_SentAt")
-                .Index(t => new { t.SentAt, t.Status, t.IsDeleted }, name: "IX_NotificationHistory_SentAt_Status_IsDeleted")
-                .Index(t => t.Status, name: "IX_NotificationHistory_Status")
-                .Index(t => t.SenderUserId)
-                .Index(t => t.RelatedEntityType, name: "IX_NotificationHistory_RelatedEntityType")
-                .Index(t => t.IsDeleted, name: "IX_NotificationHistory_IsDeleted")
-                .Index(t => t.DeletedByUserId)
-                .Index(t => t.CreatedByUserId, name: "IX_NotificationHistory_CreatedByUserId")
-                .Index(t => t.UpdatedByUserId, name: "IX_NotificationHistory_UpdatedByUserId");
+                .ForeignKey("dbo.AspNetUsers", t => t.UserId)
+                .Index(t => t.UserId, name: "IX_CashSession_UserId")
+                .Index(t => new { t.UserId, t.Status, t.OpenedAt }, name: "IX_CashSession_UserId_Status_OpenedAt")
+                .Index(t => t.OpenedAt, name: "IX_CashSession_OpenedAt")
+                .Index(t => t.ClosedAt, name: "IX_CashSession_ClosedAt")
+                .Index(t => t.Status, name: "IX_CashSession_Status")
+                .Index(t => t.IsDeleted, name: "IX_CashSession_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_CashSession_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_CashSession_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_CashSession_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_CashSession_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_CashSession_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_CashSession_UpdatedByUserId");
+            
+            CreateTable(
+                "dbo.PosTerminals",
+                c => new
+                    {
+                        PosTerminalId = c.Int(nullable: false, identity: true),
+                        Title = c.String(nullable: false, maxLength: 100),
+                        TerminalId = c.String(nullable: false, maxLength: 50),
+                        MerchantId = c.String(nullable: false, maxLength: 50),
+                        SerialNumber = c.String(maxLength: 100),
+                        IpAddress = c.String(maxLength: 50),
+                        MacAddress = c.String(maxLength: 50),
+                        Provider = c.Int(nullable: false),
+                        IsActive = c.Boolean(nullable: false),
+                        Protocol = c.Int(nullable: false),
+                        Port = c.Int(),
+                        IsDeleted = c.Boolean(nullable: false),
+                        DeletedAt = c.DateTime(),
+                        DeletedByUserId = c.String(maxLength: 128),
+                        CreatedAt = c.DateTime(nullable: false),
+                        CreatedByUserId = c.String(maxLength: 128),
+                        UpdatedAt = c.DateTime(),
+                        UpdatedByUserId = c.String(maxLength: 128),
+                    },
+                annotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_PosTerminal_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                })
+                .PrimaryKey(t => t.PosTerminalId)
+                .ForeignKey("dbo.AspNetUsers", t => t.CreatedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.DeletedByUserId)
+                .ForeignKey("dbo.AspNetUsers", t => t.UpdatedByUserId)
+                .Index(t => t.Title, name: "IX_PosTerminal_Title")
+                .Index(t => t.TerminalId, name: "IX_PosTerminal_TerminalId")
+                .Index(t => t.MerchantId, name: "IX_PosTerminal_MerchantId")
+                .Index(t => t.Provider, name: "IX_PosTerminal_Provider")
+                .Index(t => new { t.IsActive, t.Provider }, name: "IX_PosTerminal_IsActive_Provider")
+                .Index(t => t.IsActive, name: "IX_PosTerminal_IsActive")
+                .Index(t => t.IsDeleted, name: "IX_PosTerminal_IsDeleted")
+                .Index(t => t.DeletedAt, name: "IX_PosTerminal_DeletedAt")
+                .Index(t => t.DeletedByUserId, name: "IX_PosTerminal_DeletedByUserId")
+                .Index(t => t.CreatedAt, name: "IX_PosTerminal_CreatedAt")
+                .Index(t => t.CreatedByUserId, name: "IX_PosTerminal_CreatedByUserId")
+                .Index(t => t.UpdatedAt, name: "IX_PosTerminal_UpdatedAt")
+                .Index(t => t.UpdatedByUserId, name: "IX_PosTerminal_UpdatedByUserId");
             
             CreateTable(
                 "dbo.AspNetUserRoles",
@@ -1248,11 +1245,30 @@
             DropForeignKey("dbo.Appointments", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.AspNetUsers", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.AspNetUserRoles", "UserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.NotificationHistories", "SenderUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.NotificationHistories", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.NotificationHistories", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.NotificationHistories", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.AspNetUserLogins", "UserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Patients", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Receptions", "PatientId", "dbo.Patients");
+            DropForeignKey("dbo.Insurances", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.InsuranceTariffs", "InsuranceId", "dbo.Insurances");
+            DropForeignKey("dbo.Receptions", "InsuranceId", "dbo.Insurances");
+            DropForeignKey("dbo.Receptions", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PaymentTransactions", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PaymentTransactions", "ReceptionId", "dbo.Receptions");
+            DropForeignKey("dbo.PaymentTransactions", "PosTerminalId", "dbo.PosTerminals");
+            DropForeignKey("dbo.PosTerminals", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PosTerminals", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PosTerminals", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PaymentTransactions", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PaymentTransactions", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.CashSessions", "UserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.CashSessions", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.PaymentTransactions", "CashSessionId", "dbo.CashSessions");
+            DropForeignKey("dbo.CashSessions", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.CashSessions", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.ReceiptPrints", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.ReceiptPrints", "ReceptionId", "dbo.Receptions");
+            DropForeignKey("dbo.ReceiptPrints", "PrintedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.ReceiptPrints", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.ReceiptPrints", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Doctors", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.DoctorTimeSlots", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.DoctorTimeSlots", "DoctorId", "dbo.Doctors");
@@ -1287,46 +1303,14 @@
             DropForeignKey("dbo.ServiceCategories", "DepartmentId", "dbo.Departments");
             DropForeignKey("dbo.ServiceCategories", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Services", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Services", "ServiceCategoryId", "dbo.ServiceCategories");
-            DropForeignKey("dbo.ReceptionItems", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.ReceptionItems", "ServiceId", "dbo.Services");
-            DropForeignKey("dbo.ReceptionItems", "ReceptionId", "dbo.Receptions");
-            DropForeignKey("dbo.Receptions", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PaymentTransactions", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PaymentTransactions", "ReceptionId", "dbo.Receptions");
-            DropForeignKey("dbo.PaymentTransactions", "PosTerminalId", "dbo.PosTerminals");
-            DropForeignKey("dbo.PosTerminals", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PosTerminals", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PosTerminals", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PaymentTransactions", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PaymentTransactions", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.CashSessions", "UserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.CashSessions", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.PaymentTransactions", "CashSessionId", "dbo.CashSessions");
-            DropForeignKey("dbo.CashSessions", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.CashSessions", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.ReceiptPrints", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.ReceiptPrints", "ReceptionId", "dbo.Receptions");
-            DropForeignKey("dbo.ReceiptPrints", "PrintedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.ReceiptPrints", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.ReceiptPrints", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Insurances", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.InsuranceTariffs", "InsuranceId", "dbo.Insurances");
             DropForeignKey("dbo.InsuranceTariffs", "UpdatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.InsuranceTariffs", "ServiceId", "dbo.Services");
             DropForeignKey("dbo.InsuranceTariffs", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.InsuranceTariffs", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Receptions", "InsuranceId", "dbo.Insurances");
-            DropForeignKey("dbo.Patients", "InsuranceId", "dbo.Insurances");
-            DropForeignKey("dbo.Patients", "UpdatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Receptions", "PatientId", "dbo.Patients");
-            DropForeignKey("dbo.Patients", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Patients", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Patients", "ApplicationUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Insurances", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Insurances", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Receptions", "DeletedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Receptions", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Services", "ServiceCategoryId", "dbo.ServiceCategories");
+            DropForeignKey("dbo.ReceptionItems", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.ReceptionItems", "ServiceId", "dbo.Services");
+            DropForeignKey("dbo.ReceptionItems", "ReceptionId", "dbo.Receptions");
             DropForeignKey("dbo.ReceptionItems", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.ReceptionItems", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Services", "DeletedByUserId", "dbo.AspNetUsers");
@@ -1345,7 +1329,19 @@
             DropForeignKey("dbo.Departments", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Clinics", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.Clinics", "CreatedByUserId", "dbo.AspNetUsers");
-            DropForeignKey("dbo.Doctors", "ApplicationUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Receptions", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Receptions", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Patients", "InsuranceId", "dbo.Insurances");
+            DropForeignKey("dbo.Insurances", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Insurances", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Patients", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Patients", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.Patients", "ApplicationUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.NotificationHistories", "SenderUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.NotificationHistories", "UpdatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.NotificationHistories", "DeletedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.NotificationHistories", "CreatedByUserId", "dbo.AspNetUsers");
+            DropForeignKey("dbo.AspNetUserLogins", "UserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.AspNetUsers", "DeletedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.AspNetUsers", "CreatedByUserId", "dbo.AspNetUsers");
             DropForeignKey("dbo.AspNetUserClaims", "UserId", "dbo.AspNetUsers");
@@ -1364,18 +1360,64 @@
             DropIndex("dbo.NotificationTemplates", "IX_NotificationTemplate_ChannelType");
             DropIndex("dbo.AspNetUserRoles", new[] { "RoleId" });
             DropIndex("dbo.AspNetUserRoles", new[] { "UserId" });
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_UpdatedByUserId");
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_CreatedByUserId");
-            DropIndex("dbo.NotificationHistories", new[] { "DeletedByUserId" });
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_IsDeleted");
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_RelatedEntityType");
-            DropIndex("dbo.NotificationHistories", new[] { "SenderUserId" });
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Status");
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_SentAt_Status_IsDeleted");
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_SentAt");
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Recipient_Status_SentAt");
-            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Recipient");
-            DropIndex("dbo.AspNetUserLogins", new[] { "UserId" });
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedByUserId");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedAt");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_CreatedByUserId");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_CreatedAt");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_DeletedByUserId");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_DeletedAt");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_IsDeleted");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_IsActive");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_IsActive_Provider");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_Provider");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_MerchantId");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_TerminalId");
+            DropIndex("dbo.PosTerminals", "IX_PosTerminal_Title");
+            DropIndex("dbo.CashSessions", "IX_CashSession_UpdatedByUserId");
+            DropIndex("dbo.CashSessions", "IX_CashSession_UpdatedAt");
+            DropIndex("dbo.CashSessions", "IX_CashSession_CreatedByUserId");
+            DropIndex("dbo.CashSessions", "IX_CashSession_CreatedAt");
+            DropIndex("dbo.CashSessions", "IX_CashSession_DeletedByUserId");
+            DropIndex("dbo.CashSessions", "IX_CashSession_DeletedAt");
+            DropIndex("dbo.CashSessions", "IX_CashSession_IsDeleted");
+            DropIndex("dbo.CashSessions", "IX_CashSession_Status");
+            DropIndex("dbo.CashSessions", "IX_CashSession_ClosedAt");
+            DropIndex("dbo.CashSessions", "IX_CashSession_OpenedAt");
+            DropIndex("dbo.CashSessions", "IX_CashSession_UserId_Status_OpenedAt");
+            DropIndex("dbo.CashSessions", "IX_CashSession_UserId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_UpdatedByUserId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_UpdatedAt");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CreatedByUserId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CreatedAt");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_DeletedByUserId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_DeletedAt");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_IsDeleted");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReceiptNo");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReferenceCode");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_TransactionId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_Status");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_Method");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_Amount");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CashSessionId_Status_CreatedAt");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CashSessionId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_PosTerminalId");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReceptionId_Status");
+            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReceptionId");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_UpdatedByUserId");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_UpdatedAt");
+            DropIndex("dbo.ReceiptPrints", new[] { "PrintedByUserId" });
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_CreatedByUserId");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_CreatedAt");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_DeletedByUserId");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_DeletedAt");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_CreatedAt_IsDeleted");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_IsDeleted");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_PrintedBy");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_PrintDate_IsDeleted");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_PrintDate");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_ReceiptHash");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_ReceiptContent");
+            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_ReceptionId_PrintDate");
             DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_UpdatedByUserId");
             DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_UpdatedAt");
             DropIndex("dbo.DoctorTimeSlots", "IX_DoctorTimeSlot_CreatedByUserId");
@@ -1458,64 +1500,6 @@
             DropIndex("dbo.Specializations", "IX_Specialization_Name");
             DropIndex("dbo.DoctorSpecializations", new[] { "DoctorId" });
             DropIndex("dbo.DoctorSpecializations", new[] { "SpecializationId" });
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedByUserId");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_UpdatedAt");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_CreatedByUserId");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_CreatedAt");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_DeletedByUserId");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_DeletedAt");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_IsDeleted");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_IsActive");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_IsActive_Provider");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_Provider");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_MerchantId");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_TerminalId");
-            DropIndex("dbo.PosTerminals", "IX_PosTerminal_Title");
-            DropIndex("dbo.CashSessions", "IX_CashSession_UpdatedByUserId");
-            DropIndex("dbo.CashSessions", "IX_CashSession_UpdatedAt");
-            DropIndex("dbo.CashSessions", "IX_CashSession_CreatedByUserId");
-            DropIndex("dbo.CashSessions", "IX_CashSession_CreatedAt");
-            DropIndex("dbo.CashSessions", "IX_CashSession_DeletedByUserId");
-            DropIndex("dbo.CashSessions", "IX_CashSession_DeletedAt");
-            DropIndex("dbo.CashSessions", "IX_CashSession_IsDeleted");
-            DropIndex("dbo.CashSessions", "IX_CashSession_Status");
-            DropIndex("dbo.CashSessions", "IX_CashSession_ClosedAt");
-            DropIndex("dbo.CashSessions", "IX_CashSession_OpenedAt");
-            DropIndex("dbo.CashSessions", "IX_CashSession_UserId_Status_OpenedAt");
-            DropIndex("dbo.CashSessions", "IX_CashSession_UserId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_UpdatedByUserId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_UpdatedAt");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CreatedByUserId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CreatedAt");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_DeletedByUserId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_DeletedAt");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_IsDeleted");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReceiptNo");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReferenceCode");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_TransactionId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_Status");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_Method");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_Amount");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CashSessionId_Status_CreatedAt");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_CashSessionId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_PosTerminalId");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReceptionId_Status");
-            DropIndex("dbo.PaymentTransactions", "IX_PaymentTransaction_ReceptionId");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_UpdatedByUserId");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_UpdatedAt");
-            DropIndex("dbo.ReceiptPrints", new[] { "PrintedByUserId" });
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_CreatedByUserId");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_CreatedAt");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_DeletedByUserId");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_DeletedAt");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_CreatedAt_IsDeleted");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_IsDeleted");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_PrintedBy");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_PrintDate_IsDeleted");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_PrintDate");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_ReceiptHash");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_ReceiptContent");
-            DropIndex("dbo.ReceiptPrints", "IX_ReceiptPrint_ReceptionId_PrintDate");
             DropIndex("dbo.InsuranceTariffs", "IX_InsuranceTariff_UpdatedByUserId");
             DropIndex("dbo.InsuranceTariffs", "IX_InsuranceTariff_UpdatedAt");
             DropIndex("dbo.InsuranceTariffs", "IX_InsuranceTariff_CreatedByUserId");
@@ -1529,48 +1513,6 @@
             DropIndex("dbo.InsuranceTariffs", "IX_InsuranceTariff_ServiceId");
             DropIndex("dbo.InsuranceTariffs", "IX_InsuranceTariff_Insurance_Service_Unique");
             DropIndex("dbo.InsuranceTariffs", "IX_InsuranceTariff_InsuranceId");
-            DropIndex("dbo.Patients", new[] { "ApplicationUserId" });
-            DropIndex("dbo.Patients", "IX_Patient_UpdatedByUserId");
-            DropIndex("dbo.Patients", "IX_Patient_UpdatedAt");
-            DropIndex("dbo.Patients", "IX_Patient_CreatedByUserId");
-            DropIndex("dbo.Patients", "IX_Patient_CreatedAt");
-            DropIndex("dbo.Patients", "IX_Patient_DeletedByUserId");
-            DropIndex("dbo.Patients", "IX_Patient_DeletedAt");
-            DropIndex("dbo.Patients", "IX_Patient_IsDeleted");
-            DropIndex("dbo.Patients", "IX_Patient_LastLoginDate");
-            DropIndex("dbo.Patients", "IX_Patient_InsuranceId_LastLoginDate");
-            DropIndex("dbo.Patients", "IX_Patient_InsuranceId");
-            DropIndex("dbo.Patients", "IX_Patient_PhoneNumber");
-            DropIndex("dbo.Patients", "IX_Patient_BirthDate");
-            DropIndex("dbo.Patients", "IX_Patient_LastName");
-            DropIndex("dbo.Patients", "IX_Patient_LastName_FirstName");
-            DropIndex("dbo.Patients", "IX_Patient_FirstName");
-            DropIndex("dbo.Patients", "IX_Patient_NationalCode");
-            DropIndex("dbo.Insurances", "IX_Insurance_UpdatedByUserId");
-            DropIndex("dbo.Insurances", "IX_Insurance_UpdatedAt");
-            DropIndex("dbo.Insurances", "IX_Insurance_CreatedByUserId");
-            DropIndex("dbo.Insurances", "IX_Insurance_CreatedAt");
-            DropIndex("dbo.Insurances", "IX_Insurance_DeletedByUserId");
-            DropIndex("dbo.Insurances", "IX_Insurance_DeletedAt");
-            DropIndex("dbo.Insurances", "IX_Insurance_IsDeleted");
-            DropIndex("dbo.Insurances", "IX_Insurance_IsActive_IsDeleted");
-            DropIndex("dbo.Insurances", "IX_Insurance_IsActive");
-            DropIndex("dbo.Insurances", "IX_Insurance_Name");
-            DropIndex("dbo.Receptions", "IX_Reception_UpdatedByUserId");
-            DropIndex("dbo.Receptions", "IX_Reception_UpdatedAt");
-            DropIndex("dbo.Receptions", "IX_Reception_CreatedByUserId");
-            DropIndex("dbo.Receptions", "IX_Reception_CreatedAt");
-            DropIndex("dbo.Receptions", "IX_Reception_DeletedByUserId");
-            DropIndex("dbo.Receptions", "IX_Reception_DeletedAt");
-            DropIndex("dbo.Receptions", "IX_Reception_IsDeleted");
-            DropIndex("dbo.Receptions", "IX_Reception_Status");
-            DropIndex("dbo.Receptions", "IX_Reception_ReceptionDate");
-            DropIndex("dbo.Receptions", "IX_Reception_InsuranceId_Date_Status");
-            DropIndex("dbo.Receptions", "IX_Reception_InsuranceId");
-            DropIndex("dbo.Receptions", "IX_Reception_DoctorId_Date_Status");
-            DropIndex("dbo.Receptions", "IX_Reception_DoctorId");
-            DropIndex("dbo.Receptions", "IX_Reception_PatientId_Date_Status");
-            DropIndex("dbo.Receptions", "IX_Reception_PatientId");
             DropIndex("dbo.ReceptionItems", "IX_ReceptionItem_UpdatedByUserId");
             DropIndex("dbo.ReceptionItems", "IX_ReceptionItem_UpdatedAt");
             DropIndex("dbo.ReceptionItems", "IX_ReceptionItem_CreatedByUserId");
@@ -1662,7 +1604,6 @@
             DropIndex("dbo.Clinics", "IX_Clinic_IsDeleted");
             DropIndex("dbo.Clinics", "IX_Clinic_PhoneNumber");
             DropIndex("dbo.Clinics", "IX_Clinic_Name");
-            DropIndex("dbo.Doctors", "IX_Doctor_ApplicationUserId");
             DropIndex("dbo.Doctors", "IX_Doctor_UpdatedByUserId");
             DropIndex("dbo.Doctors", "IX_Doctor_UpdatedAt");
             DropIndex("dbo.Doctors", "IX_Doctor_CreatedByUserId");
@@ -1687,6 +1628,60 @@
             DropIndex("dbo.Doctors", "IX_Doctor_LastName");
             DropIndex("dbo.Doctors", "IX_Doctor_LastName_FirstName");
             DropIndex("dbo.Doctors", "IX_Doctor_FirstName");
+            DropIndex("dbo.Receptions", "IX_Reception_UpdatedByUserId");
+            DropIndex("dbo.Receptions", "IX_Reception_UpdatedAt");
+            DropIndex("dbo.Receptions", "IX_Reception_CreatedByUserId");
+            DropIndex("dbo.Receptions", "IX_Reception_CreatedAt");
+            DropIndex("dbo.Receptions", "IX_Reception_DeletedByUserId");
+            DropIndex("dbo.Receptions", "IX_Reception_DeletedAt");
+            DropIndex("dbo.Receptions", "IX_Reception_IsDeleted");
+            DropIndex("dbo.Receptions", "IX_Reception_Status");
+            DropIndex("dbo.Receptions", "IX_Reception_ReceptionDate");
+            DropIndex("dbo.Receptions", "IX_Reception_InsuranceId_Date_Status");
+            DropIndex("dbo.Receptions", "IX_Reception_InsuranceId");
+            DropIndex("dbo.Receptions", "IX_Reception_DoctorId_Date_Status");
+            DropIndex("dbo.Receptions", "IX_Reception_DoctorId");
+            DropIndex("dbo.Receptions", "IX_Reception_PatientId_Date_Status");
+            DropIndex("dbo.Receptions", "IX_Reception_PatientId");
+            DropIndex("dbo.Insurances", "IX_Insurance_UpdatedByUserId");
+            DropIndex("dbo.Insurances", "IX_Insurance_UpdatedAt");
+            DropIndex("dbo.Insurances", "IX_Insurance_CreatedByUserId");
+            DropIndex("dbo.Insurances", "IX_Insurance_CreatedAt");
+            DropIndex("dbo.Insurances", "IX_Insurance_DeletedByUserId");
+            DropIndex("dbo.Insurances", "IX_Insurance_DeletedAt");
+            DropIndex("dbo.Insurances", "IX_Insurance_IsDeleted");
+            DropIndex("dbo.Insurances", "IX_Insurance_IsActive_IsDeleted");
+            DropIndex("dbo.Insurances", "IX_Insurance_IsActive");
+            DropIndex("dbo.Insurances", "IX_Insurance_Name");
+            DropIndex("dbo.Patients", new[] { "ApplicationUserId" });
+            DropIndex("dbo.Patients", "IX_Patient_UpdatedByUserId");
+            DropIndex("dbo.Patients", "IX_Patient_UpdatedAt");
+            DropIndex("dbo.Patients", "IX_Patient_CreatedByUserId");
+            DropIndex("dbo.Patients", "IX_Patient_CreatedAt");
+            DropIndex("dbo.Patients", "IX_Patient_DeletedByUserId");
+            DropIndex("dbo.Patients", "IX_Patient_DeletedAt");
+            DropIndex("dbo.Patients", "IX_Patient_IsDeleted");
+            DropIndex("dbo.Patients", "IX_Patient_LastLoginDate");
+            DropIndex("dbo.Patients", "IX_Patient_InsuranceId_LastLoginDate");
+            DropIndex("dbo.Patients", "IX_Patient_InsuranceId");
+            DropIndex("dbo.Patients", "IX_Patient_PhoneNumber");
+            DropIndex("dbo.Patients", "IX_Patient_BirthDate");
+            DropIndex("dbo.Patients", "IX_Patient_LastName");
+            DropIndex("dbo.Patients", "IX_Patient_LastName_FirstName");
+            DropIndex("dbo.Patients", "IX_Patient_FirstName");
+            DropIndex("dbo.Patients", "IX_Patient_NationalCode");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_UpdatedByUserId");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_CreatedByUserId");
+            DropIndex("dbo.NotificationHistories", new[] { "DeletedByUserId" });
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_IsDeleted");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_RelatedEntityType");
+            DropIndex("dbo.NotificationHistories", new[] { "SenderUserId" });
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Status");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_SentAt_Status_IsDeleted");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_SentAt");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Recipient_Status_SentAt");
+            DropIndex("dbo.NotificationHistories", "IX_NotificationHistory_Recipient");
+            DropIndex("dbo.AspNetUserLogins", new[] { "UserId" });
             DropIndex("dbo.AspNetUserClaims", new[] { "UserId" });
             DropIndex("dbo.AspNetUsers", "UserNameIndex");
             DropIndex("dbo.AspNetUsers", "IX_ApplicationUser_Email");
@@ -1724,12 +1719,26 @@
             DropTable("dbo.NotificationTemplates");
             DropTable("dbo.DatabaseVersion");
             DropTable("dbo.AspNetUserRoles");
-            DropTable("dbo.NotificationHistories",
+            DropTable("dbo.PosTerminals",
                 removedAnnotations: new Dictionary<string, object>
                 {
-                    { "DynamicFilter_NotificationHistory_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_PosTerminal_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 });
-            DropTable("dbo.AspNetUserLogins");
+            DropTable("dbo.CashSessions",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_CashSession_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.PaymentTransactions",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_PaymentTransaction_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.ReceiptPrints",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_ReceiptPrint_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
             DropTable("dbo.DoctorTimeSlots",
                 removedAnnotations: new Dictionary<string, object>
                 {
@@ -1759,46 +1768,10 @@
                     { "DynamicFilter_Specialization_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 });
             DropTable("dbo.DoctorSpecializations");
-            DropTable("dbo.PosTerminals",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_PosTerminal_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
-            DropTable("dbo.CashSessions",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_CashSession_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
-            DropTable("dbo.PaymentTransactions",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_PaymentTransaction_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
-            DropTable("dbo.ReceiptPrints",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_ReceiptPrint_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
             DropTable("dbo.InsuranceTariffs",
                 removedAnnotations: new Dictionary<string, object>
                 {
                     { "DynamicFilter_InsuranceTariff_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
-            DropTable("dbo.Patients",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_Patient_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
-            DropTable("dbo.Insurances",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_Insurance_ActiveInsurances", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                    { "DynamicFilter_Insurance_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
-                });
-            DropTable("dbo.Receptions",
-                removedAnnotations: new Dictionary<string, object>
-                {
-                    { "DynamicFilter_Reception_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 });
             DropTable("dbo.ReceptionItems",
                 removedAnnotations: new Dictionary<string, object>
@@ -1835,6 +1808,28 @@
                     { "DynamicFilter_Doctor_ActiveDoctors", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                     { "DynamicFilter_Doctor_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
                 });
+            DropTable("dbo.Receptions",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Reception_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.Insurances",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Insurance_ActiveInsurances", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                    { "DynamicFilter_Insurance_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.Patients",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_Patient_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.NotificationHistories",
+                removedAnnotations: new Dictionary<string, object>
+                {
+                    { "DynamicFilter_NotificationHistory_IsDeletedFilter", "EntityFramework.DynamicFilters.DynamicFilterDefinition" },
+                });
+            DropTable("dbo.AspNetUserLogins");
             DropTable("dbo.AspNetUserClaims");
             DropTable("dbo.AspNetUsers",
                 removedAnnotations: new Dictionary<string, object>

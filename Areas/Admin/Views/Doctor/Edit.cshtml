@@ -6,127 +6,194 @@
 
 @section Styles {
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
-    <link href="~/Content/plugins/SweetAlert2/sweetalert2.min.css" rel="stylesheet" />
     <style>
+        /* Medical Environment Color Scheme - Minimal Design */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        /* Base Styles - Clean and Minimal */
+        body {
+            font-family: 'Tahoma', 'Arial', sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: var(--medical-text);
+            background-color: #ffffff;
+        }
+
+        /* Form Container - Simple and Clean */
+        .medical-form-container {
+            background: #ffffff;
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .medical-form-header {
+            border-bottom: 2px solid var(--medical-primary);
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .medical-form-title {
+            color: var(--medical-primary);
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .medical-form-subtitle {
+            color: var(--medical-text-muted);
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Form Sections - Minimal Design */
         .form-section {
-            background: #f8f9fc;
-            border-radius: 0.35rem;
+            background: var(--medical-light);
+            border-radius: 8px;
             padding: 1.5rem;
             margin-bottom: 1.5rem;
-            border: 1px solid #e3e6f0;
+            border: 1px solid var(--medical-border);
         }
 
-        .form-section h5 {
-            color: #4e73df;
-            border-bottom: 2px solid #4e73df;
+        .form-section-title {
+            color: var(--medical-primary);
+            border-bottom: 2px solid var(--medical-primary);
             padding-bottom: 0.5rem;
             margin-bottom: 1.5rem;
+            font-size: 1.1rem;
+            font-weight: 600;
         }
 
-        .required-field::after {
+        .required::after {
             content: " *";
-            color: #e74a3b;
+            color: var(--medical-danger);
+            font-weight: bold;
         }
 
+        /* Profile Image - Simple Design */
         .profile-image-container {
             text-align: center;
             margin-bottom: 1rem;
         }
 
         .profile-image {
-            width: 150px;
-            height: 150px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             object-fit: cover;
-            border: 4px solid #4e73df;
-            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border: 3px solid var(--medical-primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
 
-        .dropzone {
-            border: 2px dashed #4e73df;
-            border-radius: 0.35rem;
-            background: #f8f9fc;
-            min-height: 100px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        /* Simple File Upload */
+        .file-upload-container {
+            border: 2px dashed var(--medical-border);
+            border-radius: 8px;
+            background: var(--medical-light);
+            padding: 1.5rem;
+            text-align: center;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: border-color 0.3s ease;
         }
 
-        .dropzone:hover {
-            background: #eaecf4;
-            border-color: #2e59d9;
+            .file-upload-container:hover {
+                border-color: var(--medical-primary);
+            }
+
+        /* Form Elements - Touch Friendly */
+        .form-control {
+            font-size: 14px;
+            padding: 0.75rem;
+            border: 1px solid var(--medical-border);
+            border-radius: 6px;
         }
 
-        .dropzone.dragover {
-            background: #e3f2fd;
-            border-color: #2196f3;
-            transform: scale(1.02);
+            .form-control:focus {
+                border-color: var(--medical-primary);
+                box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+            }
+
+        .btn {
+            font-size: 14px;
+            padding: 0.75rem 1.5rem;
+            border-radius: 6px;
+            font-weight: 500;
         }
 
-        .dropzone.upload-success {
-            background: #e8f5e8;
-            border-color: #28a745;
-            animation: successPulse 0.5s ease-in-out;
-        }
-
-        @@keyframes successPulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-
-        .profile-image {
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .profile-image:hover {
-            transform: scale(1.05);
-            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.25);
-        }
-
+        /* Validation - Clean Design */
         .validation-summary {
             background: #f8d7da;
             border: 1px solid #f5c6cb;
-            border-radius: 0.35rem;
+            border-radius: 6px;
             padding: 1rem;
             margin-bottom: 1.5rem;
         }
 
-        .validation-summary ul {
-            margin-bottom: 0;
-            padding-right: 1.5rem;
-        }
+            .validation-summary ul {
+                margin-bottom: 0;
+                padding-right: 1.5rem;
+            }
 
         .form-group label {
             font-weight: 600;
-            color: #5a5c69;
+            color: var(--medical-text);
+            margin-bottom: 0.5rem;
         }
 
         .help-text {
             font-size: 0.875rem;
-            color: #858796;
+            color: var(--medical-text-muted);
             margin-top: 0.25rem;
         }
 
+        /* Audit Info - Simple Design */
         .audit-info {
             background: #e8f4fd;
             border: 1px solid #bee5eb;
-            border-radius: 0.35rem;
+            border-radius: 6px;
             padding: 1rem;
             margin-bottom: 1.5rem;
         }
 
-        .audit-info h6 {
-            color: #0c5460;
-            margin-bottom: 0.5rem;
+            .audit-info h6 {
+                color: #0c5460;
+                margin-bottom: 0.5rem;
+            }
+
+            .audit-info p {
+                margin-bottom: 0.25rem;
+                font-size: 0.875rem;
+            }
+
+        /* Card Design - Minimal */
+        .card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .audit-info p {
-            margin-bottom: 0.25rem;
-            font-size: 0.875rem;
+        .card-header {
+            background: var(--medical-light);
+            border-bottom: 1px solid var(--medical-border);
+            padding: 1rem 1.5rem;
+        }
+
+        .card-body {
+            padding: 1.5rem;
         }
     </style>
 }
@@ -195,7 +262,7 @@
                         <div class="form-group">
                             <label for="Gender">جنسیت *</label>
                             @Html.DropDownListFor(m => m.Gender, new SelectList(new[]
-                            {
+                                           {
                                 new { Value = "", Text = "انتخاب جنسیت" },
                                 new { Value = "1", Text = "مرد" },
                                 new { Value = "2", Text = "زن" }
@@ -204,12 +271,12 @@
                         </div>
                     </div>
                     <div class="col-md-6">
-                                            <div class="form-group">
-                        <label for="DateOfBirthShamsi">تاریخ تولد</label>
-                        @Html.TextBoxFor(m => m.DateOfBirthShamsi, new { @class = "form-control", placeholder = "مثال: 1369/03/27", autocomplete = "off" })
-                        @Html.ValidationMessageFor(m => m.DateOfBirthShamsi, "", new { @class = "text-danger" })
-                        <div class="help-text">تاریخ تولد را به صورت شمسی وارد کنید (مثال: 1369/03/27)</div>
-                    </div>
+                        <div class="form-group">
+                            <label for="DateOfBirthShamsi">تاریخ تولد</label>
+                            @Html.TextBoxFor(m => m.DateOfBirthShamsi, new { @class = "form-control", placeholder = "مثال: 1369/03/27", autocomplete = "off" })
+                            @Html.ValidationMessageFor(m => m.DateOfBirthShamsi, "", new { @class = "text-danger" })
+                            <div class="help-text">تاریخ تولد را به صورت شمسی وارد کنید (مثال: 1369/03/27)</div>
+                        </div>
                     </div>
                 </div>
                 <div class="row">
@@ -241,7 +308,7 @@
                         <div class="form-group">
                             <label for="Degree">مدرک تحصیلی *</label>
                             @Html.DropDownListFor(m => m.Degree, new SelectList(new[]
-                            {
+                                           {
                                 new { Value = "", Text = "انتخاب مدرک تحصیلی" },
                                 new { Value = "1", Text = "پزشک عمومی" },
                                 new { Value = "2", Text = "متخصص" },
@@ -314,7 +381,7 @@
                         <div class="form-group">
                             <label for="SecurityLevel">سطح امنیتی</label>
                             @Html.DropDownListFor(m => m.SecurityLevel, new SelectList(new[]
-                            {
+                                           {
                                 new { Value = "Normal", Text = "عادی" },
                                 new { Value = "High", Text = "بالا" },
                                 new { Value = "VeryHigh", Text = "خیلی بالا" }
@@ -326,9 +393,9 @@
                 <div class="row">
                     <div class="col-md-12">
                         <div class="form-group">
-                                                    <label for="Bio">بیوگرافی</label>
-                        @Html.TextAreaFor(m => m.Bio, new { @class = "form-control", rows = "4" })
-                        @Html.ValidationMessageFor(m => m.Bio, "", new { @class = "text-danger" })
+                            <label for="Bio">بیوگرافی</label>
+                            @Html.TextAreaFor(m => m.Bio, new { @class = "form-control", rows = "4" })
+                            @Html.ValidationMessageFor(m => m.Bio, "", new { @class = "text-danger" })
                         </div>
                     </div>
                 </div>
@@ -377,23 +444,30 @@
 
         <div class="card shadow mb-4">
             <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">تصویر پروفایل</h6>
+                <h6 class="m-0 font-weight-bold text-primary">تصویر پروفایل و وضعیت</h6>
             </div>
             <div class="card-body">
                 <div class="row">
+                    
                     <div class="col-md-6">
                         <div class="profile-image-container">
-                            <img id="profilePreview" src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/Content/Images/default-avatar.jpg" : Model.ProfileImageUrl)" class="profile-image" alt="تصویر پروفایل" />
+                            <img id="profilePreview" 
+                                 src="@(string.IsNullOrEmpty(Model.ProfileImageUrl) ? "/Content/Images/default-avatar.png" : Model.ProfileImageUrl)" 
+                                 class="profile-image" alt="تصویر پروفایل" />
                         </div>
-                        <div class="dropzone" id="imageDropzone">
-                            <div class="dz-message">
-                                <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
-                                <p>برای آپلود تصویر کلیک کنید یا فایل را اینجا بکشید</p>
-                                <small class="text-muted">فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 2MB)</small>
-                            </div>
-                        </div>
-                        <input type="file" id="ProfileImage" name="ProfileImage" accept="image/*" style="display: none;" />
+
+                        <!-- لیبل به input وصل است -->
+                        <label for="ProfileImage" id="imageUploadContainer" class="file-upload-container">
+                            <i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i>
+                            <p class="mb-2">برای آپلود تصویر کلیک کنید</p>
+                            <small class="text-muted">فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 2MB)</small>
+                        </label>
+
+                        <!-- این input با label بالا وصل است -->
+                        <input type="file" id="ProfileImage" name="ProfileImage" accept="image/*" style="display:none;" />
                     </div>
+
+
                     <div class="col-md-6">
                         <div class="form-group">
                             <label for="IsActive">وضعیت فعال</label>
@@ -409,28 +483,7 @@
             </div>
         </div>
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">تنظیمات</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="SecurityLevel">سطح امنیتی</label>
-                            @Html.DropDownListFor(m => m.SecurityLevel, new SelectList(new[]
-                            {
-                                new { Value = "Normal", Text = "عادی" },
-                                new { Value = "High", Text = "بالا" },
-                                new { Value = "VeryHigh", Text = "خیلی بالا" }
-                            }, "Value", "Text"), new { @class = "form-control" })
-                            @Html.ValidationMessageFor(m => m.SecurityLevel, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
 
-            </div>
-        </div>
 
         <!-- Audit Trail Section -->
         <div class="audit-info">
@@ -465,9 +518,7 @@
 
 @section Scripts {
     <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
-    <script src="~/Content/plugins/SweetAlert2/sweetalert2.min.js"></script>
-    <script src="~/Content/plugins/jquery-validation/jquery.validate.min.js"></script>
-    <script src="~/Content/plugins/jquery-validation/localization/messages_fa.min.js"></script>
+    <script src="~/Content/plugins/SweetAlert2/sweetalert2@11.js"></script>
     <script>
         $(document).ready(function () {
             // Initialize Persian DatePicker for DateOfBirthShamsi
@@ -478,129 +529,63 @@
                 onSelect: function(unix) {
                     // Convert to Persian date format
                     var date = new Date(unix);
-                    var persianDate = date.getFullYear() + '/' + 
-                        String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+                    var persianDate = date.getFullYear() + '/' +
+                        String(date.getMonth() + 1).padStart(2, '0') + '/' +
                         String(date.getDate()).padStart(2, '0');
                     $('#DateOfBirthShamsi').val(persianDate);
                 }
             });
 
-            // Enhanced form validation
-            $('#doctorForm').validate({
-                rules: {
-                    FirstName: {
-                        required: true,
-                        minlength: 2,
-                        maxlength: 100,
-                        pattern: /^[\u0600-\u06FF\s]+$/
-                    },
-                    LastName: {
-                        required: true,
-                        minlength: 2,
-                        maxlength: 100,
-                        pattern: /^[\u0600-\u06FF\s]+$/
-                    },
-                    MedicalCouncilCode: {
-                        required: true,
-                        minlength: 1,
-                        maxlength: 20
-                    },
-                    PhoneNumber: {
-                        required: true,
-                        pattern: /^0\d{10}$/
-                    },
-                    SelectedSpecializationIds: {
-                        required: true
-                    },
-                    Email: {
-                        email: true,
-                        maxlength: 100
-                    },
-                    Degree: {
-                        required: true
-                    },
-                    Gender: {
-                        required: true
-                    }
-                },
-                messages: {
-                    FirstName: {
-                        required: "نام پزشک الزامی است",
-                        minlength: "نام باید حداقل 2 کاراکتر باشد",
-                        maxlength: "نام نمی‌تواند بیش از 100 کاراکتر باشد",
-                        pattern: "نام باید به فارسی وارد شود"
-                    },
-                    LastName: {
-                        required: "نام خانوادگی پزشک الزامی است",
-                        minlength: "نام خانوادگی باید حداقل 2 کاراکتر باشد",
-                        maxlength: "نام خانوادگی نمی‌تواند بیش از 100 کاراکتر باشد",
-                        pattern: "نام خانوادگی باید به فارسی وارد شود"
-                    },
-                    MedicalCouncilCode: {
-                        required: "شماره نظام پزشکی الزامی است",
-                        minlength: "شماره نظام پزشکی باید حداقل 1 کاراکتر باشد",
-                        maxlength: "شماره نظام پزشکی نمی‌تواند بیش از 20 کاراکتر باشد"
-                    },
-                    PhoneNumber: {
-                        required: "شماره تلفن الزامی است",
-                        pattern: "شماره تلفن باید با 0 شروع شود و 11 رقم باشد"
-                    },
-                    SelectedSpecializationIds: {
-                        required: "انتخاب حداقل یک تخصص الزامی است"
-                    },
-                    Email: {
-                        email: "فرمت ایمیل نامعتبر است",
-                        maxlength: "ایمیل نمی‌تواند بیش از 100 کاراکتر باشد"
-                    },
-                    Degree: {
-                        required: "انتخاب مدرک تحصیلی الزامی است"
-                    },
-                    Gender: {
-                        required: "انتخاب جنسیت الزامی است"
-                    }
-                },
-                errorElement: 'span',
-                errorClass: 'text-danger',
-                highlight: function (element) {
-                    $(element).closest('.form-group').addClass('has-error');
-                    $(element).addClass('field-error');
-                },
-                unhighlight: function (element) {
-                    $(element).closest('.form-group').removeClass('has-error');
-                    $(element).removeClass('field-error');
-                    if ($(element).val().length > 0) {
-                        $(element).addClass('field-success');
-                    }
-                },
-                submitHandler: function(form) {
-                    // بررسی انتخاب تخصص‌ها
-                    var selectedSpecializations = $('#SelectedSpecializationIds').val();
-                    if (!selectedSpecializations || selectedSpecializations.length === 0) {
-                        swal("خطا!", "لطفاً حداقل یک تخصص انتخاب کنید.", "error");
-                        return false;
-                    }
+            // Simple form validation without jQuery validate
+            $('#doctorForm').off('submit').on('submit', function(e) {
+                var isValid = true;
 
-                    // Show loading state
-                    $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...');
-                    $(form).addClass('form-loading');
-
-                    return true;
-                }
-            });
-
-            // Real-time validation
-            $('input, select, textarea').on('blur', function () {
-                if ($(this).hasClass('required-field') || $(this).attr('required')) {
+                // Check required fields
+                $(this).find('[required]').each(function() {
                     if (!$(this).val()) {
                         $(this).addClass('is-invalid');
+                        isValid = false;
                     } else {
-                        $(this).removeClass('is-invalid');
+                        $(this).removeClass('is-invalid').addClass('is-valid');
                     }
+                });
+
+                // Check specializations
+                var selectedSpecializations = $('#SelectedSpecializationIds').val();
+                if (!selectedSpecializations || selectedSpecializations.length === 0) {
+                    $('#SelectedSpecializationIds').addClass('is-invalid');
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'لطفاً حداقل یک تخصص انتخاب کنید.',
+                        confirmButtonText: 'باشه'
+                    });
+                    isValid = false;
+                } else {
+                    $('#SelectedSpecializationIds').removeClass('is-invalid').addClass('is-valid');
+                }
+
+                if (isValid) {
+                    // Show loading state
+                    $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...');
+                } else {
+                    e.preventDefault();
+                }
+
+                return isValid;
+            });
+
+            // Real-time validation feedback - Fixed to prevent conflicts
+            $('input, select, textarea').off('blur').on('blur', function() {
+                if ($(this).prop('required') && !$(this).val()) {
+                    $(this).addClass('is-invalid').removeClass('is-valid');
+                } else if ($(this).val()) {
+                    $(this).removeClass('is-invalid').addClass('is-valid');
                 }
             });
 
             // Phone number formatting
-            $('#PhoneNumber').on('input', function () {
+            $('#PhoneNumber').off('input').on('input', function () {
                 var value = $(this).val().replace(/\D/g, '');
                 if (value.length > 0 && !value.startsWith('0')) {
                     value = '0' + value;
@@ -609,7 +594,7 @@
             });
 
             // National code validation
-            $('#NationalCode').on('input', function () {
+            $('#NationalCode').off('input').on('input', function () {
                 var value = $(this).val().replace(/\D/g, '');
                 if (value.length > 10) {
                     value = value.substring(0, 10);
@@ -618,7 +603,7 @@
             });
 
             // Medical council code validation
-            $('#MedicalCouncilCode').on('input', function () {
+            $('#MedicalCouncilCode').off('input').on('input', function () {
                 var value = $(this).val().replace(/\D/g, '');
                 if (value.length > 8) {
                     value = value.substring(0, 8);
@@ -626,10 +611,23 @@
                 $(this).val(value);
             });
 
-            // Enhanced Image Upload Functionality
-            initializeImageUpload();
+            // Simple Image Upload - Fixed to prevent infinite loop
+         // Simple Image Upload - Fixed to prevent infinite loop
+$('#ProfileImage').on('change', function (e) {
+    var file = e.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            $('#profilePreview').attr('src', e.target.result);
+        }
+        reader.readAsDataURL(file);
+    }
+        });
 
-            // Success message on page load
+
+
+
+            // Success/Error messages
             @if (TempData["Success"] != null)
             {
                 <text>
@@ -642,7 +640,6 @@
                 </text>
             }
 
-            // Error message on page load
             @if (TempData["Error"] != null)
             {
                 <text>
@@ -653,88 +650,6 @@
                     confirmButtonText: 'باشه'
                 });
                 </text>
-            }
-
-            // Enhanced Image Upload Functionality
-            function initializeImageUpload() {
-                // Initialize custom file upload
-                $('#imageDropzone').on('click', function() {
-                    $('#ProfileImage').click();
-                });
-
-                $('#ProfileImage').on('change', function() {
-                    var file = this.files[0];
-                    if (file) {
-                        // Validate file type
-                        if (!file.type.match(/image.*/)) {
-                            swal("خطا!", "فقط فایل‌های تصویری مجاز هستند.", "error");
-                            return;
-                        }
-                        
-                        // Validate file size (2MB)
-                        if (file.size > 2 * 1024 * 1024) {
-                            swal("خطا!", "حجم فایل نباید بیشتر از 2 مگابایت باشد.", "error");
-                            return;
-                        }
-
-                        // Show loading state
-                        $('#imageDropzone .dz-message').html('<i class="fas fa-spinner fa-spin fa-2x text-primary mb-2"></i><p>در حال پردازش...</p>');
-
-                        var reader = new FileReader();
-                        reader.onload = function (e) {
-                            $('#profilePreview').attr('src', e.target.result);
-                            $('#imageDropzone .dz-message').html('<i class="fas fa-check fa-2x text-success mb-2"></i><p>تصویر انتخاب شد</p><small class="text-success">' + file.name + '</small>');
-                            
-                            // Add success animation
-                            $('#imageDropzone').addClass('upload-success');
-                            setTimeout(function() {
-                                $('#imageDropzone').removeClass('upload-success');
-                            }, 2000);
-                        };
-                        reader.readAsDataURL(file);
-                    }
-                });
-
-                // Drag and drop functionality
-                $('#imageDropzone').on('dragover', function(e) {
-                    e.preventDefault();
-                    $(this).addClass('dragover');
-                });
-
-                $('#imageDropzone').on('dragleave', function(e) {
-                    e.preventDefault();
-                    $(this).removeClass('dragover');
-                });
-
-                $('#imageDropzone').on('drop', function(e) {
-                    e.preventDefault();
-                    $(this).removeClass('dragover');
-                    
-                    var files = e.originalEvent.dataTransfer.files;
-                    if (files.length > 0) {
-                        $('#ProfileImage')[0].files = files;
-                        $('#ProfileImage').trigger('change');
-                    }
-                });
-
-                // Remove image functionality
-                $('#profilePreview').on('click', function() {
-                    if ($('#ProfileImage')[0].files.length > 0) {
-                        swal({
-                            title: "حذف تصویر",
-                            text: "آیا می‌خواهید تصویر انتخاب شده را حذف کنید؟",
-                            icon: "warning",
-                            buttons: ["انصراف", "حذف"],
-                            dangerMode: true,
-                        }).then((willDelete) => {
-                            if (willDelete) {
-                                $('#ProfileImage').val('');
-                                $('#profilePreview').attr('src', '/Content/Images/default-avatar.jpg');
-                                $('#imageDropzone .dz-message').html('<i class="fas fa-cloud-upload-alt fa-2x text-primary mb-2"></i><p>برای آپلود تصویر کلیک کنید یا فایل را اینجا بکشید</p><small class="text-muted">فرمت‌های مجاز: JPG, PNG, GIF (حداکثر 2MB)</small>');
-                            }
-                        });
-                    }
-                });
             }
         });
     </script>

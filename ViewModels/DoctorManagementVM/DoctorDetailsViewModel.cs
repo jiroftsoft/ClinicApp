@@ -298,14 +298,14 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 IsActive = doctor.IsActive,
                 IsDeleted = doctor.IsDeleted,
                 CreatedAt = doctor.CreatedAt,
-                CreatedBy = doctor.CreatedByUser?.FullName ?? doctor.CreatedByUserId,
+                CreatedBy = doctor.CreatedByUser?.FullName ?? GetUserDisplayName(doctor.CreatedByUserId),
                 CreatedAtShamsi = doctor.CreatedAt.ToPersianDateTime(),
                 UpdatedAt = doctor.UpdatedAt,
                 ExperienceYears = doctor.ExperienceYears,
-                UpdatedBy = doctor.UpdatedByUser?.FullName ?? doctor.UpdatedByUserId,
+                UpdatedBy = doctor.UpdatedByUser?.FullName ?? GetUserDisplayName(doctor.UpdatedByUserId),
                 UpdatedAtShamsi = doctor.UpdatedAt?.ToPersianDateTime(),
                 DeletedAt = doctor.DeletedAt,
-                DeletedBy = doctor.DeletedByUser?.FullName ?? doctor.DeletedByUserId,
+                DeletedBy = doctor.DeletedByUser?.FullName ?? GetUserDisplayName(doctor.DeletedByUserId),
                 DeletedAtShamsi = doctor.DeletedAt?.ToPersianDateTime(),
                 DepartmentCount = doctor.DoctorDepartments?.Count(dd => 
                     dd.Department != null && 
@@ -338,6 +338,34 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             }
             
             return viewModel;
+        }
+
+        /// <summary>
+        /// تبدیل شناسه کاربر به نام نمایشی
+        /// </summary>
+        private static string GetUserDisplayName(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return "سیستم";
+
+            // شناسه‌های شناخته شده برای کاربران سیستم
+            switch (userId.ToLower())
+            {
+                case "51a37cb8-efbf-420a-8dfd-d17e8a1c8e50":
+                    return "مدیر سیستم";
+                case "76549c38-562c-40ee-8a86-d8fb07ad50de":
+                    return "کاربر ادمین";
+                case "3020347998":
+                    return "مدیر سیستم";
+                case "3031945451":
+                    return "سیستم";
+                default:
+                    // اگر شناسه GUID باشد، نام کاربری را برگردان
+                    if (userId.Length > 20)
+                        return "کاربر سیستم";
+                    else
+                        return userId;
+            }
         }
     }
 

@@ -278,13 +278,41 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 LicenseNumber = doctor.LicenseNumber,
                 ClinicId = doctor.ClinicId, // Add ClinicId to the ViewModel
                 CreatedAt = doctor.CreatedAt,
-                CreatedBy = doctor.CreatedByUser?.FullName ?? doctor.CreatedByUserId,
+                CreatedBy = doctor.CreatedByUser?.FullName ?? GetUserDisplayName(doctor.CreatedByUserId),
                 UpdatedAt = doctor.UpdatedAt,
-                UpdatedBy = doctor.UpdatedByUser?.FullName ?? doctor.UpdatedByUserId,
+                UpdatedBy = doctor.UpdatedByUser?.FullName ?? GetUserDisplayName(doctor.UpdatedByUserId),
                 CreatedAtShamsi = doctor.CreatedAt.ToPersianDateTime(),
                 UpdatedAtShamsi = doctor.UpdatedAt?.ToPersianDateTime(),
                 SelectedSpecializationIds = doctor.DoctorSpecializations?.Where(ds => ds.Specialization != null).Select(ds => ds.SpecializationId).ToList() ?? new List<int>()
             };
+        }
+
+        /// <summary>
+        /// تبدیل شناسه کاربر به نام نمایشی
+        /// </summary>
+        private static string GetUserDisplayName(string userId)
+        {
+            if (string.IsNullOrEmpty(userId))
+                return "سیستم";
+
+            // شناسه‌های شناخته شده برای کاربران سیستم
+            switch (userId.ToLower())
+            {
+                case "51a37cb8-efbf-420a-8dfd-d17e8a1c8e50":
+                    return "مدیر سیستم";
+                case "76549c38-562c-40ee-8a86-d8fb07ad50de":
+                    return "کاربر ادمین";
+                case "3020347998":
+                    return "مدیر سیستم";
+                case "3031945451":
+                    return "سیستم";
+                default:
+                    // اگر شناسه GUID باشد، نام کاربری را برگردان
+                    if (userId.Length > 20)
+                        return "کاربر سیستم";
+                    else
+                        return userId;
+            }
         }
 
         /// <summary>
