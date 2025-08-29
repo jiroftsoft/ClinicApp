@@ -1,0 +1,584 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentRemovalViewModel
+@{
+    ViewBag.Title = "حذف انتسابات پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        .removal-form {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .form-section {
+            border-left: 4px solid #dc3545;
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        .form-section h5 {
+            color: #dc3545;
+            font-weight: 600;
+        }
+        .doctor-info-card {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .warning-section {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .danger-zone {
+            background: #f8d7da;
+            border: 2px solid #dc3545;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .btn-submit {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        .assignment-summary {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+        .dependency-check {
+            background: #e8f5e8;
+            border: 1px solid #28a745;
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner-border text-danger" role="status">
+        <span class="visually-hidden">در حال پردازش...</span>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-danger">
+                        <i class="fas fa-trash me-2"></i>
+                        حذف انتسابات پزشک
+                    </h2>
+                    <p class="text-muted mb-0">حذف کامل انتسابات پزشک از تمام دپارتمان‌ها و صلاحیت‌ها</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "DoctorAssignment")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Section -->
+    <div class="warning-section">
+        <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle fa-2x text-warning me-3"></i>
+            <div>
+                <h5 class="mb-1">هشدار مهم!</h5>
+                <p class="mb-0">این عملیات تمام انتسابات پزشک را حذف خواهد کرد. این کار قابل بازگشت نیست.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Information Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="doctor-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-user-md me-2"></i>
+                            @Model.DoctorName
+                        </h4>
+                        <p class="mb-0 opacity-75">
+                            <i class="fas fa-id-card me-2"></i>
+                            کد ملی: @Model.DoctorNationalCode
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end">
+                            <div class="text-center me-4">
+                                <h5 class="mb-1">@Model.ActiveAssignmentsCount</h5>
+                                <small class="opacity-75">انتسابات فعال</small>
+                            </div>
+                            <div class="text-center">
+                                <h5 class="mb-1">@ViewBag.TotalDepartments</h5>
+                                <small class="opacity-75">دپارتمان‌ها</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Current Assignments Summary -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="assignment-summary">
+                <h6 class="mb-3">
+                    <i class="fas fa-list me-2"></i>
+                    خلاصه انتسابات فعلی
+                </h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">@ViewBag.DepartmentAssignments</h4>
+                            <small class="text-muted">انتسابات دپارتمان</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-info">@ViewBag.ServiceAssignments</h4>
+                            <small class="text-muted">صلاحیت‌های خدماتی</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-success">@ViewBag.ActiveAssignments</h4>
+                            <small class="text-muted">انتسابات فعال</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-warning">@ViewBag.PendingAssignments</h4>
+                            <small class="text-muted">انتظار تایید</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Removal Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="removal-form p-4">
+                @using (Html.BeginForm("RemoveAssignments", "DoctorAssignment", FormMethod.Post, new { id = "removalForm", @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.DoctorId)
+                    @Html.HiddenFor(m => m.DoctorName)
+
+                    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                    <!-- Dependencies Check -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-link me-2"></i>
+                            بررسی وابستگی‌ها
+                        </h5>
+                        <div class="dependency-check">
+                            <div class="form-check">
+                                @Html.CheckBoxFor(m => m.DependenciesChecked, new { @class = "form-check-input" })
+                                <label class="form-check-label fw-bold" for="@Html.IdFor(m => m.DependenciesChecked)">
+                                    وابستگی‌ها بررسی شده‌اند
+                                </label>
+                            </div>
+                            <p class="text-muted mb-0 mt-2">
+                                <i class="fas fa-info-circle me-1"></i>
+                                قبل از حذف، تمام وابستگی‌ها و تأثیرات این عملیات بررسی شده‌اند
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Removal Type -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-trash-alt me-2"></i>
+                            نوع حذف
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">نوع حذف</label>
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(m => m.IsPermanentRemoval, new { @class = "form-check-input" })
+                                        <label class="form-check-label" for="@Html.IdFor(m => m.IsPermanentRemoval)">
+                                            حذف دائمی (غیرقابل بازگشت)
+                                        </label>
+                                    </div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        در صورت انتخاب، انتسابات به طور کامل حذف خواهند شد
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">وضعیت فعلی</label>
+                                    <div class="form-control-plaintext">
+                                        <span class="badge bg-success">@Model.ActiveAssignmentsCount انتساب فعال</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Removal Reason -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-comment me-2"></i>
+                            دلیل حذف
+                        </h5>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.RemovalReason, "دلیل حذف", new { @class = "form-label fw-bold" })
+                                    @Html.TextAreaFor(m => m.RemovalReason, new { @class = "form-control", rows = "4", placeholder = "دلیل حذف انتسابات پزشک را توضیح دهید..." })
+                                    @Html.ValidationMessageFor(m => m.RemovalReason, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone -->
+                    <div class="danger-zone">
+                        <h6 class="text-danger mb-3">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            منطقه خطر - تأیید نهایی
+                        </h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">تأیید حذف</label>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="confirmRemoval" required>
+                                        <label class="form-check-label" for="confirmRemoval">
+                                            من تأیید می‌کنم که می‌خواهم تمام انتسابات این پزشک را حذف کنم
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">تأیید مسئولیت</label>
+                                    <div class="form-check">
+                                        <input type="checkbox" class="form-check-input" id="confirmResponsibility" required>
+                                        <label class="form-check-label" for="confirmResponsibility">
+                                            من مسئولیت کامل این عملیات را می‌پذیرم
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="button" class="btn btn-outline-secondary" onclick="validateForm()">
+                                        <i class="fas fa-check-circle me-2"></i>
+                                        اعتبارسنجی
+                                    </button>
+                                    <button type="button" class="btn btn-outline-info" onclick="checkDependencies()">
+                                        <i class="fas fa-link me-2"></i>
+                                        بررسی وابستگی‌ها
+                                    </button>
+                                </div>
+                                <div>
+                                    <a href="@Url.Action("Index", "DoctorAssignment")" class="btn btn-secondary me-2">
+                                        <i class="fas fa-times me-2"></i>
+                                        انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-danger btn-submit">
+                                        <i class="fas fa-trash me-2"></i>
+                                        حذف انتسابات
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dependencies Modal -->
+<div class="modal fade" id="dependenciesModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-link me-2"></i>
+                    بررسی وابستگی‌ها
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="dependenciesContent">
+                    <!-- Content will be loaded here -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Scripts/jquery.validate.min.js"></script>
+    <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+    
+    <script>
+        $(document).ready(function () {
+            initializeFormValidation();
+            setupEventHandlers();
+        });
+
+        function initializeFormValidation() {
+            $('#removalForm').validate({
+                rules: {
+                    DependenciesChecked: {
+                        required: true
+                    },
+                    RemovalReason: {
+                        required: true,
+                        minlength: 10,
+                        maxlength: 500
+                    },
+                    confirmRemoval: {
+                        required: true
+                    },
+                    confirmResponsibility: {
+                        required: true
+                    }
+                },
+                messages: {
+                    DependenciesChecked: {
+                        required: 'لطفاً تأیید کنید که وابستگی‌ها بررسی شده‌اند'
+                    },
+                    RemovalReason: {
+                        required: 'لطفاً دلیل حذف را وارد کنید',
+                        minlength: 'دلیل حذف باید حداقل 10 کاراکتر باشد',
+                        maxlength: 'دلیل حذف نمی‌تواند بیشتر از 500 کاراکتر باشد'
+                    },
+                    confirmRemoval: {
+                        required: 'لطفاً تأیید حذف را انتخاب کنید'
+                    },
+                    confirmResponsibility: {
+                        required: 'لطفاً تأیید مسئولیت را انتخاب کنید'
+                    }
+                },
+                errorClass: 'text-danger',
+                highlight: function (element) {
+                    $(element).addClass('is-invalid');
+                },
+                unhighlight: function (element) {
+                    $(element).removeClass('is-invalid');
+                },
+                submitHandler: function (form) {
+                    showLoading();
+                    return true;
+                }
+            });
+        }
+
+        function setupEventHandlers() {
+            $('#IsPermanentRemoval').on('change', function() {
+                if ($(this).is(':checked')) {
+                    showPermanentRemovalWarning();
+                }
+            });
+        }
+
+        function validateForm() {
+            if ($('#removalForm').valid()) {
+                showSuccess('اعتبارسنجی موفق', 'فرم شما معتبر است و آماده ارسال می‌باشد');
+            } else {
+                showError('خطا در اعتبارسنجی', 'لطفاً خطاهای فرم را برطرف کنید');
+            }
+        }
+
+        function checkDependencies() {
+            const doctorId = $('#DoctorId').val();
+
+            showLoading();
+
+            $.post('@Url.Action("CheckDependencies", "DoctorAssignment")', {
+                doctorId: doctorId
+            })
+            .done(function (data) {
+                if (data.success) {
+                    showDependenciesModal(data.data);
+                    $('#DependenciesChecked').prop('checked', true);
+                } else {
+                    showError('خطا در بررسی وابستگی‌ها', data.message);
+                }
+            })
+            .fail(function () {
+                showError('خطا در ارتباط با سرور', 'لطفاً دوباره تلاش کنید');
+            })
+            .always(function () {
+                hideLoading();
+            });
+        }
+
+        function showDependenciesModal(dependencies) {
+            let content = '<div class="alert alert-info">';
+            content += '<h6><i class="fas fa-info-circle me-2"></i>وضعیت وابستگی‌ها</h6>';
+            
+            if (dependencies.HasDependencies) {
+                content += '<div class="alert alert-warning">';
+                content += '<h6>وابستگی‌های یافت شده:</h6><ul>';
+                dependencies.Dependencies.forEach(function (dep) {
+                    content += `<li>${dep}</li>`;
+                });
+                content += '</ul></div>';
+                
+                content += '<div class="alert alert-danger">';
+                content += '<i class="fas fa-exclamation-triangle me-2"></i>';
+                content += 'حذف انتسابات ممکن است بر این موارد تأثیر بگذارد';
+                content += '</div>';
+            } else {
+                content += '<div class="alert alert-success">';
+                content += '<i class="fas fa-check-circle me-2"></i>';
+                content += 'هیچ وابستگی خاصی یافت نشد. حذف بی‌خطر است.';
+                content += '</div>';
+            }
+            
+            content += '</div>';
+
+            $('#dependenciesContent').html(content);
+            $('#dependenciesModal').modal('show');
+        }
+
+        function showPermanentRemovalWarning() {
+            Swal.fire({
+                title: 'هشدار حذف دائمی!',
+                text: 'انتخاب حذف دائمی باعث حذف کامل و غیرقابل بازگشت انتسابات خواهد شد.',
+                icon: 'warning',
+                confirmButtonColor: '#dc3545',
+                confirmButtonText: 'متوجه شدم',
+                showCancelButton: false
+            });
+        }
+
+        // Form submission handling
+        $('#removalForm').on('submit', function (e) {
+            if (!$(this).valid()) {
+                e.preventDefault();
+                showError('خطا در اعتبارسنجی', 'لطفاً خطاهای فرم را برطرف کنید');
+                return false;
+            }
+
+            const isPermanent = $('#IsPermanentRemoval').is(':checked');
+            const confirmRemoval = $('#confirmRemoval').is(':checked');
+            const confirmResponsibility = $('#confirmResponsibility').is(':checked');
+
+            if (!confirmRemoval || !confirmResponsibility) {
+                e.preventDefault();
+                showError('خطا', 'لطفاً تمام تأییدها را انتخاب کنید');
+                return false;
+            }
+
+            let confirmMessage = 'آیا از حذف انتسابات پزشک اطمینان دارید؟';
+            if (isPermanent) {
+                confirmMessage = '⚠️ هشدار: این عملیات حذف دائمی است و قابل بازگشت نیست! آیا اطمینان دارید؟';
+            }
+
+            Swal.fire({
+                title: 'تایید حذف',
+                text: confirmMessage,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading();
+                    return true;
+                } else {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+
+        function showLoading() {
+            $('.loading-overlay').show();
+        }
+
+        function hideLoading() {
+            $('.loading-overlay').hide();
+        }
+
+        function showSuccess(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'success',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        function showError(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        // Keyboard shortcuts
+        $(document).keydown(function (e) {
+            // Ctrl+Delete for removal
+            if (e.ctrlKey && e.keyCode === 46) {
+                e.preventDefault();
+                $('#removalForm').submit();
+            }
+            
+            // Ctrl+Shift+V for validation
+            if (e.ctrlKey && e.shiftKey && e.keyCode === 86) {
+                e.preventDefault();
+                validateForm();
+            }
+        });
+    </script>
+}

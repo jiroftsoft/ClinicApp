@@ -427,7 +427,6 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\IdentityConfig.cs" />
     <Compile Include="App_Start\IdentitySeed.cs" />
-    <Compile Include="App_Start\MappingProfile.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\Startup.Auth.cs" />
     <Compile Include="App_Start\UnityConfig.cs" />
@@ -435,22 +434,20 @@
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
-    <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorDepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorReportingController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorScheduleController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorServiceCategoryController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\SpecializationController.cs" />
-    <Compile Include="Core\Class1.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
-    <Compile Include="Extensions\Class1.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
@@ -462,9 +459,7 @@
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
-    <Compile Include="Infrastructure\Class1.cs" />
     <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
-    <Compile Include="Interfaces\ClinicAdmin\Class1.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentManagementService.cs" />
@@ -505,6 +500,7 @@
     <Compile Include="Models\DoctorDependencyInfo.cs" />
     <Compile Include="Repositories\Class1.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
+    <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorDepartmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorReportingRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorScheduleRepository.cs" />
@@ -535,11 +531,16 @@
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\BulkAssignmentViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\AssignmentFilterViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\AssignmentStatsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentOperationViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexPageViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ActiveDoctorsReportViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentsViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentsViewModelValidator.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentOperationViewModelValidator.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorCreateEditViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorDashboardViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorDepartmentViewModel.cs" />
@@ -597,7 +598,6 @@
     </Compile>
     <Compile Include="Startup.cs" />
     <Compile Include="ViewModels\BreadcrumbItem.cs" />
-    <Compile Include="ViewModels\Class1.cs" />
     <Compile Include="ViewModels\ClinicViewModels.cs" />
     <Compile Include="ViewModels\OtpViewModels.cs" />
     <Compile Include="ViewModels\PatientViewModel.cs" />
@@ -3194,6 +3194,19 @@
     <Content Include="Areas\Admin\Views\Specialization\Create.cshtml" />
     <Content Include="Areas\Admin\Views\Specialization\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Specialization\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\AssignToDepartment.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\TransferDoctor.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\RemoveAssignments.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\AssignmentReport.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Assignments.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentStats.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_DoctorAssignmentsList.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentForm.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_ServiceCategoriesList.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentHistory.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_BulkAssignmentForm.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3443,7 +3456,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Admin\Views\DoctorAssignment\" />
     <Folder Include="Areas\Admin\Views\DoctorDepartment\" />
     <Folder Include="Areas\Admin\Views\DoctorReporting\" />
     <Folder Include="Areas\Admin\Views\DoctorSchedule\" />

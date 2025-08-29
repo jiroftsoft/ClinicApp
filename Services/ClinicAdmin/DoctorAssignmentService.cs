@@ -25,6 +25,7 @@ namespace ClinicApp.Services.ClinicAdmin
     /// 5. پشتیبانی از تقویم شمسی و اعداد فارسی در تمام فرآیندهای مدیریتی
     /// 6. پشتیبانی از محیط‌های Production و سیستم‌های Load Balanced
     /// 7. مدیریت حرفه‌ای خطاها و لاگ‌گیری برای سیستم‌های پزشکی
+    /// 8. عملیات ترکیبی و انتقال پزشکان بین دپارتمان‌ها
     /// 
     /// نکته حیاتی: این کلاس بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
@@ -100,6 +101,13 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
                 }
 
+                // اعتبارسنجی سطح بالا
+                var validationCheck = await ValidateAssignmentCompatibilityAsync(assignments);
+                if (!validationCheck.Success)
+                {
+                    return validationCheck;
+                }
+
                 // به‌روزرسانی انتسابات دپارتمان‌ها
                 await UpdateDepartmentAssignmentsAsync(doctorId, assignments.DoctorDepartments);
 
@@ -168,9 +176,258 @@ namespace ClinicApp.Services.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// انتساب همزمان پزشک به دپارتمان و سرفصل‌های خدماتی مرتبط
+        /// </summary>
+        public async Task<ServiceResult> AssignDoctorToDepartmentWithServicesAsync(int doctorId, int departmentId, List<int> serviceCategoryIds)
+        {
+            try
+            {
+                _logger.Information("درخواست انتساب پزشک {DoctorId} به دپارتمان {DepartmentId} با سرفصل‌های خدماتی", doctorId, departmentId);
+
+                // اعتبارسنجی پارامترها
+                if (doctorId <= 0 || departmentId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه پزشک یا دپارتمان نامعتبر است.");
+                }
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                {
+                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
+                }
+
+                // انتساب به دپارتمان
+                var departmentAssignment = new DoctorDepartmentViewModel
+                {
+                    DoctorId = doctorId,
+                    DepartmentId = departmentId,
+                    IsActive = true
+                };
+
+                var departmentResult = await _doctorDepartmentService.AssignDoctorToDepartmentAsync(departmentAssignment);
+                if (!departmentResult.Success)
+                {
+                    return departmentResult;
+                }
+
+                // انتساب سرفصل‌های خدماتی
+                if (serviceCategoryIds != null && serviceCategoryIds.Any())
+                {
+                    foreach (var serviceCategoryId in serviceCategoryIds)
+                    {
+                        var serviceAssignment = new DoctorServiceCategoryViewModel
+                        {
+                            DoctorId = doctorId,
+                            ServiceCategoryId = serviceCategoryId,
+                            IsActive = true
+                        };
+
+                        var serviceResult = await _doctorServiceCategoryService.GrantServiceCategoryToDoctorAsync(serviceAssignment);
+                        if (!serviceResult.Success)
+                        {
+                            _logger.Warning("خطا در انتساب سرفصل خدماتی {ServiceCategoryId} به پزشک {DoctorId}", serviceCategoryId, doctorId);
+                        }
+                    }
+                }
+
+                _logger.Information("پزشک {DoctorId} با موفقیت به دپارتمان {DepartmentId} انتساب داده شد", doctorId, departmentId);
+                return ServiceResult.Successful("پزشک با موفقیت به دپارتمان انتساب داده شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در انتساب پزشک {DoctorId} به دپارتمان {DepartmentId}", doctorId, departmentId);
+                return ServiceResult.Failed("خطا در انتساب پزشک به دپارتمان");
+            }
+        }
+
+        /// <summary>
+        /// انتقال پزشک بین دپارتمان‌ها با حفظ صلاحیت‌های خدماتی
+        /// </summary>
+        public async Task<ServiceResult> TransferDoctorBetweenDepartmentsAsync(int doctorId, int fromDepartmentId, int toDepartmentId, bool preserveServiceCategories = true)
+        {
+            try
+            {
+                _logger.Information("درخواست انتقال پزشک {DoctorId} از دپارتمان {FromDepartmentId} به دپارتمان {ToDepartmentId}", 
+                    doctorId, fromDepartmentId, toDepartmentId);
+
+                // اعتبارسنجی پارامترها
+                if (doctorId <= 0 || fromDepartmentId <= 0 || toDepartmentId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه‌های وارد شده نامعتبر هستند.");
+                }
+
+                if (fromDepartmentId == toDepartmentId)
+                {
+                    return ServiceResult.Failed("دپارتمان مبدا و مقصد نمی‌توانند یکسان باشند.");
+                }
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                {
+                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
+                }
+
+                // دریافت سرفصل‌های خدماتی فعلی (در صورت نیاز به حفظ)
+                List<int> currentServiceCategories = new List<int>();
+                if (preserveServiceCategories)
+                {
+                    var currentAssignmentsResult = await _doctorServiceCategoryService.GetServiceCategoriesForDoctorAsync(doctorId, "", 1, int.MaxValue);
+                    if (currentAssignmentsResult.Success)
+                    {
+                        currentServiceCategories = currentAssignmentsResult.Data.Items
+                            .Where(sc => sc.IsActive)
+                            .Select(sc => sc.ServiceCategoryId)
+                            .ToList();
+                    }
+                }
+
+                // حذف انتساب از دپارتمان فعلی
+                var removeResult = await _doctorDepartmentService.RevokeDoctorFromDepartmentAsync(doctorId, fromDepartmentId);
+                if (!removeResult.Success)
+                {
+                    _logger.Warning("خطا در حذف انتساب پزشک {DoctorId} از دپارتمان {FromDepartmentId}", doctorId, fromDepartmentId);
+                }
+
+                // انتساب به دپارتمان جدید
+                var newDepartmentAssignment = new DoctorDepartmentViewModel
+                {
+                    DoctorId = doctorId,
+                    DepartmentId = toDepartmentId,
+                    IsActive = true
+                };
+
+                var assignResult = await _doctorDepartmentService.AssignDoctorToDepartmentAsync(newDepartmentAssignment);
+                if (!assignResult.Success)
+                {
+                    return assignResult;
+                }
+
+                // بازانتساب سرفصل‌های خدماتی (در صورت نیاز)
+                if (preserveServiceCategories && currentServiceCategories.Any())
+                {
+                    foreach (var serviceCategoryId in currentServiceCategories)
+                    {
+                        var serviceAssignment = new DoctorServiceCategoryViewModel
+                        {
+                            DoctorId = doctorId,
+                            ServiceCategoryId = serviceCategoryId,
+                            IsActive = true
+                        };
+
+                        await _doctorServiceCategoryService.GrantServiceCategoryToDoctorAsync(serviceAssignment);
+                    }
+                }
+
+                _logger.Information("پزشک {DoctorId} با موفقیت از دپارتمان {FromDepartmentId} به دپارتمان {ToDepartmentId} منتقل شد", 
+                    doctorId, fromDepartmentId, toDepartmentId);
+
+                return ServiceResult.Successful("پزشک با موفقیت بین دپارتمان‌ها منتقل شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در انتقال پزشک {DoctorId} بین دپارتمان‌ها", doctorId);
+                return ServiceResult.Failed("خطا در انتقال پزشک بین دپارتمان‌ها");
+            }
+        }
+
+        /// <summary>
+        /// حذف کامل تمام انتسابات یک پزشک
+        /// </summary>
+        public async Task<ServiceResult> RemoveAllDoctorAssignmentsAsync(int doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست حذف تمام انتسابات پزشک {DoctorId}", doctorId);
+
+                // اعتبارسنجی پارامترها
+                if (doctorId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه پزشک نامعتبر است.");
+                }
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(doctorId);
+                if (doctor == null)
+                {
+                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
+                }
+
+                // بررسی وابستگی‌ها
+                var dependencies = await _doctorAssignmentRepository.GetDoctorDependenciesAsync(doctorId);
+                if (dependencies.HasActiveAppointments)
+                {
+                    return ServiceResult.Failed($"پزشک دارای {dependencies.ActiveAppointmentsCount} نوبت فعال است و نمی‌توان انتسابات را حذف کرد.");
+                }
+
+                // حذف انتسابات دپارتمان‌ها
+                var departmentAssignmentsResult = await _doctorDepartmentService.GetDepartmentsForDoctorAsync(doctorId, "", 1, int.MaxValue);
+                if (departmentAssignmentsResult.Success)
+                {
+                    foreach (var assignment in departmentAssignmentsResult.Data.Items)
+                    {
+                        await _doctorDepartmentService.RevokeDoctorFromDepartmentAsync(doctorId, assignment.DepartmentId);
+                    }
+                }
+
+                // حذف انتسابات سرفصل‌های خدماتی
+                var serviceCategoryAssignmentsResult = await _doctorServiceCategoryService.GetServiceCategoriesForDoctorAsync(doctorId, "", 1, int.MaxValue);
+                if (serviceCategoryAssignmentsResult.Success)
+                {
+                    foreach (var assignment in serviceCategoryAssignmentsResult.Data.Items)
+                    {
+                        await _doctorServiceCategoryService.RevokeServiceCategoryFromDoctorAsync(doctorId, assignment.ServiceCategoryId);
+                    }
+                }
+
+                _logger.Information("تمام انتسابات پزشک {DoctorId} با موفقیت حذف شد", doctorId);
+                return ServiceResult.Successful("تمام انتسابات پزشک با موفقیت حذف شد.");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در حذف تمام انتسابات پزشک {DoctorId}", doctorId);
+                return ServiceResult.Failed("خطا در حذف انتسابات پزشک");
+            }
+        }
+
         #endregion
 
         #region Private Helper Methods (متدهای کمکی خصوصی)
+
+        /// <summary>
+        /// اعتبارسنجی سازگاری انتسابات
+        /// </summary>
+        private async Task<ServiceResult> ValidateAssignmentCompatibilityAsync(DoctorAssignmentsViewModel assignments)
+        {
+            try
+            {
+                // بررسی تداخل دپارتمان‌ها
+                var departmentIds = assignments.DoctorDepartments?.Select(d => d.DepartmentId).Distinct().ToList() ?? new List<int>();
+                if (departmentIds.Count != (assignments.DoctorDepartments?.Count ?? 0))
+                {
+                    return ServiceResult.Failed("انتساب تکراری به دپارتمان‌ها مجاز نیست.");
+                }
+
+                // بررسی تداخل سرفصل‌های خدماتی
+                var serviceCategoryIds = assignments.DoctorServiceCategories?.Select(s => s.ServiceCategoryId).Distinct().ToList() ?? new List<int>();
+                if (serviceCategoryIds.Count != (assignments.DoctorServiceCategories?.Count ?? 0))
+                {
+                    return ServiceResult.Failed("انتساب تکراری به سرفصل‌های خدماتی مجاز نیست.");
+                }
+
+                // بررسی سازگاری سرفصل‌های خدماتی با دپارتمان‌ها
+                // این بخش می‌تواند بر اساس قوانین کسب‌وکار توسعه یابد
+
+                return ServiceResult.Successful();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در اعتبارسنجی سازگاری انتسابات");
+                return ServiceResult.Failed("خطا در اعتبارسنجی انتسابات");
+            }
+        }
 
         /// <summary>
         /// به‌روزرسانی انتسابات دپارتمان‌ها

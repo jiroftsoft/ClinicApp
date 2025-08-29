@@ -27,6 +27,35 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// <returns>نتیجه حاوی تمام انتسابات پزشک.</returns>
         Task<DoctorAssignments> GetDoctorAssignmentsAsync(int doctorId);
 
+        /// <summary>
+        /// دریافت اطلاعات وابستگی‌های پزشک برای بررسی امکان حذف.
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک.</param>
+        /// <returns>اطلاعات وابستگی‌های پزشک.</returns>
+        Task<DoctorDependencyInfo> GetDoctorDependenciesAsync(int doctorId);
+
+        /// <summary>
+        /// به‌روزرسانی تمام انتسابات یک پزشک در یک تراکنش.
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک.</param>
+        /// <param name="assignments">انتسابات جدید.</param>
+        /// <returns>نتیجه عملیات.</returns>
+        Task<bool> UpdateAllAssignmentsAsync(int doctorId, DoctorAssignments assignments);
+
+        /// <summary>
+        /// بررسی وجود انتسابات فعال برای یک پزشک.
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک.</param>
+        /// <returns>آیا انتسابات فعالی وجود دارد.</returns>
+        Task<bool> HasActiveAssignmentsAsync(int doctorId);
+
+        /// <summary>
+        /// دریافت تعداد انتسابات فعال یک پزشک.
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک.</param>
+        /// <returns>تعداد انتسابات فعال.</returns>
+        Task<int> GetActiveAssignmentsCountAsync(int doctorId);
+
         #endregion
     }
 }

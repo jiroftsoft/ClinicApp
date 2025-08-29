@@ -1,0 +1,172 @@
+@model List<ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentViewModel>
+
+<div class="assignments-card p-4">
+    <h4 class="mb-3">
+        <i class="fas fa-hospital me-2"></i>
+        انتسابات دپارتمان
+    </h4>
+
+    @if (Model != null && Model.Any())
+    {
+        foreach (var dept in Model)
+        {
+            <div class="assignment-item">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h5 class="mb-2">@dept.DepartmentName</h5>
+                        <p class="text-muted mb-2">
+                            <i class="fas fa-calendar me-1"></i>
+                            تاریخ انتساب: @(dept.AssignmentDate?.ToString("yyyy/MM/dd") ?? "نامشخص")
+                        </p>
+                        @if (!string.IsNullOrEmpty(dept.Description))
+                        {
+                            <p class="text-muted mb-0">
+                                <i class="fas fa-comment me-1"></i>
+                                @dept.Description
+                            </p>
+                        }
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="mb-2">
+                            @if (dept.IsActive)
+                            {
+                                <span class="badge bg-success assignment-badge">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary assignment-badge">غیرفعال</span>
+                            }
+                        </div>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-sm btn-outline-primary" 
+                                    onclick="editAssignment(@dept.Id)" title="ویرایش">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" 
+                                    onclick="transferAssignment(@dept.Id)" title="انتقال">
+                                <i class="fas fa-exchange-alt"></i>
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="removeAssignment(@dept.Id)" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-hospital"></i>
+            <h5>هیچ انتساب دپارتمانی یافت نشد</h5>
+            <p>این پزشک هنوز به هیچ دپارتمانی انتساب نشده است.</p>
+            @if (ViewBag.ShowAddButton != null && ViewBag.ShowAddButton)
+            {
+                <a href="@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = ViewBag.DoctorId })" class="btn btn-primary">
+                    <i class="fas fa-plus me-2"></i>
+                    انتساب دپارتمان
+                </a>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .assignments-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    .assignment-item {
+        border: 1px solid #e9ecef;
+        border-radius: 10px;
+        padding: 20px;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    .assignment-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    .assignment-badge {
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: 500;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+    .btn-group .btn {
+        margin-left: 2px;
+    }
+    .btn-group .btn:first-child {
+        margin-left: 0;
+    }
+</style>
+
+<script>
+    function editAssignment(assignmentId) {
+        window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment")/' + assignmentId;
+    }
+
+    function transferAssignment(assignmentId) {
+        window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment")/' + assignmentId;
+    }
+
+    function removeAssignment(assignmentId) {
+        Swal.fire({
+            title: 'آیا مطمئن هستید؟',
+            text: 'این عملیات قابل بازگشت نیست!',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'بله، حذف کن',
+            cancelButtonText: 'انصراف'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                performRemoveAssignment(assignmentId);
+            }
+        });
+    }
+
+    function performRemoveAssignment(assignmentId) {
+        $.post('@Url.Action("RemoveAssignments", "DoctorAssignment")', { id: assignmentId })
+            .done(function (data) {
+                if (data.success) {
+                    Swal.fire({
+                        title: 'حذف موفق',
+                        text: 'انتساب با موفقیت حذف شد',
+                        icon: 'success',
+                        confirmButtonText: 'باشه'
+                    }).then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire({
+                        title: 'خطا در حذف',
+                        text: data.message,
+                        icon: 'error',
+                        confirmButtonText: 'باشه'
+                    });
+                }
+            })
+            .fail(function () {
+                Swal.fire({
+                    title: 'خطا در ارتباط با سرور',
+                    text: 'لطفاً دوباره تلاش کنید',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            });
+    }
+</script>

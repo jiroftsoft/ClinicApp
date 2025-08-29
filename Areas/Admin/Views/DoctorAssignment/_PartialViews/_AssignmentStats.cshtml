@@ -1,0 +1,134 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.AssignmentStatsViewModel
+
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card p-4">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">@Model.TotalDoctors</h3>
+                    <p class="mb-0 opacity-75">کل پزشکان</p>
+                    <small class="trend-indicator trend-up">
+                        <i class="fas fa-arrow-up me-1"></i>
+                        +@Model.DoctorGrowthRate% نسبت به ماه گذشته
+                    </small>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-user-md"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card p-4" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">@Model.TotalAssignments</h3>
+                    <p class="mb-0 opacity-75">کل انتسابات</p>
+                    <small class="trend-indicator trend-up">
+                        <i class="fas fa-arrow-up me-1"></i>
+                        +@Model.AssignmentGrowthRate% نسبت به ماه گذشته
+                    </small>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-link"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card p-4" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">@Model.ActiveAssignments</h3>
+                    <p class="mb-0 opacity-75">انتسابات فعال</p>
+                    <small class="trend-indicator trend-stable">
+                        <i class="fas fa-minus me-1"></i>
+                        @Model.ActiveAssignmentRate% نرخ فعال
+                    </small>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-xl-3 col-md-6 mb-3">
+        <div class="stats-card p-4" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="mb-1">@Model.AverageAssignments</h3>
+                    <p class="mb-0 opacity-75">میانگین انتساب</p>
+                    <small class="trend-indicator trend-up">
+                        <i class="fas fa-arrow-up me-1"></i>
+                        +@Model.AverageGrowthRate% نسبت به ماه گذشته
+                    </small>
+                </div>
+                <div class="stats-icon">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (Model.ShowDetailedStats)
+{
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="stats-item">
+                <div class="stats-number">@Model.MultiDepartmentDoctors</div>
+                <div class="text-muted">پزشکان چند دپارتمانه</div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="stats-item">
+                <div class="stats-number">@Model.SingleDepartmentDoctors</div>
+                <div class="text-muted">پزشکان تک دپارتمانه</div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .stats-card {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border-radius: 15px;
+        color: white;
+        transition: transform 0.3s ease;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .stats-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    .trend-indicator {
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+    .trend-up {
+        color: #28a745;
+    }
+    .trend-down {
+        color: #dc3545;
+    }
+    .trend-stable {
+        color: #6c757d;
+    }
+    .stats-item {
+        text-align: center;
+        padding: 15px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        margin-bottom: 15px;
+    }
+    .stats-number {
+        font-size: 2rem;
+        font-weight: bold;
+        color: #667eea;
+    }
+</style>

@@ -84,9 +84,6 @@ namespace ClinicApp
                 // ثبت سرویس کاربر فعلی با پشتیبانی کامل از تمام محیط‌ها
                 RegisterCurrentUserService(container);
 
-                // ثبت AutoMapper با پشتیبانی از مپینگ‌های پزشکی
-                RegisterAutoMapper(container);
-
                 // ثبت Logger با پشتیبانی از محیط‌های مختلف
                 RegisterLogger(container);
 
@@ -249,25 +246,7 @@ namespace ClinicApp
             }
         }
 
-        private static void RegisterAutoMapper(IUnityContainer container)
-        {
-            try
-            {
-                var mappingConfig = new MapperConfiguration(cfg =>
-                {
-                    cfg.AddProfile(new MappingProfile());
-                });
-
-                var mapper = mappingConfig.CreateMapper();
-                container.RegisterInstance<IMapper>(mapper);
-                _log.Information("AutoMapper با موفقیت راه‌اندازی شد");
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "خطا در راه‌اندازی AutoMapper");
-                throw;
-            }
-        }
+       
 
         private static void RegisterLogger(IUnityContainer container)
         {
@@ -345,6 +324,7 @@ namespace ClinicApp
                 container.RegisterType<IDoctorServiceCategoryRepository, DoctorServiceCategoryRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorScheduleRepository, DoctorScheduleRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorReportingRepository, DoctorReportingRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorAssignmentRepository, DoctorAssignmentRepository>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Services
                 container.RegisterType<IDoctorCrudService, DoctorCrudService>(new PerRequestLifetimeManager());
@@ -368,6 +348,11 @@ namespace ClinicApp
                 container.RegisterType<IValidator<DoctorServiceCategoryViewModel>, DoctorServiceCategoryViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DoctorScheduleViewModel>, DoctorScheduleViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DoctorAssignmentsViewModel>, DoctorAssignmentsViewModelValidator>(new PerRequestLifetimeManager());
+                
+                // ثبت Validator برای عملیات انتساب پزشکان
+                container.RegisterType<IValidator<DoctorAssignmentOperationViewModel>, DoctorAssignmentOperationViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorTransferViewModel>, DoctorTransferViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorAssignmentRemovalViewModel>, DoctorAssignmentRemovalViewModelValidator>(new PerRequestLifetimeManager());
 
                 // Register Specialization Validators
                 container.RegisterType<IValidator<SpecializationCreateEditViewModel>, SpecializationCreateEditViewModelValidator>(new PerRequestLifetimeManager());

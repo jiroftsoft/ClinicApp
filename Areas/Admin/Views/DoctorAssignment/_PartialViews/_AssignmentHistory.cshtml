@@ -1,0 +1,240 @@
+@model List<ClinicApp.ViewModels.DoctorManagementVM.AssignmentHistoryViewModel>
+
+<div class="history-card p-4">
+    <h4 class="mb-3">
+        <i class="fas fa-history me-2"></i>
+        تاریخچه انتسابات
+    </h4>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="timeline">
+            @foreach (var history in Model.OrderByDescending(h => h.ActionDate))
+            {
+                <div class="timeline-item">
+                    <div class="timeline-marker @GetTimelineMarkerClass(history.ActionType)">
+                        <i class="@GetTimelineIcon(history.ActionType)"></i>
+                    </div>
+                    <div class="timeline-content">
+                        <div class="timeline-header">
+                            <h6 class="mb-1">@history.ActionTitle</h6>
+                            <small class="text-muted">
+                                <i class="fas fa-calendar me-1"></i>
+                                @history.ActionDate.ToString("yyyy/MM/dd HH:mm")
+                            </small>
+                        </div>
+                        <div class="timeline-body">
+                            <p class="mb-2">@history.ActionDescription</p>
+                            @if (!string.IsNullOrEmpty(history.DepartmentName))
+                            {
+                                <div class="history-detail">
+                                    <strong>دپارتمان:</strong> @history.DepartmentName
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(history.ServiceCategories))
+                            {
+                                <div class="history-detail">
+                                    <strong>صلاحیت‌ها:</strong> @history.ServiceCategories
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(history.PerformedBy))
+                            {
+                                <div class="history-detail">
+                                    <strong>انجام شده توسط:</strong> @history.PerformedBy
+                                </div>
+                            }
+                            @if (!string.IsNullOrEmpty(history.Notes))
+                            {
+                                <div class="history-notes">
+                                    <strong>یادداشت:</strong> @history.Notes
+                                </div>
+                            }
+                        </div>
+                        <div class="timeline-footer">
+                            <span class="badge @GetActionTypeBadgeClass(history.ActionType)">
+                                @GetActionTypeText(history.ActionType)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="empty-state">
+            <i class="fas fa-history"></i>
+            <h5>هیچ تاریخچه‌ای یافت نشد</h5>
+            <p>هنوز هیچ عملیاتی روی انتسابات این پزشک انجام نشده است.</p>
+        </div>
+    }
+</div>
+
+<style>
+    .history-card {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 15px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, #667eea, #764ba2);
+    }
+    .timeline-item {
+        position: relative;
+        margin-bottom: 30px;
+    }
+    .timeline-marker {
+        position: absolute;
+        left: -22px;
+        top: 0;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 12px;
+        z-index: 1;
+    }
+    .timeline-marker.assignment {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    .timeline-marker.transfer {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+    .timeline-marker.removal {
+        background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
+    }
+    .timeline-marker.update {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+    .timeline-content {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 20px;
+        margin-left: 15px;
+        position: relative;
+    }
+    .timeline-content::before {
+        content: '';
+        position: absolute;
+        left: -8px;
+        top: 15px;
+        width: 0;
+        height: 0;
+        border-top: 8px solid transparent;
+        border-bottom: 8px solid transparent;
+        border-right: 8px solid #f8f9fa;
+    }
+    .timeline-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+    .timeline-header h6 {
+        color: #667eea;
+        font-weight: 600;
+        margin: 0;
+    }
+    .timeline-body {
+        margin-bottom: 15px;
+    }
+    .timeline-body p {
+        color: #495057;
+        margin-bottom: 10px;
+    }
+    .history-detail {
+        font-size: 0.9rem;
+        color: #6c757d;
+        margin-bottom: 5px;
+    }
+    .history-notes {
+        font-size: 0.9rem;
+        color: #495057;
+        font-style: italic;
+        background: rgba(102, 126, 234, 0.1);
+        padding: 8px;
+        border-radius: 5px;
+        margin-top: 10px;
+    }
+    .timeline-footer {
+        text-align: left;
+    }
+    .badge {
+        font-size: 0.75rem;
+        padding: 6px 12px;
+        border-radius: 15px;
+    }
+    .empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        color: #6c757d;
+    }
+    .empty-state i {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.5;
+    }
+</style>
+
+@functions {
+    private string GetTimelineMarkerClass(string actionType)
+    {
+        return actionType?.ToLower() switch
+        {
+            "assignment" => "assignment",
+            "transfer" => "transfer",
+            "removal" => "removal",
+            "update" => "update",
+            _ => "assignment"
+        };
+    }
+
+    private string GetTimelineIcon(string actionType)
+    {
+        return actionType?.ToLower() switch
+        {
+            "assignment" => "fas fa-plus",
+            "transfer" => "fas fa-exchange-alt",
+            "removal" => "fas fa-trash",
+            "update" => "fas fa-edit",
+            _ => "fas fa-info-circle"
+        };
+    }
+
+    private string GetActionTypeBadgeClass(string actionType)
+    {
+        return actionType?.ToLower() switch
+        {
+            "assignment" => "bg-success",
+            "transfer" => "bg-warning",
+            "removal" => "bg-danger",
+            "update" => "bg-info",
+            _ => "bg-secondary"
+        };
+    }
+
+    private string GetActionTypeText(string actionType)
+    {
+        return actionType?.ToLower() switch
+        {
+            "assignment" => "انتساب",
+            "transfer" => "انتقال",
+            "removal" => "حذف",
+            "update" => "بروزرسانی",
+            _ => "عملیات"
+        };
+    }
+}
