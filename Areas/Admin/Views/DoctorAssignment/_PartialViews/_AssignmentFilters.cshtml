@@ -12,8 +12,8 @@
             <!-- Doctor Filter -->
             <div class="col-md-3 mb-3">
                 <div class="form-group">
-                    @Html.LabelFor(m => m.DoctorName, "نام پزشک", new { @class = "form-label fw-bold" })
-                    @Html.TextBoxFor(m => m.DoctorName, new { @class = "form-control", placeholder = "جستجو بر اساس نام..." })
+                    @Html.LabelFor(m => m.SearchTerm, "نام پزشک", new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(m => m.SearchTerm, new { @class = "form-control", placeholder = "جستجو بر اساس نام..." })
                 </div>
             </div>
 
@@ -22,7 +22,7 @@
                 <div class="form-group">
                     @Html.LabelFor(m => m.DepartmentId, "دپارتمان", new { @class = "form-label fw-bold" })
                     @Html.DropDownListFor(m => m.DepartmentId, 
-                        new SelectList(ViewBag.Departments, "Id", "Name"), 
+                        new SelectList(ViewBag.Departments ?? Model.Departments, "Value", "Text"), 
                         "همه دپارتمان‌ها", 
                         new { @class = "form-select" })
                 </div>
@@ -33,7 +33,7 @@
                 <div class="form-group">
                     @Html.LabelFor(m => m.ServiceCategoryId, "صلاحیت خدماتی", new { @class = "form-label fw-bold" })
                     @Html.DropDownListFor(m => m.ServiceCategoryId, 
-                        new SelectList(ViewBag.ServiceCategories, "Id", "Name"), 
+                        new SelectList(ViewBag.ServiceCategories ?? Model.ServiceCategories, "Value", "Text"), 
                         "همه صلاحیت‌ها", 
                         new { @class = "form-select" })
                 </div>
@@ -44,11 +44,7 @@
                 <div class="form-group">
                     @Html.LabelFor(m => m.Status, "وضعیت", new { @class = "form-label fw-bold" })
                     @Html.DropDownListFor(m => m.Status, 
-                        new SelectList(new[] {
-                            new { Value = "", Text = "همه وضعیت‌ها" },
-                            new { Value = "Active", Text = "فعال" },
-                            new { Value = "Inactive", Text = "غیرفعال" }
-                        }, "Value", "Text"), 
+                        new SelectList(Model.Statuses, "Value", "Text"), 
                         new { @class = "form-select" })
                 </div>
             </div>
@@ -58,15 +54,15 @@
             <!-- Date Range Filters -->
             <div class="col-md-3 mb-3">
                 <div class="form-group">
-                    @Html.LabelFor(m => m.AssignmentDateFrom, "تاریخ انتساب از", new { @class = "form-label fw-bold" })
-                    @Html.TextBoxFor(m => m.AssignmentDateFrom, new { @class = "form-control datepicker", placeholder = "yyyy/mm/dd" })
+                    @Html.LabelFor(m => m.DateFrom, "تاریخ انتساب از", new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(m => m.DateFrom, new { @class = "form-control datepicker", placeholder = "yyyy/mm/dd" })
                 </div>
             </div>
 
             <div class="col-md-3 mb-3">
                 <div class="form-group">
-                    @Html.LabelFor(m => m.AssignmentDateTo, "تاریخ انتساب تا", new { @class = "form-label fw-bold" })
-                    @Html.TextBoxFor(m => m.AssignmentDateTo, new { @class = "form-control datepicker", placeholder = "yyyy/mm/dd" })
+                    @Html.LabelFor(m => m.DateTo, "تاریخ انتساب تا", new { @class = "form-label fw-bold" })
+                    @Html.TextBoxFor(m => m.DateTo, new { @class = "form-control datepicker", placeholder = "yyyy/mm/dd" })
                 </div>
             </div>
 
@@ -75,105 +71,40 @@
                 <div class="form-group">
                     @Html.LabelFor(m => m.AssignmentType, "نوع انتساب", new { @class = "form-label fw-bold" })
                     @Html.DropDownListFor(m => m.AssignmentType, 
-                        new SelectList(new[] {
-                            new { Value = "", Text = "همه انواع" },
-                            new { Value = "Single", Text = "تک دپارتمانه" },
-                            new { Value = "Multi", Text = "چند دپارتمانه" }
-                        }, "Value", "Text"), 
+                        new SelectList(Model.AssignmentTypes, "Value", "Text"), 
                         new { @class = "form-select" })
                 </div>
             </div>
 
-            <!-- Sort Order -->
+            <!-- Action Buttons -->
             <div class="col-md-3 mb-3">
                 <div class="form-group">
-                    @Html.LabelFor(m => m.SortOrder, "مرتب‌سازی", new { @class = "form-label fw-bold" })
-                    @Html.DropDownListFor(m => m.SortOrder, 
-                        new SelectList(new[] {
-                            new { Value = "DoctorName", Text = "نام پزشک" },
-                            new { Value = "DepartmentName", Text = "نام دپارتمان" },
-                            new { Value = "AssignmentDate", Text = "تاریخ انتساب" },
-                            new { Value = "Status", Text = "وضعیت" }
-                        }, "Value", "Text"), 
-                        new { @class = "form-select" })
-                </div>
-            </div>
-        </div>
-
-        <!-- Advanced Filters -->
-        <div class="row">
-            <div class="col-12">
-                <div class="advanced-filters" id="advancedFilters" style="display: none;">
-                    <h6 class="mb-3">
-                        <i class="fas fa-cog me-2"></i>
-                        فیلترهای پیشرفته
-                    </h6>
-                    <div class="row">
-                        <div class="col-md-3 mb-3">
-                            <div class="form-group">
-                                @Html.LabelFor(m => m.HasServiceCategories, "دارای صلاحیت", new { @class = "form-label fw-bold" })
-                                @Html.DropDownListFor(m => m.HasServiceCategories, 
-                                    new SelectList(new[] {
-                                        new { Value = "", Text = "همه" },
-                                        new { Value = "true", Text = "دارد" },
-                                        new { Value = "false", Text = "ندارد" }
-                                    }, "Value", "Text"), 
-                                    new { @class = "form-select" })
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="form-group">
-                                @Html.LabelFor(m => m.MinAssignments, "حداقل انتسابات", new { @class = "form-label fw-bold" })
-                                @Html.TextBoxFor(m => m.MinAssignments, new { @class = "form-control", type = "number", min = "0", placeholder = "0" })
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="form-group">
-                                @Html.LabelFor(m => m.MaxAssignments, "حداکثر انتسابات", new { @class = "form-label fw-bold" })
-                                @Html.TextBoxFor(m => m.MaxAssignments, new { @class = "form-control", type = "number", min = "0", placeholder = "نامحدود" })
-                            </div>
-                        </div>
-
-                        <div class="col-md-3 mb-3">
-                            <div class="form-group">
-                                @Html.LabelFor(m => m.CreatedBy, "ایجاد شده توسط", new { @class = "form-label fw-bold" })
-                                @Html.TextBoxFor(m => m.CreatedBy, new { @class = "form-control", placeholder = "نام کاربر..." })
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Filter Actions -->
-        <div class="row mt-3">
-            <div class="col-12">
-                <div class="d-flex justify-content-between align-items-center">
-                    <div>
-                        <button type="submit" class="btn btn-primary me-2">
+                    <label class="form-label fw-bold">&nbsp;</label>
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill">
                             <i class="fas fa-search me-2"></i>
-                            اعمال فیلتر
+                            جستجو
                         </button>
-                        <button type="button" class="btn btn-outline-secondary me-2" onclick="resetFilters()">
+                        <button type="button" class="btn btn-outline-secondary" onclick="resetFilters()">
                             <i class="fas fa-undo me-2"></i>
                             پاک کردن
                         </button>
-                        <button type="button" class="btn btn-outline-info" onclick="toggleAdvancedFilters()">
-                            <i class="fas fa-cog me-2"></i>
-                            فیلترهای پیشرفته
-                        </button>
-                    </div>
-                    <div>
-                        <button type="button" class="btn btn-outline-success" onclick="exportFilteredData()">
-                            <i class="fas fa-download me-2"></i>
-                            خروجی
-                        </button>
                     </div>
                 </div>
             </div>
         </div>
+
+        if (Model.HasFilters)
+        {
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>فیلترهای فعال:</strong> @Model.GetFilterSummary()
+                    </div>
+                </div>
+            </div>
+        }
     }
 </div>
 
@@ -225,141 +156,112 @@
 </style>
 
 <script>
-    $(document).ready(function () {
-        initializeFilters();
-        setupFilterEventHandlers();
-    });
-
-    function initializeFilters() {
-        // Initialize date pickers
-        $('.datepicker').persianDatepicker({
-            format: 'YYYY/MM/DD',
-            initialValue: false,
-            autoClose: true,
-            onSelect: function (unix) {
-                // Handle date selection
-            }
-        });
-
-        // Initialize Select2 for dropdowns
-        $('#DepartmentId, #ServiceCategoryId, #Status, #AssignmentType, #SortOrder').select2({
-            placeholder: 'انتخاب کنید...',
-            allowClear: true,
-            language: 'fa',
-            width: '100%'
-        });
-    }
-
-    function setupFilterEventHandlers() {
-        // Auto-submit form on certain changes
-        $('#DepartmentId, #ServiceCategoryId, #Status, #AssignmentType').on('change', function() {
-            if ($(this).val()) {
-                $('#filterForm').submit();
-            }
-        });
-
-        // Debounced search for text inputs
-        let searchTimeout;
-        $('#DoctorName, #CreatedBy').on('input', function() {
-            clearTimeout(searchTimeout);
-            searchTimeout = setTimeout(function() {
-                $('#filterForm').submit();
-            }, 500);
-        });
-    }
-
-    function resetFilters() {
-        Swal.fire({
-            title: 'پاک کردن فیلترها',
-            text: 'آیا می‌خواهید تمام فیلترها پاک شوند؟',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'بله، پاک کن',
-            cancelButtonText: 'انصراف'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                // Reset all form fields
-                $('#filterForm')[0].reset();
-                
-                // Clear Select2 selections
-                $('#DepartmentId, #ServiceCategoryId, #Status, #AssignmentType, #SortOrder').val(null).trigger('change');
-                
-                // Clear date pickers
-                $('.datepicker').val('');
-                
-                // Hide advanced filters
-                $('#advancedFilters').hide();
-                
-                // Submit form to refresh results
-                $('#filterForm').submit();
-            }
-        });
-    }
-
-    function toggleAdvancedFilters() {
-        const advancedFilters = $('#advancedFilters');
-        const button = $('button[onclick="toggleAdvancedFilters()"]');
+    // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+    (function() {
+        'use strict';
         
-        if (advancedFilters.is(':visible')) {
-            advancedFilters.slideUp();
-            button.html('<i class="fas fa-cog me-2"></i>فیلترهای پیشرفته');
-        } else {
-            advancedFilters.slideDown();
-            button.html('<i class="fas fa-times me-2"></i>بستن فیلترهای پیشرفته');
+        function ensureJQuery(callback) {
+            if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    ensureJQuery(callback);
+                }, 50);
+            }
         }
-    }
 
-    function exportFilteredData() {
-        const formData = $('#filterForm').serialize();
-        const exportUrl = '@Url.Action("ExportAssignments", "DoctorAssignment")?' + formData;
-        
-        Swal.fire({
-            title: 'در حال آماده‌سازی خروجی...',
-            text: 'لطفاً صبر کنید',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
-        });
-
-        // Create a temporary link to download the file
-        const link = document.createElement('a');
-        link.href = exportUrl;
-        link.download = 'assignments_export.xlsx';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-
-        setTimeout(() => {
-            Swal.fire({
-                title: 'خروجی آماده شد',
-                text: 'فایل با موفقیت دانلود شد',
-                icon: 'success',
-                confirmButtonText: 'باشه'
+        // تابع ریست فیلترها
+        window.resetFilters = function() {
+            ensureJQuery(function() {
+                // Reset form fields
+                $('#filterForm input[type="text"]').val('');
+                $('#filterForm select').prop('selectedIndex', 0);
+                
+                // Submit form to refresh data
+                $('#filterForm').submit();
             });
-        }, 1000);
-    }
+        };
 
-    // Keyboard shortcuts
-    $(document).keydown(function(e) {
-        // Ctrl + F to focus on search
-        if (e.ctrlKey && e.keyCode === 70) {
-            e.preventDefault();
-            $('#DoctorName').focus();
+        // راه‌اندازی datepicker ها
+        function initializeDatepickers() {
+            ensureJQuery(function() {
+                if (typeof $.fn.datepicker !== 'undefined') {
+                    $('.datepicker').datepicker({
+                        format: 'yyyy/mm/dd',
+                        autoclose: true,
+                        todayHighlight: true,
+                        rtl: true
+                    });
+                } else {
+                    console.warn('DatePicker plugin not loaded');
+                }
+            });
         }
-        
-        // Ctrl + R to reset filters
-        if (e.ctrlKey && e.keyCode === 82) {
-            e.preventDefault();
-            resetFilters();
+
+        // راه‌اندازی Persian DatePicker
+        function initializePersianDatepickers() {
+            ensureJQuery(function() {
+                if (typeof $.fn.persianDatepicker !== 'undefined') {
+                    $('.persian-date').each(function() {
+                        var $this = $(this);
+                        if (!$this.data('persian-datepicker-initialized')) {
+                            $this.persianDatepicker({
+                                format: 'YYYY/MM/DD',
+                                initialValue: false,
+                                autoClose: true,
+                                observer: true,
+                                calendar: {
+                                    persian: {
+                                        locale: 'fa',
+                                        leapYearMode: 'astronomical'
+                                    }
+                                },
+                                toolbox: {
+                                    todayBtn: { enabled: true, text: { fa: 'امروز' } },
+                                    clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
+                                },
+                                onSelect: function(unix) {
+                                    var date = new Date(unix);
+                                    var persianDate = date.getFullYear() + '/' +
+                                        String(date.getMonth() + 1).padStart(2, '0') + '/' +
+                                        String(date.getDate()).padStart(2, '0');
+                                    $this.val(persianDate);
+                                    
+                                    // Trigger change event
+                                    $this.trigger('change');
+                                }
+                            });
+                            $this.data('persian-datepicker-initialized', true);
+                        }
+                    });
+                }
+            });
         }
-        
-        // Ctrl + E to export
-        if (e.ctrlKey && e.keyCode === 69) {
-            e.preventDefault();
-            exportFilteredData();
+
+        // راه‌اندازی اولیه
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeDatepickers();
+                initializePersianDatepickers();
+            });
+        } else {
+            initializeDatepickers();
+            initializePersianDatepickers();
         }
-    });
+
+        // راه‌اندازی مجدد برای محتوای AJAX
+        ensureJQuery(function() {
+            $(document).on('DOMNodeInserted', function(e) {
+                if ($(e.target).hasClass('datepicker') || 
+                    $(e.target).hasClass('persian-date') ||
+                    $(e.target).find('.datepicker, .persian-date').length > 0) {
+                    setTimeout(function() {
+                        initializeDatepickers();
+                        initializePersianDatepickers();
+                    }, 100);
+                }
+            });
+        });
+
+    })();
 </script>

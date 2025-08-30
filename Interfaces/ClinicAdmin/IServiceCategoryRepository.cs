@@ -88,9 +88,15 @@ namespace ClinicApp.Interfaces.ClinicAdmin
 
         /// <summary>
         /// Saves all pending changes to the database.
-        /// ذخیره تمام تغییرات معلق در پایگاه داده
+        /// ذخیره تمام تغییرات در انتظار به پایگاه داده
         /// </summary>
-        /// <returns>تسک async برای ذخیره‌سازی</returns>
         Task SaveChangesAsync();
+
+        /// <summary>
+        /// Fetches all active ServiceCategories across all departments for dropdown lists.
+        /// دریافت تمام دسته‌بندی‌های خدمات فعال از همه دپارتمان‌ها برای لیست‌های کشویی
+        /// </summary>
+        /// <returns>لیست تمام دسته‌بندی‌های خدمات فعال</returns>
+        Task<List<ServiceCategory>> GetAllActiveServiceCategoriesAsync();
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels.DoctorManagementVM;
 
@@ -33,8 +34,8 @@ public interface IDoctorServiceCategoryService
     /// <summary>
     /// اعطا کردن صلاحیت ارائه یک دسته‌بندی خدمات به یک پزشک.
     /// </summary>
-    /// <param name="model">مدل حاوی اطلاعات صلاحیت.</param>
-    /// <returns>نتیجه عملیات اعطا صلاحیت.</returns>
+    /// <param name="model">مدل حاوی اطلاعات اعطای صلاحیت.</param>
+    /// <returns>نتیجه عملیات اعطای صلاحیت.</returns>
     Task<ServiceResult> GrantServiceCategoryToDoctorAsync(DoctorServiceCategoryViewModel model);
 
     /// <summary>
@@ -46,11 +47,17 @@ public interface IDoctorServiceCategoryService
     Task<ServiceResult> RevokeServiceCategoryFromDoctorAsync(int doctorId, int serviceCategoryId);
 
     /// <summary>
-    /// به‌روزرسانی اطلاعات صلاحیت پزشک در ارائه یک دسته‌بندی خدمات.
+    /// به‌روزرسانی اطلاعات صلاحیت ارائه دسته‌بندی خدمات توسط پزشک.
     /// </summary>
     /// <param name="model">مدل حاوی اطلاعات به‌روز شده صلاحیت.</param>
     /// <returns>نتیجه عملیات به‌روزرسانی.</returns>
-    Task<ServiceResult> UpdateDoctorServiceCategoryPermissionAsync(DoctorServiceCategoryViewModel model);
+    Task<ServiceResult> UpdateDoctorServiceCategoryAsync(DoctorServiceCategoryViewModel model);
+
+    /// <summary>
+    /// دریافت لیست تمام دسته‌بندی‌های خدمات فعال برای استفاده در لیست‌های کشویی.
+    /// </summary>
+    /// <returns>لیستی از تمام دسته‌بندی‌های خدمات فعال.</returns>
+    Task<ServiceResult<List<LookupItemViewModel>>> GetAllServiceCategoriesAsync();
 
     #endregion
 }

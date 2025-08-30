@@ -121,11 +121,16 @@ public interface IDoctorCrudRepository
     Task<List<Doctor>> SearchDoctorsAsync(DoctorSearchViewModel filter);
 
     /// <summary>
-    /// دریافت تعداد پزشکان مطابق با فیلترهای جستجو
+    /// دریافت تعداد کل پزشکان
     /// </summary>
-    /// <param name="filter">فیلترهای جستجو</param>
-    /// <returns>تعداد پزشکان مطابق با فیلترها</returns>
-    Task<int> GetDoctorsCountAsync(DoctorSearchViewModel filter);
+    /// <returns>تعداد کل پزشکان</returns>
+    Task<int> GetAllDoctorsCountAsync();
+
+    /// <summary>
+    /// دریافت تعداد پزشکان فعال
+    /// </summary>
+    /// <returns>تعداد پزشکان فعال</returns>
+    Task<int> GetActiveDoctorsCountAsync();
 
     #endregion
 }

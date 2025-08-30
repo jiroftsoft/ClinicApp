@@ -427,6 +427,22 @@ namespace ClinicApp.Repositories.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// ذخیره تمام تغییرات در انتظار به پایگاه داده
+        /// </summary>
+        public async Task SaveChangesAsync()
+        {
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ذخیره تغییرات");
+                throw new InvalidOperationException("خطا در ذخیره تغییرات", ex);
+            }
+        }
+
         #endregion
     }
 }

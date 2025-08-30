@@ -23,7 +23,6 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorReportingController(
             IDoctorReportingService doctorReportingService,
@@ -34,7 +33,6 @@ namespace ClinicApp.Areas.Admin.Controllers
             _doctorReportingService = doctorReportingService ?? throw new ArgumentNullException(nameof(doctorReportingService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorReportingController>();
         }
 

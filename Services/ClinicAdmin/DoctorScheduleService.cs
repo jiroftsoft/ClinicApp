@@ -35,20 +35,18 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorScheduleViewModel> _validator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorScheduleService(
             IDoctorScheduleRepository doctorScheduleRepository,
             IDoctorCrudRepository doctorRepository,
             ICurrentUserService currentUserService,
-            IValidator<DoctorScheduleViewModel> validator,
-            IMapper mapper)
+            IValidator<DoctorScheduleViewModel> validator
+            )
         {
             _doctorScheduleRepository = doctorScheduleRepository ?? throw new ArgumentNullException(nameof(doctorScheduleRepository));
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorScheduleService>();
         }
 

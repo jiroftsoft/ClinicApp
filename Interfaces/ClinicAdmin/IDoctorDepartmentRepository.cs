@@ -91,5 +91,10 @@ public interface IDoctorDepartmentRepository
     /// <returns>لیست پزشکان فعال در دپارتمان</returns>
     Task<List<Doctor>> GetActiveDoctorsForDepartmentLookupAsync(int departmentId);
 
+    /// <summary>
+    /// ذخیره تمام تغییرات در انتظار به پایگاه داده
+    /// </summary>
+    Task SaveChangesAsync();
+
     #endregion
 }

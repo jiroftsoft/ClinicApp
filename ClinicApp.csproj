@@ -464,6 +464,7 @@
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDoctorAssignmentHistoryService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorAssignmentRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorAssignmentService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorCrudRepository.cs" />
@@ -496,15 +497,21 @@
     <Compile Include="Migrations\202508282054043_OneMigration.Designer.cs">
       <DependentUpon>202508282054043_OneMigration.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202508291341167_DoctorAssignmentHistory.cs" />
+    <Compile Include="Migrations\202508291341167_DoctorAssignmentHistory.Designer.cs">
+      <DependentUpon>202508291341167_DoctorAssignmentHistory.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
     <Compile Include="Repositories\Class1.cs" />
+    <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorDepartmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorReportingRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorScheduleRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorServiceCategoryRepository.cs" />
+    <Compile Include="Repositories\ClinicAdmin\IDoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\SpecializationRepository.cs" />
     <Compile Include="Repositories\ClinicRepository.cs" />
     <Compile Include="Repositories\DepartmentRepository.cs" />
@@ -514,6 +521,7 @@
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\BackgroundCurrentUserService.cs" />
     <Compile Include="Services\Class1.cs" />
+    <Compile Include="Services\ClinicAdmin\DoctorAssignmentHistoryService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorCrudService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorDepartmentService.cs" />
@@ -531,9 +539,13 @@
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\BulkAssignmentViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentFilterViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentStatsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DataTablesResponse.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentDetailsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentOperationViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexPageViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexViewModel.cs" />
@@ -632,8 +644,12 @@
     <Content Include="Content\bootstrap.min.css" />
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
+    <Content Include="Content\css\admin-layout.css" />
+    <Content Include="Content\css\notifications.css" />
     <Content Include="Content\Images\default-avatar.png" />
     <Content Include="Content\Images\shafa-logo.png" />
+    <Content Include="Content\js\admin-layout.js" />
+    <Content Include="Content\js\jquery-protection.js" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
@@ -3207,6 +3223,7 @@
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_ServiceCategoriesList.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentHistory.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_BulkAssignmentForm.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentFilters.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3452,6 +3469,8 @@
     <Content Include="SERVICE_DELETION_FIX.md" />
     <Content Include="SERVICE_FILTERS_FIX.md" />
     <Content Include="TOAST_UNDEFINED_FIX.md" />
+    <Content Include="Views\Shared\_PersianDatePickerTemplate.cshtml" />
+    <Content Include="Views\Shared\_PersianDatePickerExample.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -3494,6 +3513,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202508282054043_OneMigration.resx">
       <DependentUpon>202508282054043_OneMigration.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202508291341167_DoctorAssignmentHistory.resx">
+      <DependentUpon>202508291341167_DoctorAssignmentHistory.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

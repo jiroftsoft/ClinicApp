@@ -325,6 +325,7 @@ namespace ClinicApp
                 container.RegisterType<IDoctorScheduleRepository, DoctorScheduleRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorReportingRepository, DoctorReportingRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentRepository, DoctorAssignmentRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorAssignmentHistoryRepository, DoctorAssignmentHistoryRepository>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Services
                 container.RegisterType<IDoctorCrudService, DoctorCrudService>(new PerRequestLifetimeManager());
@@ -333,6 +334,7 @@ namespace ClinicApp
                 container.RegisterType<IDoctorScheduleService, DoctorScheduleService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentService, DoctorAssignmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorReportingService, DoctorReportingService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorAssignmentHistoryService, DoctorAssignmentHistoryService>(new PerRequestLifetimeManager());
 
                 // Register Specialization Management Repositories and Services
                 container.RegisterType<ISpecializationRepository, SpecializationRepository>(new PerRequestLifetimeManager());

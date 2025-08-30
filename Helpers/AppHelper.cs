@@ -307,6 +307,12 @@ namespace ClinicApp.Helpers
             public string[] GetUserRoles() =>
                 new string[0];
 
+            public string GetCurrentUserId() =>
+                UserId;
+
+            public string GetCurrentUserName() =>
+                UserName;
+
             public bool IsDevelopmentEnvironment()
             {
                 // در این پیاده‌سازی، اگر HttpContext موجود باشد، محیط تولید فرض می‌شود
@@ -384,6 +390,12 @@ namespace ClinicApp.Helpers
             public string[] GetUserRoles() =>
                 new string[0];
 
+            public string GetCurrentUserId() =>
+                UserId;
+
+            public string GetCurrentUserName() =>
+                UserName;
+
             public bool IsDevelopmentEnvironment()
             {
                 // در این پیاده‌سازی، اگر Principal موجود باشد، محیط تولید فرض می‌شود
@@ -449,6 +461,12 @@ namespace ClinicApp.Helpers
 
             public string[] GetUserRoles() =>
                 new string[] { AppRoles.Admin };
+
+            public string GetCurrentUserId() =>
+                UserId;
+
+            public string GetCurrentUserName() =>
+                UserName;
 
             public bool IsDevelopmentEnvironment()
             {

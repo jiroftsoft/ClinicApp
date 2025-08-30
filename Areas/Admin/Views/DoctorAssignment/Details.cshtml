@@ -1,4 +1,4 @@
-@model dynamic
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentDetailsViewModel
 @{
     ViewBag.Title = "جزئیات انتسابات پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -7,6 +7,7 @@
 @section Styles {
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <style>
+        /* Main Styles */
         .details-card {
             background: white;
             border-radius: 15px;
@@ -19,10 +20,10 @@
             margin-bottom: 25px;
         }
 
-            .info-section h5 {
-                color: #667eea;
-                font-weight: 600;
-            }
+        .info-section h5 {
+            color: #667eea;
+            font-weight: 600;
+        }
 
         .doctor-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -43,10 +44,10 @@
             transition: all 0.3s ease;
         }
 
-            .department-card:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            }
+        .department-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
 
         .service-category-item {
             background: #f8f9fa;
@@ -76,30 +77,175 @@
             margin-bottom: 20px;
         }
 
-            .timeline-item::before {
-                content: '';
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 12px;
-                height: 12px;
-                border-radius: 50%;
-                background: #667eea;
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 12px;
+            width: 2px;
+            height: calc(100% + 8px);
+            background: #e9ecef;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+
+        /* Accessibility Improvements */
+        .btn:focus {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        .stats-item:focus-within {
+            outline: 2px solid #667eea;
+            outline-offset: 2px;
+        }
+
+        /* Loading States */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive Improvements */
+        @@media (max-width: 768px) {
+            .doctor-header {
+                padding: 15px;
             }
 
-            .timeline-item::after {
-                content: '';
-                position: absolute;
-                left: 5px;
-                top: 12px;
-                width: 2px;
-                height: calc(100% + 8px);
-                background: #e9ecef;
+            .stats-item {
+                margin-bottom: 10px;
             }
 
-            .timeline-item:last-child::after {
-                display: none;
+            .stats-number {
+                font-size: 1.5rem;
             }
+
+            .btn-group {
+                flex-direction: column;
+            }
+
+            .btn-group .btn {
+                margin-bottom: 5px;
+            }
+        }
+
+        /* Print Styles */
+        @@media print {
+            /* Hide unnecessary elements */
+            .action-buttons,
+            .btn,
+            .loading-overlay,
+            .swal2-container {
+                display: none !important;
+            }
+
+            /* Improve print layout */
+            .container-fluid {
+                max-width: none;
+                padding: 0;
+            }
+
+            .doctor-header {
+                background: #667eea !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+
+            .stats-item {
+                border: 1px solid #ddd;
+                page-break-inside: avoid;
+            }
+
+            .assignment-item,
+            .service-category-item {
+                page-break-inside: avoid;
+                border: 1px solid #ddd;
+            }
+
+            /* Ensure proper page breaks */
+            .timeline-item {
+                page-break-inside: avoid;
+            }
+
+            /* Add page numbers */
+            @@page {
+                margin: 1cm;
+            }
+
+            /* Header for each page */
+            .doctor-header::after {
+                content: "صفحه " counter(page);
+                position: absolute;
+                bottom: 10px;
+                right: 20px;
+                font-size: 12px;
+                opacity: 0.7;
+            }
+        }
+
+        /* High Contrast Mode Support */
+        @@media (prefers-contrast: high) {
+            .doctor-header {
+                background: #000 !important;
+                color: #fff !important;
+            }
+
+            .stats-item {
+                border: 2px solid #000;
+            }
+
+            .btn {
+                border: 2px solid currentColor;
+            }
+        }
+
+        /* Reduced Motion Support */
+        @@media (prefers-reduced-motion: reduce) {
+            .department-card:hover,
+            .btn:hover {
+                transform: none;
+            }
+
+            .loading-spinner {
+                animation: none;
+            }
+        }
     </style>
 }
 
@@ -120,6 +266,18 @@
                         <i class="fas fa-arrow-right me-2"></i>
                         بازگشت به لیست
                     </a>
+                    <button type="button" class="btn btn-info me-2" onclick="refreshData()" title="بروزرسانی (Ctrl+R)">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        بروزرسانی
+                    </button>
+                    <button type="button" class="btn btn-warning me-2" onclick="printDetails()" title="چاپ (Ctrl+P)">
+                        <i class="fas fa-print me-2"></i>
+                        چاپ
+                    </button>
+                    <button type="button" class="btn btn-secondary me-2" onclick="exportDetails()" title="خروجی (Ctrl+E)">
+                        <i class="fas fa-download me-2"></i>
+                        خروجی
+                    </button>
                     <a href="@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-success">
                         <i class="fas fa-plus me-2"></i>
                         انتساب جدید
@@ -137,29 +295,33 @@
                     <div class="col-md-8">
                         <h3 class="mb-2">
                             <i class="fas fa-user-md me-2"></i>
-                            @Model.DoctorName
+                                                         @Html.DisplayFor(m => m.DoctorName)
                         </h3>
                         <p class="mb-1 opacity-75">
                             <i class="fas fa-id-card me-2"></i>
-                            کد ملی: @Model.DoctorNationalCode
+                                                         کد ملی: @Html.DisplayFor(m => m.DoctorNationalCode)
                         </p>
-                        <p class="mb-0 opacity-75">
-                            <i class="fas fa-calendar me-2"></i>
-                            تاریخ آخرین بروزرسانی: @DateTime.Now.ToString("yyyy/MM/dd")
-                        </p>
+                                            <p class="mb-0 opacity-75">
+                        <i class="fas fa-calendar me-2"></i>
+                        تاریخ آخرین بروزرسانی: <span id="lastUpdateTime">@DateTime.Now.ToString("yyyy/MM/dd")</span>
+                    </p>
+                    <p class="mb-0 opacity-75">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        <span id="lastRefreshTime">آخرین بروزرسانی: -</span>
+                    </p>
                     </div>
                     <div class="col-md-4 text-end">
                         <div class="d-flex justify-content-end">
                             <div class="text-center me-4">
-                                <h4 class="mb-1">@Model.TotalActiveAssignments</h4>
+                                <h4 class="mb-1" id="totalAssignments">@Model.TotalActiveAssignments</h4>
                                 <small class="opacity-75">کل انتسابات</small>
                             </div>
                             <div class="text-center me-4">
-                                <h4 class="mb-1">@Model.ActiveDepartmentCount</h4>
+                                <h4 class="mb-1" id="activeDepartments">@Model.ActiveDepartmentCount</h4>
                                 <small class="opacity-75">دپارتمان‌ها</small>
                             </div>
                             <div class="text-center">
-                                <h4 class="mb-1">@Model.ActiveServiceCategoryCount</h4>
+                                <h4 class="mb-1" id="activeServiceCategories">@Model.ActiveServiceCategoryCount</h4>
                                 <small class="opacity-75">صلاحیت‌ها</small>
                             </div>
                         </div>
@@ -173,19 +335,19 @@
     <div class="row mb-4">
         <div class="col-md-3">
             <div class="stats-item">
-                <div class="stats-number">@Model.TotalActiveAssignments</div>
+                <div class="stats-number" data-stat-type="totalActiveAssignments">@Model.TotalActiveAssignments</div>
                 <div class="text-muted">کل انتسابات فعال</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-item">
-                <div class="stats-number">@Model.ActiveDepartmentCount</div>
+                <div class="stats-number" data-stat-type="activeDepartmentCount">@Model.ActiveDepartmentCount</div>
                 <div class="text-muted">دپارتمان‌های فعال</div>
             </div>
         </div>
         <div class="col-md-3">
             <div class="stats-item">
-                <div class="stats-number">@Model.ActiveServiceCategoryCount</div>
+                <div class="stats-number" data-stat-type="activeServiceCategoryCount">@Model.ActiveServiceCategoryCount</div>
                 <div class="text-muted">صلاحیت‌های فعال</div>
             </div>
         </div>
@@ -201,26 +363,26 @@
     <div class="row">
         <!-- Department Assignments -->
         <div class="col-md-6 mb-4">
-            @Html.Partial("_DoctorAssignmentsList", Model.Departments)
+            @Html.Partial("_PartialViews/_DoctorAssignmentsList", Model.Departments)
         </div>
 
         <!-- Service Categories -->
         <div class="col-md-6 mb-4">
-            @Html.Partial("_ServiceCategoriesList", Model.ServiceCategories)
+            @Html.Partial("_PartialViews/_ServiceCategoriesList", Model.ServiceCategories)
         </div>
     </div>
 
     <!-- Assignment History -->
     <div class="row">
         <div class="col-12">
-            @Html.Partial("_AssignmentHistory", Model.History)
+            @Html.Partial("_PartialViews/_AssignmentHistory", Model.History)
         </div>
     </div>
 
     <!-- Action Buttons -->
     <div class="row mt-4">
         <div class="col-12">
-            <div class="d-flex justify-content-center">
+            <div class="d-flex justify-content-center action-buttons">
                 <a href="@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-success me-3">
                     <i class="fas fa-plus me-2"></i>
                     انتساب جدید
@@ -242,74 +404,302 @@
     </div>
 </div>
 
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner"></div>
+</div>
+
 @section Scripts {
     <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
 
     <script>
-        $(document).ready(function () {
-            // Auto-refresh data every 5 minutes
-            setInterval(function () {
-                refreshData();
-            }, 300000);
+        // Global variables
+        let refreshInterval;
+        let isRefreshing = false;
+        const REFRESH_INTERVAL = 300000; // 5 minutes
+        const DOCTOR_ID = @Model.DoctorId;
+
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                initializePage();
+            });
         });
 
-        function refreshData() {
-            // Show loading indicator
-            Swal.fire({
-                title: 'در حال بروزرسانی...',
-                text: 'اطلاعات در حال بروزرسانی است',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
-                }
-            });
-
-            // Reload page after a short delay
-            setTimeout(function () {
-                location.reload();
-            }, 1000);
+        // Wrapper function to ensure jQuery is available
+        function withJQuery(callback) {
+            if (typeof $ !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(() => withJQuery(callback), 100);
+            }
         }
 
-        // Print functionality
-        function printDetails() {
-            window.print();
+        function initializePage() {
+            withJQuery(function() {
+                // Initialize auto-refresh with better control
+                startAutoRefresh();
+                
+                // Initialize keyboard shortcuts
+                initializeKeyboardShortcuts();
+                
+                // Initialize print functionality
+                initializePrintFunctionality();
+                
+                // Initialize export functionality
+                initializeExportFunctionality();
+                
+                // Show last refresh time
+                updateLastRefreshTime();
+            });
         }
 
-        // Export functionality
-        function exportDetails() {
-            Swal.fire({
-                title: 'در حال آماده‌سازی...',
-                text: 'فایل در حال آماده‌سازی است',
-                allowOutsideClick: false,
-                didOpen: () => {
-                    Swal.showLoading();
+        function startAutoRefresh() {
+            withJQuery(function() {
+                // Clear existing interval
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+                
+                // Start new interval
+                refreshInterval = setInterval(function () {
+                    if (!isRefreshing) {
+                        refreshData();
+                    }
+                }, REFRESH_INTERVAL);
+            });
+        }
+
+        function stopAutoRefresh() {
+            withJQuery(function() {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                    refreshInterval = null;
                 }
             });
+        }
 
-            // Simulate export process
-            setTimeout(function () {
-                Swal.fire({
-                    title: 'آماده شد!',
-                    text: 'فایل با موفقیت آماده شد',
-                    icon: 'success',
-                    confirmButtonText: 'دانلود'
+        async function refreshData() {
+            if (isRefreshing) return;
+            
+            isRefreshing = true;
+            
+            try {
+                withJQuery(function() {
+                    // Show loading indicator
+                    Swal.fire({
+                        title: 'در حال بروزرسانی...',
+                        text: 'اطلاعات در حال بروزرسانی است',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
                 });
-            }, 2000);
+
+                // Use AJAX to refresh data instead of full page reload
+                const response = await fetch(`@Url.Action("GetDoctorDetailsPartial", "DoctorAssignment")/${DOCTOR_ID}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        updatePageData(data.data);
+                        showSuccess('بروزرسانی موفق', 'اطلاعات با موفقیت بروزرسانی شد');
+                    } else {
+                        showError('خطا در بروزرسانی', data.message);
+                    }
+                } else {
+                    throw new Error('خطا در ارتباط با سرور');
+                }
+            } catch (error) {
+                console.error('خطا در بروزرسانی:', error);
+                showError('خطا در بروزرسانی', 'لطفاً دوباره تلاش کنید');
+            } finally {
+                isRefreshing = false;
+                updateLastRefreshTime();
+            }
         }
 
-        // Keyboard shortcuts
-        $(document).keydown(function (e) {
-            // Ctrl+R for refresh
-            if (e.ctrlKey && e.keyCode === 82) {
-                e.preventDefault();
-                refreshData();
-            }
+        function updatePageData(data) {
+            withJQuery(function() {
+                // Update statistics
+                $('.stats-number').each(function() {
+                    const statType = $(this).data('stat-type');
+                    if (data.stats && data.stats[statType] !== undefined) {
+                        $(this).text(data.stats[statType]);
+                    }
+                });
 
-            // Ctrl+P for print
-            if (e.ctrlKey && e.keyCode === 80) {
-                e.preventDefault();
-                printDetails();
+                // Update doctor header info
+                if (data.doctorInfo) {
+                    $('#doctorName').text(data.doctorInfo.name);
+                    $('#doctorNationalCode').text(data.doctorInfo.nationalCode);
+                    $('#lastUpdateTime').text(data.doctorInfo.lastUpdate);
+                }
+
+                // Update assignments count in header
+                if (data.headerStats) {
+                    $('#totalAssignments').text(data.headerStats.totalActiveAssignments);
+                    $('#activeDepartments').text(data.headerStats.activeDepartmentCount);
+                    $('#activeServiceCategories').text(data.headerStats.activeServiceCategoryCount);
+                }
+            });
+        }
+
+        function updateLastRefreshTime() {
+            withJQuery(function() {
+                const now = new Date();
+                const timeString = now.toLocaleTimeString('fa-IR');
+                $('#lastRefreshTime').text(`آخرین بروزرسانی: ${timeString}`);
+            });
+        }
+
+        function initializeKeyboardShortcuts() {
+            withJQuery(function() {
+                $(document).keydown(function (e) {
+                    // Ctrl+R for refresh
+                    if (e.ctrlKey && e.keyCode === 82) {
+                        e.preventDefault();
+                        refreshData();
+                    }
+
+                    // Ctrl+P for print
+                    if (e.ctrlKey && e.keyCode === 80) {
+                        e.preventDefault();
+                        printDetails();
+                    }
+
+                    // Ctrl+E for export
+                    if (e.ctrlKey && e.keyCode === 69) {
+                        e.preventDefault();
+                        exportDetails();
+                    }
+
+                    // Escape to stop auto-refresh
+                    if (e.keyCode === 27) {
+                        stopAutoRefresh();
+                        showInfo('بروزرسانی خودکار متوقف شد', 'برای فعال‌سازی مجدد F5 را فشار دهید');
+                    }
+                });
+            });
+        }
+
+        function initializePrintFunctionality() {
+            withJQuery(function() {
+                // Add print button event listener
+                $(document).on('click', '#printButton', function() {
+                    printDetails();
+                });
+            });
+        }
+
+        function printDetails() {
+            withJQuery(function() {
+                // Hide action buttons before printing
+                $('.action-buttons').addClass('d-none');
+                
+                // Print the page
+                window.print();
+                
+                // Show action buttons after printing
+                setTimeout(() => {
+                    $('.action-buttons').removeClass('d-none');
+                }, 1000);
+            });
+        }
+
+        function initializeExportFunctionality() {
+            withJQuery(function() {
+                // Add export button event listener
+                $(document).on('click', '#exportButton', function() {
+                    exportDetails();
+                });
+            });
+        }
+
+        async function exportDetails() {
+            try {
+                withJQuery(function() {
+                    Swal.fire({
+                        title: 'در حال آماده‌سازی...',
+                        text: 'فایل در حال آماده‌سازی است',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+                });
+
+                const response = await fetch(`@Url.Action("ExportDoctorDetails", "DoctorAssignment")/${DOCTOR_ID}`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `doctor-assignments-${DOCTOR_ID}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+
+                    showSuccess('آماده شد!', 'فایل با موفقیت دانلود شد');
+                } else {
+                    throw new Error('خطا در آماده‌سازی فایل');
+                }
+            } catch (error) {
+                console.error('خطا در export:', error);
+                showError('خطا در export', 'لطفاً دوباره تلاش کنید');
             }
+        }
+
+        // Utility functions
+        function showSuccess(title, message) {
+            withJQuery(function() {
+                Swal.fire({
+                    title: title,
+                    text: message,
+                    icon: 'success',
+                    confirmButtonText: 'باشه'
+                });
+            });
+        }
+
+        function showError(title, message) {
+            withJQuery(function() {
+                Swal.fire({
+                    title: title,
+                    text: message,
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+            });
+        }
+
+        function showInfo(title, message) {
+            withJQuery(function() {
+                Swal.fire({
+                    title: title,
+                    text: message,
+                    icon: 'info',
+                    confirmButtonText: 'باشه'
+                });
+            });
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', function() {
+            stopAutoRefresh();
         });
     </script>
 }

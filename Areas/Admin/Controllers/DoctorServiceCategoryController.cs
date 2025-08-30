@@ -25,20 +25,18 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorServiceCategoryViewModel> _serviceCategoryValidator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorServiceCategoryController(
             IDoctorServiceCategoryService doctorServiceCategoryService,
             IDoctorCrudService doctorCrudService,
             ICurrentUserService currentUserService,
-            IValidator<DoctorServiceCategoryViewModel> serviceCategoryValidator,
-            IMapper mapper)
+            IValidator<DoctorServiceCategoryViewModel> serviceCategoryValidator
+            )
         {
             _doctorServiceCategoryService = doctorServiceCategoryService ?? throw new ArgumentNullException(nameof(doctorServiceCategoryService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _serviceCategoryValidator = serviceCategoryValidator ?? throw new ArgumentNullException(nameof(serviceCategoryValidator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorServiceCategoryController>();
         }
 
@@ -200,7 +198,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 // به‌روزرسانی صلاحیت
-                var result = await _doctorServiceCategoryService.UpdateDoctorServiceCategoryPermissionAsync(model);
+                var result = await _doctorServiceCategoryService.UpdateDoctorServiceCategoryAsync(model);
 
                 if (!result.Success)
                 {
@@ -457,6 +455,33 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در دریافت لیست پزشکان با صلاحیت دسته‌بندی خدمات {ServiceCategoryId}", serviceCategoryId);
                 return Json(new { success = false, message = "خطا در دریافت لیست پزشکان با صلاحیت دسته‌بندی خدمات" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های خدماتی برای استفاده در لیست‌های کشویی
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetServiceCategories()
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX دریافت لیست دسته‌بندی‌های خدماتی");
+
+                var result = await _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var categories = result.Data.Select(c => new { Id = c.Id, Name = c.Name }).ToList();
+
+                return Json(new { success = true, data = categories }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست دسته‌بندی‌های خدماتی");
+                return Json(new { success = false, message = "خطا در دریافت دسته‌بندی‌های خدماتی" }, JsonRequestBehavior.AllowGet);
             }
         }
 

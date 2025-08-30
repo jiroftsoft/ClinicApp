@@ -1,7 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels.DoctorManagementVM;
+using ClinicApp.Models.Entities;
 
 namespace ClinicApp.Interfaces.ClinicAdmin;
 
@@ -62,6 +64,58 @@ public interface IDoctorAssignmentService
     /// <param name="doctorId">شناسه پزشک.</param>
     /// <returns>نتیجه عملیات حذف.</returns>
     Task<ServiceResult> RemoveAllDoctorAssignmentsAsync(int doctorId);
+
+    #endregion
+
+    #region Statistics and Reporting (آمار و گزارش‌گیری)
+
+    /// <summary>
+    /// دریافت آمار کلی انتسابات پزشکان.
+    /// </summary>
+    /// <returns>نتیجه حاوی آمار انتسابات.</returns>
+    Task<ServiceResult<AssignmentStatsViewModel>> GetAssignmentStatisticsAsync();
+
+    /// <summary>
+    /// دریافت اطلاعات وابستگی‌های پزشک برای بررسی امکان حذف.
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک.</param>
+    /// <returns>نتیجه حاوی اطلاعات وابستگی‌های پزشک.</returns>
+    Task<ServiceResult<DoctorDependencyInfo>> GetDoctorDependenciesAsync(int doctorId);
+
+    /// <summary>
+    /// دریافت تعداد انتسابات فعال یک پزشک.
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک.</param>
+    /// <returns>نتیجه حاوی تعداد انتسابات فعال.</returns>
+    Task<ServiceResult<int>> GetActiveAssignmentsCountAsync(int doctorId);
+
+    /// <summary>
+    /// دریافت لیست انتسابات برای DataTables با pagination و filtering.
+    /// </summary>
+    /// <param name="request">درخواست DataTables شامل pagination و filtering.</param>
+    /// <returns>نتیجه حاوی لیست انتسابات با pagination.</returns>
+    Task<ServiceResult<DataTablesResponse>> GetAssignmentsForDataTablesAsync(DataTablesRequest request);
+
+    #endregion
+
+    #region Assignment History (تاریخچه انتسابات)
+
+    /// <summary>
+    /// دریافت تاریخچه انتسابات یک پزشک.
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک.</param>
+    /// <param name="page">شماره صفحه.</param>
+    /// <param name="pageSize">تعداد رکورد در هر صفحه.</param>
+    /// <returns>نتیجه حاوی تاریخچه انتسابات پزشک.</returns>
+    Task<ServiceResult<List<DoctorAssignmentHistory>>> GetDoctorAssignmentHistoryAsync(int doctorId, int page = 1, int pageSize = 20);
+
+    /// <summary>
+    /// دریافت آمار تاریخچه انتسابات.
+    /// </summary>
+    /// <param name="startDate">تاریخ شروع (اختیاری).</param>
+    /// <param name="endDate">تاریخ پایان (اختیاری).</param>
+    /// <returns>نتیجه حاوی آمار تاریخچه انتسابات.</returns>
+    Task<ServiceResult<DashboardHistoryStats>> GetAssignmentHistoryStatsAsync(DateTime? startDate = null, DateTime? endDate = null);
 
     #endregion
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -36,22 +37,19 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorDepartmentViewModel> _validator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorDepartmentService(
             IDoctorDepartmentRepository doctorDepartmentRepository,
             IDoctorCrudRepository doctorRepository,
             IDepartmentRepository departmentRepository,
             ICurrentUserService currentUserService,
-            IValidator<DoctorDepartmentViewModel> validator,
-            IMapper mapper)
+            IValidator<DoctorDepartmentViewModel> validator)
         {
             _doctorDepartmentRepository = doctorDepartmentRepository ?? throw new ArgumentNullException(nameof(doctorDepartmentRepository));
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
             _departmentRepository = departmentRepository ?? throw new ArgumentNullException(nameof(departmentRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorDepartmentService>();
         }
 
@@ -256,44 +254,77 @@ namespace ClinicApp.Services.ClinicAdmin
         {
             try
             {
-                _logger.Information("درخواست به‌روزرسانی انتصاب پزشک {DoctorId} در دپارتمان {DepartmentId}", model.DoctorId, model.DepartmentId);
+                _logger.Information("درخواست به‌روزرسانی انتصاب پزشک {DoctorId} به دپارتمان {DepartmentId}", 
+                    model.DoctorId, model.DepartmentId);
 
-                // اعتبارسنجی مدل
-                var validationResult = await _validator.ValidateAsync(model);
-                if (!validationResult.IsValid)
+                // اعتبارسنجی پارامترها
+                if (model.DoctorId <= 0 || model.DepartmentId <= 0)
                 {
-                    var errors = validationResult.Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage)).ToList();
-                    _logger.Warning("اعتبارسنجی مدل به‌روزرسانی انتصاب پزشک ناموفق: {@Errors}", errors);
-                    return ServiceResult.FailedWithValidationErrors("اطلاعات وارد شده صحیح نیست", errors);
+                    return ServiceResult.Failed("شناسه پزشک یا دپارتمان نامعتبر است.");
+                }
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(model.DoctorId);
+                if (doctor == null)
+                {
+                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
                 }
 
                 // بررسی وجود انتصاب
                 var existingAssignment = await _doctorDepartmentRepository.GetDoctorDepartmentAsync(model.DoctorId, model.DepartmentId);
                 if (existingAssignment == null)
                 {
-                    _logger.Warning("انتساب پزشک {DoctorId} به دپارتمان {DepartmentId} یافت نشد", model.DoctorId, model.DepartmentId);
-                    return ServiceResult.Failed("انتساب مورد نظر یافت نشد.");
+                    return ServiceResult.Failed("انتصاب مورد نظر یافت نشد.");
                 }
 
-                // به‌روزرسانی فیلدها
+                // به‌روزرسانی اطلاعات
                 existingAssignment.Role = model.Role;
                 existingAssignment.IsActive = model.IsActive;
-                existingAssignment.StartDate = model.StartDate;
-                existingAssignment.EndDate = model.EndDate;
-                existingAssignment.UpdatedAt = DateTime.Now;
+                existingAssignment.UpdatedAt = DateTime.UtcNow;
                 existingAssignment.UpdatedByUserId = _currentUserService.UserId;
 
-                // ذخیره تغییرات
                 await _doctorDepartmentRepository.UpdateDoctorDepartmentAsync(existingAssignment);
+                await _doctorDepartmentRepository.SaveChangesAsync();
 
-                _logger.Information("انتساب پزشک {DoctorId} در دپارتمان {DepartmentId} با موفقیت به‌روزرسانی شد", model.DoctorId, model.DepartmentId);
+                _logger.Information("انتصاب پزشک {DoctorId} به دپارتمان {DepartmentId} با موفقیت به‌روزرسانی شد", 
+                    model.DoctorId, model.DepartmentId);
 
-                return ServiceResult.Successful("اطلاعات انتساب پزشک با موفقیت به‌روزرسانی شد.");
+                return ServiceResult.Successful("انتصاب پزشک با موفقیت به‌روزرسانی شد.");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در به‌روزرسانی انتصاب پزشک {DoctorId} در دپارتمان {DepartmentId}", model.DoctorId, model.DepartmentId);
+                _logger.Error(ex, "خطا در به‌روزرسانی انتصاب پزشک {DoctorId} به دپارتمان {DepartmentId}", 
+                    model.DoctorId, model.DepartmentId);
                 return ServiceResult.Failed("خطا در به‌روزرسانی انتصاب پزشک");
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست تمام دپارتمان‌های فعال برای استفاده در لیست‌های کشویی
+        /// </summary>
+        public async Task<ServiceResult<List<LookupItemViewModel>>> GetAllDepartmentsAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت لیست تمام دپارتمان‌های فعال");
+
+                var departments = await _departmentRepository.GetAllActiveDepartmentsAsync();
+
+                var lookupItems = departments.Select(d => new LookupItemViewModel
+                {
+                    Id = d.DepartmentId,
+                    Name = d.Name,
+                    Description = d.Description
+                }).ToList();
+
+                _logger.Information("لیست تمام دپارتمان‌های فعال با موفقیت دریافت شد. تعداد: {Count}", lookupItems.Count);
+
+                return ServiceResult<List<LookupItemViewModel>>.Successful(lookupItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست تمام دپارتمان‌های فعال");
+                return ServiceResult<List<LookupItemViewModel>>.Failed("خطا در دریافت لیست دپارتمان‌ها");
             }
         }
 

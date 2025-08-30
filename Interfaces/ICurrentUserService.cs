@@ -191,5 +191,17 @@ public interface ICurrentUserService
     /// <returns>آرایه نقش‌های کاربر</returns>
     string[] GetUserRoles();
 
+    /// <summary>
+    /// دریافت شناسه کاربر جاری
+    /// </summary>
+    /// <returns>شناسه کاربر جاری</returns>
+    string GetCurrentUserId();
+
+    /// <summary>
+    /// دریافت نام کاربر جاری
+    /// </summary>
+    /// <returns>نام کاربر جاری</returns>
+    string GetCurrentUserName();
+
     #endregion
 }

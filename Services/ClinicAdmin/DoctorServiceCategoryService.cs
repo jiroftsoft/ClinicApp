@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
@@ -35,22 +37,20 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorServiceCategoryViewModel> _validator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorServiceCategoryService(
             IDoctorServiceCategoryRepository doctorServiceCategoryRepository,
             IDoctorCrudRepository doctorRepository,
             IServiceCategoryRepository serviceCategoryRepository,
             ICurrentUserService currentUserService,
-            IValidator<DoctorServiceCategoryViewModel> validator,
-            IMapper mapper)
+            IValidator<DoctorServiceCategoryViewModel> validator
+            )
         {
             _doctorServiceCategoryRepository = doctorServiceCategoryRepository ?? throw new ArgumentNullException(nameof(doctorServiceCategoryRepository));
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
             _serviceCategoryRepository = serviceCategoryRepository ?? throw new ArgumentNullException(nameof(serviceCategoryRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorServiceCategoryService>();
         }
 
@@ -218,52 +218,84 @@ namespace ClinicApp.Services.ClinicAdmin
         }
 
         /// <summary>
-        /// به‌روزرسانی اطلاعات صلاحیت پزشک در ارائه یک دسته‌بندی خدمات
+        /// به‌روزرسانی اطلاعات صلاحیت ارائه دسته‌بندی خدمات توسط پزشک
         /// </summary>
-        public async Task<ServiceResult> UpdateDoctorServiceCategoryPermissionAsync(DoctorServiceCategoryViewModel model)
+        public async Task<ServiceResult> UpdateDoctorServiceCategoryAsync(DoctorServiceCategoryViewModel model)
         {
             try
             {
-                _logger.Information("درخواست به‌روزرسانی صلاحیت پزشک {DoctorId} در دسته‌بندی خدمات {ServiceCategoryId}", model.DoctorId, model.ServiceCategoryId);
+                _logger.Information("درخواست به‌روزرسانی صلاحیت پزشک {DoctorId} برای دسته‌بندی {ServiceCategoryId}", 
+                    model.DoctorId, model.ServiceCategoryId);
 
-                // اعتبارسنجی مدل
-                var validationResult = await _validator.ValidateAsync(model);
-                if (!validationResult.IsValid)
+                // اعتبارسنجی پارامترها
+                if (model.DoctorId <= 0 || model.ServiceCategoryId <= 0)
                 {
-                    var errors = validationResult.Errors.Select(e => new ValidationError(e.PropertyName, e.ErrorMessage)).ToList();
-                    _logger.Warning("اعتبارسنجی مدل به‌روزرسانی صلاحیت دسته‌بندی خدمات ناموفق: {@Errors}", errors);
-                    return ServiceResult.FailedWithValidationErrors("اطلاعات وارد شده صحیح نیست", errors);
+                    return ServiceResult.Failed("شناسه پزشک یا دسته‌بندی خدمات نامعتبر است.");
+                }
+
+                // بررسی وجود پزشک
+                var doctor = await _doctorRepository.GetByIdAsync(model.DoctorId);
+                if (doctor == null)
+                {
+                    return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
                 }
 
                 // بررسی وجود صلاحیت
                 var existingPermission = await _doctorServiceCategoryRepository.GetDoctorServiceCategoryAsync(model.DoctorId, model.ServiceCategoryId);
                 if (existingPermission == null)
                 {
-                    _logger.Warning("صلاحیت پزشک {DoctorId} برای دسته‌بندی خدمات {ServiceCategoryId} یافت نشد", model.DoctorId, model.ServiceCategoryId);
                     return ServiceResult.Failed("صلاحیت مورد نظر یافت نشد.");
                 }
 
-                // به‌روزرسانی فیلدها
+                // به‌روزرسانی اطلاعات
                 existingPermission.AuthorizationLevel = model.AuthorizationLevel;
-                existingPermission.IsActive = model.IsActive;
-                existingPermission.GrantedDate = model.GrantedDate;
-                existingPermission.ExpiryDate = model.ExpiryDate;
                 existingPermission.CertificateNumber = model.CertificateNumber;
-                existingPermission.Notes = model.Notes;
-                existingPermission.UpdatedAt = DateTime.Now;
+                existingPermission.IsActive = model.IsActive;
+                existingPermission.UpdatedAt = DateTime.UtcNow;
                 existingPermission.UpdatedByUserId = _currentUserService.UserId;
 
-                // ذخیره تغییرات
                 await _doctorServiceCategoryRepository.UpdateDoctorServiceCategoryAsync(existingPermission);
+                await _doctorServiceCategoryRepository.SaveChangesAsync();
 
-                _logger.Information("صلاحیت پزشک {DoctorId} در دسته‌بندی خدمات {ServiceCategoryId} با موفقیت به‌روزرسانی شد", model.DoctorId, model.ServiceCategoryId);
+                _logger.Information("صلاحیت پزشک {DoctorId} برای دسته‌بندی {ServiceCategoryId} با موفقیت به‌روزرسانی شد", 
+                    model.DoctorId, model.ServiceCategoryId);
 
-                return ServiceResult.Successful("اطلاعات صلاحیت دسته‌بندی خدمات با موفقیت به‌روزرسانی شد.");
+                return ServiceResult.Successful("صلاحیت پزشک با موفقیت به‌روزرسانی شد.");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در به‌روزرسانی صلاحیت پزشک {DoctorId} در دسته‌بندی خدمات {ServiceCategoryId}", model.DoctorId, model.ServiceCategoryId);
-                return ServiceResult.Failed("خطا در به‌روزرسانی صلاحیت دسته‌بندی خدمات");
+                _logger.Error(ex, "خطا در به‌روزرسانی صلاحیت پزشک {DoctorId} برای دسته‌بندی {ServiceCategoryId}", 
+                    model.DoctorId, model.ServiceCategoryId);
+                return ServiceResult.Failed("خطا در به‌روزرسانی صلاحیت پزشک");
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست تمام دسته‌بندی‌های خدمات فعال برای استفاده در لیست‌های کشویی
+        /// </summary>
+        public async Task<ServiceResult<List<LookupItemViewModel>>> GetAllServiceCategoriesAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت لیست تمام دسته‌بندی‌های خدمات فعال");
+
+                var serviceCategories = await _serviceCategoryRepository.GetAllActiveServiceCategoriesAsync();
+
+                var lookupItems = serviceCategories.Select(sc => new LookupItemViewModel
+                {
+                    Id = sc.ServiceCategoryId,
+                    Name = sc.Title,
+                    Description = $"{sc.Department.Name} - {sc.Description}"
+                }).ToList();
+
+                _logger.Information("لیست تمام دسته‌بندی‌های خدمات فعال با موفقیت دریافت شد. تعداد: {Count}", lookupItems.Count);
+
+                return ServiceResult<List<LookupItemViewModel>>.Successful(lookupItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست تمام دسته‌بندی‌های خدمات فعال");
+                return ServiceResult<List<LookupItemViewModel>>.Failed("خطا در دریافت لیست دسته‌بندی‌های خدمات");
             }
         }
 

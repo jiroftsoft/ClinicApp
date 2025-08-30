@@ -7,11 +7,12 @@ namespace ClinicApp
     {
         public static void RegisterBundles(BundleCollection bundles)
         {
-            bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
-                        "~/Scripts/jquery-{version}.js"));
+                    bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
+            "~/Scripts/jquery-{version}.js",
+            "~/Content/js/jquery-protection.js"));
 
-            bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
-                        "~/Scripts/jquery.validate*"));
+        bundles.Add(new ScriptBundle("~/bundles/jqueryval").Include(
+            "~/Scripts/jquery.validate*"));
 
             // Use the development version of Modernizr to develop with and learn from. Then, when you're
             // ready for production, use the build tool at https://modernizr.com to pick only the tests you need.
@@ -47,16 +48,21 @@ namespace ClinicApp
                 "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
             ));
 
-            // Use CDN Bootstrap in layout; avoid duplicate local Bootstrap CSS here
+            // Admin Layout CSS Bundle
+            bundles.Add(new StyleBundle("~/Content/admin").Include(
+                "~/Content/css/admin-layout.css",
+                "~/Content/css/notifications.css"
+            ));
+
+            // Main CSS Bundle
             bundles.Add(new StyleBundle("~/Content/css").Include(
-                       "~/Content/bootstrap.css",
-                      "~/Content/bootstrap-rtl.css",
-                      "~/Content/Site.css",
-                      "~/Content/aos.css",
-                      "~/Content/toastr.min.css",
-                      "~/Content/persian-datepicker.min.css",
-                      "~/Content/plugins/SweetAlert2/sweetalert2.min.css"
-                      ));
+                "~/Content/bootstrap.css",
+                "~/Content/bootstrap-rtl.css",
+                "~/Content/Site.css",
+                "~/Content/aos.css",
+                "~/Content/toastr.min.css",
+                "~/Content/persian-datepicker.min.css"
+            ));
             // Add a new bundle for Toastr styles
             bundles.Add(new StyleBundle("~/Content/toastr").Include(
                 "~/Content/toastr.min.css"));

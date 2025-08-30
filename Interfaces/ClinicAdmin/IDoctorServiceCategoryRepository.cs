@@ -107,5 +107,17 @@ public interface IDoctorServiceCategoryRepository
     /// <returns>لیست پزشکان مجاز در سرفصل خدماتی</returns>
     Task<List<Doctor>> GetAuthorizedDoctorsForServiceCategoryLookupAsync(int serviceCategoryId);
 
+    /// <summary>
+    /// دریافت لیست پزشکان فعال در یک دسته‌بندی خدماتی برای استفاده در لیست‌های کشویی
+    /// </summary>
+    /// <param name="serviceCategoryId">شناسه دسته‌بندی خدماتی</param>
+    /// <returns>لیست پزشکان فعال در دسته‌بندی خدماتی</returns>
+    Task<List<Doctor>> GetActiveDoctorsForServiceCategoryLookupAsync(int serviceCategoryId);
+
+    /// <summary>
+    /// ذخیره تمام تغییرات در انتظار به پایگاه داده
+    /// </summary>
+    Task SaveChangesAsync();
+
     #endregion
 }

@@ -37,7 +37,6 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorCreateEditViewModel> _createEditValidator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         // Production Configuration
         private const int MaxFileSizeInMB = 2;
@@ -56,7 +55,6 @@ namespace ClinicApp.Areas.Admin.Controllers
             _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _createEditValidator = createEditValidator ?? throw new ArgumentNullException(nameof(createEditValidator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorController>();
         }
 
@@ -405,6 +403,44 @@ namespace ClinicApp.Areas.Admin.Controllers
         #endregion
 
         #region AJAX Operations
+
+        /// <summary>
+        /// دریافت لیست پزشکان برای استفاده در لیست‌های کشویی
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDoctors()
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX دریافت لیست پزشکان");
+
+                var filter = new DoctorSearchViewModel
+                {
+                    PageNumber = 1,
+                    PageSize = 1000, // دریافت همه پزشکان فعال
+                    IsActive = true
+                };
+
+                var result = await _doctorCrudService.GetDoctorsAsync(filter);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var doctors = result.Data.Items.Select(d => new { 
+                    Id = d.DoctorId, 
+                    FullName = $"{d.FirstName} {d.LastName}",
+                    NationalCode = d.NationalCode
+                }).ToList();
+
+                return Json(new { success = true, data = doctors }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست پزشکان");
+                return Json(new { success = false, message = "خطا در دریافت پزشکان" }, JsonRequestBehavior.AllowGet);
+            }
+        }
 
         /// <summary>
         /// تغییر وضعیت فعال/غیرفعال پزشک

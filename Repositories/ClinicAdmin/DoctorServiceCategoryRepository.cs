@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using Serilog;
 
 namespace ClinicApp.Repositories.ClinicAdmin
 {
@@ -25,10 +26,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
     public class DoctorServiceCategoryRepository : IDoctorServiceCategoryRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ILogger _logger;
 
-        public DoctorServiceCategoryRepository(ApplicationDbContext context)
+        public DoctorServiceCategoryRepository(ApplicationDbContext context, ILogger logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         #region Doctor-ServiceCategory Management (مدیریت انتصاب پزشک به سرفصل‌های خدماتی)
@@ -318,26 +321,82 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         /// <summary>
-        /// دریافت لیست پزشکان مجاز در یک سرفصل خدماتی برای استفاده در لیست‌های کشویی
+        /// دریافت لیست پزشکان مجاز در سرفصل خدماتی برای استفاده در لیست‌های کشویی
         /// </summary>
         public async Task<List<Doctor>> GetAuthorizedDoctorsForServiceCategoryLookupAsync(int serviceCategoryId)
         {
             try
             {
-                return await _context.DoctorServiceCategories
-                    .Where(dsc => dsc.ServiceCategoryId == serviceCategoryId && dsc.IsActive)
+                _logger.Information("دریافت لیست پزشکان مجاز سرفصل خدماتی {ServiceCategoryId} برای lookup", serviceCategoryId);
+
+                var doctors = await _context.DoctorServiceCategories
                     .Include(dsc => dsc.Doctor)
+                    .Where(dsc => dsc.ServiceCategoryId == serviceCategoryId && 
+                                 dsc.IsActive && 
+                                 !dsc.IsDeleted &&
+                                 dsc.Doctor.IsActive && 
+                                 !dsc.Doctor.IsDeleted)
                     .Select(dsc => dsc.Doctor)
-                    .Where(d => !d.IsDeleted)
-                    .OrderBy(d => d.FirstName)
-                    .ThenBy(d => d.LastName)
-                    .AsNoTracking()
+                    .OrderBy(d => d.LastName)
+                    .ThenBy(d => d.FirstName)
                     .ToListAsync();
+
+                _logger.Information("یافتن {Count} پزشک مجاز در سرفصل خدماتی {ServiceCategoryId}", doctors.Count, serviceCategoryId);
+
+                return doctors;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست پزشکان مجاز سرفصل خدماتی {ServiceCategoryId}", serviceCategoryId);
+                throw new InvalidOperationException($"خطا در دریافت لیست پزشکان مجاز سرفصل خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست پزشکان فعال در یک دسته‌بندی خدماتی برای استفاده در لیست‌های کشویی
+        /// </summary>
+        public async Task<List<Doctor>> GetActiveDoctorsForServiceCategoryLookupAsync(int serviceCategoryId)
+        {
+            try
+            {
+                _logger.Information("دریافت لیست پزشکان فعال دسته‌بندی خدماتی {ServiceCategoryId} برای lookup", serviceCategoryId);
+
+                var doctors = await _context.DoctorServiceCategories
+                    .Include(dsc => dsc.Doctor)
+                    .Where(dsc => dsc.ServiceCategoryId == serviceCategoryId && 
+                                 dsc.IsActive && 
+                                 !dsc.IsDeleted &&
+                                 dsc.Doctor.IsActive && 
+                                 !dsc.Doctor.IsDeleted)
+                    .Select(dsc => dsc.Doctor)
+                    .OrderBy(d => d.LastName)
+                    .ThenBy(d => d.FirstName)
+                    .ToListAsync();
+
+                _logger.Information("یافتن {Count} پزشک فعال در دسته‌بندی خدماتی {ServiceCategoryId}", doctors.Count, serviceCategoryId);
+
+                return doctors;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست پزشکان فعال دسته‌بندی خدماتی {ServiceCategoryId}", serviceCategoryId);
+                throw new InvalidOperationException($"خطا در دریافت لیست پزشکان فعال دسته‌بندی خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// ذخیره تمام تغییرات در انتظار به پایگاه داده
+        /// </summary>
+        public async Task SaveChangesAsync()
+        {
+            try
+            {
+                await _context.SaveChangesAsync();
             }
             catch (Exception ex)
             {
                 // لاگ خطا برای سیستم‌های پزشکی
-                throw new InvalidOperationException($"خطا در دریافت لیست پزشکان مجاز برای سرفصل خدماتی {serviceCategoryId}", ex);
+                throw new InvalidOperationException("خطا در ذخیره تغییرات", ex);
             }
         }
 

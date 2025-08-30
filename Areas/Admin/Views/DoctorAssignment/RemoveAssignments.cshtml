@@ -364,9 +364,12 @@
     <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
     
     <script>
-        $(document).ready(function () {
-            initializeFormValidation();
-            setupEventHandlers();
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                initializeFormValidation();
+                setupEventHandlers();
+            });
         });
 
         function initializeFormValidation() {

@@ -315,17 +315,20 @@
         let trendChart;
         let currentFilters = {};
 
-        $(document).ready(function () {
-            initializeDataTable();
-            initializeSelect2();
-            initializeCharts();
-            loadInitialData();
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                initializeDataTable();
+                initializeSelect2();
+                initializeCharts();
+                loadInitialData();
+            });
         });
 
         function initializeDataTable() {
             reportTable = $('#reportTable').DataTable({
                 language: {
-                    url: '/Scripts/DataTables/persian.json'
+                  url: '@Url.Content("~/Content/plugins/DataTables/js/fa.json")'
                 },
                 responsive: true,
                 processing: true,

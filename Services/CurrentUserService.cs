@@ -887,6 +887,22 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// دریافت شناسه کاربر جاری
+        /// </summary>
+        public string GetCurrentUserId()
+        {
+            return UserId;
+        }
+
+        /// <summary>
+        /// دریافت نام کاربر جاری
+        /// </summary>
+        public string GetCurrentUserName()
+        {
+            return UserName;
+        }
+
+        /// <summary>
         /// بررسی معتبر بودن کاربر فعلی برای عملیات‌های حساس
         /// </summary>
         /// <returns>true اگر کاربر معتبر و احراز هویت شده باشد</returns>

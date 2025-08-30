@@ -124,7 +124,7 @@
     <!-- Assignment Form -->
     <div class="row">
         <div class="col-12">
-            @Html.Partial("_AssignmentForm", Model)
+            @Html.Partial("_PartialViews/_AssignmentForm", Model)
         </div>
     </div>
 </div>
@@ -160,9 +160,12 @@
     <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
     
     <script>
-        $(document).ready(function () {
-            initializeSelect2();
-            initializeFormValidation();
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                initializeSelect2();
+                initializeFormValidation();
+            });
         });
 
         function initializeSelect2() {

@@ -91,6 +91,7 @@ namespace ClinicApp.Models
         public DbSet<DoctorTimeSlot> DoctorTimeSlots { get; set; }
         public DbSet<Specialization> Specializations { get; set; }
         public DbSet<DoctorSpecialization> DoctorSpecializations { get; set; }
+        public DbSet<DoctorAssignmentHistory> DoctorAssignmentHistories { get; set; }
 
         #endregion
 

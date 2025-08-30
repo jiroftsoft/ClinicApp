@@ -42,7 +42,7 @@
                 <div class="mb-3">
                     @Html.LabelFor(m => m.DepartmentId, "دپارتمان", new { @class = "form-label fw-bold" })
                     @Html.DropDownListFor(m => m.DepartmentId, 
-                        new SelectList(ViewBag.Departments, "Id", "Name"), 
+                        new SelectList(ViewBag.Departments ?? new List<object>(), "Value", "Text"), 
                         "انتخاب دپارتمان...", 
                         new { @class = "form-select", required = "required" })
                     @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "text-danger" })
@@ -73,7 +73,7 @@
                 <div class="mb-3">
                     @Html.LabelFor(m => m.ServiceCategoryIds, "صلاحیت‌ها", new { @class = "form-label fw-bold" })
                     @Html.ListBoxFor(m => m.ServiceCategoryIds, 
-                        new MultiSelectList(ViewBag.ServiceCategories, "Id", "Name"), 
+                        new MultiSelectList(ViewBag.ServiceCategories ?? new List<object>(), "Value", "Text"), 
                         new { @class = "form-select", multiple = "multiple", id = "serviceCategories" })
                     @Html.ValidationMessageFor(m => m.ServiceCategoryIds, "", new { @class = "text-danger" })
                     <div class="form-text">
@@ -162,10 +162,13 @@
 </style>
 
 <script>
-    $(document).ready(function () {
-        initializeSelect2();
-        initializeFormValidation();
-        setupEventHandlers();
+    // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+    window.ensureJQuery(function() {
+        $(document).ready(function () {
+            initializeSelect2();
+            initializeFormValidation();
+            setupEventHandlers();
+        });
     });
 
     function initializeSelect2() {
@@ -235,11 +238,23 @@
     }
 
     function loadServiceCategories(departmentId) {
+        if (!departmentId) {
+            updateServiceCategories([]);
+            return;
+        }
+
         $.get('@Url.Action("GetServiceCategoriesByDepartment", "DoctorAssignment")', { departmentId: departmentId })
             .done(function (data) {
                 if (data.success) {
                     updateServiceCategories(data.data);
+                } else {
+                    console.error('خطا در بارگذاری دسته‌بندی‌های خدماتی:', data.message);
+                    updateServiceCategories([]);
                 }
+            })
+            .fail(function (xhr, status, error) {
+                console.error('خطا در ارتباط با سرور برای دسته‌بندی‌های خدماتی:', error);
+                updateServiceCategories([]);
             });
     }
 
@@ -247,9 +262,13 @@
         const select = $('#serviceCategories');
         select.empty();
         
-        categories.forEach(function (category) {
-            select.append(new Option(category.Name, category.Id, false, false));
-        });
+        if (categories && categories.length > 0) {
+            categories.forEach(function (category) {
+                select.append(new Option(category.Name, category.Id, false, false));
+            });
+        } else {
+            select.append(new Option('هیچ دسته‌بندی یافت نشد', '', true, true));
+        }
         
         select.trigger('change');
     }

@@ -26,18 +26,16 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<SpecializationCreateEditViewModel> _createEditValidator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public SpecializationController(
             ISpecializationService specializationService,
             ICurrentUserService currentUserService,
-            IValidator<SpecializationCreateEditViewModel> createEditValidator,
-            IMapper mapper)
+            IValidator<SpecializationCreateEditViewModel> createEditValidator
+            )
         {
             _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _createEditValidator = createEditValidator ?? throw new ArgumentNullException(nameof(createEditValidator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<SpecializationController>();
         }
 

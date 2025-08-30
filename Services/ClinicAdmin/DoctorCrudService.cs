@@ -39,7 +39,6 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorCreateEditViewModel> _validator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
         private readonly IClinicRepository _clinicRepository; // اضافه کردن repository کلینیک
         private readonly ApplicationDbContext _context; // اضافه کردن context برای دسترسی مستقیم به دیتابیس
 
@@ -49,7 +48,6 @@ namespace ClinicApp.Services.ClinicAdmin
             IDoctorReportingRepository doctorReportingRepository,
             ICurrentUserService currentUserService,
             IValidator<DoctorCreateEditViewModel> validator,
-            IMapper mapper,
             IClinicRepository clinicRepository,
             ApplicationDbContext context) // اضافه کردن dependency
         {
@@ -58,7 +56,6 @@ namespace ClinicApp.Services.ClinicAdmin
             _doctorReportingRepository = doctorReportingRepository ?? throw new ArgumentNullException(nameof(doctorReportingRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _clinicRepository = clinicRepository ?? throw new ArgumentNullException(nameof(clinicRepository)); // تخصیص dependency
             _context = context ?? throw new ArgumentNullException(nameof(context)); // تخصیص dependency
             _logger = Log.ForContext<DoctorCrudService>();
@@ -87,7 +84,7 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 // دریافت پزشکان از repository
                 var doctors = await _doctorRepository.SearchDoctorsAsync(filter);
-                var totalCount = await _doctorRepository.GetDoctorsCountAsync(filter);
+                var totalCount = await _doctorRepository.GetAllDoctorsCountAsync();
 
                 // تبدیل به ViewModel
                 var doctorViewModels = doctors.Select(DoctorIndexViewModel.FromEntity).ToList();

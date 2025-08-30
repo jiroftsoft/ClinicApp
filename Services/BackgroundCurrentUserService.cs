@@ -229,6 +229,22 @@ namespace ClinicApp.Services
             }
         }
 
+        /// <summary>
+        /// دریافت شناسه کاربر جاری
+        /// </summary>
+        public string GetCurrentUserId()
+        {
+            return _systemUserId;
+        }
+
+        /// <summary>
+        /// دریافت نام کاربر جاری
+        /// </summary>
+        public string GetCurrentUserName()
+        {
+            return "سیستم";
+        }
+
         public bool IsDevelopmentEnvironment()
         {
             // BackgroundCurrentUserService معمولاً در محیط‌های غیر-وب استفاده می‌شود

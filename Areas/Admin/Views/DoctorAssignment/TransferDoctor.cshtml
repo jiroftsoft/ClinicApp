@@ -184,7 +184,7 @@
                                 <div class="mb-3">
                                     @Html.LabelFor(m => m.ToDepartmentId, "دپارتمان مقصد", new { @class = "form-label fw-bold" })
                                     @Html.DropDownListFor(m => m.ToDepartmentId, 
-                                        new SelectList(ViewBag.Departments, "Id", "Name"), 
+                                        new SelectList(ViewBag.Departments, "Value", "Text"), 
                                         "انتخاب دپارتمان مقصد...", 
                                         new { @class = "form-select", required = "required" })
                                     @Html.ValidationMessageFor(m => m.ToDepartmentId, "", new { @class = "text-danger" })
@@ -327,10 +327,13 @@
     <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
     
     <script>
-        $(document).ready(function () {
-            initializeSelect2();
-            initializeFormValidation();
-            setupEventHandlers();
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                initializeSelect2();
+                initializeFormValidation();
+                setupEventHandlers();
+            });
         });
 
         function initializeSelect2() {

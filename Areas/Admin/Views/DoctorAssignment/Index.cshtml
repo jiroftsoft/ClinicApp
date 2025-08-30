@@ -3,13 +3,16 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-@model dynamic
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentIndexViewModel
+
+@Html.AntiForgeryToken()
 
 @section Styles {
     <link href="~/Content/plugins/DataTables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/DataTables/css/responsive.bootstrap4.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
         .stats-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -17,32 +20,39 @@
             color: white;
             transition: transform 0.3s ease;
         }
-        .stats-card:hover {
-            transform: translateY(-5px);
-        }
+
+            .stats-card:hover {
+                transform: translateY(-5px);
+            }
+
         .stats-icon {
             font-size: 2.5rem;
             opacity: 0.8;
         }
+
         .assignment-table {
             background: white;
             border-radius: 10px;
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
+
         .btn-assignment {
             border-radius: 25px;
             font-weight: 600;
             transition: all 0.3s ease;
         }
-        .btn-assignment:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-        }
+
+            .btn-assignment:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            }
+
         .search-box {
             background: white;
             border-radius: 25px;
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
+
         .loading-spinner {
             display: none;
         }
@@ -76,8 +86,8 @@
     </div>
 
     <!-- Filters and Statistics -->
-    @Html.Partial("_AssignmentFilters", Model.Filters)
-    @Html.Partial("_AssignmentStats", Model.Stats)
+    @Html.Partial("_PartialViews/_AssignmentFilters", Model.Filters)
+    @Html.Partial("_PartialViews/_AssignmentStats", Model.Stats)
 
     <!-- Main Content -->
     <div class="row">
@@ -166,236 +176,170 @@
 </div>
 
 @section Scripts {
+    <!-- jQuery باید اول لود بشه -->
+    <script src="~/Scripts/jquery-3.7.0.js"></script>
+    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
+
+    <!-- پلاگین‌ها -->
     <script src="~/content/plugins/DataTables/js/jquery.dataTables.min.js"></script>
     <script src="~/content/plugins/DataTables/js/dataTables.bootstrap4.min.js"></script>
     <script src="~/content/plugins/DataTables/js/dataTables.responsive.min.js"></script>
-    <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script src="~/content/plugins/select2/js/select2.min.js"></script>
     <script src="~/content/plugins/select2/js/fa.min.js"></script>
-    
+    <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+
     <script>
         let assignmentsTable;
-        let currentFilters = {};
 
-        $(document).ready(function () {
-            initializeDataTable();
-            initializeSelect2();
-            loadInitialData();
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                initDataTable();
+                initSelect2();
+                initPersianDatePickers();
+                loadInitialData();
+                initSearchBox();
+            });
         });
 
-        function initializeDataTable() {
+        /* -----------------------------
+           📌 DataTable
+        ----------------------------- */
+        function initDataTable() {
             assignmentsTable = $('#assignmentsTable').DataTable({
-                language: {
-                    url: '/Scripts/DataTables/persian.json'
-                },
+                language: { url: '@Url.Content("~/Content/plugins/DataTables/js/fa.json")' },
                 responsive: true,
                 processing: true,
-                serverSide: false,
+                serverSide: true,
                 pageLength: 25,
-                order: [[0, 'asc']],
+                order: [[1, 'asc']], // sort by doctor name
+                ajax: {
+                    url: '@Url.Action("GetAssignments", "DoctorAssignment")',
+                    type: 'POST',
+                    data: function (d) {
+                        d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                        d.searchTerm = $('#searchInput').val();
+                        d.departmentId = $('#departmentFilter').val();
+                        d.status = $('#statusFilter').val();
+                        d.dateFrom = $('#DateFrom').val();
+                        d.dateTo = $('#DateTo').val();
+                        d.serviceCategoryId = $('#ServiceCategoryId').val();
+                        d.assignmentType = $('#AssignmentType').val();
+                    },
+                    error: function () {
+                        showError('خطا در بارگذاری', 'لطفاً دوباره تلاش کنید');
+                    }
+                },
+                columns: [
+                    { data: null, render: (d, t, r, m) => m.row + m.settings._iDisplayStart + 1 },
+                    { data: 'DoctorName' },
+                    { data: 'DoctorNationalCode' },
+                    { data: 'Departments', render: renderDepartments },
+                    { data: 'ServiceCategories', render: renderCategories },
+                    { data: 'Status', render: renderStatus },
+                    { data: 'AssignmentDate', render: formatDate },
+                    { data: 'Id', render: renderActions }
+                ],
                 columnDefs: [
                     { targets: [0, 7], orderable: false },
                     { targets: [3, 4], width: '20%' },
                     { targets: [5], width: '10%' }
-                ],
-                drawCallback: function (settings) {
-                    // Add custom styling after table is drawn
-                }
+                ]
             });
         }
 
-        function initializeSelect2() {
-            $('#departmentFilter, #bulkDepartment').select2({
-                placeholder: 'انتخاب کنید...',
-                allowClear: true,
-                language: 'fa'
-            });
-
-            $('#bulkDoctors, #bulkServiceCategories').select2({
-                placeholder: 'انتخاب کنید...',
-                allowClear: true,
-                language: 'fa'
-            });
+        function renderDepartments(data) {
+            if (!data?.length) return '<span class="text-muted">بدون انتساب</span>';
+            return data.map(d => `<span class="badge bg-primary me-1">${escapeHtml(d.Name)}</span>`).join('');
         }
 
-        function loadInitialData() {
-            showLoading();
-            
-            // Load departments for filter
-            $.get('@Url.Action("GetDepartments", "DoctorDepartment")')
-                .done(function (data) {
-                    if (data.success) {
-                        populateDepartmentFilter(data.data);
-                    }
-                });
-
-            // Load doctors for bulk assignment
-            $.get('@Url.Action("GetDoctors", "Doctor")')
-                .done(function (data) {
-                    if (data.success) {
-                        populateBulkDoctors(data.data);
-                    }
-                });
-
-            // Load service categories for bulk assignment
-            $.get('@Url.Action("GetServiceCategories", "DoctorServiceCategory")')
-                .done(function (data) {
-                    if (data.success) {
-                        populateBulkServiceCategories(data.data);
-                    }
-                });
-
-            hideLoading();
+        function renderCategories(data) {
+            if (!data?.length) return '<span class="text-muted">بدون صلاحیت</span>';
+            return data.map(c => `<span class="badge bg-info me-1">${escapeHtml(c.Name)}</span>`).join('');
         }
 
-        function populateDepartmentFilter(departments) {
-            const filter = $('#departmentFilter');
-            filter.empty().append('<option value="">همه دپارتمان‌ها</option>');
-            
-            departments.forEach(function (dept) {
-                filter.append(`<option value="${dept.Id}">${dept.Name}</option>`);
-            });
-        }
-
-        function populateBulkDoctors(doctors) {
-            const select = $('#bulkDoctors');
-            select.empty();
-            
-            doctors.forEach(function (doctor) {
-                select.append(`<option value="${doctor.Id}">${doctor.FullName} - ${doctor.NationalCode}</option>`);
-            });
-        }
-
-        function populateBulkServiceCategories(categories) {
-            const select = $('#bulkServiceCategories');
-            select.empty();
-            
-            categories.forEach(function (category) {
-                select.append(`<option value="${category.Id}">${category.Name}</option>`);
-            });
-        }
-
-        function applyFilters() {
-            currentFilters = {
-                search: $('#searchInput').val(),
-                department: $('#departmentFilter').val(),
-                status: $('#statusFilter').val()
+        function renderStatus(status) {
+            const map = {
+                active: '<span class="badge bg-success">فعال</span>',
+                inactive: '<span class="badge bg-secondary">غیرفعال</span>',
+                pending: '<span class="badge bg-warning">انتظار تایید</span>'
             };
-
-            refreshTable();
+            return map[status] || '<span class="badge bg-secondary">نامشخص</span>';
         }
 
-        function refreshTable() {
-            showLoading();
-            
-            // Clear current table data
-            assignmentsTable.clear();
-
-            // Load filtered data
-            $.post('@Url.Action("GetAssignments", "DoctorAssignment")', currentFilters)
-                .done(function (data) {
-                    if (data.success) {
-                        populateTable(data.data);
-                    } else {
-                        showError('خطا در بارگذاری داده‌ها', data.message);
-                    }
-                })
-                .fail(function () {
-                    showError('خطا در ارتباط با سرور', 'لطفاً دوباره تلاش کنید');
-                })
-                .always(function () {
-                    hideLoading();
-                });
-        }
-
-        function populateTable(assignments) {
-            assignments.forEach(function (assignment, index) {
-                const row = [
-                    index + 1,
-                    assignment.DoctorName,
-                    assignment.DoctorNationalCode,
-                    formatDepartments(assignment.Departments),
-                    formatServiceCategories(assignment.ServiceCategories),
-                    formatStatus(assignment.Status),
-                    formatDate(assignment.AssignmentDate),
-                    createActionButtons(assignment.Id)
-                ];
-                
-                assignmentsTable.row.add(row);
-            });
-            
-            assignmentsTable.draw();
-        }
-
-        function formatDepartments(departments) {
-            if (!departments || departments.length === 0) {
-                return '<span class="text-muted">بدون انتساب</span>';
-            }
-            
-            return departments.map(dept => 
-                `<span class="badge bg-primary me-1">${dept.Name}</span>`
-            ).join('');
-        }
-
-        function formatServiceCategories(categories) {
-            if (!categories || categories.length === 0) {
-                return '<span class="text-muted">بدون صلاحیت</span>';
-            }
-            
-            return categories.map(cat => 
-                `<span class="badge bg-info me-1">${cat.Name}</span>`
-            ).join('');
-        }
-
-        function formatStatus(status) {
-            const statusMap = {
-                'active': '<span class="badge bg-success">فعال</span>',
-                'inactive': '<span class="badge bg-secondary">غیرفعال</span>',
-                'pending': '<span class="badge bg-warning">انتظار تایید</span>'
-            };
-            
-            return statusMap[status] || '<span class="badge bg-secondary">نامشخص</span>';
-        }
-
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            
-            const date = new Date(dateString);
-            return date.toLocaleDateString('fa-IR');
-        }
-
-        function createActionButtons(assignmentId) {
+        function renderActions(id) {
             return `
                 <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="viewDetails(${assignmentId})" title="مشاهده جزئیات">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-success" onclick="editAssignment(${assignmentId})" title="ویرایش">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-warning" onclick="transferDoctor(${assignmentId})" title="انتقال">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${assignmentId})" title="حذف">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
+                    <button class="btn btn-sm btn-outline-primary" onclick="viewDetails(${id})"><i class="fas fa-eye"></i></button>
+                    <button class="btn btn-sm btn-outline-success" onclick="editAssignment(${id})"><i class="fas fa-edit"></i></button>
+                    <button class="btn btn-sm btn-outline-warning" onclick="transferDoctor(${id})"><i class="fas fa-exchange-alt"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" onclick="removeAssignment(${id})"><i class="fas fa-trash"></i></button>
+                </div>`;
         }
 
-        function viewDetails(assignmentId) {
-            window.location.href = '@Url.Action("Details", "DoctorAssignment")/' + assignmentId;
+        /* -----------------------------
+           📌 Select2
+        ----------------------------- */
+        function initSelect2() {
+            $('#departmentFilter, #bulkDepartment, #bulkDoctors, #bulkServiceCategories').select2({
+                placeholder: 'انتخاب کنید...',
+                allowClear: true,
+                language: 'fa'
+            });
         }
 
-        function editAssignment(assignmentId) {
-            window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment")/' + assignmentId;
+        /* -----------------------------
+           📌 Persian DatePicker
+        ----------------------------- */
+        function initPersianDatePickers() {
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true
+            });
         }
 
-        function transferDoctor(assignmentId) {
-            window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment")/' + assignmentId;
+        /* -----------------------------
+           📌 Load initial data
+        ----------------------------- */
+        function loadInitialData() {
+            showLoading();
+
+            $.get('@Url.Action("GetDepartments", "DoctorDepartment")').done(r => {
+                if (r.success) populateSelect('#departmentFilter', r.data, 'همه دپارتمان‌ها');
+            });
+
+            $.get('@Url.Action("GetDoctors", "Doctor")').done(r => {
+                if (r.success) populateSelect('#bulkDoctors', r.data, null, true);
+            });
+
+            $.get('@Url.Action("GetServiceCategories", "DoctorServiceCategory")').done(r => {
+                if (r.success) populateSelect('#bulkServiceCategories', r.data);
+            }).always(hideLoading);
         }
 
-        function removeAssignment(assignmentId) {
+        function populateSelect(selector, data, defaultOption = null, showCode = false) {
+            const select = $(selector);
+            select.empty();
+            if (defaultOption) select.append(`<option value="">${defaultOption}</option>`);
+            data.forEach(item => {
+                const text = showCode ? `${item.FullName} - ${item.NationalCode}` : item.Name;
+                select.append(new Option(text, item.Id));
+            });
+        }
+
+        /* -----------------------------
+           📌 Actions
+        ----------------------------- */
+        function applyFilters() { assignmentsTable.ajax.reload(); }
+        function refreshTable() { assignmentsTable.ajax.reload(); }
+
+        function viewDetails(id) { window.location.href = '@Url.Action("Details", "DoctorAssignment")/' + id; }
+        function editAssignment(id) { window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment")/' + id; }
+        function transferDoctor(id) { window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment")/' + id; }
+
+        function removeAssignment(id) {
             Swal.fire({
                 title: 'آیا مطمئن هستید؟',
                 text: 'این عملیات قابل بازگشت نیست!',
@@ -405,119 +349,78 @@
                 cancelButtonColor: '#3085d6',
                 confirmButtonText: 'بله، حذف کن',
                 cancelButtonText: 'انصراف'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    performRemoveAssignment(assignmentId);
-                }
-            });
+            }).then(r => { if (r.isConfirmed) performRemoveAssignment(id); });
         }
 
-        function performRemoveAssignment(assignmentId) {
+        function performRemoveAssignment(id) {
             showLoading();
-            
-            $.post('@Url.Action("RemoveAssignments", "DoctorAssignment")', { id: assignmentId })
-                .done(function (data) {
-                    if (data.success) {
-                        showSuccess('حذف موفق', 'انتساب با موفقیت حذف شد');
-                        refreshTable();
-                    } else {
-                        showError('خطا در حذف', data.message);
-                    }
-                })
-                .fail(function () {
-                    showError('خطا در ارتباط با سرور', 'لطفاً دوباره تلاش کنید');
-                })
-                .always(function () {
-                    hideLoading();
-                });
-        }
-
-        function showBulkAssignmentModal() {
-            $('#bulkAssignmentModal').modal('show');
+            $.post('@Url.Action("RemoveAssignments", "DoctorAssignment")', {
+                id: id,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            }).done(r => {
+                if (r.success) {
+                    showSuccess('حذف موفق', 'انتساب حذف شد');
+                    refreshTable();
+                } else showError('خطا', r.message);
+            }).fail(() => showError('خطا', 'لطفاً دوباره تلاش کنید'))
+              .always(hideLoading);
         }
 
         function performBulkAssignment() {
             const doctors = $('#bulkDoctors').val();
             const department = $('#bulkDepartment').val();
-            const categories = $('#bulkServiceCategories').val();
+            const categories = $('#bulkServiceCategories').val() || [];
 
-            if (!doctors || doctors.length === 0) {
-                showError('خطا', 'لطفاً حداقل یک پزشک انتخاب کنید');
-                return;
-            }
+            if (!doctors?.length) return showError('خطا', 'حداقل یک پزشک انتخاب کنید');
+            if (!department) return showError('خطا', 'لطفاً دپارتمان را انتخاب کنید');
 
-            if (!department) {
-                showError('خطا', 'لطفاً دپارتمان را انتخاب کنید');
-                return;
-            }
-
-            const assignments = doctors.map(doctorId => ({
-                DoctorId: doctorId,
+            const assignments = doctors.map(d => ({
+                DoctorId: d,
                 DepartmentId: department,
-                ServiceCategoryIds: categories || []
+                ServiceCategoryIds: categories
             }));
 
             showLoading();
-            
-            $.post('@Url.Action("BulkAssign", "DoctorAssignment")', { models: assignments })
-                .done(function (data) {
-                    if (data.success) {
-                        showSuccess('انتساب گروهی موفق', 
-                            `${data.successCount} پزشک با موفقیت انتساب شدند`);
-                        $('#bulkAssignmentModal').modal('hide');
-                        refreshTable();
-                    } else {
-                        showError('خطا در انتساب گروهی', data.message);
-                    }
-                })
-                .fail(function () {
-                    showError('خطا در ارتباط با سرور', 'لطفاً دوباره تلاش کنید');
-                })
-                .always(function () {
-                    hideLoading();
-                });
+            $.ajax({
+                url: '@Url.Action("BulkAssign", "DoctorAssignment")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ models: assignments }),
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() }
+            }).done(r => {
+                if (r.success) {
+                    showSuccess('موفق', `${r.successCount} پزشک انتساب شدند`);
+                    $('#bulkAssignmentModal').modal('hide');
+                    refreshTable();
+                } else showError('خطا', r.message);
+            }).fail(() => showError('خطا', 'لطفاً دوباره تلاش کنید'))
+              .always(hideLoading);
         }
 
-        function refreshData() {
-            refreshTable();
+        /* -----------------------------
+           📌 Utils
+        ----------------------------- */
+        function initSearchBox() {
+            $('#searchInput').on('keyup', e => { if (e.keyCode === 13) applyFilters(); });
         }
 
-        function showLoading() {
-            $('.loading-spinner').show();
+        function formatDate(dateString) {
+            if (!dateString) return '-';
+            try {
+                return new Date(dateString).toLocaleDateString('fa-IR');
+            } catch { return '-'; }
         }
 
-        function hideLoading() {
-            $('.loading-spinner').hide();
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
         }
 
-        function showSuccess(title, message) {
-            Swal.fire({
-                title: title,
-                text: message,
-                icon: 'success',
-                confirmButtonText: 'باشه'
-            });
-        }
+        function showLoading() { $('.loading-spinner').show(); }
+        function hideLoading() { $('.loading-spinner').hide(); }
 
-        function showError(title, message) {
-            Swal.fire({
-                title: title,
-                text: message,
-                icon: 'error',
-                confirmButtonText: 'باشه'
-            });
-        }
-
-        // Search functionality
-        $('#searchInput').on('keyup', function (e) {
-            if (e.keyCode === 13) {
-                applyFilters();
-            }
-        });
-
-        // Auto-refresh every 5 minutes
-        setInterval(function () {
-            refreshTable();
-        }, 300000);
+        function showSuccess(title, msg) { Swal.fire({ title, text: msg, icon: 'success' }); }
+        function showError(title, msg) { Swal.fire({ title, text: msg, icon: 'error' }); }
     </script>
 }

@@ -1,0 +1,146 @@
+@* Template برای استفاده صحیح Persian DatePicker در ClinicApp *@
+
+@helper PersianDateInput(string name, string value = "", string placeholder = "مثال: 1369/03/27", string label = "تاریخ", bool required = false, string validationMessage = "")
+{
+    <div class="form-group">
+        <label for="@name" class="form-label">
+            @label
+            @if (required)
+            {
+                <span class="text-danger">*</span>
+            }
+        </label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-calendar-alt"></i>
+            </span>
+            <input type="text" 
+                   id="@name" 
+                   name="@name" 
+                   value="@value" 
+                   class="form-control persian-date" 
+                   placeholder="@placeholder"
+                   autocomplete="off"
+                   @if (required) { <text>required</text> } />
+        </div>
+        @if (!string.IsNullOrEmpty(validationMessage))
+        {
+            <div class="invalid-feedback">@validationMessage</div>
+        }
+        <div class="form-text">تاریخ را به صورت شمسی وارد کنید</div>
+    </div>
+}
+
+@* Template برای Persian DatePicker با تنظیمات سفارشی *@
+@helper PersianDateInputCustom(string name, string value = "", string placeholder = "مثال: 1369/03/27", string label = "تاریخ", object htmlAttributes = null)
+{
+    var attributes = HtmlHelper.AnonymousObjectToHtmlAttributes(htmlAttributes);
+    var cssClass = attributes.ContainsKey("class") ? attributes["class"] + " persian-date" : "form-control persian-date";
+    attributes["class"] = cssClass;
+    attributes["autocomplete"] = "off";
+    
+    <div class="form-group">
+        <label for="@name" class="form-label">@label</label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-calendar-alt"></i>
+            </span>
+            @Html.TextBox(name, value, attributes)
+        </div>
+        <div class="form-text">تاریخ را به صورت شمسی وارد کنید</div>
+    </div>
+}
+
+@* Template برای Persian DatePicker با فیلد مخفی میلادی *@
+@helper PersianDateInputWithHidden(string persianName, string gregorianName, string persianValue = "", string gregorianValue = "", string placeholder = "مثال: 1369/03/27", string label = "تاریخ")
+{
+    <div class="form-group">
+        <label for="@persianName" class="form-label">@label</label>
+        <div class="input-group">
+            <span class="input-group-text">
+                <i class="fas fa-calendar-alt"></i>
+            </span>
+            <input type="text" 
+                   id="@persianName" 
+                   name="@persianName" 
+                   value="@persianValue" 
+                   class="form-control persian-date" 
+                   placeholder="@placeholder"
+                   autocomplete="off"
+                   data-alt-field="@gregorianName" />
+            <input type="hidden" 
+                   id="@gregorianName" 
+                   name="@gregorianName" 
+                   value="@gregorianValue" />
+        </div>
+        <div class="form-text">تاریخ را به صورت شمسی وارد کنید</div>
+    </div>
+}
+
+@* JavaScript Helper برای راه‌اندازی Persian DatePicker *@
+@helper PersianDatePickerScript(string selector = ".persian-date", object options = null)
+{
+    <script>
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        function ensureJQuery(callback) {
+            if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    ensureJQuery(callback);
+                }, 50);
+            }
+        }
+
+        // راه‌اندازی Persian DatePicker
+        ensureJQuery(function() {
+            if (typeof $.fn.persianDatepicker !== 'undefined') {
+                var defaultOptions = {
+                    format: 'YYYY/MM/DD',
+                    initialValue: false,
+                    autoClose: true,
+                    observer: true,
+                    calendar: {
+                        persian: {
+                            locale: 'fa',
+                            leapYearMode: 'astronomical'
+                        }
+                    },
+                    toolbox: {
+                        todayBtn: { enabled: true, text: { fa: 'امروز' } },
+                        clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
+                    },
+                    onSelect: function(unix) {
+                        var date = new Date(unix);
+                        var persianDate = date.getFullYear() + '/' + 
+                            String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+                            String(date.getDate()).padStart(2, '0');
+                        $(this.element).val(persianDate);
+                        
+                        // اگر فیلد مخفی وجود دارد، آن را به‌روزرسانی کن
+                        var altField = $(this.element).data('alt-field');
+                        if (altField) {
+                            var gregorianDate = date.getFullYear() + '-' + 
+                                String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                                String(date.getDate()).padStart(2, '0');
+                            $(altField).val(gregorianDate);
+                        }
+                    }
+                };
+
+                var finalOptions = @Html.Raw(Json.Encode(options ?? new object()));
+                var mergedOptions = $.extend({}, defaultOptions, finalOptions);
+
+                $('@selector').each(function() {
+                    var $this = $(this);
+                    if (!$this.data('persian-datepicker-initialized')) {
+                        $this.persianDatepicker(mergedOptions);
+                        $this.data('persian-datepicker-initialized', true);
+                    }
+                });
+            } else {
+                console.warn('Persian DatePicker plugin not loaded');
+            }
+        });
+    </script>
+}

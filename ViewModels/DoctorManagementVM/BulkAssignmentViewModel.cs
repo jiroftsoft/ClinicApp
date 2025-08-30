@@ -29,6 +29,15 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "جایگزینی انتسابات موجود")]
         public bool ReplaceExisting { get; set; }
 
+        [Display(Name = "نوع انتساب")]
+        public string AssignmentType { get; set; } = "New"; // New, Replace, Add
+
+        [Display(Name = "رد کردن انتسابات موجود")]
+        public bool SkipExisting { get; set; }
+
+        [Display(Name = "بررسی سازگاری")]
+        public bool ValidateCompatibility { get; set; } = true;
+
         // Available options for dropdowns
         public List<DoctorListItem> AvailableDoctors { get; set; } = new List<DoctorListItem>();
         public List<DepartmentListItem> AvailableDepartments { get; set; } = new List<DepartmentListItem>();

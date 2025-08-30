@@ -338,114 +338,86 @@ namespace ClinicApp.Repositories.ClinicAdmin
                     .AsQueryable();
 
                 // اعمال فیلترهای جستجو
-                if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
+                if (!string.IsNullOrWhiteSpace(filter?.SearchTerm))
                 {
                     var searchTerm = filter.SearchTerm.Trim();
                     query = query.Where(d =>
                         d.FirstName.Contains(searchTerm) ||
                         d.LastName.Contains(searchTerm) ||
-                        (d.NationalCode != null && d.NationalCode.Contains(searchTerm)) ||
-                        (d.MedicalCouncilCode != null && d.MedicalCouncilCode.Contains(searchTerm)) ||
-                        (d.University != null && d.University.Contains(searchTerm)) ||
-                        d.DoctorSpecializations.Any(ds => ds.Specialization.Name.Contains(searchTerm))
+                        d.NationalCode.Contains(searchTerm) ||
+                        d.MedicalCouncilCode.Contains(searchTerm)
                     );
                 }
 
-                if (filter.IsActive.HasValue)
+                if (filter?.ClinicId.HasValue == true)
+                {
+                    // فیلتر بر اساس کلینیک (از طریق دپارتمان‌ها)
+                    query = query.Where(d => d.DoctorDepartments.Any(dd => dd.Department.ClinicId == filter.ClinicId.Value));
+                }
+
+                if (filter?.DepartmentId.HasValue == true)
+                {
+                    // فیلتر بر اساس دپارتمان
+                    query = query.Where(d => d.DoctorDepartments.Any(dd => dd.DepartmentId == filter.DepartmentId.Value));
+                }
+
+                if (filter?.SpecializationId.HasValue == true)
+                {
+                    // فیلتر بر اساس تخصص
+                    query = query.Where(d => d.DoctorSpecializations.Any(ds => ds.SpecializationId == filter.SpecializationId.Value));
+                }
+
+                if (filter?.IsActive.HasValue == true)
                 {
                     query = query.Where(d => d.IsActive == filter.IsActive.Value);
                 }
 
-                if (filter.SpecializationId.HasValue)
-                {
-                    query = query.Where(d => d.DoctorSpecializations.Any(ds => ds.SpecializationId == filter.SpecializationId.Value));
-                }
-
                 // مرتب‌سازی
-                switch (filter.SortBy?.ToLower())
-                {
-                    case "firstname":
-                        query = filter.SortOrder == "desc" 
-                            ? query.OrderByDescending(d => d.FirstName)
-                            : query.OrderBy(d => d.FirstName);
-                        break;
-                    case "lastname":
-                        query = filter.SortOrder == "desc" 
-                            ? query.OrderByDescending(d => d.LastName)
-                            : query.OrderBy(d => d.LastName);
-                        break;
-                    case "specialization":
-                        query = filter.SortOrder == "desc" 
-                            ? query.OrderByDescending(d => d.DoctorSpecializations.FirstOrDefault().Specialization.Name)
-                            : query.OrderBy(d => d.DoctorSpecializations.FirstOrDefault().Specialization.Name);
-                        break;
-                    case "createdat":
-                        query = filter.SortOrder == "desc" 
-                            ? query.OrderByDescending(d => d.CreatedAt)
-                            : query.OrderBy(d => d.CreatedAt);
-                        break;
-                    default:
-                        query = query.OrderBy(d => d.FirstName).ThenBy(d => d.LastName);
-                        break;
-                }
+                query = query.OrderBy(d => d.LastName)
+                            .ThenBy(d => d.FirstName);
 
-                // صفحه‌بندی
-                if (filter.PageNumber > 0 && filter.PageSize > 0)
-                {
-                    query = query.Skip((filter.PageNumber - 1) * filter.PageSize)
-                                .Take(filter.PageSize);
-                }
-
-                return await query.AsNoTracking().ToListAsync();
+                return await query.ToListAsync();
             }
             catch (Exception ex)
             {
                 // لاگ خطا برای سیستم‌های پزشکی
-                throw new InvalidOperationException("خطا در جستجوی پزشکان", ex);
+                throw new InvalidOperationException($"خطا در جستجوی پزشکان", ex);
             }
         }
 
         /// <summary>
-        /// دریافت تعداد پزشکان مطابق با فیلترهای جستجو
+        /// دریافت تعداد کل پزشکان
         /// </summary>
-        public async Task<int> GetDoctorsCountAsync(DoctorSearchViewModel filter)
+        public async Task<int> GetAllDoctorsCountAsync()
         {
             try
             {
-                var query = _context.Doctors
+                return await _context.Doctors
                     .Where(d => !d.IsDeleted)
-                    .AsQueryable();
-
-                // اعمال فیلترهای جستجو (بدون صفحه‌بندی)
-                if (!string.IsNullOrWhiteSpace(filter.SearchTerm))
-                {
-                    var searchTerm = filter.SearchTerm.Trim();
-                    query = query.Where(d =>
-                        d.FirstName.Contains(searchTerm) ||
-                        d.LastName.Contains(searchTerm) ||
-                        (d.NationalCode != null && d.NationalCode.Contains(searchTerm)) ||
-                        (d.MedicalCouncilCode != null && d.MedicalCouncilCode.Contains(searchTerm)) ||
-                        (d.University != null && d.University.Contains(searchTerm)) ||
-                        d.DoctorSpecializations.Any(ds => ds.Specialization.Name.Contains(searchTerm))
-                    );
-                }
-
-                if (filter.IsActive.HasValue)
-                {
-                    query = query.Where(d => d.IsActive == filter.IsActive.Value);
-                }
-
-                if (filter.SpecializationId.HasValue)
-                {
-                    query = query.Where(d => d.DoctorSpecializations.Any(ds => ds.SpecializationId == filter.SpecializationId.Value));
-                }
-
-                return await query.CountAsync();
+                    .CountAsync();
             }
             catch (Exception ex)
             {
                 // لاگ خطا برای سیستم‌های پزشکی
-                throw new InvalidOperationException("خطا در شمارش پزشکان", ex);
+                throw new InvalidOperationException("خطا در شمارش کل پزشکان", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد پزشکان فعال
+        /// </summary>
+        public async Task<int> GetActiveDoctorsCountAsync()
+        {
+            try
+            {
+                return await _context.Doctors
+                    .Where(d => d.IsActive && !d.IsDeleted)
+                    .CountAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException("خطا در شمارش پزشکان فعال", ex);
             }
         }
 

@@ -338,11 +338,14 @@
     <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
     
     <script>
-        $(document).ready(function () {
-            // Auto-refresh data every 5 minutes
-            setInterval(function () {
-                refreshData();
-            }, 300000);
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        window.ensureJQuery(function() {
+            $(document).ready(function () {
+                // Auto-refresh data every 5 minutes
+                setInterval(function () {
+                    refreshData();
+                }, 300000);
+            });
         });
 
         function editAssignment(assignmentId) {

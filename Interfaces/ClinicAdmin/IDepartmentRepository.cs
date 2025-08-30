@@ -63,4 +63,10 @@ public interface IDepartmentRepository
     /// ذخیره تمام تغییرات در صف در پایگاه داده.
     /// </summary>
     Task SaveChangesAsync();
+
+    /// <summary>
+    /// دریافت لیست تمام دپارتمان‌های فعال برای استفاده در لیست‌های کشویی.
+    /// </summary>
+    /// <returns>لیستی از تمام دپارتمان‌های فعال.</returns>
+    Task<List<Department>> GetAllActiveDepartmentsAsync();
 }

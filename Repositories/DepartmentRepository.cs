@@ -92,4 +92,16 @@ public class DepartmentRepository : IDepartmentRepository
     {
         return _context.SaveChangesAsync();
     }
+
+    /// <summary>
+    /// ✅ **Final Method Implementation:** Fetches all active departments for dropdown lists.
+    /// </summary>
+    public Task<List<Department>> GetAllActiveDepartmentsAsync()
+    {
+        return _context.Departments
+            .AsNoTracking() // ✅ Performance optimization
+            .Where(d => d.IsActive && !d.IsDeleted)
+            .OrderBy(d => d.Name)
+            .ToListAsync();
+    }
 }

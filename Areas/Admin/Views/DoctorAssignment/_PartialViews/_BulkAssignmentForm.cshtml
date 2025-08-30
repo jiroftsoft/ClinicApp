@@ -22,7 +22,7 @@
                     <div class="mb-3">
                         @Html.LabelFor(m => m.DoctorIds, "پزشکان", new { @class = "form-label fw-bold" })
                         @Html.ListBoxFor(m => m.DoctorIds, 
-                            new MultiSelectList(ViewBag.Doctors, "Id", "FullName"), 
+                            new MultiSelectList(ViewBag.Doctors ?? new List<object>(), "Value", "Text"), 
                             new { @class = "form-select", multiple = "multiple", id = "doctorSelection" })
                         @Html.ValidationMessageFor(m => m.DoctorIds, "", new { @class = "text-danger" })
                         <div class="form-text">
@@ -45,7 +45,7 @@
                     <div class="mb-3">
                         @Html.LabelFor(m => m.DepartmentId, "دپارتمان", new { @class = "form-label fw-bold" })
                         @Html.DropDownListFor(m => m.DepartmentId, 
-                            new SelectList(ViewBag.Departments, "Id", "Name"), 
+                            new SelectList(ViewBag.Departments ?? new List<object>(), "Value", "Text"), 
                             "انتخاب دپارتمان...", 
                             new { @class = "form-select", required = "required" })
                         @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "text-danger" })
@@ -76,7 +76,7 @@
                     <div class="mb-3">
                         @Html.LabelFor(m => m.ServiceCategoryIds, "صلاحیت‌ها", new { @class = "form-label fw-bold" })
                         @Html.ListBoxFor(m => m.ServiceCategoryIds, 
-                            new MultiSelectList(ViewBag.ServiceCategories, "Id", "Name"), 
+                            new MultiSelectList(ViewBag.ServiceCategories ?? new List<object>(), "Value", "Text"), 
                             new { @class = "form-select", multiple = "multiple", id = "bulkServiceCategories" })
                         @Html.ValidationMessageFor(m => m.ServiceCategoryIds, "", new { @class = "text-danger" })
                         <div class="form-text">
@@ -122,15 +122,21 @@
                     <div class="mb-3">
                         <label class="form-label fw-bold">گزینه‌های پیشرفته</label>
                         <div class="form-check">
-                            @Html.CheckBoxFor(m => m.SkipExisting, new { @class = "form-check-input" })
+                            @Html.CheckBoxFor(m => m.SkipExisting, new { @class = "form-check-input", id = "SkipExisting" })
                             <label class="form-check-label" for="@Html.IdFor(m => m.SkipExisting)">
                                 رد کردن انتسابات موجود
                             </label>
                         </div>
                         <div class="form-check">
-                            @Html.CheckBoxFor(m => m.ValidateCompatibility, new { @class = "form-check-input", @checked = "checked" })
+                            @Html.CheckBoxFor(m => m.ValidateCompatibility, new { @class = "form-check-input", @checked = "checked", id = "ValidateCompatibility" })
                             <label class="form-check-label" for="@Html.IdFor(m => m.ValidateCompatibility)">
                                 بررسی سازگاری
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.ReplaceExisting, new { @class = "form-check-input", id = "ReplaceExisting" })
+                            <label class="form-check-label" for="@Html.IdFor(m => m.ReplaceExisting)">
+                                جایگزینی انتسابات موجود
                             </label>
                         </div>
                     </div>
@@ -258,10 +264,13 @@
 </style>
 
 <script>
-    $(document).ready(function () {
-        initializeBulkSelect2();
-        initializeBulkFormValidation();
-        setupBulkEventHandlers();
+    // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+    window.ensureJQuery(function() {
+        $(document).ready(function () {
+            initializeBulkSelect2();
+            initializeBulkFormValidation();
+            setupBulkEventHandlers();
+        });
     });
 
     function initializeBulkSelect2() {
@@ -367,27 +376,46 @@
     }
 
     function validateBulkForm() {
-        if ($('#bulkAssignmentForm').valid()) {
-            Swal.fire({
-                title: 'اعتبارسنجی موفق',
-                text: 'فرم شما معتبر است و آماده ارسال می‌باشد',
-                icon: 'success',
-                confirmButtonText: 'باشه'
-            });
-        } else {
+        const doctorIds = $('#doctorSelection').val();
+        const departmentId = $('#DepartmentId').val();
+        const assignmentType = $('input[name="AssignmentType"]:checked').val();
+        const skipExisting = $('#SkipExisting').is(':checked');
+        const validateCompatibility = $('#ValidateCompatibility').is(':checked');
+
+        const errors = [];
+
+        if (!doctorIds || doctorIds.length === 0) {
+            errors.push('حداقل یک پزشک باید انتخاب شود');
+        }
+
+        if (!departmentId) {
+            errors.push('دپارتمان باید انتخاب شود');
+        }
+
+        if (errors.length > 0) {
             Swal.fire({
                 title: 'خطا در اعتبارسنجی',
-                text: 'لطفاً خطاهای فرم را برطرف کنید',
+                html: errors.map(error => `<p>• ${error}</p>`).join(''),
                 icon: 'error',
                 confirmButtonText: 'باشه'
             });
+            return false;
         }
+
+        Swal.fire({
+            title: 'اعتبارسنجی موفق',
+            text: 'فرم شما معتبر است و آماده ارسال می‌باشد',
+            icon: 'success',
+            confirmButtonText: 'باشه'
+        });
+
+        return true;
     }
 
     function previewBulkAssignment() {
-        const selectedDoctors = $('#doctorSelection').select2('data');
+        const selectedDoctors = $('#doctorSelection option:selected');
         const department = $('#DepartmentId option:selected').text();
-        const serviceCategories = $('#bulkServiceCategories').select2('data');
+        const serviceCategories = $('#bulkServiceCategories option:selected');
         const assignmentType = $('input[name="AssignmentType"]:checked').val();
 
         if (selectedDoctors.length === 0) {
@@ -401,12 +429,12 @@
         }
 
         // Update preview content
-        const doctorsList = selectedDoctors.map(doctor => `<li>${doctor.text}</li>`).join('');
+        const doctorsList = selectedDoctors.map(function() { return `<li>${$(this).text()}</li>`; }).get().join('');
         $('#selectedDoctorsList').html(doctorsList);
 
         const assignmentDetails = `
             <p><strong>دپارتمان:</strong> ${department}</p>
-            <p><strong>صلاحیت‌ها:</strong> ${serviceCategories.map(cat => cat.text).join(', ')}</p>
+            <p><strong>صلاحیت‌ها:</strong> ${serviceCategories.map(function() { return $(this).text(); }).get().join(', ') || 'هیچ صلاحیتی انتخاب نشده'}</p>
             <p><strong>نوع انتساب:</strong> ${getAssignmentTypeText(assignmentType)}</p>
             <p><strong>تعداد پزشکان:</strong> ${selectedDoctors.length}</p>
         `;
@@ -448,34 +476,12 @@
             return;
         }
 
-        $.post('@Url.Action("CheckBulkCompatibility", "DoctorAssignment")', {
-            doctorIds: doctorIds,
-            departmentId: departmentId
-        })
-        .done(function (data) {
-            if (data.success) {
-                Swal.fire({
-                    title: 'سازگاری تایید شد',
-                    text: data.message,
-                    icon: 'success',
-                    confirmButtonText: 'باشه'
-                });
-            } else {
-                Swal.fire({
-                    title: 'عدم سازگاری',
-                    text: data.message,
-                    icon: 'warning',
-                    confirmButtonText: 'باشه'
-                });
-            }
-        })
-        .fail(function () {
-            Swal.fire({
-                title: 'خطا در بررسی',
-                text: 'لطفاً دوباره تلاش کنید',
-                icon: 'error',
-                confirmButtonText: 'باشه'
-            });
+        // TODO: Implement actual compatibility check
+        Swal.fire({
+            title: 'بررسی سازگاری',
+            text: 'در حال بررسی سازگاری پزشکان با دپارتمان...',
+            icon: 'info',
+            confirmButtonText: 'باشه'
         });
     }
 

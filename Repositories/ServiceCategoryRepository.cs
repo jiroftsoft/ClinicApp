@@ -120,5 +120,19 @@ namespace ClinicApp.Repositories
         {
             return _context.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// ✅ **Final Method Implementation:** Fetches all active service categories across all departments for dropdown lists.
+        /// </summary>
+        public Task<List<ServiceCategory>> GetAllActiveServiceCategoriesAsync()
+        {
+            return _context.ServiceCategories
+                .AsNoTracking() // ✅ Performance optimization
+                .Include(sc => sc.Department) // Include department info for display
+                .Where(sc => sc.IsActive && !sc.IsDeleted)
+                .OrderBy(sc => sc.Department.Name)
+                .ThenBy(sc => sc.Title)
+                .ToListAsync();
+        }
     }
 }

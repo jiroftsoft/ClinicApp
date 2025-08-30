@@ -60,5 +60,11 @@ public interface IDoctorDepartmentService
     /// <returns>نتیجه عملیات به‌روزرسانی.</returns>
     Task<ServiceResult> UpdateDoctorDepartmentAssignmentAsync(DoctorDepartmentViewModel model);
 
+    /// <summary>
+    /// دریافت لیست تمام دپارتمان‌های فعال برای استفاده در لیست‌های کشویی.
+    /// </summary>
+    /// <returns>لیستی از تمام دپارتمان‌های فعال.</returns>
+    Task<ServiceResult<List<LookupItemViewModel>>> GetAllDepartmentsAsync();
+
     #endregion
 }

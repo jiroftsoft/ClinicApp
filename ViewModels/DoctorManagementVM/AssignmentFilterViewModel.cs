@@ -13,6 +13,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "دپارتمان")]
         public int? DepartmentId { get; set; }
 
+        [Display(Name = "صلاحیت خدماتی")]
+        public int? ServiceCategoryId { get; set; }
+
         [Display(Name = "وضعیت")]
         public string Status { get; set; }
 
@@ -27,6 +30,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
 
         // Available options for dropdowns
         public List<SelectListItem> Departments { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> ServiceCategories { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> Statuses { get; set; } = new List<SelectListItem>();
         public List<SelectListItem> AssignmentTypes { get; set; } = new List<SelectListItem>();
 

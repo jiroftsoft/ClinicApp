@@ -1,0 +1,229 @@
+@* مثال کامل استفاده از Persian DatePicker در ClinicApp *@
+
+@{
+    ViewBag.Title = "مثال Persian DatePicker";
+}
+
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 mx-auto">
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-calendar-alt me-2"></i>مثال Persian DatePicker</h4>
+                </div>
+                <div class="card-body">
+                    
+                    @* روش 1: استفاده از Template Helper *@
+                    <h5 class="mb-3">روش 1: استفاده از Template Helper</h5>
+                    @PersianDatePickerTemplate.PersianDateInput(
+                        name: "DateOfBirthShamsi",
+                        value: "1369/03/27",
+                        placeholder: "مثال: 1369/03/27",
+                        label: "تاریخ تولد",
+                        required: true,
+                        validationMessage: "تاریخ تولد الزامی است"
+                    )
+
+                    <hr class="my-4">
+
+                    @* روش 2: استفاده مستقیم با کلاس persian-date *@
+                    <h5 class="mb-3">روش 2: استفاده مستقیم</h5>
+                    <div class="form-group">
+                        <label for="appointmentDate" class="form-label">تاریخ نوبت</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <input type="text" 
+                                   id="appointmentDate" 
+                                   name="appointmentDate" 
+                                   class="form-control persian-date" 
+                                   placeholder="مثال: 1402/12/15"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="form-text">تاریخ نوبت را به صورت شمسی وارد کنید</div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    @* روش 3: Persian DatePicker با فیلد مخفی میلادی *@
+                    <h5 class="mb-3">روش 3: با فیلد مخفی میلادی</h5>
+                    @PersianDatePickerTemplate.PersianDateInputWithHidden(
+                        persianName: "visitDateShamsi",
+                        gregorianName: "visitDateGregorian",
+                        persianValue: "1402/12/15",
+                        gregorianValue: "2024-03-05",
+                        placeholder: "مثال: 1402/12/15",
+                        label: "تاریخ ویزیت"
+                    )
+
+                    <hr class="my-4">
+
+                    @* روش 4: Persian DatePicker با تنظیمات سفارشی *@
+                    <h5 class="mb-3">روش 4: با تنظیمات سفارشی</h5>
+                    <div class="form-group">
+                        <label for="customDate" class="form-label">تاریخ سفارشی</label>
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fas fa-calendar-alt"></i>
+                            </span>
+                            <input type="text" 
+                                   id="customDate" 
+                                   name="customDate" 
+                                   class="form-control persian-date-custom" 
+                                   placeholder="مثال: 1402/12/15"
+                                   autocomplete="off" />
+                        </div>
+                        <div class="form-text">تاریخ با تنظیمات سفارشی</div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @* روش 1: استفاده از Template Script *@
+    @PersianDatePickerTemplate.PersianDatePickerScript()
+
+    @* روش 2: Script سفارشی برای Persian DatePicker *@
+    <script>
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        function ensureJQuery(callback) {
+            if (typeof $ !== 'undefined' && typeof $.fn !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    ensureJQuery(callback);
+                }, 50);
+            }
+        }
+
+        // راه‌اندازی Persian DatePicker سفارشی
+        ensureJQuery(function() {
+            if (typeof $.fn.persianDatepicker !== 'undefined') {
+                
+                // راه‌اندازی برای کلاس persian-date-custom با تنظیمات متفاوت
+                $('.persian-date-custom').each(function() {
+                    var $this = $(this);
+                    if (!$this.data('persian-datepicker-initialized')) {
+                        $this.persianDatepicker({
+                            format: 'YYYY/MM/DD',
+                            initialValue: false,
+                            autoClose: true,
+                            observer: true,
+                            calendar: {
+                                persian: {
+                                    locale: 'fa',
+                                    leapYearMode: 'astronomical'
+                                }
+                            },
+                            toolbox: {
+                                todayBtn: { enabled: true, text: { fa: 'امروز' } },
+                                clearBtn: { enabled: true, text: { fa: 'پاک کردن' } },
+                                calendarSwitch: { enabled: true, format: 'YYYY' }
+                            },
+                            theme: 'blue',
+                            onSelect: function(unix) {
+                                var date = new Date(unix);
+                                var persianDate = date.getFullYear() + '/' + 
+                                    String(date.getMonth() + 1).padStart(2, '0') + '/' + 
+                                    String(date.getDate()).padStart(2, '0');
+                                $this.val(persianDate);
+                                
+                                // نمایش پیام موفقیت
+                                if (typeof toastr !== 'undefined') {
+                                    toastr.success('تاریخ انتخاب شد: ' + persianDate);
+                                }
+                            }
+                        });
+                        $this.data('persian-datepicker-initialized', true);
+                    }
+                });
+
+                // راه‌اندازی مجدد برای محتوای AJAX
+                $(document).on('DOMNodeInserted', function(e) {
+                    if ($(e.target).hasClass('persian-date') || 
+                        $(e.target).hasClass('persian-date-custom') ||
+                        $(e.target).find('.persian-date, .persian-date-custom').length > 0) {
+                        setTimeout(function() {
+                            $('.persian-date, .persian-date-custom').each(function() {
+                                var $this = $(this);
+                                if (!$this.data('persian-datepicker-initialized')) {
+                                    $this.persianDatepicker({
+                                        format: 'YYYY/MM/DD',
+                                        initialValue: false,
+                                        autoClose: true,
+                                        observer: true,
+                                        calendar: {
+                                            persian: {
+                                                locale: 'fa',
+                                                leapYearMode: 'astronomical'
+                                            }
+                                        }
+                                    });
+                                    $this.data('persian-datepicker-initialized', true);
+                                }
+                            });
+                        }, 100);
+                    }
+                });
+
+            } else {
+                console.warn('Persian DatePicker plugin not loaded');
+            }
+        });
+
+        // متدهای کمکی برای تبدیل تاریخ
+        function convertToGregorian(persianDate) {
+            if (!persianDate) return null;
+            
+            try {
+                var parts = persianDate.split('/');
+                if (parts.length !== 3) return null;
+
+                var year = parseInt(parts[0]);
+                var month = parseInt(parts[1]);
+                var day = parseInt(parts[2]);
+
+                var gregorianDate = new Date(year + 621, month - 1, day);
+                return gregorianDate.toISOString().split('T')[0];
+            } catch (e) {
+                console.error("Error converting Persian date:", e);
+                return null;
+            }
+        }
+
+        function convertToPersian(gregorianDate) {
+            if (!gregorianDate) return null;
+            
+            try {
+                var date = new Date(gregorianDate);
+                var year = date.getFullYear() - 621;
+                var month = date.getMonth() + 1;
+                var day = date.getDate();
+
+                return year + '/' + 
+                    String(month).padStart(2, '0') + '/' + 
+                    String(day).padStart(2, '0');
+            } catch (e) {
+                console.error("Error converting Gregorian date:", e);
+                return null;
+            }
+        }
+
+        // مثال استفاده از متدهای تبدیل
+        $(document).ready(function() {
+            // تبدیل تاریخ شمسی به میلادی
+            var persianDate = '1402/12/15';
+            var gregorianDate = convertToGregorian(persianDate);
+            console.log('Persian:', persianDate, '-> Gregorian:', gregorianDate);
+
+            // تبدیل تاریخ میلادی به شمسی
+            var gregorianDate2 = '2024-03-05';
+            var persianDate2 = convertToPersian(gregorianDate2);
+            console.log('Gregorian:', gregorianDate2, '-> Persian:', persianDate2);
+        });
+    </script>
+}

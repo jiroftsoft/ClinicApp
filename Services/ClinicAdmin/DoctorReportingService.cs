@@ -33,18 +33,16 @@ namespace ClinicApp.Services.ClinicAdmin
         private readonly IDoctorCrudRepository _doctorRepository;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorReportingService(
             IDoctorReportingRepository doctorReportingRepository,
             IDoctorCrudRepository doctorRepository,
-            ICurrentUserService currentUserService,
-            IMapper mapper)
+            ICurrentUserService currentUserService
+           )
         {
             _doctorReportingRepository = doctorReportingRepository ?? throw new ArgumentNullException(nameof(doctorReportingRepository));
             _doctorRepository = doctorRepository ?? throw new ArgumentNullException(nameof(doctorRepository));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorReportingService>();
         }
 

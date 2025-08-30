@@ -25,7 +25,6 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<DoctorDepartmentViewModel> _departmentValidator;
         private readonly ILogger _logger;
-        private readonly IMapper _mapper;
 
         public DoctorDepartmentController(
             IDoctorDepartmentService doctorDepartmentService,
@@ -38,7 +37,6 @@ namespace ClinicApp.Areas.Admin.Controllers
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _departmentValidator = departmentValidator ?? throw new ArgumentNullException(nameof(departmentValidator));
-            _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper));
             _logger = Log.ForContext<DoctorDepartmentController>();
         }
 
@@ -457,6 +455,33 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در دریافت لیست پزشکان دپارتمان {DepartmentId}", departmentId);
                 return Json(new { success = false, message = "خطا در دریافت لیست پزشکان دپارتمان" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست دپارتمان‌ها برای استفاده در فیلترها و لیست‌های کشویی
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDepartments()
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX دریافت لیست دپارتمان‌ها");
+
+                var result = await _doctorDepartmentService.GetAllDepartmentsAsync();
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var departments = result.Data.Select(d => new { Id = d.Id, Name = d.Name }).ToList();
+
+                return Json(new { success = true, data = departments }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست دپارتمان‌ها");
+                return Json(new { success = false, message = "خطا در دریافت دپارتمان‌ها" }, JsonRequestBehavior.AllowGet);
             }
         }
 
