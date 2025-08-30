@@ -349,11 +349,11 @@
         });
 
         function editAssignment(assignmentId) {
-            window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment")/' + assignmentId;
+            window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', assignmentId);
         }
 
         function transferAssignment(assignmentId) {
-            window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment")/' + assignmentId;
+            window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', assignmentId);
         }
 
         function removeAssignment(assignmentId) {

@@ -127,13 +127,13 @@
 
     function editAssignment(id) {
         withJQuery(function() {
-            window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment")/' + id;
+            window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', id);
         });
     }
 
     function transferAssignment(id) {
         withJQuery(function() {
-            window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment")/' + id;
+            window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', id);
         });
     }
 

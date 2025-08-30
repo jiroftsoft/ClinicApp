@@ -459,6 +459,51 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         /// <summary>
+        /// دریافت اطلاعات دپارتمان برای مقایسه (AJAX)
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDepartmentInfo(int id)
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX دریافت اطلاعات دپارتمان {DepartmentId}", id);
+
+                if (id <= 0)
+                {
+                    return Json(new { success = false, message = "شناسه دپارتمان نامعتبر است." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _doctorDepartmentService.GetAllDepartmentsAsync();
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var department = result.Data.FirstOrDefault(d => d.Id == id);
+                if (department == null)
+                {
+                    return Json(new { success = false, message = "دپارتمان مورد نظر یافت نشد." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var departmentInfo = new
+                {
+                    Id = department.Id,
+                    Name = department.Name,
+                    Code = department.Code ?? "بدون کد",
+                    DoctorCount = 0, // این مقدار باید از سرویس دریافت شود
+                    ServiceCount = 0  // این مقدار باید از سرویس دریافت شود
+                };
+
+                return Json(new { success = true, data = departmentInfo }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اطلاعات دپارتمان {DepartmentId}", id);
+                return Json(new { success = false, message = "خطا در دریافت اطلاعات دپارتمان" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
         /// دریافت لیست دپارتمان‌ها برای استفاده در فیلترها و لیست‌های کشویی
         /// </summary>
         [HttpGet]

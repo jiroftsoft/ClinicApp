@@ -102,6 +102,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string DoctorName { get; set; }
 
         /// <summary>
+        /// کد ملی پزشک (برای نمایش)
+        /// </summary>
+        [Display(Name = "کد ملی پزشک")]
+        public string DoctorNationalCode { get; set; }
+
+        /// <summary>
         /// شناسه دپارتمان مبدا
         /// </summary>
         [Required(ErrorMessage = "شناسه دپارتمان مبدا الزامی است")]

@@ -502,6 +502,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     DoctorId = doctorId.Value,
                     DoctorName = $"{doctor.FirstName} {doctor.LastName}",
+                    DoctorNationalCode = doctor.NationalCode,
                     FromDepartmentId = currentDepartment?.DepartmentId ?? 0,
                     FromDepartmentName = currentDepartment?.DepartmentName ?? "بدون دپارتمان",
                     PreserveServiceCategories = true

@@ -195,11 +195,17 @@
         // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
         window.ensureJQuery(function() {
             $(document).ready(function () {
-                initDataTable();
-                initSelect2();
-                initPersianDatePickers();
-                loadInitialData();
-                initSearchBox();
+                try {
+                    initDataTable();
+                    initSelect2();
+                    initPersianDatePickers();
+                    loadInitialData();
+                    initSearchBox();
+                    console.log('DoctorAssignment Index initialized successfully');
+                } catch (error) {
+                    console.error('Error initializing DoctorAssignment Index:', error);
+                    showError('خطا در بارگذاری', 'خطا در راه‌اندازی صفحه. لطفاً صفحه را رفرش کنید.');
+                }
             });
         });
 
@@ -207,6 +213,12 @@
            📌 DataTable
         ----------------------------- */
         function initDataTable() {
+            if (typeof $.fn.DataTable === 'undefined') {
+                console.error('DataTable plugin not loaded');
+                showError('خطا در بارگذاری', 'DataTable plugin بارگذاری نشده است');
+                return;
+            }
+            
             assignmentsTable = $('#assignmentsTable').DataTable({
                 language: { url: '@Url.Content("~/Content/plugins/DataTables/js/fa.json")' },
                 responsive: true,
@@ -227,8 +239,15 @@
                         d.serviceCategoryId = $('#ServiceCategoryId').val();
                         d.assignmentType = $('#AssignmentType').val();
                     },
-                    error: function () {
-                        showError('خطا در بارگذاری', 'لطفاً دوباره تلاش کنید');
+                    error: function (xhr, error, thrown) {
+                        console.error('DataTable AJAX Error:', error, thrown);
+                        if (xhr.status === 500) {
+                            showError('خطای سرور', 'خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.');
+                        } else if (xhr.status === 401) {
+                            showError('خطای دسترسی', 'لطفاً مجدداً وارد شوید.');
+                        } else {
+                            showError('خطا در بارگذاری', 'لطفاً دوباره تلاش کنید');
+                        }
                     }
                 },
                 columns: [
@@ -282,41 +301,39 @@
            📌 Select2
         ----------------------------- */
         function initSelect2() {
-            $('#departmentFilter, #bulkDepartment, #bulkDoctors, #bulkServiceCategories').select2({
-                placeholder: 'انتخاب کنید...',
-                allowClear: true,
-                language: 'fa'
-            });
+            if (typeof $.fn.select2 !== 'undefined') {
+                $('#departmentFilter, #bulkDepartment, #bulkDoctors, #bulkServiceCategories').select2({
+                    placeholder: 'انتخاب کنید...',
+                    allowClear: true,
+                    language: 'fa'
+                });
+            } else {
+                console.warn('Select2 plugin not loaded');
+            }
         }
 
         /* -----------------------------
            📌 Persian DatePicker
         ----------------------------- */
         function initPersianDatePickers() {
-            $('.persian-date').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                initialValue: false,
-                autoClose: true
-            });
+            if (typeof $.fn.persianDatepicker !== 'undefined') {
+                $('.persian-date').persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    initialValue: false,
+                    autoClose: true
+                });
+            } else {
+                console.warn('Persian DatePicker plugin not loaded');
+            }
         }
 
         /* -----------------------------
            📌 Load initial data
         ----------------------------- */
         function loadInitialData() {
-            showLoading();
-
-            $.get('@Url.Action("GetDepartments", "DoctorDepartment")').done(r => {
-                if (r.success) populateSelect('#departmentFilter', r.data, 'همه دپارتمان‌ها');
-            });
-
-            $.get('@Url.Action("GetDoctors", "Doctor")').done(r => {
-                if (r.success) populateSelect('#bulkDoctors', r.data, null, true);
-            });
-
-            $.get('@Url.Action("GetServiceCategories", "DoctorServiceCategory")').done(r => {
-                if (r.success) populateSelect('#bulkServiceCategories', r.data);
-            }).always(hideLoading);
+            // Data is already loaded from ViewBag in the controller
+            // No need for additional AJAX calls that might fail
+            console.log('Initial data loaded from ViewBag');
         }
 
         function populateSelect(selector, data, defaultOption = null, showCode = false) {
@@ -336,8 +353,8 @@
         function refreshTable() { assignmentsTable.ajax.reload(); }
 
         function viewDetails(id) { window.location.href = '@Url.Action("Details", "DoctorAssignment")/' + id; }
-        function editAssignment(id) { window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment")/' + id; }
-        function transferDoctor(id) { window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment")/' + id; }
+        function editAssignment(id) { window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', id); }
+        function transferDoctor(id) { window.location.href = '@Url.Action("TransferDoctor", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', id); }
 
         function removeAssignment(id) {
             Swal.fire({
@@ -362,8 +379,14 @@
                     showSuccess('حذف موفق', 'انتساب حذف شد');
                     refreshTable();
                 } else showError('خطا', r.message);
-            }).fail(() => showError('خطا', 'لطفاً دوباره تلاش کنید'))
-              .always(hideLoading);
+            }).fail((xhr, status, error) => {
+                console.error('Remove assignment error:', status, error);
+                if (xhr.status === 500) {
+                    showError('خطای سرور', 'خطا در پردازش درخواست حذف');
+                } else {
+                    showError('خطا', 'لطفاً دوباره تلاش کنید');
+                }
+            }).always(hideLoading);
         }
 
         function performBulkAssignment() {
@@ -393,8 +416,14 @@
                     $('#bulkAssignmentModal').modal('hide');
                     refreshTable();
                 } else showError('خطا', r.message);
-            }).fail(() => showError('خطا', 'لطفاً دوباره تلاش کنید'))
-              .always(hideLoading);
+            }).fail((xhr, status, error) => {
+                console.error('Bulk assignment error:', status, error);
+                if (xhr.status === 500) {
+                    showError('خطای سرور', 'خطا در پردازش انتساب گروهی');
+                } else {
+                    showError('خطا', 'لطفاً دوباره تلاش کنید');
+                }
+            }).always(hideLoading);
         }
 
         /* -----------------------------
