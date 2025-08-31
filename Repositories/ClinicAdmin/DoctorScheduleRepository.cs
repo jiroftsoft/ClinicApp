@@ -293,6 +293,108 @@ namespace ClinicApp.Repositories.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// دریافت برنامه‌های کاری پزشک
+        /// </summary>
+        public async Task<List<DoctorSchedule>> GetSchedulesForDoctorAsync(int doctorId)
+        {
+            try
+            {
+                return await _context.DoctorSchedules
+                    .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted)
+                    .Include(ds => ds.WorkDays)
+                    .ThenInclude(wd => wd.TimeRanges)
+                    .OrderBy(ds => ds.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در دریافت برنامه‌های کاری پزشک {doctorId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت برنامه کاری بر اساس شناسه
+        /// </summary>
+        public async Task<DoctorSchedule> GetScheduleByIdAsync(int scheduleId)
+        {
+            try
+            {
+                return await _context.DoctorSchedules
+                    .Where(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در دریافت برنامه کاری {scheduleId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود نوبت‌های فعال برای پزشک
+        /// </summary>
+        public async Task<bool> HasActiveAppointmentsAsync(int doctorId)
+        {
+            try
+            {
+                return await _context.Appointments
+                    .AnyAsync(a => a.DoctorId == doctorId &&
+                                 a.AppointmentDate >= DateTime.Today &&
+                                 a.Status != AppointmentStatus.Cancelled &&
+                                 !a.IsDeleted);
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در بررسی نوبت‌های فعال پزشک {doctorId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// حذف برنامه کاری
+        /// </summary>
+        public async Task<bool> DeleteScheduleAsync(int scheduleId)
+        {
+            try
+            {
+                var schedule = await _context.DoctorSchedules
+                    .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId);
+
+                if (schedule != null)
+                {
+                    schedule.IsDeleted = true;
+                    schedule.UpdatedAt = DateTime.Now;
+                    await _context.SaveChangesAsync();
+                    return true;
+                }
+                return false;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در حذف برنامه کاری {scheduleId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بازه‌های زمانی مسدود شده
+        /// </summary>
+        public async Task<List<DoctorTimeSlot>> GetBlockedTimeRangesAsync(int doctorId)
+        {
+            try
+            {
+                return await _context.DoctorTimeSlots
+                    .Where(ts => ts.DoctorId == doctorId &&
+                               ts.Status == AppointmentStatus.Cancelled &&
+                               !ts.IsDeleted)
+                    .OrderBy(ts => ts.AppointmentDate)
+                    .ThenBy(ts => ts.StartTime)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در دریافت بازه‌های مسدود شده پزشک {doctorId}", ex);
+            }
+        }
+
         #endregion
     }
 }

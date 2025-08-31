@@ -398,6 +398,36 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         /// <summary>
+        /// دریافت لیست پزشکان برای یک دسته‌بندی خدماتی
+        /// </summary>
+        public async Task<List<Doctor>> GetDoctorsForServiceCategoryAsync(int serviceCategoryId)
+        {
+            try
+            {
+                _logger.Information("دریافت لیست پزشکان دسته‌بندی خدماتی {ServiceCategoryId}", serviceCategoryId);
+
+                var doctors = await _context.DoctorServiceCategories
+                    .Include(dsc => dsc.Doctor)
+                    .Where(dsc => dsc.ServiceCategoryId == serviceCategoryId && 
+                                 !dsc.IsDeleted &&
+                                 !dsc.Doctor.IsDeleted)
+                    .Select(dsc => dsc.Doctor)
+                    .OrderBy(d => d.LastName)
+                    .ThenBy(d => d.FirstName)
+                    .ToListAsync();
+
+                _logger.Information("یافتن {Count} پزشک در دسته‌بندی خدماتی {ServiceCategoryId}", doctors.Count, serviceCategoryId);
+
+                return doctors;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست پزشکان دسته‌بندی خدماتی {ServiceCategoryId}", serviceCategoryId);
+                throw new InvalidOperationException($"خطا در دریافت لیست پزشکان دسته‌بندی خدماتی {serviceCategoryId}", ex);
+            }
+        }
+
+        /// <summary>
         /// ذخیره تمام تغییرات در انتظار به پایگاه داده
         /// </summary>
         public async Task SaveChangesAsync()
