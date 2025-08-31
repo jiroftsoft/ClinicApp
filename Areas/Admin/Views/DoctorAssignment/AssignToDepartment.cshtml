@@ -161,12 +161,23 @@
     
     <script>
         // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        window.ensureJQuery(function() {
-            $(document).ready(function () {
-                initializeSelect2();
-                initializeFormValidation();
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    initializeSelect2();
+                    initializeFormValidation();
+                });
             });
-        });
 
         function initializeSelect2() {
             $('#ServiceCategoryIds').select2({

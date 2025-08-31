@@ -420,11 +420,22 @@
         const DOCTOR_ID = @Model.DoctorId;
 
         // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        window.ensureJQuery(function() {
-            $(document).ready(function () {
-                initializePage();
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    initializePage();
+                });
             });
-        });
 
         // Wrapper function to ensure jQuery is available
         function withJQuery(callback) {

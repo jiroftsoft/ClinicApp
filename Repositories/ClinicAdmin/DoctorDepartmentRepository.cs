@@ -9,6 +9,7 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Interfaces;
 using ClinicApp.Models;
 
 namespace ClinicApp.Repositories.ClinicAdmin
@@ -32,13 +33,16 @@ namespace ClinicApp.Repositories.ClinicAdmin
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
+        private readonly ICurrentUserService _currentUserService;
 
         public DoctorDepartmentRepository(
             ApplicationDbContext context,
-            ILogger logger)
+            ILogger logger,
+            ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger.ForContext<DoctorDepartmentRepository>();
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         #region Doctor-Department Management (پیاده‌سازی مدیریت انتصاب پزشک به دپارتمان)
@@ -230,7 +234,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 // تنظیم فیلدهای ردیابی
                 doctorDepartment.CreatedAt = DateTime.Now;
-                doctorDepartment.CreatedByUserId = doctorDepartment.CreatedByUserId ?? "System";
+                doctorDepartment.CreatedByUserId = doctorDepartment.CreatedByUserId ?? _currentUserService.GetCurrentUserId();
                 doctorDepartment.IsDeleted = false;
                 doctorDepartment.DeletedAt = null;
                 doctorDepartment.DeletedByUserId = null;
@@ -281,7 +285,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 // تنظیم فیلدهای ردیابی
                 existingAssignment.UpdatedAt = DateTime.Now;
-                existingAssignment.UpdatedByUserId = doctorDepartment.UpdatedByUserId ?? "System";
+                existingAssignment.UpdatedByUserId = doctorDepartment.UpdatedByUserId ?? _currentUserService.GetCurrentUserId();
 
                 // به‌روزرسانی فیلدها
                 existingAssignment.IsActive = doctorDepartment.IsActive;
@@ -352,7 +356,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 // حذف نرم
                 existingAssignment.IsDeleted = true;
                 existingAssignment.DeletedAt = DateTime.Now;
-                existingAssignment.DeletedByUserId = doctorDepartment.DeletedByUserId ?? "System";
+                existingAssignment.DeletedByUserId = doctorDepartment.DeletedByUserId ?? _currentUserService.GetCurrentUserId();
 
                 await _context.SaveChangesAsync();
 

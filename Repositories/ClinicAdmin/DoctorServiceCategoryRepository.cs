@@ -5,6 +5,7 @@ using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using Serilog;
@@ -27,11 +28,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
+        private readonly ICurrentUserService _currentUserService;
 
-        public DoctorServiceCategoryRepository(ApplicationDbContext context, ILogger logger)
+        public DoctorServiceCategoryRepository(ApplicationDbContext context, ILogger logger, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         #region Doctor-ServiceCategory Management (مدیریت انتصاب پزشک به سرفصل‌های خدماتی)
@@ -163,9 +166,15 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 if (existingAssignment != null)
                     throw new InvalidOperationException($"پزشک قبلاً به این سرفصل خدماتی انتصاب داده شده است.");
 
-                // تنظیم تاریخ‌ها
+                // تنظیم فیلدهای ردیابی
                 doctorServiceCategory.CreatedAt = DateTime.Now;
+                doctorServiceCategory.CreatedByUserId = doctorServiceCategory.CreatedByUserId ?? _currentUserService.GetCurrentUserId();
                 doctorServiceCategory.UpdatedAt = DateTime.Now;
+                doctorServiceCategory.UpdatedByUserId = doctorServiceCategory.UpdatedByUserId ?? _currentUserService.GetCurrentUserId();
+                doctorServiceCategory.IsDeleted = false;
+                doctorServiceCategory.DeletedAt = null;
+                doctorServiceCategory.DeletedByUserId = null;
+                doctorServiceCategory.IsActive = true;
 
                 _context.DoctorServiceCategories.Add(doctorServiceCategory);
                 await _context.SaveChangesAsync();
@@ -204,7 +213,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 existingAssignment.CertificateNumber = doctorServiceCategory.CertificateNumber;
                 existingAssignment.Notes = doctorServiceCategory.Notes;
                 existingAssignment.UpdatedAt = DateTime.Now;
-                existingAssignment.UpdatedByUserId = doctorServiceCategory.UpdatedByUserId;
+                existingAssignment.UpdatedByUserId = doctorServiceCategory.UpdatedByUserId ?? _currentUserService.GetCurrentUserId();
 
                 await _context.SaveChangesAsync();
 
@@ -248,7 +257,11 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 if (hasFutureAppointments)
                     throw new InvalidOperationException("امکان حذف انتصاب به دلیل وجود نوبت‌های آینده وجود ندارد.");
 
-                _context.DoctorServiceCategories.Remove(existingAssignment);
+                // حذف نرم
+                existingAssignment.IsDeleted = true;
+                existingAssignment.DeletedAt = DateTime.Now;
+                existingAssignment.DeletedByUserId = doctorServiceCategory.DeletedByUserId ?? _currentUserService.GetCurrentUserId();
+
                 await _context.SaveChangesAsync();
 
                 return true;

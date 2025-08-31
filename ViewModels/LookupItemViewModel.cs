@@ -22,6 +22,11 @@ public class LookupItemViewModel
     public string Title { get; set; }
 
     /// <summary>
+    /// کد آیتم
+    /// </summary>
+    public string Code { get; set; }
+
+    /// <summary>
     /// توضیحات اضافی آیتم
     /// </summary>
     public string Description { get; set; }

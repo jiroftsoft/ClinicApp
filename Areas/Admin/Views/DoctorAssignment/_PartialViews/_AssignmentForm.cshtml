@@ -163,30 +163,41 @@
 
 <script>
     // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-    window.ensureJQuery(function() {
-        $(document).ready(function () {
-            initializeSelect2();
-            initializeFormValidation();
-            setupEventHandlers();
-        });
-    });
+    (function() {
+        function ensureJQuery(callback) {
+            if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    ensureJQuery(callback);
+                }, 50);
+            }
+        }
 
-    function initializeSelect2() {
-        $('#DepartmentId').select2({
-            placeholder: 'انتخاب دپارتمان...',
-            allowClear: true,
-            language: 'fa',
-            width: '100%'
+        ensureJQuery(function() {
+            $(document).ready(function () {
+                initializeSelect2();
+                initializeFormValidation();
+                setupEventHandlers();
+            });
         });
 
-        $('#serviceCategories').select2({
-            placeholder: 'انتخاب صلاحیت‌ها...',
-            allowClear: true,
-            language: 'fa',
-            width: '100%',
-            maximumSelectionLength: 10
-        });
-    }
+        function initializeSelect2() {
+            $('#DepartmentId').select2({
+                placeholder: 'انتخاب دپارتمان...',
+                allowClear: true,
+                language: 'fa',
+                width: '100%'
+            });
+
+            $('#serviceCategories').select2({
+                placeholder: 'انتخاب صلاحیت‌ها...',
+                allowClear: true,
+                language: 'fa',
+                width: '100%',
+                maximumSelectionLength: 10
+            });
+        }
 
     function initializeFormValidation() {
         $('#assignmentForm').validate({

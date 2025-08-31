@@ -176,96 +176,130 @@
 </div>
 
 @section Scripts {
-    <!-- jQuery باید اول لود بشه -->
-    <script src="~/Scripts/jquery-3.7.0.js"></script>
-    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
-
-    <!-- پلاگین‌ها -->
-    <script src="~/content/plugins/DataTables/js/jquery.dataTables.min.js"></script>
-    <script src="~/content/plugins/DataTables/js/dataTables.bootstrap4.min.js"></script>
-    <script src="~/content/plugins/DataTables/js/dataTables.responsive.min.js"></script>
-    <script src="~/content/plugins/select2/js/select2.min.js"></script>
-    <script src="~/content/plugins/select2/js/fa.min.js"></script>
-    <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
-    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <!-- Scripts are loaded via bundles in _AdminLayout.cshtml -->
+    <!-- Additional scripts specific to this page -->
 
     <script>
         let assignmentsTable;
 
         // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        window.ensureJQuery(function() {
-            $(document).ready(function () {
-                try {
-                    initDataTable();
-                    initSelect2();
-                    initPersianDatePickers();
-                    loadInitialData();
-                    initSearchBox();
-                    console.log('DoctorAssignment Index initialized successfully');
-                } catch (error) {
-                    console.error('Error initializing DoctorAssignment Index:', error);
-                    showError('خطا در بارگذاری', 'خطا در راه‌اندازی صفحه. لطفاً صفحه را رفرش کنید.');
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
                 }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    try {
+                        initDataTable();
+                        initSelect2();
+                        initPersianDatePickers();
+                        loadInitialData();
+                        initSearchBox();
+                        console.log('DoctorAssignment Index initialized successfully');
+                    } catch (error) {
+                        console.error('Error initializing DoctorAssignment Index:', error);
+                        showError('خطا در بارگذاری', 'خطا در راه‌اندازی صفحه. لطفاً صفحه را رفرش کنید.');
+                    }
+                });
             });
-        });
+        })();
 
         /* -----------------------------
            📌 DataTable
         ----------------------------- */
         function initDataTable() {
+            console.log('Initializing DataTable...');
+            console.log('jQuery version:', $.fn.jquery);
+            console.log('DataTable plugin available:', typeof $.fn.DataTable !== 'undefined');
+            
             if (typeof $.fn.DataTable === 'undefined') {
                 console.error('DataTable plugin not loaded');
                 showError('خطا در بارگذاری', 'DataTable plugin بارگذاری نشده است');
                 return;
             }
             
-            assignmentsTable = $('#assignmentsTable').DataTable({
-                language: { url: '@Url.Content("~/Content/plugins/DataTables/js/fa.json")' },
-                responsive: true,
-                processing: true,
-                serverSide: true,
-                pageLength: 25,
-                order: [[1, 'asc']], // sort by doctor name
-                ajax: {
-                    url: '@Url.Action("GetAssignments", "DoctorAssignment")',
-                    type: 'POST',
-                    data: function (d) {
-                        d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
-                        d.searchTerm = $('#searchInput').val();
-                        d.departmentId = $('#departmentFilter').val();
-                        d.status = $('#statusFilter').val();
-                        d.dateFrom = $('#DateFrom').val();
-                        d.dateTo = $('#DateTo').val();
-                        d.serviceCategoryId = $('#ServiceCategoryId').val();
-                        d.assignmentType = $('#AssignmentType').val();
-                    },
-                    error: function (xhr, error, thrown) {
-                        console.error('DataTable AJAX Error:', error, thrown);
-                        if (xhr.status === 500) {
-                            showError('خطای سرور', 'خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.');
-                        } else if (xhr.status === 401) {
-                            showError('خطای دسترسی', 'لطفاً مجدداً وارد شوید.');
-                        } else {
-                            showError('خطا در بارگذاری', 'لطفاً دوباره تلاش کنید');
-                        }
-                    }
+            // ابتدا یک تست ساده انجام می‌دهیم
+            console.log('Testing AJAX call to GetAssignments...');
+            $.ajax({
+                url: '@Url.Action("GetAssignments", "DoctorAssignment")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+                    draw: 1,
+                    start: 0,
+                    length: 10
                 },
-                columns: [
-                    { data: null, render: (d, t, r, m) => m.row + m.settings._iDisplayStart + 1 },
-                    { data: 'DoctorName' },
-                    { data: 'DoctorNationalCode' },
-                    { data: 'Departments', render: renderDepartments },
-                    { data: 'ServiceCategories', render: renderCategories },
-                    { data: 'Status', render: renderStatus },
-                    { data: 'AssignmentDate', render: formatDate },
-                    { data: 'Id', render: renderActions }
-                ],
-                columnDefs: [
-                    { targets: [0, 7], orderable: false },
-                    { targets: [3, 4], width: '20%' },
-                    { targets: [5], width: '10%' }
-                ]
+                success: function(response) {
+                    console.log('AJAX test successful:', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX test failed:', status, error);
+                    console.error('Response:', xhr.responseText);
+                }
             });
+            
+            try {
+                assignmentsTable = $('#assignmentsTable').DataTable({
+                    language: { url: '@Url.Content("~/Content/plugins/DataTables/js/fa.json")' },
+                    responsive: true,
+                    processing: true,
+                    serverSide: true,
+                    pageLength: 25,
+                    order: [[1, 'asc']], // sort by doctor name
+                    ajax: {
+                        url: '@Url.Action("GetAssignments", "DoctorAssignment")',
+                        type: 'POST',
+                        data: function (d) {
+                            d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                            d.searchTerm = $('#searchInput').val();
+                            d.departmentId = $('#departmentFilter').val();
+                            d.status = $('#statusFilter').val();
+                            d.dateFrom = $('#DateFrom').val();
+                            d.dateTo = $('#DateTo').val();
+                            d.serviceCategoryId = $('#ServiceCategoryId').val();
+                            d.assignmentType = $('#AssignmentType').val();
+                        },
+                        error: function (xhr, error, thrown) {
+                            console.error('DataTable AJAX Error:', error, thrown);
+                            console.error('Response:', xhr.responseText);
+                            if (xhr.status === 500) {
+                                showError('خطای سرور', 'خطا در پردازش درخواست. لطفاً دوباره تلاش کنید.');
+                            } else if (xhr.status === 401) {
+                                showError('خطای دسترسی', 'لطفاً مجدداً وارد شوید.');
+                            } else {
+                                showError('خطا در بارگذاری', 'لطفاً دوباره تلاش کنید');
+                            }
+                        }
+                    },
+                    columns: [
+                        { data: null, render: (d, t, r, m) => m.row + m.settings._iDisplayStart + 1 },
+                        { data: 'DoctorName' },
+                        { data: 'DoctorNationalCode' },
+                        { data: 'Departments', render: renderDepartments },
+                        { data: 'ServiceCategories', render: renderCategories },
+                        { data: 'Status', render: renderStatus },
+                        { data: 'AssignmentDate', render: formatDate },
+                        { data: 'Id', render: renderActions }
+                    ],
+                    columnDefs: [
+                        { targets: [0, 7], orderable: false },
+                        { targets: [3, 4], width: '20%' },
+                        { targets: [5], width: '10%' }
+                    ]
+                });
+                
+                console.log('DataTable initialized successfully');
+            } catch (error) {
+                console.error('Error initializing DataTable:', error);
+                showError('خطا در راه‌اندازی جدول', 'خطا در راه‌اندازی DataTable');
+            }
         }
 
         function renderDepartments(data) {
@@ -316,12 +350,20 @@
            📌 Persian DatePicker
         ----------------------------- */
         function initPersianDatePickers() {
+            console.log('Initializing Persian DatePickers...');
+            console.log('Persian DatePicker plugin available:', typeof $.fn.persianDatepicker !== 'undefined');
+            
             if (typeof $.fn.persianDatepicker !== 'undefined') {
-                $('.persian-date').persianDatepicker({
-                    format: 'YYYY/MM/DD',
-                    initialValue: false,
-                    autoClose: true
-                });
+                try {
+                    $('.persian-date').persianDatepicker({
+                        format: 'YYYY/MM/DD',
+                        initialValue: false,
+                        autoClose: true
+                    });
+                    console.log('Persian DatePickers initialized successfully');
+                } catch (error) {
+                    console.error('Error initializing Persian DatePickers:', error);
+                }
             } else {
                 console.warn('Persian DatePicker plugin not loaded');
             }
@@ -351,6 +393,11 @@
         ----------------------------- */
         function applyFilters() { assignmentsTable.ajax.reload(); }
         function refreshTable() { assignmentsTable.ajax.reload(); }
+        function refreshData() { assignmentsTable.ajax.reload(); }
+        
+        function showBulkAssignmentModal() {
+            $('#bulkAssignmentModal').modal('show');
+        }
 
         function viewDetails(id) { window.location.href = '@Url.Action("Details", "DoctorAssignment")/' + id; }
         function editAssignment(id) { window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', id); }
@@ -449,7 +496,21 @@
         function showLoading() { $('.loading-spinner').show(); }
         function hideLoading() { $('.loading-spinner').hide(); }
 
-        function showSuccess(title, msg) { Swal.fire({ title, text: msg, icon: 'success' }); }
-        function showError(title, msg) { Swal.fire({ title, text: msg, icon: 'error' }); }
+        function showSuccess(title, msg) { 
+            console.log('SweetAlert2 available:', typeof Swal !== 'undefined');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ title, text: msg, icon: 'success' }); 
+            } else {
+                alert(title + ': ' + msg);
+            }
+        }
+        function showError(title, msg) { 
+            console.log('SweetAlert2 available:', typeof Swal !== 'undefined');
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({ title, text: msg, icon: 'error' }); 
+            } else {
+                alert(title + ': ' + msg);
+            }
+        }
     </script>
 }

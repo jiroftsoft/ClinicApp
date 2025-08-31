@@ -1,0 +1,347 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentViewModel
+@{
+    ViewBag.Title = "جزئیات انتساب دپارتمان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        .details-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .info-section {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .info-section h5 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+        }
+        .info-value {
+            color: #6c757d;
+        }
+        .status-badge {
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.85rem;
+        }
+        .audit-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+        .audit-item {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-bottom: 5px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-eye me-2"></i>
+                        جزئیات انتساب دپارتمان
+                    </h2>
+                    <p class="text-muted mb-0">مشاهده جزئیات کامل انتساب پزشک به دپارتمان</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Edit", "DoctorDepartment", new { id = Model.Id })" class="btn btn-warning me-2">
+                        <i class="fas fa-edit me-2"></i>
+                        ویرایش
+                    </a>
+                    <a href="@Url.Action("Index", "DoctorDepartment")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Content -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="details-card p-4">
+                <!-- Doctor Information -->
+                <div class="info-section">
+                    <h5>
+                        <i class="fas fa-user-md me-2"></i>
+                        اطلاعات پزشک
+                    </h5>
+                    <div class="info-item">
+                        <span class="info-label">نام پزشک:</span>
+                        <span class="info-value">@Model.DoctorName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">شناسه پزشک:</span>
+                        <span class="info-value">@Model.DoctorId</span>
+                    </div>
+                </div>
+
+                <!-- Department Information -->
+                <div class="info-section">
+                    <h5>
+                        <i class="fas fa-hospital me-2"></i>
+                        اطلاعات دپارتمان
+                    </h5>
+                    <div class="info-item">
+                        <span class="info-label">نام دپارتمان:</span>
+                        <span class="info-value">@Model.DepartmentName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">شناسه دپارتمان:</span>
+                        <span class="info-value">@Model.DepartmentId</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">نام کلینیک:</span>
+                        <span class="info-value">@Model.ClinicName</span>
+                    </div>
+                </div>
+
+                <!-- Assignment Details -->
+                <div class="info-section">
+                    <h5>
+                        <i class="fas fa-cog me-2"></i>
+                        جزئیات انتساب
+                    </h5>
+                    <div class="info-item">
+                        <span class="info-label">نقش در دپارتمان:</span>
+                        <span class="info-value">@Model.Role</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">وضعیت:</span>
+                        <span class="info-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge bg-success status-badge">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary status-badge">غیرفعال</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">تاریخ شروع:</span>
+                        <span class="info-value">
+                            @if (!string.IsNullOrEmpty(Model.StartDateShamsi))
+                            {
+                                @Model.StartDateShamsi
+                            }
+                            else if (Model.StartDate.HasValue)
+                            {
+                                @Model.StartDate.Value.ToString("yyyy/MM/dd")
+                            }
+                            else
+                            {
+                                <span class="text-muted">نامشخص</span>
+                            }
+                        </span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">تاریخ پایان:</span>
+                        <span class="info-value">
+                            @if (!string.IsNullOrEmpty(Model.EndDateShamsi))
+                            {
+                                @Model.EndDateShamsi
+                            }
+                            else if (Model.EndDate.HasValue)
+                            {
+                                @Model.EndDate.Value.ToString("yyyy/MM/dd")
+                            }
+                            else
+                            {
+                                <span class="text-muted">نامشخص</span>
+                            }
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <div class="info-item">
+                            <span class="info-label">یادداشت‌ها:</span>
+                            <span class="info-value">@Model.Notes</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Audit Information -->
+                <div class="audit-section">
+                    <h6 class="text-muted mb-3">
+                        <i class="fas fa-history me-2"></i>
+                        اطلاعات ردیابی
+                    </h6>
+                    @if (Model.CreatedAt.HasValue)
+                    {
+                        <div class="audit-item">
+                            <strong>تاریخ ایجاد:</strong> @Model.CreatedAt.Value.ToString("yyyy/MM/dd HH:mm")
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
+                    {
+                        <div class="audit-item">
+                            <strong>ایجاد شده توسط:</strong> @Model.CreatedByUserName
+                        </div>
+                    }
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <div class="audit-item">
+                            <strong>آخرین بروزرسانی:</strong> @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                    {
+                        <div class="audit-item">
+                            <strong>بروزرسانی شده توسط:</strong> @Model.UpdatedByUserName
+                        </div>
+                    }
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-center">
+                            <a href="@Url.Action("Edit", "DoctorDepartment", new { id = Model.Id })" class="btn btn-warning me-3">
+                                <i class="fas fa-edit me-2"></i>
+                                ویرایش انتساب
+                            </a>
+                            <button type="button" class="btn btn-danger me-3" onclick="deleteAssignment()">
+                                <i class="fas fa-trash me-2"></i>
+                                حذف انتساب
+                            </button>
+                            <a href="@Url.Action("Index", "DoctorDepartment")" class="btn btn-outline-secondary">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    
+    <script>
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    // Page is ready
+                });
+            });
+        })();
+
+        function deleteAssignment() {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این عملیات قابل بازگشت نیست!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performDelete();
+                }
+            });
+        }
+
+        function performDelete() {
+            $.post('@Url.Action("Remove", "DoctorDepartment")', { id: @Model.Id })
+                .done(function (data) {
+                    if (data.success) {
+                        showSuccess('حذف موفق', 'انتساب با موفقیت حذف شد');
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Index", "DoctorDepartment")';
+                        }, 1500);
+                    } else {
+                        showError('خطا در حذف', data.message);
+                    }
+                })
+                .fail(function () {
+                    showError('خطا در ارتباط با سرور', 'لطفاً دوباره تلاش کنید');
+                });
+        }
+
+        function showSuccess(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'success',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        function showError(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        // Keyboard shortcuts
+        $(document).keydown(function (e) {
+            // Ctrl+E for edit
+            if (e.ctrlKey && e.keyCode === 69) {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Edit", "DoctorDepartment", new { id = Model.Id })';
+            }
+            
+            // Ctrl+D for delete
+            if (e.ctrlKey && e.keyCode === 68) {
+                e.preventDefault();
+                deleteAssignment();
+            }
+            
+            // Ctrl+B for back
+            if (e.ctrlKey && e.keyCode === 66) {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Index", "DoctorDepartment")';
+            }
+        });
+    </script>
+}

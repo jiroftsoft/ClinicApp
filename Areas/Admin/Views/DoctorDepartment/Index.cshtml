@@ -1,0 +1,469 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentIndexViewModel
+@{
+    ViewBag.Title = "مدیریت انتسابات دپارتمان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/DataTables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/DataTables/css/responsive.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        .department-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .assignment-item {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.3s ease;
+        }
+        .assignment-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .status-badge {
+            border-radius: 20px;
+            padding: 5px 12px;
+            font-size: 0.85rem;
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-hospital me-2"></i>
+                        مدیریت انتسابات دپارتمان
+                    </h2>
+                    <p class="text-muted mb-0">مدیریت انتسابات پزشکان به دپارتمان‌ها</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Assign", "DoctorDepartment")" class="btn btn-success me-2">
+                        <i class="fas fa-plus me-2"></i>
+                        انتساب جدید
+                    </a>
+                    <a href="@Url.Action("Statistics", "DoctorDepartment")" class="btn btn-info me-2">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        آمار
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        بروزرسانی
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1" id="totalAssignments">0</h4>
+                        <small class="opacity-75">کل انتسابات</small>
+                    </div>
+                    <i class="fas fa-hospital fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1" id="activeAssignments">0</h4>
+                        <small class="opacity-75">انتسابات فعال</small>
+                    </div>
+                    <i class="fas fa-check-circle fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1" id="totalDoctors">0</h4>
+                        <small class="opacity-75">پزشکان انتساب شده</small>
+                    </div>
+                    <i class="fas fa-user-md fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1" id="totalDepartments">0</h4>
+                        <small class="opacity-75">دپارتمان‌های فعال</small>
+                    </div>
+                    <i class="fas fa-building fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="department-card p-4">
+                <h5 class="mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    فیلترهای جستجو
+                </h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="searchInput" class="form-label">جستجو</label>
+                            <input type="text" class="form-control" id="searchInput" placeholder="جستجو در نام پزشک، دپارتمان...">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="departmentFilter" class="form-label">دپارتمان</label>
+                            <select class="form-control" id="departmentFilter">
+                                <option value="">همه دپارتمان‌ها</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="statusFilter" class="form-label">وضعیت</label>
+                            <select class="form-control" id="statusFilter">
+                                <option value="">همه وضعیت‌ها</option>
+                                <option value="active">فعال</option>
+                                <option value="inactive">غیرفعال</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="form-group">
+                            <label for="roleFilter" class="form-label">نقش</label>
+                            <select class="form-control" id="roleFilter">
+                                <option value="">همه نقش‌ها</option>
+                                <option value="رئیس دپارتمان">رئیس دپارتمان</option>
+                                <option value="پزشک معاون">پزشک معاون</option>
+                                <option value="پزشک عادی">پزشک عادی</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <button type="button" class="btn btn-primary me-2" onclick="applyFilters()">
+                            <i class="fas fa-search me-2"></i>
+                            اعمال فیلتر
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="clearFilters()">
+                            <i class="fas fa-times me-2"></i>
+                            پاک کردن فیلترها
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DataTable -->
+    <div class="row">
+        <div class="col-12">
+            <div class="department-card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        لیست انتسابات دپارتمان
+                    </h5>
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        در حال بارگذاری...
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <table id="assignmentsTable" class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>ردیف</th>
+                                <th>نام پزشک</th>
+                                <th>دپارتمان</th>
+                                <th>نقش</th>
+                                <th>تاریخ شروع</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Data will be loaded via AJAX -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/DataTables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/plugins/DataTables/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/plugins/DataTables/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    
+    <script>
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    initializeDataTable();
+                    loadStatistics();
+                    loadFilters();
+                    
+                    // Auto-refresh data every 5 minutes
+                    setInterval(function () {
+                        refreshData();
+                    }, 300000);
+                });
+            });
+        })();
+
+        let assignmentsTable;
+
+        function initializeDataTable() {
+            console.log('Initializing DataTable...');
+            
+            assignmentsTable = $('#assignmentsTable').DataTable({
+                language: { url: '@Url.Content("~/Content/plugins/DataTables/js/fa.json")' },
+                responsive: true,
+                processing: true,
+                serverSide: true,
+                pageLength: 25,
+                order: [[1, 'asc']], // sort by doctor name
+                ajax: {
+                    url: '@Url.Action("GetAssignments", "DoctorDepartment")',
+                    type: 'POST',
+                    data: function (d) {
+                        d.__RequestVerificationToken = $('input[name="__RequestVerificationToken"]').val();
+                        d.searchTerm = $('#searchInput').val();
+                        d.departmentId = $('#departmentFilter').val();
+                        d.status = $('#statusFilter').val();
+                        d.role = $('#roleFilter').val();
+                    },
+                    error: function (xhr, error, thrown) {
+                        console.error('DataTable AJAX Error:', error, thrown);
+                        showError('خطا در بارگذاری', 'لطفاً دوباره تلاش کنید');
+                    }
+                },
+                columns: [
+                    { data: null, render: (d, t, r, m) => m.row + m.settings._iDisplayStart + 1 },
+                    { data: 'DoctorName' },
+                    { data: 'DepartmentName' },
+                    { data: 'Role' },
+                    { data: 'StartDate', render: formatDate },
+                    { data: 'IsActive', render: renderStatus },
+                    { data: 'Id', render: renderActions }
+                ],
+                columnDefs: [
+                    { targets: [0, 6], orderable: false },
+                    { targets: [5], width: '10%' }
+                ]
+            });
+        }
+
+        function loadStatistics() {
+            $.get('@Url.Action("GetStatistics", "DoctorDepartment")')
+                .done(function (data) {
+                    if (data.success) {
+                        $('#totalAssignments').text(data.data.TotalAssignments);
+                        $('#activeAssignments').text(data.data.ActiveAssignments);
+                        $('#totalDoctors').text(data.data.TotalDoctors);
+                        $('#totalDepartments').text(data.data.TotalDepartments);
+                    }
+                })
+                .fail(function () {
+                    console.error('Failed to load statistics');
+                });
+        }
+
+        function loadFilters() {
+            // Load departments for filter
+            $.get('@Url.Action("GetDepartments", "DoctorDepartment")')
+                .done(function (data) {
+                    if (data.success) {
+                        const select = $('#departmentFilter');
+                        data.data.forEach(function(dept) {
+                            select.append(`<option value="${dept.Value}">${dept.Text}</option>`);
+                        });
+                    }
+                })
+                .fail(function () {
+                    console.error('Failed to load departments');
+                });
+        }
+
+        function applyFilters() {
+            if (assignmentsTable) {
+                assignmentsTable.ajax.reload();
+            }
+        }
+
+        function clearFilters() {
+            $('#searchInput').val('');
+            $('#departmentFilter').val('');
+            $('#statusFilter').val('');
+            $('#roleFilter').val('');
+            applyFilters();
+        }
+
+        function refreshData() {
+            if (assignmentsTable) {
+                assignmentsTable.ajax.reload();
+            }
+            loadStatistics();
+        }
+
+        function editAssignment(id) {
+            window.location.href = '@Url.Action("Edit", "DoctorDepartment", new { id = "__ID__" })'.replace('__ID__', id);
+        }
+
+        function deleteAssignment(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این عملیات قابل بازگشت نیست!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    performDelete(id);
+                }
+            });
+        }
+
+        function performDelete(id) {
+            showLoading();
+            
+            $.post('@Url.Action("Remove", "DoctorDepartment")', { id: id })
+                .done(function (data) {
+                    if (data.success) {
+                        showSuccess('حذف موفق', 'انتساب با موفقیت حذف شد');
+                        refreshData();
+                    } else {
+                        showError('خطا در حذف', data.message);
+                    }
+                })
+                .fail(function () {
+                    showError('خطا در ارتباط با سرور', 'لطفاً دوباره تلاش کنید');
+                })
+                .always(function () {
+                    hideLoading();
+                });
+        }
+
+        function formatDate(data, type, row) {
+            if (!data) return '-';
+            return new Date(data).toLocaleDateString('fa-IR');
+        }
+
+        function renderStatus(data, type, row) {
+            if (data) {
+                return '<span class="badge bg-success status-badge">فعال</span>';
+            } else {
+                return '<span class="badge bg-secondary status-badge">غیرفعال</span>';
+            }
+        }
+
+        function renderActions(data, type, row) {
+            return `
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editAssignment(${data})" title="ویرایش">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteAssignment(${data})" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function showLoading() {
+            $('.loading-spinner').show();
+        }
+
+        function hideLoading() {
+            $('.loading-spinner').hide();
+        }
+
+        function showSuccess(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'success',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        function showError(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        // Keyboard shortcuts
+        $(document).keydown(function (e) {
+            // Ctrl+R for refresh
+            if (e.ctrlKey && e.keyCode === 82) {
+                e.preventDefault();
+                refreshData();
+            }
+            
+            // Ctrl+N for new assignment
+            if (e.ctrlKey && e.keyCode === 78) {
+                e.preventDefault();
+                window.location.href = '@Url.Action("Assign", "DoctorDepartment")';
+            }
+        });
+    </script>
+}

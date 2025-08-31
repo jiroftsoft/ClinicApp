@@ -28,6 +28,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string Name { get; set; }
 
         /// <summary>
+        /// کد آیتم
+        /// </summary>
+        public string Code { get; set; }
+
+        /// <summary>
         /// توضیحات آیتم (در صورت وجود)
         /// </summary>
         public string Description { get; set; }
@@ -50,7 +55,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک موجودیت می‌سازد.
         /// </summary>
-        public static LookupItemViewModel FromEntity<T>(T entity, Func<T, int> idSelector, Func<T, string> nameSelector, Func<T, string> descriptionSelector = null, Func<T, int?> groupIdSelector = null, Func<T, string> groupNameSelector = null) where T : class
+        public static LookupItemViewModel FromEntity<T>(T entity, Func<T, int> idSelector, Func<T, string> nameSelector, Func<T, string> descriptionSelector = null, Func<T, int?> groupIdSelector = null, Func<T, string> groupNameSelector = null, Func<T, string> codeSelector = null) where T : class
         {
             if (entity == null) return null;
             
@@ -58,6 +63,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             {
                 Id = idSelector(entity),
                 Name = nameSelector(entity),
+                Code = codeSelector?.Invoke(entity),
                 Description = descriptionSelector?.Invoke(entity),
                 GroupId = groupIdSelector?.Invoke(entity),
                 GroupName = groupNameSelector?.Invoke(entity)
@@ -67,12 +73,13 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک موجودیت ساده می‌سازد.
         /// </summary>
-        public static LookupItemViewModel FromEntity(int id, string name, string description = null, int? groupId = null, string groupName = null)
+        public static LookupItemViewModel FromEntity(int id, string name, string description = null, int? groupId = null, string groupName = null, string code = null)
         {
             return new LookupItemViewModel
             {
                 Id = id,
                 Name = name,
+                Code = code,
                 Description = description,
                 GroupId = groupId,
                 GroupName = groupName

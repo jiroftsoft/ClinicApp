@@ -20,6 +20,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     public class DoctorServiceCategoryViewModel
     {
         /// <summary>
+        /// شناسه انتصاب (برای عملیات‌های ویرایش/حذف)
+        /// </summary>
+        public int Id { get; set; }
+
+        /// <summary>
         /// شناسه پزشک
         /// </summary>
         public int DoctorId { get; set; }
@@ -114,6 +119,25 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
         [Display(Name = "توضیحات")]
         public string Notes { get; set; }
+
+        /// <summary>
+        /// تاریخ انتساب پزشک به دسته‌بندی خدمات (معادل CreatedAt)
+        /// </summary>
+        [Display(Name = "تاریخ انتساب")]
+        public DateTime? AssignmentDate { get; set; }
+
+        /// <summary>
+        /// تاریخ انتساب پزشک به دسته‌بندی خدمات به فرمت شمسی
+        /// </summary>
+        [Display(Name = "تاریخ انتساب (شمسی)")]
+        public string AssignmentDateShamsi { get; set; }
+
+        /// <summary>
+        /// توضیحات انتساب
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        [Display(Name = "توضیحات")]
+        public string Description { get; set; }
 
         #region فیلدهای ردیابی (Audit Trail)
 

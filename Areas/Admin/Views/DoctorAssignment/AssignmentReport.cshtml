@@ -316,14 +316,25 @@
         let currentFilters = {};
 
         // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        window.ensureJQuery(function() {
-            $(document).ready(function () {
-                initializeDataTable();
-                initializeSelect2();
-                initializeCharts();
-                loadInitialData();
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    initializeDataTable();
+                    initializeSelect2();
+                    initializeCharts();
+                    loadInitialData();
+                });
             });
-        });
 
         function initializeDataTable() {
             reportTable = $('#reportTable').DataTable({

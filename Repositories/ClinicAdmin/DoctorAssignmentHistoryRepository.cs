@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models;
+using ClinicApp.Interfaces;
 using Serilog;
 
 namespace ClinicApp.Repositories.ClinicAdmin
@@ -16,10 +17,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
     public class DoctorAssignmentHistoryRepository : IDoctorAssignmentHistoryRepository
     {
         private readonly ApplicationDbContext _context;
+        private readonly ICurrentUserService _currentUserService;
 
-        public DoctorAssignmentHistoryRepository(ApplicationDbContext context)
+        public DoctorAssignmentHistoryRepository(ApplicationDbContext context, ICurrentUserService currentUserService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
         #region Core CRUD Operations (عملیات اصلی CRUD)
@@ -74,6 +77,33 @@ namespace ClinicApp.Repositories.ClinicAdmin
         {
             try
             {
+                // تنظیم فیلدهای ردیابی
+                history.ActionDate = DateTime.Now;
+                
+                // اطمینان از اینکه PerformedByUserId هرگز null نباشد
+                var currentUserId = _currentUserService.GetCurrentUserId();
+                if (string.IsNullOrEmpty(currentUserId))
+                {
+                    // اگر کاربر فعلی در دسترس نیست، اولین کاربر موجود را پیدا کنیم
+                    var firstUser = await _context.Users.FirstOrDefaultAsync();
+                    if (firstUser != null)
+                    {
+                        currentUserId = firstUser.Id;
+                        Log.Warning("شناسه کاربر فعلی در دسترس نیست. استفاده از اولین کاربر موجود: {FirstUserId}", currentUserId);
+                    }
+                    else
+                    {
+                        // اگر هیچ کاربری وجود ندارد، از یک شناسه پیش‌فرض استفاده کنیم
+                        currentUserId = "6f999f4d-24b8-4142-a97e-20077850278b"; // شناسه کاربر شما
+                        Log.Error("هیچ کاربری در دیتابیس یافت نشد. استفاده از شناسه پیش‌فرض: {DefaultUserId}", currentUserId);
+                    }
+                }
+                history.PerformedByUserId = history.PerformedByUserId ?? currentUserId;
+                
+                history.IsDeleted = false;
+                history.DeletedAt = null;
+                history.DeletedByUserId = null;
+
                 _context.DoctorAssignmentHistories.Add(history);
                 await _context.SaveChangesAsync();
                 return history;

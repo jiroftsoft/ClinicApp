@@ -257,7 +257,7 @@
                                 <div class="assignment-item">
                                     <div class="d-flex justify-content-between align-items-start">
                                         <div>
-                                            <h6 class="mb-2">@service.ServiceCategoryName</h6>
+                                            <h6 class="mb-2">@service.ServiceCategoryTitle</h6>
                                             <p class="text-muted mb-2 small">
                                                 <i class="fas fa-calendar me-1"></i>
                                                 تاریخ اعطا: @(service.AssignmentDate?.ToString("yyyy/MM/dd") ?? "نامشخص")
@@ -339,14 +339,25 @@
     
     <script>
         // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        window.ensureJQuery(function() {
-            $(document).ready(function () {
-                // Auto-refresh data every 5 minutes
-                setInterval(function () {
-                    refreshData();
-                }, 300000);
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    // Auto-refresh data every 5 minutes
+                    setInterval(function () {
+                        refreshData();
+                    }, 300000);
+                });
             });
-        });
 
         function editAssignment(assignmentId) {
             window.location.href = '@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = "__ID__" })'.replace('__ID__', assignmentId);

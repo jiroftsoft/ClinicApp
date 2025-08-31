@@ -3224,6 +3224,16 @@
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentHistory.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_BulkAssignmentForm.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentFilters.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\Assign.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\Statistics.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_DepartmentStats.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_AssignmentForm.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_DepartmentFilters.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_DepartmentList.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\_ViewStart.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3475,7 +3485,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Admin\Views\DoctorDepartment\" />
     <Folder Include="Areas\Admin\Views\DoctorReporting\" />
     <Folder Include="Areas\Admin\Views\DoctorSchedule\" />
     <Folder Include="Areas\Admin\Views\DoctorServiceCategory\" />

@@ -1,0 +1,485 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentViewModel
+@{
+    ViewBag.Title = "انتساب پزشک به دپارتمان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2-bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        .assignment-form-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .form-section {
+            border: 1px solid #e9ecef;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .form-section h5 {
+            color: #667eea;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .select2-container--bootstrap4 .select2-selection--single {
+            height: 38px;
+            border: 1px solid #ced4da;
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .help-text {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-plus me-2"></i>
+                        انتساب پزشک به دپارتمان
+                    </h2>
+                    <p class="text-muted mb-0">انتساب پزشک جدید به دپارتمان</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "DoctorDepartment")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Form -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="assignment-form-card p-4">
+                @using (Html.BeginForm("Assign", "DoctorDepartment", FormMethod.Post, new { id = "assignmentForm" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                    <!-- Doctor Selection Section -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-user-md me-2"></i>
+                            انتخاب پزشک
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DoctorId, "پزشک", new { @class = "form-label fw-bold" })
+                                    <select id="DoctorId" name="DoctorId" class="form-control select2" required>
+                                        <option value="">انتخاب پزشک...</option>
+                                    </select>
+                                    @Html.ValidationMessageFor(m => m.DoctorId, "", new { @class = "text-danger" })
+                                    <div class="help-text">پزشک مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">اطلاعات پزشک</label>
+                                    <div id="doctorInfo" class="p-3 bg-light rounded">
+                                        <p class="text-muted mb-0">پزشک را انتخاب کنید تا اطلاعات نمایش داده شود</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Selection Section -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-hospital me-2"></i>
+                            انتخاب دپارتمان
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DepartmentId, "دپارتمان", new { @class = "form-label fw-bold" })
+                                    <select id="DepartmentId" name="DepartmentId" class="form-control select2" required>
+                                        <option value="">انتخاب دپارتمان...</option>
+                                    </select>
+                                    @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "text-danger" })
+                                    <div class="help-text">دپارتمان مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">اطلاعات دپارتمان</label>
+                                    <div id="departmentInfo" class="p-3 bg-light rounded">
+                                        <p class="text-muted mb-0">دپارتمان را انتخاب کنید تا اطلاعات نمایش داده شود</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Assignment Details Section -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-cog me-2"></i>
+                            جزئیات انتساب
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Role, "نقش در دپارتمان", new { @class = "form-label fw-bold" })
+                                    <select id="Role" name="Role" class="form-control select2" required>
+                                        <option value="">انتخاب نقش...</option>
+                                        <option value="رئیس دپارتمان">رئیس دپارتمان</option>
+                                        <option value="پزشک معاون">پزشک معاون</option>
+                                        <option value="پزشک عادی">پزشک عادی</option>
+                                        <option value="مشاور">مشاور</option>
+                                        <option value="پزشک متخصص">پزشک متخصص</option>
+                                    </select>
+                                    @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger" })
+                                    <div class="help-text">نقش پزشک در دپارتمان را مشخص کنید</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.IsActive, "وضعیت", new { @class = "form-label fw-bold" })
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", @checked = "checked" })
+                                        <label class="form-check-label" for="@Html.IdFor(m => m.IsActive)">
+                                            فعال
+                                        </label>
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.IsActive, "", new { @class = "text-danger" })
+                                    <div class="help-text">وضعیت فعال بودن انتساب</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.StartDateShamsi, "تاریخ شروع", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.StartDateShamsi, new { @class = "form-control persian-date", placeholder = "مثال: 1402/01/01", autocomplete = "off" })
+                                    @Html.ValidationMessageFor(m => m.StartDateShamsi, "", new { @class = "text-danger" })
+                                    <div class="help-text">تاریخ شروع فعالیت در دپارتمان</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.EndDateShamsi, "تاریخ پایان (اختیاری)", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.EndDateShamsi, new { @class = "form-control persian-date", placeholder = "مثال: 1402/12/29", autocomplete = "off" })
+                                    @Html.ValidationMessageFor(m => m.EndDateShamsi, "", new { @class = "text-danger" })
+                                    <div class="help-text">تاریخ پایان فعالیت (در صورت موقت بودن)</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Notes, "یادداشت‌ها", new { @class = "form-label fw-bold" })
+                                    @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "3", placeholder = "یادداشت‌های مربوط به انتساب..." })
+                                    @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+                                    <div class="help-text">توضیحات اضافی در مورد انتساب</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Validation Summary -->
+                    <div id="validationSummary" class="alert alert-danger" style="display: none;">
+                        <h6>خطاهای اعتبارسنجی:</h6>
+                        <ul id="validationErrors"></ul>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex justify-content-center">
+                                <button type="submit" class="btn btn-success me-3" id="submitBtn">
+                                    <i class="fas fa-save me-2"></i>
+                                    ذخیره انتساب
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary me-3" onclick="resetForm()">
+                                    <i class="fas fa-undo me-2"></i>
+                                    پاک کردن فرم
+                                </button>
+                                <a href="@Url.Action("Index", "DoctorDepartment")" class="btn btn-outline-danger">
+                                    <i class="fas fa-times me-2"></i>
+                                    انصراف
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    
+    <script>
+        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+        (function() {
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            ensureJQuery(function() {
+                $(document).ready(function () {
+                    initializeSelect2();
+                    initializePersianDatePickers();
+                    loadDoctors();
+                    loadDepartments();
+                    setupEventHandlers();
+                });
+            });
+        })();
+
+        function initializeSelect2() {
+            $('.select2').select2({
+                theme: 'bootstrap4',
+                width: '100%',
+                placeholder: 'انتخاب کنید...',
+                allowClear: true
+            });
+        }
+
+        function initializePersianDatePickers() {
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                onSelect: function(unix) {
+                    var date = new Date(unix);
+                    var persianDate = date.getFullYear() + '/' + String(date.getMonth() + 1).padStart(2, '0') + '/' + String(date.getDate()).padStart(2, '0');
+                    $(this.element).val(persianDate);
+                }
+            });
+        }
+
+        function loadDoctors() {
+            $.get('@Url.Action("GetActiveDoctors", "DoctorDepartment")')
+                .done(function (data) {
+                    if (data.success) {
+                        const select = $('#DoctorId');
+                        data.data.forEach(function(doctor) {
+                            select.append(`<option value="${doctor.Value}">${doctor.Text}</option>`);
+                        });
+                        select.trigger('change');
+                    }
+                })
+                .fail(function () {
+                    showError('خطا در بارگذاری پزشکان', 'لطفاً دوباره تلاش کنید');
+                });
+        }
+
+        function loadDepartments() {
+            $.get('@Url.Action("GetDepartments", "DoctorDepartment")')
+                .done(function (data) {
+                    if (data.success) {
+                        const select = $('#DepartmentId');
+                        data.data.forEach(function(dept) {
+                            select.append(`<option value="${dept.Value}">${dept.Text}</option>`);
+                        });
+                        select.trigger('change');
+                    }
+                })
+                .fail(function () {
+                    showError('خطا در بارگذاری دپارتمان‌ها', 'لطفاً دوباره تلاش کنید');
+                });
+        }
+
+        function setupEventHandlers() {
+            // Doctor selection change
+            $('#DoctorId').on('change', function() {
+                const doctorId = $(this).val();
+                if (doctorId) {
+                    loadDoctorInfo(doctorId);
+                } else {
+                    $('#doctorInfo').html('<p class="text-muted mb-0">پزشک را انتخاب کنید تا اطلاعات نمایش داده شود</p>');
+                }
+            });
+
+            // Department selection change
+            $('#DepartmentId').on('change', function() {
+                const departmentId = $(this).val();
+                if (departmentId) {
+                    loadDepartmentInfo(departmentId);
+                } else {
+                    $('#departmentInfo').html('<p class="text-muted mb-0">دپارتمان را انتخاب کنید تا اطلاعات نمایش داده شود</p>');
+                }
+            });
+
+            // Form submission
+            $('#assignmentForm').on('submit', function(e) {
+                e.preventDefault();
+                submitForm();
+            });
+        }
+
+        function loadDoctorInfo(doctorId) {
+            $.get('@Url.Action("GetDoctorInfo", "DoctorDepartment")', { id: doctorId })
+                .done(function (data) {
+                    if (data.success) {
+                        const doctor = data.data;
+                        $('#doctorInfo').html(`
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="mb-2">${doctor.FullName}</h6>
+                                    <p class="text-muted mb-1 small">کد ملی: ${doctor.NationalCode}</p>
+                                    <p class="text-muted mb-1 small">تخصص: ${doctor.Specialization}</p>
+                                    <p class="text-muted mb-0 small">وضعیت: ${doctor.IsActive ? 'فعال' : 'غیرفعال'}</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                })
+                .fail(function () {
+                    $('#doctorInfo').html('<p class="text-danger mb-0">خطا در بارگذاری اطلاعات پزشک</p>');
+                });
+        }
+
+        function loadDepartmentInfo(departmentId) {
+            $.get('@Url.Action("GetDepartmentInfo", "DoctorDepartment")', { id: departmentId })
+                .done(function (data) {
+                    if (data.success) {
+                        const dept = data.data;
+                        $('#departmentInfo').html(`
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="mb-2">${dept.Name}</h6>
+                                    <p class="text-muted mb-1 small">کد: ${dept.Code}</p>
+                                    <p class="text-muted mb-1 small">کلینیک: ${dept.ClinicName}</p>
+                                    <p class="text-muted mb-0 small">وضعیت: ${dept.IsActive ? 'فعال' : 'غیرفعال'}</p>
+                                </div>
+                            </div>
+                        `);
+                    }
+                })
+                .fail(function () {
+                    $('#departmentInfo').html('<p class="text-danger mb-0">خطا در بارگذاری اطلاعات دپارتمان</p>');
+                });
+        }
+
+        function submitForm() {
+            // Clear previous validation errors
+            $('#validationSummary').hide();
+            $('#validationErrors').empty();
+
+            // Show loading
+            $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...');
+
+            // Get form data
+            const formData = new FormData($('#assignmentForm')[0]);
+
+            $.ajax({
+                url: '@Url.Action("Assign", "DoctorDepartment")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        showSuccess('انتساب موفق', 'پزشک با موفقیت به دپارتمان انتساب شد');
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Index", "DoctorDepartment")';
+                        }, 1500);
+                    } else {
+                        showValidationErrors(response.errors);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showError('خطا در ذخیره', 'لطفاً دوباره تلاش کنید');
+                },
+                complete: function() {
+                    $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>ذخیره انتساب');
+                }
+            });
+        }
+
+        function showValidationErrors(errors) {
+            if (errors && errors.length > 0) {
+                const errorList = $('#validationErrors');
+                errors.forEach(function(error) {
+                    errorList.append(`<li>${error}</li>`);
+                });
+                $('#validationSummary').show();
+                $('html, body').animate({
+                    scrollTop: $('#validationSummary').offset().top - 100
+                }, 500);
+            }
+        }
+
+        function resetForm() {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'تمام اطلاعات فرم پاک خواهد شد',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، پاک کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#assignmentForm')[0].reset();
+                    $('.select2').val('').trigger('change');
+                    $('#doctorInfo').html('<p class="text-muted mb-0">پزشک را انتخاب کنید تا اطلاعات نمایش داده شود</p>');
+                    $('#departmentInfo').html('<p class="text-muted mb-0">دپارتمان را انتخاب کنید تا اطلاعات نمایش داده شود</p>');
+                    $('#validationSummary').hide();
+                }
+            });
+        }
+
+        function showSuccess(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'success',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        function showError(title, message) {
+            Swal.fire({
+                title: title,
+                text: message,
+                icon: 'error',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        // Keyboard shortcuts
+        $(document).keydown(function (e) {
+            // Ctrl+S for save
+            if (e.ctrlKey && e.keyCode === 83) {
+                e.preventDefault();
+                submitForm();
+            }
+            
+            // Ctrl+R for reset
+            if (e.ctrlKey && e.keyCode === 82) {
+                e.preventDefault();
+                resetForm();
+            }
+        });
+    </script>
+}
