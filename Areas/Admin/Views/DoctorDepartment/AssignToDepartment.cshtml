@@ -1,0 +1,277 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentOperationViewModel
+@{
+    ViewBag.Title = "انتساب پزشک به دپارتمان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .assignment-form {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .form-section {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        .form-section h5 {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .doctor-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .btn-submit {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .validation-summary {
+            border-radius: 10px;
+            border: none;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">در حال پردازش...</span>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-user-plus me-2"></i>
+                        انتساب پزشک به دپارتمان
+                    </h2>
+                    <p class="text-muted mb-0">انتساب پزشک به دپارتمان و تعیین نقش</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به لیست پزشکان
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Information Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="doctor-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-user-md me-2"></i>
+                            @Model.DoctorName
+                        </h4>
+                        <p class="mb-0">
+                            <i class="fas fa-id-card me-2"></i>
+                            کد ملی: @Model.DoctorNationalCode
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-user-md me-1"></i>
+                            پزشک
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assignment Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="assignment-form p-4">
+                @using (Html.BeginForm("AssignToDepartment", "DoctorDepartment", FormMethod.Post, 
+                       new { id = "assignmentForm", @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.DoctorId)
+                    @Html.HiddenFor(m => m.DoctorName)
+
+                    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger validation-summary" })
+
+                    <!-- Doctor Information -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-user-md me-2"></i>
+                            اطلاعات پزشک
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.DoctorName, "نام پزشک", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.DoctorName, new { @class = "form-control", @readonly = "readonly" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">کد ملی</label>
+                                    <input type="text" class="form-control" value="@Model.DoctorNationalCode" readonly />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Department Selection -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-hospital me-2"></i>
+                            انتخاب دپارتمان
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.DepartmentId, "دپارتمان", new { @class = "form-label fw-bold" })
+                                    @Html.DropDownListFor(m => m.DepartmentId, 
+                                        new SelectList(ViewBag.Departments ?? new List<object>(), "Value", "Text"), 
+                                        "انتخاب دپارتمان...", 
+                                        new { @class = "form-select", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">وضعیت انتساب</label>
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", @checked = "checked" })
+                                        <label class="form-check-label" for="@Html.IdFor(m => m.IsActive)">
+                                            انتساب فعال
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-comment me-2"></i>
+                            توضیحات
+                        </h5>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.Description, "توضیحات", new { @class = "form-label fw-bold" })
+                                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", 
+                                        placeholder = "توضیحات مربوط به انتساب پزشک..." })
+                                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="form-section">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary btn-submit">
+                                        <i class="fas fa-times me-2"></i>
+                                        انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-primary btn-submit">
+                                        <i class="fas fa-save me-2"></i>
+                                        انتساب پزشک
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Initialize Select2
+            $('#DepartmentId').select2({
+                placeholder: 'انتخاب دپارتمان...',
+                allowClear: true,
+                language: 'fa'
+            });
+
+            // Form submission
+            $('#assignmentForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                if (!$(this)[0].checkValidity()) {
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                    return false;
+                }
+
+                // Show loading overlay
+                $('.loading-overlay').show();
+
+                // Submit form
+                this.submit();
+            });
+
+            // Success message
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'موفقیت',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+
+            // Error message
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'خطا',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+        });
+    </script>
+}

@@ -120,6 +120,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public int DayOfWeek { get; set; }
 
         /// <summary>
+        /// نام روز هفته
+        /// </summary>
+        public string DayName { get; set; }
+
+        /// <summary>
         /// نشان‌دهنده فعال بودن روز کاری
         /// </summary>
         public bool IsActive { get; set; } = true;

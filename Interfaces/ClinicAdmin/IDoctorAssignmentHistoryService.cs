@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
 using ClinicApp.Repositories.ClinicAdmin;
+using ClinicApp.ViewModels.DoctorManagementVM;
 
 namespace ClinicApp.Interfaces.ClinicAdmin
 {
@@ -82,6 +83,11 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// دریافت آمار تاریخچه انتسابات
         /// </summary>
         Task<ServiceResult<HistoryStats>> GetHistoryStatsAsync(DateTime? startDate = null, DateTime? endDate = null);
+
+        /// <summary>
+        /// دریافت آمار تاریخچه برای نمایش
+        /// </summary>
+        Task<ServiceResult<AssignmentHistoryStatisticsViewModel>> GetHistoryStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null);
 
         /// <summary>
         /// دریافت آمار تاریخچه برای داشبورد

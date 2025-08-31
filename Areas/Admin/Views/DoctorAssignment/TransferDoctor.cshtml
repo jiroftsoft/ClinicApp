@@ -1,6 +1,7 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorTransferViewModel
+@* صفحه انتقال کلی پزشک بین دپارتمان‌ها - برای عملیات تخصصی به DoctorDepartmentController مراجعه شود *@
 @{
-    ViewBag.Title = "انتقال پزشک";
+    ViewBag.Title = "انتقال کلی پزشک بین دپارتمان‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -86,9 +87,9 @@
                 <div>
                     <h2 class="mb-0 text-primary">
                         <i class="fas fa-exchange-alt me-2"></i>
-                        انتقال پزشک
+                        انتقال کلی پزشک بین دپارتمان‌ها
                     </h2>
-                    <p class="text-muted mb-0">انتقال پزشک از دپارتمان فعلی به دپارتمان جدید</p>
+                    <p class="text-muted mb-0">انتقال کلی پزشک از دپارتمان فعلی به دپارتمان جدید - برای عملیات تخصصی به DoctorDepartmentController مراجعه شود</p>
                 </div>
                 <div>
                     <a href="@Url.Action("Index", "DoctorAssignment")" class="btn btn-outline-secondary">

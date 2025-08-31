@@ -1,0 +1,330 @@
+@model DoctorReportingViewModel
+@{
+    ViewBag.Title = "گزارش‌گیری و آمار پزشکان";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        گزارش‌گیری و آمار پزشکان
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-success" onclick="exportReport()">
+                            <i class="fas fa-download"></i>
+                            خروجی Excel
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fas fa-check"></i>
+                            @TempData["Success"]
+                        </div>
+                    }
+
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                    <!-- فیلترهای گزارش -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="reportType">نوع گزارش:</label>
+                                <select id="reportType" class="form-control">
+                                    <option value="assignment">گزارش انتسابات</option>
+                                    <option value="schedule">گزارش برنامه‌های کاری</option>
+                                    <option value="performance">گزارش عملکرد</option>
+                                    <option value="department">گزارش دپارتمان‌ها</option>
+                                    <option value="serviceCategory">گزارش سرفصل‌های خدماتی</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="fromDate">از تاریخ:</label>
+                                <input type="date" id="fromDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="toDate">تا تاریخ:</label>
+                                <input type="date" id="toDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="button" id="generateReportBtn" class="btn btn-primary btn-block">
+                                    <i class="fas fa-chart-line"></i>
+                                    تولید گزارش
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3 id="totalDoctors">0</h3>
+                                    <p>کل پزشکان</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-user-md"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3 id="activeDoctors">0</h3>
+                                    <p>پزشکان فعال</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3 id="totalDepartments">0</h3>
+                                    <p>کل دپارتمان‌ها</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-hospital"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3 id="totalSchedules">0</h3>
+                                    <p>برنامه‌های کاری</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-calendar-alt"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودارها -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">توزیع پزشکان بر اساس دپارتمان</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="departmentChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">توزیع برنامه‌های کاری</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="scheduleChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- جدول گزارش -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">جزئیات گزارش</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-striped" id="reportTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>ردیف</th>
+                                                    <th>پزشک</th>
+                                                    <th>دپارتمان</th>
+                                                    <th>سرفصل‌های خدماتی</th>
+                                                    <th>برنامه‌های کاری</th>
+                                                    <th>وضعیت</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="6" class="text-center">لطفاً نوع گزارش را انتخاب کرده و دکمه "تولید گزارش" را کلیک کنید.</td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function () {
+            // تنظیم تاریخ‌های پیش‌فرض
+            var today = new Date();
+            var lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+            
+            $('#fromDate').val(lastMonth.toISOString().split('T')[0]);
+            $('#toDate').val(today.toISOString().split('T')[0]);
+            
+            // بارگذاری آمار کلی
+            loadGeneralStatistics();
+            
+            // تولید گزارش
+            $('#generateReportBtn').click(function () {
+                generateReport();
+            });
+        });
+
+        function loadGeneralStatistics() {
+            $.get('@Url.Action("GetGeneralStatistics")', function (data) {
+                if (data.success) {
+                    $('#totalDoctors').text(data.data.totalDoctors);
+                    $('#activeDoctors').text(data.data.activeDoctors);
+                    $('#totalDepartments').text(data.data.totalDepartments);
+                    $('#totalSchedules').text(data.data.totalSchedules);
+                    
+                    // ایجاد نمودار دپارتمان‌ها
+                    createDepartmentChart(data.data.departmentStats);
+                    createScheduleChart(data.data.scheduleStats);
+                }
+            });
+        }
+
+        function createDepartmentChart(data) {
+            var ctx = document.getElementById('departmentChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: data.map(item => item.departmentName),
+                    datasets: [{
+                        data: data.map(item => item.doctorCount),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF',
+                            '#FF9F40'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        function createScheduleChart(data) {
+            var ctx = document.getElementById('scheduleChart').getContext('2d');
+            var chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: data.map(item => item.dayOfWeek),
+                    datasets: [{
+                        label: 'تعداد برنامه‌ها',
+                        data: data.map(item => item.scheduleCount),
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function generateReport() {
+            var reportType = $('#reportType').val();
+            var fromDate = $('#fromDate').val();
+            var toDate = $('#toDate').val();
+            
+            if (!fromDate || !toDate) {
+                alert('لطفاً تاریخ شروع و پایان را وارد کنید.');
+                return;
+            }
+            
+            $.get('@Url.Action("GenerateReport")', {
+                reportType: reportType,
+                fromDate: fromDate,
+                toDate: toDate
+            }, function (data) {
+                if (data.success) {
+                    displayReport(data.data);
+                } else {
+                    alert('خطا: ' + data.message);
+                }
+            });
+        }
+
+        function displayReport(data) {
+            var tableBody = $('#reportTable tbody');
+            tableBody.empty();
+            
+            if (data && data.length > 0) {
+                data.forEach(function (item, index) {
+                    var row = '<tr>' +
+                        '<td>' + (index + 1) + '</td>' +
+                        '<td>' + item.doctorName + '</td>' +
+                        '<td>' + item.departmentName + '</td>' +
+                        '<td>' + item.serviceCategories + '</td>' +
+                        '<td>' + item.scheduleCount + '</td>' +
+                        '<td>' + (item.isActive ? '<span class="badge badge-success">فعال</span>' : '<span class="badge badge-danger">غیرفعال</span>') + '</td>' +
+                        '</tr>';
+                    tableBody.append(row);
+                });
+            } else {
+                tableBody.append('<tr><td colspan="6" class="text-center">هیچ داده‌ای یافت نشد.</td></tr>');
+            }
+        }
+
+        function exportReport() {
+            var reportType = $('#reportType').val();
+            var fromDate = $('#fromDate').val();
+            var toDate = $('#toDate').val();
+            
+            if (!fromDate || !toDate) {
+                alert('لطفاً تاریخ شروع و پایان را وارد کنید.');
+                return;
+            }
+            
+            var url = '@Url.Action("ExportReport")?reportType=' + reportType + '&fromDate=' + fromDate + '&toDate=' + toDate;
+            window.open(url, '_blank');
+        }
+    </script>
+}

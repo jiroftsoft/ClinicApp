@@ -1,0 +1,530 @@
+@* صفحه انتسابات دپارتمان پزشک - طراحی Ultimate برای محیط درمانی *@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentIndexViewModel
+@{
+    ViewBag.Title = "انتسابات دپارتمان پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    var doctor = ViewBag.Doctor as ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel;
+}
+
+@section Styles {
+    <link href="~/Content/plugins/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <style>
+        .doctor-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .doctor-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .info-item {
+            text-align: center;
+        }
+        
+        .info-label {
+            font-size: 0.9rem;
+            opacity: 0.8;
+            margin-bottom: 0.5rem;
+        }
+        
+        .info-value {
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        .department-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #28a745;
+            transition: all 0.3s ease;
+        }
+        
+        .department-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .department-card.inactive {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+        
+        .department-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .department-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .department-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .department-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .detail-item {
+            text-align: center;
+        }
+        
+        .detail-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+        }
+        
+        .btn-action {
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #6c757d;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container-fluid">
+    <!-- Doctor Header -->
+    <div class="doctor-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="fas fa-user-md me-2"></i>
+                    @(doctor?.FullName ?? "پزشک")
+                </h2>
+                <p class="mb-0 opacity-75">مدیریت انتسابات دپارتمان</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="@Url.Action("AssignToDepartment", new { doctorId = doctor?.Id })" class="btn btn-light">
+                    <i class="fas fa-plus me-2"></i>
+                    انتساب جدید
+                </a>
+            </div>
+        </div>
+        
+        <div class="doctor-info">
+            <div class="info-item">
+                <div class="info-label">کد ملی</div>
+                <div class="info-value">@(doctor?.NationalCode ?? "-")</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">شماره نظام پزشکی</div>
+                <div class="info-value">@(doctor?.MedicalCouncilCode ?? "-")</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">تخصص</div>
+                <div class="info-value">@string.Join("، ", doctor?.SpecializationNames ?? new string[0])</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">وضعیت</div>
+                <div class="info-value">
+                    <span class="badge bg-success">فعال</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-1">@(Model?.TotalDepartments ?? 0)</h4>
+                            <small>کل دپارتمان‌ها</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-success text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-1">@(Model?.ActiveDepartments ?? 0)</h4>
+                            <small>دپارتمان‌های فعال</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-warning text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-1">@(Model?.InactiveDepartments ?? 0)</h4>
+                            <small>دپارتمان‌های غیرفعال</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card bg-info text-white">
+                        <div class="card-body text-center">
+                            <h4 class="mb-1">@(Model?.TotalAssignments ?? 0)</h4>
+                            <small>کل انتسابات</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Department Assignments -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-building me-2"></i>
+                        انتسابات دپارتمان
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model?.DoctorDepartments != null && Model.DoctorDepartments.Any())
+                    {
+                        foreach (var assignment in Model.DoctorDepartments)
+                        {
+                            <div class="department-card @(!assignment.IsActive ? "inactive" : "")">
+                                <div class="department-header">
+                                    <div class="department-name">@assignment.DepartmentName</div>
+                                    <div class="department-status @(assignment.IsActive ? "status-active" : "status-inactive")">
+                                        @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                    </div>
+                                </div>
+                                
+                                <div class="department-details">
+                                    <div class="detail-item">
+                                        <div class="detail-label">نقش</div>
+                                        <div class="detail-value">@(assignment.Role ?? "پزشک")</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">تاریخ انتساب</div>
+                                        <div class="detail-value">@(assignment.CreatedAt.ToString("yyyy/MM/dd"))</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">آخرین به‌روزرسانی</div>
+                                        <div class="detail-value">@(assignment.UpdatedAt?.ToString("yyyy/MM/dd") ?? "-")</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">وضعیت</div>
+                                        <div class="detail-value">
+                                            <span class="badge bg-@(assignment.IsActive ? "success" : "danger")">
+                                                @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="action-buttons">
+                                    @if (assignment.IsActive)
+                                    {
+                                        <button class="btn btn-warning btn-action" onclick="deactivateAssignment(@assignment.Id)">
+                                            <i class="fas fa-pause me-1"></i>
+                                            غیرفعال کردن
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-success btn-action" onclick="activateAssignment(@assignment.Id)">
+                                            <i class="fas fa-play me-1"></i>
+                                            فعال کردن
+                                        </button>
+                                    }
+                                    
+                                    <button class="btn btn-info btn-action" onclick="editAssignment(@assignment.Id)">
+                                        <i class="fas fa-edit me-1"></i>
+                                        ویرایش
+                                    </button>
+                                    
+                                    <button class="btn btn-danger btn-action" onclick="removeAssignment(@assignment.Id)">
+                                        <i class="fas fa-trash me-1"></i>
+                                        حذف
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="empty-state">
+                            <i class="fas fa-building"></i>
+                            <h5>هیچ انتساب دپارتمانی یافت نشد</h5>
+                            <p>این پزشک هنوز به هیچ دپارتمانی انتساب داده نشده است</p>
+                            <a href="@Url.Action("AssignToDepartment", new { doctorId = doctor?.Id })" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>
+                                انتساب اولین دپارتمان
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Scripts/plugins/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="~/Scripts/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Scripts/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize any necessary components
+        });
+
+        function showLoading() {
+            $('.loading-overlay').show();
+        }
+
+        function hideLoading() {
+            $('.loading-overlay').hide();
+        }
+
+        function activateAssignment(assignmentId) {
+            Swal.fire({
+                title: 'فعال کردن انتساب',
+                text: 'آیا از فعال کردن این انتساب اطمینان دارید؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله، فعال کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading();
+                    
+                    $.ajax({
+                        url: '@Url.Action("ActivateAssignment")',
+                        type: 'POST',
+                        data: { assignmentId: assignmentId },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق',
+                                    text: 'انتساب با موفقیت فعال شد',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در فعال کردن انتساب'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور'
+                            });
+                        },
+                        complete: function() {
+                            hideLoading();
+                        }
+                    });
+                }
+            });
+        }
+
+        function deactivateAssignment(assignmentId) {
+            Swal.fire({
+                title: 'غیرفعال کردن انتساب',
+                text: 'آیا از غیرفعال کردن این انتساب اطمینان دارید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله، غیرفعال کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading();
+                    
+                    $.ajax({
+                        url: '@Url.Action("DeactivateAssignment")',
+                        type: 'POST',
+                        data: { assignmentId: assignmentId },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق',
+                                    text: 'انتساب با موفقیت غیرفعال شد',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در غیرفعال کردن انتساب'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور'
+                            });
+                        },
+                        complete: function() {
+                            hideLoading();
+                        }
+                    });
+                }
+            });
+        }
+
+        function editAssignment(assignmentId) {
+            window.location.href = '@Url.Action("EditAssignment")?assignmentId=' + assignmentId;
+        }
+
+        function removeAssignment(assignmentId) {
+            Swal.fire({
+                title: 'حذف انتساب',
+                text: 'آیا از حذف این انتساب اطمینان دارید؟ این عملیات غیرقابل بازگشت است.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true,
+                confirmButtonColor: '#dc3545'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    showLoading();
+                    
+                    $.ajax({
+                        url: '@Url.Action("RemoveAssignment")',
+                        type: 'POST',
+                        data: { assignmentId: assignmentId },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق',
+                                    text: 'انتساب با موفقیت حذف شد',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در حذف انتساب'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور'
+                            });
+                        },
+                        complete: function() {
+                            hideLoading();
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

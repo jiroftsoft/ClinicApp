@@ -10,6 +10,7 @@ using ClinicApp.ViewModels.DoctorManagementVM;
 using FluentValidation;
 using Serilog;
 using System.Linq;
+using System.Collections.Generic; // Added for List
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -334,6 +335,230 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در بررسی در دسترس بودن پزشک {DoctorId}", doctorId);
                 return Json(new { success = false, message = "خطا در بررسی در دسترس بودن پزشک" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        #endregion
+
+        #region Assignment Operations
+
+        /// <summary>
+        /// نمایش فرم تنظیم برنامه کاری پزشک
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> AssignSchedule(int? doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست نمایش فرم تنظیم برنامه کاری پزشک {DoctorId}", doctorId);
+
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
+                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                // دریافت اطلاعات پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
+                if (!doctorResult.Success)
+                {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
+                    TempData["Error"] = doctorResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                var doctor = doctorResult.Data;
+
+                // دریافت برنامه کاری موجود
+                var scheduleResult = await _doctorScheduleService.GetDoctorScheduleAsync(doctorId.Value);
+                var model = scheduleResult.Success ? scheduleResult.Data : new DoctorScheduleViewModel
+                {
+                    DoctorId = doctorId.Value,
+                    AppointmentDuration = 30,
+                    WorkDays = new List<WorkDayViewModel>()
+                };
+
+                // تنظیم روزهای هفته
+                if (!model.WorkDays.Any())
+                {
+                    var daysOfWeek = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه" };
+                    for (int i = 0; i < 7; i++)
+                    {
+                        model.WorkDays.Add(new WorkDayViewModel
+                        {
+                            DayOfWeek = i,
+                            DayName = daysOfWeek[i],
+                            IsActive = false,
+                            TimeRanges = new List<TimeRangeViewModel>()
+                        });
+                    }
+                }
+
+                ViewBag.Doctor = doctor;
+
+                _logger.Information("فرم تنظیم برنامه کاری پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش فرم تنظیم برنامه کاری پزشک {DoctorId}", doctorId?.ToString() ?? "null");
+                TempData["Error"] = "خطا در بارگذاری فرم تنظیم برنامه کاری";
+                return RedirectToAction("Index", "Doctor");
+            }
+        }
+
+        /// <summary>
+        /// پردازش تنظیم برنامه کاری پزشک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> AssignSchedule(DoctorScheduleViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست تنظیم برنامه کاری پزشک {DoctorId}", model.DoctorId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.Warning("مدل برنامه کاری نامعتبر برای پزشک {DoctorId}", model.DoctorId);
+                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                }
+
+                // اعتبارسنجی با FluentValidation
+                var validationResult = await _scheduleValidator.ValidateAsync(model);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    TempData["Error"] = $"خطا در اعتبارسنجی: {errors}";
+                    return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                }
+
+                // تنظیم برنامه کاری پزشک
+                var result = await _doctorScheduleService.SetDoctorScheduleAsync(model.DoctorId, model);
+
+                if (!result.Success)
+                {
+                    _logger.Warning("تنظیم برنامه کاری پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
+                    TempData["Error"] = result.Message;
+                    return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                }
+
+                _logger.Information("تنظیم برنامه کاری پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
+                TempData["Success"] = "برنامه کاری پزشک با موفقیت تنظیم شد";
+                return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تنظیم برنامه کاری پزشک {DoctorId}", model.DoctorId);
+                TempData["Error"] = "خطا در انجام عملیات تنظیم برنامه کاری";
+                return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+            }
+        }
+
+        /// <summary>
+        /// نمایش فرم مسدود کردن بازه زمانی
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> BlockTimeRange(int? doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست نمایش فرم مسدود کردن بازه زمانی پزشک {DoctorId}", doctorId);
+
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
+                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                // دریافت اطلاعات پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
+                if (!doctorResult.Success)
+                {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
+                    TempData["Error"] = doctorResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                var doctor = doctorResult.Data;
+
+                var model = new BlockTimeRangeViewModel
+                {
+                    DoctorId = doctorId.Value,
+                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
+                    StartDate = DateTime.Now,
+                    EndDate = DateTime.Now.AddDays(1),
+                    StartTime = new TimeSpan(9, 0, 0), // 9:00 AM
+                    EndTime = new TimeSpan(17, 0, 0),  // 5:00 PM
+                    Reason = ""
+                };
+
+                ViewBag.Doctor = doctor;
+
+                _logger.Information("فرم مسدود کردن بازه زمانی پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش فرم مسدود کردن بازه زمانی پزشک {DoctorId}", doctorId?.ToString() ?? "null");
+                TempData["Error"] = "خطا در بارگذاری فرم مسدود کردن بازه زمانی";
+                return RedirectToAction("Index", "Doctor");
+            }
+        }
+
+        /// <summary>
+        /// پردازش مسدود کردن بازه زمانی
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> BlockTimeRange(BlockTimeRangeViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست مسدود کردن بازه زمانی پزشک {DoctorId} از {StartDate} تا {EndDate}", 
+                    model.DoctorId, model.StartDate, model.EndDate);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.Warning("مدل مسدود کردن بازه زمانی نامعتبر برای پزشک {DoctorId}", model.DoctorId);
+                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
+                }
+
+                // ترکیب تاریخ و زمان
+                var startDateTime = model.StartDate.Date.Add(model.StartTime);
+                var endDateTime = model.EndDate.Date.Add(model.EndTime);
+
+                // بررسی منطقی بودن بازه زمانی
+                if (startDateTime >= endDateTime)
+                {
+                    TempData["Error"] = "زمان شروع باید قبل از زمان پایان باشد";
+                    return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
+                }
+
+                // مسدود کردن بازه زمانی
+                var result = await _doctorScheduleService.BlockTimeRangeForDoctorAsync(
+                    model.DoctorId, startDateTime, endDateTime, model.Reason);
+
+                if (!result.Success)
+                {
+                    _logger.Warning("مسدود کردن بازه زمانی پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
+                    TempData["Error"] = result.Message;
+                    return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
+                }
+
+                _logger.Information("مسدود کردن بازه زمانی پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
+                TempData["Success"] = "بازه زمانی با موفقیت مسدود شد";
+                return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در مسدود کردن بازه زمانی پزشک {DoctorId}", model.DoctorId);
+                TempData["Error"] = "خطا در انجام عملیات مسدود کردن بازه زمانی";
+                return RedirectToAction("BlockTimeRange", new { doctorId = model.DoctorId });
             }
         }
 

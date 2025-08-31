@@ -1,0 +1,364 @@
+@model PagedResult<DoctorScheduleViewModel>
+@{
+    ViewBag.Title = "مدیریت برنامه‌های کاری پزشکان";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calendar-alt"></i>
+                        مدیریت برنامه‌های کاری پزشکان
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addScheduleModal">
+                            <i class="fas fa-plus"></i>
+                            اضافه کردن برنامه جدید
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fas fa-check"></i>
+                            @TempData["Success"]
+                        </div>
+                    }
+
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                    <!-- فیلترها -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="doctorFilter">پزشک:</label>
+                                <select id="doctorFilter" class="form-control">
+                                    <option value="">همه پزشکان</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="dayOfWeekFilter">روز هفته:</label>
+                                <select id="dayOfWeekFilter" class="form-control">
+                                    <option value="">همه روزها</option>
+                                    <option value="شنبه">شنبه</option>
+                                    <option value="یکشنبه">یکشنبه</option>
+                                    <option value="دوشنبه">دوشنبه</option>
+                                    <option value="سه‌شنبه">سه‌شنبه</option>
+                                    <option value="چهارشنبه">چهارشنبه</option>
+                                    <option value="پنج‌شنبه">پنج‌شنبه</option>
+                                    <option value="جمعه">جمعه</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label for="statusFilter">وضعیت:</label>
+                                <select id="statusFilter" class="form-control">
+                                    <option value="">همه وضعیت‌ها</option>
+                                    <option value="true">فعال</option>
+                                    <option value="false">غیرفعال</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label>&nbsp;</label>
+                                <button type="button" id="searchBtn" class="btn btn-info btn-block">
+                                    <i class="fas fa-search"></i>
+                                    جستجو
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- جدول برنامه‌های کاری -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped">
+                            <thead>
+                                <tr>
+                                    <th>پزشک</th>
+                                    <th>روز هفته</th>
+                                    <th>زمان شروع</th>
+                                    <th>زمان پایان</th>
+                                    <th>مدت نوبت</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ شروع</th>
+                                    <th>تاریخ پایان</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="schedulesTable">
+                                @if (Model?.Items != null && Model.Items.Any())
+                                {
+                                    foreach (var item in Model.Items)
+                                    {
+                                        <tr data-id="@item.Id">
+                                            <td>@item.DoctorName</td>
+                                            <td>@item.DayOfWeek</td>
+                                            <td>@item.StartTime.ToString(@"hh\:mm")</td>
+                                            <td>@item.EndTime.ToString(@"hh\:mm")</td>
+                                            <td>@item.AppointmentDuration دقیقه</td>
+                                            <td>
+                                                @if (item.IsActive)
+                                                {
+                                                    <span class="badge badge-success">فعال</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-danger">غیرفعال</span>
+                                                }
+                                            </td>
+                                            <td>@(item.StartDate?.ToString("yyyy/MM/dd"))</td>
+                                            <td>@(item.EndDate?.ToString("yyyy/MM/dd"))</td>
+                                            <td>
+                                                <div class="btn-group">
+                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewSchedule(@item.Id)">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editSchedule(@item.Id)">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSchedule(@item.Id)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center">هیچ برنامه کاری یافت نشد.</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- صفحه‌بندی -->
+                    @if (Model != null && Model.TotalPages > 1)
+                    {
+                        <div class="d-flex justify-content-center">
+                            <nav>
+                                <ul class="pagination">
+                                    @for (int i = 1; i <= Model.TotalPages; i++)
+                                    {
+                                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                            <a class="page-link" href="#" onclick="loadPage(@i)">@i</a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal اضافه کردن برنامه جدید -->
+<div class="modal fade" id="addScheduleModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">اضافه کردن برنامه کاری جدید</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="addScheduleForm">
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="doctorId">پزشک *</label>
+                                <select id="doctorId" name="DoctorId" class="form-control" required>
+                                    <option value="">انتخاب پزشک</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="dayOfWeek">روز هفته *</label>
+                                <select id="dayOfWeek" name="DayOfWeek" class="form-control" required>
+                                    <option value="">انتخاب روز</option>
+                                    <option value="شنبه">شنبه</option>
+                                    <option value="یکشنبه">یکشنبه</option>
+                                    <option value="دوشنبه">دوشنبه</option>
+                                    <option value="سه‌شنبه">سه‌شنبه</option>
+                                    <option value="چهارشنبه">چهارشنبه</option>
+                                    <option value="پنج‌شنبه">پنج‌شنبه</option>
+                                    <option value="جمعه">جمعه</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="startTime">زمان شروع *</label>
+                                <input type="time" id="startTime" name="StartTime" class="form-control" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="endTime">زمان پایان *</label>
+                                <input type="time" id="endTime" name="EndTime" class="form-control" required />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="appointmentDuration">مدت نوبت (دقیقه) *</label>
+                                <input type="number" id="appointmentDuration" name="AppointmentDuration" class="form-control" min="15" max="120" value="30" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="isActive">وضعیت</label>
+                                <div class="custom-control custom-switch">
+                                    <input type="checkbox" id="isActive" name="IsActive" class="custom-control-input" checked>
+                                    <label class="custom-control-label" for="isActive">فعال</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="startDate">تاریخ شروع</label>
+                                <input type="date" id="startDate" name="StartDate" class="form-control" />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="endDate">تاریخ پایان</label>
+                                <input type="date" id="endDate" name="EndDate" class="form-control" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">توضیحات</label>
+                        <textarea id="notes" name="Notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">ذخیره</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            loadDoctors();
+            
+            // جستجو
+            $('#searchBtn').click(function () {
+                loadSchedules();
+            });
+            
+            // فرم اضافه کردن
+            $('#addScheduleForm').submit(function (e) {
+                e.preventDefault();
+                addSchedule();
+            });
+        });
+
+        function loadDoctors() {
+            $.get('@Url.Action("GetDoctors", "Doctor")', function (data) {
+                if (data.success) {
+                    var options = '<option value="">همه پزشکان</option>';
+                    data.data.forEach(function (doctor) {
+                        options += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
+                    });
+                    $('#doctorFilter').html(options);
+                    $('#doctorId').html(options);
+                }
+            });
+        }
+
+        function loadSchedules() {
+            var filters = {
+                doctorId: $('#doctorFilter').val(),
+                dayOfWeek: $('#dayOfWeekFilter').val(),
+                isActive: $('#statusFilter').val()
+            };
+
+            // اینجا می‌توانید AJAX call برای دریافت برنامه‌ها اضافه کنید
+            console.log('Filters:', filters);
+        }
+
+        function addSchedule() {
+            var formData = $('#addScheduleForm').serialize();
+            
+            $.post('@Url.Action("AddSchedule")', formData, function (data) {
+                if (data.success) {
+                    $('#addScheduleModal').modal('hide');
+                    location.reload();
+                } else {
+                    alert('خطا: ' + data.message);
+                }
+            });
+        }
+
+        function viewSchedule(id) {
+            window.location.href = '@Url.Action("Details")/' + id;
+        }
+
+        function editSchedule(id) {
+            window.location.href = '@Url.Action("Edit")/' + id;
+        }
+
+        function removeSchedule(id) {
+            if (confirm('آیا از حذف این برنامه کاری اطمینان دارید؟')) {
+                $.post('@Url.Action("RemoveSchedule")', {
+                    scheduleId: id
+                }, function (data) {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + data.message);
+                    }
+                });
+            }
+        }
+
+        function loadPage(page) {
+            var url = '@Url.Action("Index")?page=' + page;
+            var filters = {
+                doctorId: $('#doctorFilter').val(),
+                dayOfWeek: $('#dayOfWeekFilter').val(),
+                isActive: $('#statusFilter').val()
+            };
+            
+            $.each(filters, function (key, value) {
+                if (value) {
+                    url += '&' + key + '=' + value;
+                }
+            });
+            
+            window.location.href = url;
+        }
+    </script>
+}

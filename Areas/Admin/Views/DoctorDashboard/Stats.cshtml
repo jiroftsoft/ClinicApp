@@ -1,0 +1,199 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DashboardStatsViewModel
+@{
+    ViewBag.Title = "آمار کلی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            padding: 25px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        
+        .stats-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        آمار کلی پزشکان
+                    </h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null)
+    {
+        <!-- Statistics Cards -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="stats-number">@Model.TotalDoctors</div>
+                    <div class="stats-label">کل پزشکان</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="stats-number">@Model.ActiveDoctors</div>
+                    <div class="stats-label">پزشکان فعال</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="stats-number">@Model.TotalAssignments</div>
+                    <div class="stats-label">کل انتسابات</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="stats-number">@Model.ActiveAssignments</div>
+                    <div class="stats-label">انتسابات فعال</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">وضعیت پزشکان</h5>
+                    <canvas id="doctorsStatusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">وضعیت انتسابات</h5>
+                    <canvas id="assignmentsStatusChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Statistics -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">آمار تکمیلی</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-primary">@Model.CompletionPercentage.ToString("F1")%</h4>
+                                    <p class="text-muted">نرخ تکمیل انتسابات</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-success">@Model.LastUpdate.ToString("yyyy/MM/dd")</h4>
+                                    <p class="text-muted">آخرین بروزرسانی</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="text-center">
+                                    <h4 class="text-info">@Model.AverageAssignmentsPerDoctor.ToString("F1")</h4>
+                                    <p class="text-muted">میانگین انتسابات به ازای هر پزشک</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">آمار در دسترس نیست</h4>
+            <p class="text-muted">در حال حاضر اطلاعات آماری موجود نیست</p>
+            <a href="@Url.Action("Index", "DoctorDashboard")" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>
+                بازگشت به داشبورد
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        @if (Model != null)
+        {
+            <text>
+        // Doctors Status Chart
+        const doctorsCtx = document.getElementById('doctorsStatusChart').getContext('2d');
+        new Chart(doctorsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['فعال', 'غیرفعال'],
+                datasets: [{
+                    data: [@Model.ActiveDoctors, @(Model.TotalDoctors - Model.ActiveDoctors)],
+                    backgroundColor: ['#28a745', '#dc3545'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+
+        // Assignments Status Chart
+        const assignmentsCtx = document.getElementById('assignmentsStatusChart').getContext('2d');
+        new Chart(assignmentsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['فعال', 'غیرفعال'],
+                datasets: [{
+                    data: [@Model.ActiveAssignments, @(Model.TotalAssignments - Model.ActiveAssignments)],
+                    backgroundColor: ['#007bff', '#6c757d'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        </text>
+        }
+    </script>
+}

@@ -1,0 +1,557 @@
+@using ClinicApp.ViewModels.DoctorManagementVM
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorHistoryAdvancedStatisticsViewModel
+@{
+    ViewBag.Title = "آمار تاریخچه انتسابات";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .stats-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 35px rgba(0,0,0,0.15);
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .metric-card {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .metric-card h3 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .metric-card p {
+            margin-bottom: 0;
+            opacity: 0.9;
+        }
+
+        .filter-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .action-btn {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .table-responsive {
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .progress-bar-custom {
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+            transition: width 0.3s ease;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-chart-bar text-primary me-2"></i>
+                        آمار تاریخچه انتسابات
+                    </h2>
+                    <p class="text-muted mb-0">گزارش‌های آماری جامع از تاریخچه انتسابات پزشکان</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-success action-btn" onclick="exportStatistics()">
+                        <i class="fas fa-file-excel me-2"></i>
+                        خروجی Excel
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary action-btn">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Filter -->
+    <div class="filter-section">
+        <form id="dateFilterForm" method="get">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="startDate" class="form-label text-white fw-bold">از تاریخ:</label>
+                        <input type="text" id="startDate" name="startDate" class="form-control persian-date" 
+                               value="@(Model?.StartDate?.ToString("yyyy/MM/dd"))" placeholder="انتخاب کنید">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label for="endDate" class="form-label text-white fw-bold">تا تاریخ:</label>
+                        <input type="text" id="endDate" name="endDate" class="form-control persian-date" 
+                               value="@(Model?.EndDate?.ToString("yyyy/MM/dd"))" placeholder="انتخاب کنید">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label text-white fw-bold">&nbsp;</label>
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-light action-btn">
+                                <i class="fas fa-filter me-2"></i>
+                                اعمال فیلتر
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @if (Model != null)
+    {
+        <!-- Key Metrics -->
+        <div class="row">
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>@(Model?.TotalRecords ?? 0)</h3>
+                    <p>کل رکوردها</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>@(Model?.CriticalRecords ?? 0)</h3>
+                    <p>بحرانی</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>@(Model?.ImportantRecords ?? 0)</h3>
+                    <p>مهم</p>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="metric-card">
+                    <h3>@(Model?.NormalRecords ?? 0)</h3>
+                    <p>عادی</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <!-- Monthly Statistics Chart -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-calendar-alt text-primary me-2"></i>
+                        آمار ماهانه
+                    </h5>
+                    <canvas id="monthlyChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+
+            <!-- Action Type Distribution -->
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-pie-chart text-primary me-2"></i>
+                        توزیع نوع عملیات
+                    </h5>
+                    <canvas id="actionTypeChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Activity -->
+        <div class="row">
+            <div class="col-12">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-hospital text-primary me-2"></i>
+                        فعالیت دپارتمان‌ها
+                    </h5>
+                    <canvas id="departmentChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detailed Statistics Tables -->
+        <div class="row">
+            <!-- Doctor Activity -->
+            <div class="col-lg-6">
+                <div class="stats-card">
+                    <div class="card-body">
+                        <h5 class="card-title text-white mb-3">
+                            <i class="fas fa-user-md me-2"></i>
+                            فعالیت پزشکان
+                        </h5>
+                        @if (Model.DoctorActivity != null && Model.DoctorActivity.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover text-white">
+                                    <thead>
+                                        <tr>
+                                            <th>پزشک</th>
+                                            <th>تعداد عملیات</th>
+                                            <th>درصد</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var doctor in Model?.DoctorActivity?.Take(10) ?? new List<DoctorActivityStatisticsViewModel>())
+                                        {
+                                            var percentage = (Model?.TotalRecords ?? 0) > 0 ? ((doctor?.RecordCount ?? 0) * 100.0 / (Model?.TotalRecords ?? 1)) : 0;
+                                            <tr>
+                                                <td>@(doctor?.DoctorName ?? "نامشخص")</td>
+                                                <td>@(doctor?.RecordCount ?? 0)</td>
+                                                <td>
+                                                    <div class="progress-bar-custom">
+                                                        <div class="progress-fill" style="width: @percentage%"></div>
+                                                    </div>
+                                                    <small>@percentage.ToString("F1")%</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-white-50">هیچ داده‌ای موجود نیست.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Activity -->
+            <div class="col-lg-6">
+                <div class="stats-card">
+                    <div class="card-body">
+                        <h5 class="card-title text-white mb-3">
+                            <i class="fas fa-users me-2"></i>
+                            فعالیت کاربران
+                        </h5>
+                        @if (Model != null && Model.UserActivity != null && Model.UserActivity.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover text-white">
+                                    <thead>
+                                        <tr>
+                                            <th>کاربر</th>
+                                            <th>تعداد عملیات</th>
+                                            <th>درصد</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var user in Model?.UserActivity?.Take(10) ?? new List<UserActivityStatisticsViewModel>())
+                                        {
+                                            var percentage = (Model?.TotalRecords ?? 0) > 0 ? ((user?.RecordCount ?? 0) * 100.0 / (Model?.TotalRecords ?? 1)) : 0;
+                                            <tr>
+                                                <td>@(user?.UserName ?? "نامشخص")</td>
+                                                <td>@(user?.RecordCount ?? 0)</td>
+                                                <td>
+                                                    <div class="progress-bar-custom">
+                                                        <div class="progress-fill" style="width: @percentage%"></div>
+                                                    </div>
+                                                    <small>@percentage.ToString("F1")%</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-white-50">هیچ داده‌ای موجود نیست.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Activity Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="stats-card">
+                    <div class="card-body">
+                        <h5 class="card-title text-white mb-3">
+                            <i class="fas fa-building me-2"></i>
+                            آمار دپارتمان‌ها
+                        </h5>
+                        @if (Model?.DepartmentActivity != null && Model.DepartmentActivity.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-hover text-white">
+                                    <thead>
+                                        <tr>
+                                            <th>دپارتمان</th>
+                                            <th>کل عملیات</th>
+                                            <th>بحرانی</th>
+                                            <th>مهم</th>
+                                            <th>عادی</th>
+                                            <th>درصد کل</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var dept in Model.DepartmentActivity)
+                                        {
+                                            var percentage = (Model?.TotalRecords ?? 0) > 0 ? ((dept?.TotalRecords ?? 0) * 100.0 / (Model?.TotalRecords ?? 1)) : 0;
+                                            <tr>
+                                                <td>@(dept?.DepartmentName ?? "نامشخص")</td>
+                                                <td>@(dept?.TotalRecords ?? 0)</td>
+                                                <td>@(dept?.CriticalRecords ?? 0)</td>
+                                                <td>@(dept?.ImportantRecords ?? 0)</td>
+                                                <td>@(dept?.NormalRecords ?? 0)</td>
+                                                <td>
+                                                    <div class="progress-bar-custom">
+                                                        <div class="progress-fill" style="width: @percentage%"></div>
+                                                    </div>
+                                                    <small>@percentage.ToString("F1")%</small>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <p class="text-white-50">هیچ داده‌ای موجود نیست.</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-chart-bar fa-3x text-muted mb-3"></i>
+            <h5 class="text-muted">هیچ آماری موجود نیست</h5>
+            <p class="text-muted">در بازه زمانی انتخاب شده هیچ داده‌ای برای نمایش وجود ندارد.</p>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian Date Picker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false,
+                persianDigit: true
+            });
+
+            // Show loading overlay on form submit
+            $('#dateFilterForm').on('submit', function() {
+                $('.loading-overlay').show();
+            });
+
+            // Initialize Charts
+            @if (Model != null)
+            {
+                <text>
+                // Monthly Statistics Chart
+                const monthlyCtx = document.getElementById('monthlyChart').getContext('2d');
+                new Chart(monthlyCtx, {
+                    type: 'line',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", Model.MonthlyStatistics?.Select(x => $"'{x.Month}'") ?? new string[0]))],
+                        datasets: [{
+                            label: 'تعداد عملیات',
+                            data: [@Html.Raw(string.Join(",", Model.MonthlyStatistics?.Select(x => x.RecordCount.ToString()) ?? new string[0]))],
+                            borderColor: '#667eea',
+                            backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                            tension: 0.4,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+
+                // Action Type Distribution Chart
+                const actionTypeCtx = document.getElementById('actionTypeChart').getContext('2d');
+                new Chart(actionTypeCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['انتساب', 'حذف انتساب', 'بروزرسانی'],
+                        datasets: [{
+                            data: [@(Model?.AssignmentCount ?? 0), @(Model?.RemovalCount ?? 0), @(Model?.UpdateCount ?? 0)],
+                            backgroundColor: [
+                                '#667eea',
+                                '#f093fb',
+                                '#4facfe'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+
+                // Department Activity Chart
+                const departmentCtx = document.getElementById('departmentChart').getContext('2d');
+                new Chart(departmentCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: [@Html.Raw(string.Join(",", Model.DepartmentActivity?.Select(x => $"'{x.DepartmentName}'") ?? new string[0]))],
+                        datasets: [{
+                            label: 'کل عملیات',
+                            data: [@Html.Raw(string.Join(",", Model.DepartmentActivity?.Select(x => x.TotalRecords.ToString()) ?? new string[0]))],
+                            backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                            borderColor: '#667eea',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+        });
+
+        function exportStatistics() {
+            $('.loading-overlay').show();
+            
+            const formData = new FormData();
+            formData.append('startDate', $('#startDate').val());
+            formData.append('endDate', $('#endDate').val());
+            
+            $.ajax({
+                url: '@Url.Action("ExportToExcel")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(blob) {
+                    $('.loading-overlay').hide();
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'آمار_تاریخچه_انتسابات.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                },
+                error: function() {
+                    $('.loading-overlay').hide();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'خطا در ایجاد فایل Excel.'
+                    });
+                }
+            });
+        }
+    </script>
+}

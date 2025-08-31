@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models;
 using System.Threading.Tasks;
 
 namespace ClinicApp.Interfaces.ClinicAdmin
@@ -70,14 +71,3 @@ public class DoctorAssignments
     public List<DoctorServiceCategory> DoctorServiceCategories { get; set; } = new List<DoctorServiceCategory>();
 }
 
-/// <summary>
-/// مدل اطلاعات وابستگی‌های پزشک برای بررسی امکان حذف
-/// </summary>
-public class DoctorDependencyInfo
-{
-    public int DoctorId { get; set; }
-    public bool HasActiveAppointments { get; set; }
-    public int ActiveAppointmentsCount { get; set; }
-    public bool HasActiveReceptions { get; set; }
-    public int ActiveReceptionsCount { get; set; }
-}

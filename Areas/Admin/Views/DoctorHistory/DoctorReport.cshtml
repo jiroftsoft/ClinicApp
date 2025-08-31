@@ -1,0 +1,541 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorHistoryReportViewModel
+@{
+    ViewBag.Title = "گزارش تاریخچه پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .report-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .doctor-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .doctor-avatar {
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 3em;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-size: 2.5em;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .timeline-container {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .timeline-item {
+            position: relative;
+            padding: 20px 0 20px 50px;
+            border-left: 3px solid #667eea;
+            margin-left: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: -11px;
+            top: 25px;
+            width: 20px;
+            height: 20px;
+            background: #667eea;
+            border-radius: 50%;
+            border: 4px solid white;
+            box-shadow: 0 0 0 3px #667eea;
+        }
+
+        .timeline-item:last-child {
+            border-left: none;
+        }
+
+        .timeline-date {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+            margin-bottom: 10px;
+        }
+
+        .timeline-title {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .timeline-description {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .importance-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .importance-critical {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .importance-important {
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            color: white;
+        }
+
+        .importance-normal {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+            color: white;
+        }
+
+        .filter-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .action-btn {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-user-md text-primary me-2"></i>
+                        گزارش تاریخچه پزشک
+                    </h2>
+                    <p class="text-muted mb-0">گزارش جامع تاریخچه انتسابات پزشک</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-success action-btn" onclick="exportDoctorReport()">
+                        <i class="fas fa-file-excel me-2"></i>
+                        خروجی Excel
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary action-btn">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Doctor != null)
+    {
+        <!-- Doctor Header -->
+        <div class="doctor-header">
+            <div class="doctor-avatar">
+                <i class="fas fa-user"></i>
+            </div>
+            <h3 class="mb-2">@Model.Doctor.FullName</h3>
+            <p class="mb-3">@Model.Doctor.Specialization</p>
+            <div class="row">
+                <div class="col-md-4">
+                    <strong>شناسه:</strong> @Model.Doctor.Id
+                </div>
+                <div class="col-md-4">
+                    <strong>کلینیک:</strong> @Model.Doctor.ClinicName
+                </div>
+                <div class="col-md-4">
+                    <strong>وضعیت:</strong> 
+                    @if (Model.Doctor.IsActive)
+                    {
+                        <span class="badge bg-success">فعال</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">غیرفعال</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Date Filter -->
+        <div class="filter-section">
+            <form id="dateFilterForm" method="get">
+                <input type="hidden" name="doctorId" value="@Model.Doctor.Id" />
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="startDate" class="form-label text-white fw-bold">از تاریخ:</label>
+                            <input type="text" id="startDate" name="startDate" class="form-control persian-date" 
+                                   value="@(Model.StartDate?.ToString("yyyy/MM/dd"))" placeholder="انتخاب کنید">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label for="endDate" class="form-label text-white fw-bold">تا تاریخ:</label>
+                            <input type="text" id="endDate" name="endDate" class="form-control persian-date" 
+                                   value="@(Model.EndDate?.ToString("yyyy/MM/dd"))" placeholder="انتخاب کنید">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="form-label text-white fw-bold">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-light action-btn">
+                                    <i class="fas fa-filter me-2"></i>
+                                    اعمال فیلتر
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Statistics Grid -->
+        <div class="stats-grid">
+            <div class="stat-item">
+                <div class="stat-number">@Model.TotalRecords</div>
+                <div class="stat-label">کل عملیات</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">@Model.CriticalRecords</div>
+                <div class="stat-label">بحرانی</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">@Model.ImportantRecords</div>
+                <div class="stat-label">مهم</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">@Model.NormalRecords</div>
+                <div class="stat-label">عادی</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">@Model.AssignmentCount</div>
+                <div class="stat-label">انتساب</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-number">@Model.RemovalCount</div>
+                <div class="stat-label">حذف انتساب</div>
+            </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-pie-chart text-primary me-2"></i>
+                        توزیع اهمیت عملیات
+                    </h5>
+                    <canvas id="importanceChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="chart-container">
+                    <h5 class="mb-3">
+                        <i class="fas fa-bar-chart text-primary me-2"></i>
+                        توزیع نوع عملیات
+                    </h5>
+                    <canvas id="actionTypeChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="timeline-container">
+            <h5 class="mb-4">
+                <i class="fas fa-history text-primary me-2"></i>
+                تاریخچه عملیات
+            </h5>
+            
+            @if (Model.HistoryItems != null && Model.HistoryItems.Count > 0)
+            {
+                foreach (var item in Model.HistoryItems.OrderByDescending(x => x.ActionDate))
+                {
+                    <div class="timeline-item">
+                        <div class="timeline-date">
+                            @item.ActionDate.ToString("yyyy/MM/dd HH:mm")
+                            @{
+                                var importanceClass = item.Importance switch
+                                {
+                                    "Critical" => "importance-critical",
+                                    "Important" => "importance-important",
+                                    _ => "importance-normal"
+                                };
+                            }
+                            <span class="importance-badge @importanceClass">@item.Importance</span>
+                        </div>
+                        <div class="timeline-title">
+                            @item.ActionTitle
+                            <span class="badge bg-info">@item.ActionType</span>
+                        </div>
+                        <div class="timeline-description">
+                            @if (!string.IsNullOrEmpty(item.DepartmentName))
+                            {
+                                <strong>دپارتمان:</strong> @item.DepartmentName<br>
+                            }
+                            @if (!string.IsNullOrEmpty(item.ActionDescription))
+                            {
+                                <strong>توضیحات:</strong> @item.ActionDescription<br>
+                            }
+                            <strong>انجام دهنده:</strong> @item.PerformedByUserName
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="fas fa-history fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">هیچ تاریخچه‌ای یافت نشد</h5>
+                    <p class="text-muted">در بازه زمانی انتخاب شده هیچ عملیاتی برای این پزشک ثبت نشده است.</p>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h5 class="text-warning">پزشک مورد نظر یافت نشد</h5>
+            <p class="text-muted">پزشک با شناسه وارد شده وجود ندارد.</p>
+            <a href="@Url.Action("Index")" class="btn btn-primary">
+                <i class="fas fa-arrow-right me-2"></i>
+                بازگشت به لیست
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian Date Picker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false,
+                persianDigit: true
+            });
+
+            // Show loading overlay on form submit
+            $('#dateFilterForm').on('submit', function() {
+                $('.loading-overlay').show();
+            });
+
+            // Initialize Charts
+            @if (Model != null)
+            {
+                <text>
+                // Ensure Chart.js is loaded before initializing charts
+                if (typeof Chart === 'undefined') {
+                    console.error('Chart.js is not loaded. Please check the bundle configuration.');
+                    return;
+                }
+                
+                // Importance Distribution Chart
+                const importanceCtx = document.getElementById('importanceChart').getContext('2d');
+                new Chart(importanceCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['بحرانی', 'مهم', 'عادی'],
+                        datasets: [{
+                            data: [@Model.CriticalRecords, @Model.ImportantRecords, @Model.NormalRecords],
+                            backgroundColor: [
+                                '#ff6b6b',
+                                '#feca57',
+                                '#48dbfb'
+                            ]
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                            }
+                        }
+                    }
+                });
+
+                // Action Type Distribution Chart
+                const actionTypeCtx = document.getElementById('actionTypeChart').getContext('2d');
+                new Chart(actionTypeCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: ['انتساب', 'حذف انتساب', 'بروزرسانی'],
+                        datasets: [{
+                            label: 'تعداد',
+                            data: [@Model.AssignmentCount, @Model.RemovalCount, @Model.UpdateCount],
+                            backgroundColor: [
+                                '#667eea',
+                                '#f093fb',
+                                '#4facfe'
+                            ],
+                            borderColor: [
+                                '#667eea',
+                                '#f093fb',
+                                '#4facfe'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: {
+                                display: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+                </text>
+            }
+        });
+
+        function exportDoctorReport() {
+            $('.loading-overlay').show();
+            
+            const formData = new FormData();
+            formData.append('doctorId', '@Model?.Doctor?.Id');
+            formData.append('startDate', $('#startDate').val());
+            formData.append('endDate', $('#endDate').val());
+            
+            $.ajax({
+                url: '@Url.Action("ExportToExcel")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(blob) {
+                    $('.loading-overlay').hide();
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `گزارش_تاریخچه_پزشک_${@Model?.Doctor?.Id}.xlsx`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                },
+                error: function() {
+                    $('.loading-overlay').hide();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'خطا در ایجاد فایل Excel.'
+                    });
+                }
+            });
+        }
+    </script>
+}

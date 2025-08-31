@@ -136,6 +136,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string ToDepartmentName { get; set; }
 
         /// <summary>
+        /// نقش پزشک در دپارتمان
+        /// </summary>
+        [Display(Name = "نقش پزشک")]
+        public string Role { get; set; }
+
+        /// <summary>
         /// آیا صلاحیت‌های خدماتی حفظ شوند
         /// </summary>
         [Display(Name = "حفظ صلاحیت‌های خدماتی")]

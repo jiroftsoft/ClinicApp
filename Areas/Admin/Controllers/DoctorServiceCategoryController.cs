@@ -486,5 +486,252 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         #endregion
+
+        #region Assignment Operations
+
+        /// <summary>
+        /// نمایش فرم انتساب پزشک به دسته‌بندی خدمات
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> AssignToServiceCategory(int? doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست نمایش فرم انتساب پزشک {DoctorId} به دسته‌بندی خدمات", doctorId);
+
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
+                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                // دریافت اطلاعات پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
+                if (!doctorResult.Success)
+                {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
+                    TempData["Error"] = doctorResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                var doctor = doctorResult.Data;
+
+                var model = new DoctorServiceCategoryViewModel
+                {
+                    DoctorId = doctorId.Value,
+                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
+                    IsActive = true,
+                    GrantedDate = DateTime.Now
+                };
+
+                // دریافت لیست دسته‌بندی‌های خدمات فعال
+                var serviceCategoriesResult = await _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
+                if (!serviceCategoriesResult.Success)
+                {
+                    _logger.Warning("خطا در دریافت لیست دسته‌بندی‌های خدمات");
+                    TempData["Error"] = serviceCategoriesResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                ViewBag.ServiceCategories = serviceCategoriesResult.Data.Select(sc => new { Value = sc.Id, Text = sc.Name }).ToList();
+
+                _logger.Information("فرم انتساب پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش فرم انتساب پزشک {DoctorId}", doctorId?.ToString() ?? "null");
+                TempData["Error"] = "خطا در بارگذاری فرم انتساب";
+                return RedirectToAction("Index", "Doctor");
+            }
+        }
+
+        /// <summary>
+        /// پردازش انتساب پزشک به دسته‌بندی خدمات
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> AssignToServiceCategory(DoctorServiceCategoryViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست انتساب پزشک {DoctorId} به دسته‌بندی خدمات {ServiceCategoryId}", 
+                    model.DoctorId, model.ServiceCategoryId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.Warning("مدل انتساب نامعتبر برای پزشک {DoctorId}", model.DoctorId);
+                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    return RedirectToAction("AssignToServiceCategory", new { doctorId = model.DoctorId });
+                }
+
+                // اعتبارسنجی با FluentValidation
+                var validationResult = await _serviceCategoryValidator.ValidateAsync(model);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    TempData["Error"] = $"خطا در اعتبارسنجی: {errors}";
+                    return RedirectToAction("AssignToServiceCategory", new { doctorId = model.DoctorId });
+                }
+
+                // انتساب پزشک به دسته‌بندی خدمات
+                var result = await _doctorServiceCategoryService.GrantServiceCategoryToDoctorAsync(model);
+
+                if (!result.Success)
+                {
+                    _logger.Warning("انتساب پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
+                    TempData["Error"] = result.Message;
+                    return RedirectToAction("AssignToServiceCategory", new { doctorId = model.DoctorId });
+                }
+
+                _logger.Information("انتساب پزشک {DoctorId} به دسته‌بندی خدمات {ServiceCategoryId} با موفقیت انجام شد", 
+                    model.DoctorId, model.ServiceCategoryId);
+                TempData["Success"] = "انتساب پزشک با موفقیت انجام شد";
+                return RedirectToAction("ServiceCategoryPermissions", new { doctorId = model.DoctorId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در انتساب پزشک {DoctorId} به دسته‌بندی خدمات", model.DoctorId);
+                TempData["Error"] = "خطا در انجام عملیات انتساب";
+                return RedirectToAction("AssignToServiceCategory", new { doctorId = model.DoctorId });
+            }
+        }
+
+        /// <summary>
+        /// نمایش فرم انتقال صلاحیت‌های خدماتی پزشک
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> TransferServiceCategory(int? doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست نمایش فرم انتقال صلاحیت‌های خدماتی پزشک {DoctorId}", doctorId);
+
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
+                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                // دریافت اطلاعات پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
+                if (!doctorResult.Success)
+                {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
+                    TempData["Error"] = doctorResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                var doctor = doctorResult.Data;
+
+                // دریافت صلاحیت‌های فعلی پزشک
+                var permissionsResult = await _doctorServiceCategoryService.GetServiceCategoriesForDoctorAsync(doctorId.Value, "", 1, 100);
+                if (!permissionsResult.Success)
+                {
+                    _logger.Warning("صلاحیت‌های پزشک {DoctorId} یافت نشد", doctorId);
+                    TempData["Error"] = permissionsResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                var permissions = permissionsResult.Data;
+
+                // تعیین دسته‌بندی فعلی (اولین دسته‌بندی فعال)
+                var currentServiceCategory = permissions.Items.FirstOrDefault(psc => psc.IsActive);
+                
+                var model = new DoctorServiceCategoryViewModel
+                {
+                    DoctorId = doctorId.Value,
+                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
+                    ServiceCategoryId = currentServiceCategory?.ServiceCategoryId ?? 0,
+                    ServiceCategoryTitle = currentServiceCategory?.ServiceCategoryTitle ?? "بدون صلاحیت",
+                    IsActive = true
+                };
+
+                // دریافت لیست دسته‌بندی‌های خدمات فعال
+                var serviceCategoriesResult = await _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
+                if (!serviceCategoriesResult.Success)
+                {
+                    _logger.Warning("خطا در دریافت لیست دسته‌بندی‌های خدمات");
+                    TempData["Error"] = serviceCategoriesResult.Message;
+                    return RedirectToAction("Index", "Doctor");
+                }
+
+                ViewBag.ServiceCategories = serviceCategoriesResult.Data
+                    .Where(sc => sc.Id != currentServiceCategory?.ServiceCategoryId)
+                    .Select(sc => new { Value = sc.Id, Text = sc.Name })
+                    .ToList();
+
+                _logger.Information("فرم انتقال صلاحیت‌های خدماتی پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
+                return View(model);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش فرم انتقال صلاحیت‌های خدماتی پزشک {DoctorId}", doctorId?.ToString() ?? "null");
+                TempData["Error"] = "خطا در بارگذاری فرم انتقال";
+                return RedirectToAction("Index", "Doctor");
+            }
+        }
+
+        /// <summary>
+        /// پردازش انتقال صلاحیت‌های خدماتی پزشک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> TransferServiceCategory(DoctorServiceCategoryViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست انتقال صلاحیت‌های خدماتی پزشک {DoctorId} از دسته‌بندی {FromServiceCategoryId} به دسته‌بندی {ToServiceCategoryId}", 
+                    model.DoctorId, model.ServiceCategoryId, model.ServiceCategoryId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.Warning("مدل انتقال نامعتبر برای پزشک {DoctorId}", model.DoctorId);
+                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    return RedirectToAction("TransferServiceCategory", new { doctorId = model.DoctorId });
+                }
+
+                // حذف از دسته‌بندی فعلی
+                var revokeResult = await _doctorServiceCategoryService.RevokeServiceCategoryFromDoctorAsync(model.DoctorId, model.ServiceCategoryId);
+                if (!revokeResult.Success)
+                {
+                    _logger.Warning("خطا در حذف از دسته‌بندی فعلی: {Message}", revokeResult.Message);
+                    TempData["Error"] = $"خطا در حذف از دسته‌بندی فعلی: {revokeResult.Message}";
+                    return RedirectToAction("TransferServiceCategory", new { doctorId = model.DoctorId });
+                }
+
+                // انتساب به دسته‌بندی جدید
+                var assignModel = new DoctorServiceCategoryViewModel
+                {
+                    DoctorId = model.DoctorId,
+                    ServiceCategoryId = model.ServiceCategoryId,
+                    IsActive = true,
+                    GrantedDate = DateTime.Now,
+                    AuthorizationLevel = model.AuthorizationLevel ?? "پزشک عادی"
+                };
+
+                var assignResult = await _doctorServiceCategoryService.GrantServiceCategoryToDoctorAsync(assignModel);
+                if (!assignResult.Success)
+                {
+                    _logger.Warning("خطا در انتساب به دسته‌بندی جدید: {Message}", assignResult.Message);
+                    TempData["Error"] = $"خطا در انتساب به دسته‌بندی جدید: {assignResult.Message}";
+                    return RedirectToAction("TransferServiceCategory", new { doctorId = model.DoctorId });
+                }
+
+                _logger.Information("انتقال صلاحیت‌های خدماتی پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
+                TempData["Success"] = "انتقال صلاحیت‌های خدماتی با موفقیت انجام شد";
+                return RedirectToAction("ServiceCategoryPermissions", new { doctorId = model.DoctorId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در انتقال صلاحیت‌های خدماتی پزشک {DoctorId}", model.DoctorId);
+                TempData["Error"] = "خطا در انجام عملیات انتقال";
+                return RedirectToAction("TransferServiceCategory", new { doctorId = model.DoctorId });
+            }
+        }
+
+        #endregion
     }
 }

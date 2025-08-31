@@ -1,0 +1,506 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.AssignmentHistoryViewModel
+@{
+    ViewBag.Title = "جزئیات تاریخچه انتساب";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .details-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .info-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .info-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+            margin: -25px -25px 20px -25px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .info-item:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #555;
+            min-width: 150px;
+        }
+
+        .info-value {
+            color: #333;
+            text-align: left;
+        }
+
+        .importance-badge {
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9em;
+            font-weight: 600;
+        }
+
+        .importance-critical {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .importance-important {
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            color: white;
+        }
+
+        .importance-normal {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+            color: white;
+        }
+
+        .action-btn {
+            border-radius: 25px;
+            padding: 10px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .doctor-avatar {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+
+        .timeline-item {
+            position: relative;
+            padding-left: 30px;
+            margin-bottom: 20px;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 12px;
+            height: 12px;
+            background: #667eea;
+            border-radius: 50%;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            left: 5px;
+            top: 12px;
+            width: 2px;
+            height: calc(100% + 8px);
+            background: #e0e0e0;
+        }
+
+        .timeline-item:last-child::after {
+            display: none;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-history text-primary me-2"></i>
+                        جزئیات تاریخچه انتساب
+                    </h2>
+                    <p class="text-muted mb-0">مشاهده اطلاعات کامل رکورد تاریخچه</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary action-btn">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت
+                    </a>
+                    <button type="button" class="btn btn-danger action-btn" onclick="deleteHistory(@Model.Id)">
+                        <i class="fas fa-trash me-2"></i>
+                        حذف
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (Model != null)
+    {
+        <div class="row">
+            <!-- Main Details -->
+            <div class="col-lg-8">
+                <div class="details-card">
+                    <div class="card-body">
+                        <!-- Doctor Information -->
+                        <div class="info-section">
+                            <div class="info-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-user-md me-2"></i>
+                                    اطلاعات پزشک
+                                </h5>
+                            </div>
+                            <div class="text-center mb-4">
+                                <div class="doctor-avatar mx-auto">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                                <h4 class="mb-1">@Model.DoctorName</h4>
+                                <p class="text-muted mb-0">@Model.DoctorSpecialization</p>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">شناسه پزشک:</span>
+                                        <span class="info-value">@Model.DoctorId</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">کلینیک:</span>
+                                        <span class="info-value">@Model.ClinicName</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Information -->
+                        <div class="info-section">
+                            <div class="info-header">
+                                <h5 class="mb-0">
+                                    <i class="fas fa-tasks me-2"></i>
+                                    اطلاعات عملیات
+                                </h5>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">نوع عملیات:</span>
+                                        <span class="info-value">
+                                            <span class="badge bg-info">@Model.ActionType</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="info-item">
+                                        <span class="info-label">اهمیت:</span>
+                                        <span class="info-value">
+                                            @{
+                                                var importanceClass = Model.Importance switch
+                                                {
+                                                    "Critical" => "importance-critical",
+                                                    "Important" => "importance-important",
+                                                    _ => "importance-normal"
+                                                };
+                                            }
+                                            <span class="importance-badge @importanceClass">@Model.Importance</span>
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="info-item">
+                                        <span class="info-label">عنوان عملیات:</span>
+                                        <span class="info-value">@Model.ActionTitle</span>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="info-item">
+                                        <span class="info-label">توضیحات:</span>
+                                        <span class="info-value">@(string.IsNullOrEmpty(Model.ActionDescription) ? "بدون توضیح" : Model.ActionDescription)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Information -->
+                        @if (!string.IsNullOrEmpty(Model.DepartmentName))
+                        {
+                            <div class="info-section">
+                                <div class="info-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-hospital me-2"></i>
+                                        اطلاعات دپارتمان
+                                    </h5>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <span class="info-label">نام دپارتمان:</span>
+                                            <span class="info-value">@Model.DepartmentName</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="info-item">
+                                            <span class="info-label">شناسه دپارتمان:</span>
+                                            <span class="info-value">@Model.DepartmentId</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Service Categories -->
+                        @if (!string.IsNullOrEmpty(Model.ServiceCategories))
+                        {
+                            <div class="info-section">
+                                <div class="info-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-list-alt me-2"></i>
+                                        دسته‌بندی‌های خدماتی
+                                    </h5>
+                                </div>
+                                <div class="info-item">
+                                    <span class="info-label">خدمات:</span>
+                                    <span class="info-value">@Model.ServiceCategories</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <!-- Timing Information -->
+                <div class="info-section">
+                    <div class="info-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-clock me-2"></i>
+                            اطلاعات زمانی
+                        </h5>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="info-item">
+                            <span class="info-label">تاریخ عملیات:</span>
+                            <span class="info-value">@Model.ActionDate.ToString("yyyy/MM/dd")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">ساعت عملیات:</span>
+                            <span class="info-value">@Model.ActionDate.ToString("HH:mm:ss")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">تاریخ ایجاد:</span>
+                            <span class="info-value">@Model.CreatedDate.ToString("yyyy/MM/dd")</span>
+                        </div>
+                        <div class="info-item">
+                            <span class="info-label">آخرین بروزرسانی:</span>
+                            <span class="info-value">@(Model.UpdatedDate?.ToString("yyyy/MM/dd"))</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- User Information -->
+                <div class="info-section">
+                    <div class="info-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user me-2"></i>
+                            اطلاعات کاربر
+                        </h5>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">انجام دهنده:</span>
+                        <span class="info-value">@Model.PerformedByUserName</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">شناسه کاربر:</span>
+                        <span class="info-value">@Model.PerformedByUserId</span>
+                    </div>
+                </div>
+
+                <!-- System Information -->
+                <div class="info-section">
+                    <div class="info-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>
+                            اطلاعات سیستمی
+                        </h5>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">شناسه رکورد:</span>
+                        <span class="info-value">@Model.Id</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">وضعیت:</span>
+                        <span class="info-value">
+                            @if (Model.IsDeleted)
+                            {
+                                <span class="badge bg-danger">حذف شده</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">فعال</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="info-section">
+                    <div class="info-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bolt me-2"></i>
+                            عملیات سریع
+                        </h5>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("DoctorReport", new { doctorId = Model.DoctorId })" 
+                           class="btn btn-outline-primary action-btn">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            گزارش پزشک
+                        </a>
+                        <a href="@Url.Action("Search", new { doctorId = Model.DoctorId })" 
+                           class="btn btn-outline-info action-btn">
+                            <i class="fas fa-search me-2"></i>
+                            جستجوی بیشتر
+                        </a>
+                        <button type="button" class="btn btn-outline-warning action-btn" onclick="exportHistory(@Model.Id)">
+                            <i class="fas fa-download me-2"></i>
+                            خروجی PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+            <h5 class="text-warning">رکورد مورد نظر یافت نشد</h5>
+            <p class="text-muted">تاریخچه انتساب با شناسه وارد شده وجود ندارد.</p>
+            <a href="@Url.Action("Index")" class="btn btn-primary">
+                <i class="fas fa-arrow-right me-2"></i>
+                بازگشت به لیست
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function deleteHistory(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این تاریخچه حذف خواهد شد.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن!',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("Delete")',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفقیت',
+                                    text: 'تاریخچه با موفقیت حذف شد.'
+                                }).then(() => {
+                                    window.location.href = '@Url.Action("Index")';
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در حذف تاریخچه.'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور.'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function exportHistory(id) {
+            Swal.fire({
+                title: 'در حال ایجاد فایل...',
+                text: 'لطفاً صبر کنید',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            $.ajax({
+                url: '@Url.Action("ExportToPdf")',
+                type: 'POST',
+                data: {
+                    id: id,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(blob) {
+                    Swal.close();
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `تاریخچه_انتساب_${id}.pdf`;
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                },
+                error: function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'خطا در ایجاد فایل PDF.'
+                    });
+                }
+            });
+        }
+    </script>
+}

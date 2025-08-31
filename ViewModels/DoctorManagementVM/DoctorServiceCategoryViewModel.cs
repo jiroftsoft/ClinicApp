@@ -20,9 +20,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     public class DoctorServiceCategoryViewModel
     {
         /// <summary>
-        /// شناسه انتصاب (برای عملیات‌های ویرایش/حذف)
+        /// شناسه انتصاب (ترکیبی از DoctorId و ServiceCategoryId)
         /// </summary>
-        public int Id { get; set; }
+        public string AssignmentId => $"{DoctorId}_{ServiceCategoryId}";
 
         /// <summary>
         /// شناسه پزشک
@@ -45,6 +45,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Display(Name = "عنوان دسته‌بندی")]
         public string ServiceCategoryTitle { get; set; }
+
+        /// <summary>
+        /// نام دسته‌بندی خدمات (برای سازگاری)
+        /// </summary>
+        [Display(Name = "نام دسته‌بندی")]
+        public string ServiceCategoryName { get; set; }
 
         /// <summary>
         /// شناسه دپارتمان مربوط به دسته‌بندی خدمات

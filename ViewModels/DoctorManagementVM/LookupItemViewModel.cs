@@ -28,6 +28,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string Name { get; set; }
 
         /// <summary>
+        /// متن نمایشی آیتم (برای SelectListItem)
+        /// </summary>
+        public string Text { get; set; }
+
+        /// <summary>
         /// کد آیتم
         /// </summary>
         public string Code { get; set; }

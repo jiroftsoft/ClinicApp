@@ -1,6 +1,7 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentsViewModel
+@* صفحه لیست انتسابات کلی پزشک - برای عملیات تخصصی به ماژول‌های مربوطه مراجعه شود *@
 @{
-    ViewBag.Title = "انتسابات پزشک";
+    ViewBag.Title = "لیست انتسابات کلی پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -81,9 +82,9 @@
                 <div>
                     <h2 class="mb-0 text-primary">
                         <i class="fas fa-list me-2"></i>
-                        انتسابات پزشک
+                        لیست انتسابات کلی پزشک
                     </h2>
-                    <p class="text-muted mb-0">مشاهده تمام انتسابات و صلاحیت‌های پزشک</p>
+                    <p class="text-muted mb-0">مشاهده تمام انتسابات و صلاحیت‌های پزشک - برای عملیات تخصصی به ماژول‌های مربوطه مراجعه شود</p>
                 </div>
                 <div>
                     <a href="@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-success me-2">

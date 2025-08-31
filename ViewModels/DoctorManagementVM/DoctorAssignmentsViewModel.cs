@@ -52,21 +52,19 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// تعداد کل انتسابات فعال
         /// </summary>
         [Display(Name = "تعداد انتسابات فعال")]
-        public int TotalActiveAssignments => 
-            (DoctorDepartments?.Where(d => d.IsActive).Count() ?? 0) + 
-            (DoctorServiceCategories?.Where(s => s.IsActive).Count() ?? 0);
+        public int TotalActiveAssignments { get; set; }
 
         /// <summary>
         /// تعداد انتسابات دپارتمان فعال
         /// </summary>
         [Display(Name = "تعداد دپارتمان‌های فعال")]
-        public int ActiveDepartmentCount => DoctorDepartments?.Where(d => d.IsActive).Count() ?? 0;
+        public int ActiveDepartmentCount { get; set; }
 
         /// <summary>
         /// تعداد انتسابات سرفصل خدماتی فعال
         /// </summary>
         [Display(Name = "تعداد سرفصل‌های خدماتی فعال")]
-        public int ActiveServiceCategoryCount => DoctorServiceCategories?.Where(s => s.IsActive).Count() ?? 0;
+        public int ActiveServiceCategoryCount { get; set; }
 
         /// <summary>
         /// آیا پزشک دارای انتسابات فعال است

@@ -123,45 +123,45 @@ namespace ClinicApp.Services
             }
         }
 
-        public async Task<bool> HasAccessToServiceAsync(int serviceId)
+        public Task<bool> HasAccessToServiceAsync(int serviceId)
         {
             try
             {
                 // کاربر سیستم به تمام خدمات دسترسی دارد
-                return _isSystemAdmin;
+                return Task.FromResult(_isSystemAdmin);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطای غیرمنتظره در بررسی دسترسی کاربر سیستم به خدمات {ServiceId}", serviceId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
-        public async Task<bool> HasAccessToInsuranceAsync(int insuranceId)
+        public Task<bool> HasAccessToInsuranceAsync(int insuranceId)
         {
             try
             {
                 // کاربر سیستم به تمام بیمه‌ها دسترسی دارد
-                return _isSystemAdmin;
+                return Task.FromResult(_isSystemAdmin);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در بررسی دسترسی به بیمه {InsuranceId}.", insuranceId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
-        public async Task<bool> HasAccessToDepartmentAsync(int departmentId)
+        public Task<bool> HasAccessToDepartmentAsync(int departmentId)
         {
             try
             {
                 // کاربر سیستم به تمام دپارتمان‌ها دسترسی دارد
-                return _isSystemAdmin;
+                return Task.FromResult(_isSystemAdmin);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در بررسی دسترسی به دپارتمان {DepartmentId}.", departmentId);
-                return false;
+                return Task.FromResult(false);
             }
         }
 
@@ -169,16 +169,16 @@ namespace ClinicApp.Services
 
         #region Helper Methods (روش‌های کمکی)
 
-        public async Task<Doctor> GetDoctorInfoAsync()
+        public Task<Doctor> GetDoctorInfoAsync()
         {
             _log.Warning("تلاش برای دریافت اطلاعات پزشک توسط BackgroundCurrentUserService");
-            return null;
+            return Task.FromResult<Doctor>(null);
         }
 
-        public async Task<Patient> GetPatientInfoAsync()
+        public Task<Patient> GetPatientInfoAsync()
         {
             _log.Warning("تلاش برای دریافت اطلاعات بیمار توسط BackgroundCurrentUserService");
-            return null;
+            return Task.FromResult<Patient>(null);
         }
 
         public string GetSystemUserId()
@@ -186,34 +186,34 @@ namespace ClinicApp.Services
             return _systemUserId;
         }
 
-        public async Task<List<Department>> GetDoctorActiveDepartmentsAsync()
+        public Task<List<Department>> GetDoctorActiveDepartmentsAsync()
         {
             _log.Warning("تلاش برای دریافت دپارتمان‌های فعال پزشک توسط BackgroundCurrentUserService");
-            return new List<Department>();
+            return Task.FromResult(new List<Department>());
         }
 
-        public async Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync()
+        public Task<List<ServiceCategory>> GetDoctorAuthorizedServiceCategoriesAsync()
         {
             _log.Warning("تلاش برای دریافت دسته‌بندی خدمات مجاز پزشک توسط BackgroundCurrentUserService");
-            return new List<ServiceCategory>();
+            return Task.FromResult(new List<ServiceCategory>());
         }
 
-        public async Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId)
+        public Task<bool> IsDoctorActiveInDepartmentAsync(int departmentId)
         {
             _log.Warning("تلاش برای بررسی فعالیت پزشک در دپارتمان {DepartmentId} توسط BackgroundCurrentUserService", departmentId);
-            return false;
+            return Task.FromResult(false);
         }
 
-        public async Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId)
+        public Task<bool> IsDoctorAuthorizedForServiceCategoryAsync(int serviceCategoryId)
         {
             _log.Warning("تلاش برای بررسی مجوز پزشک برای دسته‌بندی خدمات {ServiceCategoryId} توسط BackgroundCurrentUserService", serviceCategoryId);
-            return false;
+            return Task.FromResult(false);
         }
 
-        public async Task<string> GetDoctorRoleInDepartmentAsync(int departmentId)
+        public Task<string> GetDoctorRoleInDepartmentAsync(int departmentId)
         {
             _log.Warning("تلاش برای دریافت نقش پزشک در دپارتمان {DepartmentId} توسط BackgroundCurrentUserService", departmentId);
-            return null;
+            return Task.FromResult<string>(null);
         }
 
         public string[] GetUserRoles()

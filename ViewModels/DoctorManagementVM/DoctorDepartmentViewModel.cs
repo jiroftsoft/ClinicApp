@@ -20,9 +20,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     public class DoctorDepartmentViewModel
     {
         /// <summary>
-        /// شناسه انتصاب (برای عملیات‌های ویرایش/حذف)
+        /// شناسه انتصاب (ترکیبی از DoctorId و DepartmentId)
         /// </summary>
-        public int Id { get; set; }
+        public string AssignmentId => $"{DoctorId}_{DepartmentId}";
 
         /// <summary>
         /// شناسه پزشک

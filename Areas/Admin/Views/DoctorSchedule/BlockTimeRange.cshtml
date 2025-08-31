@@ -1,0 +1,328 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.BlockTimeRangeViewModel
+@{
+    ViewBag.Title = "مسدود کردن بازه زمانی پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .block-form {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .form-section {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        .form-section h5 {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .doctor-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .btn-submit {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .validation-summary {
+            border-radius: 10px;
+            border: none;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">در حال پردازش...</span>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-ban me-2"></i>
+                        مسدود کردن بازه زمانی پزشک
+                    </h2>
+                    <p class="text-muted mb-0">مسدود کردن بازه زمانی برای مرخصی، جلسات یا سایر موارد</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به لیست پزشکان
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Information Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="doctor-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-user-md me-2"></i>
+                            @ViewBag.Doctor.FirstName @ViewBag.Doctor.LastName
+                        </h4>
+                        <p class="mb-0">
+                            <i class="fas fa-id-card me-2"></i>
+                            کد ملی: @ViewBag.Doctor.NationalCode
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-user-md me-1"></i>
+                            پزشک
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Block Time Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="block-form p-4">
+                @using (Html.BeginForm("BlockTimeRange", "DoctorSchedule", FormMethod.Post, 
+                       new { id = "blockForm", @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.DoctorId)
+                    @Html.HiddenFor(m => m.DoctorName)
+
+                    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger validation-summary" })
+
+                    <!-- Date Range -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-calendar me-2"></i>
+                            بازه زمانی
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.StartDate, "تاریخ شروع", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.StartDate, "{0:yyyy/MM/dd}", new { @class = "form-control", type = "date", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.EndDate, "تاریخ پایان", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.EndDate, "{0:yyyy/MM/dd}", new { @class = "form-control", type = "date", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Time Range -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-clock me-2"></i>
+                            ساعات کاری
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.StartTime, "زمان شروع", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.StartTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.StartTime, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.EndTime, "زمان پایان", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.EndTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.EndTime, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Reason -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-comment me-2"></i>
+                            دلیل مسدودیت
+                        </h5>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.Reason, "دلیل مسدودیت", new { @class = "form-label fw-bold" })
+                                    @Html.TextAreaFor(m => m.Reason, new { @class = "form-control", rows = "3", 
+                                        placeholder = "دلیل مسدود کردن این بازه زمانی را وارد کنید..." })
+                                    @Html.ValidationMessageFor(m => m.Reason, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recurrence Options -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-repeat me-2"></i>
+                            تنظیمات تکرار
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(m => m.IsRecurring, new { @class = "form-check-input", id = "isRecurring" })
+                                        <label class="form-check-label" for="isRecurring">
+                                            مسدودیت تکرار شونده
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">نوع تکرار</label>
+                                    <select class="form-select" id="recurrenceType" name="RecurrenceType">
+                                        <option value="">انتخاب کنید...</option>
+                                        <option value="daily">روزانه</option>
+                                        <option value="weekly">هفتگی</option>
+                                        <option value="monthly">ماهانه</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">تعداد تکرار</label>
+                                    <input type="number" class="form-control" id="recurrenceCount" name="RecurrenceCount" 
+                                           min="1" max="365" placeholder="تعداد تکرار..." />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="form-section">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary btn-submit">
+                                        <i class="fas fa-times me-2"></i>
+                                        انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-warning btn-submit">
+                                        <i class="fas fa-ban me-2"></i>
+                                        مسدود کردن بازه زمانی
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Toggle recurrence options
+            $('#isRecurring').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#recurrenceType, #recurrenceCount').prop('disabled', false);
+                } else {
+                    $('#recurrenceType, #recurrenceCount').prop('disabled', true);
+                }
+            });
+
+            // Initialize recurrence options state
+            $('#isRecurring').trigger('change');
+
+            // Form submission
+            $('#blockForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                if (!$(this)[0].checkValidity()) {
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                    return false;
+                }
+
+                // Confirm block time range
+                Swal.fire({
+                    title: 'تأیید مسدودیت',
+                    text: 'آیا از مسدود کردن این بازه زمانی اطمینان دارید؟',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#ffc107',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'بله، مسدود کن',
+                    cancelButtonText: 'انصراف'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Show loading overlay
+                        $('.loading-overlay').show();
+                        
+                        // Submit form
+                        this.submit();
+                    }
+                });
+            });
+
+            // Success message
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'موفقیت',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+
+            // Error message
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'خطا',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+        });
+    </script>
+}

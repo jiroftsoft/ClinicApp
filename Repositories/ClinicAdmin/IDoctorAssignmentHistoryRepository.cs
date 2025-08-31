@@ -135,6 +135,13 @@ namespace ClinicApp.Repositories.ClinicAdmin
         public int ImportantRecords { get; set; }
         public int NormalRecords { get; set; }
         public int SecurityRecords { get; set; }
+        public int AssignmentsCount { get; set; }
+        public int TransfersCount { get; set; }
+        public int RemovalsCount { get; set; }
+        public string MostActiveMonth { get; set; }
+        public string MostActiveDoctor { get; set; }
+        public string MostActiveDepartment { get; set; }
+        public decimal AverageChangesPerMonth { get; set; }
         public Dictionary<string, int> ActionTypeCounts { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> DepartmentCounts { get; set; } = new Dictionary<string, int>();
         public Dictionary<string, int> UserCounts { get; set; } = new Dictionary<string, int>();

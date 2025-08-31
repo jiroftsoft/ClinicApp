@@ -1,0 +1,470 @@
+@* صفحه اصلی گزارش‌های پزشکان - طراحی Ultimate برای محیط درمانی *@
+@{
+    ViewBag.Title = "گزارش‌های پزشکان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <style>
+        .report-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+        
+        .report-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .report-card .card-body {
+            padding: 2rem;
+            color: white;
+        }
+        
+        .report-card .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            color: white;
+        }
+        
+        .report-card .card-text {
+            font-size: 0.95rem;
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        
+        .report-card .btn {
+            background: rgba(255,255,255,0.2);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: white;
+            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+        }
+        
+        .report-card .btn:hover {
+            background: rgba(255,255,255,0.3);
+            border-color: rgba(255,255,255,0.5);
+            transform: scale(1.05);
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .quick-actions {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+        
+        .quick-actions h4 {
+            color: white;
+            margin-bottom: 1.5rem;
+        }
+        
+        .quick-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            color: white;
+            padding: 0.75rem 1.25rem;
+            border-radius: 20px;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+        
+        .quick-btn:hover {
+            background: rgba(255,255,255,0.3);
+            color: white;
+            text-decoration: none;
+            transform: scale(1.05);
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-chart-line text-primary me-2"></i>
+                        گزارش‌های پزشکان
+                    </h1>
+                    <p class="text-muted mb-0">مدیریت و تحلیل گزارش‌های جامع پزشکان کلینیک شفا</p>
+                </div>
+                <div>
+                    <button class="btn btn-primary" onclick="refreshStats()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        به‌روزرسانی آمار
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalDoctors">-</div>
+                    <div class="stat-label">کل پزشکان</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeDoctors">-</div>
+                    <div class="stat-label">پزشکان فعال</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="totalAssignments">-</div>
+                    <div class="stat-label">کل انتسابات</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="activeDepartments">-</div>
+                    <div class="stat-label">دپارتمان‌های فعال</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="quick-actions">
+                <h4><i class="fas fa-bolt me-2"></i>دسترسی سریع</h4>
+                <a href="@Url.Action("ActiveDoctorsReport")" class="quick-btn">
+                    <i class="fas fa-user-md me-2"></i>گزارش پزشکان فعال
+                </a>
+                <a href="@Url.Action("PerformanceReport")" class="quick-btn">
+                    <i class="fas fa-chart-bar me-2"></i>گزارش عملکرد
+                </a>
+                <a href="@Url.Action("ComparisonReport")" class="quick-btn">
+                    <i class="fas fa-balance-scale me-2"></i>گزارش مقایسه‌ای
+                </a>
+                <a href="@Url.Action("DependencyReport")" class="quick-btn">
+                    <i class="fas fa-sitemap me-2"></i>گزارش وابستگی‌ها
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Cards -->
+    <div class="row">
+        <div class="col-lg-6 col-xl-3 mb-4">
+            <div class="card report-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-md fa-3x text-white-50"></i>
+                    </div>
+                    <h5 class="card-title">گزارش پزشکان فعال</h5>
+                    <p class="card-text">مشاهده و تحلیل وضعیت پزشکان فعال در سیستم</p>
+                    <a href="@Url.Action("ActiveDoctorsReport")" class="btn">
+                        <i class="fas fa-eye me-2"></i>مشاهده گزارش
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-xl-3 mb-4">
+            <div class="card report-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-chart-bar fa-3x text-white-50"></i>
+                    </div>
+                    <h5 class="card-title">گزارش عملکرد</h5>
+                    <p class="card-text">تحلیل عملکرد و آمار فعالیت‌های پزشکان</p>
+                    <a href="@Url.Action("PerformanceReport")" class="btn">
+                        <i class="fas fa-chart-line me-2"></i>مشاهده گزارش
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-xl-3 mb-4">
+            <div class="card report-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-balance-scale fa-3x text-white-50"></i>
+                    </div>
+                    <h5 class="card-title">گزارش مقایسه‌ای</h5>
+                    <p class="card-text">مقایسه عملکرد پزشکان و دپارتمان‌ها</p>
+                    <a href="@Url.Action("ComparisonReport")" class="btn">
+                        <i class="fas fa-exchange-alt me-2"></i>مشاهده گزارش
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 col-xl-3 mb-4">
+            <div class="card report-card">
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-sitemap fa-3x text-white-50"></i>
+                    </div>
+                    <h5 class="card-title">گزارش وابستگی‌ها</h5>
+                    <p class="card-text">تحلیل وابستگی‌ها و روابط بین پزشکان</p>
+                    <a href="@Url.Action("DependencyReport")" class="btn">
+                        <i class="fas fa-project-diagram me-2"></i>مشاهده گزارش
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-history me-2"></i>
+                        فعالیت‌های اخیر
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="recentActivityTable">
+                            <thead>
+                                <tr>
+                                    <th>تاریخ</th>
+                                    <th>عملیات</th>
+                                    <th>پزشک</th>
+                                    <th>دپارتمان</th>
+                                    <th>وضعیت</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="5" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>
+                                        در حال بارگذاری...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Scripts/plugins/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="~/Scripts/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Scripts/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            $('#recentActivityTable').DataTable({
+                language: {
+                    url: '/Scripts/plugins/datatables/Persian.json'
+                },
+                pageLength: 10,
+                order: [[0, 'desc']],
+                responsive: true
+            });
+
+            // Load initial statistics
+            loadStatistics();
+            loadRecentActivity();
+        });
+
+        function showLoading() {
+            $('.loading-overlay').show();
+        }
+
+        function hideLoading() {
+            $('.loading-overlay').hide();
+        }
+
+        function loadStatistics() {
+            showLoading();
+            
+            $.ajax({
+                url: '@Url.Action("GetStatistics", "DoctorReporting")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        $('#totalDoctors').text(response.data.totalDoctors || 0);
+                        $('#activeDoctors').text(response.data.activeDoctors || 0);
+                        $('#totalAssignments').text(response.data.totalAssignments || 0);
+                        $('#activeDepartments').text(response.data.activeDepartments || 0);
+                    } else {
+                        console.error('خطا در دریافت آمار:', response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('خطا در ارتباط با سرور:', error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'خطا در دریافت آمار از سرور'
+                    });
+                },
+                complete: function() {
+                    hideLoading();
+                }
+            });
+        }
+
+        function loadRecentActivity() {
+            $.ajax({
+                url: '@Url.Action("GetRecentActivity", "DoctorReporting")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        updateRecentActivityTable(response.data);
+                    } else {
+                        console.error('خطا در دریافت فعالیت‌های اخیر:', response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('خطا در ارتباط با سرور:', error);
+                }
+            });
+        }
+
+        function updateRecentActivityTable(activities) {
+            var tbody = $('#recentActivityTable tbody');
+            tbody.empty();
+
+            if (activities && activities.length > 0) {
+                activities.forEach(function(activity) {
+                    var row = `
+                        <tr>
+                            <td>${activity.date}</td>
+                            <td>
+                                <span class="badge bg-${getActionBadgeClass(activity.actionType)}">
+                                    ${activity.actionType}
+                                </span>
+                            </td>
+                            <td>${activity.doctorName}</td>
+                            <td>${activity.departmentName || '-'}</td>
+                            <td>
+                                <span class="badge bg-${activity.status === 'success' ? 'success' : 'warning'}">
+                                    ${activity.status === 'success' ? 'موفق' : 'در انتظار'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                tbody.append(`
+                    <tr>
+                        <td colspan="5" class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>
+                            هیچ فعالیتی یافت نشد
+                        </td>
+                    </tr>
+                `);
+            }
+        }
+
+        function getActionBadgeClass(actionType) {
+            switch(actionType.toLowerCase()) {
+                case 'assignment': return 'primary';
+                case 'removal': return 'danger';
+                case 'transfer': return 'warning';
+                case 'update': return 'info';
+                default: return 'secondary';
+            }
+        }
+
+        function refreshStats() {
+            loadStatistics();
+            loadRecentActivity();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'به‌روزرسانی شد',
+                text: 'آمار و اطلاعات با موفقیت به‌روزرسانی شد',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // Auto-refresh every 5 minutes
+        setInterval(function() {
+            loadStatistics();
+        }, 300000);
+    </script>
+}

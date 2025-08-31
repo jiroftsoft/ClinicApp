@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {
     public class AssignmentHistoryViewModel
-    {
+    {   
         public int Id { get; set; }
 
         [Display(Name = "نوع عملیات")]
@@ -54,6 +54,29 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
 
         [Display(Name = "تاریخ بروزرسانی")]
         public DateTime? UpdatedAt { get; set; }
+
+        // Additional properties for views
+        [Display(Name = "سطح اهمیت")]
+        public string Importance { get; set; }
+
+        [Display(Name = "تخصص پزشک")]
+        public string DoctorSpecialization { get; set; }
+
+        [Display(Name = "نام کاربر انجام دهنده")]
+        public string PerformedByUserName { get; set; }
+
+        // Additional properties for Details view
+        [Display(Name = "نام کلینیک")]
+        public string ClinicName { get; set; }
+
+        [Display(Name = "تاریخ ایجاد")]
+        public DateTime CreatedDate { get; set; }
+
+        [Display(Name = "تاریخ بروزرسانی")]
+        public DateTime? UpdatedDate { get; set; }
+
+        [Display(Name = "حذف شده")]
+        public bool IsDeleted { get; set; }
 
         // Helper properties
         public string ActionDateFormatted => ActionDate.ToString("yyyy/MM/dd HH:mm");

@@ -408,10 +408,10 @@ namespace ClinicApp.Services.ClinicAdmin
 
                 // بررسی وابستگی‌ها
                 var dependencies = await _doctorAssignmentRepository.GetDoctorDependenciesAsync(doctorId);
-                if (dependencies.HasActiveAppointments || dependencies.HasActiveReceptions)
+                if (!dependencies.CanBeDeleted)
                 {
-                    _logger.Warning("پزشک {DoctorId} دارای وابستگی‌های فعال است و قابل حذف نیست", doctorId);
-                    return ServiceResult.Failed("پزشک دارای وابستگی‌های فعال است و قابل حذف نیست.");
+                    _logger.Warning("پزشک {DoctorId} دارای وابستگی‌های فعال است و قابل حذف نیست: {ErrorMessage}", doctorId, dependencies.DeletionErrorMessage);
+                    return ServiceResult.Failed(dependencies.DeletionErrorMessage);
                 }
 
                 // حذف انتسابات دپارتمان‌ها
@@ -622,8 +622,8 @@ namespace ClinicApp.Services.ClinicAdmin
                 // دریافت اطلاعات وابستگی‌ها
                 var dependencies = await _doctorAssignmentRepository.GetDoctorDependenciesAsync(doctorId);
 
-                _logger.Information("وابستگی‌های پزشک {DoctorId} با موفقیت بررسی شد. HasActiveAppointments: {HasActiveAppointments}, HasActiveReceptions: {HasActiveReceptions}", 
-                    doctorId, dependencies.HasActiveAppointments, dependencies.HasActiveReceptions);
+                _logger.Information("وابستگی‌های پزشک {DoctorId} با موفقیت بررسی شد. CanBeDeleted: {CanBeDeleted}, AppointmentCount: {AppointmentCount}", 
+                    doctorId, dependencies.CanBeDeleted, dependencies.AppointmentCount);
 
                 return ServiceResult<DoctorDependencyInfo>.Successful(dependencies);
             }

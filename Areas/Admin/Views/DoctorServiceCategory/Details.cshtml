@@ -1,0 +1,135 @@
+@model DoctorServiceCategoryViewModel
+@{
+    ViewBag.Title = "جزئیات صلاحیت خدماتی";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-md"></i>
+                        جزئیات صلاحیت خدماتی
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت
+                        </a>
+                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning">
+                            <i class="fas fa-edit"></i>
+                            ویرایش
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>اطلاعات پزشک</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>نام پزشک:</strong></td>
+                                    <td>@Model.DoctorName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>کد ملی:</strong></td>
+                                    <td>@Model.DoctorNationalCode</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>کد نظام پزشکی:</strong></td>
+                                    <td>@Model.DoctorMedicalCouncilCode</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>اطلاعات سرفصل خدماتی</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>سرفصل خدماتی:</strong></td>
+                                    <td>@Model.ServiceCategoryName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>دپارتمان:</strong></td>
+                                    <td>@Model.DepartmentName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>کد سرفصل:</strong></td>
+                                    <td>@Model.ServiceCategoryCode</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    <hr />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>اطلاعات صلاحیت</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>سطح صلاحیت:</strong></td>
+                                    <td>@Model.AuthorizationLevel</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>شماره گواهی:</strong></td>
+                                    <td>@Model.CertificateNumber</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>تاریخ اعطا:</strong></td>
+                                    <td>@(Model.GrantedDate?.ToString("yyyy/MM/dd"))</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>وضعیت:</strong></td>
+                                    <td>
+                                        @if (Model.IsActive)
+                                        {
+                                            <span class="badge badge-success">فعال</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger">غیرفعال</span>
+                                        }
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>اطلاعات سیستمی</h5>
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>تاریخ ایجاد:</strong></td>
+                                    <td>@(Model.CreatedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>تاریخ به‌روزرسانی:</strong></td>
+                                    <td>@(Model.UpdatedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>ایجاد کننده:</strong></td>
+                                    <td>@Model.CreatedByUserName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>به‌روزرسانی کننده:</strong></td>
+                                    <td>@Model.UpdatedByUserName</td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    {
+                        <hr />
+                        <div class="row">
+                            <div class="col-12">
+                                <h5>توضیحات</h5>
+                                <p>@Model.Notes</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

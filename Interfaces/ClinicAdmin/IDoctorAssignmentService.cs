@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models;
 
 namespace ClinicApp.Interfaces.ClinicAdmin;
 

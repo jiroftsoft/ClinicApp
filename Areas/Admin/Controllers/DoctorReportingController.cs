@@ -9,6 +9,9 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using FluentValidation;
 using Serilog;
+using System.Collections.Generic;
+using ClinicApp.Models;
+using ClinicApp.Repositories.ClinicAdmin; // Added for List
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -317,6 +320,209 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در دریافت آمار داشبورد پزشک {DoctorId}", doctorId);
                 return Json(new { success = false, message = "خطا در دریافت آمار داشبورد" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        #endregion
+
+        #region Advanced Reporting
+
+        /// <summary>
+        /// نمایش گزارش عملکرد پزشک
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> PerformanceReport(int? doctorId, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            try
+            {
+                _logger.Information("درخواست گزارش عملکرد پزشک {DoctorId} توسط کاربر {UserId}", doctorId, _currentUserService.UserId);
+
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    return RedirectToAction("Reports");
+                }
+
+                // تنظیم مقادیر پیش‌فرض
+                if (!startDate.HasValue)
+                    startDate = DateTime.Today.AddDays(-30);
+                if (!endDate.HasValue)
+                    endDate = DateTime.Today;
+
+                // بررسی وجود پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
+                if (!doctorResult.Success)
+                {
+                    TempData["Error"] = "پزشک مورد نظر یافت نشد";
+                    return RedirectToAction("Reports");
+                }
+
+                ViewBag.Doctor = doctorResult.Data;
+                ViewBag.StartDate = startDate.Value.ToString("yyyy/MM/dd");
+                ViewBag.EndDate = endDate.Value.ToString("yyyy/MM/dd");
+
+                // دریافت آمار عملکرد
+                var performanceStats = await GetDoctorPerformanceStatsAsync(doctorId.Value, startDate.Value, endDate.Value);
+
+                _logger.Information("گزارش عملکرد پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
+                return View(performanceStats);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش گزارش عملکرد پزشک {DoctorId}", doctorId?.ToString() ?? "null");
+                TempData["Error"] = "خطا در بارگذاری گزارش عملکرد";
+                return RedirectToAction("Reports");
+            }
+        }
+
+        /// <summary>
+        /// نمایش گزارش مقایسه‌ای پزشکان
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> ComparisonReport(int? clinicId = null, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            try
+            {
+                _logger.Information("درخواست گزارش مقایسه‌ای پزشکان توسط کاربر {UserId}", _currentUserService.UserId);
+
+                // تنظیم مقادیر پیش‌فرض
+                if (!startDate.HasValue)
+                    startDate = DateTime.Today.AddDays(-30);
+                if (!endDate.HasValue)
+                    endDate = DateTime.Today;
+
+                ViewBag.ClinicId = clinicId;
+                ViewBag.StartDate = startDate.Value.ToString("yyyy/MM/dd");
+                ViewBag.EndDate = endDate.Value.ToString("yyyy/MM/dd");
+
+                // دریافت گزارش مقایسه‌ای
+                var comparisonReport = await GetDoctorComparisonReportAsync(clinicId ?? 0, startDate.Value, endDate.Value);
+
+                _logger.Information("گزارش مقایسه‌ای پزشکان با موفقیت نمایش داده شد");
+                return View(comparisonReport);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش گزارش مقایسه‌ای پزشکان");
+                TempData["Error"] = "خطا در بارگذاری گزارش مقایسه‌ای";
+                return RedirectToAction("Reports");
+            }
+        }
+
+        /// <summary>
+        /// نمایش گزارش وابستگی‌های پزشک
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> DependencyReport(int? doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست گزارش وابستگی‌های پزشک {DoctorId} توسط کاربر {UserId}", doctorId, _currentUserService.UserId);
+
+                if (!doctorId.HasValue || doctorId.Value <= 0)
+                {
+                    TempData["Error"] = "شناسه پزشک نامعتبر است";
+                    return RedirectToAction("Reports");
+                }
+
+                // بررسی وجود پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
+                if (!doctorResult.Success)
+                {
+                    TempData["Error"] = "پزشک مورد نظر یافت نشد";
+                    return RedirectToAction("Reports");
+                }
+
+                ViewBag.Doctor = doctorResult.Data;
+
+                // دریافت اطلاعات وابستگی‌ها
+                var dependencyInfo = await GetDoctorDependencyInfoAsync(doctorId.Value);
+
+                _logger.Information("گزارش وابستگی‌های پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
+                return View(dependencyInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در نمایش گزارش وابستگی‌های پزشک {DoctorId}", doctorId?.ToString() ?? "null");
+                TempData["Error"] = "خطا در بارگذاری گزارش وابستگی‌ها";
+                return RedirectToAction("Reports");
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// دریافت آمار عملکرد پزشک
+        /// </summary>
+        private async Task<DoctorPerformanceStats> GetDoctorPerformanceStatsAsync(int doctorId, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                // این متد باید از Repository استفاده کند
+                // فعلاً یک نمونه ساده برمی‌گردانیم
+                return new DoctorPerformanceStats
+                {
+                    DoctorId = doctorId,
+                    TotalAppointments = 0,
+                    CompletedAppointments = 0,
+                    CancelledAppointments = 0,
+                    PendingAppointments = 0,
+                    StartDate = startDate,
+                    EndDate = endDate
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت آمار عملکرد پزشک {DoctorId}", doctorId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت گزارش مقایسه‌ای پزشکان
+        /// </summary>
+        private async Task<List<DoctorComparisonReport>> GetDoctorComparisonReportAsync(int clinicId, DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                // این متد باید از Repository استفاده کند
+                // فعلاً یک لیست خالی برمی‌گردانیم
+                return new List<DoctorComparisonReport>();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت گزارش مقایسه‌ای پزشکان");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات وابستگی‌های پزشک
+        /// </summary>
+        private async Task<DoctorDependencyInfo> GetDoctorDependencyInfoAsync(int doctorId)
+        {
+            try
+            {
+                // این متد باید از Repository استفاده کند
+                // فعلاً یک نمونه ساده برمی‌گردانیم
+                return new DoctorDependencyInfo
+                {
+                    CanBeDeleted = false,
+                    DeletionErrorMessage = "بررسی وابستگی‌ها در حال انجام است",
+                    TotalActiveAppointments = 0,
+                    TotalDepartmentAssignments = 0,
+                    TotalServiceCategoryAssignments = 0,
+                    AppointmentCount = 0,
+                    DepartmentAssignmentCount = 0,
+                    ServiceCategoryAssignmentCount = 0
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اطلاعات وابستگی‌های پزشک {DoctorId}", doctorId);
+                throw;
             }
         }
 

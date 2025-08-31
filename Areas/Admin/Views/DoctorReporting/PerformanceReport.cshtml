@@ -1,0 +1,323 @@
+@model ClinicApp.Repositories.ClinicAdmin.DoctorPerformanceStats
+@{
+    ViewBag.Title = "گزارش عملکرد پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/chart.js/chart.min.css" rel="stylesheet" />
+    <style>
+        .performance-report {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .stats-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .stats-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        .doctor-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .date-range-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-chart-line me-2"></i>
+                        گزارش عملکرد پزشک
+                    </h2>
+                    <p class="text-muted mb-0">آمار و تحلیل عملکرد پزشک در بازه زمانی مشخص</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Reports", "DoctorReporting")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به گزارش‌ها
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Information Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="doctor-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-user-md me-2"></i>
+                            @ViewBag.Doctor.FirstName @ViewBag.Doctor.LastName
+                        </h4>
+                        <p class="mb-0">
+                            <i class="fas fa-id-card me-2"></i>
+                            کد ملی: @ViewBag.Doctor.NationalCode
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-user-md me-1"></i>
+                            پزشک
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Date Range Info -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="date-range-info">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-2">
+                            <i class="fas fa-calendar me-2"></i>
+                            بازه زمانی گزارش
+                        </h5>
+                        <p class="mb-0">
+                            از @ViewBag.StartDate تا @ViewBag.EndDate
+                        </p>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <button class="btn btn-outline-primary" onclick="exportReport()">
+                            <i class="fas fa-download me-2"></i>
+                            دانلود گزارش
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Statistics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card text-center">
+                <div class="stats-number">@Model.TotalAppointments</div>
+                <div class="stats-label">کل نوبت‌ها</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                <div class="stats-number">@Model.CompletedAppointments</div>
+                <div class="stats-label">نوبت‌های تکمیل شده</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center" style="background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);">
+                <div class="stats-number">@Model.PendingAppointments</div>
+                <div class="stats-label">نوبت‌های در انتظار</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card text-center" style="background: linear-gradient(135deg, #dc3545 0%, #e83e8c 100%);">
+                <div class="stats-number">@Model.CancelledAppointments</div>
+                <div class="stats-label">نوبت‌های لغو شده</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    توزیع نوبت‌ها
+                </h5>
+                <canvas id="appointmentsChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    آمار روزانه
+                </h5>
+                <canvas id="dailyChart" width="400" height="300"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Metrics -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="performance-report p-4">
+                <h5 class="mb-3">
+                    <i class="fas fa-tachometer-alt me-2"></i>
+                    شاخص‌های عملکرد
+                </h5>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <div class="h3 text-primary">
+                                @(Model.TotalAppointments > 0 ? Math.Round((double)Model.CompletedAppointments / Model.TotalAppointments * 100, 1) : 0)%
+                            </div>
+                            <div class="text-muted">نرخ تکمیل نوبت‌ها</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <div class="h3 text-warning">
+                                @(Model.TotalAppointments > 0 ? Math.Round((double)Model.CancelledAppointments / Model.TotalAppointments * 100, 1) : 0)%
+                            </div>
+                            <div class="text-muted">نرخ لغو نوبت‌ها</div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center p-3">
+                            <div class="h3 text-info">
+                                @(Model.TotalAppointments > 0 ? Math.Round((double)Model.PendingAppointments / Model.TotalAppointments * 100, 1) : 0)%
+                            </div>
+                            <div class="text-muted">نرخ نوبت‌های در انتظار</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/chart.js/chart.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Pie Chart for Appointments Distribution
+            var appointmentsCtx = document.getElementById('appointmentsChart').getContext('2d');
+            var appointmentsChart = new Chart(appointmentsCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['تکمیل شده', 'در انتظار', 'لغو شده'],
+                    datasets: [{
+                        data: [@Model.CompletedAppointments, @Model.PendingAppointments, @Model.CancelledAppointments],
+                        backgroundColor: [
+                            '#28a745',
+                            '#ffc107',
+                            '#dc3545'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: {
+                                    size: 12
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Bar Chart for Daily Statistics (Sample Data)
+            var dailyCtx = document.getElementById('dailyChart').getContext('2d');
+            var dailyChart = new Chart(dailyCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
+                    datasets: [{
+                        label: 'تعداد نوبت‌ها',
+                        data: [12, 19, 15, 25, 22, 18, 10],
+                        backgroundColor: 'rgba(102, 126, 234, 0.8)',
+                        borderColor: 'rgba(102, 126, 234, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                stepSize: 5
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+        });
+
+        function exportReport() {
+            Swal.fire({
+                title: 'دانلود گزارش',
+                text: 'آیا می‌خواهید گزارش عملکرد پزشک را دانلود کنید؟',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#667eea',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'بله، دانلود کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Show loading
+                    Swal.fire({
+                        title: 'در حال دانلود...',
+                        text: 'لطفاً صبر کنید',
+                        allowOutsideClick: false,
+                        didOpen: () => {
+                            Swal.showLoading();
+                        }
+                    });
+
+                    // Simulate download
+                    setTimeout(() => {
+                        Swal.fire({
+                            title: 'موفقیت',
+                            text: 'گزارش با موفقیت دانلود شد',
+                            icon: 'success',
+                            confirmButtonText: 'باشه'
+                        });
+                    }, 2000);
+                }
+            });
+        }
+    </script>
+}

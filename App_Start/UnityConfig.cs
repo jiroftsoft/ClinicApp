@@ -326,15 +326,21 @@ namespace ClinicApp
                 container.RegisterType<IDoctorReportingRepository, DoctorReportingRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentRepository, DoctorAssignmentRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentHistoryRepository, DoctorAssignmentHistoryRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorDashboardRepository, DoctorDashboardRepository>(new PerRequestLifetimeManager());
 
                 // Register Doctor Management Services
                 container.RegisterType<IDoctorCrudService, DoctorCrudService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDoctorDashboardService, DoctorDashboardService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorDepartmentService, DoctorDepartmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorServiceCategoryService, DoctorServiceCategoryService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorScheduleService, DoctorScheduleService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentService, DoctorAssignmentService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorReportingService, DoctorReportingService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentHistoryService, DoctorAssignmentHistoryService>(new PerRequestLifetimeManager());
+
+                // Register Core Services for Search functionality
+                container.RegisterType<IDoctorCrudService, DoctorCrudService>(new PerRequestLifetimeManager());
+                container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new PerRequestLifetimeManager());
 
                 // Register Specialization Management Repositories and Services
                 container.RegisterType<ISpecializationRepository, SpecializationRepository>(new PerRequestLifetimeManager());

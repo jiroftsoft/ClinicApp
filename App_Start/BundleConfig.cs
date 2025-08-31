@@ -46,6 +46,7 @@ namespace ClinicApp
                 "~/Content/plugins/select2/js/select2.full.min.js",
                 "~/Content/plugins/select2/js/fa.min.js",
                 "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
+               
             ));
 
             // Admin Layout CSS Bundle

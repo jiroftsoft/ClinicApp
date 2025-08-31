@@ -1,0 +1,498 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDashboardIndexViewModel
+@{
+    ViewBag.Title = "داشبورد پزشکان";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .dashboard-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        
+        .dashboard-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+            text-align: center;
+        }
+        
+        .quick-action-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 5px;
+        }
+        
+        .quick-action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .doctor-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+        }
+        
+        .doctor-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-inactive {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .search-box {
+            background: white;
+            border-radius: 25px;
+            border: 2px solid #e9ecef;
+            padding: 15px 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .filter-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="dashboard-card p-4">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="text-white mb-2">
+                            <i class="fas fa-user-md me-3"></i>
+                            داشبورد پزشکان
+                        </h2>
+                        <p class="text-white-50 mb-0">
+                            مدیریت و نظارت بر وضعیت پزشکان کلینیک شفا
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="d-flex justify-content-end">
+                            <button class="btn btn-light me-2" onclick="refreshDashboard()">
+                                <i class="fas fa-sync-alt"></i>
+                                بروزرسانی
+                            </button>
+                            <button class="btn btn-outline-light" onclick="exportData()">
+                                <i class="fas fa-download"></i>
+                                خروجی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-user-md fa-2x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-1">@(Model?.TotalDoctors ?? 0)</h4>
+                        <p class="mb-0">کل پزشکان</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-1">@(Model?.ActiveDoctors ?? 0)</h4>
+                        <p class="mb-0">پزشکان فعال</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-link fa-2x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-1">@(Model?.TotalAssignments ?? 0)</h4>
+                        <p class="mb-0">کل انتسابات</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-chart-line fa-2x"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h4 class="mb-1">@(Model?.CompletionPercentage?.ToString("F1") ?? "0")%</h4>
+                        <p class="mb-0">نرخ تکمیل</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="filter-section">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="search-box">
+                            <div class="input-group">
+                                <input type="text" id="searchTerm" class="form-control border-0" placeholder="جستجوی پزشک...">
+                                <button class="btn btn-primary" type="button" onclick="searchDoctors()">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="clinicFilter" class="form-select" onchange="applyFilters()">
+                            <option value="">همه کلینیک‌ها</option>
+                            @if (Model?.Clinics != null)
+                            {
+                                foreach (var clinic in Model.Clinics)
+                                {
+                                    <option value="@clinic.Id">@clinic.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select id="departmentFilter" class="form-select" onchange="applyFilters()">
+                            <option value="">همه دپارتمان‌ها</option>
+                            @if (Model?.Departments != null)
+                            {
+                                foreach (var dept in Model.Departments)
+                                {
+                                    <option value="@dept.Id">@dept.Name</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                            <i class="fas fa-times"></i>
+                            پاک کردن
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        عملیات سریع
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap">
+                        <a href="@Url.Action("Create", "DoctorCrud")" class="quick-action-btn">
+                            <i class="fas fa-plus me-2"></i>
+                            افزودن پزشک جدید
+                        </a>
+                        <a href="@Url.Action("Index", "DoctorReporting")" class="quick-action-btn">
+                            <i class="fas fa-chart-bar me-2"></i>
+                            گزارش‌گیری
+                        </a>
+                        <a href="@Url.Action("Index", "DoctorDepartment")" class="quick-action-btn">
+                            <i class="fas fa-building me-2"></i>
+                            مدیریت دپارتمان‌ها
+                        </a>
+                        <a href="@Url.Action("Index", "DoctorServiceCategory")" class="quick-action-btn">
+                            <i class="fas fa-certificate me-2"></i>
+                            صلاحیت‌های خدماتی
+                        </a>
+                        <a href="@Url.Action("Index", "DoctorSchedule")" class="quick-action-btn">
+                            <i class="fas fa-calendar me-2"></i>
+                            برنامه‌های کاری
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Doctors -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">
+                        <i class="fas fa-users me-2"></i>
+                        پزشکان اخیر
+                    </h5>
+                    <a href="@Url.Action("Index", "DoctorCrud")" class="btn btn-sm btn-primary">
+                        مشاهده همه
+                    </a>
+                </div>
+                <div class="card-body">
+                    @if (Model?.RecentDoctors != null && Model.RecentDoctors.Any())
+                    {
+                        <div class="row">
+                            @foreach (var doctor in Model.RecentDoctors.Take(6))
+                            {
+                                <div class="col-lg-4 col-md-6">
+                                    <div class="doctor-card">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <div class="flex-shrink-0">
+                                                <img src="@(string.IsNullOrEmpty(doctor.ProfileImage) ? "/Content/Images/default-avatar.png" : doctor.ProfileImage)" 
+                                                     class="rounded-circle" width="50" height="50" alt="تصویر پزشک">
+                                            </div>
+                                            <div class="flex-grow-1 ms-3">
+                                                <h6 class="mb-1">@doctor.FullName</h6>
+                                                <p class="text-muted mb-0">@doctor.Specialization</p>
+                                            </div>
+                                            <div class="flex-shrink-0">
+                                                <span class="status-badge @(doctor.IsActive ? "status-active" : "status-inactive")">
+                                                    @(doctor.IsActive ? "فعال" : "غیرفعال")
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <small class="text-muted">
+                                                <i class="fas fa-building me-1"></i>
+                                                @doctor.ClinicName
+                                            </small>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="@Url.Action("Details", new { id = doctor.Id })" class="btn btn-outline-primary btn-sm">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <a href="@Url.Action("Assignments", new { id = doctor.Id })" class="btn btn-outline-info btn-sm">
+                                                    <i class="fas fa-link"></i>
+                                                </a>
+                                                <button class="btn btn-outline-success btn-sm" onclick="getQuickActions(@doctor.Id)">
+                                                    <i class="fas fa-bolt"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-user-md fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">هیچ پزشکی یافت نشد</h5>
+                            <p class="text-muted">برای شروع، پزشک جدیدی اضافه کنید</p>
+                            <a href="@Url.Action("Create", "DoctorCrud")" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>
+                                افزودن پزشک جدید
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- System Alerts -->
+    @if (Model?.SystemAlerts != null && Model.SystemAlerts.Any())
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card border-warning">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            هشدارهای سیستم
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        @foreach (var alert in Model.SystemAlerts)
+                        {
+                            <div class="alert alert-warning d-flex align-items-center mb-2">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span>@alert.Message</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Refresh Dashboard
+        function refreshDashboard() {
+            location.reload();
+        }
+
+        // Export Data
+        function exportData() {
+            // TODO: Implement export functionality
+            Swal.fire({
+                title: 'در حال آماده‌سازی',
+                text: 'قابلیت خروجی در حال توسعه است',
+                icon: 'info',
+                confirmButtonText: 'باشه'
+            });
+        }
+
+        // Search Doctors
+        function searchDoctors() {
+            const searchTerm = document.getElementById('searchTerm').value;
+            const clinicId = document.getElementById('clinicFilter').value;
+            const departmentId = document.getElementById('departmentFilter').value;
+            
+            const url = '@Url.Action("Search")' + 
+                '?searchTerm=' + encodeURIComponent(searchTerm) +
+                '&clinicId=' + clinicId +
+                '&departmentId=' + departmentId;
+            
+            window.location.href = url;
+        }
+
+        // Apply Filters
+        function applyFilters() {
+            const clinicId = document.getElementById('clinicFilter').value;
+            const departmentId = document.getElementById('departmentFilter').value;
+            
+            const url = '@Url.Action("Index")' + 
+                '?clinicId=' + clinicId +
+                '&departmentId=' + departmentId;
+            
+            window.location.href = url;
+        }
+
+        // Clear Filters
+        function clearFilters() {
+            document.getElementById('searchTerm').value = '';
+            document.getElementById('clinicFilter').value = '';
+            document.getElementById('departmentFilter').value = '';
+            
+            window.location.href = '@Url.Action("Index")';
+        }
+
+        // Get Quick Actions
+        function getQuickActions(doctorId) {
+            $.ajax({
+                url: '@Url.Action("GetQuickActions")',
+                type: 'GET',
+                data: { doctorId: doctorId },
+                success: function(response) {
+                    if (response.success) {
+                        showQuickActionsModal(response.data, doctorId);
+                    } else {
+                        Swal.fire({
+                            title: 'خطا',
+                            text: response.message,
+                            icon: 'error',
+                            confirmButtonText: 'باشه'
+                        });
+                    }
+                },
+                error: function() {
+                    Swal.fire({
+                        title: 'خطا',
+                        text: 'خطا در دریافت عملیات سریع',
+                        icon: 'error',
+                        confirmButtonText: 'باشه'
+                    });
+                }
+            });
+        }
+
+        // Show Quick Actions Modal
+        function showQuickActionsModal(actions, doctorId) {
+            let actionsHtml = '';
+            actions.forEach(function(action) {
+                actionsHtml += `
+                    <a href="${action.actionUrl}" class="btn btn-outline-primary btn-sm me-2 mb-2">
+                        <i class="${action.iconClass}"></i>
+                        ${action.actionTitle}
+                    </a>
+                `;
+            });
+
+            Swal.fire({
+                title: 'عملیات سریع',
+                html: `
+                    <div class="text-center">
+                        <p class="mb-3">انتخاب عملیات برای پزشک:</p>
+                        <div class="d-flex flex-wrap justify-content-center">
+                            ${actionsHtml}
+                        </div>
+                    </div>
+                `,
+                icon: 'info',
+                confirmButtonText: 'بستن',
+                showCancelButton: false
+            });
+        }
+
+        // Auto-refresh stats every 5 minutes
+        setInterval(function() {
+            $.ajax({
+                url: '@Url.Action("GetActiveDoctorsStats")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        // Update stats if needed
+                        console.log('Stats updated');
+                    }
+                }
+            });
+        }, 300000); // 5 minutes
+    </script>
+}

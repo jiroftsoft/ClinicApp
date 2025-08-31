@@ -8,6 +8,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models;
 using FluentValidation;
 using Microsoft.AspNet.Identity;
 using Serilog;
@@ -17,7 +18,14 @@ using System.Web.Caching;
 namespace ClinicApp.Areas.Admin.Controllers
 {
     /// <summary>
-    /// کنترلر مدیریت انتسابات پزشکان برای سیستم‌های پزشکی کلینیک شفا
+    /// کنترلر مدیریت انتسابات کلی پزشکان
+    /// مسئولیت اصلی: مدیریت عملیات انتساب، انتقال و حذف انتسابات پزشکان
+    /// Actions تخصصی به کنترولرهای مربوطه منتقل شده‌اند:
+    /// - تاریخچه: DoctorHistoryController
+    /// - گزارش‌گیری: DoctorReportingController
+    /// - انتساب دپارتمان: DoctorDepartmentController
+    /// - انتساب خدمات: DoctorServiceCategoryController
+    /// - برنامه زمانی: DoctorScheduleController
     /// </summary>
     //[Authorize(Roles = "Admin")]
     public class DoctorAssignmentController : Controller
@@ -53,7 +61,12 @@ namespace ClinicApp.Areas.Admin.Controllers
             _logger = Log.ForContext<DoctorAssignmentController>();
         }
 
-        // Index Action
+        #region Main Actions (اکشن‌های اصلی)
+
+        /// <summary>
+        /// صفحه اصلی مدیریت انتسابات کلی پزشکان
+        /// نمایش آمار کلی و فیلترهای اصلی
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> Index()
         {
@@ -167,6 +180,9 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // Details Action
+        /// <summary>
+        /// نمایش جزئیات انتسابات پزشک
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> Details(int? id)
         {
@@ -273,6 +289,9 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // Assignments Action
+        /// <summary>
+        /// نمایش لیست انتسابات پزشک
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> Assignments(int? doctorId)
         {
@@ -324,6 +343,14 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // AssignToDepartment GET Action
+        #endregion
+
+        #region Assignment Operations (عملیات انتساب)
+
+        /// <summary>
+        /// نمایش فرم انتساب پزشک به دپارتمان (عملیات کلی)
+        /// برای انتساب‌های تخصصی به DoctorDepartmentController مراجعه شود
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> AssignToDepartment(int? doctorId)
         {
@@ -403,7 +430,9 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // AssignToDepartment POST Action
+        /// <summary>
+        /// پردازش انتساب پزشک به دپارتمان (عملیات کلی)
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> AssignToDepartment(DoctorAssignmentOperationViewModel model)
@@ -459,6 +488,9 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // TransferDoctor GET Action
+        /// <summary>
+        /// نمایش فرم انتقال پزشک بین دپارتمان‌ها (عملیات کلی)
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> TransferDoctor(int? doctorId)
         {
@@ -533,7 +565,9 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // TransferDoctor POST Action
+        /// <summary>
+        /// پردازش انتقال پزشک بین دپارتمان‌ها (عملیات کلی)
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> TransferDoctor(DoctorTransferViewModel model)
@@ -588,7 +622,13 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // RemoveAssignments GET Action
+        #endregion
+
+        #region Removal Operations (عملیات حذف)
+
+        /// <summary>
+        /// نمایش فرم حذف انتسابات پزشک
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> RemoveAssignments(int? doctorId)
         {
@@ -642,7 +682,9 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // RemoveAssignments POST Action
+        /// <summary>
+        /// پردازش حذف انتسابات پزشک
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> RemoveAssignments(DoctorAssignmentRemovalViewModel model)
@@ -837,6 +879,13 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // Export Actions
+        #endregion
+
+        #region Export Operations (عملیات خروجی)
+
+        /// <summary>
+        /// خروجی جزئیات انتسابات پزشک
+        /// </summary>
         [HttpGet]
         public async Task<ActionResult> ExportDoctorDetails(int id)
         {
@@ -914,47 +963,11 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // Reporting Actions
-        [HttpGet]
-        public async Task<ActionResult> AssignmentReport()
-        {
-            try
-            {
-                _logger.Information("درخواست نمایش گزارش انتسابات");
+        // Actions تخصصی به کنترولرهای مربوطه منتقل شده‌اند:
+        // - AssignmentReport و GetAssignmentStatistics → DoctorReportingController
+        // - AssignmentHistory و متدهای مربوطه → DoctorHistoryController
 
-                // TODO: Implement when GetAssignmentStatisticsAsync is available
-                var statistics = new { TotalDoctors = 0, TotalAssignments = 0, ActiveAssignments = 0 };
-                ViewBag.Statistics = statistics;
-
-                _logger.Information("گزارش انتسابات با موفقیت نمایش داده شد");
-                return View();
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در نمایش گزارش انتسابات");
-                TempData["ErrorMessage"] = "خطا در بارگذاری گزارش";
-                return RedirectToAction("Index");
-            }
-        }
-
-        [HttpPost]
-        public async Task<JsonResult> GetAssignmentStatistics()
-        {
-            try
-            {
-                _logger.Information("درخواست دریافت آمار انتسابات");
-
-                // TODO: Implement when GetAssignmentStatisticsAsync is available
-                var statistics = new { TotalDoctors = 0, TotalAssignments = 0, ActiveAssignments = 0 };
-                return Json(new { success = true, data = statistics });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در دریافت آمار انتسابات");
-                return Json(new { success = false, message = "خطا در دریافت آمار" });
-            }
-        }
-
-        #region Helper Methods
+        #region Helper Methods (متدهای کمکی)
 
         /// <summary>
         /// تولید فایل متنی برای export جزئیات پزشک
@@ -1044,7 +1057,9 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
-        #region AJAX Operations
+        #endregion
+
+        #region AJAX Operations (عملیات AJAX)
 
         /// <summary>
         /// دریافت لیست انتسابات برای نمایش در جدول
@@ -1242,155 +1257,6 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
-        #region Assignment History Actions
-
-        /// <summary>
-        /// نمایش تاریخچه انتسابات پزشک
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult> AssignmentHistory(int doctorId, int page = 1)
-        {
-            try
-            {
-                _logger.Information("درخواست نمایش تاریخچه انتسابات پزشک {DoctorId}. Page: {Page}", doctorId, page);
-
-                if (doctorId <= 0)
-                {
-                    _logger.Warning("شناسه پزشک نامعتبر: {DoctorId}", doctorId);
-                    TempData["ErrorMessage"] = "شناسه پزشک نامعتبر است";
-                    return RedirectToAction("Index");
-                }
-
-                // دریافت اطلاعات پزشک
-                var doctorResult = await _doctorService.GetDoctorDetailsAsync(doctorId);
-                if (!doctorResult.Success)
-                {
-                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId);
-                    TempData["ErrorMessage"] = doctorResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                var doctor = doctorResult.Data;
-
-                // دریافت تاریخچه انتسابات
-                var historyResult = await _doctorAssignmentService.GetDoctorAssignmentHistoryAsync(doctorId, page, 20);
-                if (!historyResult.Success)
-                {
-                    _logger.Warning("خطا در دریافت تاریخچه پزشک {DoctorId}: {Message}", doctorId, historyResult.Message);
-                    TempData["ErrorMessage"] = historyResult.Message;
-                    return RedirectToAction("Details", new { id = doctorId });
-                }
-
-                var viewModel = new
-                {
-                    DoctorId = doctorId,
-                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
-                    DoctorNationalCode = doctor.NationalCode,
-                    History = historyResult.Data,
-                    CurrentPage = page,
-                    PageSize = 20
-                };
-
-                _logger.Information("تاریخچه انتسابات پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId);
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در نمایش تاریخچه انتسابات پزشک {DoctorId}", doctorId);
-                TempData["ErrorMessage"] = "خطا در بارگذاری تاریخچه انتسابات";
-                return RedirectToAction("Details", new { id = doctorId });
-            }
-        }
-
-        /// <summary>
-        /// دریافت تاریخچه انتسابات به صورت AJAX
-        /// </summary>
-        [HttpPost]
-        public async Task<JsonResult> GetAssignmentHistory(int doctorId, int page = 1, int pageSize = 20)
-        {
-            try
-            {
-                _logger.Information("درخواست AJAX دریافت تاریخچه انتسابات پزشک {DoctorId}. Page: {Page}, PageSize: {PageSize}", 
-                    doctorId, page, pageSize);
-
-                if (doctorId <= 0)
-                {
-                    return Json(new { success = false, message = "شناسه پزشک نامعتبر است" });
-                }
-
-                // دریافت تاریخچه انتسابات
-                var result = await _doctorAssignmentService.GetDoctorAssignmentHistoryAsync(doctorId, page, pageSize);
-                if (!result.Success)
-                {
-                    return Json(new { success = false, message = result.Message });
-                }
-
-                // تبدیل به فرمت مناسب برای نمایش
-                var historyData = result.Data.Select(h => new
-                {
-                    Id = h.Id,
-                    ActionType = h.ActionType,
-                    ActionTitle = h.ActionTitle,
-                    ActionDescription = h.ActionDescription,
-                    ActionDate = h.ActionDate.ToString("yyyy/MM/dd HH:mm"),
-                    DepartmentName = h.DepartmentName ?? "-",
-                    PerformedByUserName = h.PerformedByUserName ?? "سیستم",
-                    Importance = "normal",
-                    ImportanceClass = GetImportanceClass("normal"),
-                    Notes = h.Notes ?? "-"
-                }).ToList();
-
-                return Json(new { success = true, data = historyData });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در دریافت تاریخچه انتسابات پزشک {DoctorId}", doctorId);
-                return Json(new { success = false, message = "خطا در دریافت تاریخچه انتسابات" });
-            }
-        }
-
-        /// <summary>
-        /// دریافت آمار تاریخچه انتسابات
-        /// </summary>
-        [HttpPost]
-        public async Task<JsonResult> GetAssignmentHistoryStats(DateTime? startDate = null, DateTime? endDate = null)
-        {
-            try
-            {
-                _logger.Information("درخواست AJAX دریافت آمار تاریخچه انتسابات. StartDate: {StartDate}, EndDate: {EndDate}", 
-                    startDate, endDate);
-
-                // دریافت آمار تاریخچه
-                var result = await _doctorAssignmentService.GetAssignmentHistoryStatsAsync(startDate, endDate);
-                if (!result.Success)
-                {
-                    return Json(new { success = false, message = result.Message });
-                }
-
-                return Json(new { success = true, data = result.Data });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در دریافت آمار تاریخچه انتسابات");
-                return Json(new { success = false, message = "خطا در دریافت آمار تاریخچه" });
-            }
-        }
-
-        /// <summary>
-        /// تعیین کلاس CSS بر اساس اهمیت عملیات
-        /// </summary>
-        private string GetImportanceClass(string importance)
-        {
-            return importance?.ToLower() switch
-            {
-                "normal" => "badge bg-secondary",
-                "important" => "badge bg-warning",
-                "critical" => "badge bg-danger",
-                "security" => "badge bg-dark",
-                _ => "badge bg-secondary"
-            };
-        }
-
-        #endregion
+        // AssignmentHistory و متدهای مربوطه به DoctorHistoryController منتقل شده‌اند
     }
 }

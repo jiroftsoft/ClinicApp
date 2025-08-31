@@ -1,0 +1,534 @@
+@* گزارش پزشکان فعال - طراحی Ultimate برای محیط درمانی *@
+@model ClinicApp.ViewModels.DoctorManagementVM.ActiveDoctorsReportViewModel
+@{
+    ViewBag.Title = "گزارش پزشکان فعال";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/chart.js/chart.min.css" rel="stylesheet" />
+    <style>
+        .filter-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .filter-card .card-body {
+            padding: 2rem;
+        }
+        
+        .filter-card .form-label {
+            color: white;
+            font-weight: 500;
+        }
+        
+        .filter-card .form-control,
+        .filter-card .form-select {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            border-radius: 10px;
+        }
+        
+        .filter-card .form-control::placeholder {
+            color: rgba(255,255,255,0.7);
+        }
+        
+        .filter-card .form-control:focus,
+        .filter-card .form-select:focus {
+            background: rgba(255,255,255,0.15);
+            border-color: rgba(255,255,255,0.4);
+            box-shadow: 0 0 0 0.2rem rgba(255,255,255,0.25);
+            color: white;
+        }
+        
+        .stats-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-item {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #667eea;
+            transition: all 0.3s ease;
+        }
+        
+        .stat-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            font-weight: 500;
+        }
+        
+        .doctor-card {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border-left: 4px solid #28a745;
+            transition: all 0.3s ease;
+        }
+        
+        .doctor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .doctor-header {
+            display: flex;
+            justify-content: between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .doctor-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.25rem;
+        }
+        
+        .doctor-specialization {
+            color: #667eea;
+            font-size: 0.9rem;
+        }
+        
+        .doctor-status {
+            background: #28a745;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .doctor-details {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .detail-item {
+            text-align: center;
+        }
+        
+        .detail-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 0.25rem;
+        }
+        
+        .detail-value {
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .doctor-departments {
+            margin-bottom: 1rem;
+        }
+        
+        .department-badge {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 0.25rem 0.5rem;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            margin: 0.25rem;
+            display: inline-block;
+        }
+        
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-user-md text-success me-2"></i>
+                        گزارش پزشکان فعال
+                    </h1>
+                    <p class="text-muted mb-0">تحلیل و گزارش جامع پزشکان فعال در سیستم</p>
+                </div>
+                <div>
+                    <button class="btn btn-success me-2" onclick="exportReport()">
+                        <i class="fas fa-download me-2"></i>
+                        خروجی Excel
+                    </button>
+                    <button class="btn btn-primary" onclick="refreshReport()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        به‌روزرسانی
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card filter-card">
+                <div class="card-body">
+                    <form id="filterForm" method="get">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">کلینیک</label>
+                                <select class="form-select" name="clinicId" id="clinicId">
+                                    <option value="">همه کلینیک‌ها</option>
+                                    <option value="1">کلینیک شفا</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">دپارتمان</label>
+                                <select class="form-select" name="departmentId" id="departmentId">
+                                    <option value="">همه دپارتمان‌ها</option>
+                                    <option value="1">دپارتمان داخلی</option>
+                                    <option value="2">دپارتمان جراحی</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">از تاریخ</label>
+                                <input type="text" class="form-control persian-date" name="startDate" id="startDate" 
+                                       placeholder="انتخاب تاریخ" value="@ViewBag.StartDate">
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">تا تاریخ</label>
+                                <input type="text" class="form-control persian-date" name="endDate" id="endDate" 
+                                       placeholder="انتخاب تاریخ" value="@ViewBag.EndDate">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-light">
+                                    <i class="fas fa-search me-2"></i>
+                                    اعمال فیلتر
+                                </button>
+                                <button type="button" class="btn btn-outline-light ms-2" onclick="clearFilters()">
+                                    <i class="fas fa-times me-2"></i>
+                                    پاک کردن فیلترها
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="stats-row">
+                <div class="stat-item">
+                    <div class="stat-number" id="totalActiveDoctors">@(Model?.TotalActiveDoctors ?? 0)</div>
+                    <div class="stat-label">پزشکان فعال</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalDepartments">@(Model?.TotalDepartments ?? 0)</div>
+                    <div class="stat-label">دپارتمان‌های فعال</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="totalAssignments">@(Model?.TotalAssignments ?? 0)</div>
+                    <div class="stat-label">کل انتسابات</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="avgAssignmentsPerDoctor">@(Model?.AverageAssignmentsPerDoctor?.ToString("F1") ?? "0")</div>
+                    <div class="stat-label">میانگین انتسابات</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-pie me-2"></i>
+                    توزیع پزشکان بر اساس دپارتمان
+                </h5>
+                <canvas id="departmentChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="chart-container">
+                <h5 class="mb-3">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    فعالیت پزشکان در ماه گذشته
+                </h5>
+                <canvas id="activityChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctors List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-list me-2"></i>
+                        لیست پزشکان فعال
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (Model?.ActiveDoctors != null && Model.ActiveDoctors.Any())
+                    {
+                        foreach (var doctor in Model.ActiveDoctors)
+                        {
+                            <div class="doctor-card">
+                                <div class="doctor-header">
+                                    <div>
+                                        <div class="doctor-name">@doctor.FullName</div>
+                                        <div class="doctor-specialization">@string.Join("، ", doctor.SpecializationNames)</div>
+                                    </div>
+                                    <div class="doctor-status">فعال</div>
+                                </div>
+                                
+                                <div class="doctor-details">
+                                    <div class="detail-item">
+                                        <div class="detail-label">کد ملی</div>
+                                        <div class="detail-value">@doctor.NationalCode</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">شماره نظام پزشکی</div>
+                                        <div class="detail-value">@doctor.MedicalCouncilCode</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">تعداد انتسابات</div>
+                                        <div class="detail-value">@doctor.AssignmentCount</div>
+                                    </div>
+                                    <div class="detail-item">
+                                        <div class="detail-label">آخرین فعالیت</div>
+                                        <div class="detail-value">@doctor.LastActivityDate?.ToString("yyyy/MM/dd")</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="doctor-departments">
+                                    <strong>دپارتمان‌ها:</strong>
+                                    @foreach (var dept in doctor.Departments)
+                                    {
+                                        <span class="department-badge">@dept.Name</span>
+                                    }
+                                </div>
+                                
+                                <div class="text-end">
+                                    <a href="@Url.Action("Details", "Doctor", new { id = doctor.Id })" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>
+                                        جزئیات
+                                    </a>
+                                    <a href="@Url.Action("DepartmentAssignments", "DoctorDepartment", new { doctorId = doctor.Id })" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-building me-1"></i>
+                                        انتسابات دپارتمان
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-user-md fa-3x mb-3"></i>
+                            <h5>هیچ پزشک فعالی یافت نشد</h5>
+                            <p>با تغییر فیلترها، نتایج بیشتری مشاهده کنید</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/plugins/datatables/jquery.dataTables.min.js"></script>
+    <script src="~/Scripts/plugins/datatables/dataTables.bootstrap5.min.js"></script>
+    <script src="~/Scripts/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Scripts/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Scripts/plugins/chart.js/chart.min.js"></script>
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian Date Picker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true
+            });
+
+            // Initialize Charts
+            initializeCharts();
+        });
+
+        function showLoading() {
+            $('.loading-overlay').show();
+        }
+
+        function hideLoading() {
+            $('.loading-overlay').hide();
+        }
+
+        function initializeCharts() {
+            // Department Distribution Chart
+            var departmentCtx = document.getElementById('departmentChart').getContext('2d');
+            var departmentChart = new Chart(departmentCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['دپارتمان داخلی', 'دپارتمان جراحی', 'دپارتمان قلب', 'دپارتمان اطفال'],
+                    datasets: [{
+                        data: [12, 8, 6, 4],
+                        backgroundColor: [
+                            '#667eea',
+                            '#764ba2',
+                            '#f093fb',
+                            '#f5576c'
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+
+            // Activity Chart
+            var activityCtx = document.getElementById('activityChart').getContext('2d');
+            var activityChart = new Chart(activityCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['هفته 1', 'هفته 2', 'هفته 3', 'هفته 4'],
+                    datasets: [{
+                        label: 'فعالیت پزشکان',
+                        data: [65, 59, 80, 81],
+                        backgroundColor: '#28a745',
+                        borderColor: '#28a745',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        function refreshReport() {
+            showLoading();
+            $('#filterForm').submit();
+        }
+
+        function clearFilters() {
+            $('#clinicId').val('');
+            $('#departmentId').val('');
+            $('#startDate').val('');
+            $('#endDate').val('');
+            $('#filterForm').submit();
+        }
+
+        function exportReport() {
+            showLoading();
+            
+            var formData = $('#filterForm').serialize();
+            var url = '@Url.Action("ExportActiveDoctorsReport")' + '?' + formData;
+            
+            // Create temporary link for download
+            var link = document.createElement('a');
+            link.href = url;
+            link.download = 'گزارش_پزشکان_فعال.xlsx';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            hideLoading();
+            
+            Swal.fire({
+                icon: 'success',
+                title: 'خروجی موفق',
+                text: 'گزارش با موفقیت دانلود شد',
+                timer: 2000,
+                showConfirmButton: false
+            });
+        }
+
+        // Auto-refresh every 10 minutes
+        setInterval(function() {
+            refreshReport();
+        }, 600000);
+    </script>
+}

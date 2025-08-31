@@ -1,0 +1,350 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
+@{
+    ViewBag.Title = "تنظیم برنامه کاری پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .schedule-form {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        }
+        .form-section {
+            border-left: 4px solid #667eea;
+            padding-left: 20px;
+            margin-bottom: 30px;
+        }
+        .form-section h5 {
+            color: #667eea;
+            font-weight: 600;
+        }
+        .doctor-info-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 10px;
+            padding: 20px;
+        }
+        .work-day-card {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s ease;
+        }
+        .work-day-card.active {
+            border-color: #667eea;
+            background-color: #f8f9ff;
+        }
+        .time-range-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        .btn-submit {
+            border-radius: 25px;
+            font-weight: 600;
+            padding: 12px 30px;
+            transition: all 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        .validation-summary {
+            border-radius: 10px;
+            border: none;
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">در حال پردازش...</span>
+    </div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0 text-primary">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        تنظیم برنامه کاری پزشک
+                    </h2>
+                    <p class="text-muted mb-0">تنظیم برنامه کاری هفتگی و زمان‌های کاری پزشک</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت به لیست پزشکان
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctor Information Card -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="doctor-info-card">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h4 class="mb-2">
+                            <i class="fas fa-user-md me-2"></i>
+                            @ViewBag.Doctor.FirstName @ViewBag.Doctor.LastName
+                        </h4>
+                        <p class="mb-0">
+                            <i class="fas fa-id-card me-2"></i>
+                            کد ملی: @ViewBag.Doctor.NationalCode
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <div class="badge bg-light text-dark fs-6">
+                            <i class="fas fa-user-md me-1"></i>
+                            پزشک
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Form -->
+    <div class="row">
+        <div class="col-12">
+            <div class="schedule-form p-4">
+                @using (Html.BeginForm("AssignSchedule", "DoctorSchedule", FormMethod.Post, 
+                       new { id = "scheduleForm", @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.DoctorId)
+
+                    @Html.ValidationSummary(true, "", new { @class = "alert alert-danger validation-summary" })
+
+                    <!-- Appointment Duration -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-clock me-2"></i>
+                            تنظیمات نوبت‌دهی
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    @Html.LabelFor(m => m.AppointmentDuration, "مدت زمان هر نوبت (دقیقه)", new { @class = "form-label fw-bold" })
+                                    @Html.DropDownListFor(m => m.AppointmentDuration, 
+                                        new SelectList(new[] { 15, 20, 30, 45, 60, 90, 120 }, Model.AppointmentDuration), 
+                                        new { @class = "form-select" })
+                                    @Html.ValidationMessageFor(m => m.AppointmentDuration, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">زمان پیش‌فرض روز کاری</label>
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <label class="form-label">شروع</label>
+                                            <input type="time" class="form-control" id="defaultStartTime" value="09:00" />
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label">پایان</label>
+                                            <input type="time" class="form-control" id="defaultEndTime" value="17:00" />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Work Days -->
+                    <div class="form-section">
+                        <h5>
+                            <i class="fas fa-calendar-week me-2"></i>
+                            روزهای کاری هفتگی
+                        </h5>
+                        <div class="row">
+                            @for (int i = 0; i < Model.WorkDays.Count; i++)
+                            {
+                                var workDay = Model.WorkDays[i];
+                                <div class="col-md-6 mb-3">
+                                    <div class="work-day-card p-3 @(workDay.IsActive ? "active" : "")" id="workDay-@i">
+                                        <div class="d-flex justify-content-between align-items-center mb-3">
+                                            <div class="form-check">
+                                                @Html.CheckBoxFor(m => m.WorkDays[i].IsActive, new { @class = "form-check-input work-day-toggle", data_day = i })
+                                                <label class="form-check-label fw-bold" for="@Html.IdFor(m => m.WorkDays[i].IsActive)">
+                                                    @workDay.DayName
+                                                </label>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary add-time-range" data-day="@i">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                        
+                                        @Html.HiddenFor(m => m.WorkDays[i].DayOfWeek)
+                                        @Html.HiddenFor(m => m.WorkDays[i].DayName)
+                                        
+                                        <div class="time-ranges" id="timeRanges-@i">
+                                            @for (int j = 0; j < workDay.TimeRanges.Count; j++)
+                                            {
+                                                <div class="time-range-item">
+                                                    <div class="row">
+                                                        <div class="col-5">
+                                                            <label class="form-label">شروع</label>
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].StartTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time" })
+                                                        </div>
+                                                        <div class="col-5">
+                                                            <label class="form-label">پایان</label>
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].EndTime, "{0:hh\\:mm}", new { @class = "form-control", type = "time" })
+                                                        </div>
+                                                        <div class="col-2">
+                                                            <label class="form-label">&nbsp;</label>
+                                                            <button type="button" class="btn btn-sm btn-outline-danger remove-time-range">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Submit Buttons -->
+                    <div class="form-section">
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-between">
+                                    <a href="@Url.Action("Index", "Doctor")" class="btn btn-outline-secondary btn-submit">
+                                        <i class="fas fa-times me-2"></i>
+                                        انصراف
+                                    </a>
+                                    <button type="submit" class="btn btn-primary btn-submit">
+                                        <i class="fas fa-save me-2"></i>
+                                        ذخیره برنامه کاری
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Toggle work day active state
+            $('.work-day-toggle').on('change', function() {
+                var dayIndex = $(this).data('day');
+                var workDayCard = $('#workDay-' + dayIndex);
+                
+                if ($(this).is(':checked')) {
+                    workDayCard.addClass('active');
+                } else {
+                    workDayCard.removeClass('active');
+                }
+            });
+
+            // Add time range
+            $('.add-time-range').on('click', function() {
+                var dayIndex = $(this).data('day');
+                var timeRangesContainer = $('#timeRanges-' + dayIndex);
+                var timeRangeCount = timeRangesContainer.find('.time-range-item').length;
+                
+                var newTimeRange = `
+                    <div class="time-range-item">
+                        <div class="row">
+                            <div class="col-5">
+                                <label class="form-label">شروع</label>
+                                <input type="time" class="form-control" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].StartTime" />
+                            </div>
+                            <div class="col-5">
+                                <label class="form-label">پایان</label>
+                                <input type="time" class="form-control" name="WorkDays[${dayIndex}].TimeRanges[${timeRangeCount}].EndTime" />
+                            </div>
+                            <div class="col-2">
+                                <label class="form-label">&nbsp;</label>
+                                <button type="button" class="btn btn-sm btn-outline-danger remove-time-range">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                timeRangesContainer.append(newTimeRange);
+            });
+
+            // Remove time range
+            $(document).on('click', '.remove-time-range', function() {
+                $(this).closest('.time-range-item').remove();
+            });
+
+            // Form submission
+            $('#scheduleForm').on('submit', function (e) {
+                e.preventDefault();
+                
+                if (!$(this)[0].checkValidity()) {
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                    return false;
+                }
+
+                // Show loading overlay
+                $('.loading-overlay').show();
+
+                // Submit form
+                this.submit();
+            });
+
+            // Success message
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'موفقیت',
+                    text: '@TempData["Success"]',
+                    icon: 'success',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+
+            // Error message
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    title: 'خطا',
+                    text: '@TempData["Error"]',
+                    icon: 'error',
+                    confirmButtonText: 'باشه'
+                });
+                </text>
+            }
+        });
+    </script>
+}

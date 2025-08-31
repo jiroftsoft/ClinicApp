@@ -1,6 +1,7 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentOperationViewModel
+@* صفحه انتساب کلی پزشک به دپارتمان - برای انتساب‌های تخصصی به DoctorDepartmentController مراجعه شود *@
 @{
-    ViewBag.Title = "انتساب پزشک به دپارتمان";
+    ViewBag.Title = "انتساب کلی پزشک به دپارتمان";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
@@ -75,9 +76,9 @@
                 <div>
                     <h2 class="mb-0 text-primary">
                         <i class="fas fa-user-plus me-2"></i>
-                        انتساب پزشک به دپارتمان
+                        انتساب کلی پزشک به دپارتمان
                     </h2>
-                    <p class="text-muted mb-0">انتساب پزشک به دپارتمان و تعیین صلاحیت‌های خدماتی</p>
+                    <p class="text-muted mb-0">انتساب کلی پزشک به دپارتمان و تعیین صلاحیت‌های خدماتی - برای انتساب‌های تخصصی به DoctorDepartmentController مراجعه شود</p>
                 </div>
                 <div>
                     <a href="@Url.Action("Index", "DoctorAssignment")" class="btn btn-outline-secondary">

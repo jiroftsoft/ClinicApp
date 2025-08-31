@@ -111,11 +111,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 return new DoctorDependencyInfo
                 {
-                    DoctorId = doctorId,
-                    HasActiveAppointments = activeAppointments.Any(),
-                    ActiveAppointmentsCount = activeAppointments.Count,
-                    HasActiveReceptions = hasActiveReceptions,
-                    ActiveReceptionsCount = 0 // این بخش نیاز به پیاده‌سازی دارد
+                    CanBeDeleted = !activeAppointments.Any(),
+                    DeletionErrorMessage = activeAppointments.Any() ? "این پزشک دارای نوبت‌های فعال است" : "پزشک قابل حذف است",
+                    TotalActiveAppointments = activeAppointments.Count,
+                    AppointmentCount = activeAppointments.Count,
+                    DepartmentAssignmentCount = 0,
+                    ServiceCategoryAssignmentCount = 0
                 };
             }
             catch (Exception ex)

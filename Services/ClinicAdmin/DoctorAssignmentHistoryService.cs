@@ -8,6 +8,7 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
 using ClinicApp.Repositories.ClinicAdmin;
 using ClinicApp.Services;
+using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
 
 namespace ClinicApp.Services.ClinicAdmin
@@ -306,6 +307,43 @@ namespace ClinicApp.Services.ClinicAdmin
             {
                 Log.Error(ex, "خطا در دریافت آمار تاریخچه انتسابات");
                 return ServiceResult<HistoryStats>.Failed("خطا در دریافت آمار تاریخچه انتسابات.");
+            }
+        }
+
+        /// <summary>
+        /// دریافت آمار تاریخچه برای نمایش
+        /// </summary>
+        public async Task<ServiceResult<AssignmentHistoryStatisticsViewModel>> GetHistoryStatisticsAsync(DateTime? startDate = null, DateTime? endDate = null)
+        {
+            try
+            {
+                var stats = await _historyRepository.GetHistoryStatsAsync(startDate, endDate);
+                
+                var viewModel = new AssignmentHistoryStatisticsViewModel
+                {
+                    TotalHistoryRecords = stats.TotalRecords,
+                    AssignmentsCount = stats.AssignmentsCount,
+                    TransfersCount = stats.TransfersCount,
+                    RemovalsCount = stats.RemovalsCount,
+                    TotalChanges = stats.TotalRecords,
+                    Assignments = stats.AssignmentsCount,
+                    Transfers = stats.TransfersCount,
+                    Removals = stats.RemovalsCount,
+                    MostActiveMonth = stats.MostActiveMonth,
+                    MostActiveDoctor = stats.MostActiveDoctor,
+                    MostActiveDepartment = stats.MostActiveDepartment,
+                    AverageChangesPerMonth = stats.AverageChangesPerMonth,
+                    StartDate = startDate ?? DateTime.Now.AddMonths(-1),
+                    EndDate = endDate ?? DateTime.Now,
+                    GeneratedAt = DateTime.Now
+                };
+
+                return ServiceResult<AssignmentHistoryStatisticsViewModel>.Successful(viewModel);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "خطا در دریافت آمار تاریخچه برای نمایش");
+                return ServiceResult<AssignmentHistoryStatisticsViewModel>.Failed("خطا در دریافت آمار تاریخچه.");
             }
         }
 

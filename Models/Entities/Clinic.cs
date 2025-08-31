@@ -175,12 +175,14 @@ namespace ClinicApp.Models.Entities
         Available = 0,
         [Display(Name = "ثبت شده")]
         Scheduled = 1,
+        [Display(Name = "در انتظار")]
+        Pending = 2,
         [Display(Name = "انجام شده")]
-        Completed = 2,
+        Completed = 3,
         [Display(Name = "لغو شده")]
-        Cancelled = 3,
+        Cancelled = 4,
         [Display(Name = "عدم حضور")]
-        NoShow = 4
+        NoShow = 5
     }
     #endregion
 

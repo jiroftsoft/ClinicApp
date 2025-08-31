@@ -435,7 +435,9 @@
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DoctorDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorDepartmentController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DoctorHistoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorReportingController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorScheduleController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorServiceCategoryController.cs" />
@@ -469,6 +471,8 @@
     <Compile Include="Interfaces\ClinicAdmin\IDoctorAssignmentService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorCrudRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorCrudService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDoctorDashboardRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IDoctorDashboardService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorDepartmentRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorDepartmentService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorReportingRepository.cs" />
@@ -507,6 +511,7 @@
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
+    <Compile Include="Repositories\ClinicAdmin\DoctorDashboardRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorDepartmentRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorReportingRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorScheduleRepository.cs" />
@@ -524,6 +529,7 @@
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentHistoryService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorCrudService.cs" />
+    <Compile Include="Services\ClinicAdmin\DoctorDashboardService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorDepartmentService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorReportingService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorScheduleService.cs" />
@@ -540,6 +546,7 @@
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\BlockTimeRangeViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\BulkAssignmentViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentFilterViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentStatsViewModel.cs" />
@@ -547,6 +554,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentDetailsViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentOperationViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorHistoryViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexPageViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ActiveDoctorsReportViewModel.cs" />
@@ -561,6 +569,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\DoctorSearchViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorServiceCategoryViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\ReportingViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\TimeSlotViewModel.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
@@ -653,6 +662,7 @@
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
+    <Content Include="Content\plugins\chartjs\chart.umd.min.js" />
     <Content Include="Content\plugins\dropzone\basic.css" />
     <Content Include="Content\plugins\dropzone\basic.min.css" />
     <Content Include="Content\plugins\dropzone\dropzone-amd-module.js" />
@@ -3224,16 +3234,32 @@
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentHistory.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_BulkAssignmentForm.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentFilters.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\Assign.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\Statistics.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_DepartmentStats.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_AssignmentForm.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_DepartmentFilters.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\_PartialViews\_DepartmentList.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\_ViewStart.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\AssignToDepartment.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\TransferDoctor.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorServiceCategory\AssignToServiceCategory.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorServiceCategory\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorServiceCategory\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorSchedule\AssignSchedule.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorSchedule\BlockTimeRange.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorSchedule\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorServiceCategory\TransferServiceCategory.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorReporting\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorReporting\PerformanceReport.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDashboard\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDashboard\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDashboard\Assignments.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDashboard\Search.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDashboard\Stats.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorHistory\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorHistory\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorHistory\Search.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorHistory\Statistics.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorDepartment\DepartmentAssignments.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorHistory\DoctorReport.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorReporting\ActiveDoctorsReport.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorReporting\Reports.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorServiceCategory\ServiceCategoryPermissions.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorSchedule\Schedule.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3485,9 +3511,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Admin\Views\DoctorReporting\" />
-    <Folder Include="Areas\Admin\Views\DoctorSchedule\" />
-    <Folder Include="Areas\Admin\Views\DoctorServiceCategory\" />
     <Folder Include="Areas\Receptionist\Data\" />
     <Folder Include="Areas\Receptionist\Views\Reception\" />
     <Folder Include="Constants\" />

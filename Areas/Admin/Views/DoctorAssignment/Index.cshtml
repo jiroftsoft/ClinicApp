@@ -1,9 +1,10 @@
 @{
-    ViewBag.Title = "مدیریت انتسابات پزشکان";
+    ViewBag.Title = "مدیریت انتسابات کلی پزشکان";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentIndexViewModel
+@* صفحه اصلی مدیریت انتسابات کلی پزشکان - برای عملیات تخصصی به ماژول‌های مربوطه مراجعه شود *@
 
 @Html.AntiForgeryToken()
 
@@ -67,9 +68,9 @@
                 <div>
                     <h2 class="mb-0 text-primary">
                         <i class="fas fa-user-md me-2"></i>
-                        مدیریت انتسابات پزشکان
+                        مدیریت انتسابات کلی پزشکان
                     </h2>
-                    <p class="text-muted mb-0">مدیریت کامل انتسابات پزشکان به دپارتمان‌ها و سرفصل‌های خدماتی</p>
+                    <p class="text-muted mb-0">مدیریت عملیات انتساب، انتقال و حذف انتسابات پزشکان - برای عملیات تخصصی به ماژول‌های مربوطه مراجعه شود</p>
                 </div>
                 <div>
                     <button type="button" class="btn btn-success btn-assignment" onclick="showBulkAssignmentModal()">

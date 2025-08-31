@@ -2,12 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
+
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
-
 namespace ClinicApp.Repositories.ClinicAdmin
 {
     /// <summary>
@@ -303,7 +303,7 @@ namespace ClinicApp.Repositories.ClinicAdmin
                 return await _context.DoctorSchedules
                     .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted)
                     .Include(ds => ds.WorkDays)
-                    .ThenInclude(wd => wd.TimeRanges)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
                     .OrderBy(ds => ds.CreatedAt)
                     .ToListAsync();
             }

@@ -1,0 +1,522 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentsViewModel
+@{
+    ViewBag.Title = "انتسابات پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .assignment-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            color: white;
+            padding: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .assignment-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            padding: 20px;
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+            border-left: 4px solid #667eea;
+        }
+        
+        .assignment-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.12);
+        }
+        
+        .assignment-card.inactive {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+        
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        
+        .status-active {
+            background: #28a745;
+            color: white;
+        }
+        
+        .status-inactive {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            color: white;
+            text-align: center;
+        }
+        
+        .action-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border: none;
+            border-radius: 20px;
+            padding: 8px 16px;
+            color: white;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 2px;
+            font-size: 12px;
+        }
+        
+        .action-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+        
+        .assignment-type {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .type-department {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .type-service {
+            background: #f3e5f5;
+            color: #7b1fa2;
+        }
+        
+        .type-schedule {
+            background: #e8f5e8;
+            color: #388e3c;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #666;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Index", "DoctorDashboard")">
+                    <i class="fas fa-home"></i>
+                    داشبورد
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a href="@Url.Action("Details", new { id = Model?.DoctorId ?? 0 })">
+                    جزئیات پزشک
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">انتسابات</li>
+        </ol>
+    </nav>
+
+    @if (Model != null)
+    {
+        <!-- Assignment Header -->
+        <div class="assignment-header">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h3 class="mb-2">انتسابات پزشک</h3>
+                    <p class="mb-0 text-white-50">
+                        <i class="fas fa-user-md me-2"></i>
+                        @Model.DoctorName - @Model.Specialization
+                    </p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex justify-content-end">
+                        <a href="@Url.Action("AssignToDepartment", "DoctorDepartment", new { doctorId = Model.DoctorId })" class="action-btn me-2">
+                            <i class="fas fa-plus me-1"></i>
+                            انتساب به دپارتمان
+                        </a>
+                        <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" class="action-btn">
+                            <i class="fas fa-certificate me-1"></i>
+                            صلاحیت خدماتی
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-link fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">@Model.TotalActiveAssignments</h4>
+                            <p class="mb-0">انتسابات فعال</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-building fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">@Model.ActiveDepartmentCount</h4>
+                            <p class="mb-0">دپارتمان‌های فعال</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-certificate fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">@Model.ActiveServiceCategoryCount</h4>
+                            <p class="mb-0">صلاحیت‌های خدماتی</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <div class="stats-card">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-calendar fa-2x"></i>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h4 class="mb-1">@Model.ActiveScheduleCount</h4>
+                            <p class="mb-0">برنامه‌های کاری</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Assignments -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-building me-2"></i>
+                            انتسابات به دپارتمان‌ها
+                        </h5>
+                        <a href="@Url.Action("AssignToDepartment", "DoctorDepartment", new { doctorId = Model.DoctorId })" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            انتساب جدید
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.DepartmentAssignments != null && Model.DepartmentAssignments.Any())
+                        {
+                            <div class="row">
+                                @foreach (var assignment in Model.DepartmentAssignments)
+                                {
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="assignment-card @(!assignment.IsActive ? "inactive" : "")">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <span class="assignment-type type-department">دپارتمان</span>
+                                                    <h6 class="mb-1">@assignment.DepartmentName</h6>
+                                                    <p class="text-muted mb-0">@assignment.ClinicName</p>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="status-badge @(assignment.IsActive ? "status-active" : "status-inactive")">
+                                                        @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        تاریخ انتساب: @assignment.AssignmentDate
+                                                    </small>
+                                                </div>
+                                                <div class="col-6 text-end">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="@Url.Action("Edit", "DoctorDepartment", new { id = assignment.Id })" class="action-btn">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button class="action-btn" onclick="removeAssignment(@assignment.Id, 'department')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="fas fa-building"></i>
+                                <h5>هیچ انتساب دپارتمانی یافت نشد</h5>
+                                <p>پزشک هنوز به هیچ دپارتمانی انتساب داده نشده است</p>
+                                <a href="@Url.Action("AssignToDepartment", "DoctorDepartment", new { doctorId = Model.DoctorId })" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>
+                                    انتساب به دپارتمان
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Category Assignments -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-certificate me-2"></i>
+                            صلاحیت‌های خدماتی
+                        </h5>
+                        <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            صلاحیت جدید
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.ServiceCategoryAssignments != null && Model.ServiceCategoryAssignments.Any())
+                        {
+                            <div class="row">
+                                @foreach (var assignment in Model.ServiceCategoryAssignments)
+                                {
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="assignment-card @(!assignment.IsActive ? "inactive" : "")">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <span class="assignment-type type-service">صلاحیت خدماتی</span>
+                                                    <h6 class="mb-1">@assignment.ServiceCategoryName</h6>
+                                                    <p class="text-muted mb-0">@assignment.DepartmentName - @assignment.ClinicName</p>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="status-badge @(assignment.IsActive ? "status-active" : "status-inactive")">
+                                                        @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-calendar me-1"></i>
+                                                        تاریخ اعطا: @assignment.AssignmentDate
+                                                    </small>
+                                                </div>
+                                                <div class="col-6 text-end">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="@Url.Action("Edit", "DoctorServiceCategory", new { id = assignment.Id })" class="action-btn">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button class="action-btn" onclick="removeAssignment(@assignment.Id, 'service')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="fas fa-certificate"></i>
+                                <h5>هیچ صلاحیت خدماتی یافت نشد</h5>
+                                <p>پزشک هنوز هیچ صلاحیت خدماتی ندارد</p>
+                                <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>
+                                    اعطای صلاحیت خدماتی
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Schedule Assignments -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-calendar me-2"></i>
+                            برنامه‌های کاری
+                        </h5>
+                        <a href="@Url.Action("AssignSchedule", "DoctorSchedule", new { doctorId = Model.DoctorId })" class="btn btn-sm btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            برنامه جدید
+                        </a>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.ScheduleAssignments != null && Model.ScheduleAssignments.Any())
+                        {
+                            <div class="row">
+                                @foreach (var assignment in Model.ScheduleAssignments)
+                                {
+                                    <div class="col-lg-6 col-md-12">
+                                        <div class="assignment-card @(!assignment.IsActive ? "inactive" : "")">
+                                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                                <div>
+                                                    <span class="assignment-type type-schedule">برنامه کاری</span>
+                                                    <h6 class="mb-1">@assignment.ScheduleName</h6>
+                                                    <p class="text-muted mb-0">@assignment.DepartmentName - @assignment.ClinicName</p>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="status-badge @(assignment.IsActive ? "status-active" : "status-inactive")">
+                                                        @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-6">
+                                                    <small class="text-muted">
+                                                        <i class="fas fa-clock me-1"></i>
+                                                        @assignment.DayOfWeek - @assignment.StartTime تا @assignment.EndTime
+                                                    </small>
+                                                </div>
+                                                <div class="col-6 text-end">
+                                                    <div class="btn-group btn-group-sm">
+                                                        <a href="@Url.Action("Edit", "DoctorSchedule", new { id = assignment.Id })" class="action-btn">
+                                                            <i class="fas fa-edit"></i>
+                                                        </a>
+                                                        <button class="action-btn" onclick="removeAssignment(@assignment.Id, 'schedule')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="empty-state">
+                                <i class="fas fa-calendar"></i>
+                                <h5>هیچ برنامه کاری یافت نشد</h5>
+                                <p>پزشک هنوز هیچ برنامه کاری ندارد</p>
+                                <a href="@Url.Action("AssignSchedule", "DoctorSchedule", new { doctorId = Model.DoctorId })" class="btn btn-primary">
+                                    <i class="fas fa-plus me-2"></i>
+                                    تنظیم برنامه کاری
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <i class="fas fa-link fa-3x text-muted mb-3"></i>
+            <h4 class="text-muted">اطلاعات انتسابات یافت نشد</h4>
+            <p class="text-muted">پزشک مورد نظر وجود ندارد یا حذف شده است</p>
+            <a href="@Url.Action("Index", "DoctorDashboard")" class="btn btn-primary">
+                <i class="fas fa-arrow-left me-2"></i>
+                بازگشت به داشبورد
+            </a>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        // Remove Assignment
+        function removeAssignment(assignmentId, type) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این عملیات قابل بازگشت نیست',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    let url = '';
+                    switch (type) {
+                        case 'department':
+                            url = '@Url.Action("RemoveDepartmentAssignment", "DoctorDepartment")';
+                            break;
+                        case 'service':
+                            url = '@Url.Action("RemoveServiceCategoryAssignment", "DoctorServiceCategory")';
+                            break;
+                        case 'schedule':
+                            url = '@Url.Action("RemoveScheduleAssignment", "DoctorSchedule")';
+                            break;
+                    }
+                    
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: { id: assignmentId },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    title: 'موفق',
+                                    text: 'انتساب با موفقیت حذف شد',
+                                    icon: 'success',
+                                    confirmButtonText: 'باشه'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    title: 'خطا',
+                                    text: response.message,
+                                    icon: 'error',
+                                    confirmButtonText: 'باشه'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                title: 'خطا',
+                                text: 'خطا در حذف انتساب',
+                                icon: 'error',
+                                confirmButtonText: 'باشه'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

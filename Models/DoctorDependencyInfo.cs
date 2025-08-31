@@ -53,6 +53,36 @@ namespace ClinicApp.Models
         public int TotalTodayAppointments { get; set; }
 
         /// <summary>
+        /// آیا انتسابات فعال به دپارتمان دارد
+        /// </summary>
+        public bool HasActiveDepartmentAssignments { get; set; }
+
+        /// <summary>
+        /// آیا انتسابات فعال به دسته‌بندی خدمات دارد
+        /// </summary>
+        public bool HasActiveServiceCategoryAssignments { get; set; }
+
+        /// <summary>
+        /// آیا برنامه‌های کاری فعال دارد
+        /// </summary>
+        public bool HasActiveSchedules { get; set; }
+
+        /// <summary>
+        /// تعداد نوبت‌ها
+        /// </summary>
+        public int AppointmentCount { get; set; }
+
+        /// <summary>
+        /// تعداد انتسابات دپارتمان
+        /// </summary>
+        public int DepartmentAssignmentCount { get; set; }
+
+        /// <summary>
+        /// تعداد انتسابات دسته‌بندی خدمات
+        /// </summary>
+        public int ServiceCategoryAssignmentCount { get; set; }
+
+        /// <summary>
         /// لیست دپارتمان‌های مرتبط
         /// </summary>
         public List<DepartmentSummaryInfo> DepartmentSummaries { get; set; }

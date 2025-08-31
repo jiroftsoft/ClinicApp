@@ -1,0 +1,520 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorHistorySearchViewModel
+@{
+    ViewBag.Title = "جستجوی پیشرفته تاریخچه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        .search-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .filter-section {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .results-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .importance-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            font-weight: 600;
+        }
+
+        .importance-critical {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a52);
+            color: white;
+        }
+
+        .importance-important {
+            background: linear-gradient(135deg, #feca57, #ff9ff3);
+            color: white;
+        }
+
+        .importance-normal {
+            background: linear-gradient(135deg, #48dbfb, #0abde3);
+            color: white;
+        }
+
+        .action-btn {
+            border-radius: 25px;
+            padding: 8px 20px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+        }
+
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .search-stats {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .advanced-filters {
+            background: rgba(255,255,255,0.1);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .filter-group {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+    </style>
+}
+
+<div class="loading-overlay">
+    <div class="spinner"></div>
+</div>
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-search text-primary me-2"></i>
+                        جستجوی پیشرفته تاریخچه
+                    </h2>
+                    <p class="text-muted mb-0">جستجوی پیشرفته در تاریخچه انتسابات پزشکان</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-success action-btn" onclick="exportSearchResults()">
+                        <i class="fas fa-file-excel me-2"></i>
+                        خروجی Excel
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary action-btn">
+                        <i class="fas fa-arrow-right me-2"></i>
+                        بازگشت
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search Statistics -->
+    @if (Model?.SearchResults != null && Model.SearchResults.Any())
+    {
+        <div class="search-stats">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="mb-0">@Model.SearchResults.Count</h4>
+                        <small>نتایج یافت شده</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="mb-0">@Model.SearchResults.Count(x => x.Importance == "Critical")</h4>
+                        <small>بحرانی</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="mb-0">@Model.SearchResults.Count(x => x.Importance == "Important")</h4>
+                        <small>مهم</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <h4 class="mb-0">@Model.SearchResults.Count(x => x.Importance == "Normal")</h4>
+                        <small>عادی</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Advanced Search Form -->
+    <div class="filter-section">
+        <form id="advancedSearchForm" method="get">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="searchTerm" class="form-label text-white fw-bold">عبارت جستجو:</label>
+                        <input type="text" id="searchTerm" name="searchTerm" class="form-control" 
+                               value="@(Model?.Filter?.SearchTerm)" placeholder="جستجو در عنوان و توضیحات">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="doctorId" class="form-label text-white fw-bold">پزشک:</label>
+                        <select id="doctorId" name="doctorId" class="form-select">
+                            <option value="">همه پزشکان</option>
+                            @if (Model?.Doctors != null)
+                            {
+                                foreach (var doctor in Model.Doctors)
+                                {
+                                    var selected = Model?.Filter?.DoctorId?.ToString() == doctor.Value ? "selected" : "";
+                                    <option value="@doctor.Value" @selected>@doctor.Text</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="actionType" class="form-label text-white fw-bold">نوع عملیات:</label>
+                        <select id="actionType" name="actionType" class="form-select">
+                            <option value="">همه عملیات</option>
+                            <option value="AssignToDepartment" @(Model?.Filter?.ActionType == "AssignToDepartment" ? "selected" : "")>انتساب به دپارتمان</option>
+                            <option value="AssignServiceCategories" @(Model?.Filter?.ActionType == "AssignServiceCategories" ? "selected" : "")>انتساب سرفصل‌های خدماتی</option>
+                            <option value="Transfer" @(Model?.Filter?.ActionType == "Transfer" ? "selected" : "")>انتقال</option>
+                            <option value="Removal" @(Model?.Filter?.ActionType == "Removal" ? "selected" : "")>حذف</option>
+                            <option value="Update" @(Model?.Filter?.ActionType == "Update" ? "selected" : "")>ویرایش</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="importance" class="form-label text-white fw-bold">اهمیت:</label>
+                        <select id="importance" name="importance" class="form-select">
+                            <option value="">همه سطوح</option>
+                            <option value="Critical" @(Model?.Filter?.Importance == "Critical" ? "selected" : "")>بحرانی</option>
+                            <option value="Important" @(Model?.Filter?.Importance == "Important" ? "selected" : "")>مهم</option>
+                            <option value="Normal" @(Model?.Filter?.Importance == "Normal" ? "selected" : "")>عادی</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="advanced-filters">
+                <h6 class="text-white mb-3">
+                    <i class="fas fa-filter me-2"></i>
+                    فیلترهای پیشرفته
+                </h6>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label for="departmentId" class="form-label fw-bold">دپارتمان:</label>
+                            <select id="departmentId" name="departmentId" class="form-select">
+                                <option value="">همه دپارتمان‌ها</option>
+                                @if (Model?.Departments != null)
+                                {
+                                    foreach (var dept in Model.Departments)
+                                    {
+                                        var selected = Model?.Filter?.DepartmentId?.ToString() == dept.Value ? "selected" : "";
+                                        <option value="@dept.Value" @selected>@dept.Text</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label for="performedBy" class="form-label fw-bold">انجام دهنده:</label>
+                            <input type="text" id="performedBy" name="performedBy" class="form-control" 
+                                   value="@(Model?.Filter?.PerformedBy)" placeholder="نام کاربر">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label for="startDate" class="form-label fw-bold">از تاریخ:</label>
+                            <input type="text" id="startDate" name="startDate" class="form-control persian-date" 
+                                   value="@(Model?.Filter?.StartDate?.ToString("yyyy/MM/dd"))" placeholder="انتخاب کنید">
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label for="endDate" class="form-label fw-bold">تا تاریخ:</label>
+                            <input type="text" id="endDate" name="endDate" class="form-control persian-date" 
+                                   value="@(Model?.Filter?.EndDate?.ToString("yyyy/MM/dd"))" placeholder="انتخاب کنید">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mt-3">
+                <div class="col-12">
+                    <div class="d-flex justify-content-between">
+                        <button type="submit" class="btn btn-light action-btn">
+                            <i class="fas fa-search me-2"></i>
+                            جستجو
+                        </button>
+                        <button type="button" class="btn btn-outline-light action-btn" onclick="clearFilters()">
+                            <i class="fas fa-eraser me-2"></i>
+                            پاک کردن فیلترها
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Search Results -->
+    @if (Model?.SearchResults != null)
+    {
+        <div class="results-card">
+            <div class="card-body">
+                @if (Model.SearchResults.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>پزشک</th>
+                                    <th>نوع عملیات</th>
+                                    <th>عنوان عملیات</th>
+                                    <th>دپارتمان</th>
+                                    <th>اهمیت</th>
+                                    <th>تاریخ</th>
+                                    <th>انجام دهنده</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.SearchResults)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    <i class="fas fa-user text-white"></i>
+                                                </div>
+                                                <div>
+                                                    <div class="fw-bold">@item.DoctorName</div>
+                                                    <small class="text-muted">@item.DoctorSpecialization</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-info">@item.ActionType</span>
+                                        </td>
+                                        <td>@item.ActionTitle</td>
+                                        <td>@item.DepartmentName</td>
+                                        <td>
+                                            @{
+                                                var importanceClass = item.Importance switch
+                                                {
+                                                    "Critical" => "importance-critical",
+                                                    "Important" => "importance-important",
+                                                    _ => "importance-normal"
+                                                };
+                                            }
+                                            <span class="importance-badge @importanceClass">@item.Importance</span>
+                                        </td>
+                                        <td>
+                                            <div>@item.ActionDate.ToString("yyyy/MM/dd")</div>
+                                            <small class="text-muted">@item.ActionDate.ToString("HH:mm")</small>
+                                        </td>
+                                        <td>@item.PerformedByUserName</td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="@Url.Action("Details", new { id = item.Id })" 
+                                                   class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                        onclick="deleteHistory(@item.Id)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(Model.Filter?.SearchTerm) || 
+                         Model.Filter?.DoctorId != null || 
+                         Model.Filter?.ActionType != null)
+                {
+                    <div class="text-center py-5">
+                        <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">نتیجه‌ای یافت نشد</h5>
+                        <p class="text-muted">با فیلترهای اعمال شده هیچ تاریخچه‌ای یافت نشد.</p>
+                        <button type="button" class="btn btn-primary" onclick="clearFilters()">
+                            <i class="fas fa-eraser me-2"></i>
+                            پاک کردن فیلترها
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian Date Picker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false,
+                persianDigit: true
+            });
+
+            // Show loading overlay on form submit
+            $('#advancedSearchForm').on('submit', function() {
+                $('.loading-overlay').show();
+            });
+        });
+
+        function clearFilters() {
+            $('#searchTerm').val('');
+            $('#doctorId').val('');
+            $('#actionType').val('');
+            $('#importance').val('');
+            $('#departmentId').val('');
+            $('#performedBy').val('');
+            $('#startDate').val('');
+            $('#endDate').val('');
+            
+            $('#advancedSearchForm').submit();
+        }
+
+        function deleteHistory(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این تاریخچه حذف خواهد شد.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'بله، حذف کن!',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('.loading-overlay').show();
+                    
+                    $.ajax({
+                        url: '@Url.Action("Delete")',
+                        type: 'POST',
+                        data: {
+                            id: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function(response) {
+                            $('.loading-overlay').hide();
+                            
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفقیت',
+                                    text: 'تاریخچه با موفقیت حذف شد.'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در حذف تاریخچه.'
+                                });
+                            }
+                        },
+                        error: function() {
+                            $('.loading-overlay').hide();
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور.'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function exportSearchResults() {
+            $('.loading-overlay').show();
+            
+            const formData = new FormData();
+            formData.append('searchTerm', $('#searchTerm').val() || '');
+            formData.append('doctorId', $('#doctorId').val() || '');
+            formData.append('actionType', $('#actionType').val() || '');
+            formData.append('importance', $('#importance').val() || '');
+            formData.append('departmentId', $('#departmentId').val() || '');
+            formData.append('performedBy', $('#performedBy').val() || '');
+            formData.append('startDate', $('#startDate').val() || '');
+            formData.append('endDate', $('#endDate').val() || '');
+            
+            $.ajax({
+                url: '@Url.Action("ExportToExcel")',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(blob) {
+                    $('.loading-overlay').hide();
+                    
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'نتایج_جستجوی_تاریخچه.xlsx';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                    document.body.removeChild(a);
+                },
+                error: function() {
+                    $('.loading-overlay').hide();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'خطا در ایجاد فایل Excel.'
+                    });
+                }
+            });
+        }
+    </script>
+}
