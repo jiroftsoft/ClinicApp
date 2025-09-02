@@ -56,4 +56,49 @@ public interface IDoctorScheduleService
     Task<ServiceResult<List<TimeSlotViewModel>>> GetAvailableAppointmentSlotsAsync(int doctorId, DateTime date);
 
     #endregion
+
+    #region List and Search Operations
+
+    /// <summary>
+    /// دریافت لیست تمام برنامه‌های کاری پزشکان با صفحه‌بندی
+    /// </summary>
+    /// <param name="searchTerm">عبارت جستجو</param>
+    /// <param name="pageNumber">شماره صفحه</param>
+    /// <param name="pageSize">تعداد آیتم‌ها در هر صفحه</param>
+    /// <returns>نتیجه حاوی لیست صفحه‌بندی شده برنامه‌های کاری</returns>
+    Task<ServiceResult<PagedResult<DoctorScheduleViewModel>>> GetAllDoctorSchedulesAsync(string searchTerm, int pageNumber, int pageSize);
+
+    #endregion
+
+    #region Schedule Management Operations
+
+    /// <summary>
+    /// دریافت برنامه کاری بر اساس شناسه
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>نتیجه حاوی برنامه کاری</returns>
+    Task<ServiceResult<DoctorScheduleViewModel>> GetDoctorScheduleByIdAsync(int scheduleId);
+
+    /// <summary>
+    /// حذف برنامه کاری
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>نتیجه عملیات حذف</returns>
+    Task<ServiceResult> DeleteDoctorScheduleAsync(int scheduleId);
+
+    /// <summary>
+    /// غیرفعال کردن برنامه کاری
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>نتیجه عملیات غیرفعال‌سازی</returns>
+    Task<ServiceResult> DeactivateDoctorScheduleAsync(int scheduleId);
+
+    /// <summary>
+    /// فعال کردن مجدد برنامه کاری
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>نتیجه عملیات فعال‌سازی</returns>
+    Task<ServiceResult> ActivateDoctorScheduleAsync(int scheduleId);
+
+    #endregion
 }

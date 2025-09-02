@@ -1,0 +1,466 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.EmergencyBooking
+@{
+    ViewBag.Title = "جزئیات رزرو اورژانس";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-ambulance text-danger me-2"></i>
+            جزئیات رزرو اورژانس
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "EmergencyBooking")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به لیست
+            </a>
+            @if (Model.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Pending)
+            {
+                <button type="button" class="btn btn-warning btn-sm" onclick="setPriority(@Model.EmergencyId)">
+                    <i class="fas fa-flag me-1"></i>
+                    تنظیم اولویت
+                </button>
+                <button type="button" class="btn btn-danger btn-sm" onclick="cancelBooking(@Model.EmergencyId)">
+                    <i class="fas fa-times me-1"></i>
+                    لغو رزرو
+                </button>
+            }
+        </div>
+    </div>
+
+    <!-- Emergency Booking Details -->
+    <div class="row">
+        <!-- Main Information -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-info-circle me-1"></i>
+                        اطلاعات اصلی
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">شناسه رزرو:</label>
+                                <p class="form-control-plaintext">@Model.EmergencyId</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">وضعیت:</label>
+                                <p>
+                                    <span class="badge @Model.StatusCssClass fs-6">
+                                        @Model.StatusDisplay
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">پزشک:</label>
+                                <p class="form-control-plaintext">@Model.DoctorName</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">اولویت:</label>
+                                <p>
+                                    <span class="badge @Model.PriorityCssClass fs-6">
+                                        @Model.PriorityDisplay
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">تاریخ نوبت:</label>
+                                <p class="form-control-plaintext">@Model.AppointmentDateDisplay</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">زمان نوبت:</label>
+                                <p class="form-control-plaintext">@Model.AppointmentTimeDisplay</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">روز هفته:</label>
+                                <p class="form-control-plaintext">@Model.DayOfWeekDisplay</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">تاریخ ایجاد:</label>
+                                <p class="form-control-plaintext">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Patient Information -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user me-1"></i>
+                        اطلاعات بیمار
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">نام بیمار:</label>
+                                <p class="form-control-plaintext">@Model.PatientName</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">شماره تلفن:</label>
+                                <p class="form-control-plaintext">@Model.PatientPhone</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">کد ملی:</label>
+                                <p class="form-control-plaintext">@Model.PatientNationalCode</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">شناسه بیمار:</label>
+                                <p class="form-control-plaintext">@Model.PatientId</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Emergency Details -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        جزئیات اورژانس
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">نوع اورژانس:</label>
+                                <p class="form-control-plaintext">@Model.Type</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">دلیل اورژانس:</label>
+                                <p class="form-control-plaintext">@Model.EmergencyReason</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar Information -->
+        <div class="col-lg-4">
+            <!-- Status Summary -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-1"></i>
+                        خلاصه وضعیت
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-3">
+                        <div class="status-icon mb-2">
+                            @if (Model.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Pending)
+                            {
+                                <i class="fas fa-clock fa-3x text-warning"></i>
+                            }
+                            else if (Model.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Confirmed)
+                            {
+                                <i class="fas fa-check-circle fa-3x text-success"></i>
+                            }
+                            else if (Model.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Canceled)
+                            {
+                                <i class="fas fa-times-circle fa-3x text-danger"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-info-circle fa-3x text-info"></i>
+                            }
+                        </div>
+                        <h5 class="fw-bold">@Model.StatusDisplay</h5>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h6 class="text-muted">اولویت</h6>
+                                <span class="badge @Model.PriorityCssClass fs-6">@Model.PriorityDisplay</span>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h6 class="text-muted">نوع</h6>
+                            <span class="badge bg-info fs-6">@Model.Type</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-1"></i>
+                        عملیات سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        @if (Model.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Pending)
+                        {
+                            <button type="button" class="btn btn-warning" onclick="setPriority(@Model.EmergencyId)">
+                                <i class="fas fa-flag me-1"></i>
+                                تنظیم اولویت
+                            </button>
+                            <button type="button" class="btn btn-danger" onclick="cancelBooking(@Model.EmergencyId)">
+                                <i class="fas fa-times me-1"></i>
+                                لغو رزرو
+                            </button>
+                        }
+                        <a href="@Url.Action("Index", "EmergencyBooking")" class="btn btn-secondary">
+                            <i class="fas fa-list me-1"></i>
+                            مشاهده لیست
+                        </a>
+                        <a href="@Url.Action("Create", "EmergencyBooking")" class="btn btn-primary">
+                            <i class="fas fa-plus me-1"></i>
+                            رزرو جدید
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Timeline -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-history me-1"></i>
+                        تاریخچه
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">رزرو ایجاد شد</h6>
+                                <p class="timeline-text">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</p>
+                            </div>
+                        </div>
+                        @if (Model.Status != ClinicApp.Models.Entities.EmergencyBookingStatus.Pending)
+                        {
+                            <div class="timeline-item">
+                                <div class="timeline-marker bg-success"></div>
+                                <div class="timeline-content">
+                                    <h6 class="timeline-title">وضعیت تغییر یافت</h6>
+                                    <p class="timeline-text">@Model.StatusDisplay</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Priority Modal -->
+<div class="modal fade" id="priorityModal" tabindex="-1" aria-labelledby="priorityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="priorityModalLabel">تنظیم اولویت اورژانس</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="priorityForm">
+                    <input type="hidden" id="bookingId" name="bookingId">
+                    <div class="mb-3">
+                        <label for="prioritySelect" class="form-label">اولویت جدید</label>
+                        <select id="prioritySelect" name="priority" class="form-select" required>
+                            <option value="">انتخاب کنید</option>
+                            <option value="Critical">بحرانی</option>
+                            <option value="High">بالا</option>
+                            <option value="Medium">متوسط</option>
+                            <option value="Low">کم</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="updatePriority()">ذخیره</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">لغو رزرو اورژانس</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelForm">
+                    <input type="hidden" id="cancelBookingId" name="cancelBookingId">
+                    <div class="mb-3">
+                        <label for="cancellationReason" class="form-label">دلیل لغو</label>
+                        <textarea id="cancellationReason" name="cancellationReason" class="form-control" 
+                                  rows="3" required placeholder="دلیل لغو را وارد کنید"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCancel()">لغو رزرو</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Set Priority
+        function setPriority(bookingId) {
+            $('#bookingId').val(bookingId);
+            $('#priorityModal').modal('show');
+        }
+
+        // Update Priority
+        function updatePriority() {
+            const bookingId = $('#bookingId').val();
+            const priority = $('#prioritySelect').val();
+
+            if (!priority) {
+                alert('لطفاً اولویت را انتخاب کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("SetPriority", "EmergencyBooking")',
+                type: 'POST',
+                data: {
+                    id: bookingId,
+                    priority: priority,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#priorityModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        // Cancel Booking
+        function cancelBooking(bookingId) {
+            $('#cancelBookingId').val(bookingId);
+            $('#cancelModal').modal('show');
+        }
+
+        // Confirm Cancel
+        function confirmCancel() {
+            const bookingId = $('#cancelBookingId').val();
+            const reason = $('#cancellationReason').val();
+
+            if (!reason.trim()) {
+                alert('لطفاً دلیل لغو را وارد کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("Cancel", "EmergencyBooking")',
+                type: 'POST',
+                data: {
+                    id: bookingId,
+                    cancellationReason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#cancelModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+    </script>
+}
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 20px;
+    }
+
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        top: 0;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        border: 2px solid #fff;
+        box-shadow: 0 0 0 3px #e3e6f0;
+    }
+
+    .timeline-content {
+        padding-left: 10px;
+    }
+
+    .timeline-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .timeline-text {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-bottom: 0;
+    }
+
+    .status-icon {
+        text-align: center;
+    }
+</style>

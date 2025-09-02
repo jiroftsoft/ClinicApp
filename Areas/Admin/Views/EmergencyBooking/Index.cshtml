@@ -1,0 +1,328 @@
+@model List<ClinicApp.ViewModels.DoctorManagementVM.EmergencyBooking>
+@{
+    ViewBag.Title = "مدیریت رزروهای اورژانس";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-ambulance text-danger me-2"></i>
+            مدیریت رزروهای اورژانس
+        </h1>
+        <a href="@Url.Action("Create", "EmergencyBooking")" class="btn btn-primary btn-sm">
+            <i class="fas fa-plus me-1"></i>
+            رزرو جدید
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-filter me-1"></i>
+                فیلترها
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" action="@Url.Action("Index", "EmergencyBooking")" class="row g-3">
+                <div class="col-md-3">
+                    <label for="doctorId" class="form-label">پزشک</label>
+                    <select name="doctorId" id="doctorId" class="form-select">
+                        <option value="">همه پزشکان</option>
+                        @if (ViewBag.Doctors != null)
+                        {
+                            foreach (var doctor in ViewBag.Doctors)
+                            {
+                                var selected = Request.QueryString["doctorId"] == doctor.Value ? "selected" : "";
+                                <option value="@doctor.Value" @selected>@doctor.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="date" class="form-label">تاریخ</label>
+                    <input type="text" name="date" id="date" class="form-control persian-date" 
+                           value="@Request.QueryString["date"]" placeholder="انتخاب تاریخ">
+                </div>
+                <div class="col-md-3">
+                    <label for="priority" class="form-label">اولویت</label>
+                    <select name="priority" id="priority" class="form-select">
+                        <option value="">همه اولویت‌ها</option>
+                        <option value="Critical" @(Request.QueryString["priority"] == "Critical" ? "selected" : "")>بحرانی</option>
+                        <option value="High" @(Request.QueryString["priority"] == "High" ? "selected" : "")>بالا</option>
+                        <option value="Medium" @(Request.QueryString["priority"] == "Medium" ? "selected" : "")>متوسط</option>
+                        <option value="Low" @(Request.QueryString["priority"] == "Low" ? "selected" : "")>کم</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>
+                        جستجو
+                    </button>
+                    <a href="@Url.Action("Index", "EmergencyBooking")" class="btn btn-secondary">
+                        <i class="fas fa-times me-1"></i>
+                        پاک کردن
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Emergency Bookings List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-list me-1"></i>
+                لیست رزروهای اورژانس
+            </h6>
+            <div class="btn-group" role="group">
+                <a href="@Url.Action("Statistics", "EmergencyBooking")" class="btn btn-info btn-sm">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    آمار
+                </a>
+                <a href="@Url.Action("Report", "EmergencyBooking")" class="btn btn-success btn-sm">
+                    <i class="fas fa-file-alt me-1"></i>
+                    گزارش
+                </a>
+            </div>
+        </div>
+        <div class="card-body">
+            @if (Model != null && Model.Any())
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="emergencyBookingsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>شناسه</th>
+                                <th>پزشک</th>
+                                <th>بیمار</th>
+                                <th>تاریخ</th>
+                                <th>زمان</th>
+                                <th>اولویت</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var booking in Model)
+                            {
+                                <tr>
+                                    <td>@booking.EmergencyId</td>
+                                    <td>@booking.DoctorName</td>
+                                    <td>@booking.PatientName</td>
+                                    <td>@booking.AppointmentDateDisplay</td>
+                                    <td>@booking.AppointmentTimeDisplay</td>
+                                    <td>
+                                        <span class="badge @booking.PriorityCssClass">
+                                            @booking.PriorityDisplay
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @booking.StatusCssClass">
+                                            @booking.StatusDisplay
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("Details", "EmergencyBooking", new { id = booking.EmergencyId })" 
+                                               class="btn btn-info btn-sm" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            @if (booking.Status == ClinicApp.Models.Entities.EmergencyBookingStatus.Pending)
+                                            {
+                                                <button type="button" class="btn btn-warning btn-sm" 
+                                                        onclick="setPriority(@booking.EmergencyId)" title="تنظیم اولویت">
+                                                    <i class="fas fa-flag"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm" 
+                                                        onclick="cancelBooking(@booking.EmergencyId)" title="لغو">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">هیچ رزرو اورژانسی یافت نشد</h5>
+                    <p class="text-muted">برای شروع، یک رزرو اورژانس جدید ایجاد کنید.</p>
+                    <a href="@Url.Action("Create", "EmergencyBooking")" class="btn btn-primary">
+                        <i class="fas fa-plus me-1"></i>
+                        رزرو جدید
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Priority Modal -->
+<div class="modal fade" id="priorityModal" tabindex="-1" aria-labelledby="priorityModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="priorityModalLabel">تنظیم اولویت اورژانس</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="priorityForm">
+                    <input type="hidden" id="bookingId" name="bookingId">
+                    <div class="mb-3">
+                        <label for="prioritySelect" class="form-label">اولویت جدید</label>
+                        <select id="prioritySelect" name="priority" class="form-select" required>
+                            <option value="">انتخاب کنید</option>
+                            <option value="Critical">بحرانی</option>
+                            <option value="High">بالا</option>
+                            <option value="Medium">متوسط</option>
+                            <option value="Low">کم</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="updatePriority()">ذخیره</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="cancelModalLabel">لغو رزرو اورژانس</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="cancelForm">
+                    <input type="hidden" id="cancelBookingId" name="cancelBookingId">
+                    <div class="mb-3">
+                        <label for="cancellationReason" class="form-label">دلیل لغو</label>
+                        <textarea id="cancellationReason" name="cancellationReason" class="form-control" 
+                                  rows="3" required placeholder="دلیل لغو را وارد کنید"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" onclick="confirmCancel()">لغو رزرو</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Initialize DataTable
+            if ($('#emergencyBookingsTable tbody tr').length > 0) {
+                $('#emergencyBookingsTable').DataTable({
+                    language: {
+                        url: '/Content/DataTables/Persian.json'
+                    },
+                    pageLength: 25,
+                    order: [[0, 'desc']]
+                });
+            }
+        });
+
+        // Set Priority
+        function setPriority(bookingId) {
+            $('#bookingId').val(bookingId);
+            $('#priorityModal').modal('show');
+        }
+
+        // Update Priority
+        function updatePriority() {
+            const bookingId = $('#bookingId').val();
+            const priority = $('#prioritySelect').val();
+
+            if (!priority) {
+                alert('لطفاً اولویت را انتخاب کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("SetPriority", "EmergencyBooking")',
+                type: 'POST',
+                data: {
+                    id: bookingId,
+                    priority: priority,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#priorityModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        // Cancel Booking
+        function cancelBooking(bookingId) {
+            $('#cancelBookingId').val(bookingId);
+            $('#cancelModal').modal('show');
+        }
+
+        // Confirm Cancel
+        function confirmCancel() {
+            const bookingId = $('#cancelBookingId').val();
+            const reason = $('#cancellationReason').val();
+
+            if (!reason.trim()) {
+                alert('لطفاً دلیل لغو را وارد کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("Cancel", "EmergencyBooking")',
+                type: 'POST',
+                data: {
+                    id: bookingId,
+                    cancellationReason: reason,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        $('#cancelModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطا در ارتباط با سرور');
+                }
+            });
+        }
+    </script>
+}

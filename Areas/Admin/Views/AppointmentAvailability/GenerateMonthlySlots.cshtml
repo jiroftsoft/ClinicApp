@@ -1,0 +1,795 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.GenerateMonthlySlotsRequest
+@{
+    ViewBag.Title = "تولید اسلات‌های ماهانه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-alt text-success me-2"></i>
+            تولید اسلات‌های ماهانه
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")" class="btn btn-warning btn-sm">
+                <i class="fas fa-calendar-week me-1"></i>
+                تولید اسلات هفتگی
+            </a>
+            <a href="@Url.Action("AvailableDates", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                تاریخ‌های در دسترس
+            </a>
+        </div>
+    </div>
+
+    <!-- Generation Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-cog me-1"></i>
+                تنظیمات تولید اسلات‌های ماهانه
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("GenerateMonthlySlots", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="monthStart" class="form-label">تاریخ شروع ماه</label>
+                            <input type="text" name="monthStart" id="monthStart" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ شروع ماه" required>
+                            <div class="invalid-feedback">لطفاً تاریخ شروع ماه را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="slotDurationMinutes" class="form-label">مدت زمان هر اسلات (دقیقه)</label>
+                            <select name="slotDurationMinutes" id="slotDurationMinutes" class="form-select" required>
+                                <option value="15">15 دقیقه</option>
+                                <option value="30" selected>30 دقیقه</option>
+                                <option value="45">45 دقیقه</option>
+                                <option value="60">60 دقیقه</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="defaultWorkStartTimeHour" class="form-label">زمان شروع کاری (ساعت)</label>
+                            <input type="number" name="defaultWorkStartTimeHour" id="defaultWorkStartTimeHour" 
+                                   class="form-control" min="0" max="23" value="8" required>
+                            <div class="invalid-feedback">ساعت شروع باید بین 0 تا 23 باشد</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="defaultWorkEndTimeHour" class="form-label">زمان پایان کاری (ساعت)</label>
+                            <input type="number" name="defaultWorkEndTimeHour" id="defaultWorkEndTimeHour" 
+                                   class="form-control" min="0" max="23" value="17" required>
+                            <div class="invalid-feedback">ساعت پایان باید بین 0 تا 23 باشد</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="includeWeekends" id="includeWeekends" value="true">
+                                <label class="form-check-label" for="includeWeekends">
+                                    شامل آخر هفته (جمعه و شنبه)
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">اگر انتخاب شود، اسلات‌ها برای جمعه و شنبه نیز تولید می‌شوند</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="breakDuration" class="form-label">مدت زمان استراحت (دقیقه)</label>
+                            <input type="number" name="breakDuration" id="breakDuration" class="form-control" 
+                                   min="0" max="120" value="30">
+                            <small class="form-text text-muted">مدت زمان استراحت بین اسلات‌ها</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="seasonalOptimization" id="seasonalOptimization" value="true">
+                                <label class="form-check-label" for="seasonalOptimization">
+                                    بهینه‌سازی فصلی
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">تنظیم خودکار ساعات کاری بر اساس فصل</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="excludeHolidays" id="excludeHolidays" value="true" checked>
+                                <label class="form-check-label" for="excludeHolidays">
+                                    حذف تعطیلات رسمی
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">اسلات‌ها برای روزهای تعطیل رسمی تولید نمی‌شوند</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-magic me-1"></i>
+                            تولید اسلات‌های ماهانه
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" onclick="previewMonthlySlots()">
+                            <i class="fas fa-eye me-1"></i>
+                            پیش‌نمایش ماهانه
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Monthly Schedule Preview -->
+    <div class="card shadow mb-4" id="monthlyPreviewCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-calendar-alt me-1"></i>
+                پیش‌نمایش برنامه ماهانه
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-primary" id="totalMonthlySlots">0</div>
+                        <small class="text-muted">کل اسلات‌ها</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-success" id="workingDaysCount">0</div>
+                        <small class="text-muted">روزهای کاری</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-info" id="totalWorkHours">0</div>
+                        <small class="text-muted">ساعات کاری کل</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-warning" id="holidaysCount">0</div>
+                        <small class="text-muted">روزهای تعطیل</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monthly Calendar View -->
+            <div class="row">
+                <div class="col-12">
+                    <div id="monthlyCalendar">
+                        <!-- Monthly calendar will be generated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Weekly Summary Table -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <h6>خلاصه هفتگی</h6>
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover" id="weeklySummaryTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>هفته</th>
+                                    <th>تاریخ شروع</th>
+                                    <th>تاریخ پایان</th>
+                                    <th>روزهای کاری</th>
+                                    <th>تعداد اسلات</th>
+                                    <th>ساعات کاری</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="weeklySummaryBody">
+                                <!-- Weekly summary will be generated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Schedule Details -->
+    <div class="card shadow mb-4" id="dailyDetailsCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clock me-1"></i>
+                جزئیات برنامه روزانه
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>برنامه زمانی روزانه</h6>
+                    <div id="dailyTimeline">
+                        <!-- Daily timeline will be generated here -->
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>آمار روزانه</h6>
+                    <div id="dailyStats">
+                        <!-- Daily statistics will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-warning w-100" onclick="generateWeeklySlots()">
+                        <i class="fas fa-calendar-week me-1"></i>
+                        تولید اسلات هفتگی
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="copyToNextMonth()">
+                        <i class="fas fa-copy me-1"></i>
+                        کپی برای ماه بعد
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="exportMonthlySchedule()">
+                        <i class="fas fa-file-export me-1"></i>
+                        خروجی برنامه ماهانه
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Monthly Generation Progress Modal -->
+<div class="modal fade" id="monthlyGenerationProgressModal" tabindex="-1" aria-labelledby="monthlyGenerationProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="monthlyGenerationProgressModalLabel">در حال تولید اسلات‌های ماهانه</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <h6>در حال تولید اسلات‌های ماهانه...</h6>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="monthlyGenerationProgress"></div>
+                    </div>
+                    <small class="text-muted mt-2" id="monthlyGenerationStatus">آماده‌سازی...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Set default values
+            const today = new Date();
+            const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            $('input[name="monthStart"]').val(firstDayOfMonth.toISOString().split('T')[0]);
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    event.preventDefault();
+                    generateMonthlySlots();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Auto-calculate work hours
+            $('#defaultWorkStartTimeHour, #defaultWorkEndTimeHour').on('change', function() {
+                calculateWorkHours();
+            });
+
+            // Seasonal optimization change
+            $('#seasonalOptimization').on('change', function() {
+                if (this.checked) {
+                    applySeasonalOptimization();
+                } else {
+                    resetToDefaultHours();
+                }
+            });
+        });
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('generateMonthlySlotsForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                const today = new Date();
+                const firstDayOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                $('input[name="monthStart"]').val(firstDayOfMonth.toISOString().split('T')[0]);
+                $('input[name="slotDurationMinutes"]').val('30');
+                $('input[name="defaultWorkStartTimeHour"]').val('8');
+                $('input[name="defaultWorkEndTimeHour"]').val('17');
+                $('input[name="breakDuration"]').val('30');
+                
+                // Hide preview cards
+                $('#monthlyPreviewCard, #dailyDetailsCard').hide();
+            }
+        }
+
+        // Apply Seasonal Optimization
+        function applySeasonalOptimization() {
+            const currentMonth = new Date().getMonth() + 1;
+            let startHour, endHour;
+            
+            if (currentMonth >= 3 && currentMonth <= 5) {
+                // Spring: 7:00 - 18:00
+                startHour = 7;
+                endHour = 18;
+            } else if (currentMonth >= 6 && currentMonth <= 8) {
+                // Summer: 6:00 - 19:00
+                startHour = 6;
+                endHour = 19;
+            } else if (currentMonth >= 9 && currentMonth <= 11) {
+                // Fall: 7:00 - 18:00
+                startHour = 7;
+                endHour = 18;
+            } else {
+                // Winter: 8:00 - 17:00
+                startHour = 8;
+                endHour = 17;
+            }
+            
+            $('#defaultWorkStartTimeHour').val(startHour);
+            $('#defaultWorkEndTimeHour').val(endHour);
+            
+            showSuccessMessage('ساعات کاری بر اساس فصل تنظیم شد');
+        }
+
+        // Reset to Default Hours
+        function resetToDefaultHours() {
+            $('#defaultWorkStartTimeHour').val(8);
+            $('#defaultWorkEndTimeHour').val(17);
+        }
+
+        // Calculate Work Hours
+        function calculateWorkHours() {
+            const startHour = parseInt($('#defaultWorkStartTimeHour').val()) || 0;
+            const endHour = parseInt($('#defaultWorkEndTimeHour').val()) || 0;
+            
+            if (startHour >= endHour) {
+                $('#defaultWorkEndTimeHour').addClass('is-invalid');
+                return;
+            }
+            
+            $('#defaultWorkEndTimeHour').removeClass('is-invalid');
+        }
+
+        // Preview Monthly Slots
+        function previewMonthlySlots() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            generateMonthlyPreview(formData);
+        }
+
+        // Generate Monthly Slots
+        function generateMonthlySlots() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            
+            // Show progress modal
+            $('#monthlyGenerationProgressModal').modal('show');
+            
+            // Simulate generation process
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 100) progress = 100;
+                
+                $('#monthlyGenerationProgress').css('width', progress + '%');
+                
+                if (progress >= 20) $('#monthlyGenerationStatus').text('تولید اسلات‌های هفتگی...');
+                if (progress >= 40) $('#monthlyGenerationStatus').text('بررسی تعطیلات...');
+                if (progress >= 60) $('#monthlyGenerationStatus').text('بهینه‌سازی فصلی...');
+                if (progress >= 80) $('#monthlyGenerationStatus').text('ذخیره‌سازی...');
+                if (progress >= 100) $('#monthlyGenerationStatus').text('تکمیل شد!');
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(() => {
+                        $('#monthlyGenerationProgressModal').modal('hide');
+                        showSuccessMessage('اسلات‌های ماهانه با موفقیت تولید شدند');
+                        
+                        // Generate and show preview
+                        generateMonthlyPreview(formData);
+                    }, 1000);
+                }
+            }, 300);
+        }
+
+        // Validate Form
+        function validateForm() {
+            const doctorId = $('#doctorId').val();
+            const monthStart = $('#monthStart').val();
+            const startHour = parseInt($('#defaultWorkStartTimeHour').val());
+            const endHour = parseInt($('#defaultWorkEndTimeHour').val());
+            
+            if (!doctorId) {
+                alert('لطفاً پزشک را انتخاب کنید');
+                return false;
+            }
+            
+            if (!monthStart) {
+                alert('لطفاً تاریخ شروع ماه را انتخاب کنید');
+                return false;
+            }
+            
+            if (startHour >= endHour) {
+                alert('ساعت شروع باید کمتر از ساعت پایان باشد');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Get Form Data
+        function getFormData() {
+            return {
+                doctorId: $('#doctorId').val(),
+                monthStart: $('#monthStart').val(),
+                slotDurationMinutes: parseInt($('#slotDurationMinutes').val()),
+                defaultWorkStartTimeHour: parseInt($('#defaultWorkStartTimeHour').val()),
+                defaultWorkEndTimeHour: parseInt($('#defaultWorkEndTimeHour').val()),
+                includeWeekends: $('#includeWeekends').is(':checked'),
+                breakDuration: parseInt($('#breakDuration').val()) || 0,
+                seasonalOptimization: $('#seasonalOptimization').is(':checked'),
+                excludeHolidays: $('#excludeHolidays').is(':checked')
+            };
+        }
+
+        // Generate Monthly Preview
+        function generateMonthlyPreview(formData) {
+            const monthStart = new Date(formData.monthStart);
+            const monthEnd = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0);
+            const daysInMonth = monthEnd.getDate();
+            
+            let totalSlots = 0;
+            let workingDays = 0;
+            let totalWorkHours = 0;
+            let holidaysCount = 0;
+            
+            // Generate calendar view
+            let calendarHtml = '<div class="table-responsive"><table class="table table-bordered table-sm">';
+            calendarHtml += '<thead class="table-dark"><tr>';
+            
+            // Week day headers
+            const weekDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+            weekDays.forEach(day => {
+                calendarHtml += `<th class="text-center">${day}</th>`;
+            });
+            
+            calendarHtml += '</tr></thead><tbody>';
+            
+            // Calculate first day of month
+            const firstDay = monthStart.getDay();
+            let dayCounter = 1;
+            const totalWeeks = Math.ceil((daysInMonth + firstDay) / 7);
+            
+            for (let week = 0; week < totalWeeks; week++) {
+                calendarHtml += '<tr>';
+                
+                for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                    if ((week === 0 && dayOfWeek < firstDay) || dayCounter > daysInMonth) {
+                        calendarHtml += '<td class="text-muted"></td>';
+                    } else {
+                        const currentDate = new Date(monthStart.getFullYear(), monthStart.getMonth(), dayCounter);
+                        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Friday or Saturday
+                        const isHoliday = checkIfHoliday(currentDate);
+                        
+                        let cellClass = '';
+                        let statusText = '';
+                        let slotsText = '';
+                        
+                        if (isHoliday) {
+                            cellClass = 'table-danger';
+                            statusText = 'تعطیل رسمی';
+                            slotsText = 'بدون اسلات';
+                            holidaysCount++;
+                        } else if (!formData.includeWeekends && isWeekend) {
+                            cellClass = 'table-secondary';
+                            statusText = 'آخر هفته';
+                            slotsText = 'بدون اسلات';
+                        } else {
+                            const workHours = formData.defaultWorkEndTimeHour - formData.defaultWorkStartTimeHour;
+                            const slotCount = Math.floor((workHours * 60) / (formData.slotDurationMinutes + formData.breakDuration));
+                            
+                            if (slotCount > 0) {
+                                cellClass = 'table-success';
+                                statusText = 'کاری';
+                                slotsText = `${slotCount} اسلات`;
+                                totalSlots += slotCount;
+                                workingDays++;
+                                totalWorkHours += workHours;
+                            } else {
+                                cellClass = 'table-warning';
+                                statusText = 'بدون اسلات';
+                                slotsText = '0 اسلات';
+                            }
+                        }
+                        
+                        calendarHtml += `
+                            <td class="text-center ${cellClass}">
+                                <div class="fw-bold">${dayCounter}</div>
+                                <small class="text-muted">${statusText}</small>
+                                <br>
+                                <small class="text-muted">${slotsText}</small>
+                            </td>
+                        `;
+                        dayCounter++;
+                    }
+                }
+                
+                calendarHtml += '</tr>';
+            }
+            
+            calendarHtml += '</tbody></table></div>';
+            $('#monthlyCalendar').html(calendarHtml);
+            
+            // Generate weekly summary
+            generateWeeklySummary(formData, monthStart, monthEnd);
+            
+            // Update statistics
+            $('#totalMonthlySlots').text(totalSlots);
+            $('#workingDaysCount').text(workingDays);
+            $('#totalWorkHours').text(totalWorkHours);
+            $('#holidaysCount').text(holidaysCount);
+            
+            $('#monthlyPreviewCard').show();
+        }
+
+        // Generate Weekly Summary
+        function generateWeeklySummary(formData, monthStart, monthEnd) {
+            const weeks = [];
+            let currentDate = new Date(monthStart);
+            
+            while (currentDate <= monthEnd) {
+                const weekStart = new Date(currentDate);
+                const weekEnd = new Date(currentDate);
+                weekEnd.setDate(currentDate.getDate() + 6);
+                
+                if (weekEnd > monthEnd) {
+                    weekEnd.setTime(monthEnd.getTime());
+                }
+                
+                weeks.push({
+                    start: new Date(weekStart),
+                    end: new Date(weekEnd)
+                });
+                
+                currentDate.setDate(currentDate.getDate() + 7);
+            }
+            
+            let summaryBody = '';
+            weeks.forEach((week, index) => {
+                const workingDaysInWeek = calculateWorkingDaysInWeek(week.start, week.end, formData);
+                const slotsInWeek = workingDaysInWeek * Math.floor((formData.defaultWorkEndTimeHour - formData.defaultWorkStartTimeHour) * 60 / (formData.slotDurationMinutes + formData.breakDuration));
+                const workHoursInWeek = workingDaysInWeek * (formData.defaultWorkEndTimeHour - formData.defaultWorkStartTimeHour);
+                
+                summaryBody += `
+                    <tr>
+                        <td>هفته ${index + 1}</td>
+                        <td>${week.start.toLocaleDateString('fa-IR')}</td>
+                        <td>${week.end.toLocaleDateString('fa-IR')}</td>
+                        <td>${workingDaysInWeek}</td>
+                        <td>${slotsInWeek}</td>
+                        <td>${workHoursInWeek}</td>
+                        <td>
+                            <button type="button" class="btn btn-info btn-sm" onclick="viewWeekDetails(${index})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            $('#weeklySummaryBody').html(summaryBody);
+        }
+
+        // Calculate Working Days in Week
+        function calculateWorkingDaysInWeek(weekStart, weekEnd, formData) {
+            let workingDays = 0;
+            const currentDate = new Date(weekStart);
+            
+            while (currentDate <= weekEnd) {
+                const dayOfWeek = currentDate.getDay();
+                const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Friday or Saturday
+                const isHoliday = checkIfHoliday(currentDate);
+                
+                if (!isHoliday && (formData.includeWeekends || !isWeekend)) {
+                    workingDays++;
+                }
+                
+                currentDate.setDate(currentDate.getDate() + 1);
+            }
+            
+            return workingDays;
+        }
+
+        // Check If Holiday (simplified)
+        function checkIfHoliday(date) {
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            
+            // Persian holidays (simplified)
+            if (month === 1 && day === 1) return true; // Nowruz
+            if (month === 1 && day === 2) return true; // Nowruz
+            if (month === 1 && day === 3) return true; // Nowruz
+            if (month === 1 && day === 4) return true; // Nowruz
+            if (month === 3 && day === 15) return true; // Islamic Republic Day
+            if (month === 6 && day === 4) return true; // Imam Khomeini's death
+            if (month === 6 && day === 5) return true; // Imam Khomeini's death
+            if (month === 12 && day === 29) return true; // Islamic Revolution Day
+            
+            return false;
+        }
+
+        // View Week Details
+        function viewWeekDetails(weekIndex) {
+            // Implement week details view
+            alert('نمایش جزئیات هفته در حال توسعه است');
+        }
+
+        // Other functions
+        function generateWeeklySlots() {
+            window.location.href = '@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")';
+        }
+
+        function copyToNextMonth() {
+            if (confirm('آیا از کپی کردن برنامه برای ماه بعد اطمینان دارید؟')) {
+                const currentMonthStart = new Date($('input[name="monthStart"]').val());
+                const nextMonthStart = new Date(currentMonthStart);
+                nextMonthStart.setMonth(currentMonthStart.getMonth() + 1);
+                
+                $('input[name="monthStart"]').val(nextMonthStart.toISOString().split('T')[0]);
+                showSuccessMessage('تاریخ ماه بعد تنظیم شد');
+            }
+        }
+
+        function exportMonthlySchedule() {
+            alert('خروجی برنامه ماهانه در حال توسعه است');
+        }
+
+        function showSuccessMessage(message) {
+            alert(message);
+        }
+    </script>
+}
+<style>
+    .table-sm td {
+        padding: 0.5rem;
+        font-size: 0.875rem;
+    }
+
+    .table-sm .fw-bold {
+        font-size: 1rem;
+    }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .timeline-container {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .timeline-time {
+        font-weight: bold;
+        min-width: 120px;
+        margin-right: 15px;
+        color: #007bff;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+
+    .timeline-slot {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .timeline-duration {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>
+

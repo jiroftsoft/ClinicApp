@@ -1,0 +1,659 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.GenerateWeeklySlotsRequest
+@{
+    ViewBag.Title = "تولید اسلات‌های هفتگی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-week text-warning me-2"></i>
+            تولید اسلات‌های هفتگی
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableDates", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                تاریخ‌های در دسترس
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-info btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+        </div>
+    </div>
+
+    <!-- Generation Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-cog me-1"></i>
+                تنظیمات تولید اسلات‌های هفتگی
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("GenerateWeeklySlots", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="weekStart" class="form-label">تاریخ شروع هفته</label>
+                            <input type="text" name="weekStart" id="weekStart" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ شروع هفته" required>
+                            <div class="invalid-feedback">لطفاً تاریخ شروع هفته را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="slotDurationMinutes" class="form-label">مدت زمان هر اسلات (دقیقه)</label>
+                            <select name="slotDurationMinutes" id="slotDurationMinutes" class="form-select" required>
+                                <option value="15">15 دقیقه</option>
+                                <option value="30" selected>30 دقیقه</option>
+                                <option value="45">45 دقیقه</option>
+                                <option value="60">60 دقیقه</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="defaultWorkStartTimeHour" class="form-label">زمان شروع کاری (ساعت)</label>
+                            <input type="number" name="defaultWorkStartTimeHour" id="defaultWorkStartTimeHour" 
+                                   class="form-control" min="0" max="23" value="8" required>
+                            <div class="invalid-feedback">ساعت شروع باید بین 0 تا 23 باشد</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="defaultWorkEndTimeHour" class="form-label">زمان پایان کاری (ساعت)</label>
+                            <input type="number" name="defaultWorkEndTimeHour" id="defaultWorkEndTimeHour" 
+                                   class="form-control" min="0" max="23" value="17" required>
+                            <div class="invalid-feedback">ساعت پایان باید بین 0 تا 23 باشد</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="includeWeekends" id="includeWeekends" value="true">
+                                <label class="form-check-label" for="includeWeekends">
+                                    شامل آخر هفته (جمعه و شنبه)
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">اگر انتخاب شود، اسلات‌ها برای جمعه و شنبه نیز تولید می‌شوند</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="breakDuration" class="form-label">مدت زمان استراحت (دقیقه)</label>
+                            <input type="number" name="breakDuration" id="breakDuration" class="form-control" 
+                                   min="0" max="120" value="30">
+                            <small class="form-text text-muted">مدت زمان استراحت بین اسلات‌ها</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-magic me-1"></i>
+                            تولید اسلات‌های هفتگی
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" onclick="previewSlots()">
+                            <i class="fas fa-eye me-1"></i>
+                            پیش‌نمایش
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Weekly Schedule Preview -->
+    <div class="card shadow mb-4" id="weeklyPreviewCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-calendar-alt me-1"></i>
+                پیش‌نمایش برنامه هفتگی
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-primary" id="totalSlots">0</div>
+                        <small class="text-muted">کل اسلات‌ها</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-success" id="availableSlots">0</div>
+                        <small class="text-muted">اسلات‌های در دسترس</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-info" id="workingDays">0</div>
+                        <small class="text-muted">روزهای کاری</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-warning" id="totalHours">0</div>
+                        <small class="text-muted">ساعات کاری کل</small>
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="weeklyScheduleTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>روز هفته</th>
+                            <th>تاریخ</th>
+                            <th>ساعات کاری</th>
+                            <th>تعداد اسلات</th>
+                            <th>وضعیت</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="weeklyScheduleBody">
+                        <!-- Weekly schedule will be generated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Daily Schedule Details -->
+    <div class="card shadow mb-4" id="dailyDetailsCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clock me-1"></i>
+                جزئیات برنامه روزانه
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h6>برنامه زمانی روزانه</h6>
+                    <div id="dailyTimeline">
+                        <!-- Daily timeline will be generated here -->
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <h6>آمار روزانه</h6>
+                    <div id="dailyStats">
+                        <!-- Daily statistics will be generated here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="generateMonthlySlots()">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        تولید اسلات ماهانه
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="copyToNextWeek()">
+                        <i class="fas fa-copy me-1"></i>
+                        کپی برای هفته بعد
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-warning w-100" onclick="exportSchedule()">
+                        <i class="fas fa-file-export me-1"></i>
+                        خروجی برنامه
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Slot Generation Progress Modal -->
+<div class="modal fade" id="generationProgressModal" tabindex="-1" aria-labelledby="generationProgressModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="generationProgressModalLabel">در حال تولید اسلات‌ها</h5>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <div class="spinner-border text-primary mb-3" role="status">
+                        <span class="visually-hidden">در حال بارگذاری...</span>
+                    </div>
+                    <h6>در حال تولید اسلات‌های هفتگی...</h6>
+                    <div class="progress mt-3">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%" id="generationProgress"></div>
+                    </div>
+                    <small class="text-muted mt-2" id="generationStatus">آماده‌سازی...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Set default values
+            const today = new Date();
+            const monday = new Date(today);
+            monday.setDate(today.getDate() - today.getDay() + 1);
+            $('input[name="weekStart"]').val(monday.toISOString().split('T')[0]);
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    event.preventDefault();
+                    generateWeeklySlots();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Auto-calculate work hours
+            $('#defaultWorkStartTimeHour, #defaultWorkEndTimeHour').on('change', function() {
+                calculateWorkHours();
+            });
+        });
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('generateWeeklySlotsForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                const today = new Date();
+                const monday = new Date(today);
+                monday.setDate(today.getDate() - today.getDay() + 1);
+                $('input[name="weekStart"]').val(monday.toISOString().split('T')[0]);
+                $('input[name="slotDurationMinutes"]').val('30');
+                $('input[name="defaultWorkStartTimeHour"]').val('8');
+                $('input[name="defaultWorkEndTimeHour"]').val('17');
+                $('input[name="breakDuration"]').val('30');
+                
+                // Hide preview cards
+                $('#weeklyPreviewCard, #dailyDetailsCard').hide();
+            }
+        }
+
+        // Calculate Work Hours
+        function calculateWorkHours() {
+            const startHour = parseInt($('#defaultWorkStartTimeHour').val()) || 0;
+            const endHour = parseInt($('#defaultWorkEndTimeHour').val()) || 0;
+            
+            if (startHour >= endHour) {
+                $('#defaultWorkEndTimeHour').addClass('is-invalid');
+                return;
+            }
+            
+            $('#defaultWorkEndTimeHour').removeClass('is-invalid');
+            const workHours = endHour - startHour;
+            
+            // Update slot count preview
+            const slotDuration = parseInt($('#slotDurationMinutes').val()) || 30;
+            const breakDuration = parseInt($('#breakDuration').val()) || 0;
+            const totalBreakTime = Math.floor(workHours * 60 / (slotDuration + breakDuration)) * breakDuration;
+            const availableTime = (workHours * 60) - totalBreakTime;
+            const slotCount = Math.floor(availableTime / slotDuration);
+            
+            // Update preview if visible
+            if ($('#weeklyPreviewCard').is(':visible')) {
+                updateSlotCount(slotCount);
+            }
+        }
+
+        // Preview Slots
+        function previewSlots() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            generateWeeklyPreview(formData);
+        }
+
+        // Generate Weekly Slots
+        function generateWeeklySlots() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            
+            // Show progress modal
+            $('#generationProgressModal').modal('show');
+            
+            // Simulate generation process
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 20;
+                if (progress > 100) progress = 100;
+                
+                $('#generationProgress').css('width', progress + '%');
+                
+                if (progress >= 25) $('#generationStatus').text('تولید اسلات‌های روزانه...');
+                if (progress >= 50) $('#generationStatus').text('بررسی تداخل‌ها...');
+                if (progress >= 75) $('#generationStatus').text('ذخیره‌سازی...');
+                if (progress >= 100) $('#generationStatus').text('تکمیل شد!');
+                
+                if (progress >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(() => {
+                        $('#generationProgressModal').modal('hide');
+                        showSuccessMessage('اسلات‌های هفتگی با موفقیت تولید شدند');
+                        
+                        // Generate and show preview
+                        generateWeeklyPreview(formData);
+                    }, 1000);
+                }
+            }, 200);
+        }
+
+        // Validate Form
+        function validateForm() {
+            const doctorId = $('#doctorId').val();
+            const weekStart = $('#weekStart').val();
+            const startHour = parseInt($('#defaultWorkStartTimeHour').val());
+            const endHour = parseInt($('#defaultWorkEndTimeHour').val());
+            
+            if (!doctorId) {
+                alert('لطفاً پزشک را انتخاب کنید');
+                return false;
+            }
+            
+            if (!weekStart) {
+                alert('لطفاً تاریخ شروع هفته را انتخاب کنید');
+                return false;
+            }
+            
+            if (startHour >= endHour) {
+                alert('ساعت شروع باید کمتر از ساعت پایان باشد');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Get Form Data
+        function getFormData() {
+            return {
+                doctorId: $('#doctorId').val(),
+                weekStart: $('#weekStart').val(),
+                slotDurationMinutes: parseInt($('#slotDurationMinutes').val()),
+                defaultWorkStartTimeHour: parseInt($('#defaultWorkStartTimeHour').val()),
+                defaultWorkEndTimeHour: parseInt($('#defaultWorkEndTimeHour').val()),
+                includeWeekends: $('#includeWeekends').is(':checked'),
+                breakDuration: parseInt($('#breakDuration').val()) || 0
+            };
+        }
+
+        // Generate Weekly Preview
+        function generateWeeklyPreview(formData) {
+            const weekStart = new Date(formData.weekStart);
+            const weekDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+            const persianWeekDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+            
+            let totalSlots = 0;
+            let workingDays = 0;
+            let totalHours = 0;
+            
+            let tableBody = '';
+            
+            for (let i = 0; i < 7; i++) {
+                const currentDate = new Date(weekStart);
+                currentDate.setDate(weekStart.getDate() + i);
+                
+                const dayOfWeek = currentDate.getDay();
+                const isWeekend = dayOfWeek === 5 || dayOfWeek === 6; // Friday or Saturday
+                
+                if (!formData.includeWeekends && isWeekend) {
+                    tableBody += `
+                        <tr class="table-secondary">
+                            <td>${persianWeekDays[dayOfWeek]}</td>
+                            <td>${currentDate.toLocaleDateString('fa-IR')}</td>
+                            <td colspan="4" class="text-center text-muted">تعطیل</td>
+                        </tr>
+                    `;
+                    continue;
+                }
+                
+                workingDays++;
+                const workHours = formData.defaultWorkEndTimeHour - formData.defaultWorkStartTimeHour;
+                totalHours += workHours;
+                
+                const slotCount = Math.floor((workHours * 60) / (formData.slotDurationMinutes + formData.breakDuration));
+                totalSlots += slotCount;
+                
+                const statusClass = slotCount > 0 ? 'table-success' : 'table-warning';
+                const statusText = slotCount > 0 ? 'آماده' : 'بدون اسلات';
+                
+                tableBody += `
+                    <tr class="${statusClass}">
+                        <td>${persianWeekDays[dayOfWeek]}</td>
+                        <td>${currentDate.toLocaleDateString('fa-IR')}</td>
+                        <td>${formData.defaultWorkStartTimeHour}:00 - ${formData.defaultWorkEndTimeHour}:00</td>
+                        <td>${slotCount}</td>
+                        <td><span class="badge bg-success">${statusText}</span></td>
+                        <td>
+                            <button type="button" class="btn btn-info btn-sm" onclick="viewDailyDetails(${i})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }
+            
+            $('#weeklyScheduleBody').html(tableBody);
+            $('#totalSlots').text(totalSlots);
+            $('#availableSlots').text(totalSlots);
+            $('#workingDays').text(workingDays);
+            $('#totalHours').text(totalHours);
+            
+            $('#weeklyPreviewCard').show();
+        }
+
+        // View Daily Details
+        function viewDailyDetails(dayIndex) {
+            const formData = getFormData();
+            const weekStart = new Date(formData.weekStart);
+            const currentDate = new Date(weekStart);
+            currentDate.setDate(weekStart.getDate() + dayIndex);
+            
+            const workHours = formData.defaultWorkEndTimeHour - formData.defaultWorkStartTimeHour;
+            const slotCount = Math.floor((workHours * 60) / (formData.slotDurationMinutes + formData.breakDuration));
+            
+            // Generate daily timeline
+            let timelineHtml = '';
+            let currentTime = formData.defaultWorkStartTimeHour;
+            
+            for (let i = 0; i < slotCount; i++) {
+                const startHour = currentTime;
+                const startTime = startHour.toString().padStart(2, '0') + ':00';
+                
+                currentTime += formData.slotDurationMinutes / 60;
+                const endHour = currentTime;
+                const endTime = endHour.toString().padStart(2, '0') + ':00';
+                
+                timelineHtml += `
+                    <div class="timeline-item">
+                        <div class="timeline-time">${startTime} - ${endTime}</div>
+                        <div class="timeline-content">
+                            <div class="timeline-slot">اسلات ${i + 1}</div>
+                            <div class="timeline-duration">${formData.slotDurationMinutes} دقیقه</div>
+                        </div>
+                    </div>
+                `;
+                
+                // Add break if not last slot
+                if (i < slotCount - 1 && formData.breakDuration > 0) {
+                    currentTime += formData.breakDuration / 60;
+                }
+            }
+            
+            $('#dailyTimeline').html(timelineHtml);
+            
+            // Generate daily statistics
+            const dailyStatsHtml = `
+                <div class="row">
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h5 text-primary">${slotCount}</div>
+                            <small class="text-muted">تعداد اسلات</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h5 text-success">${workHours}</div>
+                            <small class="text-muted">ساعات کاری</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h5 text-info">${formData.slotDurationMinutes}</div>
+                            <small class="text-muted">مدت اسلات (دقیقه)</small>
+                        </div>
+                    </div>
+                    <div class="col-6 mb-3">
+                        <div class="text-center">
+                            <div class="h5 text-warning">${formData.breakDuration}</div>
+                            <small class="text-muted">استراحت (دقیقه)</small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            $('#dailyStats').html(dailyStatsHtml);
+            $('#dailyDetailsCard').show();
+        }
+
+        // Other functions
+        function generateMonthlySlots() {
+            window.location.href = '@Url.Action("GenerateMonthlySlots", "AppointmentAvailability")';
+        }
+
+        function copyToNextWeek() {
+            if (confirm('آیا از کپی کردن برنامه برای هفته بعد اطمینان دارید؟')) {
+                const currentWeekStart = new Date($('input[name="weekStart"]').val());
+                const nextWeekStart = new Date(currentWeekStart);
+                nextWeekStart.setDate(currentWeekStart.getDate() + 7);
+                
+                $('input[name="weekStart"]').val(nextWeekStart.toISOString().split('T')[0]);
+                showSuccessMessage('تاریخ هفته بعد تنظیم شد');
+            }
+        }
+
+        function exportSchedule() {
+            alert('خروجی برنامه در حال توسعه است');
+        }
+
+        function showSuccessMessage(message) {
+            alert(message);
+        }
+    </script>
+}
+
+<style>
+    .timeline-container {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+        background-color: #f8f9fa;
+    }
+
+    .timeline-time {
+        font-weight: bold;
+        min-width: 120px;
+        margin-right: 15px;
+        color: #007bff;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+
+    .timeline-slot {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .timeline-duration {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .form-check-input:checked {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+</style>

@@ -1,0 +1,393 @@
+@{
+    ViewBag.Title = "بهینه‌سازی برنامه کاری";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-chart-line text-primary me-2"></i>
+            بهینه‌سازی برنامه کاری
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("DailyOptimization", "ScheduleOptimization")" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                بهینه‌سازی روزانه
+            </a>
+            <a href="@Url.Action("WeeklyOptimization", "ScheduleOptimization")" class="btn btn-info btn-sm">
+                <i class="fas fa-calendar-week me-1"></i>
+                بهینه‌سازی هفتگی
+            </a>
+            <a href="@Url.Action("MonthlyOptimization", "ScheduleOptimization")" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar-alt me-1"></i>
+                بهینه‌سازی ماهانه
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                پزشکان فعال
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="activeDoctorsCount">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                نوبت‌های امروز
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="todayAppointmentsCount">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                بهینه‌سازی‌های انجام شده
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="optimizationsCount">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-bar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                درصد بهینه‌سازی
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="optimizationPercentage">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Optimization Tools -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-tools me-1"></i>
+                        ابزارهای سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="quickOptimizeBreakTimes()">
+                                <i class="fas fa-coffee me-1"></i>
+                                بهینه‌سازی زمان استراحت
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-warning w-100" onclick="quickOptimizeEmergencyTimes()">
+                                <i class="fas fa-ambulance me-1"></i>
+                                بهینه‌سازی زمان اورژانس
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-success w-100" onclick="quickBalanceWorkload()">
+                                <i class="fas fa-balance-scale me-1"></i>
+                                متعادل‌سازی بار کاری
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-info w-100" onclick="generateOptimizationReport()">
+                                <i class="fas fa-file-alt me-1"></i>
+                                تولید گزارش
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-1"></i>
+                        آمار کلی
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="optimizationChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Optimizations -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-history me-1"></i>
+                آخرین بهینه‌سازی‌ها
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="recentOptimizationsTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>پزشک</th>
+                            <th>نوع بهینه‌سازی</th>
+                            <th>وضعیت</th>
+                            <th>نتایج</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>هیچ بهینه‌سازی‌ای یافت نشد</p>
+                                <p>برای شروع، یکی از ابزارهای بهینه‌سازی را انتخاب کنید</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Recommendations -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-lightbulb me-1"></i>
+                پیشنهادات بهینه‌سازی
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row" id="recommendationsContainer">
+                <div class="col-12 text-center text-muted py-4">
+                    <i class="fas fa-lightbulb fa-2x mb-2"></i>
+                    <p>هیچ پیشنهادی در حال حاضر موجود نیست</p>
+                    <p>برای دریافت پیشنهادات، ابتدا برنامه کاری پزشکان را بررسی کنید</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Optimization Modal -->
+<div class="modal fade" id="quickOptimizationModal" tabindex="-1" aria-labelledby="quickOptimizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickOptimizationModalLabel">بهینه‌سازی سریع</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickOptimizationForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quickDoctorId" class="form-label">پزشک</label>
+                                <select id="quickDoctorId" name="doctorId" class="form-select" required>
+                                    <option value="">انتخاب پزشک</option>
+                                    @if (ViewBag.Doctors != null)
+                                    {
+                                        foreach (var doctor in ViewBag.Doctors)
+                                        {
+                                            <option value="@doctor.Value">@doctor.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quickDate" class="form-label">تاریخ</label>
+                                <input type="text" id="quickDate" name="date" class="form-control persian-date" 
+                                       placeholder="انتخاب تاریخ" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="optimizationType" class="form-label">نوع بهینه‌سازی</label>
+                        <select id="optimizationType" name="optimizationType" class="form-select" required>
+                            <option value="">انتخاب کنید</option>
+                            <option value="break">زمان استراحت</option>
+                            <option value="emergency">زمان اورژانس</option>
+                            <option value="workload">بار کاری</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="executeQuickOptimization()">اجرای بهینه‌سازی</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Load dashboard data
+            loadDashboardData();
+            
+            // Initialize chart
+            initializeOptimizationChart();
+        });
+
+        // Load Dashboard Data
+        function loadDashboardData() {
+            // Simulate loading data (replace with actual API calls)
+            setTimeout(() => {
+                $('#activeDoctorsCount').text('12');
+                $('#todayAppointmentsCount').text('45');
+                $('#optimizationsCount').text('8');
+                $('#optimizationPercentage').text('85%');
+            }, 1000);
+        }
+
+        // Initialize Optimization Chart
+        function initializeOptimizationChart() {
+            const ctx = document.getElementById('optimizationChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['بهینه شده', 'نیاز به بهینه‌سازی', 'در حال بررسی'],
+                    datasets: [{
+                        data: [65, 25, 10],
+                        backgroundColor: ['#28a745', '#ffc107', '#17a2b8'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Quick Optimization Functions
+        function quickOptimizeBreakTimes() {
+            showQuickOptimizationModal('break', 'بهینه‌سازی زمان استراحت');
+        }
+
+        function quickOptimizeEmergencyTimes() {
+            showQuickOptimizationModal('emergency', 'بهینه‌سازی زمان اورژانس');
+        }
+
+        function quickBalanceWorkload() {
+            showQuickOptimizationModal('workload', 'متعادل‌سازی بار کاری');
+        }
+
+        function showQuickOptimizationModal(type, title) {
+            $('#optimizationType').val(type);
+            $('#quickOptimizationModalLabel').text(title);
+            $('#quickOptimizationModal').modal('show');
+        }
+
+        function executeQuickOptimization() {
+            const doctorId = $('#quickDoctorId').val();
+            const date = $('#quickDate').val();
+            const type = $('#optimizationType').val();
+
+            if (!doctorId || !date || !type) {
+                alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            // Show loading state
+            const submitBtn = $('button[onclick="executeQuickOptimization()"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اجرا...');
+
+            // Simulate API call
+            setTimeout(() => {
+                $('#quickOptimizationModal').modal('hide');
+                submitBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('بهینه‌سازی با موفقیت انجام شد');
+                
+                // Refresh dashboard
+                loadDashboardData();
+            }, 2000);
+        }
+
+        function generateOptimizationReport() {
+            // Redirect to report page
+            window.location.href = '@Url.Action("Report", "ScheduleOptimization")';
+        }
+
+        function showSuccessMessage(message) {
+            // You can implement a proper toast notification here
+            alert(message);
+        }
+    </script>
+}

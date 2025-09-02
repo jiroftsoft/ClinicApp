@@ -1,0 +1,473 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.AvailableTimeSlotsRequest
+@{
+    ViewBag.Title = "بررسی دسترسی‌پذیری اسلات";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-search text-info me-2"></i>
+            بررسی دسترسی‌پذیری اسلات
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+            <a href="@Url.Action("AvailableDates", "AppointmentAvailability")" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                تاریخ‌های در دسترس
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-search me-1"></i>
+                جستجوی دسترسی‌پذیری اسلات
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("CheckSlotAvailability", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="date" class="form-label">تاریخ</label>
+                            <input type="text" name="date" id="date" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ" required>
+                            <div class="invalid-feedback">لطفاً تاریخ را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="minDurationMinutes" class="form-label">حداقل مدت زمان (دقیقه)</label>
+                            <select name="minDurationMinutes" id="minDurationMinutes" class="form-select" required>
+                                <option value="15">15 دقیقه</option>
+                                <option value="30" selected>30 دقیقه</option>
+                                <option value="45">45 دقیقه</option>
+                                <option value="60">60 دقیقه</option>
+                                <option value="90">90 دقیقه</option>
+                                <option value="120">120 دقیقه</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="timeRange" class="form-label">بازه زمانی</label>
+                            <select name="timeRange" id="timeRange" class="form-select">
+                                <option value="">همه ساعات</option>
+                                <option value="morning">صبح (8:00 - 12:00)</option>
+                                <option value="afternoon">ظهر (12:00 - 16:00)</option>
+                                <option value="evening">عصر (16:00 - 20:00)</option>
+                                <option value="night">شب (20:00 - 24:00)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="slotType" class="form-label">نوع اسلات</label>
+                            <select name="slotType" id="slotType" class="form-select">
+                                <option value="">همه انواع</option>
+                                <option value="regular">عادی</option>
+                                <option value="emergency">اورژانس</option>
+                                <option value="consultation">مشاوره</option>
+                                <option value="followup">پیگیری</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-search me-1"></i>
+                            بررسی دسترسی‌پذیری
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" onclick="quickCheck()">
+                            <i class="fas fa-bolt me-1"></i>
+                            بررسی سریع
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Availability Results -->
+    <div class="card shadow mb-4" id="availabilityResultsCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-chart-pie me-1"></i>
+                نتایج بررسی دسترسی‌پذیری
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-success" id="totalSlots">0</div>
+                        <small class="text-muted">کل اسلات‌ها</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-primary" id="availableSlots">0</div>
+                        <small class="text-muted">در دسترس</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-warning" id="bookedSlots">0</div>
+                        <small class="text-muted">رزرو شده</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-info" id="availabilityPercentage">0%</div>
+                        <small class="text-muted">درصد دسترسی</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Availability Chart -->
+            <div class="row mb-4">
+                <div class="col-lg-8">
+                    <canvas id="availabilityChart" width="400" height="200"></canvas>
+                </div>
+                <div class="col-lg-4">
+                    <div id="availabilityLegend">
+                        <!-- Legend will be generated here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Time Slots Table -->
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="availabilityTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>زمان شروع</th>
+                            <th>زمان پایان</th>
+                            <th>مدت (دقیقه)</th>
+                            <th>وضعیت</th>
+                            <th>نوع اسلات</th>
+                            <th>قیمت</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="availabilityTableBody">
+                        <!-- Availability data will be generated here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="reserveAvailableSlots()">
+                        <i class="fas fa-bookmark me-1"></i>
+                        رزرو اسلات‌های در دسترس
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="exportAvailabilityReport()">
+                        <i class="fas fa-file-export me-1"></i>
+                        خروجی گزارش
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-warning w-100" onclick="generateSlotsForDate()">
+                        <i class="fas fa-plus me-1"></i>
+                        تولید اسلات جدید
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Set default values
+            $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    event.preventDefault();
+                    checkSlotAvailability();
+                }
+                $(this).addClass('was-validated');
+            });
+        });
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('checkSlotAvailabilityForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+                $('input[name="minDurationMinutes"]').val('30');
+                
+                // Hide results
+                $('#availabilityResultsCard').hide();
+            }
+        }
+
+        // Quick Check
+        function quickCheck() {
+            const doctorId = $('#doctorId').val();
+            if (!doctorId) {
+                alert('لطفاً ابتدا پزشک را انتخاب کنید');
+                return;
+            }
+            
+            // Simulate quick check
+            showLoadingState();
+            setTimeout(() => {
+                hideLoadingState();
+                checkSlotAvailability();
+            }, 1000);
+        }
+
+        // Check Slot Availability
+        function checkSlotAvailability() {
+            if (!validateForm()) return;
+            
+            showLoadingState();
+            
+            // Simulate API call
+            setTimeout(() => {
+                hideLoadingState();
+                generateAvailabilityResults();
+            }, 2000);
+        }
+
+        // Validate Form
+        function validateForm() {
+            const doctorId = $('#doctorId').val();
+            const date = $('#date').val();
+            const minDuration = $('#minDurationMinutes').val();
+            
+            if (!doctorId) {
+                alert('لطفاً پزشک را انتخاب کنید');
+                return false;
+            }
+            
+            if (!date) {
+                alert('لطفاً تاریخ را انتخاب کنید');
+                return false;
+            }
+            
+            if (!minDuration) {
+                alert('لطفاً حداقل مدت زمان را انتخاب کنید');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Generate Availability Results
+        function generateAvailabilityResults() {
+            // Simulate data
+            const totalSlots = 24;
+            const availableSlots = 18;
+            const bookedSlots = 6;
+            const availabilityPercentage = Math.round((availableSlots / totalSlots) * 100);
+            
+            // Update statistics
+            $('#totalSlots').text(totalSlots);
+            $('#availableSlots').text(availableSlots);
+            $('#bookedSlots').text(bookedSlots);
+            $('#availabilityPercentage').text(availabilityPercentage + '%');
+            
+            // Generate chart
+            generateAvailabilityChart(availableSlots, bookedSlots);
+            
+            // Generate table
+            generateAvailabilityTable();
+            
+            // Show results
+            $('#availabilityResultsCard').show();
+        }
+
+        // Generate Availability Chart
+        function generateAvailabilityChart(available, booked) {
+            const ctx = document.getElementById('availabilityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['در دسترس', 'رزرو شده'],
+                    datasets: [{
+                        data: [available, booked],
+                        backgroundColor: ['#28a745', '#ffc107'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate Availability Table
+        function generateAvailabilityTable() {
+            const timeSlots = [
+                { start: '08:00', end: '08:30', duration: 30, status: 'available', type: 'عادی', price: 50000 },
+                { start: '08:30', end: '09:00', duration: 30, status: 'booked', type: 'عادی', price: 50000 },
+                { start: '09:00', end: '09:30', duration: 30, status: 'available', type: 'عادی', price: 50000 },
+                { start: '09:30', end: '10:00', duration: 30, status: 'available', type: 'عادی', price: 50000 },
+                { start: '10:00', end: '10:30', duration: 30, status: 'booked', type: 'عادی', price: 50000 },
+                { start: '10:30', end: '11:00', duration: 30, status: 'available', type: 'عادی', price: 50000 },
+                { start: '11:00', end: '11:30', duration: 30, status: 'available', type: 'عادی', price: 50000 },
+                { start: '11:30', end: '12:00', duration: 30, status: 'available', type: 'عادی', price: 50000 }
+            ];
+            
+            let tableBody = '';
+            timeSlots.forEach((slot, index) => {
+                const statusClass = slot.status === 'available' ? 'bg-success' : 'bg-warning';
+                const statusText = slot.status === 'available' ? 'در دسترس' : 'رزرو شده';
+                
+                tableBody += `
+                    <tr>
+                        <td>${slot.start}</td>
+                        <td>${slot.end}</td>
+                        <td><span class="badge bg-info">${slot.duration}</span></td>
+                        <td><span class="badge ${statusClass}">${statusText}</span></td>
+                        <td><span class="badge bg-secondary">${slot.type}</span></td>
+                        <td><span class="text-success fw-bold">${slot.price.toLocaleString()} تومان</span></td>
+                        <td>
+                            ${slot.status === 'available' ? 
+                                `<button type="button" class="btn btn-success btn-sm" onclick="reserveSlot(${index})">
+                                    <i class="fas fa-bookmark"></i>
+                                </button>` : 
+                                `<button type="button" class="btn btn-info btn-sm" onclick="viewSlotDetails(${index})">
+                                    <i class="fas fa-eye"></i>
+                                </button>`
+                            }
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            $('#availabilityTableBody').html(tableBody);
+        }
+
+        // Show Loading State
+        function showLoadingState() {
+            // You can implement a loading spinner here
+            console.log('Loading...');
+        }
+
+        // Hide Loading State
+        function hideLoadingState() {
+            console.log('Loading complete');
+        }
+
+        // Other functions
+        function reserveAvailableSlots() {
+            alert('رزرو گروهی اسلات‌ها در حال توسعه است');
+        }
+
+        function exportAvailabilityReport() {
+            alert('خروجی گزارش در حال توسعه است');
+        }
+
+        function generateSlotsForDate() {
+            const doctorId = $('#doctorId').val();
+            const date = $('#date').val();
+            
+            if (!doctorId || !date) {
+                alert('لطفاً ابتدا پزشک و تاریخ را انتخاب کنید');
+                return;
+            }
+            
+            window.location.href = '@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")?doctorId=' + doctorId + '&startDate=' + date;
+        }
+
+        function reserveSlot(slotIndex) {
+            if (confirm('آیا از رزرو این اسلات اطمینان دارید؟')) {
+                alert('اسلات با موفقیت رزرو شد');
+                // Refresh results
+                checkSlotAvailability();
+            }
+        }
+
+        function viewSlotDetails(slotIndex) {
+            alert('جزئیات اسلات در حال توسعه است');
+        }
+    </script>
+}

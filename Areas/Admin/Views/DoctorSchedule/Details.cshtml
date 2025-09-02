@@ -1,0 +1,301 @@
+@* صفحه جزئیات برنامه کاری پزشک - طراحی Ultimate برای محیط درمانی *@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
+@{
+    ViewBag.Title = "جزئیات برنامه کاری پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <style>
+        .doctor-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .schedule-details {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .work-day-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #28a745;
+        }
+        
+        .work-day-card.inactive {
+            border-left-color: #dc3545;
+            opacity: 0.7;
+        }
+        
+        .time-range-item {
+            background: white;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #4facfe;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+        
+        .btn-action {
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Doctor Header -->
+    <div class="doctor-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="fas fa-user-md me-2"></i>
+                    @(Model.DoctorName ?? "پزشک")
+                </h2>
+                <p class="mb-0 opacity-75">جزئیات برنامه کاری و زمان‌بندی</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="@Url.Action("Index")" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    بازگشت به لیست
+                </a>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="h4 mb-1">@Model.TotalSchedules</div>
+                    <div class="small opacity-75">کل برنامه‌ها</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="h4 mb-1">@Model.ActiveSchedules</div>
+                    <div class="small opacity-75">برنامه‌های فعال</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="h4 mb-1">@Model.TotalTimeSlots</div>
+                    <div class="small opacity-75">زمان‌های کاری</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="text-center">
+                    <div class="h4 mb-1">@Model.WeeklyHours</div>
+                    <div class="small opacity-75">ساعت هفتگی</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Schedule Details -->
+    <div class="schedule-details">
+        <div class="row">
+            <div class="col-12">
+                <h4 class="mb-3">
+                    <i class="fas fa-calendar-alt me-2"></i>
+                    جزئیات برنامه کاری
+                </h4>
+                
+                @if (Model.WorkDays != null && Model.WorkDays.Any())
+                {
+                    foreach (var workDay in Model.WorkDays.OrderBy(w => w.DayOrder))
+                    {
+                        <div class="work-day-card @(!workDay.IsActive ? "inactive" : "")">
+                            <div class="row align-items-center">
+                                <div class="col-md-3">
+                                    <h6 class="mb-2">@workDay.DayName</h6>
+                                    <span class="badge bg-@(workDay.IsActive ? "success" : "danger")">
+                                        @(workDay.IsActive ? "فعال" : "غیرفعال")
+                                    </span>
+                                </div>
+                                <div class="col-md-9">
+                                    @if (workDay.TimeRanges != null && workDay.TimeRanges.Any())
+                                    {
+                                        foreach (var timeRange in workDay.TimeRanges.OrderBy(t => t.StartTime))
+                                        {
+                                            <div class="time-range-item">
+                                                <div class="row align-items-center">
+                                                    <div class="col-md-4">
+                                                        <strong>@timeRange.StartTime.ToString("HH:mm") - @timeRange.EndTime.ToString("HH:mm")</strong>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <span class="badge bg-@(timeRange.IsActive ? "success" : "danger")">
+                                                            @(timeRange.IsActive ? "فعال" : "غیرفعال")
+                                                        </span>
+                                                    </div>
+                                                    <div class="col-md-4 text-end">
+                                                        <small class="text-muted">
+                                                            مدت: @((timeRange.EndTime - timeRange.StartTime).TotalMinutes) دقیقه
+                                                        </small>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            هیچ بازه زمانی تعریف نشده است
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="text-center text-muted py-5">
+                        <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                        <h5>هیچ برنامه کاری تعریف نشده است</h5>
+                        <p>برای این پزشک هنوز برنامه کاری تنظیم نشده است.</p>
+                    </div>
+                }
+            </div>
+        </div>
+        
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary btn-action">
+                <i class="fas fa-edit me-2"></i>
+                ویرایش برنامه
+            </a>
+            <a href="@Url.Action("Schedule", new { doctorId = Model.DoctorId })" class="btn btn-info btn-action">
+                <i class="fas fa-calendar me-2"></i>
+                مشاهده برنامه
+            </a>
+            <button class="btn btn-warning btn-action" onclick="deactivateSchedule(@Model.Id)">
+                <i class="fas fa-pause me-2"></i>
+                غیرفعال کردن
+            </button>
+            <button class="btn btn-danger btn-action" onclick="removeSchedule(@Model.Id)">
+                <i class="fas fa-trash me-2"></i>
+                حذف برنامه
+            </button>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        function deactivateSchedule(scheduleId) {
+            Swal.fire({
+                title: 'غیرفعال کردن برنامه',
+                text: 'آیا از غیرفعال کردن این برنامه اطمینان دارید؟',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله، غیرفعال کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("DeactivateSchedule")',
+                        type: 'POST',
+                        data: { scheduleId: scheduleId },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق',
+                                    text: 'برنامه با موفقیت غیرفعال شد',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در غیرفعال کردن برنامه'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function removeSchedule(scheduleId) {
+            Swal.fire({
+                title: 'حذف برنامه',
+                text: 'آیا از حذف این برنامه اطمینان دارید؟ این عملیات غیرقابل بازگشت است.',
+                icon: 'error',
+                showCancelButton: true,
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                reverseButtons: true,
+                confirmButtonColor: '#dc3545'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: '@Url.Action("RemoveSchedule")',
+                        type: 'POST',
+                        data: { scheduleId: scheduleId },
+                        success: function(response) {
+                            if (response.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفق',
+                                    text: 'برنامه با موفقیت حذف شد',
+                                    timer: 2000,
+                                    showConfirmButton: false
+                                }).then(() => {
+                                    window.location.href = '@Url.Action("Index")';
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا',
+                                    text: response.message || 'خطا در حذف برنامه'
+                                });
+                            }
+                        },
+                        error: function() {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا',
+                                text: 'خطا در ارتباط با سرور'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+    </script>
+}

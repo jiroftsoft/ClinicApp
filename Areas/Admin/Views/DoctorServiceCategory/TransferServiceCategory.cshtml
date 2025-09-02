@@ -1,8 +1,10 @@
-@model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryViewModel
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryTransferFormViewModel
 @{
     ViewBag.Title = "انتقال صلاحیت‌های خدماتی پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
+
+@Html.AntiForgeryToken()
 
 @section Styles {
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
@@ -13,41 +15,49 @@
             border-radius: 15px;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
         }
+
         .form-section {
             border-left: 4px solid #667eea;
             padding-left: 20px;
             margin-bottom: 30px;
         }
-        .form-section h5 {
-            color: #667eea;
-            font-weight: 600;
-        }
+
+            .form-section h5 {
+                color: #667eea;
+                font-weight: 600;
+            }
+
         .doctor-info-card {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 10px;
             padding: 20px;
         }
+
         .current-service-card {
             background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
             color: white;
             border-radius: 10px;
             padding: 20px;
         }
+
         .btn-submit {
             border-radius: 25px;
             font-weight: 600;
             padding: 12px 30px;
             transition: all 0.3s ease;
         }
-        .btn-submit:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-        }
+
+            .btn-submit:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            }
+
         .validation-summary {
             border-radius: 10px;
             border: none;
         }
+
         .loading-overlay {
             position: fixed;
             top: 0;
@@ -60,6 +70,7 @@
             align-items: center;
             z-index: 9999;
         }
+
         .transfer-arrow {
             font-size: 2rem;
             color: #667eea;
@@ -105,7 +116,7 @@
                     <div class="col-md-8">
                         <h4 class="mb-2">
                             <i class="fas fa-user-md me-2"></i>
-                            @Model.DoctorName
+                            @Model.Doctor.FullName
                         </h4>
                         <p class="mb-0">
                             <i class="fas fa-id-card me-2"></i>
@@ -134,7 +145,7 @@
                             دسته‌بندی خدمات فعلی
                         </h5>
                         <p class="mb-0 fs-5">
-                            @Model.ServiceCategoryTitle
+                            @Model.Transfer.ServiceCategoryTitle
                         </p>
                     </div>
                     <div class="col-md-4 text-end">
@@ -157,12 +168,12 @@
     <div class="row">
         <div class="col-12">
             <div class="transfer-form p-4">
-                @using (Html.BeginForm("TransferServiceCategory", "DoctorServiceCategory", FormMethod.Post, 
+                @using (Html.BeginForm("TransferServiceCategory", "DoctorServiceCategory", FormMethod.Post,
                        new { id = "transferForm", @class = "needs-validation", novalidate = "novalidate" }))
                 {
                     @Html.AntiForgeryToken()
-                    @Html.HiddenFor(m => m.DoctorId)
-                    @Html.HiddenFor(m => m.DoctorName)
+                    @Html.HiddenFor(m => m.Doctor.DoctorId)
+                    @Html.HiddenFor(m => m.Doctor.FullName)
 
                     @Html.ValidationSummary(true, "", new { @class = "alert alert-danger validation-summary" })
 
@@ -175,27 +186,27 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.ServiceCategoryId, "دسته‌بندی خدمات مقصد", new { @class = "form-label fw-bold" })
-                                    @Html.DropDownListFor(m => m.ServiceCategoryId, 
-                                        new SelectList(ViewBag.ServiceCategories ?? new List<object>(), "Value", "Text"), 
-                                        "انتخاب دسته‌بندی خدمات مقصد...", 
+                                    @Html.LabelFor(m => m.Transfer.ServiceCategoryId, "دسته‌بندی خدمات مقصد", new { @class = "form-label fw-bold" })
+                                    @Html.DropDownListFor(m => m.Transfer.ServiceCategoryId,
+                                        new SelectList(ViewBag.ServiceCategories ?? new List<object>(), "Value", "Text"),
+                                        "انتخاب دسته‌بندی خدمات مقصد...",
                                         new { @class = "form-select", required = "required" })
-                                    @Html.ValidationMessageFor(m => m.ServiceCategoryId, "", new { @class = "text-danger" })
+                                    @Html.ValidationMessageFor(m => m.Transfer.ServiceCategoryId, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.AuthorizationLevel, "سطح صلاحیت جدید", new { @class = "form-label fw-bold" })
-                                    @Html.DropDownListFor(m => m.AuthorizationLevel, 
+                                    @Html.LabelFor(m => m.Transfer.AuthorizationLevel, "سطح صلاحیت جدید", new { @class = "form-label fw-bold" })
+                                    @Html.DropDownListFor(m => m.Transfer.AuthorizationLevel,
                                         new SelectList(new[] {
                                             new { Value = "مبتدی", Text = "مبتدی" },
                                             new { Value = "متوسط", Text = "متوسط" },
                                             new { Value = "پیشرفته", Text = "پیشرفته" },
                                             new { Value = "متخصص", Text = "متخصص" }
-                                        }, "Value", "Text"), 
-                                        "انتخاب سطح صلاحیت جدید...", 
+                                        }, "Value", "Text"),
+                                        "انتخاب سطح صلاحیت جدید...",
                                         new { @class = "form-select", required = "required" })
-                                    @Html.ValidationMessageFor(m => m.AuthorizationLevel, "", new { @class = "text-danger" })
+                                    @Html.ValidationMessageFor(m => m.Transfer.AuthorizationLevel, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                         </div>
@@ -225,8 +236,8 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <div class="form-check">
-                                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", @checked = "checked" })
-                                        <label class="form-check-label" for="@Html.IdFor(m => m.IsActive)">
+                                        @Html.CheckBoxFor(m => m.Transfer.IsActive, new { @class = "form-check-input", @checked = "checked" })
+                                        <label class="form-check-label" for="@Html.IdFor(m => m.Transfer.IsActive)">
                                             صلاحیت فعال
                                         </label>
                                     </div>
@@ -248,18 +259,20 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.CertificateNumber, "شماره گواهی‌نامه جدید", new { @class = "form-label fw-bold" })
-                                    @Html.TextBoxFor(m => m.CertificateNumber, new { @class = "form-control", 
-                                        placeholder = "شماره گواهی‌نامه جدید..." })
-                                    @Html.ValidationMessageFor(m => m.CertificateNumber, "", new { @class = "text-danger" })
+                                    @Html.LabelFor(m => m.Transfer.CertificateNumber, "شماره گواهی‌نامه جدید", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.Transfer.CertificateNumber, new
+                                    {
+                                        @class = "form-control",
+                                        placeholder = "شماره گواهی‌نامه جدید..."
+                                    })
+                                    @Html.ValidationMessageFor(m => m.Transfer.CertificateNumber, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.CertificateIssuingAuthority, "مرجع صدور جدید", new { @class = "form-label fw-bold" })
-                                    @Html.TextBoxFor(m => m.CertificateIssuingAuthority, new { @class = "form-control", 
-                                        placeholder = "مرجع صدور گواهی‌نامه جدید..." })
-                                    @Html.ValidationMessageFor(m => m.CertificateIssuingAuthority, "", new { @class = "text-danger" })
+                                    @Html.LabelFor(m => m.Transfer.GrantedDate, "تاریخ اعطا", new { @class = "form-label fw-bold" })
+                                    @Html.TextBoxFor(m => m.Transfer.GrantedDate, new { @class = "form-control", type = "date" })
+                                    @Html.ValidationMessageFor(m => m.Transfer.GrantedDate, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                         </div>
@@ -274,10 +287,14 @@
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.Description, "توضیحات", new { @class = "form-label fw-bold" })
-                                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", 
-                                        placeholder = "توضیحات مربوط به انتقال صلاحیت‌های خدماتی..." })
-                                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                                    @Html.LabelFor(m => m.Transfer.Notes, "توضیحات", new { @class = "form-label fw-bold" })
+                                    @Html.TextAreaFor(m => m.Transfer.Notes, new
+                                    {
+                                        @class = "form-control",
+                                        rows = "3",
+                                        placeholder = "توضیحات مربوط به انتقال صلاحیت‌های خدماتی..."
+                                    })
+                                    @Html.ValidationMessageFor(m => m.Transfer.Notes, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                         </div>
@@ -312,13 +329,13 @@
     <script>
         $(document).ready(function () {
             // Initialize Select2
-            $('#ServiceCategoryId').select2({
+            $('#Transfer_ServiceCategoryId').select2({
                 placeholder: 'انتخاب دسته‌بندی خدمات مقصد...',
                 allowClear: true,
                 language: 'fa'
             });
 
-            $('#AuthorizationLevel').select2({
+            $('#Transfer_AuthorizationLevel').select2({
                 placeholder: 'انتخاب سطح صلاحیت جدید...',
                 allowClear: true,
                 language: 'fa'
@@ -327,7 +344,7 @@
             // Form submission
             $('#transferForm').on('submit', function (e) {
                 e.preventDefault();
-                
+
                 if (!$(this)[0].checkValidity()) {
                     e.stopPropagation();
                     $(this).addClass('was-validated');
@@ -348,7 +365,7 @@
                     if (result.isConfirmed) {
                         // Show loading overlay
                         $('.loading-overlay').show();
-                        
+
                         // Submit form
                         this.submit();
                     }

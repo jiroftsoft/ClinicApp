@@ -1,0 +1,162 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryViewModel
+@{
+    ViewBag.Title = "ویرایش صلاحیت خدماتی پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-edit"></i>
+                        ویرایش صلاحیت خدماتی پزشک
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                    @using (Html.BeginForm("Edit", "DoctorServiceCategory", FormMethod.Post, new { @class = "form-horizontal" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.DoctorId)
+                        @Html.HiddenFor(m => m.ServiceCategoryId)
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">اطلاعات پزشک</h5>
+                                <div class="form-group">
+                                    <label class="form-label">نام پزشک:</label>
+                                    <input type="text" class="form-control" value="@Model.DoctorName" readonly />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">کد پزشک:</label>
+                                    <input type="text" class="form-control" value="@Model.DoctorId" readonly />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">اطلاعات دسته‌بندی خدماتی</h5>
+                                <div class="form-group">
+                                    <label class="form-label">عنوان دسته‌بندی:</label>
+                                    <input type="text" class="form-control" value="@Model.ServiceCategoryTitle" readonly />
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">کد دسته‌بندی:</label>
+                                    <input type="text" class="form-control" value="@Model.ServiceCategoryId" readonly />
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">تنظیمات صلاحیت</h5>
+                                <div class="form-group">
+                                    <label for="AuthorizationLevel" class="form-label">سطح صلاحیت *</label>
+                                    <select id="AuthorizationLevel" name="AuthorizationLevel" class="form-control" required>
+                                        <option value="پزشک عادی" @(Model.AuthorizationLevel == "پزشک عادی" ? "selected" : "")>پزشک عادی</option>
+                                        <option value="پزشک متخصص" @(Model.AuthorizationLevel == "پزشک متخصص" ? "selected" : "")>پزشک متخصص</option>
+                                        <option value="پزشک فوق تخصص" @(Model.AuthorizationLevel == "پزشک فوق تخصص" ? "selected" : "")>پزشک فوق تخصص</option>
+                                        <option value="استاد" @(Model.AuthorizationLevel == "استاد" ? "selected" : "")>استاد</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="CertificateNumber" class="form-label">شماره گواهی</label>
+                                    <input type="text" id="CertificateNumber" name="CertificateNumber" class="form-control" value="@Model.CertificateNumber" />
+                                </div>
+                                <div class="form-group">
+                                    <div class="custom-control custom-switch">
+                                        <input type="checkbox" id="IsActive" name="IsActive" class="custom-control-input" @(Model.IsActive ? "checked" : "") value="true" />
+                                        <input type="hidden" name="IsActive" value="false" />
+                                        <label class="custom-control-label" for="IsActive">صلاحیت فعال</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">اطلاعات زمانی</h5>
+                                <div class="form-group">
+                                    <label for="GrantedDate" class="form-label">تاریخ اعطا *</label>
+                                    <input type="date" id="GrantedDate" name="GrantedDate" class="form-control" value="@(Model.GrantedDate?.ToString("yyyy-MM-dd"))" required />
+                                </div>
+                                <div class="form-group">
+                                    <label for="ExpiryDate" class="form-label">تاریخ انقضا</label>
+                                    <input type="date" id="ExpiryDate" name="ExpiryDate" class="form-control" value="@(Model.ExpiryDate?.ToString("yyyy-MM-dd"))" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label for="Notes" class="form-label">توضیحات</label>
+                                    <textarea id="Notes" name="Notes" class="form-control" rows="3" placeholder="توضیحات مربوط به صلاحیت...">@Model.Notes</textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i>
+                                    ذخیره تغییرات
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i>
+                                    انصراف
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // اعتبارسنجی فرم
+            $('form').submit(function (e) {
+                var isValid = true;
+                
+                // بررسی فیلدهای اجباری
+                if (!$('#AuthorizationLevel').val()) {
+                    $('#AuthorizationLevel').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#AuthorizationLevel').removeClass('is-invalid');
+                }
+                
+                if (!$('#GrantedDate').val()) {
+                    $('#GrantedDate').addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $('#GrantedDate').removeClass('is-invalid');
+                }
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    alert('لطفاً فیلدهای اجباری را تکمیل کنید.');
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,298 @@
+@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.DoctorManagementVM.EmergencyBookingRequest
+@{
+    ViewBag.Title = "رزرو اورژانس جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-ambulance text-danger me-2"></i>
+            رزرو اورژانس جدید
+        </h1>
+        <a href="@Url.Action("Index", "EmergencyBooking")" class="btn btn-secondary btn-sm">
+            <i class="fas fa-arrow-right me-1"></i>
+            بازگشت به لیست
+        </a>
+    </div>
+
+    <!-- Emergency Booking Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-plus me-1"></i>
+                اطلاعات رزرو اورژانس
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("Create", "EmergencyBooking", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <!-- Basic Information -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            اطلاعات پایه
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.DoctorId, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.DoctorId, 
+                                new SelectList(ViewBag.Doctors ?? new List<System.Web.Mvc.SelectListItem>(), "Value", "Text"), 
+                                "انتخاب پزشک", new { @class = "form-select", required = "required" })
+                            @Html.ValidationMessageFor(m => m.DoctorId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.PatientName, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.PatientName, new { @class = "form-control", placeholder = "نام کامل بیمار" })
+                            @Html.ValidationMessageFor(m => m.PatientName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.PatientPhone, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.PatientPhone, new { @class = "form-control", placeholder = "شماره تلفن بیمار" })
+                            @Html.ValidationMessageFor(m => m.PatientPhone, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.PatientId, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.PatientId, new { @class = "form-control", type = "number", placeholder = "شناسه بیمار (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointment Details -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-calendar-alt me-2"></i>
+                            جزئیات نوبت
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Date, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.Date, "{0:yyyy/MM/dd}", new { @class = "form-control persian-date", placeholder = "انتخاب تاریخ" })
+                            @Html.ValidationMessageFor(m => m.Date, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Time, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.Time, "{0:HH:mm}", new { @class = "form-control", type = "time" })
+                            @Html.ValidationMessageFor(m => m.Time, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Priority, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.Priority, 
+                                new SelectList(ViewBag.EmergencyPriorities ?? new List<System.Web.Mvc.SelectListItem>(), "Value", "Text"), 
+                                "انتخاب اولویت", new { @class = "form-select", required = "required" })
+                            @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.EmergencyType, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.EmergencyType, 
+                                Html.GetEnumSelectList<ClinicApp.Models.Entities.EmergencyType>(), 
+                                "انتخاب نوع اورژانس", new { @class = "form-select", required = "required" })
+                            @Html.ValidationMessageFor(m => m.EmergencyType, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.EmergencyReason, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.EmergencyReason, new { @class = "form-control", rows = "3", placeholder = "دلیل اورژانس" })
+                            @Html.ValidationMessageFor(m => m.EmergencyReason, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Medical Information -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-heartbeat me-2"></i>
+                            اطلاعات پزشکی
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.ClinicalSymptoms, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.ClinicalSymptoms, new { @class = "form-control", rows = "3", placeholder = "علائم بالینی (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.ClinicalSymptoms, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.MedicalHistory, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.MedicalHistory, new { @class = "form-control", rows = "3", placeholder = "سابقه پزشکی (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.MedicalHistory, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CurrentMedications, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.CurrentMedications, new { @class = "form-control", rows = "2", placeholder = "داروهای مصرفی فعلی (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.CurrentMedications, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.Allergies, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.Allergies, new { @class = "form-control", rows = "2", placeholder = "آلرژی‌ها (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.Allergies, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Companion Information -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="fas fa-user-friends me-2"></i>
+                            اطلاعات همراه
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CompanionName, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.CompanionName, new { @class = "form-control", placeholder = "نام همراه (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.CompanionName, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CompanionPhone, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.CompanionPhone, new { @class = "form-control", placeholder = "شماره تلفن همراه (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.CompanionPhone, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.CompanionRelationship, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.CompanionRelationship, new { @class = "form-control", placeholder = "رابطه با بیمار (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.CompanionRelationship, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Additional Notes -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            @Html.LabelFor(m => m.AdditionalNotes, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.AdditionalNotes, new { @class = "form-control", rows = "3", placeholder = "توضیحات اضافی (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.AdditionalNotes, "", new { @class = "text-danger" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-save me-1"></i>
+                            ثبت رزرو اورژانس
+                        </button>
+                        <a href="@Url.Action("Index", "EmergencyBooking")" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-times me-1"></i>
+                            انصراف
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false,
+                onSelect: function(unix) {
+                    // Convert Persian date to Gregorian for model binding
+                    var gregorianDate = new Date(unix);
+                    var year = gregorianDate.getFullYear();
+                    var month = String(gregorianDate.getMonth() + 1).padStart(2, '0');
+                    var day = String(gregorianDate.getDate()).padStart(2, '0');
+                    var gregorianDateString = year + '-' + month + '-' + day;
+                    
+                    // Set the hidden input for model binding
+                    $('input[name="Date"]').val(gregorianDateString);
+                }
+            });
+
+            // Set default values
+            $('input[name="Date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            $('input[name="Time"]').val('@DateTime.Now.ToString("HH:mm")');
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Auto-save functionality
+            let autoSaveTimer;
+            $('input, select, textarea').on('input change', function() {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(function() {
+                    // Auto-save logic can be implemented here
+                    console.log('Auto-save triggered');
+                }, 30000); // 30 seconds delay
+            });
+        });
+
+        // Form submission with confirmation
+        $('form').on('submit', function(e) {
+            if (!confirm('آیا از ثبت رزرو اورژانس اطمینان دارید؟')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Show loading state
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال ثبت...');
+        });
+    </script>
+}

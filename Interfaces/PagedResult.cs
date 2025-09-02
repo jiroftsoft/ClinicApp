@@ -39,6 +39,11 @@ namespace ClinicApp.Interfaces
         public int PageNumber { get; set; }
 
         /// <summary>
+        /// شماره صفحه فعلی (برای سازگاری با Views)
+        /// </summary>
+        public int CurrentPage => PageNumber;
+
+        /// <summary>
         /// تعداد آیتم‌ها در هر صفحه
         /// </summary>
         public int PageSize { get; set; }

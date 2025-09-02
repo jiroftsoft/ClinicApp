@@ -1,13 +1,14 @@
 @* صفحه صلاحیت‌های دسته‌بندی خدمات پزشک - طراحی Ultimate برای محیط درمانی *@
-@model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryIndexViewModel
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryPermissionsViewModel
 @{
     ViewBag.Title = "صلاحیت‌های دسته‌بندی خدمات";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
-    var doctor = ViewBag.Doctor as ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel;
 }
 
+@Html.AntiForgeryToken()
+
 @section Styles {
-    <link href="~/Content/plugins/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/datatables/js/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
@@ -172,7 +173,7 @@
             animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
+        @@keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
@@ -212,12 +213,12 @@
             <div class="col-md-8">
                 <h2 class="mb-2">
                     <i class="fas fa-user-md me-2"></i>
-                    @(doctor?.FullName ?? "پزشک")
+                    @(Model?.Doctor?.FullName ?? "پزشک")
                 </h2>
                 <p class="mb-0 opacity-75">مدیریت صلاحیت‌های دسته‌بندی خدمات</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("AssignToServiceCategory", new { doctorId = doctor?.Id })" class="btn btn-light">
+                                            <a href="@Url.Action("AssignToServiceCategory", new { doctorId = Model?.Doctor?.DoctorId })" class="btn btn-light">
                     <i class="fas fa-plus me-2"></i>
                     اعطای صلاحیت جدید
                 </a>
@@ -227,15 +228,15 @@
         <div class="doctor-info">
             <div class="info-item">
                 <div class="info-label">کد ملی</div>
-                <div class="info-value">@(doctor?.NationalCode ?? "-")</div>
+                <div class="info-value">@(Model?.Doctor?.NationalCode ?? "-")</div>
             </div>
             <div class="info-item">
                 <div class="info-label">شماره نظام پزشکی</div>
-                <div class="info-value">@(doctor?.MedicalCouncilCode ?? "-")</div>
+                <div class="info-value">@(Model?.Doctor?.MedicalCouncilCode ?? "-")</div>
             </div>
             <div class="info-item">
                 <div class="info-label">تخصص</div>
-                <div class="info-value">@string.Join("، ", doctor?.SpecializationNames ?? new string[0])</div>
+                <div class="info-value">@string.Join("، ", Model?.Doctor?.SpecializationNames ?? new List<string>())</div>
             </div>
             <div class="info-item">
                 <div class="info-label">وضعیت</div>
@@ -253,15 +254,15 @@
                 <div class="col-md-3">
                     <div class="card bg-primary text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.TotalServiceCategories ?? 0)</h4>
-                            <small>کل دسته‌بندی‌ها</small>
+                            <h4 class="mb-1">@(Model?.Stats?.TotalPermissions ?? 0)</h4>
+                            <small>کل صلاحیت‌ها</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card bg-success text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.ActiveServiceCategories ?? 0)</h4>
+                            <h4 class="mb-1">@(Model?.Stats?.ActivePermissions ?? 0)</h4>
                             <small>صلاحیت‌های فعال</small>
                         </div>
                     </div>
@@ -269,7 +270,7 @@
                 <div class="col-md-3">
                     <div class="card bg-warning text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.InactiveServiceCategories ?? 0)</h4>
+                            <h4 class="mb-1">@(Model?.Stats?.InactivePermissions ?? 0)</h4>
                             <small>صلاحیت‌های غیرفعال</small>
                         </div>
                     </div>
@@ -277,8 +278,8 @@
                 <div class="col-md-3">
                     <div class="card bg-info text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.TotalPermissions ?? 0)</h4>
-                            <small>کل صلاحیت‌ها</small>
+                            <h4 class="mb-1">@(Model?.Stats?.LastPermissionDate?.ToString("yyyy/MM/dd") ?? "-")</h4>
+                            <small>آخرین صلاحیت</small>
                         </div>
                     </div>
                 </div>
@@ -297,9 +298,9 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if (Model?.DoctorServiceCategories != null && Model.DoctorServiceCategories.Any())
+                    @if (Model?.Permissions != null && Model.Permissions.Any())
                     {
-                        foreach (var permission in Model.DoctorServiceCategories)
+                        foreach (var permission in Model.Permissions)
                         {
                             <div class="service-card @(!permission.IsActive ? "inactive" : "")">
                                 <div class="service-header">
@@ -332,7 +333,7 @@
                                     </div>
                                 </div>
                                 
-                                @if (!string.IsNullOrEmpty(permission.CertificateNumber) || !string.IsNullOrEmpty(permission.CertificateIssuer))
+                                @if (!string.IsNullOrEmpty(permission.CertificateNumber) || permission.GrantedDate.HasValue)
                                 {
                                     <div class="certificate-info">
                                         <div class="certificate-title">
@@ -346,16 +347,16 @@
                                                     <strong>شماره گواهی:</strong> @permission.CertificateNumber
                                                 </div>
                                             }
-                                            @if (!string.IsNullOrEmpty(permission.CertificateIssuer))
+                                            @if (permission.GrantedDate.HasValue)
                                             {
                                                 <div>
-                                                    <strong>صادرکننده:</strong> @permission.CertificateIssuer
+                                                    <strong>تاریخ اعطا:</strong> @permission.GrantedDate.Value.ToString("yyyy/MM/dd")
                                                 </div>
                                             }
-                                            @if (permission.CertificateIssueDate.HasValue)
+                                            @if (permission.ExpiryDate.HasValue)
                                             {
                                                 <div>
-                                                    <strong>تاریخ صدور:</strong> @permission.CertificateIssueDate.Value.ToString("yyyy/MM/dd")
+                                                    <strong>تاریخ انقضا:</strong> @permission.ExpiryDate.Value.ToString("yyyy/MM/dd")
                                                 </div>
                                             }
                                         </div>
@@ -373,25 +374,25 @@
                                 <div class="action-buttons">
                                     @if (permission.IsActive)
                                     {
-                                        <button class="btn btn-warning btn-action" onclick="deactivatePermission(@permission.Id)">
+                                        <button class="btn btn-warning btn-action" onclick="deactivatePermission('@permission.AssignmentId')">
                                             <i class="fas fa-pause me-1"></i>
                                             غیرفعال کردن
                                         </button>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-success btn-action" onclick="activatePermission(@permission.Id)">
+                                        <button class="btn btn-success btn-action" onclick="activatePermission('@permission.AssignmentId')">
                                             <i class="fas fa-play me-1"></i>
                                             فعال کردن
                                         </button>
                                     }
                                     
-                                    <button class="btn btn-info btn-action" onclick="editPermission(@permission.Id)">
+                                    <button class="btn btn-info btn-action" onclick="editPermission('@permission.AssignmentId')">
                                         <i class="fas fa-edit me-1"></i>
                                         ویرایش
                                     </button>
                                     
-                                    <button class="btn btn-danger btn-action" onclick="removePermission(@permission.Id)">
+                                    <button class="btn btn-danger btn-action" onclick="removePermission('@permission.AssignmentId')">
                                         <i class="fas fa-trash me-1"></i>
                                         حذف
                                     </button>
@@ -405,7 +406,7 @@
                             <i class="fas fa-certificate"></i>
                             <h5>هیچ صلاحیت خدماتی یافت نشد</h5>
                             <p>این پزشک هنوز هیچ صلاحیت دسته‌بندی خدماتی ندارد</p>
-                            <a href="@Url.Action("AssignToServiceCategory", new { doctorId = doctor?.Id })" class="btn btn-primary">
+                            <a href="@Url.Action("AssignToServiceCategory", new { doctorId = Model?.Doctor?.DoctorId })" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>
                                 اعطای اولین صلاحیت
                             </a>
@@ -418,10 +419,10 @@
 </div>
 
 @section Scripts {
-    <script src="~/Scripts/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Scripts/plugins/datatables/dataTables.bootstrap5.min.js"></script>
-    <script src="~/Scripts/plugins/sweetalert2/sweetalert2.min.js"></script>
-    <script src="~/Scripts/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/content/plugins/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="~/content/plugins/datatables/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
     
     <script>
         $(document).ready(function() {

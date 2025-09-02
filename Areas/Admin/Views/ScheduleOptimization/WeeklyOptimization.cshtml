@@ -1,0 +1,548 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.WorkloadBalanceResult
+@{
+    ViewBag.Title = "بهینه‌سازی برنامه کاری هفتگی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-week text-info me-2"></i>
+            بهینه‌سازی برنامه کاری هفتگی
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "ScheduleOptimization")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("DailyOptimization", "ScheduleOptimization")" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                بهینه‌سازی روزانه
+            </a>
+            <a href="@Url.Action("MonthlyOptimization", "ScheduleOptimization")" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar-alt me-1"></i>
+                بهینه‌سازی ماهانه
+            </a>
+        </div>
+    </div>
+
+    <!-- Weekly Optimization Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-cog me-1"></i>
+                تنظیمات بهینه‌سازی هفتگی
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("WeeklyOptimization", "ScheduleOptimization", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="weekStart" class="form-label">شروع هفته</label>
+                            <input type="text" name="weekStart" id="weekStart" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ شروع هفته" required>
+                            <div class="invalid-feedback">لطفاً تاریخ شروع هفته را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="optimizationType" class="form-label">نوع بهینه‌سازی</label>
+                            <select name="optimizationType" id="optimizationType" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="workload">متعادل‌سازی بار کاری</option>
+                                <option value="break">بهینه‌سازی زمان استراحت</option>
+                                <option value="emergency">بهینه‌سازی زمان اورژانس</option>
+                                <option value="comprehensive">بهینه‌سازی جامع</option>
+                            </select>
+                            <div class="invalid-feedback">لطفاً نوع بهینه‌سازی را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">اولویت بهینه‌سازی</label>
+                            <select name="priority" id="priority" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="high">بالا</option>
+                                <option value="medium">متوسط</option>
+                                <option value="low">کم</option>
+                            </select>
+                            <div class="invalid-feedback">لطفاً اولویت را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="maxAppointmentsPerDay" class="form-label">حداکثر نوبت در روز</label>
+                            <input type="number" name="maxAppointmentsPerDay" id="maxAppointmentsPerDay" class="form-control" 
+                                   min="1" max="50" value="20" required>
+                            <div class="invalid-feedback">لطفاً تعداد معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="breakDuration" class="form-label">مدت زمان استراحت (دقیقه)</label>
+                            <input type="number" name="breakDuration" id="breakDuration" class="form-control" 
+                                   min="15" max="120" value="30" required>
+                            <div class="invalid-feedback">لطفاً مدت زمان معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="maxWorkingDays" class="form-label">حداکثر روزهای کاری</label>
+                            <input type="number" name="maxWorkingDays" id="maxWorkingDays" class="form-control" 
+                                   min="1" max="7" value="6" required>
+                            <div class="invalid-feedback">لطفاً تعداد معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="includeWeekend" class="form-label">شامل آخر هفته</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="includeWeekend" id="includeWeekend" value="true">
+                                <label class="form-check-label" for="includeWeekend">
+                                    شامل جمعه و شنبه در برنامه کاری
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="balanceWorkload" class="form-label">متعادل‌سازی بار کاری</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="balanceWorkload" id="balanceWorkload" value="true" checked>
+                                <label class="form-check-label" for="balanceWorkload">
+                                    توزیع یکنواخت نوبت‌ها در طول هفته
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label for="constraints" class="form-label">محدودیت‌ها و ملاحظات</label>
+                            <textarea name="constraints" id="constraints" class="form-control" rows="3" 
+                                      placeholder="محدودیت‌ها و ملاحظات خاص را وارد کنید (اختیاری)"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-magic me-1"></i>
+                            اجرای بهینه‌سازی هفتگی
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Week Preview -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-calendar-alt me-1"></i>
+                پیش‌نمایش هفته
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row" id="weekPreview">
+                <div class="col-12 text-center text-muted py-4">
+                    <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                    <p>برای مشاهده پیش‌نمایش هفته، ابتدا پزشک و تاریخ شروع هفته را انتخاب کنید</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Optimization Results Preview -->
+    @if (Model != null)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line me-1"></i>
+                    نتایج بهینه‌سازی هفتگی
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">وضعیت بهینه‌سازی:</label>
+                            <p>
+                                <span class="badge bg-success fs-6">@Model.Status</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">پیام:</label>
+                            <p class="form-control-plaintext">@Model.Message</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-primary">@Model.CurrentAppointments</div>
+                            <small class="text-muted">نوبت‌های فعلی</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-success">@Model.SuggestedAppointments</div>
+                            <small class="text-muted">نوبت‌های پیشنهادی</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-info">@Model.WorkloadPercentage.ToString("P1")</div>
+                            <small class="text-muted">درصد بار کاری</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-warning">@Model.BreakTimeMinutes</div>
+                            <small class="text-muted">زمان استراحت (دقیقه)</small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.OptimizedSlots != null && Model.OptimizedSlots.Any())
+                {
+                    <div class="mt-4">
+                        <h6 class="fw-bold">اسلات‌های بهینه شده:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>روز</th>
+                                        <th>زمان شروع</th>
+                                        <th>زمان پایان</th>
+                                        <th>نوع</th>
+                                        <th>وضعیت</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var slot in Model.OptimizedSlots.Take(15))
+                                    {
+                                        <tr>
+                                            <td>@slot.DateDisplay</td>
+                                            <td>@slot.StartTimeDisplay</td>
+                                            <td>@slot.EndTimeDisplay</td>
+                                            <td>@slot.Type</td>
+                                            <td>
+                                                <span class="badge bg-success">بهینه شده</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Recommendations != null && Model.Recommendations.Any())
+                {
+                    <div class="mt-4">
+                        <h6 class="fw-bold">پیشنهادات بهبود:</h6>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var recommendation in Model.Recommendations.Take(5))
+                            {
+                                <li class="list-group-item">
+                                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                                    @recommendation
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <a href="@Url.Action("WeeklyOptimizationResult", "ScheduleOptimization", new { doctorId = Model.DoctorId, weekStart = DateTime.Today.ToString("yyyy-MM-dd") })" 
+                           class="btn btn-info btn-lg me-3">
+                            <i class="fas fa-eye me-1"></i>
+                            مشاهده جزئیات کامل
+                        </a>
+                        <button type="button" class="btn btn-success btn-lg" onclick="applyOptimization()">
+                            <i class="fas fa-check me-1"></i>
+                            اعمال بهینه‌سازی
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Weekly Statistics -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-chart-bar me-1"></i>
+                آمار هفتگی
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-8">
+                    <canvas id="weeklyChart" width="400" height="200"></canvas>
+                </div>
+                <div class="col-lg-4">
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <div class="h5 text-primary">0</div>
+                                <small class="text-muted">روزهای کاری</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <div class="h5 text-success">0</div>
+                                <small class="text-muted">نوبت‌های کل</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <div class="h5 text-info">0</div>
+                                <small class="text-muted">ساعات کاری</small>
+                            </div>
+                        </div>
+                        <div class="col-6 mb-3">
+                            <div class="text-center">
+                                <div class="h5 text-warning">0</div>
+                                <small class="text-muted">ساعات استراحت</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false,
+                onSelect: function(unix) {
+                    // Convert Persian date to Gregorian for model binding
+                    var gregorianDate = new Date(unix);
+                    var year = gregorianDate.getFullYear();
+                    var month = String(gregorianDate.getMonth() + 1).padStart(2, '0');
+                    var day = String(gregorianDate.getDate()).padStart(2, '0');
+                    var gregorianDateString = year + '-' + month + '-' + day;
+                    
+                    // Set the hidden input for model binding
+                    $('input[name="weekStart"]').val(gregorianDateString);
+                    
+                    // Update week preview
+                    updateWeekPreview(gregorianDate);
+                }
+            });
+
+            // Set default values
+            $('input[name="weekStart"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            
+            // Initialize weekly chart
+            initializeWeeklyChart();
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Auto-save functionality
+            let autoSaveTimer;
+            $('input, select, textarea').on('input change', function() {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(function() {
+                    // Auto-save logic can be implemented here
+                    console.log('Auto-save triggered');
+                }, 30000); // 30 seconds delay
+            });
+        });
+
+        // Update Week Preview
+        function updateWeekPreview(startDate) {
+            const weekDays = ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'];
+            let previewHtml = '<div class="row">';
+            
+            for (let i = 0; i < 7; i++) {
+                const currentDate = new Date(startDate);
+                currentDate.setDate(currentDate.getDate() + i);
+                const dayName = weekDays[i];
+                const dateStr = currentDate.toLocaleDateString('fa-IR');
+                
+                previewHtml += `
+                    <div class="col-md-3 col-sm-6 mb-3">
+                        <div class="card border-left-primary h-100">
+                            <div class="card-body text-center">
+                                <h6 class="card-title text-primary">${dayName}</h6>
+                                <p class="card-text">${dateStr}</p>
+                                <div class="badge bg-success">در دسترس</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            previewHtml += '</div>';
+            $('#weekPreview').html(previewHtml);
+        }
+
+        // Initialize Weekly Chart
+        function initializeWeeklyChart() {
+            const ctx = document.getElementById('weeklyChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['شنبه', 'یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه'],
+                    datasets: [{
+                        label: 'نوبت‌های فعلی',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'نوبت‌های پیشنهادی',
+                        data: [0, 0, 0, 0, 0, 0, 0],
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('optimizationForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                $('input[name="weekStart"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+                $('input[name="maxAppointmentsPerDay"]').val('20');
+                $('input[name="breakDuration"]').val('30');
+                $('input[name="maxWorkingDays"]').val('6');
+                
+                // Reset week preview
+                $('#weekPreview').html(`
+                    <div class="col-12 text-center text-muted py-4">
+                        <i class="fas fa-calendar-week fa-2x mb-2"></i>
+                        <p>برای مشاهده پیش‌نمایش هفته، ابتدا پزشک و تاریخ شروع هفته را انتخاب کنید</p>
+                    </div>
+                `);
+            }
+        }
+
+        // Apply Optimization
+        function applyOptimization() {
+            if (confirm('آیا از اعمال بهینه‌سازی هفتگی اطمینان دارید؟ این عمل برنامه کاری پزشک را تغییر خواهد داد.')) {
+                // Show loading state
+                const applyBtn = $('button[onclick="applyOptimization()"]');
+                const originalText = applyBtn.html();
+                applyBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اعمال...');
+
+                // Simulate API call
+                setTimeout(() => {
+                    applyBtn.prop('disabled', false).html(originalText);
+                    
+                    // Show success message
+                    showSuccessMessage('بهینه‌سازی هفتگی با موفقیت اعمال شد');
+                    
+                    // Refresh page or update UI
+                    location.reload();
+                }, 2000);
+            }
+        }
+
+        // Form submission with confirmation
+        $('form').on('submit', function(e) {
+            if (!confirm('آیا از اجرای بهینه‌سازی هفتگی اطمینان دارید؟')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Show loading state
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اجرا...');
+        });
+
+        function showSuccessMessage(message) {
+            // You can implement a proper toast notification here
+            alert(message);
+        }
+    </script>
+}

@@ -432,6 +432,7 @@
     <Compile Include="App_Start\UnityConfig.cs" />
     <Compile Include="App_Start\UnityMvcActivator.cs" />
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
+    <Compile Include="Areas\Admin\Controllers\AppointmentAvailabilityController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
@@ -442,7 +443,9 @@
     <Compile Include="Areas\Admin\Controllers\DoctorScheduleController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorServiceCategoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
+    <Compile Include="Areas\Admin\Controllers\EmergencyBookingController.cs" />
     <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\SpecializationController.cs" />
@@ -457,11 +460,13 @@
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
+    <Compile Include="Helpers\EnumExtensions.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDepartmentManagementService.cs" />
@@ -481,6 +486,8 @@
     <Compile Include="Interfaces\ClinicAdmin\IDoctorScheduleService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorServiceCategoryRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IDoctorServiceCategoryService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IEmergencyBookingService.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\IScheduleOptimizationService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceCategoryRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceRepository.cs" />
@@ -505,6 +512,10 @@
     <Compile Include="Migrations\202508291341167_DoctorAssignmentHistory.Designer.cs">
       <DependentUpon>202508291341167_DoctorAssignmentHistory.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509021215300_EnhancedDoctorScheduleModule.cs" />
+    <Compile Include="Migrations\202509021215300_EnhancedDoctorScheduleModule.Designer.cs">
+      <DependentUpon>202509021215300_EnhancedDoctorScheduleModule.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
     <Compile Include="Repositories\Class1.cs" />
@@ -526,6 +537,7 @@
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\BackgroundCurrentUserService.cs" />
     <Compile Include="Services\Class1.cs" />
+    <Compile Include="Services\ClinicAdmin\AppointmentAvailabilityService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentHistoryService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorCrudService.cs" />
@@ -534,6 +546,8 @@
     <Compile Include="Services\ClinicAdmin\DoctorReportingService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorScheduleService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorServiceCategoryService.cs" />
+    <Compile Include="Services\ClinicAdmin\EmergencyBookingService.cs" />
+    <Compile Include="Services\ClinicAdmin\ScheduleOptimizationService.cs" />
     <Compile Include="Services\ClinicAdmin\SpecializationService.cs" />
     <Compile Include="Services\ClinicManagementService.cs" />
     <Compile Include="Services\CurrentUserService.cs" />
@@ -545,6 +559,7 @@
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\BlockTimeRangeViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\BulkAssignmentViewModel.cs" />
@@ -568,9 +583,12 @@
     <Compile Include="ViewModels\DoctorManagementVM\DoctorScheduleViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorSearchViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorServiceCategoryViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\EmergencyBookingViewModels.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\AppointmentAvailabilityViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ReportingViewModels.cs" />
-    <Compile Include="ViewModels\DoctorManagementVM\TimeSlotViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\ScheduleConflict.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationViewModels.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
@@ -608,6 +626,7 @@
     <Compile Include="Interfaces\PagedResult.cs" />
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
+    <Compile Include="Models\Entities\AppointmentType.cs" />
     <Compile Include="Models\Entities\Clinic.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
@@ -661,6 +680,7 @@
     <Content Include="Content\js\jquery-protection.js" />
     <Content Include="Content\js\medical-debug.js" />
     <Content Include="Content\js\medical-toast.js" />
+    <Content Include="Content\medical-forms.css" />
     <Content Include="Content\plugins\chartjs\chart.min.js" />
     <Content Include="Content\plugins\chartjs\chart.umd.min.js" />
     <Content Include="Content\plugins\dropzone\basic.css" />
@@ -674,7 +694,6 @@
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.css" />
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.min.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-date.min.js" />
-    <Content Include="Content\plugins\persian-datepicker\persian-datepicker-helper.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.css" />
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.js" />
     <Content Include="Content\plugins\select2\css\select2.css" />
@@ -3260,6 +3279,26 @@
     <Content Include="Areas\Admin\Views\DoctorReporting\Reports.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\ServiceCategoryPermissions.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorSchedule\Schedule.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorServiceCategory\Edit.cshtml" />
+    <Content Include="DESIGN_PRINCIPLES_CONTRACT.md" />
+    <Content Include="Areas\Admin\Views\EmergencyBooking\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\EmergencyBooking\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\EmergencyBooking\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\ScheduleOptimization\DailyOptimization.cshtml" />
+    <Content Include="Areas\Admin\Views\ScheduleOptimization\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ScheduleOptimization\WeeklyOptimization.cshtml" />
+    <Content Include="Areas\Admin\Views\ScheduleOptimization\MonthlyOptimization.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\AvailableDates.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\AvailableTimeSlots.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\GenerateWeeklySlots.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\CheckSlotAvailability.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\GenerateMonthlySlots.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\ReserveSlot.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\ReleaseSlot.cshtml" />
+    <Content Include="Areas\Admin\Views\AppointmentAvailability\ViewSlotDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorSchedule\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorSchedule\Edit.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3548,6 +3587,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202508291341167_DoctorAssignmentHistory.resx">
       <DependentUpon>202508291341167_DoctorAssignmentHistory.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509021215300_EnhancedDoctorScheduleModule.resx">
+      <DependentUpon>202509021215300_EnhancedDoctorScheduleModule.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

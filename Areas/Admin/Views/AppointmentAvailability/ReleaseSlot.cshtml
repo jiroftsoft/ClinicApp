@@ -1,0 +1,544 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.ReleaseSlotRequest
+@{
+    ViewBag.Title = "آزادسازی اسلات زمانی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-unlock text-warning me-2"></i>
+            آزادسازی اسلات زمانی
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+            <a href="@Url.Action("CheckSlotAvailability", "AppointmentAvailability")" class="btn btn-info btn-sm">
+                <i class="fas fa-search me-1"></i>
+                بررسی دسترسی‌پذیری
+            </a>
+        </div>
+    </div>
+
+    <!-- Slot Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-info-circle me-1"></i>
+                اطلاعات اسلات انتخاب شده
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">پزشک:</label>
+                        <div id="selectedDoctor" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">تاریخ:</label>
+                        <div id="selectedDate" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">زمان شروع:</label>
+                        <div id="startTime" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">زمان پایان:</label>
+                        <div id="endTime" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">وضعیت فعلی:</label>
+                        <div id="currentStatus" class="form-control-plaintext">
+                            <span class="badge bg-warning">رزرو شده</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">بیمار:</label>
+                        <div id="patientName" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع ویزیت:</label>
+                        <div id="appointmentType" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Release Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-edit me-1"></i>
+                فرم آزادسازی اسلات
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("ReleaseSlot", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <input type="hidden" id="slotId" name="slotId">
+                <input type="hidden" id="doctorId" name="doctorId">
+                <input type="hidden" id="reservationDate" name="reservationDate">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="releaseReason" class="form-label">دلیل آزادسازی <span class="text-danger">*</span></label>
+                            <select name="releaseReason" id="releaseReason" class="form-select" required>
+                                <option value="">انتخاب دلیل آزادسازی</option>
+                                <option value="patient_cancellation">لغو از سوی بیمار</option>
+                                <option value="doctor_cancellation">لغو از سوی پزشک</option>
+                                <option value="emergency">اورژانس پزشکی</option>
+                                <option value="technical_issue">مشکل فنی</option>
+                                <option value="schedule_conflict">تداخل برنامه</option>
+                                <option value="other">سایر</option>
+                            </select>
+                            <div class="invalid-feedback">لطفاً دلیل آزادسازی را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="releaseType" class="form-label">نوع آزادسازی</label>
+                            <select name="releaseType" id="releaseType" class="form-select">
+                                <option value="immediate">فوری (بلافاصله)</option>
+                                <option value="scheduled" selected>برنامه‌ریزی شده</option>
+                                <option value="conditional">مشروط</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="releaseDate" class="form-label">تاریخ آزادسازی</label>
+                            <input type="text" name="releaseDate" id="releaseDate" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ آزادسازی">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="releaseTime" class="form-label">زمان آزادسازی</label>
+                            <input type="time" name="releaseTime" id="releaseTime" class="form-control">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label for="detailedReason" class="form-label">توضیحات تفصیلی</label>
+                            <textarea name="detailedReason" id="detailedReason" class="form-control" 
+                                      rows="3" placeholder="توضیحات کامل دلیل آزادسازی را وارد کنید"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="notifyPatient" class="form-label">اعلان به بیمار</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="notifyPatient" id="notifyPatient" value="true" checked>
+                                <label class="form-check-label" for="notifyPatient">
+                                    ارسال پیامک اطلاع‌رسانی
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="notifyDoctor" class="form-label">اعلان به پزشک</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="notifyDoctor" id="notifyDoctor" value="true" checked>
+                                <label class="form-check-label" for="notifyDoctor">
+                                    ارسال پیامک اطلاع‌رسانی
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="refundRequired" class="form-label">بازپرداخت</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="refundRequired" id="refundRequired" value="true">
+                                <label class="form-check-label" for="refundRequired">
+                                    نیاز به بازپرداخت دارد
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="rescheduleOffered" class="form-label">تغییر زمان</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="rescheduleOffered" id="rescheduleOffered" value="true" checked>
+                                <label class="form-check-label" for="rescheduleOffered">
+                                    پیشنهاد تغییر زمان
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-warning btn-lg me-3">
+                            <i class="fas fa-unlock me-1"></i>
+                            آزادسازی اسلات
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" onclick="previewRelease()">
+                            <i class="fas fa-eye me-1"></i>
+                            پیش‌نمایش
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Release Summary -->
+    <div class="card shadow mb-4" id="releaseSummaryCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clipboard-check me-1"></i>
+                خلاصه آزادسازی
+            </h6>
+        </div>
+        <div class="card-body">
+            <div id="releaseSummary">
+                <!-- Release summary will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="checkSlotAvailability()">
+                        <i class="fas fa-search me-1"></i>
+                        بررسی دسترسی‌پذیری
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="rescheduleAppointment()">
+                        <i class="fas fa-calendar-plus me-1"></i>
+                        تغییر زمان ویزیت
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="exportReleaseReport()">
+                        <i class="fas fa-file-export me-1"></i>
+                        خروجی گزارش
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Initialize form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    event.preventDefault();
+                    confirmRelease();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Load slot information from URL parameters
+            loadSlotInformation();
+            
+            // Set default values
+            const today = new Date();
+            $('input[name="releaseDate"]').val(today.toISOString().split('T')[0]);
+            $('input[name="releaseTime"]').val(today.toTimeString().slice(0, 5));
+        });
+
+        // Load Slot Information
+        function loadSlotInformation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const slotId = urlParams.get('slotId');
+            const doctorId = urlParams.get('doctorId');
+            const date = urlParams.get('date');
+            const startTime = urlParams.get('startTime');
+            const endTime = urlParams.get('endTime');
+            
+            if (slotId && doctorId && date && startTime && endTime) {
+                // Set hidden fields
+                $('#slotId').val(slotId);
+                $('#doctorId').val(doctorId);
+                $('#reservationDate').val(date);
+                
+                // Update display
+                $('#selectedDoctor').text(getDoctorName(doctorId));
+                $('#selectedDate').text(formatDate(date));
+                $('#startTime').text(startTime);
+                $('#endTime').text(endTime);
+                $('#patientName').text('احمد احمدی');
+                $('#appointmentType').text('ویزیت عادی');
+            } else {
+                // Show demo data
+                showDemoData();
+            }
+        }
+
+        // Show Demo Data
+        function showDemoData() {
+            $('#selectedDoctor').text('دکتر احمد محمدی');
+            $('#selectedDate').text('1402/10/15');
+            $('#startTime').text('09:00');
+            $('#endTime').text('09:30');
+            $('#patientName').text('احمد احمدی');
+            $('#appointmentType').text('ویزیت عادی');
+        }
+
+        // Get Doctor Name
+        function getDoctorName(doctorId) {
+            const doctors = {
+                '1': 'دکتر احمد محمدی',
+                '2': 'دکتر فاطمه احمدی',
+                '3': 'دکتر علی رضایی'
+            };
+            return doctors[doctorId] || 'پزشک نامشخص';
+        }
+
+        // Format Date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fa-IR');
+        }
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('releaseSlotForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                const today = new Date();
+                $('input[name="releaseDate"]').val(today.toISOString().split('T')[0]);
+                $('input[name="releaseTime"]').val(today.toTimeString().slice(0, 5));
+                
+                // Hide summary
+                $('#releaseSummaryCard').hide();
+            }
+        }
+
+        // Preview Release
+        function previewRelease() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            generateReleaseSummary(formData);
+            $('#releaseSummaryCard').show();
+        }
+
+        // Confirm Release
+        function confirmRelease() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            
+            // Show loading state
+            const submitBtn = $('button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال آزادسازی...');
+            
+            // Simulate API call
+            setTimeout(() => {
+                submitBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('اسلات با موفقیت آزاد شد');
+                
+                // Redirect to main page
+                setTimeout(() => {
+                    window.location.href = '@Url.Action("Index", "AppointmentAvailability")';
+                }, 2000);
+            }, 3000);
+        }
+
+        // Validate Form
+        function validateForm() {
+            const releaseReason = $('#releaseReason').val();
+            
+            if (!releaseReason) {
+                alert('لطفاً دلیل آزادسازی را انتخاب کنید');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Get Form Data
+        function getFormData() {
+            return {
+                slotId: $('#slotId').val(),
+                doctorId: $('#doctorId').val(),
+                reservationDate: $('#reservationDate').val(),
+                releaseReason: $('#releaseReason').val(),
+                releaseType: $('#releaseType').val(),
+                releaseDate: $('#releaseDate').val(),
+                releaseTime: $('#releaseTime').val(),
+                detailedReason: $('#detailedReason').val(),
+                notifyPatient: $('#notifyPatient').is(':checked'),
+                notifyDoctor: $('#notifyDoctor').is(':checked'),
+                refundRequired: $('#refundRequired').is(':checked'),
+                rescheduleOffered: $('#rescheduleOffered').is(':checked')
+            };
+        }
+
+        // Generate Release Summary
+        function generateReleaseSummary(formData) {
+            const summaryHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>اطلاعات اسلات:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>پزشک:</strong> ${getDoctorName(formData.doctorId)}</li>
+                            <li><strong>تاریخ:</strong> ${formatDate(formData.reservationDate)}</li>
+                            <li><strong>زمان:</strong> ${$('#startTime').text()} - ${$('#endTime').text()}</li>
+                            <li><strong>بیمار:</strong> ${$('#patientName').text()}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>جزئیات آزادسازی:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>دلیل:</strong> ${getReleaseReasonText(formData.releaseReason)}</li>
+                            <li><strong>نوع:</strong> ${getReleaseTypeText(formData.releaseType)}</li>
+                            <li><strong>تاریخ آزادسازی:</strong> ${formData.releaseDate || 'فوری'}</li>
+                            <li><strong>زمان آزادسازی:</strong> ${formData.releaseTime || 'فوری'}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>تنظیمات:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>اعلان به بیمار:</strong> ${formData.notifyPatient ? 'بله' : 'خیر'}</li>
+                            <li><strong>اعلان به پزشک:</strong> ${formData.notifyDoctor ? 'بله' : 'خیر'}</li>
+                            <li><strong>بازپرداخت:</strong> ${formData.refundRequired ? 'بله' : 'خیر'}</li>
+                            <li><strong>تغییر زمان:</strong> ${formData.rescheduleOffered ? 'پیشنهاد می‌شود' : 'پیشنهاد نمی‌شود'}</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            $('#releaseSummary').html(summaryHtml);
+        }
+
+        // Get Release Reason Text
+        function getReleaseReasonText(reason) {
+            const reasons = {
+                'patient_cancellation': 'لغو از سوی بیمار',
+                'doctor_cancellation': 'لغو از سوی پزشک',
+                'emergency': 'اورژانس پزشکی',
+                'technical_issue': 'مشکل فنی',
+                'schedule_conflict': 'تداخل برنامه',
+                'other': 'سایر'
+            };
+            return reasons[reason] || reason;
+        }
+
+        // Get Release Type Text
+        function getReleaseTypeText(type) {
+            const types = {
+                'immediate': 'فوری (بلافاصله)',
+                'scheduled': 'برنامه‌ریزی شده',
+                'conditional': 'مشروط'
+            };
+            return types[type] || type;
+        }
+
+        // Other functions
+        function checkSlotAvailability() {
+            window.location.href = '@Url.Action("CheckSlotAvailability", "AppointmentAvailability")';
+        }
+
+        function rescheduleAppointment() {
+            const doctorId = $('#doctorId').val();
+            const date = $('#reservationDate').val();
+            
+            if (!doctorId || !date) {
+                alert('لطفاً ابتدا پزشک و تاریخ را انتخاب کنید');
+                return;
+            }
+            
+            window.location.href = '@Url.Action("ReserveSlot", "AppointmentAvailability")?doctorId=' + doctorId + '&date=' + date;
+        }
+
+        function exportReleaseReport() {
+            alert('خروجی گزارش در حال توسعه است');
+        }
+
+        function showSuccessMessage(message) {
+            alert(message);
+        }
+    </script>
+}

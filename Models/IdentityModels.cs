@@ -89,6 +89,11 @@ namespace ClinicApp.Models
         public DbSet<DoctorWorkDay> DoctorWorkDays { get; set; }
         public DbSet<DoctorTimeRange> DoctorTimeRanges { get; set; }
         public DbSet<DoctorTimeSlot> DoctorTimeSlots { get; set; }
+        
+        // ========== موجودیت‌های جدید برای برنامه‌ریزی پیشرفته ==========
+        public DbSet<AppointmentSlot> AppointmentSlots { get; set; }
+        public DbSet<ScheduleException> ScheduleExceptions { get; set; }
+        public DbSet<ScheduleTemplate> ScheduleTemplates { get; set; }
         public DbSet<Specialization> Specializations { get; set; }
         public DbSet<DoctorSpecialization> DoctorSpecializations { get; set; }
         public DbSet<DoctorAssignmentHistory> DoctorAssignmentHistories { get; set; }
@@ -127,6 +132,11 @@ namespace ClinicApp.Models
             modelBuilder.Filter("ActiveDoctorWorkDays", (DoctorWorkDay wd) => wd.IsActive, true);
             modelBuilder.Filter("ActiveDoctorTimeRanges", (DoctorTimeRange tr) => tr.IsActive, true);
             // حذف filter مشکل‌ساز برای DoctorTimeSlots - به جای آن از query filter استفاده می‌کنیم
+            
+            // ========== فیلترهای جدید برای موجودیت‌های برنامه‌ریزی پیشرفته ==========
+            modelBuilder.Filter("ActiveAppointmentSlots", (AppointmentSlot aps) => aps.IsActive, true);
+            modelBuilder.Filter("ActiveScheduleExceptions", (ScheduleException se) => se.IsActive, true);
+            modelBuilder.Filter("ActiveScheduleTemplates", (ScheduleTemplate st) => st.IsActive, true);
 
 
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس

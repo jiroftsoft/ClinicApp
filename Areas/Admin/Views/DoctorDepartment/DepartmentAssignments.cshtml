@@ -1,13 +1,14 @@
 @* صفحه انتسابات دپارتمان پزشک - طراحی Ultimate برای محیط درمانی *@
-@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentIndexViewModel
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentAssignmentsViewModel
 @{
     ViewBag.Title = "انتسابات دپارتمان پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
-    var doctor = ViewBag.Doctor as ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel;
 }
 
+@Html.AntiForgeryToken()
+
 @section Styles {
-    <link href="~/Content/plugins/datatables/dataTables.bootstrap5.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/datatables/js/dataTables.bootstrap5.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
@@ -153,7 +154,7 @@
             animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
+        @@keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
@@ -183,12 +184,12 @@
             <div class="col-md-8">
                 <h2 class="mb-2">
                     <i class="fas fa-user-md me-2"></i>
-                    @(doctor?.FullName ?? "پزشک")
+                    @(Model?.Doctor?.FullName ?? "پزشک")
                 </h2>
                 <p class="mb-0 opacity-75">مدیریت انتسابات دپارتمان</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("AssignToDepartment", new { doctorId = doctor?.Id })" class="btn btn-light">
+                <a href="@Url.Action("AssignToDepartment", new { doctorId = Model?.Doctor?.DoctorId })" class="btn btn-light">
                     <i class="fas fa-plus me-2"></i>
                     انتساب جدید
                 </a>
@@ -198,15 +199,15 @@
         <div class="doctor-info">
             <div class="info-item">
                 <div class="info-label">کد ملی</div>
-                <div class="info-value">@(doctor?.NationalCode ?? "-")</div>
+                <div class="info-value">@(Model?.Doctor?.NationalCode ?? "-")</div>
             </div>
             <div class="info-item">
                 <div class="info-label">شماره نظام پزشکی</div>
-                <div class="info-value">@(doctor?.MedicalCouncilCode ?? "-")</div>
+                <div class="info-value">@(Model?.Doctor?.MedicalCouncilCode ?? "-")</div>
             </div>
             <div class="info-item">
                 <div class="info-label">تخصص</div>
-                <div class="info-value">@string.Join("، ", doctor?.SpecializationNames ?? new string[0])</div>
+                <div class="info-value">@string.Join("، ", Model?.Doctor?.SpecializationNames ?? new List<string>())</div>
             </div>
             <div class="info-item">
                 <div class="info-label">وضعیت</div>
@@ -224,32 +225,32 @@
                 <div class="col-md-3">
                     <div class="card bg-primary text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.TotalDepartments ?? 0)</h4>
-                            <small>کل دپارتمان‌ها</small>
+                            <h4 class="mb-1">@(Model?.Stats?.TotalAssignments ?? 0)</h4>
+                            <small>کل انتسابات</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card bg-success text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.ActiveDepartments ?? 0)</h4>
-                            <small>دپارتمان‌های فعال</small>
+                            <h4 class="mb-1">@(Model?.Stats?.ActiveAssignments ?? 0)</h4>
+                            <small>انتسابات فعال</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card bg-warning text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.InactiveDepartments ?? 0)</h4>
-                            <small>دپارتمان‌های غیرفعال</small>
+                            <h4 class="mb-1">@(Model?.Stats?.InactiveAssignments ?? 0)</h4>
+                            <small>انتسابات غیرفعال</small>
                         </div>
                     </div>
                 </div>
                 <div class="col-md-3">
                     <div class="card bg-info text-white">
                         <div class="card-body text-center">
-                            <h4 class="mb-1">@(Model?.TotalAssignments ?? 0)</h4>
-                            <small>کل انتسابات</small>
+                            <h4 class="mb-1">@(Model?.Stats?.LastAssignmentDate?.ToString("yyyy/MM/dd") ?? "-")</h4>
+                            <small>آخرین انتساب</small>
                         </div>
                     </div>
                 </div>
@@ -268,9 +269,9 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    @if (Model?.DoctorDepartments != null && Model.DoctorDepartments.Any())
+                    @if (Model?.Assignments != null && Model.Assignments.Any())
                     {
-                        foreach (var assignment in Model.DoctorDepartments)
+                        foreach (var assignment in Model.Assignments)
                         {
                             <div class="department-card @(!assignment.IsActive ? "inactive" : "")">
                                 <div class="department-header">
@@ -306,25 +307,25 @@
                                 <div class="action-buttons">
                                     @if (assignment.IsActive)
                                     {
-                                        <button class="btn btn-warning btn-action" onclick="deactivateAssignment(@assignment.Id)">
-                                            <i class="fas fa-pause me-1"></i>
-                                            غیرفعال کردن
-                                        </button>
+                                                                            <button class="btn btn-warning btn-action" onclick="deactivateAssignment('@assignment.AssignmentId')">
+                                        <i class="fas fa-pause me-1"></i>
+                                        غیرفعال کردن
+                                    </button>
                                     }
                                     else
                                     {
-                                        <button class="btn btn-success btn-action" onclick="activateAssignment(@assignment.Id)">
+                                        <button class="btn btn-success btn-action" onclick="activateAssignment('@assignment.AssignmentId')">
                                             <i class="fas fa-play me-1"></i>
                                             فعال کردن
                                         </button>
                                     }
                                     
-                                    <button class="btn btn-info btn-action" onclick="editAssignment(@assignment.Id)">
+                                    <button class="btn btn-info btn-action" onclick="editAssignment('@assignment.AssignmentId')">
                                         <i class="fas fa-edit me-1"></i>
                                         ویرایش
                                     </button>
                                     
-                                    <button class="btn btn-danger btn-action" onclick="removeAssignment(@assignment.Id)">
+                                    <button class="btn btn-danger btn-action" onclick="removeAssignment('@assignment.AssignmentId')">
                                         <i class="fas fa-trash me-1"></i>
                                         حذف
                                     </button>
@@ -338,7 +339,7 @@
                             <i class="fas fa-building"></i>
                             <h5>هیچ انتساب دپارتمانی یافت نشد</h5>
                             <p>این پزشک هنوز به هیچ دپارتمانی انتساب داده نشده است</p>
-                            <a href="@Url.Action("AssignToDepartment", new { doctorId = doctor?.Id })" class="btn btn-primary">
+                                                         <a href="@Url.Action("AssignToDepartment", new { doctorId = Model?.Doctor?.DoctorId })" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>
                                 انتساب اولین دپارتمان
                             </a>
@@ -351,10 +352,10 @@
 </div>
 
 @section Scripts {
-    <script src="~/Scripts/plugins/datatables/jquery.dataTables.min.js"></script>
-    <script src="~/Scripts/plugins/datatables/dataTables.bootstrap5.min.js"></script>
-    <script src="~/Scripts/plugins/sweetalert2/sweetalert2.min.js"></script>
-    <script src="~/Scripts/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/dataTables.bootstrap5.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
     
     <script>
         $(document).ready(function() {
@@ -382,11 +383,14 @@
                 if (result.isConfirmed) {
                     showLoading();
                     
-                    $.ajax({
-                        url: '@Url.Action("ActivateAssignment")',
-                        type: 'POST',
-                        data: { assignmentId: assignmentId },
-                        success: function(response) {
+                                         $.ajax({
+                         url: '@Url.Action("ActivateAssignment")',
+                         type: 'POST',
+                         data: { 
+                             assignmentId: assignmentId,
+                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                         },
+                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
                                     icon: 'success',
@@ -433,11 +437,14 @@
                 if (result.isConfirmed) {
                     showLoading();
                     
-                    $.ajax({
-                        url: '@Url.Action("DeactivateAssignment")',
-                        type: 'POST',
-                        data: { assignmentId: assignmentId },
-                        success: function(response) {
+                                         $.ajax({
+                         url: '@Url.Action("DeactivateAssignment")',
+                         type: 'POST',
+                         data: { 
+                             assignmentId: assignmentId,
+                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                         },
+                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
                                     icon: 'success',
@@ -489,11 +496,14 @@
                 if (result.isConfirmed) {
                     showLoading();
                     
-                    $.ajax({
-                        url: '@Url.Action("RemoveAssignment")',
-                        type: 'POST',
-                        data: { assignmentId: assignmentId },
-                        success: function(response) {
+                                         $.ajax({
+                         url: '@Url.Action("RemoveAssignment")',
+                         type: 'POST',
+                         data: { 
+                             assignmentId: assignmentId,
+                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                         },
+                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
                                     icon: 'success',

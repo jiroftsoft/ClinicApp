@@ -3157,26 +3157,90 @@ namespace ClinicApp.Models.Entities
         [Required(ErrorMessage = "پزشک الزامی است.")]
         public int DoctorId { get; set; }
 
-        /// <summary>
-        /// مدت زمان هر نوبت (به دقیقه)
-        /// </summary>
-        [Range(5, 120, ErrorMessage = "مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")]
-        public int AppointmentDuration { get; set; } = 30;
+            /// <summary>
+    /// مدت زمان هر نوبت (به دقیقه)
+    /// </summary>
+    [Range(5, 120, ErrorMessage = "مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")]
+    public int AppointmentDuration { get; set; } = 30;
 
-        /// <summary>
-        /// زمان شروع پیش‌فرض روز کاری
-        /// </summary>
-        public TimeSpan? DefaultStartTime { get; set; }
+    /// <summary>
+    /// زمان شروع پیش‌فرض روز کاری
+    /// </summary>
+    public TimeSpan? DefaultStartTime { get; set; }
 
-        /// <summary>
-        /// زمان پایان پیش‌فرض روز کاری
-        /// </summary>
-        public TimeSpan? DefaultEndTime { get; set; }
+    /// <summary>
+    /// زمان پایان پیش‌فرض روز کاری
+    /// </summary>
+    public TimeSpan? DefaultEndTime { get; set; }
 
-        /// <summary>
-        /// وضعیت فعال/غیرفعال بودن برنامه کاری
-        /// </summary>
-        public bool IsActive { get; set; } = true;
+    /// <summary>
+    /// وضعیت فعال/غیرفعال بودن برنامه کاری
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    // ========== ویژگی‌های جدید برای برنامه‌ریزی پیشرفته ==========
+    
+    /// <summary>
+    /// حداکثر تعداد نوبت در روز
+    /// </summary>
+    [Range(1, 200, ErrorMessage = "حداکثر نوبت در روز باید بین 1 تا 200 باشد.")]
+    public int MaxAppointmentsPerDay { get; set; } = 50;
+
+    /// <summary>
+    /// حداقل روزهای پیش‌رزرو (0 = همان روز)
+    /// </summary>
+    [Range(0, 365, ErrorMessage = "حداقل روزهای پیش‌رزرو باید بین 0 تا 365 باشد.")]
+    public int MinAdvanceBookingDays { get; set; } = 1;
+
+    /// <summary>
+    /// حداکثر روزهای پیش‌رزرو
+    /// </summary>
+    [Range(1, 365, ErrorMessage = "حداکثر روزهای پیش‌رزرو باید بین 1 تا 365 باشد.")]
+    public int MaxAdvanceBookingDays { get; set; } = 90;
+
+    /// <summary>
+    /// امکان رزرو همان روز
+    /// </summary>
+    public bool AllowSameDayBooking { get; set; } = true;
+
+    /// <summary>
+    /// نیاز به ثبت‌نام بیمار
+    /// </summary>
+    public bool RequirePatientRegistration { get; set; } = false;
+
+    /// <summary>
+    /// هزینه ویزیت پایه (ریال)
+    /// </summary>
+    [Range(0, 10000000, ErrorMessage = "هزینه ویزیت باید بین 0 تا 10,000,000 ریال باشد.")]
+    public decimal ConsultationFee { get; set; } = 0;
+
+    /// <summary>
+    /// هزینه لغو نوبت (ریال)
+    /// </summary>
+    [Range(0, 1000000, ErrorMessage = "هزینه لغو باید بین 0 تا 1,000,000 ریال باشد.")]
+    public decimal CancellationFee { get; set; } = 0;
+
+    /// <summary>
+    /// ساعت‌های اخطار لغو (0 = بدون اخطار)
+    /// </summary>
+    [Range(0, 168, ErrorMessage = "ساعت‌های اخطار لغو باید بین 0 تا 168 باشد.")]
+    public int CancellationNoticeHours { get; set; } = 24;
+
+    /// <summary>
+    /// امکان رزرو اورژانس
+    /// </summary>
+    public bool AllowEmergencyBooking { get; set; } = true;
+
+    /// <summary>
+    /// امکان مراجعه بدون رزرو
+    /// </summary>
+    public bool AllowWalkInPatients { get; set; } = false;
+
+    /// <summary>
+    /// حداکثر تعداد بیماران بدون رزرو در روز
+    /// </summary>
+    [Range(0, 50, ErrorMessage = "حداکثر بیماران بدون رزرو باید بین 0 تا 50 باشد.")]
+    public int MaxWalkInPatientsPerDay { get; set; } = 5;
 
         /// <summary>
         /// وضعیت حذف نرم
@@ -3222,6 +3286,359 @@ namespace ClinicApp.Models.Entities
         public virtual ApplicationUser UpdatedByUser { get; set; }
         public virtual ApplicationUser DeletedByUser { get; set; }
         public virtual ICollection<DoctorWorkDay> WorkDays { get; set; } = new List<DoctorWorkDay>();
+        
+        // ========== Navigation Properties جدید برای برنامه‌ریزی پیشرفته ==========
+        
+        /// <summary>
+        /// استثناهای برنامه کاری (تعطیلات، روزهای خاص)
+        /// </summary>
+        public virtual ICollection<ScheduleException> Exceptions { get; set; } = new List<ScheduleException>();
+        
+        /// <summary>
+        /// قالب‌های برنامه کاری قابل استفاده مجدد
+        /// </summary>
+        public virtual ICollection<ScheduleTemplate> Templates { get; set; } = new List<ScheduleTemplate>();
+        
+        /// <summary>
+        /// اسلات‌های نوبت تولید شده
+        /// </summary>
+        public virtual ICollection<AppointmentSlot> AppointmentSlots { get; set; } = new List<AppointmentSlot>();
+    }
+
+    /// <summary>
+    /// موجودیت اسلات نوبت برای مدیریت دقیق زمان‌های رزرو
+    /// این موجودیت امکان مدیریت اسلات‌های فردی را فراهم می‌کند
+    /// </summary>
+    public class AppointmentSlot : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه اسلات نوبت
+        /// </summary>
+        public int SlotId { get; set; }
+
+        /// <summary>
+        /// شناسه برنامه کاری پزشک
+        /// </summary>
+        [Required(ErrorMessage = "برنامه کاری الزامی است.")]
+        public int ScheduleId { get; set; }
+
+        /// <summary>
+        /// تاریخ اسلات
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ اسلات الزامی است.")]
+        public DateTime SlotDate { get; set; }
+
+        /// <summary>
+        /// زمان شروع اسلات
+        /// </summary>
+        [Required(ErrorMessage = "زمان شروع الزامی است.")]
+        public TimeSpan StartTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان اسلات
+        /// </summary>
+        [Required(ErrorMessage = "زمان پایان الزامی است.")]
+        public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// وضعیت اسلات
+        /// </summary>
+        [Required(ErrorMessage = "وضعیت اسلات الزامی است.")]
+        public AppointmentSlotStatus Status { get; set; } = AppointmentSlotStatus.Available;
+
+        /// <summary>
+        /// قیمت اسلات (ریال)
+        /// </summary>
+        [Range(0, 10000000, ErrorMessage = "قیمت باید بین 0 تا 10,000,000 ریال باشد.")]
+        public decimal Price { get; set; }
+
+        /// <summary>
+        /// شناسه بیمار (اختیاری)
+        /// </summary>
+        public int? PatientId { get; set; }
+
+        /// <summary>
+        /// شناسه نوبت (اختیاری)
+        /// </summary>
+        public int? AppointmentId { get; set; }
+
+        /// <summary>
+        /// آیا اسلات اورژانس است؟
+        /// </summary>
+        public bool IsEmergencySlot { get; set; } = false;
+
+        /// <summary>
+        /// آیا امکان مراجعه بدون رزرو است؟
+        /// </summary>
+        public bool IsWalkInAllowed { get; set; } = false;
+
+        /// <summary>
+        /// اولویت اسلات (0 = عادی، 1 = بالا، 2 = خیلی بالا)
+        /// </summary>
+        [Range(0, 2, ErrorMessage = "اولویت باید بین 0 تا 2 باشد.")]
+        public int Priority { get; set; } = 0;
+
+        /// <summary>
+        /// توضیحات اضافی
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Notes { get; set; }
+
+        #region پیاده‌سازی ISoftDelete
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        // Navigation Properties
+        public virtual DoctorSchedule Schedule { get; set; }
+        public virtual Patient Patient { get; set; }
+        public virtual Appointment Appointment { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    /// <summary>
+    /// وضعیت‌های مختلف اسلات نوبت
+    /// </summary>
+    public enum AppointmentSlotStatus : byte
+    {
+        [Display(Name = "در دسترس")]
+        Available = 0,
+        [Display(Name = "رزرو شده")]
+        Booked = 1,
+        [Display(Name = "تکمیل شده")]
+        Completed = 2,
+        [Display(Name = "لغو شده")]
+        Cancelled = 3,
+        [Display(Name = "مسدود شده")]
+        Blocked = 4,
+        [Display(Name = "در انتظار تأیید")]
+        PendingConfirmation = 5,
+        [Display(Name = "نیاز به پرداخت")]
+        NeedsPayment = 6
+    }
+
+    /// <summary>
+    /// موجودیت استثناهای برنامه کاری برای مدیریت تعطیلات و روزهای خاص
+    /// این موجودیت امکان تعریف روزهای تعطیل، مرخصی و تغییرات موقت را فراهم می‌کند
+    /// </summary>
+    public class ScheduleException : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه استثنا
+        /// </summary>
+        public int ExceptionId { get; set; }
+
+        /// <summary>
+        /// شناسه برنامه کاری پزشک
+        /// </summary>
+        [Required(ErrorMessage = "برنامه کاری الزامی است.")]
+        public int ScheduleId { get; set; }
+
+        /// <summary>
+        /// نوع استثنا
+        /// </summary>
+        [Required(ErrorMessage = "نوع استثنا الزامی است.")]
+        public ExceptionType Type { get; set; }
+
+        /// <summary>
+        /// تاریخ شروع استثنا
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ شروع الزامی است.")]
+        public DateTime StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان استثنا (اختیاری - برای استثناهای یک روزه)
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// زمان شروع (اختیاری - برای استثناهای جزئی روز)
+        /// </summary>
+        public TimeSpan? StartTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان (اختیاری - برای استثناهای جزئی روز)
+        /// </summary>
+        public TimeSpan? EndTime { get; set; }
+
+        /// <summary>
+        /// دلیل استثنا
+        /// </summary>
+        [Required(ErrorMessage = "دلیل استثنا الزامی است.")]
+        [MaxLength(200, ErrorMessage = "دلیل استثنا نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        public string Reason { get; set; }
+
+        /// <summary>
+        /// توضیحات اضافی
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// آیا استثنا تکرار می‌شود؟
+        /// </summary>
+        public bool IsRecurring { get; set; } = false;
+
+        /// <summary>
+        /// الگوی تکرار (اختیاری)
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "الگوی تکرار نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string RecurrencePattern { get; set; }
+
+        #region پیاده‌سازی ISoftDelete
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        // Navigation Properties
+        public virtual DoctorSchedule Schedule { get; set; }
+        public bool IsActive { get; set; }
+    }
+
+    /// <summary>
+    /// انواع مختلف استثناهای برنامه کاری
+    /// </summary>
+    public enum ExceptionType : byte
+    {
+        [Display(Name = "تعطیلات رسمی")]
+        PublicHoliday = 0,
+        [Display(Name = "مرخصی")]
+        Vacation = 1,
+        [Display(Name = "مریضی")]
+        SickLeave = 2,
+        [Display(Name = "سفر کاری")]
+        BusinessTrip = 3,
+        [Display(Name = "کنفرانس")]
+        Conference = 4,
+        [Display(Name = "آموزش")]
+        Training = 5,
+        [Display(Name = "تعطیلات")]
+        Holiday = 6,
+        [Display(Name = "سایر")]
+        Other = 7
+    }
+
+    /// <summary>
+    /// موجودیت قالب برنامه کاری برای استفاده مجدد از تنظیمات برنامه‌ریزی
+    /// این موجودیت امکان ذخیره و بازیابی قالب‌های برنامه کاری را فراهم می‌کند
+    /// </summary>
+    public class ScheduleTemplate : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه قالب
+        /// </summary>
+        public int TemplateId { get; set; }
+
+        /// <summary>
+        /// شناسه برنامه کاری پزشک
+        /// </summary>
+        [Required(ErrorMessage = "برنامه کاری الزامی است.")]
+        public int ScheduleId { get; set; }
+
+        /// <summary>
+        /// نام قالب
+        /// </summary>
+        [Required(ErrorMessage = "نام قالب الزامی است.")]
+        [MaxLength(100, ErrorMessage = "نام قالب نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string TemplateName { get; set; }
+
+        /// <summary>
+        /// توضیحات قالب
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات قالب نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// آیا قالب فعال است؟
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// آیا قالب پیش‌فرض است؟
+        /// </summary>
+        public bool IsDefault { get; set; } = false;
+
+        /// <summary>
+        /// نوع قالب
+        /// </summary>
+        [Required(ErrorMessage = "نوع قالب الزامی است.")]
+        public TemplateType Type { get; set; }
+
+        /// <summary>
+        /// تنظیمات قالب (JSON)
+        /// </summary>
+        [MaxLength(4000, ErrorMessage = "تنظیمات قالب نمی‌تواند بیش از 4000 کاراکتر باشد.")]
+        public string TemplateData { get; set; }
+
+        #region پیاده‌سازی ISoftDelete
+        public bool IsDeleted { get; set; } = false;
+        public DateTime? DeletedAt { get; set; }
+        [MaxLength(128)]
+        public string DeletedByUserId { get; set; }
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        [MaxLength(128)]
+        public string CreatedByUserId { get; set; }
+        public virtual ApplicationUser CreatedByUser { get; set; }
+        public DateTime? UpdatedAt { get; set; }
+        [MaxLength(128)]
+        public string UpdatedByUserId { get; set; }
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        // Navigation Properties
+        public virtual DoctorSchedule Schedule { get; set; }
+     
+    }
+
+    /// <summary>
+    /// انواع مختلف قالب‌های برنامه کاری
+    /// </summary>
+    public enum TemplateType : byte
+    {
+        [Display(Name = "قالب هفتگی")]
+        Weekly = 0,
+        [Display(Name = "قالب ماهانه")]
+        Monthly = 1,
+        [Display(Name = "قالب فصلی")]
+        Seasonal = 2,
+        [Display(Name = "قالب تعطیلات")]
+        Holiday = 3,
+        [Display(Name = "قالب اورژانس")]
+        Emergency = 4,
+        [Display(Name = "قالب سفارشی")]
+        Custom = 5
     }
 
     /// <summary>
@@ -3325,6 +3742,22 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(ds => ds.DeletedByUserId)
                 .WillCascadeOnDelete(false);
 
+            // روابط جدید برای برنامه‌ریزی پیشرفته
+            HasMany(ds => ds.Exceptions)
+                .WithRequired(se => se.Schedule)
+                .HasForeignKey(se => se.ScheduleId)
+                .WillCascadeOnDelete(true); // حذف cascade برای استثناها
+
+            HasMany(ds => ds.Templates)
+                .WithRequired(st => st.Schedule)
+                .HasForeignKey(st => st.ScheduleId)
+                .WillCascadeOnDelete(true); // حذف cascade برای قالب‌ها
+
+            HasMany(ds => ds.AppointmentSlots)
+                .WithRequired(aps => aps.Schedule)
+                .HasForeignKey(aps => aps.ScheduleId)
+                .WillCascadeOnDelete(true); // حذف cascade برای اسلات‌ها
+
             // روابط با WorkDays
             HasMany(ds => ds.WorkDays)
                 .WithRequired(wd => wd.Schedule)
@@ -3345,6 +3778,316 @@ namespace ClinicApp.Models.Entities
             HasIndex(ds => new { ds.DoctorId, ds.IsActive, ds.IsDeleted })
                 .HasName("IX_DoctorSchedule_DoctorId_IsActive_IsDeleted_Unique")
                 .IsUnique();
+        }
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل AppointmentSlot
+    /// </summary>
+    public class AppointmentSlotConfiguration : EntityTypeConfiguration<AppointmentSlot>
+    {
+        public AppointmentSlotConfiguration()
+        {
+            // نام جدول
+            ToTable("AppointmentSlots");
+
+            // کلید اصلی
+            HasKey(aps => aps.SlotId);
+
+            // پراپرتی‌های اصلی
+            Property(aps => aps.SlotId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+
+            Property(aps => aps.ScheduleId)
+                .IsRequired();
+
+            Property(aps => aps.SlotDate)
+                .IsRequired();
+
+            Property(aps => aps.StartTime)
+                .IsRequired();
+
+            Property(aps => aps.EndTime)
+                .IsRequired();
+
+            Property(aps => aps.Status)
+                .IsRequired();
+
+            Property(aps => aps.Price)
+                .HasPrecision(18, 2);
+
+            Property(aps => aps.Notes)
+                .HasMaxLength(500);
+
+            // پیاده‌سازی ISoftDelete
+            Property(aps => aps.IsDeleted)
+                .IsRequired();
+
+            Property(aps => aps.DeletedAt)
+                .IsOptional();
+
+            Property(aps => aps.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // پیاده‌سازی ITrackable
+            Property(aps => aps.CreatedAt)
+                .IsRequired();
+
+            Property(aps => aps.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(aps => aps.UpdatedAt)
+                .IsOptional();
+
+            Property(aps => aps.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // روابط
+            HasRequired(aps => aps.Schedule)
+                .WithMany(ds => ds.AppointmentSlots)
+                .HasForeignKey(aps => aps.ScheduleId)
+                .WillCascadeOnDelete(true);
+
+            HasOptional(aps => aps.Patient)
+                .WithMany()
+                .HasForeignKey(aps => aps.PatientId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(aps => aps.Appointment)
+                .WithMany()
+                .HasForeignKey(aps => aps.AppointmentId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(aps => aps.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(aps => aps.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(aps => aps.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(aps => aps.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(aps => aps.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(aps => aps.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌ها برای بهبود عملکرد
+            HasIndex(aps => new { aps.ScheduleId, aps.SlotDate, aps.Status })
+                .HasName("IX_AppointmentSlot_ScheduleId_Date_Status");
+
+            HasIndex(aps => new { aps.SlotDate, aps.StartTime, aps.Status })
+                .HasName("IX_AppointmentSlot_Date_Time_Status");
+
+            HasIndex(aps => new { aps.PatientId, aps.SlotDate })
+                .HasName("IX_AppointmentSlot_PatientId_Date");
+
+            HasIndex(aps => aps.IsDeleted)
+                .HasName("IX_AppointmentSlot_IsDeleted");
+        }
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل ScheduleException
+    /// </summary>
+    public class ScheduleExceptionConfiguration : EntityTypeConfiguration<ScheduleException>
+    {
+        public ScheduleExceptionConfiguration()
+        {
+            // نام جدول
+            ToTable("ScheduleExceptions");
+
+            // کلید اصلی
+            HasKey(se => se.ExceptionId);
+
+            // پراپرتی‌های اصلی
+            Property(se => se.ExceptionId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+
+            Property(se => se.ScheduleId)
+                .IsRequired();
+
+            Property(se => se.Type)
+                .IsRequired();
+
+            Property(se => se.StartDate)
+                .IsRequired();
+
+            Property(se => se.EndDate)
+                .IsOptional();
+
+            Property(se => se.StartTime)
+                .IsOptional();
+
+            Property(se => se.EndTime)
+                .IsOptional();
+
+            Property(se => se.Reason)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            Property(se => se.Description)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            Property(se => se.RecurrencePattern)
+                .IsOptional()
+                .HasMaxLength(100);
+
+            // پیاده‌سازی ISoftDelete
+            Property(se => se.IsDeleted)
+                .IsRequired();
+
+            Property(se => se.DeletedAt)
+                .IsOptional();
+
+            Property(se => se.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // پیاده‌سازی ITrackable
+            Property(se => se.CreatedAt)
+                .IsRequired();
+
+            Property(se => se.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(se => se.UpdatedAt)
+                .IsOptional();
+
+            Property(se => se.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // روابط
+            HasRequired(se => se.Schedule)
+                .WithMany(ds => ds.Exceptions)
+                .HasForeignKey(se => se.ScheduleId)
+                .WillCascadeOnDelete(true);
+
+            HasOptional(se => se.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(se => se.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(se => se.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(se => se.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(se => se.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(se => se.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌ها برای بهبود عملکرد
+            HasIndex(se => new { se.ScheduleId, se.StartDate, se.EndDate })
+                .HasName("IX_ScheduleException_ScheduleId_DateRange");
+
+            HasIndex(se => new { se.StartDate, se.Type, se.IsDeleted })
+                .HasName("IX_ScheduleException_StartDate_Type_IsDeleted");
+
+            HasIndex(se => se.IsDeleted)
+                .HasName("IX_ScheduleException_IsDeleted");
+        }
+    }
+
+    /// <summary>
+    /// کانفیگ Entity Framework برای مدل ScheduleTemplate
+    /// </summary>
+    public class ScheduleTemplateConfiguration : EntityTypeConfiguration<ScheduleTemplate>
+    {
+        public ScheduleTemplateConfiguration()
+        {
+            // نام جدول
+            ToTable("ScheduleTemplates");
+
+            // کلید اصلی
+            HasKey(st => st.TemplateId);
+
+            // پراپرتی‌های اصلی
+            Property(st => st.TemplateId)
+                .HasDatabaseGeneratedOption(DatabaseGeneratedOption.Identity);
+
+            Property(st => st.ScheduleId)
+                .IsRequired();
+
+            Property(st => st.TemplateName)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            Property(st => st.Description)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            Property(st => st.Type)
+                .IsRequired();
+
+            Property(st => st.TemplateData)
+                .IsOptional()
+                .HasMaxLength(4000);
+
+            // پیاده‌سازی ISoftDelete
+            Property(st => st.IsDeleted)
+                .IsRequired();
+
+            Property(st => st.DeletedAt)
+                .IsOptional();
+
+            Property(st => st.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // پیاده‌سازی ITrackable
+            Property(st => st.CreatedAt)
+                .IsRequired();
+
+            Property(st => st.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(st => st.UpdatedAt)
+                .IsOptional();
+
+            Property(st => st.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // روابط
+            HasRequired(st => st.Schedule)
+                .WithMany(ds => ds.Templates)
+                .HasForeignKey(st => st.ScheduleId)
+                .WillCascadeOnDelete(true);
+
+            HasOptional(st => st.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(st => st.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(st => st.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(st => st.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(st => st.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(se => se.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌ها برای بهبود عملکرد
+            HasIndex(st => new { st.ScheduleId, st.Type, st.IsActive })
+                .HasName("IX_ScheduleTemplate_ScheduleId_Type_IsActive");
+
+            HasIndex(st => new { st.IsDefault, st.IsActive, st.IsDeleted })
+                .HasName("IX_ScheduleTemplate_Default_Active_Deleted");
+
+            HasIndex(st => st.IsDeleted)
+                .HasName("IX_ScheduleTemplate_IsDeleted");
         }
     }
 
@@ -4621,6 +5364,204 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         Security = 4
     }
+    #endregion
+
+    #region DoctorSchedule Module Enums
+
+    /// <summary>
+    /// وضعیت‌های تعادل بار کاری پزشکان
+    /// </summary>
+    public enum WorkloadBalanceStatus
+    {
+        /// <summary>
+        /// بار کاری سبک - امکان افزایش تعداد نوبت‌ها
+        /// </summary>
+        Light = 1,
+
+        /// <summary>
+        /// بار کاری متعادل - وضعیت مطلوب
+        /// </summary>
+        Balanced = 2,
+
+        /// <summary>
+        /// بار کاری سنگین - نیاز به بهینه‌سازی
+        /// </summary>
+        Heavy = 3,
+
+        /// <summary>
+        /// بار کاری بیش از حد - نیاز به کاهش فوری
+        /// </summary>
+        Overloaded = 4,
+
+        /// <summary>
+        /// روز کاری تعریف نشده
+        /// </summary>
+        NoWorkDay = 5
+    }
+
+    /// <summary>
+    /// انواع زمان‌های استراحت
+    /// </summary>
+    public enum BreakType
+    {
+        /// <summary>
+        /// استراحت ناهار
+        /// </summary>
+        Lunch = 1,
+
+        /// <summary>
+        /// استراحت صبحانه
+        /// </summary>
+        Breakfast = 2,
+
+        /// <summary>
+        /// استراحت عصرانه
+        /// </summary>
+        Afternoon = 3,
+
+        /// <summary>
+        /// استراحت کوتاه
+        /// </summary>
+        Short = 4,
+
+        /// <summary>
+        /// استراحت اضطراری
+        /// </summary>
+        Emergency = 5
+    }
+
+    /// <summary>
+    /// اولویت‌های اورژانس
+    /// </summary>
+  /// <summary>
+    /// اولویت‌های اورژانس
+    /// </summary>
+    public enum EmergencyPriority : byte
+    {
+        [Display(Name = "کم")]
+        Low = 0,
+        [Display(Name = "متوسط")]
+        Medium = 1,
+        [Display(Name = "زیاد")]
+        High = 2,
+        [Display(Name = "بحرانی")]
+        Critical = 3
+    }
+
+    /// <summary>
+    /// انواع اورژانس
+    /// </summary>
+    public enum EmergencyType
+    {
+        /// <summary>
+        /// اورژانس بحرانی
+        /// </summary>
+        Critical = 1,
+
+        /// <summary>
+        /// اورژانس پزشکی
+        /// </summary>
+        Medical = 2,
+
+        /// <summary>
+        /// اورژانس تصادفی
+        /// </summary>
+        Accident = 3,
+
+        /// <summary>
+        /// اورژانس قلبی
+        /// </summary>
+        Cardiac = 4,
+
+        /// <summary>
+        /// اورژانس تنفسی
+        /// </summary>
+        Respiratory = 5
+    }
+
+    /// <summary>
+    /// وضعیت‌های رزرو اورژانس
+    /// </summary>
+    public enum EmergencyBookingStatus
+    {
+        /// <summary>
+        /// در انتظار تأیید
+        /// </summary>
+        Pending = 1,
+
+        /// <summary>
+        /// تأیید شده
+        /// </summary>
+        Confirmed = 2,
+
+        /// <summary>
+        /// لغو شده
+        /// </summary>
+        Canceled = 3,
+
+        /// <summary>
+        /// تکمیل شده
+        /// </summary>
+        Completed = 4,
+
+        /// <summary>
+        /// در حال انجام
+        /// </summary>
+        InProgress = 5
+    }
+
+    /// <summary>
+    /// شدت تعارضات اورژانس
+    /// </summary>
+    public enum EmergencyConflictSeverity
+    {
+        /// <summary>
+        /// تعارض کم - قابل حل
+        /// </summary>
+        Low = 1,
+
+        /// <summary>
+        /// تعارض متوسط - نیاز به بررسی
+        /// </summary>
+        Medium = 2,
+
+        /// <summary>
+        /// تعارض بالا - نیاز به حل فوری
+        /// </summary>
+        High = 3,
+
+        /// <summary>
+        /// تعارض بحرانی - غیرقابل حل
+        /// </summary>
+        Critical = 4
+    }
+
+    /// <summary>
+    /// وضعیت تعادل کار و زندگی
+    /// </summary>
+    public enum WorkLifeBalanceStatus
+    {
+        /// <summary>
+        /// تعادل مناسب
+        /// </summary>
+        Balanced = 1,
+
+        /// <summary>
+        /// کار بیش از حد
+        /// </summary>
+        WorkOverload = 2,
+
+        /// <summary>
+        /// استراحت بیش از حد
+        /// </summary>
+        RestOverload = 3,
+
+        /// <summary>
+        /// نیاز به بهبود
+        /// </summary>
+        NeedsImprovement = 4
+    }
+
     #endregion
 
     #region Entities

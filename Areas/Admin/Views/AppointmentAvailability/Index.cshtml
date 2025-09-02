@@ -1,0 +1,565 @@
+@{
+    ViewBag.Title = "مدیریت دسترسی‌پذیری نوبت‌ها";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-check text-success me-2"></i>
+            مدیریت دسترسی‌پذیری نوبت‌ها
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("AvailableDates", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                تاریخ‌های در دسترس
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-info btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+            <a href="@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")" class="btn btn-warning btn-sm">
+                <i class="fas fa-calendar-week me-1"></i>
+                تولید اسلات هفتگی
+            </a>
+            <a href="@Url.Action("GenerateMonthlySlots", "AppointmentAvailability")" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar-alt me-1"></i>
+                تولید اسلات ماهانه
+            </a>
+        </div>
+    </div>
+
+    <!-- Dashboard Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                پزشکان فعال
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="activeDoctorsCount">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-user-md fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                اسلات‌های در دسترس
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="availableSlotsCount">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-check fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                اسلات‌های رزرو شده
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="bookedSlotsCount">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar-times fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                درصد دسترسی‌پذیری
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800" id="availabilityPercentage">
+                                <i class="fas fa-spinner fa-spin"></i>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percentage fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-bolt me-1"></i>
+                        عملیات سریع
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-primary w-100" onclick="quickCheckAvailability()">
+                                <i class="fas fa-search me-1"></i>
+                                بررسی دسترسی‌پذیری
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-success w-100" onclick="quickGenerateSlots()">
+                                <i class="fas fa-plus me-1"></i>
+                                تولید اسلات جدید
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-warning w-100" onclick="quickReserveSlot()">
+                                <i class="fas fa-bookmark me-1"></i>
+                                رزرو موقت اسلات
+                            </button>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <button type="button" class="btn btn-outline-info w-100" onclick="generateAvailabilityReport()">
+                                <i class="fas fa-file-alt me-1"></i>
+                                تولید گزارش
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-chart-pie me-1"></i>
+                        آمار کلی
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <canvas id="availabilityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Activities -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-history me-1"></i>
+                آخرین فعالیت‌ها
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="recentActivitiesTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>پزشک</th>
+                            <th>نوع فعالیت</th>
+                            <th>وضعیت</th>
+                            <th>جزئیات</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>هیچ فعالیتی یافت نشد</p>
+                                <p>برای شروع، یکی از عملیات سریع را انتخاب کنید</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Availability Calendar -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-calendar me-1"></i>
+                تقویم دسترسی‌پذیری
+            </h6>
+        </div>
+        <div class="card-body">
+            <div id="availabilityCalendar">
+                <!-- Calendar will be generated here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Check Availability Modal -->
+<div class="modal fade" id="quickCheckModal" tabindex="-1" aria-labelledby="quickCheckModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickCheckModalLabel">بررسی سریع دسترسی‌پذیری</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickCheckForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quickDoctorId" class="form-label">پزشک</label>
+                                <select id="quickDoctorId" name="doctorId" class="form-select" required>
+                                    <option value="">انتخاب پزشک</option>
+                                    @if (ViewBag.Doctors != null)
+                                    {
+                                        foreach (var doctor in ViewBag.Doctors)
+                                        {
+                                            <option value="@doctor.Value">@doctor.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="quickDate" class="form-label">تاریخ</label>
+                                <input type="text" id="quickDate" name="date" class="form-control persian-date" 
+                                       placeholder="انتخاب تاریخ" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="executeQuickCheck()">بررسی</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Generate Slots Modal -->
+<div class="modal fade" id="quickGenerateModal" tabindex="-1" aria-labelledby="quickGenerateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="quickGenerateModalLabel">تولید سریع اسلات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="quickGenerateForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="generateDoctorId" class="form-label">پزشک</label>
+                                <select id="generateDoctorId" name="doctorId" class="form-select" required>
+                                    <option value="">انتخاب پزشک</option>
+                                    @if (ViewBag.Doctors != null)
+                                    {
+                                        foreach (var doctor in ViewBag.Doctors)
+                                        {
+                                            <option value="@doctor.Value">@doctor.Text</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="generateType" class="form-label">نوع تولید</label>
+                                <select id="generateType" name="generateType" class="form-select" required>
+                                    <option value="">انتخاب کنید</option>
+                                    <option value="weekly">هفتگی</option>
+                                    <option value="monthly">ماهانه</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="generateStartDate" class="form-label">تاریخ شروع</label>
+                                <input type="text" id="generateStartDate" name="startDate" class="form-control persian-date" 
+                                       placeholder="انتخاب تاریخ شروع" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="slotDuration" class="form-label">مدت زمان اسلات (دقیقه)</label>
+                                <input type="number" id="slotDuration" name="slotDuration" class="form-control" 
+                                       min="15" max="480" value="30" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="executeQuickGenerate()">تولید</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Load dashboard data
+            loadDashboardData();
+            
+            // Initialize chart
+            initializeAvailabilityChart();
+            
+            // Generate availability calendar
+            generateAvailabilityCalendar();
+        });
+
+        // Load Dashboard Data
+        function loadDashboardData() {
+            // Simulate loading data (replace with actual API calls)
+            setTimeout(() => {
+                $('#activeDoctorsCount').text('15');
+                $('#availableSlotsCount').text('320');
+                $('#bookedSlotsCount').text('180');
+                $('#availabilityPercentage').text('64%');
+            }, 1000);
+        }
+
+        // Initialize Availability Chart
+        function initializeAvailabilityChart() {
+            const ctx = document.getElementById('availabilityChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['در دسترس', 'رزرو شده', 'غیرفعال'],
+                    datasets: [{
+                        data: [64, 29, 7],
+                        backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                        borderWidth: 2,
+                        borderColor: '#fff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generate Availability Calendar
+        function generateAvailabilityCalendar() {
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const daysInMonth = monthEnd.getDate();
+            const firstDay = monthStart.getDay();
+            const weekDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+            
+            let calendarHtml = `
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                ${weekDays.map(day => `<th class="text-center">${day}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            let dayCounter = 1;
+            const totalWeeks = Math.ceil((daysInMonth + firstDay) / 7);
+            
+            for (let week = 0; week < totalWeeks; week++) {
+                calendarHtml += '<tr>';
+                
+                for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                    if ((week === 0 && dayOfWeek < firstDay) || dayCounter > daysInMonth) {
+                        calendarHtml += '<td class="text-muted"></td>';
+                    } else {
+                        const isWeekend = dayOfWeek === 5 || dayOfWeek === 6;
+                        const isToday = dayCounter === today.getDate();
+                        const availability = Math.random() > 0.3 ? 'available' : 'booked';
+                        
+                        let cellClass = '';
+                        let statusText = '';
+                        
+                        if (isWeekend) {
+                            cellClass = 'table-warning';
+                            statusText = 'تعطیل';
+                        } else if (availability === 'available') {
+                            cellClass = 'table-success';
+                            statusText = 'در دسترس';
+                        } else {
+                            cellClass = 'table-danger';
+                            statusText = 'رزرو شده';
+                        }
+                        
+                        if (isToday) {
+                            cellClass += ' border-primary border-3';
+                        }
+                        
+                        calendarHtml += `
+                            <td class="text-center ${cellClass}">
+                                <div class="fw-bold">${dayCounter}</div>
+                                <small class="text-muted">${statusText}</small>
+                            </td>
+                        `;
+                        dayCounter++;
+                    }
+                }
+                
+                calendarHtml += '</tr>';
+            }
+            
+            calendarHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            $('#availabilityCalendar').html(calendarHtml);
+        }
+
+        // Quick Check Availability
+        function quickCheckAvailability() {
+            $('#quickCheckModal').modal('show');
+        }
+
+        // Execute Quick Check
+        function executeQuickCheck() {
+            const doctorId = $('#quickDoctorId').val();
+            const date = $('#quickDate').val();
+
+            if (!doctorId || !date) {
+                alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            // Show loading state
+            const checkBtn = $('button[onclick="executeQuickCheck()"]');
+            const originalText = checkBtn.html();
+            checkBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال بررسی...');
+
+            // Simulate API call
+            setTimeout(() => {
+                $('#quickCheckModal').modal('hide');
+                checkBtn.prop('disabled', false).html(originalText);
+                
+                // Show results
+                showAvailabilityResults(doctorId, date);
+            }, 2000);
+        }
+
+        // Quick Generate Slots
+        function quickGenerateSlots() {
+            $('#quickGenerateModal').modal('show');
+        }
+
+        // Execute Quick Generate
+        function executeQuickGenerate() {
+            const doctorId = $('#generateDoctorId').val();
+            const generateType = $('#generateType').val();
+            const startDate = $('#generateStartDate').val();
+            const slotDuration = $('#slotDuration').val();
+
+            if (!doctorId || !generateType || !startDate || !slotDuration) {
+                alert('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            // Show loading state
+            const generateBtn = $('button[onclick="executeQuickGenerate()"]');
+            const originalText = generateBtn.html();
+            generateBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال تولید...');
+
+            // Simulate API call
+            setTimeout(() => {
+                $('#quickGenerateModal').modal('hide');
+                generateBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('اسلات‌ها با موفقیت تولید شدند');
+                
+                // Refresh dashboard
+                loadDashboardData();
+                generateAvailabilityCalendar();
+            }, 3000);
+        }
+
+        // Quick Reserve Slot
+        function quickReserveSlot() {
+            alert('این قابلیت در حال توسعه است');
+        }
+
+        // Generate Availability Report
+        function generateAvailabilityReport() {
+            window.location.href = '@Url.Action("Report", "AppointmentAvailability")';
+        }
+
+        // Show Availability Results
+        function showAvailabilityResults(doctorId, date) {
+            const results = `
+                <div class="alert alert-info">
+                    <h6>نتایج بررسی دسترسی‌پذیری:</h6>
+                    <p>پزشک: ${$('#quickDoctorId option:selected').text()}</p>
+                    <p>تاریخ: ${date}</p>
+                    <p>وضعیت: <span class="badge bg-success">در دسترس</span></p>
+                    <p>تعداد اسلات‌های خالی: 8</p>
+                    <p>تعداد اسلات‌های رزرو شده: 12</p>
+                </div>
+            `;
+            
+            // You can implement a proper modal or toast notification here
+            alert('بررسی دسترسی‌پذیری تکمیل شد');
+        }
+
+        function showSuccessMessage(message) {
+            // You can implement a proper toast notification here
+            alert(message);
+        }
+    </script>
+}

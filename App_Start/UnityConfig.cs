@@ -338,6 +338,15 @@ namespace ClinicApp
                 container.RegisterType<IDoctorReportingService, DoctorReportingService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDoctorAssignmentHistoryService, DoctorAssignmentHistoryService>(new PerRequestLifetimeManager());
 
+                // ثبت سرویس‌های مدیریت نوبت‌دهی
+                container.RegisterType<IAppointmentAvailabilityService, AppointmentAvailabilityService>(new PerRequestLifetimeManager());
+
+                // Register Schedule Optimization Service
+                container.RegisterType<IScheduleOptimizationService, ScheduleOptimizationService>(new PerRequestLifetimeManager());
+
+                // Register Emergency Booking Service
+                container.RegisterType<IEmergencyBookingService, EmergencyBookingService>(new PerRequestLifetimeManager());
+
                 // Register Core Services for Search functionality
                 container.RegisterType<IDoctorCrudService, DoctorCrudService>(new PerRequestLifetimeManager());
                 container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new PerRequestLifetimeManager());
@@ -364,6 +373,9 @@ namespace ClinicApp
 
                 // Register Specialization Validators
                 container.RegisterType<IValidator<SpecializationCreateEditViewModel>, SpecializationCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+
+                // طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم
+                // از Factory Method Pattern استفاده می‌کنیم
 
                 _log.Information("سرویس‌های پزشکی با موفقیت ثبت شدند");
             }

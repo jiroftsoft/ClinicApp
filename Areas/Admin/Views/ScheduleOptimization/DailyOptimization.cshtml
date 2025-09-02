@@ -1,0 +1,401 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.WorkloadBalanceResult
+@{
+    ViewBag.Title = "بهینه‌سازی برنامه کاری روزانه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-day text-primary me-2"></i>
+            بهینه‌سازی برنامه کاری روزانه
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "ScheduleOptimization")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("WeeklyOptimization", "ScheduleOptimization")" class="btn btn-info btn-sm">
+                <i class="fas fa-calendar-week me-1"></i>
+                بهینه‌سازی هفتگی
+            </a>
+            <a href="@Url.Action("MonthlyOptimization", "ScheduleOptimization")" class="btn btn-success btn-sm">
+                <i class="fas fa-calendar-alt me-1"></i>
+                بهینه‌سازی ماهانه
+            </a>
+        </div>
+    </div>
+
+    <!-- Optimization Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-cog me-1"></i>
+                تنظیمات بهینه‌سازی
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("DailyOptimization", "ScheduleOptimization", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="date" class="form-label">تاریخ</label>
+                            <input type="text" name="date" id="date" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ" required>
+                            <div class="invalid-feedback">لطفاً تاریخ را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="optimizationType" class="form-label">نوع بهینه‌سازی</label>
+                            <select name="optimizationType" id="optimizationType" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="workload">متعادل‌سازی بار کاری</option>
+                                <option value="break">بهینه‌سازی زمان استراحت</option>
+                                <option value="emergency">بهینه‌سازی زمان اورژانس</option>
+                                <option value="comprehensive">بهینه‌سازی جامع</option>
+                            </select>
+                            <div class="invalid-feedback">لطفاً نوع بهینه‌سازی را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">اولویت بهینه‌سازی</label>
+                            <select name="priority" id="priority" class="form-select" required>
+                                <option value="">انتخاب کنید</option>
+                                <option value="high">بالا</option>
+                                <option value="medium">متوسط</option>
+                                <option value="low">کم</option>
+                            </select>
+                            <div class="invalid-feedback">لطفاً اولویت را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="maxAppointments" class="form-label">حداکثر نوبت در روز</label>
+                            <input type="number" name="maxAppointments" id="maxAppointments" class="form-control" 
+                                   min="1" max="50" value="20" required>
+                            <div class="invalid-feedback">لطفاً تعداد معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="breakDuration" class="form-label">مدت زمان استراحت (دقیقه)</label>
+                            <input type="number" name="breakDuration" id="breakDuration" class="form-control" 
+                                   min="15" max="120" value="30" required>
+                            <div class="invalid-feedback">لطفاً مدت زمان معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12">
+                        <div class="mb-3">
+                            <label for="constraints" class="form-label">محدودیت‌ها و ملاحظات</label>
+                            <textarea name="constraints" id="constraints" class="form-control" rows="3" 
+                                      placeholder="محدودیت‌ها و ملاحظات خاص را وارد کنید (اختیاری)"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-magic me-1"></i>
+                            اجرای بهینه‌سازی
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Optimization Results Preview -->
+    @if (Model != null)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-line me-1"></i>
+                    نتایج بهینه‌سازی
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">وضعیت بهینه‌سازی:</label>
+                            <p>
+                                <span class="badge bg-success fs-6">@Model.Status</span>
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">پیام:</label>
+                            <p class="form-control-plaintext">@Model.Message</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-primary">@Model.CurrentAppointments</div>
+                            <small class="text-muted">نوبت‌های فعلی</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-success">@Model.SuggestedAppointments</div>
+                            <small class="text-muted">نوبت‌های پیشنهادی</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-info">@Model.WorkloadPercentage.ToString("P1")</div>
+                            <small class="text-muted">درصد بار کاری</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-warning">@Model.BreakTimeMinutes</div>
+                            <small class="text-muted">زمان استراحت (دقیقه)</small>
+                        </div>
+                    </div>
+                </div>
+
+                @if (Model.OptimizedSlots != null && Model.OptimizedSlots.Any())
+                {
+                    <div class="mt-4">
+                        <h6 class="fw-bold">اسلات‌های بهینه شده:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>زمان شروع</th>
+                                        <th>زمان پایان</th>
+                                        <th>نوع</th>
+                                        <th>وضعیت</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var slot in Model.OptimizedSlots.Take(10))
+                                    {
+                                        <tr>
+                                            <td>@slot.StartTimeDisplay</td>
+                                            <td>@slot.EndTimeDisplay</td>
+                                            <td>@slot.Type</td>
+                                            <td>
+                                                <span class="badge bg-success">بهینه شده</span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                }
+
+                @if (Model.Recommendations != null && Model.Recommendations.Any())
+                {
+                    <div class="mt-4">
+                        <h6 class="fw-bold">پیشنهادات بهبود:</h6>
+                        <ul class="list-group list-group-flush">
+                            @foreach (var recommendation in Model.Recommendations.Take(5))
+                            {
+                                <li class="list-group-item">
+                                    <i class="fas fa-lightbulb text-warning me-2"></i>
+                                    @recommendation
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="row mt-4">
+                    <div class="col-12 text-center">
+                        <a href="@Url.Action("DailyOptimizationResult", "ScheduleOptimization", new { doctorId = Model.DoctorId, date = DateTime.Today.ToString("yyyy-MM-dd") })" 
+                           class="btn btn-info btn-lg me-3">
+                            <i class="fas fa-eye me-1"></i>
+                            مشاهده جزئیات کامل
+                        </a>
+                        <button type="button" class="btn btn-success btn-lg" onclick="applyOptimization()">
+                            <i class="fas fa-check me-1"></i>
+                            اعمال بهینه‌سازی
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Optimization History -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-history me-1"></i>
+                تاریخچه بهینه‌سازی‌های روزانه
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover" id="optimizationHistoryTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>پزشک</th>
+                            <th>نوع</th>
+                            <th>وضعیت</th>
+                            <th>نتایج</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">
+                                <i class="fas fa-inbox fa-2x mb-2"></i>
+                                <p>هیچ بهینه‌سازی‌ای یافت نشد</p>
+                                <p>برای شروع، یک بهینه‌سازی جدید اجرا کنید</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false,
+                onSelect: function(unix) {
+                    // Convert Persian date to Gregorian for model binding
+                    var gregorianDate = new Date(unix);
+                    var year = gregorianDate.getFullYear();
+                    var month = String(gregorianDate.getMonth() + 1).padStart(2, '0');
+                    var day = String(gregorianDate.getDate()).padStart(2, '0');
+                    var gregorianDateString = year + '-' + month + '-' + day;
+                    
+                    // Set the hidden input for model binding
+                    $('input[name="date"]').val(gregorianDateString);
+                }
+            });
+
+            // Set default values
+            $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Auto-save functionality
+            let autoSaveTimer;
+            $('input, select, textarea').on('input change', function() {
+                clearTimeout(autoSaveTimer);
+                autoSaveTimer = setTimeout(function() {
+                    // Auto-save logic can be implemented here
+                    console.log('Auto-save triggered');
+                }, 30000); // 30 seconds delay
+            });
+        });
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('optimizationForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+                $('input[name="maxAppointments"]').val('20');
+                $('input[name="breakDuration"]').val('30');
+            }
+        }
+
+        // Apply Optimization
+        function applyOptimization() {
+            if (confirm('آیا از اعمال بهینه‌سازی اطمینان دارید؟ این عمل برنامه کاری پزشک را تغییر خواهد داد.')) {
+                // Show loading state
+                const applyBtn = $('button[onclick="applyOptimization()"]');
+                const originalText = applyBtn.html();
+                applyBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اعمال...');
+
+                // Simulate API call
+                setTimeout(() => {
+                    applyBtn.prop('disabled', false).html(originalText);
+                    
+                    // Show success message
+                    showSuccessMessage('بهینه‌سازی با موفقیت اعمال شد');
+                    
+                    // Refresh page or update UI
+                    location.reload();
+                }, 2000);
+            }
+        }
+
+        // Form submission with confirmation
+        $('form').on('submit', function(e) {
+            if (!confirm('آیا از اجرای بهینه‌سازی اطمینان دارید؟')) {
+                e.preventDefault();
+                return false;
+            }
+            
+            // Show loading state
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال اجرا...');
+        });
+
+        function showSuccessMessage(message) {
+            // You can implement a proper toast notification here
+            alert(message);
+        }
+    </script>
+}

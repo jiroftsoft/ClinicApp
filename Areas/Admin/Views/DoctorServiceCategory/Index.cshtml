@@ -1,8 +1,10 @@
-@model PagedResult<DoctorServiceCategoryViewModel>
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryViewModel>
 @{
     ViewBag.Title = "مدیریت صلاحیت‌های خدماتی پزشکان";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
+
+@Html.AntiForgeryToken()
 
 <div class="container-fluid">
     <div class="row">
@@ -14,7 +16,7 @@
                         مدیریت صلاحیت‌های خدماتی پزشکان
                     </h3>
                     <div class="card-tools">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addServiceCategoryModal">
+                        <button type="button" class="btn btn-primary" id="openAddModalBtn">
                             <i class="fas fa-plus"></i>
                             اضافه کردن صلاحیت جدید
                         </button>
@@ -23,8 +25,8 @@
                 <div class="card-body">
                     @if (TempData["Success"] != null)
                     {
-                        <div class="alert alert-success alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
                             <i class="fas fa-check"></i>
                             @TempData["Success"]
                         </div>
@@ -32,8 +34,8 @@
 
                     @if (TempData["Error"] != null)
                     {
-                        <div class="alert alert-danger alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
                             <i class="fas fa-exclamation-triangle"></i>
                             @TempData["Error"]
                         </div>
@@ -98,12 +100,12 @@
                                 {
                                     foreach (var item in Model.Items)
                                     {
-                                        <tr data-id="@item.Id">
-                                            <td>@item.DoctorName</td>
-                                            <td>@item.ServiceCategoryName</td>
-                                            <td>@item.DepartmentName</td>
-                                            <td>@item.AuthorizationLevel</td>
-                                            <td>@item.CertificateNumber</td>
+                                        <tr data-id="@item.AssignmentId">
+                                            <td>@(item.DoctorName ?? "-")</td>
+                                            <td>@(item.ServiceCategoryTitle ?? "-")</td>
+                                            <td>@(item.DepartmentName ?? "-")</td>
+                                            <td>@(item.AuthorizationLevel ?? "-")</td>
+                                            <td>@(item.CertificateNumber ?? "-")</td>
                                             <td>
                                                 @if (item.IsActive)
                                                 {
@@ -114,16 +116,16 @@
                                                     <span class="badge badge-danger">غیرفعال</span>
                                                 }
                                             </td>
-                                            <td>@(item.GrantedDate?.ToString("yyyy/MM/dd"))</td>
+                                            <td>@(item.GrantedDate?.ToString("yyyy/MM/dd") ?? "-")</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewServiceCategory(@item.Id)">
+                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewServiceCategory('@item.AssignmentId')" title="مشاهده">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editServiceCategory(@item.Id)">
+                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editServiceCategory('@item.AssignmentId')" title="ویرایش">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeServiceCategory(@item.DoctorId, @item.ServiceCategoryId)">
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeServiceCategory(@item.DoctorId, @item.ServiceCategoryId)" title="حذف">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
@@ -134,7 +136,10 @@
                                 else
                                 {
                                     <tr>
-                                        <td colspan="8" class="text-center">هیچ صلاحیت خدماتی یافت نشد.</td>
+                                        <td colspan="8" class="text-center text-muted">
+                                            <i class="fas fa-info-circle"></i>
+                                            هیچ صلاحیت خدماتی یافت نشد.
+                                        </td>
                                     </tr>
                                 }
                             </tbody>
@@ -149,7 +154,7 @@
                                 <ul class="pagination">
                                     @for (int i = 1; i <= Model.TotalPages; i++)
                                     {
-                                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                        <li class="page-item @(i == Model.PageNumber ? "active" : "")">
                                             <a class="page-link" href="#" onclick="loadPage(@i)">@i</a>
                                         </li>
                                     }
@@ -164,16 +169,17 @@
 </div>
 
 <!-- Modal اضافه کردن صلاحیت جدید -->
-<div class="modal fade" id="addServiceCategoryModal" tabindex="-1" role="dialog">
+<div class="modal fade" id="addServiceCategoryModal" tabindex="-1" role="dialog" aria-labelledby="addServiceCategoryModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-lg" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">اضافه کردن صلاحیت خدماتی جدید</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
+                <h5 class="modal-title" id="addServiceCategoryModalLabel">اضافه کردن صلاحیت خدماتی جدید</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <form id="addServiceCategoryForm">
+                @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -216,9 +222,25 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="grantedDate">تاریخ اعطا</label>
-                                <input type="date" id="grantedDate" name="GrantedDate" class="form-control" />
+                                <input type="text" id="grantedDate" name="GrantedDate" class="form-control persian-date" 
+                                       data-alt-field="#grantedDateGregorian"
+                                       placeholder="مثال: 1404/06/01" />
+                                <!-- تاریخ میلادی مخفی برای ذخیره در دیتابیس -->
+                                <input type="hidden" id="grantedDateGregorian" name="GrantedDateGregorian" />
                             </div>
                         </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="expiryDate">تاریخ انقضا (اختیاری)</label>
+                                <input type="text" id="expiryDate" name="ExpiryDate" class="form-control persian-date" 
+                                       data-alt-field="#expiryDateGregorian"
+                                       placeholder="مثال: 1404/06/01" />
+                                <!-- تاریخ میلادی مخفی برای ذخیره در دیتابیس -->
+                                <input type="hidden" id="expiryDateGregorian" name="ExpiryDateGregorian" />
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="isActive">وضعیت</label>
@@ -236,7 +258,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                    <button type="submit" class="btn btn-primary">ذخیره</button>
+                    <button type="submit" id="saveAddServiceCategoryBtn" class="btn btn-primary">ذخیره</button>
                 </div>
             </form>
         </div>
@@ -245,13 +267,188 @@
 
 @section Scripts {
     <script>
+        // افزودن توکن ضد جعل به همه درخواست‌های POST
+        $.ajaxSetup({
+            beforeSend: function (xhr, settings) {
+                if (settings.type === 'POST') {
+                    var token = $('input[name="__RequestVerificationToken"]').val();
+                    if (token) {
+                        xhr.setRequestHeader('RequestVerificationToken', token);
+                        xhr.setRequestHeader('X-RequestVerificationToken', token);
+                    }
+                }
+            }
+        });
+
         $(document).ready(function () {
+            console.log('Document ready - jQuery version:', $.fn.jquery);
+            console.log('Bootstrap modal available:', typeof $.fn.modal !== 'undefined');
+            
+            // اطمینان از بارگذاری کامل Bootstrap
+            if (typeof $.fn.modal === 'undefined') {
+                console.error('Bootstrap modal not loaded!');
+                console.log('Available jQuery methods:', Object.keys($.fn).filter(k => k.includes('modal')));
+                alert('خطا در بارگذاری Bootstrap. لطفاً صفحه را رفرش کنید.');
+                return;
+            }
+            
+            // تست ساده برای اطمینان از کارکرد مودال
+            console.log('Testing modal functionality...');
+            try {
+                var modalElement = $('#addServiceCategoryModal');
+                console.log('Modal element found:', modalElement.length > 0);
+                console.log('Modal classes:', modalElement.attr('class'));
+            } catch (e) {
+                console.error('Error testing modal:', e);
+            }
+            
+            // باز کردن مودال با تأخیر کوتاه
+            $('#openAddModalBtn').on('click', function(e) {
+                console.log('Button clicked - attempting to open modal');
+                e.preventDefault();
+                
+                // تأخیر کوتاه برای اطمینان از بارگذاری کامل
+                setTimeout(function() {
+                    try {
+                        // تلاش برای باز کردن مودال Bootstrap
+                        $('#addServiceCategoryModal').modal('show');
+                        console.log('Modal should be open now');
+                        
+                        // راه‌اندازی مجدد Persian DatePicker برای فیلدهای داخل مودال
+                        setTimeout(function() {
+                            console.log('Modal opened - DatePicker will be initialized by global handler');
+                        }, 200);
+
+                    } catch (error) {
+                        console.error('Error opening modal:', error);
+                        
+                        // راه‌حل جایگزین: نمایش مودال به صورت دستی
+                        console.log('Falling back to manual modal display');
+                        $('#addServiceCategoryModal').show();
+                        $('body').addClass('modal-open');
+                        
+                        // اضافه کردن backdrop
+                        if (!$('.modal-backdrop').length) {
+                            $('body').append('<div class="modal-backdrop fade show"></div>');
+                        }
+                        
+                        // اضافه کردن CSS برای مودال
+                        $('#addServiceCategoryModal').css({
+                            'display': 'block',
+                            'position': 'fixed',
+                            'top': '0',
+                            'left': '0',
+                            'width': '100%',
+                            'height': '100%',
+                            'z-index': '1050',
+                            'background-color': 'rgba(0,0,0,0.5)'
+                        });
+                        
+                        // مرکز کردن مودال
+                        $('.modal-dialog').css({
+                            'margin': '50px auto',
+                            'max-width': '800px'
+                        });
+                        
+                        // راه‌اندازی مجدد Persian DatePicker برای فیلدهای داخل مودال
+                        setTimeout(function() {
+                            console.log('Modal opened (fallback) - DatePicker will be initialized by global handler');
+                        }, 200);
+
+                    }
+                }, 100);
+            });
+            
+            // بستن مودال با کلیک روی backdrop یا دکمه close
+            $(document).on('click', '.modal-backdrop, [data-dismiss="modal"]', function() {
+                $('#addServiceCategoryModal').hide();
+                $('body').removeClass('modal-open');
+                $('.modal-backdrop').remove();
+                
+                // بازنشانی CSS
+                $('#addServiceCategoryModal').css({
+                    'display': 'none',
+                    'position': '',
+                    'top': '',
+                    'left': '',
+                    'width': '',
+                    'height': '',
+                    'z-index': '',
+                    'background-color': ''
+                });
+            });
+            
+            // راه‌اندازی Persian DatePicker برای فیلدهای داخل مودال
+            $('#addServiceCategoryModal').on('shown.bs.modal', function() {
+                console.log('Modal shown - initializing DatePicker for modal fields');
+                setTimeout(function() {
+                    if (typeof $.fn.persianDatepicker !== 'undefined') {
+                        $('#addServiceCategoryModal .persian-date').each(function() {
+                            var $this = $(this);
+                            if (!$this.data('persian-datepicker-initialized')) {
+                                $this.persianDatepicker({
+                                    format: 'YYYY/MM/DD',
+                                    initialValue: false,
+                                    autoClose: true,
+                                    observer: false,
+                                    persianDigit: true,
+                                    calendar: {
+                                        persian: {
+                                            locale: 'fa',
+                                            leapYearMode: 'astronomical'
+                                        }
+                                    },
+                                    toolbox: {
+                                        todayBtn: { enabled: true, text: { fa: 'امروز' } },
+                                        clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
+                                    },
+                                    onSelect: function(unix) {
+                                        // Convert to Persian date using jalaali-js
+                                        if (typeof window.jalaali !== 'undefined') {
+                                            var date = new Date(unix);
+                                            var persianDate = window.jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
+                                            var formattedDate = persianDate.jy + '/' + 
+                                                String(persianDate.jm).padStart(2, '0') + '/' + 
+                                                String(persianDate.jd).padStart(2, '0');
+                                            $this.val(formattedDate);
+                                        } else {
+                                            // Fallback to simple display
+                                            $this.val($this.val());
+                                        }
+                                        
+                                        // Trigger change event
+                                        $this.trigger('change');
+                                    }
+                                });
+                                $this.data('persian-datepicker-initialized', true);
+                            }
+                        });
+                    }
+                }, 100);
+            });
+            
             loadDoctors();
             loadServiceCategories();
             
-            // جستجو
+            // تنظیم تاریخ امروز به صورت پیش‌فرض (شمسی)
+            // Let the DatePicker handle the default date setting
+            console.log('Date fields will be initialized by global DatePicker handler');
+            
+            // تست نهایی: بررسی وجود دکمه
+            console.log('Add button found:', $('#openAddModalBtn').length > 0);
+            console.log('Modal found:', $('#addServiceCategoryModal').length > 0);
+            console.log('Persian DatePicker fields found:', $('.persian-date').length);
+            
+            // جستجو: ناوبری به اکشن Index با فیلترها
             $('#searchBtn').click(function () {
-                loadServiceCategories();
+                var doctorId = $('#doctorFilter').val();
+                var serviceCategoryId = $('#serviceCategoryFilter').val();
+                var isActive = $('#statusFilter').val();
+                var url = '@Url.Action("Index")?page=1';
+                if (doctorId) url += '&doctorId=' + encodeURIComponent(doctorId);
+                if (serviceCategoryId) url += '&serviceCategoryId=' + encodeURIComponent(serviceCategoryId);
+                if (isActive !== '') url += '&isActive=' + encodeURIComponent(isActive);
+                window.location.href = url;
             });
             
             // فرم اضافه کردن
@@ -259,18 +456,41 @@
                 e.preventDefault();
                 addServiceCategory();
             });
+            // دکمه ذخیره برای اطمینان از ارسال فرم
+            $('#saveAddServiceCategoryBtn').on('click', function (e) {
+                e.preventDefault();
+                addServiceCategory();
+            });
         });
 
+        function parseIfString(data) {
+            if (typeof data === 'string') {
+                try { return JSON.parse(data); } catch (e) { return null; }
+            }
+            return data;
+        }
+
         function loadDoctors() {
-            $.get('@Url.Action("GetDoctors", "Doctor")', function (data) {
-                if (data.success) {
+            $.ajax({
+                url: '@Url.Action("GetDoctors", "Doctor")',
+                type: 'GET',
+                dataType: 'json'
+            })
+            .done(function (data) {
+                var parsed = parseIfString(data);
+                if (parsed && parsed.success && Array.isArray(parsed.data)) {
                     var options = '<option value="">همه پزشکان</option>';
-                    data.data.forEach(function (doctor) {
+                    parsed.data.forEach(function (doctor) {
                         options += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
                     });
                     $('#doctorFilter').html(options);
                     $('#doctorId').html(options);
+                } else {
+                    console.warn('No doctors returned or response malformed.', data);
                 }
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to load doctors:', status, error);
             });
         }
 
@@ -281,51 +501,175 @@
                 isActive: $('#statusFilter').val()
             };
 
-            $.get('@Url.Action("GetServiceCategories")', filters, function (data) {
-                if (data.success) {
+            $.ajax({
+                url: '@Url.Action("GetServiceCategories")',
+                type: 'GET',
+                data: filters,
+                dataType: 'json'
+            })
+            .done(function (data) {
+                var parsed = parseIfString(data);
+                if (parsed && parsed.success && Array.isArray(parsed.data)) {
                     var options = '<option value="">همه سرفصل‌ها</option>';
-                    data.data.forEach(function (category) {
+                    parsed.data.forEach(function (category) {
                         options += '<option value="' + category.Id + '">' + category.Name + '</option>';
                     });
                     $('#serviceCategoryFilter').html(options);
                     $('#serviceCategoryId').html(options);
+                } else {
+                    console.warn('No service categories returned or response malformed.', data);
                 }
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to load service categories:', status, error);
             });
         }
 
         function addServiceCategory() {
-            var formData = $('#addServiceCategoryForm').serialize();
+            var selectedDoctor = $('#doctorId').val();
+            var selectedCategory = $('#serviceCategoryId').val();
+            if (!selectedDoctor || !selectedCategory) {
+                alert('لطفاً پزشک و سرفصل خدماتی را انتخاب کنید.');
+                return;
+            }
+
+            // دریافت Anti-Forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            console.log('Anti-Forgery Token:', token);
             
-            $.post('@Url.Action("AddServiceCategory")', formData, function (data) {
-                if (data.success) {
-                    $('#addServiceCategoryModal').modal('hide');
-                    location.reload();
-                } else {
-                    alert('خطا: ' + data.message);
+            if (!token) {
+                alert('خطا: توکن امنیتی یافت نشد. لطفاً صفحه را رفرش کنید.');
+                return;
+            }
+            
+            var formData = $('#addServiceCategoryForm').serialize();
+            console.log('Form data before adding token:', formData);
+            console.log('Submitting addServiceCategory with token');
+            
+            $.ajax({
+                url: '@Url.Action("AddServiceCategory")',
+                type: 'POST',
+                data: formData,
+                dataType: 'json',
+                beforeSend: function(xhr) {
+                    xhr.setRequestHeader('RequestVerificationToken', token);
                 }
+            })
+            .done(function (data) {
+                var parsed = parseIfString(data);
+                console.log('AddServiceCategory response', parsed || data);
+                if (parsed && parsed.success) {
+                    // بستن مودال
+                    try {
+                        $('#addServiceCategoryModal').modal('hide');
+                    } catch (e) {
+                        // راه‌حل جایگزین برای بستن مودال
+                        $('#addServiceCategoryModal').hide();
+                        $('body').removeClass('modal-open');
+                        $('.modal-backdrop').remove();
+                        
+                        // بازنشانی CSS
+                        $('#addServiceCategoryModal').css({
+                            'display': 'none',
+                            'position': '',
+                            'top': '',
+                            'left': '',
+                            'width': '',
+                            'height': '',
+                            'z-index': '',
+                            'background-color': ''
+                        });
+                    }
+                    
+                    var redirectDoctorId = $('#doctorId').val() || '';
+                    var redirectUrl = '@Url.Action("Index")';
+                    if (redirectDoctorId) {
+                        redirectUrl += '?doctorId=' + encodeURIComponent(redirectDoctorId);
+                    }
+                    window.location.href = redirectUrl;
+                } else {
+                    alert('خطا: ' + (parsed && parsed.message ? parsed.message : 'پاسخ نامعتبر از سرور'));
+                }
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to add service category:', status, error, xhr && xhr.responseText);
+                alert('خطا در ارتباط با سرور');
             });
         }
 
-        function viewServiceCategory(id) {
-            window.location.href = '@Url.Action("Details")/' + id;
+        function viewServiceCategory(assignmentId) {
+            try {
+                console.log('🔍 Viewing service category with assignmentId:', assignmentId);
+                console.log('🔍 AssignmentId type:', typeof assignmentId);
+                if (!assignmentId || assignmentId === 'undefined' || assignmentId === '') {
+                    console.error('❌ Invalid assignmentId:', assignmentId);
+                    alert('شناسه صلاحیت نامعتبر است.');
+                    return;
+                }
+                var url = '@Url.Action("Details")?assignmentId=' + encodeURIComponent(assignmentId);
+                console.log('🔗 Navigating to:', url);
+                window.location.href = url;
+            } catch (error) {
+                console.error('❌ Error in viewServiceCategory:', error);
+                alert('خطا در مشاهده صلاحیت خدماتی');
+            }
         }
 
-        function editServiceCategory(id) {
-            window.location.href = '@Url.Action("Edit")/' + id;
+        function editServiceCategory(assignmentId) {
+            try {
+                console.log('✏️ Editing service category with assignmentId:', assignmentId);
+                console.log('✏️ AssignmentId type:', typeof assignmentId);
+                if (!assignmentId || assignmentId === 'undefined' || assignmentId === '') {
+                    console.error('❌ Invalid assignmentId:', assignmentId);
+                    alert('شناسه صلاحیت نامعتبر است.');
+                    return;
+                }
+                var url = '@Url.Action("Edit")?assignmentId=' + encodeURIComponent(assignmentId);
+                console.log('🔗 Navigating to:', url);
+                window.location.href = url;
+            } catch (error) {
+                console.error('❌ Error in editServiceCategory:', error);
+                alert('خطا در ویرایش صلاحیت خدماتی');
+            }
         }
 
         function removeServiceCategory(doctorId, serviceCategoryId) {
-            if (confirm('آیا از حذف این صلاحیت خدماتی اطمینان دارید؟')) {
-                $.post('@Url.Action("RemoveServiceCategory")', {
-                    doctorId: doctorId,
-                    categoryId: serviceCategoryId
-                }, function (data) {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('خطا: ' + data.message);
-                    }
-                });
+            try {
+                console.log('Removing service category. DoctorId:', doctorId, 'ServiceCategoryId:', serviceCategoryId);
+                if (!doctorId || !serviceCategoryId) {
+                    console.error('Invalid parameters. DoctorId:', doctorId, 'ServiceCategoryId:', serviceCategoryId);
+                    alert('پارامترهای ورودی نامعتبر است.');
+                    return;
+                }
+
+                if (confirm('آیا از حذف این صلاحیت خدماتی اطمینان دارید؟')) {
+                    $.ajax({
+                        url: '@Url.Action("RemoveServiceCategory")',
+                        type: 'POST',
+                        dataType: 'json',
+                        data: {
+                            doctorId: doctorId,
+                            categoryId: serviceCategoryId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        }
+                    })
+                    .done(function (data) {
+                        var parsed = parseIfString(data);
+                        if (parsed && parsed.success) {
+                            location.reload();
+                        } else {
+                            console.error('Remove service category failed:', data);
+                            alert('خطا: ' + (parsed && parsed.message ? parsed.message : 'پاسخ نامعتبر از سرور'));
+                        }
+                    })
+                    .fail(function (xhr, status, error) {
+                        console.error('AJAX request failed:', status, error);
+                        alert('خطا در ارتباط با سرور');
+                    });
+                }
+            } catch (error) {
+                console.error('Error in removeServiceCategory:', error);
+                alert('خطا در حذف صلاحیت خدماتی');
             }
         }
 
@@ -336,13 +680,11 @@
                 serviceCategoryId: $('#serviceCategoryFilter').val(),
                 isActive: $('#statusFilter').val()
             };
-            
             $.each(filters, function (key, value) {
                 if (value) {
                     url += '&' + key + '=' + value;
                 }
             });
-            
             window.location.href = url;
         }
     </script>

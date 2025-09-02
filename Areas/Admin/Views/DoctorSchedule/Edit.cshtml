@@ -1,0 +1,266 @@
+@* صفحه ویرایش برنامه کاری پزشک - طراحی Ultimate برای محیط درمانی *@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel
+@{
+    ViewBag.Title = "ویرایش برنامه کاری پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <style>
+        .doctor-header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            color: white;
+            margin-bottom: 2rem;
+        }
+        
+        .edit-form {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+        
+        .work-day-section {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #28a745;
+        }
+        
+        .time-range-section {
+            background: white;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-left: 3px solid #4facfe;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: flex-end;
+            margin-top: 2rem;
+        }
+        
+        .btn-action {
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-action:hover {
+            transform: scale(1.05);
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 0.5rem;
+        }
+        
+        .form-control {
+            border-radius: 8px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #4facfe;
+            box-shadow: 0 0 0 0.2rem rgba(79, 172, 254, 0.25);
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Doctor Header -->
+    <div class="doctor-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h2 class="mb-2">
+                    <i class="fas fa-edit me-2"></i>
+                    ویرایش برنامه کاری پزشک
+                </h2>
+                <p class="mb-0 opacity-75">@(Model.DoctorName ?? "پزشک")</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-light">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    بازگشت به جزئیات
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="edit-form">
+        @using (Html.BeginForm("UpdateSchedule", "DoctorSchedule", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.Id)
+            @Html.HiddenFor(m => m.DoctorId)
+            
+            <div class="row">
+                <div class="col-12">
+                    <h4 class="mb-3">
+                        <i class="fas fa-calendar-alt me-2"></i>
+                        ویرایش برنامه کاری
+                    </h4>
+                    
+                    @if (Model.WorkDays != null && Model.WorkDays.Any())
+                    {
+                        for (int i = 0; i < Model.WorkDays.Count; i++)
+                        {
+                            var workDay = Model.WorkDays[i];
+                            <div class="work-day-section">
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <h6 class="mb-2">@workDay.DayName</h6>
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(m => m.WorkDays[i].IsActive, new { @class = "form-check-input" })
+                                            <label class="form-check-label" for="@($"WorkDays_{i}__IsActive")">
+                                                فعال
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-9">
+                                        @if (workDay.TimeRanges != null && workDay.TimeRanges.Any())
+                                        {
+                                            for (int j = 0; j < workDay.TimeRanges.Count; j++)
+                                            {
+                                                var timeRange = workDay.TimeRanges[j];
+                                                <div class="time-range-section">
+                                                    <div class="row">
+                                                        <div class="col-md-4">
+                                                            <label class="form-label">زمان شروع</label>
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].StartTime, new { @class = "form-control", type = "time" })
+                                                        </div>
+                                                        <div class="col-md-4">
+                                                            <label class="form-label">زمان پایان</label>
+                                                            @Html.TextBoxFor(m => m.WorkDays[i].TimeRanges[j].EndTime, new { @class = "form-control", type = "time" })
+                                                        </div>
+                                                        <div class="col-md-3">
+                                                            <label class="form-label">وضعیت</label>
+                                                            <div class="form-check">
+                                                                @Html.CheckBoxFor(m => m.WorkDays[i].TimeRanges[j].IsActive, new { @class = "form-check-input" })
+                                                                <label class="form-check-label" for="@($"WorkDays_{i}__TimeRanges_{j}__IsActive")">
+                                                                    فعال
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                        <div class="col-md-1">
+                                                            <button type="button" class="btn btn-sm btn-danger" onclick="removeTimeRange(this)">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                        }
+                                        <button type="button" class="btn btn-sm btn-success" onclick="addTimeRange(@i)">
+                                            <i class="fas fa-plus me-1"></i>
+                                            افزودن بازه زمانی
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center text-muted py-5">
+                            <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                            <h5>هیچ برنامه کاری تعریف نشده است</h5>
+                            <p>برای این پزشک هنوز برنامه کاری تنظیم نشده است.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="action-buttons">
+                <a href="@Url.Action("Details", new { id = Model.Id })" class="btn btn-secondary btn-action">
+                    <i class="fas fa-times me-2"></i>
+                    انصراف
+                </a>
+                <button type="submit" class="btn btn-primary btn-action">
+                    <i class="fas fa-save me-2"></i>
+                    ذخیره تغییرات
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script>
+        function addTimeRange(workDayIndex) {
+            const workDaySection = document.querySelectorAll('.work-day-section')[workDayIndex];
+            const timeRangesContainer = workDaySection.querySelector('.col-md-9');
+            const timeRangeCount = timeRangesContainer.querySelectorAll('.time-range-section').length;
+            
+            const newTimeRange = document.createElement('div');
+            newTimeRange.className = 'time-range-section';
+            newTimeRange.innerHTML = `
+                <div class="row">
+                    <div class="col-md-4">
+                        <label class="form-label">زمان شروع</label>
+                        <input type="time" class="form-control" name="WorkDays[${workDayIndex}].TimeRanges[${timeRangeCount}].StartTime" />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">زمان پایان</label>
+                        <input type="time" class="form-control" name="WorkDays[${workDayIndex}].TimeRanges[${timeRangeCount}].EndTime" />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">وضعیت</label>
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" name="WorkDays[${workDayIndex}].TimeRanges[${timeRangeCount}].IsActive" checked />
+                            <label class="form-check-label">فعال</label>
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <button type="button" class="btn btn-sm btn-danger" onclick="removeTimeRange(this)">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            // درج قبل از دکمه افزودن
+            const addButton = timeRangesContainer.querySelector('.btn-success');
+            timeRangesContainer.insertBefore(newTimeRange, addButton);
+        }
+        
+        function removeTimeRange(button) {
+            const timeRangeSection = button.closest('.time-range-section');
+            timeRangeSection.remove();
+        }
+        
+        // اعتبارسنجی فرم
+        document.querySelector('form').addEventListener('submit', function(e) {
+            if (!this.checkValidity()) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا در فرم',
+                    text: 'لطفاً تمام فیلدهای الزامی را پر کنید.'
+                });
+            }
+            
+            this.classList.add('was-validated');
+        });
+    </script>
+}

@@ -273,7 +273,8 @@
                                     format: 'YYYY/MM/DD',
                                     initialValue: false,
                                     autoClose: true,
-                                    observer: true,
+                                    observer: false,
+                                    persianDigit: true,
                                     calendar: {
                                         persian: {
                                             locale: 'fa',
@@ -285,11 +286,18 @@
                                         clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
                                     },
                                     onSelect: function(unix) {
-                                        var date = new Date(unix);
-                                        var persianDate = date.getFullYear() + '/' +
-                                            String(date.getMonth() + 1).padStart(2, '0') + '/' +
-                                            String(date.getDate()).padStart(2, '0');
-                                        $this.val(persianDate);
+                                        // Convert to Persian date using jalaali-js
+                                        if (typeof window.jalaali !== 'undefined') {
+                                            var date = new Date(unix);
+                                            var persianDate = window.jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
+                                            var formattedDate = persianDate.jy + '/' + 
+                                                String(persianDate.jm).padStart(2, '0') + '/' + 
+                                                String(persianDate.jd).padStart(2, '0');
+                                            $this.val(formattedDate);
+                                        } else {
+                                            // Fallback to simple display
+                                            $this.val($this.val());
+                                        }
                                         
                                         // Trigger change event
                                         $this.trigger('change');

@@ -164,8 +164,6 @@ namespace ClinicApp.Helpers
         /// <returns>تاریخ میلادی</returns>
         /// <exception cref="ArgumentNullException">هنگامی که persianDate null یا خالی باشد</exception>
         /// <exception cref="FormatException">هنگامی که فرمت تاریخ نامعتبر باشد</exception>
-        // در فایل Helpers/PersianDateHelper.cs
-
         public static DateTime ToGregorianDate(string persianDate)
         {
             if (string.IsNullOrWhiteSpace(persianDate))
@@ -197,6 +195,17 @@ namespace ClinicApp.Helpers
                 // پرتاب مجدد خطا با پیام واضح‌تر
                 throw new FormatException($"تاریخ شمسی '{persianDate}' معتبر نیست. لطفاً از فرمت yyyy/MM/dd استفاده کنید.", ex);
             }
+        }
+
+        /// <summary>
+        /// تبدیل رشته تاریخ شمسی به تاریخ میلادی (Alias برای ToGregorianDate)
+        /// برای سازگاری با کدهای موجود
+        /// </summary>
+        /// <param name="persianDate">تاریخ شمسی به فرمت yyyy/MM/dd</param>
+        /// <returns>تاریخ میلادی</returns>
+        public static DateTime ConvertPersianToDateTime(string persianDate)
+        {
+            return ToGregorianDate(persianDate);
         }
 
         /// <summary>

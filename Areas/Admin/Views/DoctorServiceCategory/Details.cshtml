@@ -1,8 +1,10 @@
-@model DoctorServiceCategoryViewModel
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryViewModel
 @{
-    ViewBag.Title = "جزئیات صلاحیت خدماتی";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "جزئیات صلاحیت خدماتی پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
+
+@Html.AntiForgeryToken()
 
 <div class="container-fluid">
     <div class="row">
@@ -10,121 +12,102 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-user-md"></i>
-                        جزئیات صلاحیت خدماتی
+                        <i class="fas fa-eye"></i>
+                        جزئیات صلاحیت خدماتی پزشک
                     </h3>
                     <div class="card-tools">
                         <a href="@Url.Action("Index")" class="btn btn-secondary">
                             <i class="fas fa-arrow-right"></i>
                             بازگشت
                         </a>
-                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning">
+                        <a href="@Url.Action("Edit", new { assignmentId = Model.AssignmentId })" class="btn btn-warning">
                             <i class="fas fa-edit"></i>
                             ویرایش
                         </a>
                     </div>
                 </div>
                 <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>اطلاعات پزشک</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td><strong>نام پزشک:</strong></td>
-                                    <td>@Model.DoctorName</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>کد ملی:</strong></td>
-                                    <td>@Model.DoctorNationalCode</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>کد نظام پزشکی:</strong></td>
-                                    <td>@Model.DoctorMedicalCouncilCode</td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>اطلاعات سرفصل خدماتی</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td><strong>سرفصل خدماتی:</strong></td>
-                                    <td>@Model.ServiceCategoryName</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>دپارتمان:</strong></td>
-                                    <td>@Model.DepartmentName</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>کد سرفصل:</strong></td>
-                                    <td>@Model.ServiceCategoryCode</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    <hr />
-                    
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5>اطلاعات صلاحیت</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td><strong>سطح صلاحیت:</strong></td>
-                                    <td>@Model.AuthorizationLevel</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>شماره گواهی:</strong></td>
-                                    <td>@Model.CertificateNumber</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>تاریخ اعطا:</strong></td>
-                                    <td>@(Model.GrantedDate?.ToString("yyyy/MM/dd"))</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>وضعیت:</strong></td>
-                                    <td>
-                                        @if (Model.IsActive)
-                                        {
-                                            <span class="badge badge-success">فعال</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge badge-danger">غیرفعال</span>
-                                        }
-                                    </td>
-                                </tr>
-                            </table>
-                        </div>
-                        <div class="col-md-6">
-                            <h5>اطلاعات سیستمی</h5>
-                            <table class="table table-borderless">
-                                <tr>
-                                    <td><strong>تاریخ ایجاد:</strong></td>
-                                    <td>@(Model.CreatedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>تاریخ به‌روزرسانی:</strong></td>
-                                    <td>@(Model.UpdatedAt?.ToString("yyyy/MM/dd HH:mm"))</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>ایجاد کننده:</strong></td>
-                                    <td>@Model.CreatedByUserName</td>
-                                </tr>
-                                <tr>
-                                    <td><strong>به‌روزرسانی کننده:</strong></td>
-                                    <td>@Model.UpdatedByUserName</td>
-                                </tr>
-                            </table>
-                        </div>
-                    </div>
-                    
-                    @if (!string.IsNullOrEmpty(Model.Notes))
+                    @if (TempData["Error"] != null)
                     {
-                        <hr />
+                        <div class="alert alert-danger alert-dismissible">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">اطلاعات پزشک</h5>
+                            <div class="info-group">
+                                <label class="info-label">نام پزشک:</label>
+                                <span class="info-value">@(Model?.DoctorName ?? "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <label class="info-label">کد پزشک:</label>
+                                <span class="info-value">@(Model?.DoctorId ?? 0)</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">اطلاعات دسته‌بندی خدماتی</h5>
+                            <div class="info-group">
+                                <label class="info-label">عنوان دسته‌بندی:</label>
+                                <span class="info-value">@(Model?.ServiceCategoryTitle ?? "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <label class="info-label">کد دسته‌بندی:</label>
+                                <span class="info-value">@(Model?.ServiceCategoryId ?? 0)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">جزئیات صلاحیت</h5>
+                            <div class="info-group">
+                                <label class="info-label">سطح صلاحیت:</label>
+                                <span class="info-value">@(Model?.AuthorizationLevel ?? "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <label class="info-label">شماره گواهی:</label>
+                                <span class="info-value">@(Model?.CertificateNumber ?? "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <label class="info-label">وضعیت:</label>
+                                <span class="badge @(Model?.IsActive == true ? "badge-success" : "badge-danger")">
+                                    @(Model?.IsActive == true ? "فعال" : "غیرفعال")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">اطلاعات زمانی</h5>
+                            <div class="info-group">
+                                <label class="info-label">تاریخ اعطا:</label>
+                                <span class="info-value">@(Model?.GrantedDate?.ToString("yyyy/MM/dd") ?? "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <label class="info-label">تاریخ انقضا:</label>
+                                <span class="info-value">@(Model?.ExpiryDate?.ToString("yyyy/MM/dd") ?? "-")</span>
+                            </div>
+                            <div class="info-group">
+                                <label class="info-label">تاریخ ایجاد:</label>
+                                <span class="info-value">@(Model?.CreatedAt.ToString("yyyy/MM/dd") ?? "-")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model?.Notes))
+                    {
+                        <hr class="my-4">
                         <div class="row">
                             <div class="col-12">
-                                <h5>توضیحات</h5>
-                                <p>@Model.Notes</p>
+                                <h5 class="text-primary mb-3">توضیحات</h5>
+                                <div class="info-group">
+                                    <label class="info-label">توضیحات:</label>
+                                    <span class="info-value">@Model.Notes</span>
+                                </div>
                             </div>
                         </div>
                     }
@@ -133,3 +116,24 @@
         </div>
     </div>
 </div>
+
+<style>
+    .info-group {
+        margin-bottom: 1rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .info-label {
+        font-weight: bold;
+        color: #666;
+        display: inline-block;
+        width: 120px;
+        margin-left: 1rem;
+    }
+    
+    .info-value {
+        color: #333;
+        font-weight: 500;
+    }
+</style>

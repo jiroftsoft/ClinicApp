@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Extensions;
 using ClinicApp.Models.Entities;
@@ -234,5 +235,104 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .When(x => x.StartDate.HasValue && x.EndDate.HasValue)
                 .WithMessage("تاریخ پایان نمی‌تواند قبل از تاریخ شروع باشد.");
         }
+    }
+
+    /// <summary>
+    /// ViewModel برای صفحه نمایش انتسابات دپارتمان پزشک
+    /// </summary>
+    public class DoctorDepartmentAssignmentsViewModel
+    {
+        /// <summary>
+        /// اطلاعات پزشک
+        /// </summary>
+        public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
+
+        /// <summary>
+        /// لیست انتسابات دپارتمان
+        /// </summary>
+        public List<DoctorDepartmentViewModel> Assignments { get; set; } = new List<DoctorDepartmentViewModel>();
+
+        /// <summary>
+        /// آمار انتسابات
+        /// </summary>
+        public DepartmentAssignmentStatsViewModel Stats { get; set; } = new DepartmentAssignmentStatsViewModel();
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای dropdown
+        /// </summary>
+        public List<System.Web.Mvc.SelectListItem> AvailableDepartments { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+    }
+
+    /// <summary>
+    /// ViewModel برای آمار انتسابات دپارتمان
+    /// </summary>
+    public class DepartmentAssignmentStatsViewModel
+    {
+        /// <summary>
+        /// تعداد کل انتسابات
+        /// </summary>
+        public int TotalAssignments { get; set; }
+
+        /// <summary>
+        /// تعداد انتسابات فعال
+        /// </summary>
+        public int ActiveAssignments { get; set; }
+
+        /// <summary>
+        /// تعداد انتسابات غیرفعال
+        /// </summary>
+        public int InactiveAssignments { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین انتساب
+        /// </summary>
+        public DateTime? LastAssignmentDate { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای فرم انتساب پزشک به دپارتمان
+    /// </summary>
+    public class DoctorDepartmentAssignFormViewModel
+    {
+        /// <summary>
+        /// اطلاعات پزشک
+        /// </summary>
+        public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
+
+        /// <summary>
+        /// مدل انتساب
+        /// </summary>
+        public DoctorAssignmentOperationViewModel Assignment { get; set; } = new DoctorAssignmentOperationViewModel();
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای dropdown
+        /// </summary>
+        public List<System.Web.Mvc.SelectListItem> Departments { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+    }
+
+    /// <summary>
+    /// ViewModel برای فرم انتقال پزشک بین دپارتمان‌ها
+    /// </summary>
+    public class DoctorDepartmentTransferFormViewModel
+    {
+        /// <summary>
+        /// اطلاعات پزشک
+        /// </summary>
+        public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
+
+        /// <summary>
+        /// مدل انتقال
+        /// </summary>
+        public DoctorTransferViewModel Transfer { get; set; } = new DoctorTransferViewModel();
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای dropdown
+        /// </summary>
+        public List<System.Web.Mvc.SelectListItem> Departments { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+
+        /// <summary>
+        /// انتسابات فعلی پزشک
+        /// </summary>
+        public List<DoctorDepartmentViewModel> CurrentAssignments { get; set; } = new List<DoctorDepartmentViewModel>();
     }
 }

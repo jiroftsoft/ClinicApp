@@ -1,0 +1,574 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.ReserveSlotRequest
+@{
+    ViewBag.Title = "رزرو اسلات زمانی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-bookmark text-success me-2"></i>
+            رزرو اسلات زمانی
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+            <a href="@Url.Action("CheckSlotAvailability", "AppointmentAvailability")" class="btn btn-info btn-sm">
+                <i class="fas fa-search me-1"></i>
+                بررسی دسترسی‌پذیری
+            </a>
+        </div>
+    </div>
+
+    <!-- Slot Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-info-circle me-1"></i>
+                اطلاعات اسلات انتخاب شده
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">پزشک:</label>
+                        <div id="selectedDoctor" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">تاریخ:</label>
+                        <div id="selectedDate" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">زمان شروع:</label>
+                        <div id="startTime" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">زمان پایان:</label>
+                        <div id="endTime" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">مدت زمان:</label>
+                        <div id="duration" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع اسلات:</label>
+                        <div id="slotType" class="form-control-plaintext">انتخاب نشده</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">قیمت:</label>
+                        <div id="slotPrice" class="form-control-plaintext text-success fw-bold">انتخاب نشده</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reservation Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-user-plus me-1"></i>
+                اطلاعات بیمار و رزرو
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("ReserveSlot", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <input type="hidden" id="slotId" name="slotId">
+                <input type="hidden" id="doctorId" name="doctorId">
+                <input type="hidden" id="reservationDate" name="reservationDate">
+                <input type="hidden" id="startTimeValue" name="startTime">
+                <input type="hidden" id="endTimeValue" name="endTime">
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="patientName" class="form-label">نام کامل بیمار <span class="text-danger">*</span></label>
+                            <input type="text" name="patientName" id="patientName" class="form-control" 
+                                   required placeholder="نام و نام خانوادگی بیمار">
+                            <div class="invalid-feedback">لطفاً نام کامل بیمار را وارد کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="patientPhone" class="form-label">شماره تلفن <span class="text-danger">*</span></label>
+                            <input type="tel" name="patientPhone" id="patientPhone" class="form-control" 
+                                   required placeholder="شماره تلفن بیمار">
+                            <div class="invalid-feedback">لطفاً شماره تلفن معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="patientNationalCode" class="form-label">کد ملی</label>
+                            <input type="text" name="patientNationalCode" id="patientNationalCode" class="form-control" 
+                                   placeholder="کد ملی بیمار (اختیاری)">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="patientAge" class="form-label">سن</label>
+                            <input type="number" name="patientAge" id="patientAge" class="form-control" 
+                                   min="0" max="150" placeholder="سن بیمار">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="appointmentType" class="form-label">نوع ویزیت <span class="text-danger">*</span></label>
+                            <select name="appointmentType" id="appointmentType" class="form-select" required>
+                                <option value="">انتخاب نوع ویزیت</option>
+                                <option value="regular">ویزیت عادی</option>
+                                <option value="emergency">ویزیت اورژانس</option>
+                                <option value="consultation">مشاوره</option>
+                                <option value="followup">پیگیری</option>
+                                <option value="examination">معاینه</option>
+                            </select>
+                            <div class="invalid-feedback">لطفاً نوع ویزیت را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="priority" class="form-label">اولویت</label>
+                            <select name="priority" id="priority" class="form-select">
+                                <option value="normal">عادی</option>
+                                <option value="high">بالا</option>
+                                <option value="urgent">فوری</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label for="symptoms" class="form-label">علائم و شکایات</label>
+                            <textarea name="symptoms" id="symptoms" class="form-control" 
+                                      rows="3" placeholder="علائم و شکایات بیمار را شرح دهید"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="companionName" class="form-label">نام همراه</label>
+                            <input type="text" name="companionName" id="companionName" class="form-control" 
+                                   placeholder="نام همراه بیمار (اختیاری)">
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="companionPhone" class="form-label">تلفن همراه</label>
+                            <input type="tel" name="companionPhone" id="companionPhone" class="form-control" 
+                                   placeholder="شماره تلفن همراه (اختیاری)">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label for="notes" class="form-label">توضیحات اضافی</label>
+                            <textarea name="notes" id="notes" class="form-control" 
+                                      rows="3" placeholder="توضیحات اضافی، یادآوری‌ها یا نکات خاص"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="sendSMS" id="sendSMS" value="true" checked>
+                                <label class="form-check-label" for="sendSMS">
+                                    ارسال پیامک تأیید
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="sendEmail" id="sendEmail" value="true">
+                                <label class="form-check-label" for="sendEmail">
+                                    ارسال ایمیل تأیید
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-success btn-lg me-3">
+                            <i class="fas fa-check me-1"></i>
+                            تأیید رزرو
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                        <button type="button" class="btn btn-info btn-lg" onclick="previewReservation()">
+                            <i class="fas fa-eye me-1"></i>
+                            پیش‌نمایش
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Reservation Summary -->
+    <div class="card shadow mb-4" id="reservationSummaryCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-clipboard-check me-1"></i>
+                خلاصه رزرو
+            </h6>
+        </div>
+        <div class="card-body">
+            <div id="reservationSummary">
+                <!-- Reservation summary will be generated here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="checkSlotAvailability()">
+                        <i class="fas fa-search me-1"></i>
+                        بررسی دسترسی‌پذیری
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-warning w-100" onclick="generateNewSlots()">
+                        <i class="fas fa-plus me-1"></i>
+                        تولید اسلات جدید
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="exportReservation()">
+                        <i class="fas fa-file-export me-1"></i>
+                        خروجی رزرو
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                } else {
+                    event.preventDefault();
+                    confirmReservation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Load slot information from URL parameters
+            loadSlotInformation();
+        });
+
+        // Load Slot Information
+        function loadSlotInformation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const slotId = urlParams.get('slotId');
+            const doctorId = urlParams.get('doctorId');
+            const date = urlParams.get('date');
+            const startTime = urlParams.get('startTime');
+            const endTime = urlParams.get('endTime');
+            
+            if (slotId && doctorId && date && startTime && endTime) {
+                // Set hidden fields
+                $('#slotId').val(slotId);
+                $('#doctorId').val(doctorId);
+                $('#reservationDate').val(date);
+                $('#startTimeValue').val(startTime);
+                $('#endTimeValue').val(endTime);
+                
+                // Update display
+                $('#selectedDoctor').text(getDoctorName(doctorId));
+                $('#selectedDate').text(formatDate(date));
+                $('#startTime').text(startTime);
+                $('#endTime').text(endTime);
+                $('#duration').text(calculateDuration(startTime, endTime) + ' دقیقه');
+                $('#slotType').text('عادی');
+                $('#slotPrice').text('50,000 تومان');
+            } else {
+                // Show demo data
+                showDemoData();
+            }
+        }
+
+        // Show Demo Data
+        function showDemoData() {
+            $('#selectedDoctor').text('دکتر احمد محمدی');
+            $('#selectedDate').text('1402/10/15');
+            $('#startTime').text('09:00');
+            $('#endTime').text('09:30');
+            $('#duration').text('30 دقیقه');
+            $('#slotType').text('عادی');
+            $('#slotPrice').text('50,000 تومان');
+        }
+
+        // Get Doctor Name
+        function getDoctorName(doctorId) {
+            const doctors = {
+                '1': 'دکتر احمد محمدی',
+                '2': 'دکتر فاطمه احمدی',
+                '3': 'دکتر علی رضایی'
+            };
+            return doctors[doctorId] || 'پزشک نامشخص';
+        }
+
+        // Format Date
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('fa-IR');
+        }
+
+        // Calculate Duration
+        function calculateDuration(startTime, endTime) {
+            const start = new Date(`2000-01-01T${startTime}`);
+            const end = new Date(`2000-01-01T${endTime}`);
+            const diffMs = end - start;
+            const diffMins = Math.round(diffMs / 60000);
+            return diffMins;
+        }
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('reserveSlotForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Hide summary
+                $('#reservationSummaryCard').hide();
+            }
+        }
+
+        // Preview Reservation
+        function previewReservation() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            generateReservationSummary(formData);
+            $('#reservationSummaryCard').show();
+        }
+
+        // Confirm Reservation
+        function confirmReservation() {
+            if (!validateForm()) return;
+            
+            const formData = getFormData();
+            
+            // Show loading state
+            const submitBtn = $('button[type="submit"]');
+            const originalText = submitBtn.html();
+            submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال رزرو...');
+            
+            // Simulate API call
+            setTimeout(() => {
+                submitBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('اسلات با موفقیت رزرو شد');
+                
+                // Redirect to confirmation page
+                setTimeout(() => {
+                    window.location.href = '@Url.Action("Index", "AppointmentAvailability")';
+                }, 2000);
+            }, 3000);
+        }
+
+        // Validate Form
+        function validateForm() {
+            const patientName = $('#patientName').val().trim();
+            const patientPhone = $('#patientPhone').val().trim();
+            const appointmentType = $('#appointmentType').val();
+            
+            if (!patientName) {
+                alert('لطفاً نام کامل بیمار را وارد کنید');
+                return false;
+            }
+            
+            if (!patientPhone) {
+                alert('لطفاً شماره تلفن بیمار را وارد کنید');
+                return false;
+            }
+            
+            if (!appointmentType) {
+                alert('لطفاً نوع ویزیت را انتخاب کنید');
+                return false;
+            }
+            
+            return true;
+        }
+
+        // Get Form Data
+        function getFormData() {
+            return {
+                slotId: $('#slotId').val(),
+                doctorId: $('#doctorId').val(),
+                reservationDate: $('#reservationDate').val(),
+                startTime: $('#startTimeValue').val(),
+                endTime: $('#endTimeValue').val(),
+                patientName: $('#patientName').val(),
+                patientPhone: $('#patientPhone').val(),
+                patientNationalCode: $('#patientNationalCode').val(),
+                patientAge: $('#patientAge').val(),
+                appointmentType: $('#appointmentType').val(),
+                priority: $('#priority').val(),
+                symptoms: $('#symptoms').val(),
+                companionName: $('#companionName').val(),
+                companionPhone: $('#companionPhone').val(),
+                notes: $('#notes').val(),
+                sendSMS: $('#sendSMS').is(':checked'),
+                sendEmail: $('#sendEmail').is(':checked')
+            };
+        }
+
+        // Generate Reservation Summary
+        function generateReservationSummary(formData) {
+            const summaryHtml = `
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>اطلاعات اسلات:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>پزشک:</strong> ${getDoctorName(formData.doctorId)}</li>
+                            <li><strong>تاریخ:</strong> ${formatDate(formData.reservationDate)}</li>
+                            <li><strong>زمان:</strong> ${formData.startTime} - ${formData.endTime}</li>
+                            <li><strong>نوع:</strong> ${getAppointmentTypeText(formData.appointmentType)}</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>اطلاعات بیمار:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>نام:</strong> ${formData.patientName}</li>
+                            <li><strong>تلفن:</strong> ${formData.patientPhone}</li>
+                            <li><strong>کد ملی:</strong> ${formData.patientNationalCode || 'وارد نشده'}</li>
+                            <li><strong>سن:</strong> ${formData.patientAge || 'وارد نشده'}</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-12">
+                        <h6>جزئیات رزرو:</h6>
+                        <ul class="list-unstyled">
+                            <li><strong>اولویت:</strong> ${getPriorityText(formData.priority)}</li>
+                            <li><strong>علائم:</strong> ${formData.symptoms || 'وارد نشده'}</li>
+                            <li><strong>همراه:</strong> ${formData.companionName || 'ندارد'}</li>
+                            <li><strong>یادآوری:</strong> ${formData.sendSMS ? 'پیامک' : ''} ${formData.sendSMS && formData.sendEmail ? 'و' : ''} ${formData.sendEmail ? 'ایمیل' : ''}</li>
+                        </ul>
+                    </div>
+                </div>
+            `;
+            
+            $('#reservationSummary').html(summaryHtml);
+        }
+
+        // Get Appointment Type Text
+        function getAppointmentTypeText(type) {
+            const types = {
+                'regular': 'ویزیت عادی',
+                'emergency': 'ویزیت اورژانس',
+                'consultation': 'مشاوره',
+                'followup': 'پیگیری',
+                'examination': 'معاینه'
+            };
+            return types[type] || type;
+        }
+
+        // Get Priority Text
+        function getPriorityText(priority) {
+            const priorities = {
+                'normal': 'عادی',
+                'high': 'بالا',
+                'urgent': 'فوری'
+            };
+            return priorities[priority] || priority;
+        }
+
+        // Other functions
+        function checkSlotAvailability() {
+            window.location.href = '@Url.Action("CheckSlotAvailability", "AppointmentAvailability")';
+        }
+
+        function generateNewSlots() {
+            const doctorId = $('#doctorId').val();
+            const date = $('#reservationDate').val();
+            
+            if (!doctorId || !date) {
+                alert('لطفاً ابتدا پزشک و تاریخ را انتخاب کنید');
+                return;
+            }
+            
+            window.location.href = '@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")?doctorId=' + doctorId + '&startDate=' + date;
+        }
+
+        function exportReservation() {
+            alert('خروجی رزرو در حال توسعه است');
+        }
+
+        function showSuccessMessage(message) {
+            alert(message);
+        }
+    </script>
+}

@@ -350,31 +350,6 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         /// <summary>
-        /// حذف برنامه کاری
-        /// </summary>
-        public async Task<bool> DeleteScheduleAsync(int scheduleId)
-        {
-            try
-            {
-                var schedule = await _context.DoctorSchedules
-                    .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId);
-
-                if (schedule != null)
-                {
-                    schedule.IsDeleted = true;
-                    schedule.UpdatedAt = DateTime.Now;
-                    await _context.SaveChangesAsync();
-                    return true;
-                }
-                return false;
-            }
-            catch (Exception ex)
-            {
-                throw new InvalidOperationException($"خطا در حذف برنامه کاری {scheduleId}", ex);
-            }
-        }
-
-        /// <summary>
         /// دریافت بازه‌های زمانی مسدود شده
         /// </summary>
         public async Task<List<DoctorTimeSlot>> GetBlockedTimeRangesAsync(int doctorId)
@@ -396,5 +371,150 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         #endregion
+
+        #region List and Search Operations
+
+        /// <summary>
+        /// دریافت تمام برنامه‌های کاری پزشکان
+        /// </summary>
+        public async Task<List<DoctorSchedule>> GetAllDoctorSchedulesAsync()
+        {
+            try
+            {
+                return await _context.DoctorSchedules
+                    .Where(ds => !ds.IsDeleted)
+                    .Include(ds => ds.Doctor)
+                    .Include(ds => ds.WorkDays)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
+                    .Include(ds => ds.CreatedByUser)
+                    .Include(ds => ds.UpdatedByUser)
+                    .OrderBy(ds => ds.CreatedAt)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException("خطا در دریافت تمام برنامه‌های کاری پزشکان", ex);
+            }
+        }
+
+        #endregion
+
+        #region Schedule CRUD Operations
+
+        /// <summary>
+        /// دریافت برنامه کاری بر اساس شناسه
+        /// </summary>
+        public async Task<DoctorSchedule> GetDoctorScheduleByIdAsync(int scheduleId)
+        {
+            try
+            {
+                return await _context.DoctorSchedules
+                    .Where(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted)
+                    .Include(ds => ds.Doctor)
+                    .Include(ds => ds.WorkDays)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges))
+                    .Include(ds => ds.CreatedByUser)
+                    .Include(ds => ds.UpdatedByUser)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در دریافت برنامه کاری {scheduleId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// حذف برنامه کاری
+        /// </summary>
+        public async Task<bool> DeleteDoctorScheduleAsync(int scheduleId)
+        {
+            try
+            {
+                var schedule = await _context.DoctorSchedules
+                    .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted);
+
+                if (schedule == null)
+                    return false;
+
+                // حذف نرم
+                schedule.IsDeleted = true;
+                schedule.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در حذف برنامه کاری {scheduleId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// غیرفعال کردن برنامه کاری
+        /// </summary>
+        public async Task<bool> DeactivateDoctorScheduleAsync(int scheduleId)
+        {
+            try
+            {
+                var schedule = await _context.DoctorSchedules
+                    .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted);
+
+                if (schedule == null)
+                    return false;
+
+                // غیرفعال کردن تمام روزهای کاری
+                if (schedule.WorkDays != null)
+                {
+                    foreach (var workDay in schedule.WorkDays)
+                    {
+                        workDay.IsActive = false;
+                        workDay.UpdatedAt = DateTime.Now;
+                    }
+                }
+
+                schedule.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در غیرفعال کردن برنامه کاری {scheduleId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// فعال کردن مجدد برنامه کاری
+        /// </summary>
+        public async Task<bool> ActivateDoctorScheduleAsync(int scheduleId)
+        {
+            try
+            {
+                var schedule = await _context.DoctorSchedules
+                    .FirstOrDefaultAsync(ds => ds.ScheduleId == scheduleId && !ds.IsDeleted);
+
+                if (schedule == null)
+                    return false;
+
+                // فعال کردن تمام روزهای کاری
+                if (schedule.WorkDays != null)
+                {
+                    foreach (var workDay in schedule.WorkDays)
+                    {
+                        workDay.IsActive = true;
+                        workDay.UpdatedAt = DateTime.Now;
+                    }
+                }
+
+                schedule.UpdatedAt = DateTime.Now;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new InvalidOperationException($"خطا در فعال کردن مجدد برنامه کاری {scheduleId}", ex);
+            }
+        }
+
+        #endregion
+
     }
 }

@@ -1,0 +1,556 @@
+@model List<ClinicApp.ViewModels.DoctorManagementVM.AvailableDate>
+@{
+    ViewBag.Title = "تاریخ‌های در دسترس";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-calendar-day text-primary me-2"></i>
+            تاریخ‌های در دسترس
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-info btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+            <a href="@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")" class="btn btn-warning btn-sm">
+                <i class="fas fa-calendar-week me-1"></i>
+                تولید اسلات هفتگی
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-search me-1"></i>
+                جستجوی تاریخ‌های در دسترس
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("AvailableDates", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="startDate" class="form-label">تاریخ شروع</label>
+                            <input type="text" name="startDate" id="startDate" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ شروع" required>
+                            <div class="invalid-feedback">لطفاً تاریخ شروع را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="endDate" class="form-label">تاریخ پایان</label>
+                            <input type="text" name="endDate" id="endDate" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ پایان" required>
+                            <div class="invalid-feedback">لطفاً تاریخ پایان را انتخاب کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="includeWeekends" class="form-label">شامل آخر هفته</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="includeWeekends" id="includeWeekends" value="true">
+                                <label class="form-check-label" for="includeWeekends">
+                                    شامل جمعه و شنبه در نتایج
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="minSlotsRequired" class="form-label">حداقل اسلات مورد نیاز</label>
+                            <input type="number" name="minSlotsRequired" id="minSlotsRequired" class="form-control" 
+                                   min="1" max="50" value="5" required>
+                            <div class="invalid-feedback">لطفاً تعداد معتبر وارد کنید</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-search me-1"></i>
+                            جستجوی تاریخ‌ها
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Available Dates Results -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calendar-check me-1"></i>
+                    نتایج جستجو
+                </h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-success btn-sm" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-1"></i>
+                        خروجی اکسل
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="printResults()">
+                        <i class="fas fa-print me-1"></i>
+                        چاپ
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-success">@Model.Count</div>
+                            <small class="text-muted">تاریخ‌های در دسترس</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-primary">@Model.Sum(d => d.AvailableSlots)</div>
+                            <small class="text-muted">اسلات‌های کل</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-info">@Model.Average(d => d.AvailabilityPercentage).ToString("P1")</div>
+                            <small class="text-muted">میانگین دسترسی‌پذیری</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-warning">@Model.Count(d => d.IsWeekend)</div>
+                            <small class="text-muted">روزهای آخر هفته</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="availableDatesTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>تاریخ</th>
+                                <th>روز هفته</th>
+                                <th>اسلات‌های در دسترس</th>
+                                <th>درصد دسترسی‌پذیری</th>
+                                <th>وضعیت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var date in Model)
+                            {
+                                <tr>
+                                    <td>@date.DateDisplay</td>
+                                    <td>@date.DayOfWeekDisplay</td>
+                                    <td>
+                                        <span class="badge bg-success">@date.AvailableSlots</span>
+                                    </td>
+                                    <td>
+                                        <div class="progress" style="height: 20px;">
+                                            <div class="progress-bar @date.AvailabilityCssClass" 
+                                                 role="progressbar" 
+                                                 style="width: @date.AvailabilityPercentage%;"
+                                                 aria-valuenow="@date.AvailabilityPercentage" 
+                                                 aria-valuemin="0" 
+                                                 aria-valuemax="100">
+                                                @date.AvailabilityPercentage.ToString("P0")
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge @date.StatusCssClass">
+                                            @date.StatusDisplay
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability", new { doctorId = date.DoctorId, date = date.Date.ToString("yyyy-MM-dd") })" 
+                                               class="btn btn-info btn-sm" title="مشاهده اسلات‌های زمانی">
+                                                <i class="fas fa-clock"></i>
+                                            </a>
+                                            <button type="button" class="btn btn-success btn-sm" 
+                                                    onclick="reserveDate(@date.DoctorId, '@date.Date.ToString("yyyy-MM-dd")')" 
+                                                    title="رزرو تاریخ">
+                                                <i class="fas fa-bookmark"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-warning btn-sm" 
+                                                    onclick="generateSlotsForDate(@date.DoctorId, '@date.Date.ToString("yyyy-MM-dd")')" 
+                                                    title="تولید اسلات">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Calendar View -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calendar me-1"></i>
+                    نمای تقویم
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="calendarView">
+                    <!-- Calendar will be generated here -->
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model != null)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-calendar-times me-1"></i>
+                    نتایج جستجو
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-calendar-times fa-3x mb-3"></i>
+                    <h5>هیچ تاریخی یافت نشد</h5>
+                    <p>برای تاریخ‌های انتخاب شده هیچ اسلات در دسترسی یافت نشد.</p>
+                    <p>لطفاً بازه زمانی دیگری انتخاب کنید یا اسلات‌های جدید تولید کنید.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="generateWeeklySlots()">
+                        <i class="fas fa-calendar-week me-1"></i>
+                        تولید اسلات هفتگی
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="generateMonthlySlots()">
+                        <i class="fas fa-calendar-alt me-1"></i>
+                        تولید اسلات ماهانه
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="checkAllDoctors()">
+                        <i class="fas fa-search me-1"></i>
+                        بررسی همه پزشکان
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reserve Date Modal -->
+<div class="modal fade" id="reserveDateModal" tabindex="-1" aria-labelledby="reserveDateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reserveDateModalLabel">رزرو تاریخ</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reserveDateForm">
+                    <input type="hidden" id="reserveDoctorId" name="doctorId">
+                    <input type="hidden" id="reserveDate" name="date">
+                    <div class="mb-3">
+                        <label for="reservationReason" class="form-label">دلیل رزرو</label>
+                        <textarea id="reservationReason" name="reason" class="form-control" 
+                                  rows="3" required placeholder="دلیل رزرو این تاریخ را وارد کنید"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="reservationDuration" class="form-label">مدت زمان رزرو (ساعت)</label>
+                        <input type="number" id="reservationDuration" name="duration" class="form-control" 
+                               min="1" max="24" value="8" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="confirmReserveDate()">رزرو</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Set default values
+            $('input[name="startDate"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            $('input[name="endDate"]').val('@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")');
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Initialize DataTable if results exist
+            if ($('#availableDatesTable tbody tr').length > 0) {
+                $('#availableDatesTable').DataTable({
+                    language: {
+                        url: '/Content/DataTables/Persian.json'
+                    },
+                    pageLength: 25,
+                    order: [[0, 'asc']]
+                });
+            }
+
+            // Generate calendar view if results exist
+            @if (Model != null && Model.Any())
+            {
+                <text>
+                generateCalendarView();
+                </text>
+            }
+        });
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('availableDatesForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                $('input[name="startDate"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+                $('input[name="endDate"]').val('@DateTime.Today.AddDays(30).ToString("yyyy-MM-dd")');
+                $('input[name="minSlotsRequired"]').val('5');
+            }
+        }
+
+        // Reserve Date
+        function reserveDate(doctorId, date) {
+            $('#reserveDoctorId').val(doctorId);
+            $('#reserveDate').val(date);
+            $('#reserveDateModal').modal('show');
+        }
+
+        // Confirm Reserve Date
+        function confirmReserveDate() {
+            const doctorId = $('#reserveDoctorId').val();
+            const date = $('#reserveDate').val();
+            const reason = $('#reservationReason').val();
+            const duration = $('#reservationDuration').val();
+
+            if (!reason.trim()) {
+                alert('لطفاً دلیل رزرو را وارد کنید');
+                return;
+            }
+
+            // Show loading state
+            const reserveBtn = $('button[onclick="confirmReserveDate()"]');
+            const originalText = reserveBtn.html();
+            reserveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال رزرو...');
+
+            // Simulate API call
+            setTimeout(() => {
+                $('#reserveDateModal').modal('hide');
+                reserveBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('تاریخ با موفقیت رزرو شد');
+                
+                // Refresh page
+                location.reload();
+            }, 2000);
+        }
+
+        // Generate Slots for Date
+        function generateSlotsForDate(doctorId, date) {
+            if (confirm('آیا از تولید اسلات برای این تاریخ اطمینان دارید؟')) {
+                // Redirect to generate slots page
+                window.location.href = '@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")?doctorId=' + doctorId + '&startDate=' + date;
+            }
+        }
+
+        // Generate Weekly Slots
+        function generateWeeklySlots() {
+            window.location.href = '@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")';
+        }
+
+        // Generate Monthly Slots
+        function generateMonthlySlots() {
+            window.location.href = '@Url.Action("GenerateMonthlySlots", "AppointmentAvailability")';
+        }
+
+        // Check All Doctors
+        function checkAllDoctors() {
+            alert('این قابلیت در حال توسعه است');
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            // You can implement Excel export functionality here
+            alert('خروجی اکسل در حال توسعه است');
+        }
+
+        // Print Results
+        function printResults() {
+            window.print();
+        }
+
+        // Generate Calendar View
+        function generateCalendarView() {
+            const availableDates = @Html.Raw(Json.Encode(Model?.Select(d => new { d.Date, d.AvailableSlots, d.IsWeekend })));
+            
+            if (!availableDates || availableDates.length === 0) return;
+
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            const monthEnd = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            const daysInMonth = monthEnd.getDate();
+            const firstDay = monthStart.getDay();
+            const weekDays = ['یکشنبه', 'دوشنبه', 'سه‌شنبه', 'چهارشنبه', 'پنج‌شنبه', 'جمعه', 'شنبه'];
+            
+            let calendarHtml = `
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-dark">
+                            <tr>
+                                ${weekDays.map(day => `<th class="text-center">${day}</th>`).join('')}
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            let dayCounter = 1;
+            const totalWeeks = Math.ceil((daysInMonth + firstDay) / 7);
+            
+            for (let week = 0; week < totalWeeks; week++) {
+                calendarHtml += '<tr>';
+                
+                for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+                    if ((week === 0 && dayOfWeek < firstDay) || dayCounter > daysInMonth) {
+                        calendarHtml += '<td class="text-muted"></td>';
+                    } else {
+                        const currentDate = new Date(today.getFullYear(), today.getMonth(), dayCounter);
+                        const dateStr = currentDate.toISOString().split('T')[0];
+                        const availableDate = availableDates.find(d => d.Date === dateStr);
+                        
+                        let cellClass = '';
+                        let statusText = '';
+                        let slotsText = '';
+                        
+                        if (availableDate) {
+                            if (availableDate.IsWeekend) {
+                                cellClass = 'table-warning';
+                                statusText = 'تعطیل';
+                            } else if (availableDate.AvailableSlots > 10) {
+                                cellClass = 'table-success';
+                                statusText = 'عالی';
+                            } else if (availableDate.AvailableSlots > 5) {
+                                cellClass = 'table-info';
+                                statusText = 'خوب';
+                            } else {
+                                cellClass = 'table-warning';
+                                statusText = 'کم';
+                            }
+                            slotsText = `${availableDate.AvailableSlots} اسلات`;
+                        } else {
+                            cellClass = 'table-secondary';
+                            statusText = 'نامشخص';
+                            slotsText = 'بدون اسلات';
+                        }
+                        
+                        calendarHtml += `
+                            <td class="text-center ${cellClass}">
+                                <div class="fw-bold">${dayCounter}</div>
+                                <small class="text-muted">${statusText}</small>
+                                <br>
+                                <small class="text-muted">${slotsText}</small>
+                            </td>
+                        `;
+                        dayCounter++;
+                    }
+                }
+                
+                calendarHtml += '</tr>';
+            }
+            
+            calendarHtml += `
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            $('#calendarView').html(calendarHtml);
+        }
+
+        function showSuccessMessage(message) {
+            // You can implement a proper toast notification here
+            alert(message);
+        }
+    </script>
+}

@@ -4,7 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using AutoMapper;
+// طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم
+// از Factory Method Pattern استفاده می‌کنیم
 using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -48,8 +49,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             IDoctorCrudService doctorCrudService,
             ISpecializationService specializationService,
             ICurrentUserService currentUserService,
-            IValidator<DoctorCreateEditViewModel> createEditValidator,
-            IMapper mapper)
+            IValidator<DoctorCreateEditViewModel> createEditValidator)
         {
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _specializationService = specializationService ?? throw new ArgumentNullException(nameof(specializationService));

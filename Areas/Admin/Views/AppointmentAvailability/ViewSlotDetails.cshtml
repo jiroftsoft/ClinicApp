@@ -1,0 +1,500 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.SlotDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات اسلات زمانی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-eye text-info me-2"></i>
+            جزئیات اسلات زمانی
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableTimeSlots", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-clock me-1"></i>
+                اسلات‌های زمانی
+            </a>
+            <a href="@Url.Action("CheckSlotAvailability", "AppointmentAvailability")" class="btn btn-success btn-sm">
+                <i class="fas fa-search me-1"></i>
+                بررسی دسترسی‌پذیری
+            </a>
+        </div>
+    </div>
+
+    <!-- Slot Basic Information -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-info-circle me-1"></i>
+                اطلاعات پایه اسلات
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">شناسه اسلات:</label>
+                        <div id="slotId" class="form-control-plaintext">SL-001</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">وضعیت:</label>
+                        <div id="slotStatus" class="form-control-plaintext">
+                            <span class="badge bg-success">در دسترس</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">پزشک:</label>
+                        <div id="doctorName" class="form-control-plaintext">دکتر احمد محمدی</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">تخصص:</label>
+                        <div id="doctorSpecialty" class="form-control-plaintext">داخلی</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">تاریخ:</label>
+                        <div id="slotDate" class="form-control-plaintext">1402/10/15</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">زمان شروع:</label>
+                        <div id="startTime" class="form-control-plaintext">09:00</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">زمان پایان:</label>
+                        <div id="endTime" class="form-control-plaintext">09:30</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">مدت زمان:</label>
+                        <div id="duration" class="form-control-plaintext">30 دقیقه</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع اسلات:</label>
+                        <div id="slotType" class="form-control-plaintext">عادی</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">قیمت:</label>
+                        <div id="slotPrice" class="form-control-plaintext text-success fw-bold">50,000 تومان</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Patient Information (if booked) -->
+    <div class="card shadow mb-4" id="patientInfoCard" style="display: none;">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-user me-1"></i>
+                اطلاعات بیمار
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نام کامل:</label>
+                        <div id="patientName" class="form-control-plaintext">احمد احمدی</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">شماره تلفن:</label>
+                        <div id="patientPhone" class="form-control-plaintext">09123456789</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">کد ملی:</label>
+                        <div id="patientNationalCode" class="form-control-plaintext">1234567890</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">سن:</label>
+                        <div id="patientAge" class="form-control-plaintext">35 سال</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">نوع ویزیت:</label>
+                        <div id="appointmentType" class="form-control-plaintext">ویزیت عادی</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اولویت:</label>
+                        <div id="appointmentPriority" class="form-control-plaintext">عادی</div>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">علائم و شکایات:</label>
+                        <div id="patientSymptoms" class="form-control-plaintext">سردرد و سرگیجه</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slot History -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-history me-1"></i>
+                تاریخچه اسلات
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="timeline-container">
+                <div class="timeline-item">
+                    <div class="timeline-time">08:30</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">اسلات ایجاد شد</div>
+                        <div class="timeline-description">اسلات توسط سیستم تولید شد</div>
+                    </div>
+                </div>
+                <div class="timeline-item">
+                    <div class="timeline-time">09:00</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">اسلات در دسترس قرار گرفت</div>
+                        <div class="timeline-description">اسلات برای رزرو آماده شد</div>
+                    </div>
+                </div>
+                <div class="timeline-item" id="bookingTimeline" style="display: none;">
+                    <div class="timeline-time">10:15</div>
+                    <div class="timeline-content">
+                        <div class="timeline-title">اسلات رزرو شد</div>
+                        <div class="timeline-description">توسط بیمار احمد احمدی</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slot Statistics -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-chart-bar me-1"></i>
+                آمار اسلات
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-primary" id="totalBookings">0</div>
+                        <small class="text-muted">کل رزروها</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-success" id="completedAppointments">0</div>
+                        <small class="text-muted">ویزیت‌های تکمیل شده</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-warning" id="cancelledAppointments">0</div>
+                        <small class="text-muted">ویزیت‌های لغو شده</small>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="text-center">
+                        <div class="h4 text-info" id="averageRating">0.0</div>
+                        <small class="text-muted">میانگین امتیاز</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="reserveSlot()" id="reserveBtn">
+                        <i class="fas fa-bookmark me-1"></i>
+                        رزرو اسلات
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button type="button" class="btn btn-outline-warning w-100" onclick="releaseSlot()" id="releaseBtn" style="display: none;">
+                        <i class="fas fa-unlock me-1"></i>
+                        آزادسازی اسلات
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button type="button" class="btn btn-outline-info w-100" onclick="editSlot()">
+                        <i class="fas fa-edit me-1"></i>
+                        ویرایش اسلات
+                    </button>
+                </div>
+                <div class="col-md-3 mb-3">
+                    <button type="button" class="btn btn-outline-danger w-100" onclick="deleteSlot()">
+                        <i class="fas fa-trash me-1"></i>
+                        حذف اسلات
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Related Slots -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-link me-1"></i>
+                اسلات‌های مرتبط
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>تاریخ</th>
+                            <th>زمان</th>
+                            <th>وضعیت</th>
+                            <th>بیمار</th>
+                            <th>عملیات</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1402/10/14</td>
+                            <td>08:30 - 09:00</td>
+                            <td><span class="badge bg-success">تکمیل شده</span></td>
+                            <td>فاطمه احمدی</td>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm" onclick="viewSlotDetails('SL-002')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>1402/10/16</td>
+                            <td>09:30 - 10:00</td>
+                            <td><span class="badge bg-warning">رزرو شده</span></td>
+                            <td>علی رضایی</td>
+                            <td>
+                                <button type="button" class="btn btn-info btn-sm" onclick="viewSlotDetails('SL-003')">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Load slot information from URL parameters
+            loadSlotInformation();
+        });
+
+        // Load Slot Information
+        function loadSlotInformation() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const slotId = urlParams.get('slotId');
+            const status = urlParams.get('status');
+            
+            if (slotId) {
+                $('#slotId').text(slotId);
+            }
+            
+            if (status === 'booked') {
+                showBookedSlot();
+            } else {
+                showAvailableSlot();
+            }
+        }
+
+        // Show Booked Slot
+        function showBookedSlot() {
+            $('#slotStatus').html('<span class="badge bg-warning">رزرو شده</span>');
+            $('#patientInfoCard').show();
+            $('#bookingTimeline').show();
+            $('#reserveBtn').hide();
+            $('#releaseBtn').show();
+            
+            // Update statistics
+            $('#totalBookings').text('1');
+            $('#completedAppointments').text('0');
+            $('#cancelledAppointments').text('0');
+            $('#averageRating').text('0.0');
+        }
+
+        // Show Available Slot
+        function showAvailableSlot() {
+            $('#slotStatus').html('<span class="badge bg-success">در دسترس</span>');
+            $('#patientInfoCard').hide();
+            $('#bookingTimeline').hide();
+            $('#reserveBtn').show();
+            $('#releaseBtn').hide();
+            
+            // Update statistics
+            $('#totalBookings').text('0');
+            $('#completedAppointments').text('0');
+            $('#cancelledAppointments').text('0');
+            $('#averageRating').text('0.0');
+        }
+
+        // Reserve Slot
+        function reserveSlot() {
+            const slotId = $('#slotId').text();
+            const doctorId = '1'; // Demo doctor ID
+            const date = $('#slotDate').text();
+            const startTime = $('#startTime').text();
+            const endTime = $('#endTime').text();
+            
+            window.location.href = '@Url.Action("ReserveSlot", "AppointmentAvailability")?slotId=' + slotId + 
+                                 '&doctorId=' + doctorId + '&date=' + date + '&startTime=' + startTime + '&endTime=' + endTime;
+        }
+
+        // Release Slot
+        function releaseSlot() {
+            const slotId = $('#slotId').text();
+            const doctorId = '1'; // Demo doctor ID
+            const date = $('#slotDate').text();
+            const startTime = $('#startTime').text();
+            const endTime = $('#endTime').text();
+            
+            window.location.href = '@Url.Action("ReleaseSlot", "AppointmentAvailability")?slotId=' + slotId + 
+                                 '&doctorId=' + doctorId + '&date=' + date + '&startTime=' + startTime + '&endTime=' + endTime;
+        }
+
+        // Edit Slot
+        function editSlot() {
+            alert('ویرایش اسلات در حال توسعه است');
+        }
+
+        // Delete Slot
+        function deleteSlot() {
+            if (confirm('آیا از حذف این اسلات اطمینان دارید؟')) {
+                alert('اسلات با موفقیت حذف شد');
+                // Redirect to main page
+                setTimeout(() => {
+                    window.location.href = '@Url.Action("Index", "AppointmentAvailability")';
+                }, 1000);
+            }
+        }
+
+        // View Slot Details
+        function viewSlotDetails(slotId) {
+            // Navigate to slot details page
+            window.location.href = '@Url.Action("ViewSlotDetails", "AppointmentAvailability")?slotId=' + slotId;
+        }
+    </script>
+}
+<style>
+    .timeline-container {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .timeline-item:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        left: 60px;
+        top: 40px;
+        bottom: -20px;
+        width: 2px;
+        background-color: #e3e6f0;
+    }
+
+    .timeline-time {
+        font-weight: bold;
+        min-width: 80px;
+        margin-right: 20px;
+        color: #007bff;
+        font-size: 0.9rem;
+    }
+
+    .timeline-content {
+        flex: 1;
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        border-left: 4px solid #007bff;
+    }
+
+    .timeline-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        color: #495057;
+    }
+
+    .timeline-description {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .form-control-plaintext {
+        padding: 0.375rem 0;
+        margin-bottom: 0;
+        color: #495057;
+        background-color: transparent;
+        border: solid transparent;
+        border-width: 1px 0;
+    }
+</style>
+

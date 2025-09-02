@@ -3,7 +3,6 @@
 @{
     ViewBag.Title = "برنامه کاری پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
-    var doctor = ViewBag.Doctor as ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel;
 }
 
 @section Styles {
@@ -203,7 +202,7 @@
             animation: spin 1s linear infinite;
         }
         
-        @keyframes spin {
+        @@keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
@@ -263,12 +262,12 @@
             <div class="col-md-8">
                 <h2 class="mb-2">
                     <i class="fas fa-user-md me-2"></i>
-                    @(doctor?.FullName ?? "پزشک")
+                    @(Model.DoctorName ?? "پزشک")
                 </h2>
                 <p class="mb-0 opacity-75">مدیریت برنامه کاری و زمان‌بندی</p>
             </div>
             <div class="col-md-4 text-end">
-                <a href="@Url.Action("AssignSchedule", new { doctorId = doctor?.Id })" class="btn btn-light">
+                <a href="@Url.Action("AssignSchedule", new { doctorId = Model.DoctorId })" class="btn btn-light">
                     <i class="fas fa-plus me-2"></i>
                     برنامه جدید
                 </a>
@@ -278,15 +277,15 @@
         <div class="doctor-info">
             <div class="info-item">
                 <div class="info-label">کد ملی</div>
-                <div class="info-value">@(doctor?.NationalCode ?? "-")</div>
+                <div class="info-value">@(Model.NationalCode ?? "-")</div>
             </div>
             <div class="info-item">
                 <div class="info-label">شماره نظام پزشکی</div>
-                <div class="info-value">@(doctor?.MedicalCouncilCode ?? "-")</div>
+                <div class="info-value">@(Model.MedicalCouncilCode ?? "-")</div>
             </div>
             <div class="info-item">
                 <div class="info-label">تخصص</div>
-                <div class="info-value">@string.Join("، ", doctor?.SpecializationNames ?? new string[0])</div>
+                <div class="info-value">@string.Join("، ", Model.SpecializationNames?.ToArray() ?? new string[0])</div>
             </div>
             <div class="info-item">
                 <div class="info-label">وضعیت</div>
@@ -457,7 +456,7 @@
                             <i class="fas fa-clock"></i>
                             <h5>هیچ برنامه کاری یافت نشد</h5>
                             <p>این پزشک هنوز هیچ برنامه کاری تعریف نکرده است</p>
-                            <a href="@Url.Action("AssignSchedule", new { doctorId = doctor?.Id })" class="btn btn-primary">
+                            <a href="@Url.Action("AssignSchedule", new { doctorId = Model.DoctorId })" class="btn btn-primary">
                                 <i class="fas fa-plus me-2"></i>
                                 تعریف اولین برنامه
                             </a>

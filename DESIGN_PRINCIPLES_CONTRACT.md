@@ -26,7 +26,88 @@ public class DoctorHistorySearchViewModel
 ViewBag.Doctors = doctorsResult.Data.Items.Select(d => new { Id = d.Id, Name = d.FullName });
 ```
 
-### 2. Avoid Dynamic Types (Critical)
+### 2. Factory Method Pattern for Entity-ViewModel Conversion (CRITICAL - NO AUTOMAPPER)
+**Principle**: Use Factory Method Pattern for converting Entity objects to ViewModels. **NEVER use AutoMapper** in this project.
+
+**Implementation Rules**:
+- ✅ **DO**: Implement static `FromEntity()` methods in ViewModels
+- ✅ **DO**: Use explicit property mapping for full control over conversions
+- ✅ **DO**: Handle complex relationships and nested objects manually
+- ✅ **DO**: Ensure type safety and compile-time checking
+- ❌ **DON'T**: Use AutoMapper or any external mapping libraries
+- ❌ **DON'T**: Use dynamic mapping or reflection-based conversion
+- ❌ **DON'T**: Import AutoMapper namespaces
+
+**Example Implementation**:
+```csharp
+// ✅ Correct Approach - Factory Method Pattern
+public class DoctorCreateEditViewModel
+{
+    public int DoctorId { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public string FullName { get; set; }
+    public List<int> SpecializationIds { get; set; } = new List<int>();
+    public List<string> SpecializationNames { get; set; } = new List<string>();
+
+    /// <summary>
+    /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
+    /// </summary>
+    public static DoctorCreateEditViewModel FromEntity(Doctor doctor)
+    {
+        if (doctor == null) return null;
+
+        return new DoctorCreateEditViewModel
+        {
+            DoctorId = doctor.DoctorId,
+            FirstName = doctor.FirstName,
+            LastName = doctor.LastName,
+            FullName = $"{doctor.FirstName} {doctor.LastName}",
+            SpecializationIds = doctor.Specializations?.Select(s => s.SpecializationId).ToList() ?? new List<int>(),
+            SpecializationNames = doctor.Specializations?.Select(s => s.Name).ToList() ?? new List<string>()
+        };
+    }
+
+    /// <summary>
+    /// ✅ (Factory Method) یک Entity جدید از روی ViewModel می‌سازد.
+    /// </summary>
+    public Doctor ToEntity()
+    {
+        return new Doctor
+        {
+            DoctorId = this.DoctorId,
+            FirstName = this.FirstName,
+            LastName = this.LastName
+            // Specializations will be handled separately by the service layer
+        };
+    }
+}
+
+// ❌ NEVER DO THIS - No AutoMapper
+// using AutoMapper;
+// cfg.CreateMap<Doctor, DoctorCreateEditViewModel>();
+```
+
+**Controller Usage**:
+```csharp
+// ✅ Correct Approach in Controller
+public async Task<ActionResult> Edit(int id)
+{
+    var result = await _doctorCrudService.GetDoctorForEditAsync(id);
+    if (result.Success && result.Data != null)
+    {
+        // Use Factory Method instead of AutoMapper
+        var viewModel = DoctorCreateEditViewModel.FromEntity(result.Data);
+        return View(viewModel);
+    }
+    return RedirectToAction("Index");
+}
+
+// ❌ NEVER DO THIS
+// var viewModel = _mapper.Map<DoctorCreateEditViewModel>(result.Data);
+```
+
+### 3. Avoid Dynamic Types (Critical)
 **Principle**: Never use `dynamic` types in medical environment applications.
 
 **Implementation Rules**:
@@ -135,7 +216,264 @@ bundles.Add(new ScriptBundle("~/bundles/plugins").Include(
 ));
 ```
 
-### 6. Efficient and Practical Solutions (Performance Critical)
+### 6. Persian DatePicker Standard Implementation (CRITICAL - MEDICAL ENVIRONMENT)
+**Principle**: Use standardized Persian DatePicker implementation for all date inputs in the medical environment.
+
+**Implementation Rules**:
+- ✅ **DO**: Use `class="persian-date"` for all date input fields
+- ✅ **DO**: Use `type="text"` instead of `type="date"` for Persian DatePicker
+- ✅ **DO**: Include proper placeholder text in Persian
+- ✅ **DO**: Set default values using JavaScript for current date
+- ✅ **DO**: Use consistent Persian DatePicker configuration across all forms
+- ❌ **DON'T**: Use HTML5 date inputs (`type="date"`) in Persian environment
+- ❌ **DON'T**: Mix different date picker implementations
+- ❌ **DON'T**: Use English date formats in Persian interface
+
+**Standard HTML Implementation**:
+```html
+<!-- ✅ Correct Approach - Persian DatePicker -->
+<div class="form-group">
+    <label for="grantedDate">تاریخ اعطا</label>
+    <input type="text" id="grantedDate" name="GrantedDate" class="form-control persian-date" 
+           placeholder="انتخاب تاریخ اعطا" />
+</div>
+
+<div class="form-group">
+    <label for="expiryDate">تاریخ انقضا (اختیاری)</label>
+    <input type="text" id="expiryDate" name="ExpiryDate" class="form-control persian-date" 
+           placeholder="انتخاب تاریخ انقضا" />
+</div>
+
+<!-- ❌ Avoid This - HTML5 Date Input -->
+<input type="date" id="grantedDate" name="GrantedDate" class="form-control" />
+```
+
+**Standard JavaScript Configuration**:
+```javascript
+// ✅ Standard Persian DatePicker Configuration
+$this.persianDatepicker({
+    format: 'YYYY/MM/DD',
+    initialValue: false,
+    autoClose: true,
+    observer: true,
+    persianDigit: true,
+    calendar: {
+        persian: {
+            locale: 'fa',
+            leapYearMode: 'astronomical',
+            showHint: true
+        }
+    },
+    toolbox: {
+        todayBtn: { enabled: true, text: { fa: 'امروز' } },
+        clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
+    },
+    onSelect: function(unix) {
+        var date = new Date(unix);
+        var persianDate = date.getFullYear() + '/' +
+            String(date.getMonth() + 1).padStart(2, '0') + '/' +
+            String(date.getDate()).padStart(2, '0');
+        $this.val(persianDate);
+        $this.trigger('change');
+    }
+});
+```
+
+**Default Date Setting Pattern**:
+```javascript
+// ✅ Set current date as default
+var today = new Date();
+var persianToday = today.getFullYear() + '/' + 
+    String(today.getMonth() + 1).padStart(2, '0') + '/' + 
+    String(today.getDate()).padStart(2, '0');
+$('#grantedDate').val(persianToday);
+```
+
+**Bundle Configuration**:
+```csharp
+// ✅ Separate Persian DatePicker Bundle
+bundles.Add(new ScriptBundle("~/bundles/persian-datepicker").Include(
+    "~/Scripts/persian-date.min.js",
+    "~/Scripts/persian-datepicker.min.js"
+));
+```
+
+**Layout Integration**:
+```html
+<!-- ✅ Load Persian DatePicker Bundle -->
+@Scripts.Render("~/bundles/persian-datepicker")
+```
+
+**Common Use Cases in Medical Environment**:
+```html
+<!-- Patient Registration Date -->
+<div class="form-group">
+    <label for="registrationDate">تاریخ ثبت نام بیمار</label>
+    <input type="text" id="registrationDate" name="RegistrationDate" class="form-control persian-date" 
+           placeholder="انتخاب تاریخ ثبت نام" />
+</div>
+
+<!-- Appointment Date -->
+<div class="form-group">
+    <label for="appointmentDate">تاریخ نوبت</label>
+    <input type="text" id="appointmentDate" name="AppointmentDate" class="form-control persian-date" 
+           placeholder="انتخاب تاریخ نوبت" />
+</div>
+
+<!-- Medical Certificate Expiry -->
+<div class="form-group">
+    <label for="certificateExpiry">تاریخ انقضای گواهی پزشکی</label>
+    <input type="text" id="certificateExpiry" name="CertificateExpiry" class="form-control persian-date" 
+           placeholder="انتخاب تاریخ انقضا" />
+</div>
+
+<!-- Birth Date -->
+<div class="form-group">
+    <label for="birthDate">تاریخ تولد</label>
+    <input type="text" id="birthDate" name="BirthDate" class="form-control persian-date" 
+           placeholder="انتخاب تاریخ تولد" />
+</div>
+```
+
+**JavaScript Initialization Pattern**:
+```javascript
+$(document).ready(function() {
+    // Set default dates for new records
+    var today = new Date();
+    var persianToday = today.getFullYear() + '/' + 
+        String(today.getMonth() + 1).padStart(2, '0') + '/' + 
+        String(today.getDate()).padStart(2, '0');
+    
+    // Set default for registration date
+    $('#registrationDate').val(persianToday);
+    
+    // Set default for appointment date (tomorrow)
+    var tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    var persianTomorrow = tomorrow.getFullYear() + '/' + 
+        String(tomorrow.getMonth() + 1).padStart(2, '0') + '/' + 
+        String(tomorrow.getDate()).padStart(2, '0');
+    $('#appointmentDate').val(persianTomorrow);
+});
+```
+
+**Migration Guide for Existing Forms**:
+```html
+<!-- ❌ Before - HTML5 Date Input -->
+<input type="date" id="appointmentDate" name="AppointmentDate" class="form-control" />
+
+<!-- ✅ After - Persian DatePicker -->
+<input type="text" id="appointmentDate" name="AppointmentDate" class="form-control persian-date" 
+       placeholder="انتخاب تاریخ نوبت" />
+```
+
+**Controller Date Handling**:
+```csharp
+// ✅ Handle Persian date strings in controllers using PersianDateHelper
+[HttpPost]
+public async Task<ActionResult> CreateAppointment(AppointmentViewModel model)
+{
+    try
+    {
+        // Convert Persian date string to DateTime for database storage
+        if (!string.IsNullOrEmpty(model.AppointmentDateString))
+        {
+            var appointmentDate = PersianDateHelper.ConvertPersianToDateTime(model.AppointmentDateString);
+            if (appointmentDate.HasValue)
+            {
+                model.AppointmentDate = appointmentDate.Value;
+                _logger.Information("تاریخ نوبت تبدیل شد: {PersianDate} -> {GregorianDate}", 
+                    model.AppointmentDateString, appointmentDate.Value.ToString("yyyy/MM/dd"));
+            }
+            else
+            {
+                _logger.Warning("فرمت تاریخ نوبت نامعتبر: {PersianDate}, کاربر: {UserId}", 
+                    model.AppointmentDateString, _currentUserService.UserId);
+                return Json(new { success = false, message = "فرمت تاریخ نوبت نامعتبر است." });
+            }
+        }
+        
+        // Process the appointment...
+    }
+    catch (Exception ex)
+    {
+        _logger.Error(ex, "Error parsing Persian date: {DateString}", model.AppointmentDateString);
+        ModelState.AddModelError("AppointmentDateString", "فرمت تاریخ نامعتبر است");
+    }
+}
+```
+
+**ViewModel Date Properties**:
+```csharp
+// ✅ ViewModel with both DateTime and string properties
+public class AppointmentViewModel
+{
+    // For database storage (Gregorian)
+    public DateTime? AppointmentDate { get; set; }
+    
+    // For UI display (Persian)
+    public string AppointmentDateShamsi { get; set; }
+    
+    // For user input (Persian string)
+    public string AppointmentDateString { get; set; }
+}
+```
+
+**PersianDateHelper Usage**:
+```csharp
+// ✅ Convert Persian to Gregorian for database
+var gregorianDate = PersianDateHelper.ConvertPersianToDateTime("1403/09/15");
+
+// ✅ Convert Gregorian to Persian for display
+var persianDate = PersianDateHelper.ConvertDateTimeToPersian(DateTime.Now);
+
+// ✅ Get current Persian date
+var todayPersian = PersianDateHelper.GetCurrentPersianDate();
+
+// ✅ Validate Persian date format
+var isValid = PersianDateHelper.IsValidPersianDate("1403/09/15");
+```
+
+**Best Practices for Persian Date Handling**:
+```csharp
+// ✅ Always validate Persian dates before conversion
+if (PersianDateHelper.IsValidPersianDate(model.DateString))
+{
+    var dateTime = PersianDateHelper.ConvertPersianToDateTime(model.DateString);
+    // Process the date...
+}
+
+// ✅ Use proper logging for date conversions
+_logger.Information("تاریخ تبدیل شد: {PersianDate} -> {GregorianDate}", 
+    persianDateString, gregorianDate.ToString("yyyy/MM/dd"));
+
+// ✅ Handle null/empty dates gracefully
+var dateTime = PersianDateHelper.ConvertPersianToDateTime(model.DateString ?? string.Empty);
+
+// ✅ Set default Persian dates in JavaScript
+var todayPersian = PersianDateHelper.GetCurrentPersianDate();
+$('#appointmentDate').val(todayPersian);
+```
+
+**Common Pitfalls to Avoid**:
+```csharp
+// ❌ Don't mix Persian and Gregorian date formats
+var wrongDate = "2024/01/15"; // This is Gregorian, not Persian!
+
+// ❌ Don't use DateTime.Parse for Persian dates
+var wrongConversion = DateTime.Parse("1403/09/15"); // Will fail!
+
+// ❌ Don't forget to validate before conversion
+var unsafeConversion = PersianDateHelper.ConvertPersianToDateTime(userInput); // Could be null!
+
+// ✅ Always validate first
+if (PersianDateHelper.IsValidPersianDate(userInput))
+{
+    var safeConversion = PersianDateHelper.ConvertPersianToDateTime(userInput);
+}
+```
+
+### 7. Efficient and Practical Solutions (Performance Critical)
 **Principle**: Optimize for performance and practical usability in medical environments.
 
 **Implementation Rules**:
@@ -294,6 +632,20 @@ Before deploying any module to production:
 - [ ] All views use null-conditional operators
 - [ ] **CSRF protection implemented** (`@Html.AntiForgeryToken()` in all views with POST actions)
 - [ ] **Chart.js integration pattern implemented** (local files in bundles, defensive checks)
+- [ ] **Factory Method Pattern implemented** (FromEntity() and ToEntity() methods in ViewModels)
+- [ ] **NO AutoMapper usage** (strictly forbidden - use Factory Methods instead)
+- [ ] **Medical Environment Logging Standards implemented** (Serilog + Seq integration)
+- [ ] **Comprehensive error tracking** (all operations logged with context)
+- [ ] **Client IP tracking** (for security and audit purposes)
+- [ ] **Systematic Review and Incremental Change Management implemented** (comprehensive review before changes)
+- [ ] **To-Do List created** before any implementation
+- [ ] **Changes documented** with reasons and impacts
+- [ ] **Knowledge base updated** with all changes
+- [ ] **Persian DatePicker Standard Implementation** (all date inputs use `class="persian-date"`)
+- [ ] **No HTML5 date inputs** (`type="date"` avoided in Persian environment)
+- [ ] **Persian DatePicker bundle loaded** (`@Scripts.Render("~/bundles/persian-datepicker")`)
+- [ ] **Default date values set** (current date as default where appropriate)
+- [ ] **Persian placeholder text** (proper Persian placeholders for date fields)
 - [ ] Proper error handling implemented
 - [ ] Performance optimized
 - [ ] Medical data validation implemented
@@ -304,6 +656,246 @@ Before deploying any module to production:
 
 This contract is now part of the project's knowledge base and must be referenced for all future development work. Any violation of these principles will result in immediate refactoring to ensure medical environment compliance.
 
+**Critical Rules**:
+1. **NEVER use AutoMapper** - Use Factory Method Pattern instead
+2. **Always implement FromEntity() and ToEntity() methods** in ViewModels
+3. **Maintain explicit control** over Entity-ViewModel conversions
+4. **Follow Factory Method Pattern** for all data transformations
+5. **Always conduct systematic review** before any code changes
+6. **Implement changes incrementally** in small, testable units
+7. **Create detailed To-Do List** before execution
+8. **Document all changes** with reasons and impacts
+9. **Update knowledge base** with every change
+10. **Follow existing contracts strictly** - no violations allowed
+
 **Last Updated**: Current Session
 **Contract Status**: Active and Mandatory
 **Scope**: All ClinicApp Development
+
+### 7. Medical Environment Logging Standards (CRITICAL for Medical Data Integrity)
+**Principle**: Implement comprehensive logging for medical environments using Serilog and Seq to ensure 100% traceability and error resistance.
+
+**Implementation Rules**:
+- ✅ **DO**: Use structured logging with Serilog for all medical operations
+- ✅ **DO**: Log all user actions, data changes, and system events
+- ✅ **DO**: Include user context (UserId, IP, Timestamp) in all logs
+- ✅ **DO**: Use Seq for centralized log viewing and analysis
+- ✅ **DO**: Implement defensive logging with null checks
+- ✅ **DO**: Log both success and failure scenarios
+- ❌ **DON'T**: Skip logging for critical medical operations
+- ❌ **DON'T**: Use generic error messages without context
+- ❌ **DON'T**: Log sensitive medical data (PII)
+
+**Example Implementation**:
+```csharp
+// ✅ Correct Approach - Comprehensive Medical Logging
+public async Task<ActionResult> Index(int page = 1, int pageSize = 20)
+{
+    try
+    {
+        _logger.Information("درخواست نمایش لیست صلاحیت‌های خدماتی پزشکان. صفحه: {Page}, اندازه: {PageSize}, کاربر: {UserId}, IP: {IPAddress}", 
+            page, pageSize, _currentUserService.UserId, GetClientIPAddress());
+
+        // Log input validation
+        if (page <= 0 || pageSize <= 0)
+        {
+            _logger.Warning("پارامترهای نامعتبر صفحه. صفحه: {Page}, اندازه: {PageSize}", page, pageSize);
+            TempData["Error"] = "پارامترهای صفحه نامعتبر است.";
+            return View(new PagedResult<DoctorServiceCategoryViewModel> { Items = new List<DoctorServiceCategoryViewModel>() });
+        }
+
+        var result = await _doctorServiceCategoryService.GetServiceCategoriesForDoctorAsync(0, "", page, pageSize);
+        
+        if (!result.Success)
+        {
+            _logger.Error("خطا در دریافت لیست صلاحیت‌ها. پیام: {ErrorMessage}, کد خطا: {ErrorCode}", 
+                result.Message, result.ErrorCode);
+            TempData["Error"] = result.Message;
+            return View(new PagedResult<DoctorServiceCategoryViewModel> { Items = new List<DoctorServiceCategoryViewModel>() });
+        }
+
+        _logger.Information("لیست صلاحیت‌های خدماتی پزشکان با موفقیت بارگذاری شد. تعداد: {Count}, صفحه: {Page}", 
+            result.Data?.Items?.Count ?? 0, page);
+        
+        return View(result.Data);
+    }
+    catch (Exception ex)
+    {
+        _logger.Error(ex, "خطای غیرمنتظره در بارگذاری لیست صلاحیت‌های خدماتی پزشکان. صفحه: {Page}, کاربر: {UserId}", 
+            page, _currentUserService.UserId);
+        TempData["Error"] = "خطا در بارگذاری لیست صلاحیت‌ها";
+        return View(new PagedResult<DoctorServiceCategoryViewModel> { Items = new List<DoctorServiceCategoryViewModel>() });
+    }
+}
+
+// ✅ Helper method for client IP tracking
+private string GetClientIPAddress()
+{
+    try
+    {
+        var forwarded = Request.Headers["X-Forwarded-For"];
+        if (!string.IsNullOrEmpty(forwarded))
+        {
+            return forwarded.Split(',')[0].Trim();
+        }
+        return Request.UserHostAddress ?? "Unknown";
+    }
+    catch
+    {
+        return "Unknown";
+    }
+}
+```
+
+**Seq Integration**:
+```csharp
+// ✅ Add to Startup.cs or Global.asax.cs
+Log.Logger = new LoggerConfiguration()
+    .WriteTo.Seq("http://localhost:5341") // Seq server URL
+    .Enrich.WithProperty("Application", "ClinicApp")
+    .Enrich.WithProperty("Environment", "Production")
+    .CreateLogger();
+```
+
+**Medical Data Logging Checklist**:
+- [ ] All medical operations logged with user context
+- [ ] Input validation logged before processing
+- [ ] Success/failure scenarios logged with details
+- [ ] Client IP and timestamp included
+- [ ] No sensitive medical data in logs
+- [ ] Structured logging format used
+- [ ] Seq integration configured
+- [ ] Error tracking comprehensive
+
+### 8. Systematic Review and Incremental Change Management (CRITICAL for System Integrity)
+**Principle**: All changes must follow a systematic, incremental approach with comprehensive review and documentation to maintain system integrity and prevent duplicate implementations.
+
+**Implementation Rules**:
+- ✅ **DO**: Conduct comprehensive systematic review before any code changes
+- ✅ **DO**: Implement changes incrementally in small, testable units
+- ✅ **DO**: Create detailed To-Do List before execution
+- ✅ **DO**: Follow existing contracts and knowledge base strictly
+- ✅ **DO**: Document all changes with reasons and impacts
+- ❌ **DON'T**: Make changes without systematic review
+- ❌ **DON'T**: Implement large, monolithic changes
+- ❌ **DON'T**: Violate existing design contracts
+- ❌ **DON'T**: Skip documentation and knowledge base updates
+
+**Systematic Review Process**:
+```csharp
+// ✅ Required: Complete module review before changes
+// 1. Examine all related modules, controllers, and ViewModels
+// 2. Identify potential duplicate methods or actions
+// 3. Review database structure and architecture
+// 4. Check existing implementations in knowledge base
+// 5. Validate against design contracts
+```
+
+**Incremental Change Implementation**:
+```csharp
+// ✅ Correct Approach - Small, testable changes
+// Step 1: Fix one specific issue
+public async Task<ActionResult> FixSpecificIssue()
+{
+    // Single, focused change
+    // Testable independently
+    // Rollback possible if needed
+}
+
+// Step 2: Test and validate
+// Step 3: Move to next incremental change
+// ❌ Avoid: Large, complex changes that are hard to test
+```
+
+**To-Do List Template**:
+```markdown
+## Change Implementation Plan
+
+### Objective
+- [ ] Clear description of what needs to be changed
+
+### Affected Components
+- [ ] Modules involved
+- [ ] Controllers affected
+- [ ] ViewModels modified
+- [ ] Database changes (if any)
+
+### Implementation Steps
+- [ ] Step 1: [Description]
+- [ ] Step 2: [Description]
+- [ ] Step 3: [Description]
+
+### Testing Requirements
+- [ ] Unit tests needed
+- [ ] Integration tests required
+- [ ] Manual testing scenarios
+
+### Rollback Plan
+- [ ] How to revert changes if needed
+- [ ] Backup procedures
+
+### Documentation Updates
+- [ ] Update knowledge base
+- [ ] Modify design contracts
+- [ ] Update compliance checklist
+```
+
+**Change Documentation Template**:
+```markdown
+## Change Record
+
+**Date**: [YYYY-MM-DD]
+**Change Type**: [Bug Fix/Feature/Refactoring]
+**Reason**: [Why this change was needed]
+
+**Files Modified**:
+- [File Path 1]: [Description of changes]
+- [File Path 2]: [Description of changes]
+
+**Impact Analysis**:
+- [ ] No impact on other modules
+- [ ] Minor impact: [Description]
+- [ ] Major impact: [Description]
+
+**Testing Results**:
+- [ ] All tests passed
+- [ ] Issues found: [Description]
+- [ ] Rollback required: [Yes/No]
+
+**Knowledge Base Updates**:
+- [ ] Design contracts updated
+- [ ] New patterns documented
+- [ ] Compliance checklist updated
+```
+
+**Systematic Review Checklist**:
+- [ ] All related modules examined
+- [ ] No duplicate methods/actions identified
+- [ ] Database structure reviewed
+- [ ] Architecture impact assessed
+- [ ] Existing implementations checked
+- [ ] Design contracts validated
+- [ ] Knowledge base consulted
+- [ ] Change plan documented
+
+**Incremental Change Checklist**:
+- [ ] Changes are small and focused
+- [ ] Each change is independently testable
+- [ ] Rollback plan exists
+- [ ] Testing requirements defined
+- [ ] Documentation updated
+- [ ] Knowledge base maintained
+- [ ] Compliance verified
+- [ ] Impact documented
+
+**Contract Compliance Verification**:
+- [ ] All changes follow existing contracts
+- [ ] No AutoMapper usage introduced
+- [ ] Factory Method Pattern maintained
+- [ ] Strongly-typed ViewModels used
+- [ ] Comprehensive logging implemented
+- [ ] Medical environment standards met
+- [ ] Error resistance maintained
+- [ ] Performance optimized
+
+## Compliance Checklist

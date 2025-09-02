@@ -4,6 +4,8 @@ using ClinicApp.Extensions;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
 using FluentValidation;
+using System.Collections.Generic;
+using System.Web.Mvc;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {
@@ -111,6 +113,18 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Display(Name = "تاریخ انقضا (شمسی)")]
         public string ExpiryDateShamsi { get; set; }
+
+        /// <summary>
+        /// تاریخ اعطا به صورت string برای Persian DatePicker (ورودی از کاربر)
+        /// </summary>
+        [Display(Name = "تاریخ اعطا")]
+        public string GrantedDateString { get; set; }
+
+        /// <summary>
+        /// تاریخ انقضا به صورت string برای Persian DatePicker (ورودی از کاربر)
+        /// </summary>
+        [Display(Name = "تاریخ انقضا")]
+        public string ExpiryDateString { get; set; }
 
         /// <summary>
         /// شماره گواهی نامه (در صورت وجود)
@@ -271,6 +285,18 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .WithMessage("توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")
                 .When(x => !string.IsNullOrEmpty(x.Notes));
 
+            // اعتبارسنجی تاریخ شمسی
+            RuleFor(x => x.GrantedDateString)
+                .Must(PersianDateHelper.IsValidPersianDate)
+                .When(x => !string.IsNullOrEmpty(x.GrantedDateString))
+                .WithMessage("فرمت تاریخ اعطا نامعتبر است.");
+
+            RuleFor(x => x.ExpiryDateString)
+                .Must(PersianDateHelper.IsValidPersianDate)
+                .When(x => !string.IsNullOrEmpty(x.ExpiryDateString))
+                .WithMessage("فرمت تاریخ انقضا نامعتبر است.");
+
+            // اعتبارسنجی منطقی تاریخ‌ها
             RuleFor(x => x.GrantedDate)
                 .LessThanOrEqualTo(x => x.ExpiryDate)
                 .When(x => x.GrantedDate.HasValue && x.ExpiryDate.HasValue)
@@ -281,5 +307,99 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .When(x => x.GrantedDate.HasValue && x.ExpiryDate.HasValue)
                 .WithMessage("تاریخ انقضا نمی‌تواند قبل از تاریخ اعطا باشد.");
         }
+    }
+
+    /// <summary>
+    /// ViewModel برای صفحه نمایش صلاحیت‌های دسته‌بندی خدمات پزشک
+    /// </summary>
+    public class DoctorServiceCategoryPermissionsViewModel
+    {
+        /// <summary>
+        /// اطلاعات پزشک
+        /// </summary>
+        public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
+
+        /// <summary>
+        /// لیست صلاحیت‌های دسته‌بندی خدمات
+        /// </summary>
+        public List<DoctorServiceCategoryViewModel> Permissions { get; set; } = new List<DoctorServiceCategoryViewModel>();
+
+        /// <summary>
+        /// آمار صلاحیت‌ها
+        /// </summary>
+        public ServiceCategoryPermissionStatsViewModel Stats { get; set; } = new ServiceCategoryPermissionStatsViewModel();
+    }
+
+    /// <summary>
+    /// ViewModel برای آمار صلاحیت‌های دسته‌بندی خدمات
+    /// </summary>
+    public class ServiceCategoryPermissionStatsViewModel
+    {
+        /// <summary>
+        /// تعداد کل صلاحیت‌ها
+        /// </summary>
+        public int TotalPermissions { get; set; }
+
+        /// <summary>
+        /// تعداد صلاحیت‌های فعال
+        /// </summary>
+        public int ActivePermissions { get; set; }
+
+        /// <summary>
+        /// تعداد صلاحیت‌های غیرفعال
+        /// </summary>
+        public int InactivePermissions { get; set; }
+
+        /// <summary>
+        /// تاریخ آخرین صلاحیت
+        /// </summary>
+        public DateTime? LastPermissionDate { get; set; }
+    }
+
+    /// <summary>
+    /// ViewModel برای فرم انتساب پزشک به دسته‌بندی خدمات
+    /// </summary>
+    public class DoctorServiceCategoryAssignFormViewModel
+    {
+        /// <summary>
+        /// اطلاعات پزشک
+        /// </summary>
+        public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
+
+        /// <summary>
+        /// مدل انتساب
+        /// </summary>
+        public DoctorServiceCategoryViewModel Assignment { get; set; } = new DoctorServiceCategoryViewModel();
+
+        /// <summary>
+        /// لیست دسته‌بندی‌های خدمات موجود برای انتخاب
+        /// </summary>
+        public List<System.Web.Mvc.SelectListItem> AvailableServiceCategories { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+    }
+
+    /// <summary>
+    /// ViewModel برای فرم انتقال صلاحیت‌های خدماتی پزشک
+    /// </summary>
+    public class DoctorServiceCategoryTransferFormViewModel
+    {
+        /// <summary>
+        /// اطلاعات پزشک
+        /// </summary>
+        public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
+
+        /// <summary>
+        /// مدل انتقال
+        /// </summary>
+        public DoctorServiceCategoryViewModel Transfer { get; set; } = new DoctorServiceCategoryViewModel();
+
+        /// <summary>
+        /// لیست دسته‌بندی‌های خدمات موجود برای انتخاب
+        /// </summary>
+        public List<System.Web.Mvc.SelectListItem> AvailableServiceCategories { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+
+        /// <summary>
+        /// صلاحیت‌های فعلی پزشک
+        /// </summary>
+        public List<DoctorServiceCategoryViewModel> CurrentPermissions { get; set; } = new List<DoctorServiceCategoryViewModel>();
     }
 }

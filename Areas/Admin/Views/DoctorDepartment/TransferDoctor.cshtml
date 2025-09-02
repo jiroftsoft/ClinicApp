@@ -1,8 +1,10 @@
-@model ClinicApp.ViewModels.DoctorManagementVM.DoctorTransferViewModel
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDepartmentTransferFormViewModel
 @{
     ViewBag.Title = "انتقال پزشک بین دپارتمان‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
+
+@Html.AntiForgeryToken()
 
 @section Styles {
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
@@ -105,11 +107,11 @@
                     <div class="col-md-8">
                         <h4 class="mb-2">
                             <i class="fas fa-user-md me-2"></i>
-                            @Model.DoctorName
+                            @(Model?.Doctor?.FullName ?? "نامشخص")
                         </h4>
                         <p class="mb-0">
                             <i class="fas fa-id-card me-2"></i>
-                            کد ملی: @Model.DoctorNationalCode
+                            کد ملی: @(Model?.Doctor?.NationalCode ?? "نامشخص")
                         </p>
                     </div>
                     <div class="col-md-4 text-end">
@@ -134,7 +136,7 @@
                             دپارتمان فعلی
                         </h5>
                         <p class="mb-0 fs-5">
-                            @Model.FromDepartmentName
+                            @(Model?.Transfer?.FromDepartmentName ?? "نامشخص")
                         </p>
                     </div>
                     <div class="col-md-4 text-end">
@@ -161,10 +163,10 @@
                        new { id = "transferForm", @class = "needs-validation", novalidate = "novalidate" }))
                 {
                     @Html.AntiForgeryToken()
-                    @Html.HiddenFor(m => m.DoctorId)
-                    @Html.HiddenFor(m => m.DoctorName)
-                    @Html.HiddenFor(m => m.FromDepartmentId)
-                    @Html.HiddenFor(m => m.FromDepartmentName)
+                    <input type="hidden" name="DoctorId" value="@(Model?.Transfer?.DoctorId ?? 0)" />
+                    <input type="hidden" name="DoctorName" value="@(Model?.Doctor?.FullName ?? "")" />
+                    <input type="hidden" name="FromDepartmentId" value="@(Model?.Transfer?.FromDepartmentId ?? 0)" />
+                    <input type="hidden" name="FromDepartmentName" value="@(Model?.Transfer?.FromDepartmentName ?? "")" />
 
                     @Html.ValidationSummary(true, "", new { @class = "alert alert-danger validation-summary" })
 
@@ -177,20 +179,26 @@
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.ToDepartmentId, "دپارتمان مقصد", new { @class = "form-label fw-bold" })
-                                    @Html.DropDownListFor(m => m.ToDepartmentId, 
-                                        new SelectList(ViewBag.Departments ?? new List<object>(), "Value", "Text"), 
-                                        "انتخاب دپارتمان مقصد...", 
-                                        new { @class = "form-select", required = "required" })
-                                    @Html.ValidationMessageFor(m => m.ToDepartmentId, "", new { @class = "text-danger" })
+                                    <label for="ToDepartmentId" class="form-label fw-bold">دپارتمان مقصد</label>
+                                    <select id="ToDepartmentId" name="ToDepartmentId" class="form-select" required>
+                                        <option value="">انتخاب دپارتمان مقصد...</option>
+                                        @if (Model?.Departments != null)
+                                        {
+                                            foreach (var dept in Model.Departments)
+                                            {
+                                                <option value="@dept.Value">@dept.Text</option>
+                                            }
+                                        }
+                                    </select>
+                                    <div class="invalid-feedback">لطفاً دپارتمان مقصد را انتخاب کنید.</div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.Role, "نقش در دپارتمان جدید", new { @class = "form-label fw-bold" })
-                                    @Html.TextBoxFor(m => m.Role, new { @class = "form-control", 
-                                        placeholder = "مثال: پزشک عادی، رئیس دپارتمان..." })
-                                    @Html.ValidationMessageFor(m => m.Role, "", new { @class = "text-danger" })
+                                    <label for="Role" class="form-label fw-bold">نقش در دپارتمان جدید</label>
+                                    <input type="text" id="Role" name="Role" class="form-control" 
+                                        value="@(Model?.Transfer?.Role ?? "")"
+                                        placeholder="مثال: پزشک عادی، رئیس دپارتمان..." />
                                 </div>
                             </div>
                         </div>
@@ -206,8 +214,10 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <div class="form-check">
-                                        @Html.CheckBoxFor(m => m.PreserveServiceCategories, new { @class = "form-check-input", @checked = "checked" })
-                                        <label class="form-check-label" for="@Html.IdFor(m => m.PreserveServiceCategories)">
+                                        <input type="checkbox" id="PreserveServiceCategories" name="PreserveServiceCategories" 
+                                               class="form-check-input" checked value="true" />
+                                        <input type="hidden" name="PreserveServiceCategories" value="false" />
+                                        <label class="form-check-label" for="PreserveServiceCategories">
                                             حفظ صلاحیت‌های خدماتی
                                         </label>
                                     </div>
@@ -220,8 +230,9 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <div class="form-check">
-                                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", @checked = "checked" })
-                                        <label class="form-check-label" for="@Html.IdFor(m => m.IsActive)">
+                                        <input type="checkbox" id="IsActive" name="IsActive" class="form-check-input" checked value="true" />
+                                        <input type="hidden" name="IsActive" value="false" />
+                                        <label class="form-check-label" for="IsActive">
                                             انتساب فعال
                                         </label>
                                     </div>
@@ -243,10 +254,9 @@
                         <div class="row">
                             <div class="col-12">
                                 <div class="mb-3">
-                                    @Html.LabelFor(m => m.Description, "توضیحات", new { @class = "form-label fw-bold" })
-                                    @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", 
-                                        placeholder = "توضیحات مربوط به انتقال پزشک..." })
-                                    @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                                    <label for="TransferReason" class="form-label fw-bold">توضیحات</label>
+                                    <textarea id="TransferReason" name="TransferReason" class="form-control" rows="3" 
+                                        placeholder="توضیحات مربوط به انتقال پزشک..."></textarea>
                                 </div>
                             </div>
                         </div>
@@ -276,7 +286,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
     <script>
         $(document).ready(function () {

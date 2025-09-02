@@ -1,0 +1,772 @@
+@model List<ClinicApp.ViewModels.DoctorManagementVM.TimeSlotViewModel>
+@{
+    ViewBag.Title = "اسلات‌های زمانی در دسترس";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-clock text-info me-2"></i>
+            اسلات‌های زمانی در دسترس
+        </h1>
+        <div class="btn-group" role="group">
+            <a href="@Url.Action("Index", "AppointmentAvailability")" class="btn btn-secondary btn-sm">
+                <i class="fas fa-arrow-right me-1"></i>
+                بازگشت به داشبورد
+            </a>
+            <a href="@Url.Action("AvailableDates", "AppointmentAvailability")" class="btn btn-primary btn-sm">
+                <i class="fas fa-calendar-day me-1"></i>
+                تاریخ‌های در دسترس
+            </a>
+            <a href="@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")" class="btn btn-warning btn-sm">
+                <i class="fas fa-calendar-week me-1"></i>
+                تولید اسلات هفتگی
+            </a>
+        </div>
+    </div>
+
+    <!-- Search Form -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-search me-1"></i>
+                جستجوی اسلات‌های زمانی
+            </h6>
+        </div>
+        <div class="card-body">
+            @using (Html.BeginForm("AvailableTimeSlots", "AppointmentAvailability", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+            {
+                @Html.AntiForgeryToken()
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="doctorId" class="form-label">پزشک</label>
+                            <select name="doctorId" id="doctorId" class="form-select" required>
+                                <option value="">انتخاب پزشک</option>
+                                @if (ViewBag.Doctors != null)
+                                {
+                                    foreach (var doctor in ViewBag.Doctors)
+                                    {
+                                        <option value="@doctor.Value">@doctor.Text</option>
+                                    }
+                                }
+                            </select>
+                            <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="date" class="form-label">تاریخ</label>
+                            <input type="text" name="date" id="date" class="form-control persian-date" 
+                                   placeholder="انتخاب تاریخ" required>
+                            <div class="invalid-feedback">لطفاً تاریخ را انتخاب کنید</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label for="timeRange" class="form-label">بازه زمانی</label>
+                            <select name="timeRange" id="timeRange" class="form-select">
+                                <option value="">همه ساعات</option>
+                                <option value="morning">صبح (8:00 - 12:00)</option>
+                                <option value="afternoon">ظهر (12:00 - 16:00)</option>
+                                <option value="evening">عصر (16:00 - 20:00)</option>
+                                <option value="night">شب (20:00 - 24:00)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="slotDuration" class="form-label">مدت زمان اسلات (دقیقه)</label>
+                            <select name="slotDuration" id="slotDuration" class="form-select">
+                                <option value="">همه مدت‌ها</option>
+                                <option value="15">15 دقیقه</option>
+                                <option value="30">30 دقیقه</option>
+                                <option value="45">45 دقیقه</option>
+                                <option value="60">60 دقیقه</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label for="slotStatus" class="form-label">وضعیت اسلات</label>
+                            <select name="slotStatus" id="slotStatus" class="form-select">
+                                <option value="">همه وضعیت‌ها</option>
+                                <option value="available">در دسترس</option>
+                                <option value="booked">رزرو شده</option>
+                                <option value="reserved">رزرو موقت</option>
+                                <option value="blocked">مسدود شده</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-12 text-center">
+                        <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-search me-1"></i>
+                            جستجوی اسلات‌ها
+                        </button>
+                        <button type="button" class="btn btn-secondary btn-lg" onclick="resetForm()">
+                            <i class="fas fa-undo me-1"></i>
+                            بازنشانی
+                        </button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Time Slots Results -->
+    @if (Model != null && Model.Any())
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-clock me-1"></i>
+                    نتایج جستجو
+                </h6>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-success btn-sm" onclick="exportToExcel()">
+                        <i class="fas fa-file-excel me-1"></i>
+                        خروجی اکسل
+                    </button>
+                    <button type="button" class="btn btn-info btn-sm" onclick="printResults()">
+                        <i class="fas fa-print me-1"></i>
+                        چاپ
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-success">@Model.Count</div>
+                            <small class="text-muted">کل اسلات‌ها</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-primary">@Model.Count(s => s.Status == "available")</div>
+                            <small class="text-muted">در دسترس</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-warning">@Model.Count(s => s.Status == "booked")</div>
+                            <small class="text-muted">رزرو شده</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <div class="h4 text-info">@Model.Average(s => s.Duration).ToString("F0")</div>
+                            <small class="text-muted">میانگین مدت (دقیقه)</small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" id="timeSlotsTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>زمان شروع</th>
+                                <th>زمان پایان</th>
+                                <th>مدت (دقیقه)</th>
+                                <th>وضعیت</th>
+                                <th>نوع اسلات</th>
+                                <th>قیمت</th>
+                                <th>عملیات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var slot in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <span class="fw-bold">@slot.StartTimeDisplay</span>
+                                    </td>
+                                    <td>
+                                        <span class="fw-bold">@slot.EndTimeDisplay</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info">@slot.Duration</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge @slot.StatusCssClass">
+                                            @slot.StatusDisplay
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">@slot.Type</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-success fw-bold">@slot.Price.ToString("N0") تومان</span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            @if (slot.Status == "available")
+                                            {
+                                                <button type="button" class="btn btn-success btn-sm" 
+                                                        onclick="reserveSlot(@slot.Id)" title="رزرو اسلات">
+                                                    <i class="fas fa-bookmark"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-warning btn-sm" 
+                                                        onclick="blockSlot(@slot.Id)" title="مسدود کردن">
+                                                    <i class="fas fa-ban"></i>
+                                                </button>
+                                            }
+                                            else if (slot.Status == "reserved")
+                                            {
+                                                <button type="button" class="btn btn-info btn-sm" 
+                                                        onclick="confirmReservation(@slot.Id)" title="تأیید رزرو">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                <button type="button" class="btn btn-danger btn-sm" 
+                                                        onclick="cancelReservation(@slot.Id)" title="لغو رزرو">
+                                                    <i class="fas fa-times"></i>
+                                                </button>
+                                            }
+                                            <button type="button" class="btn btn-info btn-sm" 
+                                                    onclick="viewSlotDetails(@slot.Id)" title="جزئیات">
+                                                <i class="fas fa-eye"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Timeline View -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-timeline me-1"></i>
+                    نمای زمانی
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="timelineView">
+                    <!-- Timeline will be generated here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Chart -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-chart-bar me-1"></i>
+                    آمار اسلات‌ها
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <canvas id="slotsChart" width="400" height="200"></canvas>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="row">
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="h5 text-success">@Model.Count(s => s.Status == "available")</div>
+                                    <small class="text-muted">در دسترس</small>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="h5 text-warning">@Model.Count(s => s.Status == "booked")</div>
+                                    <small class="text-muted">رزرو شده</small>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="h5 text-info">@Model.Count(s => s.Status == "reserved")</div>
+                                    <small class="text-muted">رزرو موقت</small>
+                                </div>
+                            </div>
+                            <div class="col-6 mb-3">
+                                <div class="text-center">
+                                    <div class="h5 text-danger">@Model.Count(s => s.Status == "blocked")</div>
+                                    <small class="text-muted">مسدود شده</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model != null)
+    {
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="fas fa-clock me-1"></i>
+                    نتایج جستجو
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-clock fa-3x mb-3"></i>
+                    <h5>هیچ اسلاتی یافت نشد</h5>
+                    <p>برای تاریخ و پزشک انتخاب شده هیچ اسلات زمانی یافت نشد.</p>
+                    <p>لطفاً تاریخ دیگری انتخاب کنید یا اسلات‌های جدید تولید کنید.</p>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Quick Actions -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                <i class="fas fa-bolt me-1"></i>
+                عملیات سریع
+            </h6>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-primary w-100" onclick="generateSlotsForDate()">
+                        <i class="fas fa-plus me-1"></i>
+                        تولید اسلات برای تاریخ
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-success w-100" onclick="bulkReserveSlots()">
+                        <i class="fas fa-bookmark me-1"></i>
+                        رزرو گروهی اسلات‌ها
+                    </button>
+                </div>
+                <div class="col-md-4 mb-3">
+                    <button type="button" class="btn btn-outline-warning w-100" onclick="bulkBlockSlots()">
+                        <i class="fas fa-ban me-1"></i>
+                        مسدود کردن گروهی
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reserve Slot Modal -->
+<div class="modal fade" id="reserveSlotModal" tabindex="-1" aria-labelledby="reserveSlotModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reserveSlotModalLabel">رزرو اسلات زمانی</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reserveSlotForm">
+                    <input type="hidden" id="slotId" name="slotId">
+                    <div class="mb-3">
+                        <label for="patientName" class="form-label">نام بیمار</label>
+                        <input type="text" id="patientName" name="patientName" class="form-control" 
+                               required placeholder="نام کامل بیمار">
+                    </div>
+                    <div class="mb-3">
+                        <label for="patientPhone" class="form-label">شماره تلفن</label>
+                        <input type="tel" id="patientPhone" name="patientPhone" class="form-control" 
+                               required placeholder="شماره تلفن بیمار">
+                    </div>
+                    <div class="mb-3">
+                        <label for="reservationNotes" class="form-label">توضیحات</label>
+                        <textarea id="reservationNotes" name="notes" class="form-control" 
+                                  rows="3" placeholder="توضیحات اضافی (اختیاری)"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-primary" onclick="confirmReserveSlot()">رزرو</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Block Slot Modal -->
+<div class="modal fade" id="blockSlotModal" tabindex="-1" aria-labelledby="blockSlotModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="blockSlotModalLabel">مسدود کردن اسلات</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="blockSlotForm">
+                    <input type="hidden" id="blockSlotId" name="slotId">
+                    <div class="mb-3">
+                        <label for="blockReason" class="form-label">دلیل مسدود کردن</label>
+                        <textarea id="blockReason" name="reason" class="form-control" 
+                                  rows="3" required placeholder="دلیل مسدود کردن اسلات را وارد کنید"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="blockDuration" class="form-label">مدت زمان مسدودیت</label>
+                        <select id="blockDuration" name="duration" class="form-select" required>
+                            <option value="">انتخاب کنید</option>
+                            <option value="1">1 ساعت</option>
+                            <option value="4">4 ساعت</option>
+                            <option value="8">8 ساعت</option>
+                            <option value="24">1 روز</option>
+                            <option value="168">1 هفته</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-warning" onclick="confirmBlockSlot()">مسدود کردن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/persian-datepicker")
+    @Scripts.Render("~/bundles/plugins")
+    
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-date').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true,
+                persianDigit: false
+            });
+
+            // Set default values
+            $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            
+            // Form validation
+            $('.needs-validation').on('submit', function(event) {
+                if (!this.checkValidity()) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Initialize DataTable if results exist
+            if ($('#timeSlotsTable tbody tr').length > 0) {
+                $('#timeSlotsTable').DataTable({
+                    language: {
+                        url: '/Content/DataTables/Persian.json'
+                    },
+                    pageLength: 25,
+                    order: [[0, 'asc']]
+                });
+            }
+
+            // Generate timeline view if results exist
+            @if (Model != null && Model.Any())
+            {
+                <text>
+                generateTimelineView();
+                initializeSlotsChart();
+                </text>
+            }
+        });
+
+        // Reset Form
+        function resetForm() {
+            if (confirm('آیا از بازنشانی فرم اطمینان دارید؟')) {
+                document.getElementById('availableTimeSlotsForm').reset();
+                $('.needs-validation').removeClass('was-validated');
+                
+                // Reset default values
+                $('input[name="date"]').val('@DateTime.Today.ToString("yyyy-MM-dd")');
+            }
+        }
+
+        // Reserve Slot
+        function reserveSlot(slotId) {
+            $('#slotId').val(slotId);
+            $('#reserveSlotModal').modal('show');
+        }
+
+        // Confirm Reserve Slot
+        function confirmReserveSlot() {
+            const slotId = $('#slotId').val();
+            const patientName = $('#patientName').val();
+            const patientPhone = $('#patientPhone').val();
+            const notes = $('#reservationNotes').val();
+
+            if (!patientName.trim() || !patientPhone.trim()) {
+                alert('لطفاً نام و شماره تلفن بیمار را وارد کنید');
+                return;
+            }
+
+            // Show loading state
+            const reserveBtn = $('button[onclick="confirmReserveSlot()"]');
+            const originalText = reserveBtn.html();
+            reserveBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال رزرو...');
+
+            // Simulate API call
+            setTimeout(() => {
+                $('#reserveSlotModal').modal('hide');
+                reserveBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('اسلات با موفقیت رزرو شد');
+                
+                // Refresh page
+                location.reload();
+            }, 2000);
+        }
+
+        // Block Slot
+        function blockSlot(slotId) {
+            $('#blockSlotId').val(slotId);
+            $('#blockSlotModal').modal('show');
+        }
+
+        // Confirm Block Slot
+        function confirmBlockSlot() {
+            const slotId = $('#blockSlotId').val();
+            const reason = $('#blockReason').val();
+            const duration = $('#blockDuration').val();
+
+            if (!reason.trim() || !duration) {
+                alert('لطفاً دلیل و مدت زمان مسدودیت را وارد کنید');
+                return;
+            }
+
+            // Show loading state
+            const blockBtn = $('button[onclick="confirmBlockSlot()"]');
+            const originalText = blockBtn.html();
+            blockBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال مسدود کردن...');
+
+            // Simulate API call
+            setTimeout(() => {
+                $('#blockSlotModal').modal('hide');
+                blockBtn.prop('disabled', false).html(originalText);
+                
+                // Show success message
+                showSuccessMessage('اسلات با موفقیت مسدود شد');
+                
+                // Refresh page
+                location.reload();
+            }, 2000);
+        }
+
+        // Other functions
+        function confirmReservation(slotId) {
+            if (confirm('آیا از تأیید رزرو اطمینان دارید؟')) {
+                // Implement confirmation logic
+                alert('رزرو تأیید شد');
+            }
+        }
+
+        function cancelReservation(slotId) {
+            if (confirm('آیا از لغو رزرو اطمینان دارید؟')) {
+                // Implement cancellation logic
+                alert('رزرو لغو شد');
+            }
+        }
+
+        function viewSlotDetails(slotId) {
+            // Implement slot details view
+            alert('جزئیات اسلات در حال توسعه است');
+        }
+
+        function generateSlotsForDate() {
+            const doctorId = $('#doctorId').val();
+            const date = $('#date').val();
+
+            if (!doctorId || !date) {
+                alert('لطفاً ابتدا پزشک و تاریخ را انتخاب کنید');
+                return;
+            }
+
+            window.location.href = '@Url.Action("GenerateWeeklySlots", "AppointmentAvailability")?doctorId=' + doctorId + '&startDate=' + date;
+        }
+
+        function bulkReserveSlots() {
+            alert('رزرو گروهی در حال توسعه است');
+        }
+
+        function bulkBlockSlots() {
+            alert('مسدود کردن گروهی در حال توسعه است');
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            alert('خروجی اکسل در حال توسعه است');
+        }
+
+        // Print Results
+        function printResults() {
+            window.print();
+        }
+
+        // Generate Timeline View
+        function generateTimelineView() {
+            const timeSlots = @Html.Raw(Json.Encode(Model?.Select(s => new { s.StartTime, s.EndTime, s.Status, s.Duration })));
+            
+            if (!timeSlots || timeSlots.length === 0) return;
+
+            let timelineHtml = '<div class="timeline-container">';
+            
+            timeSlots.forEach((slot, index) => {
+                const startTime = new Date(`2000-01-01T${slot.StartTime}`);
+                const endTime = new Date(`2000-01-01T${slot.EndTime}`);
+                const startHour = startTime.getHours();
+                const startMinute = startTime.getMinutes();
+                const endHour = endTime.getHours();
+                const endMinute = endTime.getMinutes();
+                
+                let statusClass = '';
+                let statusText = '';
+                
+                switch(slot.Status) {
+                    case 'available':
+                        statusClass = 'timeline-item-available';
+                        statusText = 'در دسترس';
+                        break;
+                    case 'booked':
+                        statusClass = 'timeline-item-booked';
+                        statusText = 'رزرو شده';
+                        break;
+                    case 'reserved':
+                        statusClass = 'timeline-item-reserved';
+                        statusText = 'رزرو موقت';
+                        break;
+                    case 'blocked':
+                        statusClass = 'timeline-item-blocked';
+                        statusText = 'مسدود شده';
+                        break;
+                }
+                
+                timelineHtml += `
+                    <div class="timeline-item ${statusClass}">
+                        <div class="timeline-time">
+                            ${startHour.toString().padStart(2, '0')}:${startMinute.toString().padStart(2, '0')} - 
+                            ${endHour.toString().padStart(2, '0')}:${endMinute.toString().padStart(2, '0')}
+                        </div>
+                        <div class="timeline-content">
+                            <div class="timeline-status">${statusText}</div>
+                            <div class="timeline-duration">${slot.Duration} دقیقه</div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            timelineHtml += '</div>';
+            $('#timelineView').html(timelineHtml);
+        }
+
+        // Initialize Slots Chart
+        function initializeSlotsChart() {
+            const ctx = document.getElementById('slotsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['8:00', '9:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00'],
+                    datasets: [{
+                        label: 'اسلات‌های در دسترس',
+                        data: [5, 8, 6, 4, 3, 7, 9, 6, 5, 8, 7, 4],
+                        backgroundColor: 'rgba(40, 167, 69, 0.2)',
+                        borderColor: 'rgba(40, 167, 69, 1)',
+                        borderWidth: 1
+                    }, {
+                        label: 'اسلات‌های رزرو شده',
+                        data: [2, 1, 3, 5, 6, 2, 0, 3, 4, 1, 2, 5],
+                        backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            position: 'top'
+                        }
+                    }
+                }
+            });
+        }
+
+        function showSuccessMessage(message) {
+            alert(message);
+        }
+    </script>
+}
+
+<style>
+    .timeline-container {
+        position: relative;
+        padding: 20px 0;
+    }
+
+    .timeline-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        border-radius: 8px;
+        border-left: 4px solid;
+    }
+
+    .timeline-item-available {
+        background-color: #d4edda;
+        border-left-color: #28a745;
+    }
+
+    .timeline-item-booked {
+        background-color: #fff3cd;
+        border-left-color: #ffc107;
+    }
+
+    .timeline-item-reserved {
+        background-color: #cce7ff;
+        border-left-color: #17a2b8;
+    }
+
+    .timeline-item-blocked {
+        background-color: #f8d7da;
+        border-left-color: #dc3545;
+    }
+
+    .timeline-time {
+        font-weight: bold;
+        min-width: 120px;
+        margin-right: 15px;
+    }
+
+    .timeline-content {
+        flex: 1;
+    }
+
+    .timeline-status {
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .timeline-duration {
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+</style>

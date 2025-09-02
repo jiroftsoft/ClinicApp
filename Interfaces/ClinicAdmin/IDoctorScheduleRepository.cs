@@ -68,4 +68,46 @@ public interface IDoctorScheduleRepository
     Task<bool> BlockTimeRangeForDoctorAsync(int doctorId, DateTime start, DateTime end, string reason);
 
     #endregion
+
+    #region List and Search Operations
+
+    /// <summary>
+    /// دریافت تمام برنامه‌های کاری پزشکان
+    /// </summary>
+    /// <returns>لیست تمام برنامه‌های کاری</returns>
+    Task<List<DoctorSchedule>> GetAllDoctorSchedulesAsync();
+
+    #endregion
+
+    #region Schedule CRUD Operations
+
+    /// <summary>
+    /// دریافت برنامه کاری بر اساس شناسه
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>برنامه کاری</returns>
+    Task<DoctorSchedule> GetDoctorScheduleByIdAsync(int scheduleId);
+
+    /// <summary>
+    /// حذف برنامه کاری
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>درست اگر حذف با موفقیت انجام شد</returns>
+    Task<bool> DeleteDoctorScheduleAsync(int scheduleId);
+
+    /// <summary>
+    /// غیرفعال کردن برنامه کاری
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>درست اگر غیرفعال‌سازی با موفقیت انجام شد</returns>
+    Task<bool> DeactivateDoctorScheduleAsync(int scheduleId);
+
+    /// <summary>
+    /// فعال کردن مجدد برنامه کاری
+    /// </summary>
+    /// <param name="scheduleId">شناسه برنامه کاری</param>
+    /// <returns>درست اگر فعال‌سازی با موفقیت انجام شد</returns>
+    Task<bool> ActivateDoctorScheduleAsync(int scheduleId);
+
+    #endregion
 }

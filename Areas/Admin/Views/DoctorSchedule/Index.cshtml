@@ -1,138 +1,358 @@
-@model PagedResult<DoctorScheduleViewModel>
+@* صفحه مدیریت برنامه‌های کاری پزشکان - طراحی Ultimate برای محیط درمانی *@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.DoctorManagementVM.DoctorScheduleViewModel>
 @{
     ViewBag.Title = "مدیریت برنامه‌های کاری پزشکان";
-    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/datatables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/datatables/css/responsive.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        .schedule-card {
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .schedule-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+        }
+        
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        
+        .filter-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 15px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            color: white;
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 15px;
+            color: white;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .action-buttons .btn {
+            border-radius: 25px;
+            margin: 0 0.25rem;
+            transition: all 0.3s ease;
+        }
+        
+        .action-buttons .btn:hover {
+            transform: scale(1.1);
+        }
+        
+        .modal-content {
+            border-radius: 20px;
+            border: none;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 20px 20px 0 0;
+            border: none;
+        }
+        
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            padding: 0.75rem 2rem;
+            font-weight: 600;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+        
+        .table {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .table thead th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .table tbody tr:hover {
+            background-color: rgba(102, 126, 234, 0.05);
+        }
+        
+        .pagination .page-link {
+            border-radius: 10px;
+            margin: 0 0.25rem;
+            border: none;
+            color: #667eea;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+    </style>
 }
 
 <div class="container-fluid">
-    <div class="row">
+    <!-- Header Section -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-calendar-alt"></i>
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0 text-gray-800">
+                        <i class="fas fa-calendar-alt text-primary me-2"></i>
                         مدیریت برنامه‌های کاری پزشکان
-                    </h3>
-                    <div class="card-tools">
-                        <button type="button" class="btn btn-primary" data-toggle="modal" data-target="#addScheduleModal">
-                            <i class="fas fa-plus"></i>
-                            اضافه کردن برنامه جدید
-                        </button>
+                    </h1>
+                    <p class="text-muted mb-0">مدیریت کامل برنامه‌های کاری و زمان‌بندی پزشکان کلینیک</p>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-primary btn-lg" data-bs-toggle="modal" data-bs-target="#addScheduleModal">
+                        <i class="fas fa-plus me-2"></i>
+                        برنامه کاری جدید
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-white-50 small">کل برنامه‌ها</div>
+                        <div class="text-lg font-weight-bold">@(Model?.TotalItems ?? 0)</div>
+                    </div>
+                    <div class="text-white-50">
+                        <i class="fas fa-calendar fa-2x"></i>
                     </div>
                 </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-white-50 small">برنامه‌های فعال</div>
+                        <div class="text-lg font-weight-bold">@(Model?.Items?.Count(i => i.IsActive) ?? 0)</div>
+                    </div>
+                    <div class="text-white-50">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-white-50 small">پزشکان فعال</div>
+                        <div class="text-lg font-weight-bold">@(Model?.Items?.Select(i => i.DoctorId).Distinct().Count() ?? 0)</div>
+                    </div>
+                    <div class="text-white-50">
+                        <i class="fas fa-user-md fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="stats-card" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <div class="text-white-50 small">ساعت‌های کاری</div>
+                        <div class="text-lg font-weight-bold">@(Model?.Items?.Sum(i => i.WeeklyHours) ?? 0)</div>
+                    </div>
+                    <div class="text-white-50">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="filter-section">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="text-white mb-2">پزشک</label>
+                    <select id="doctorFilter" class="form-select">
+                        <option value="">همه پزشکان</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="text-white mb-2">روز هفته</label>
+                    <select id="dayOfWeekFilter" class="form-select">
+                        <option value="">همه روزها</option>
+                        <option value="شنبه">شنبه</option>
+                        <option value="یکشنبه">یکشنبه</option>
+                        <option value="دوشنبه">دوشنبه</option>
+                        <option value="سه‌شنبه">سه‌شنبه</option>
+                        <option value="چهارشنبه">چهارشنبه</option>
+                        <option value="پنج‌شنبه">پنج‌شنبه</option>
+                        <option value="جمعه">جمعه</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="text-white mb-2">وضعیت</label>
+                    <select id="statusFilter" class="form-select">
+                        <option value="">همه وضعیت‌ها</option>
+                        <option value="true">فعال</option>
+                        <option value="false">غیرفعال</option>
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="form-group">
+                    <label class="text-white mb-2">&nbsp;</label>
+                    <button type="button" id="searchBtn" class="btn btn-light btn-block">
+                        <i class="fas fa-search me-2"></i>
+                        جستجو
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card schedule-card">
                 <div class="card-body">
                     @if (TempData["Success"] != null)
                     {
-                        <div class="alert alert-success alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <i class="fas fa-check"></i>
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle me-2"></i>
                             @TempData["Success"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     }
 
                     @if (TempData["Error"] != null)
                     {
-                        <div class="alert alert-danger alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <i class="fas fa-exclamation-triangle"></i>
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
                             @TempData["Error"]
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     }
 
-                    <!-- فیلترها -->
-                    <div class="row mb-3">
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="doctorFilter">پزشک:</label>
-                                <select id="doctorFilter" class="form-control">
-                                    <option value="">همه پزشکان</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="dayOfWeekFilter">روز هفته:</label>
-                                <select id="dayOfWeekFilter" class="form-control">
-                                    <option value="">همه روزها</option>
-                                    <option value="شنبه">شنبه</option>
-                                    <option value="یکشنبه">یکشنبه</option>
-                                    <option value="دوشنبه">دوشنبه</option>
-                                    <option value="سه‌شنبه">سه‌شنبه</option>
-                                    <option value="چهارشنبه">چهارشنبه</option>
-                                    <option value="پنج‌شنبه">پنج‌شنبه</option>
-                                    <option value="جمعه">جمعه</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label for="statusFilter">وضعیت:</label>
-                                <select id="statusFilter" class="form-control">
-                                    <option value="">همه وضعیت‌ها</option>
-                                    <option value="true">فعال</option>
-                                    <option value="false">غیرفعال</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label>&nbsp;</label>
-                                <button type="button" id="searchBtn" class="btn btn-info btn-block">
-                                    <i class="fas fa-search"></i>
-                                    جستجو
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- جدول برنامه‌های کاری -->
+                    <!-- DataTable -->
                     <div class="table-responsive">
-                        <table class="table table-bordered table-striped">
+                        <table id="schedulesTable" class="table table-hover">
                             <thead>
                                 <tr>
                                     <th>پزشک</th>
                                     <th>روز هفته</th>
-                                    <th>زمان شروع</th>
-                                    <th>زمان پایان</th>
+                                    <th>زمان کاری</th>
                                     <th>مدت نوبت</th>
                                     <th>وضعیت</th>
-                                    <th>تاریخ شروع</th>
-                                    <th>تاریخ پایان</th>
+                                    <th>آمار</th>
                                     <th>عملیات</th>
                                 </tr>
                             </thead>
-                            <tbody id="schedulesTable">
+                            <tbody>
                                 @if (Model?.Items != null && Model.Items.Any())
                                 {
                                     foreach (var item in Model.Items)
                                     {
-                                        <tr data-id="@item.Id">
-                                            <td>@item.DoctorName</td>
-                                            <td>@item.DayOfWeek</td>
-                                            <td>@item.StartTime.ToString(@"hh\:mm")</td>
-                                            <td>@item.EndTime.ToString(@"hh\:mm")</td>
-                                            <td>@item.AppointmentDuration دقیقه</td>
+                                        <tr data-id="@item.Id" 
+                                            data-doctor-id="@item.DoctorId"
+                                            data-day-of-week="@item.DayOfWeek"
+                                            data-is-active="@item.IsActive.ToString().ToLower()">
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-sm bg-primary rounded-circle d-flex align-items-center justify-content-center me-3">
+                                                        <i class="fas fa-user-md text-white"></i>
+                                                    </div>
+                                                    <div>
+                                                        <div class="font-weight-bold">@item.DoctorName</div>
+                                                        <small class="text-muted">کد: @item.DoctorId</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-info">@item.DayOfWeek</span>
+                                            </td>
+                                            <td>
+                                                <div class="text-center">
+                                                    <div class="font-weight-bold">@item.StartTime.ToString(@"HH:mm") - @item.EndTime.ToString(@"HH:mm")</div>
+                                                    <small class="text-muted">@item.WeeklyHours ساعت هفتگی</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">@item.AppointmentDuration دقیقه</span>
+                                            </td>
                                             <td>
                                                 @if (item.IsActive)
                                                 {
-                                                    <span class="badge badge-success">فعال</span>
+                                                    <span class="status-badge bg-success">
+                                                        <i class="fas fa-check-circle me-1"></i>
+                                                        فعال
+                                                    </span>
                                                 }
                                                 else
                                                 {
-                                                    <span class="badge badge-danger">غیرفعال</span>
+                                                    <span class="status-badge bg-danger">
+                                                        <i class="fas fa-times-circle me-1"></i>
+                                                        غیرفعال
+                                                    </span>
                                                 }
                                             </td>
-                                            <td>@(item.StartDate?.ToString("yyyy/MM/dd"))</td>
-                                            <td>@(item.EndDate?.ToString("yyyy/MM/dd"))</td>
                                             <td>
-                                                <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewSchedule(@item.Id)">
+                                                <div class="text-center">
+                                                    <div class="font-weight-bold text-primary">@item.TotalSchedules</div>
+                                                    <small class="text-muted">برنامه</small>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewSchedule(@item.Id)" title="مشاهده">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editSchedule(@item.Id)">
+                                                    <button type="button" class="btn btn-sm btn-warning" onclick="editSchedule(@item.Id)" title="ویرایش">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
-                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSchedule(@item.Id)">
+                                                    <button type="button" class="btn btn-sm btn-success" onclick="activateSchedule(@item.Id)" title="فعال‌سازی">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger" onclick="removeSchedule(@item.Id)" title="حذف">
                                                         <i class="fas fa-trash"></i>
                                                     </button>
                                                 </div>
@@ -140,26 +360,38 @@
                                         </tr>
                                     }
                                 }
-                                else
-                                {
-                                    <tr>
-                                        <td colspan="9" class="text-center">هیچ برنامه کاری یافت نشد.</td>
-                                    </tr>
-                                }
                             </tbody>
                         </table>
                     </div>
 
-                    <!-- صفحه‌بندی -->
+                    <!-- Pagination -->
                     @if (Model != null && Model.TotalPages > 1)
                     {
-                        <div class="d-flex justify-content-center">
+                        <div class="d-flex justify-content-center mt-4">
                             <nav>
                                 <ul class="pagination">
-                                    @for (int i = 1; i <= Model.TotalPages; i++)
+                                    @if (Model.CurrentPage > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="#" onclick="loadPage(@(Model.CurrentPage - 1))">
+                                                <i class="fas fa-chevron-right"></i>
+                                            </a>
+                                        </li>
+                                    }
+                                    
+                                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
                                     {
                                         <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                                             <a class="page-link" href="#" onclick="loadPage(@i)">@i</a>
+                                        </li>
+                                    }
+                                    
+                                    @if (Model.CurrentPage < Model.TotalPages)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" href="#" onclick="loadPage(@(Model.CurrentPage + 1))">
+                                                <i class="fas fa-chevron-left"></i>
+                                            </a>
                                         </li>
                                     }
                                 </ul>
@@ -173,30 +405,32 @@
 </div>
 
 <!-- Modal اضافه کردن برنامه جدید -->
-<div class="modal fade" id="addScheduleModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
+<div class="modal fade" id="addScheduleModal" tabindex="-1" aria-labelledby="addScheduleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">اضافه کردن برنامه کاری جدید</h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
+                <h5 class="modal-title" id="addScheduleModalLabel">
+                    <i class="fas fa-plus me-2"></i>
+                    اضافه کردن برنامه کاری جدید
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form id="addScheduleForm">
+            <form id="addScheduleForm" class="needs-validation" novalidate>
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="doctorId">پزشک *</label>
-                                <select id="doctorId" name="DoctorId" class="form-control" required>
+                            <div class="form-group mb-3">
+                                <label for="doctorId" class="form-label">پزشک <span class="text-danger">*</span></label>
+                                <select id="doctorId" name="DoctorId" class="form-select" required>
                                     <option value="">انتخاب پزشک</option>
                                 </select>
+                                <div class="invalid-feedback">لطفاً پزشک را انتخاب کنید</div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="dayOfWeek">روز هفته *</label>
-                                <select id="dayOfWeek" name="DayOfWeek" class="form-control" required>
+                            <div class="form-group mb-3">
+                                <label for="dayOfWeek" class="form-label">روز هفته <span class="text-danger">*</span></label>
+                                <select id="dayOfWeek" name="DayOfWeek" class="form-select" required>
                                     <option value="">انتخاب روز</option>
                                     <option value="شنبه">شنبه</option>
                                     <option value="یکشنبه">یکشنبه</option>
@@ -206,62 +440,72 @@
                                     <option value="پنج‌شنبه">پنج‌شنبه</option>
                                     <option value="جمعه">جمعه</option>
                                 </select>
+                                <div class="invalid-feedback">لطفاً روز هفته را انتخاب کنید</div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="startTime">زمان شروع *</label>
+                            <div class="form-group mb-3">
+                                <label for="startTime" class="form-label">زمان شروع <span class="text-danger">*</span></label>
                                 <input type="time" id="startTime" name="StartTime" class="form-control" required />
+                                <div class="invalid-feedback">لطفاً زمان شروع را وارد کنید</div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="endTime">زمان پایان *</label>
+                            <div class="form-group mb-3">
+                                <label for="endTime" class="form-label">زمان پایان <span class="text-danger">*</span></label>
                                 <input type="time" id="endTime" name="EndTime" class="form-control" required />
+                                <div class="invalid-feedback">لطفاً زمان پایان را وارد کنید</div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="appointmentDuration">مدت نوبت (دقیقه) *</label>
+                            <div class="form-group mb-3">
+                                <label for="appointmentDuration" class="form-label">مدت نوبت (دقیقه) <span class="text-danger">*</span></label>
                                 <input type="number" id="appointmentDuration" name="AppointmentDuration" class="form-control" min="15" max="120" value="30" required />
+                                <div class="invalid-feedback">لطفاً مدت نوبت را وارد کنید (15-120 دقیقه)</div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="isActive">وضعیت</label>
-                                <div class="custom-control custom-switch">
-                                    <input type="checkbox" id="isActive" name="IsActive" class="custom-control-input" checked>
-                                    <label class="custom-control-label" for="isActive">فعال</label>
+                            <div class="form-group mb-3">
+                                <label for="isActive" class="form-label">وضعیت</label>
+                                <div class="form-check form-switch">
+                                    <input type="checkbox" id="isActive" name="IsActive" class="form-check-input" checked>
+                                    <label class="form-check-label" for="isActive">فعال</label>
                                 </div>
                             </div>
                         </div>
                     </div>
                     <div class="row">
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="startDate">تاریخ شروع</label>
-                                <input type="date" id="startDate" name="StartDate" class="form-control" />
+                            <div class="form-group mb-3">
+                                <label for="startDate" class="form-label">تاریخ شروع</label>
+                                <input type="text" id="startDate" name="StartDate" class="form-control persian-datepicker" placeholder="انتخاب تاریخ" />
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="endDate">تاریخ پایان</label>
-                                <input type="date" id="endDate" name="EndDate" class="form-control" />
+                            <div class="form-group mb-3">
+                                <label for="endDate" class="form-label">تاریخ پایان</label>
+                                <input type="text" id="endDate" name="EndDate" class="form-control persian-datepicker" placeholder="انتخاب تاریخ" />
                             </div>
                         </div>
                     </div>
-                    <div class="form-group">
-                        <label for="notes">توضیحات</label>
-                        <textarea id="notes" name="Notes" class="form-control" rows="3"></textarea>
+                    <div class="form-group mb-3">
+                        <label for="notes" class="form-label">توضیحات</label>
+                        <textarea id="notes" name="Notes" class="form-control" rows="3" placeholder="توضیحات اضافی..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                    <button type="submit" class="btn btn-primary">ذخیره</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times me-2"></i>
+                        انصراف
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>
+                        ذخیره برنامه
+                    </button>
                 </div>
             </form>
         </div>
@@ -269,44 +513,156 @@
 </div>
 
 @section Scripts {
+    <script src="~/Content/plugins/datatables/js/jquery.dataTables.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/dataTables.bootstrap4.min.js"></script>
+    <script src="~/Content/plugins/datatables/js/dataTables.responsive.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
+    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
+    
     <script>
         $(document).ready(function () {
+            // Initialize DataTable
+            var table = $('#schedulesTable').DataTable({
+                responsive: true,
+                language: {
+                    url: '/Content/plugins/datatables/js/fa.json'
+                },
+                pageLength: 25,
+                order: [[0, 'asc']],
+                columnDefs: [
+                    { orderable: false, targets: [6] }
+                ]
+            });
+
+            // Initialize Persian DatePicker
+            $('.persian-datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                initialValue: false,
+                autoClose: true
+            });
+
+            // Initialize Select2
+            $('#doctorId, #doctorFilter').select2({
+                placeholder: 'انتخاب پزشک',
+                allowClear: true
+            });
+
+            // Add change event handlers for filters
+            $('#doctorFilter, #dayOfWeekFilter, #statusFilter').on('change', function() {
+                // Auto-apply filters when selection changes
+                setTimeout(function() {
+                    applyFilters();
+                }, 100);
+            });
+
             loadDoctors();
             
-            // جستجو
+            // Search functionality
             $('#searchBtn').click(function () {
-                loadSchedules();
+                applyFilters();
             });
             
-            // فرم اضافه کردن
+            // Form submission
             $('#addScheduleForm').submit(function (e) {
                 e.preventDefault();
-                addSchedule();
+                if (this.checkValidity()) {
+                    addSchedule();
+                } else {
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
+                }
+            });
+
+            // Real-time validation
+            $('#startTime, #endTime').on('change', function() {
+                validateTimeRange();
             });
         });
 
         function loadDoctors() {
-            $.get('@Url.Action("GetDoctors", "Doctor")', function (data) {
-                if (data.success) {
-                    var options = '<option value="">همه پزشکان</option>';
-                    data.data.forEach(function (doctor) {
-                        options += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
-                    });
-                    $('#doctorFilter').html(options);
-                    $('#doctorId').html(options);
+            $.ajax({
+                url: '@Url.Action("GetDoctors", "Doctor")',
+                type: 'GET',
+                dataType: 'json',
+                success: function (data) {
+                    if (data.success && data.data) {
+                        var options = '<option value="">همه پزشکان</option>';
+                        data.data.forEach(function (doctor) {
+                            options += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
+                        });
+                        $('#doctorFilter').html(options);
+                        $('#doctorId').html(options);
+                        console.log('Doctors loaded successfully:', data.data.length);
+                    } else {
+                        console.error('Failed to load doctors:', data.message);
+                        $('#doctorFilter').html('<option value="">خطا در بارگذاری پزشکان</option>');
+                        $('#doctorId').html('<option value="">خطا در بارگذاری پزشکان</option>');
+                    }
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error loading doctors:', error);
+                    $('#doctorFilter').html('<option value="">خطا در بارگذاری پزشکان</option>');
+                    $('#doctorId').html('<option value="">خطا در بارگذاری پزشکان</option>');
                 }
             });
         }
 
-        function loadSchedules() {
-            var filters = {
-                doctorId: $('#doctorFilter').val(),
-                dayOfWeek: $('#dayOfWeekFilter').val(),
-                isActive: $('#statusFilter').val()
-            };
+        function applyFilters() {
+            var doctorFilter = $('#doctorFilter').val();
+            var dayOfWeekFilter = $('#dayOfWeekFilter').val();
+            var statusFilter = $('#statusFilter').val();
+            
+            // Get DataTable instance
+            var table = $('#schedulesTable').DataTable();
+            
+            // Clear all filters first
+            table.search('').columns().search('').draw();
+            
+            // Apply custom filtering
+            $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
+                var $row = $(table.row(dataIndex).node());
+                
+                // Get values from data attributes
+                var doctorId = $row.data('doctor-id').toString();
+                var dayOfWeek = $row.data('day-of-week');
+                var isActive = $row.data('is-active') === 'true';
+                
+                // Apply filters
+                if (doctorFilter && doctorId !== doctorFilter) return false;
+                if (dayOfWeekFilter && dayOfWeek !== dayOfWeekFilter) return false;
+                if (statusFilter !== '') {
+                    var statusValue = statusFilter === 'true';
+                    if (isActive !== statusValue) return false;
+                }
+                
+                return true;
+            });
+            
+            // Redraw table with filters
+            table.draw();
+            
+            // Remove custom filter function
+            $.fn.dataTable.ext.search.pop();
+            
+            console.log('Filters applied:', {
+                doctor: doctorFilter,
+                dayOfWeek: dayOfWeekFilter,
+                status: statusFilter
+            });
+        }
 
-            // اینجا می‌توانید AJAX call برای دریافت برنامه‌ها اضافه کنید
-            console.log('Filters:', filters);
+        function validateTimeRange() {
+            var startTime = $('#startTime').val();
+            var endTime = $('#endTime').val();
+            
+            if (startTime && endTime) {
+                if (startTime >= endTime) {
+                    $('#endTime')[0].setCustomValidity('زمان پایان باید بعد از زمان شروع باشد');
+                } else {
+                    $('#endTime')[0].setCustomValidity('');
+                }
+            }
         }
 
         function addSchedule() {
@@ -314,11 +670,30 @@
             
             $.post('@Url.Action("AddSchedule")', formData, function (data) {
                 if (data.success) {
-                    $('#addScheduleModal').modal('hide');
-                    location.reload();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'موفقیت!',
+                        text: data.message,
+                        confirmButtonText: 'باشه'
+                    }).then(() => {
+                        $('#addScheduleModal').modal('hide');
+                        location.reload();
+                    });
                 } else {
-                    alert('خطا: ' + data.message);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا!',
+                        text: data.message,
+                        confirmButtonText: 'باشه'
+                    });
                 }
+            }).fail(function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'خطا!',
+                    text: 'خطا در ارتباط با سرور',
+                    confirmButtonText: 'باشه'
+                });
             });
         }
 
@@ -330,18 +705,71 @@
             window.location.href = '@Url.Action("Edit")/' + id;
         }
 
+        function activateSchedule(id) {
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این برنامه کاری فعال خواهد شد',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'بله، فعال کن',
+                cancelButtonText: 'انصراف'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("ActivateSchedule")', { scheduleId: id }, function (data) {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'موفقیت!',
+                                text: data.message,
+                                confirmButtonText: 'باشه'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا!',
+                                text: data.message,
+                                confirmButtonText: 'باشه'
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
         function removeSchedule(id) {
-            if (confirm('آیا از حذف این برنامه کاری اطمینان دارید؟')) {
-                $.post('@Url.Action("RemoveSchedule")', {
-                    scheduleId: id
-                }, function (data) {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('خطا: ' + data.message);
-                    }
-                });
-            }
+            Swal.fire({
+                title: 'آیا مطمئن هستید؟',
+                text: 'این برنامه کاری حذف خواهد شد و قابل بازگشت نیست!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'بله، حذف کن',
+                cancelButtonText: 'انصراف',
+                confirmButtonColor: '#d33'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.post('@Url.Action("RemoveSchedule")', { scheduleId: id }, function (data) {
+                        if (data.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'موفقیت!',
+                                text: data.message,
+                                confirmButtonText: 'باشه'
+                            }).then(() => {
+                                location.reload();
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'خطا!',
+                                text: data.message,
+                                confirmButtonText: 'باشه'
+                            });
+                        }
+                    });
+                }
+            });
         }
 
         function loadPage(page) {
