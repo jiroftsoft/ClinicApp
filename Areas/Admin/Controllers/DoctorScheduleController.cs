@@ -612,6 +612,28 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
+        #region Helper Methods
+
+        /// <summary>
+        /// تبدیل نام روز هفته به شماره
+        /// </summary>
+        private int ConvertDayOfWeekToNumber(string dayOfWeek)
+        {
+            switch (dayOfWeek)
+            {
+                case "شنبه": return 6;
+                case "یکشنبه": return 0;
+                case "دوشنبه": return 1;
+                case "سه‌شنبه": return 2;
+                case "چهارشنبه": return 3;
+                case "پنج‌شنبه": return 4;
+                case "جمعه": return 5;
+                default: return 0;
+            }
+        }
+
+        #endregion
+
         #region Schedule CRUD Operations
 
         /// <summary>
@@ -629,6 +651,28 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     return Json(new { success = false, message = "اطلاعات وارد شده صحیح نیست." });
                 }
+
+                // ساخت WorkDays از اطلاعات فرم
+                model.WorkDays = new List<WorkDayViewModel>
+                {
+                    new WorkDayViewModel
+                    {
+                        DayOfWeek = ConvertDayOfWeekToNumber(model.DayOfWeek),
+                        DayName = model.DayOfWeek,
+                        IsActive = true, // همیشه فعال برای برنامه جدید
+                        TimeRanges = new List<TimeRangeViewModel>
+                        {
+                            new TimeRangeViewModel
+                            {
+                                StartTime = model.StartTime,
+                                EndTime = model.EndTime,
+                                IsActive = true // همیشه فعال برای برنامه جدید
+                            }
+                        }
+                    }
+                };
+
+
 
                 // اعتبارسنجی با FluentValidation
                 var validationResult = await _scheduleValidator.ValidateAsync(model);

@@ -3280,7 +3280,7 @@
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\ServiceCategoryPermissions.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorSchedule\Schedule.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\Edit.cshtml" />
-    <Content Include="DESIGN_PRINCIPLES_CONTRACT.md" />
+    <Content Include="CONTRACTS\APP_PRINCIPLES_CONTRACT.md" />
     <Content Include="Areas\Admin\Views\EmergencyBooking\Index.cshtml" />
     <Content Include="Areas\Admin\Views\EmergencyBooking\Create.cshtml" />
     <Content Include="Areas\Admin\Views\EmergencyBooking\Details.cshtml" />
@@ -3299,6 +3299,8 @@
     <Content Include="Areas\Admin\Views\AppointmentAvailability\ViewSlotDetails.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorSchedule\Details.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorSchedule\Edit.cshtml" />
+    <Content Include="CONTRACTS\DESIGN_PRINCIPLES_CONTRACT.md" />
+    <Content Include="CONTRACTS\FormStandards.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

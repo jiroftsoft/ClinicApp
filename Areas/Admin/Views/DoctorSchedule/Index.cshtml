@@ -416,6 +416,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <form id="addScheduleForm" class="needs-validation" novalidate>
+                @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="row">
                         <div class="col-md-6">
@@ -542,21 +543,27 @@
                 autoClose: true
             });
 
-            // Initialize Select2
-            $('#doctorId, #doctorFilter').select2({
-                placeholder: 'انتخاب پزشک',
-                allowClear: true
+            // Load doctors first, then initialize Select2
+            loadDoctors().then(function() {
+                // Initialize Select2 only after doctors are loaded
+                initializeSelect2();
             });
 
             // Add change event handlers for filters
-            $('#doctorFilter, #dayOfWeekFilter, #statusFilter').on('change', function() {
+            $('#dayOfWeekFilter, #statusFilter').on('change', function() {
                 // Auto-apply filters when selection changes
                 setTimeout(function() {
                     applyFilters();
                 }, 100);
             });
-
-            loadDoctors();
+            
+            // Add change event handler for doctor filter
+            $(document).on('change', '#doctorFilter', function() {
+                // Auto-apply filters when doctor selection changes
+                setTimeout(function() {
+                    applyFilters();
+                }, 100);
+            });
             
             // Search functionality
             $('#searchBtn').click(function () {
@@ -578,34 +585,126 @@
             $('#startTime, #endTime').on('change', function() {
                 validateTimeRange();
             });
+            
+            // Modal event handlers
+            $('#addScheduleModal').on('shown.bs.modal', function () {
+                console.log('Modal shown, checking doctors...');
+                
+                // Ensure doctors are loaded when modal is shown
+                if ($('#doctorId option').length <= 1) {
+                    console.log('Reloading doctors for modal...');
+                    loadDoctors().then(function() {
+                        refreshSelect2();
+                    });
+                } else {
+                    console.log('Doctors already loaded, refreshing Select2...');
+                    refreshSelect2();
+                }
+                
+                // Force Select2 to recalculate positioning
+                setTimeout(function() {
+                    if ($('#doctorId').hasClass('select2-hidden-accessible')) {
+                        $('#doctorId').select2('destroy');
+                        $('#doctorId').select2({
+                            placeholder: 'انتخاب پزشک',
+                            allowClear: true,
+                            width: '100%',
+                            dropdownParent: $('#addScheduleModal') // Important for modal
+                        });
+                        console.log('Modal Select2 reinitialized with dropdownParent');
+                    }
+                }, 100);
+            });
         });
 
         function loadDoctors() {
-            $.ajax({
-                url: '@Url.Action("GetDoctors", "Doctor")',
-                type: 'GET',
-                dataType: 'json',
-                success: function (data) {
-                    if (data.success && data.data) {
-                        var options = '<option value="">همه پزشکان</option>';
-                        data.data.forEach(function (doctor) {
-                            options += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
-                        });
-                        $('#doctorFilter').html(options);
-                        $('#doctorId').html(options);
-                        console.log('Doctors loaded successfully:', data.data.length);
-                    } else {
-                        console.error('Failed to load doctors:', data.message);
-                        $('#doctorFilter').html('<option value="">خطا در بارگذاری پزشکان</option>');
-                        $('#doctorId').html('<option value="">خطا در بارگذاری پزشکان</option>');
+            console.log('Loading doctors...');
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: '@Url.Action("GetDoctors", "Doctor")',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function (data) {
+                        console.log('AJAX response:', data);
+                        if (data.success && data.data) {
+                            // Options for filter (includes "همه پزشکان")
+                            var filterOptions = '<option value="">همه پزشکان</option>';
+                            data.data.forEach(function (doctor) {
+                                filterOptions += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
+                            });
+                            
+                            // Options for modal (includes "انتخاب پزشک")
+                            var modalOptions = '<option value="">انتخاب پزشک</option>';
+                            data.data.forEach(function (doctor) {
+                                modalOptions += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
+                            });
+                            
+                            console.log('Filter options:', filterOptions);
+                            console.log('Modal options:', modalOptions);
+                            
+                            // Update filter dropdown
+                            $('#doctorFilter').html(filterOptions);
+                            console.log('Filter dropdown updated, options count:', $('#doctorFilter option').length);
+                            
+                            // Update modal dropdown
+                            $('#doctorId').html(modalOptions);
+                            console.log('Modal dropdown updated, options count:', $('#doctorId option').length);
+                            
+                            console.log('Doctors loaded successfully:', data.data.length);
+                            resolve(data.data); // Resolve the promise with data
+                        } else {
+                            console.error('Failed to load doctors:', data.message);
+                            var errorOption = '<option value="">خطا در بارگذاری پزشکان</option>';
+                            $('#doctorFilter').html(errorOption);
+                            $('#doctorId').html(errorOption);
+                            reject(data.message); // Reject the promise with error
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('Error loading doctors:', error);
+                        console.error('XHR status:', xhr.status);
+                        console.error('XHR response:', xhr.responseText);
+                        var errorOption = '<option value="">خطا در بارگذاری پزشکان</option>';
+                        $('#doctorFilter').html(errorOption);
+                        $('#doctorId').html(errorOption);
+                        reject(error); // Reject the promise with error
                     }
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error loading doctors:', error);
-                    $('#doctorFilter').html('<option value="">خطا در بارگذاری پزشکان</option>');
-                    $('#doctorId').html('<option value="">خطا در بارگذاری پزشکان</option>');
-                }
+                });
             });
+        }
+
+        function initializeSelect2() {
+            // Initialize Select2 for doctor filter
+            $('#doctorFilter').select2({
+                placeholder: 'انتخاب پزشک',
+                allowClear: true,
+                width: '100%'
+            });
+            
+            // Initialize Select2 for modal doctor selection with proper parent
+            $('#doctorId').select2({
+                placeholder: 'انتخاب پزشک',
+                allowClear: true,
+                width: '100%',
+                dropdownParent: $('#addScheduleModal') // Important for modal positioning
+            });
+            
+            console.log('Select2 initialized successfully');
+        }
+
+        function refreshSelect2() {
+            // Destroy existing Select2 instances
+            if ($('#doctorFilter').hasClass('select2-hidden-accessible')) {
+                $('#doctorFilter').select2('destroy');
+            }
+            if ($('#doctorId').hasClass('select2-hidden-accessible')) {
+                $('#doctorId').select2('destroy');
+            }
+            
+            // Re-initialize Select2
+            initializeSelect2();
+            
+            console.log('Select2 refreshed successfully');
         }
 
         function applyFilters() {
@@ -668,7 +767,11 @@
         function addSchedule() {
             var formData = $('#addScheduleForm').serialize();
             
-            $.post('@Url.Action("AddSchedule")', formData, function (data) {
+            $.ajax({
+                url: '@Url.Action("AddSchedule")',
+                type: 'POST',
+                data: formData,
+                success: function (data) {
                 if (data.success) {
                     Swal.fire({
                         icon: 'success',
@@ -687,14 +790,16 @@
                         confirmButtonText: 'باشه'
                     });
                 }
-            }).fail(function() {
+            },
+            error: function() {
                 Swal.fire({
                     icon: 'error',
                     title: 'خطا!',
                     text: 'خطا در ارتباط با سرور',
                     confirmButtonText: 'باشه'
                 });
-            });
+            }
+        });
         }
 
         function viewSchedule(id) {
@@ -715,7 +820,14 @@
                 cancelButtonText: 'انصراف'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $.post('@Url.Action("ActivateSchedule")', { scheduleId: id }, function (data) {
+                    $.ajax({
+                        url: '@Url.Action("ActivateSchedule")',
+                        type: 'POST',
+                        data: { 
+                            scheduleId: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (data) {
                         if (data.success) {
                             Swal.fire({
                                 icon: 'success',
@@ -733,7 +845,16 @@
                                 confirmButtonText: 'باشه'
                             });
                         }
-                    });
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا!',
+                            text: 'خطا در ارتباط با سرور',
+                            confirmButtonText: 'باشه'
+                        });
+                    }
+                });
                 }
             });
         }
@@ -749,7 +870,14 @@
                 confirmButtonColor: '#d33'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    $.post('@Url.Action("RemoveSchedule")', { scheduleId: id }, function (data) {
+                    $.ajax({
+                        url: '@Url.Action("RemoveSchedule")',
+                        type: 'POST',
+                        data: { 
+                            scheduleId: id,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
+                        success: function (data) {
                         if (data.success) {
                             Swal.fire({
                                 icon: 'success',
@@ -767,7 +895,16 @@
                                 confirmButtonText: 'باشه'
                             });
                         }
-                    });
+                    },
+                    error: function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا!',
+                            text: 'خطا در ارتباط با سرور',
+                            confirmButtonText: 'باشه'
+                        });
+                    }
+                });
                 }
             });
         }

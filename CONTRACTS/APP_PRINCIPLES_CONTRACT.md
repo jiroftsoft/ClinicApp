@@ -29,6 +29,54 @@ ViewBag.Doctors = doctorsResult.Data.Items.Select(d => new { Id = d.Id, Name = d
 ### 2. Factory Method Pattern for Entity-ViewModel Conversion (CRITICAL - NO AUTOMAPPER)
 **Principle**: Use Factory Method Pattern for converting Entity objects to ViewModels. **NEVER use AutoMapper** in this project.
 
+### 3. Anti-Forgery Token Security (MANDATORY)
+**Principle**: **ALWAYS use Anti-Forgery Token protection for ALL POST actions** to prevent CSRF attacks.
+
+**Implementation Rules**:
+- ✅ **DO**: Add `@Html.AntiForgeryToken()` to ALL forms
+- ✅ **DO**: Use `[ValidateAntiForgeryToken]` attribute on ALL POST actions
+- ✅ **DO**: Ensure token is included in AJAX requests
+- ❌ **DON'T**: Create POST actions without Anti-Forgery protection
+- ❌ **DON'T**: Forget to include token in form submissions
+
+**Example Implementation**:
+```csharp
+// ✅ Controller Action (MANDATORY)
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<ActionResult> Create(DoctorScheduleViewModel model)
+{
+    // Action logic
+}
+
+// ✅ View Form (MANDATORY)
+<form id="createForm" method="post">
+    @Html.AntiForgeryToken()  <!-- ALWAYS include this -->
+    <!-- Form fields -->
+</form>
+
+// ✅ JavaScript AJAX (MANDATORY)
+$.ajax({
+    url: '@Url.Action("Create")',
+    type: 'POST',
+    data: $('#createForm').serialize(), // Includes token automatically
+    success: function(data) { /* ... */ }
+});
+
+// ✅ Manual Token Inclusion for Custom AJAX
+$.ajax({
+    url: '@Url.Action("Create")',
+    type: 'POST',
+    data: { 
+        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val(),
+        // Other data
+    },
+    success: function(data) { /* ... */ }
+});
+```
+
+**Security Warning**: Failure to implement Anti-Forgery protection will result in CSRF vulnerabilities!
+
 **Implementation Rules**:
 - ✅ **DO**: Implement static `FromEntity()` methods in ViewModels
 - ✅ **DO**: Use explicit property mapping for full control over conversions

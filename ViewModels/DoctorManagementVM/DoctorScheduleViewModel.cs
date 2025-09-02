@@ -96,17 +96,17 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// روز هفته (برای سازگاری با View)
         /// </summary>
-        public string DayOfWeek => WorkDays?.FirstOrDefault(w => w.IsActive)?.DayName ?? "نامشخص";
+        public string DayOfWeek { get; set; }
 
         /// <summary>
         /// زمان شروع (برای سازگاری با View)
         /// </summary>
-        public TimeSpan StartTime => WorkDays?.FirstOrDefault(w => w.IsActive)?.TimeRanges?.FirstOrDefault()?.StartTime ?? TimeSpan.Zero;
+        public TimeSpan StartTime { get; set; }
 
         /// <summary>
         /// زمان پایان (برای سازگاری با View)
         /// </summary>
-        public TimeSpan EndTime => WorkDays?.FirstOrDefault(w => w.IsActive)?.TimeRanges?.FirstOrDefault()?.EndTime ?? TimeSpan.Zero;
+        public TimeSpan EndTime { get; set; }
 
         /// <summary>
         /// وضعیت فعال (برای سازگاری با View)
@@ -379,12 +379,32 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 .InclusiveBetween(5, 120)
                 .WithMessage("مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.");
 
-            RuleFor(x => x.WorkDays)
+            // اعتبارسنجی روز هفته
+            RuleFor(x => x.DayOfWeek)
                 .NotEmpty()
-                .WithMessage("حداقل یک روز کاری باید تعیین شود.");
+                .WithMessage("روز هفته باید انتخاب شود.");
 
-            RuleForEach(x => x.WorkDays)
-                .SetValidator(new WorkDayViewModelValidator());
+            // اعتبارسنجی زمان شروع
+            RuleFor(x => x.StartTime)
+                .NotEqual(TimeSpan.Zero)
+                .WithMessage("زمان شروع الزامی است.");
+
+            // اعتبارسنجی زمان پایان
+            RuleFor(x => x.EndTime)
+                .NotEqual(TimeSpan.Zero)
+                .WithMessage("زمان پایان الزامی است.");
+
+            // اعتبارسنجی منطقی بودن زمان
+            RuleFor(x => x.EndTime)
+                .GreaterThan(x => x.StartTime)
+                .WithMessage("زمان پایان باید بعد از زمان شروع باشد.");
+
+            // اعتبارسنجی WorkDays (اختیاری برای سازگاری)
+            When(x => x.WorkDays != null && x.WorkDays.Any(), () =>
+            {
+                RuleForEach(x => x.WorkDays)
+                    .SetValidator(new WorkDayViewModelValidator());
+            });
         }
     }
 
