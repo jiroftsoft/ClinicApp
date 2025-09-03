@@ -228,13 +228,19 @@ namespace ClinicApp.Services.ClinicAdmin
                     return ServiceResult<DoctorScheduleViewModel>.Failed("پزشک مورد نظر یافت نشد.");
                 }
 
-                // دریافت برنامه کاری
-                var doctorSchedule = await _doctorScheduleRepository.GetDoctorScheduleAsync(doctorId);
+                // دریافت برنامه کاری همراه با جزئیات کامل
+                var doctorSchedule = await _doctorScheduleRepository.GetDoctorScheduleWithAllDetailsAsync(doctorId);
                 if (doctorSchedule == null)
                 {
                     _logger.Information("برنامه کاری برای پزشک {DoctorId} یافت نشد", doctorId);
                     return ServiceResult<DoctorScheduleViewModel>.Successful(null);
                 }
+
+                // لاگ اطلاعات برای دیباگ
+                _logger.Information("برنامه کاری پزشک {DoctorId} یافت شد. WorkDays: {WorkDaysCount}, TimeRanges: {TimeRangesCount}", 
+                    doctorId, 
+                    doctorSchedule.WorkDays?.Count ?? 0,
+                    doctorSchedule.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0);
 
                 // تبدیل به ViewModel
                 var scheduleViewModel = DoctorScheduleViewModel.FromEntity(doctorSchedule);

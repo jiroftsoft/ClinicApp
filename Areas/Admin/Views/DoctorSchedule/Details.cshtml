@@ -138,23 +138,29 @@
                                     {
                                         foreach (var timeRange in workDay.TimeRanges.OrderBy(t => t.StartTime))
                                         {
-                                            <div class="time-range-item">
-                                                <div class="row align-items-center">
-                                                    <div class="col-md-4">
-                                                        <strong>@timeRange.StartTime.ToString("HH:mm") - @timeRange.EndTime.ToString("HH:mm")</strong>
-                                                    </div>
-                                                    <div class="col-md-4">
-                                                        <span class="badge bg-@(timeRange.IsActive ? "success" : "danger")">
-                                                            @(timeRange.IsActive ? "فعال" : "غیرفعال")
-                                                        </span>
-                                                    </div>
-                                                    <div class="col-md-4 text-end">
-                                                        <small class="text-muted">
-                                                            مدت: @((timeRange.EndTime - timeRange.StartTime).TotalMinutes) دقیقه
-                                                        </small>
+                                            if (timeRange.StartTime != TimeSpan.Zero && timeRange.EndTime != TimeSpan.Zero)
+                                            {
+                                                <div class="time-range-item">
+                                                    <div class="row align-items-center">
+                                                        <div class="col-md-4">
+                                                            <strong>
+                                                                @timeRange.StartTime.ToString(@"hh\:mm") - @timeRange.EndTime.ToString(@"hh\:mm")
+                                                            </strong>
+                                                        </div>
+
+                                                        <div class="col-md-4">
+                                                            <span class="badge bg-@(timeRange.IsActive ? "success" : "danger")">
+                                                                @(timeRange.IsActive ? "فعال" : "غیرفعال")
+                                                            </span>
+                                                        </div>
+                                                        <div class="col-md-4 text-end">
+                                                            <small class="text-muted">
+                                                                مدت: @((timeRange.EndTime - timeRange.StartTime).TotalMinutes) دقیقه
+                                                            </small>
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
+                                            }
                                         }
                                     }
                                     else
@@ -203,7 +209,7 @@
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/sweetalert2/sweetalert2.min.js"></script>
+    <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script>
         function deactivateSchedule(scheduleId) {
             Swal.fire({

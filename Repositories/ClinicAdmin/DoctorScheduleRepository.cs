@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using EntityFramework.DynamicFilters;
+
 namespace ClinicApp.Repositories.ClinicAdmin
 {
     /// <summary>
@@ -52,22 +54,71 @@ namespace ClinicApp.Repositories.ClinicAdmin
         }
 
         /// <summary>
+        /// دریافت برنامه کاری پزشک همراه با جزئیات کامل (شامل داده‌های غیرفعال)
+        /// این متد فیلترهای سراسری را دور می‌زند تا تمام داده‌ها را دریافت کند
+        /// </summary>
+        public async Task<DoctorSchedule> GetDoctorScheduleWithAllDetailsAsync(int doctorId)
+        {
+            try
+            {
+                // استفاده از query مستقیم برای دور زدن فیلترهای سراسری
+                var result = await _context.DoctorSchedules
+                    .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted)
+                    .Include(ds => ds.Doctor)
+                    .Include(ds => ds.WorkDays)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges)) // اضافه کردن TimeRanges
+                    .Include(ds => ds.CreatedByUser)
+                    .Include(ds => ds.UpdatedByUser)
+                    .FirstOrDefaultAsync();
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت جزئیات کامل برنامه کاری پزشک {doctorId}", ex);
+            }
+        }
+
+        /// <summary>
         /// دریافت برنامه کاری پزشک همراه با جزئیات
         /// </summary>
         public async Task<DoctorSchedule> GetDoctorScheduleWithDetailsAsync(int doctorId)
         {
             try
             {
-                return await _context.DoctorSchedules
+                // غیرفعال کردن موقت فیلترهای سراسری برای دریافت تمام داده‌ها
+                _context.DisableFilter("ActiveDoctorSchedules");
+                _context.DisableFilter("ActiveDoctorWorkDays");
+                _context.DisableFilter("ActiveDoctorTimeRanges");
+                
+                var result = await _context.DoctorSchedules
                     .Where(ds => ds.DoctorId == doctorId && !ds.IsDeleted)
                     .Include(ds => ds.Doctor)
                     .Include(ds => ds.WorkDays)
+                    .Include(ds => ds.WorkDays.Select(wd => wd.TimeRanges)) // اضافه کردن TimeRanges
                     .Include(ds => ds.CreatedByUser)
                     .Include(ds => ds.UpdatedByUser)
                     .FirstOrDefaultAsync();
+                
+                // فعال کردن مجدد فیلترهای سراسری
+                _context.EnableFilter("ActiveDoctorSchedules");
+                _context.EnableFilter("ActiveDoctorWorkDays");
+                _context.EnableFilter("ActiveDoctorTimeRanges");
+                
+                return result;
             }
             catch (Exception ex)
             {
+                // فعال کردن مجدد فیلترهای سراسری در صورت بروز خطا
+                try
+                {
+                    _context.EnableFilter("ActiveDoctorSchedules");
+                    _context.EnableFilter("ActiveDoctorWorkDays");
+                    _context.EnableFilter("ActiveDoctorTimeRanges");
+                }
+                catch { /* نادیده گرفتن خطاهای فعال‌سازی مجدد */ }
+                
                 // لاگ خطا برای سیستم‌های پزشکی
                 throw new InvalidOperationException($"خطا در دریافت جزئیات برنامه کاری پزشک {doctorId}", ex);
             }

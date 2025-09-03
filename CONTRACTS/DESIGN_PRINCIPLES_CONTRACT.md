@@ -69,6 +69,31 @@ public ActionResult ActionName(Model model) // بدون ValidateAntiForgeryToken
 public ActionResult ActionName(Model model)
 ```
 
+### **5. عدم استفاده از ServiceResult Enhanced:**
+```csharp
+// ❌ ممنوع - هرگز استفاده نکنید
+public async Task<string> CreateSchedule(Model model) // return string
+public async Task<Exception> UpdateSchedule(Model model) // return Exception
+
+// ✅ صحیح - همیشه از ServiceResult Enhanced استفاده کنید
+public async Task<ServiceResult<Schedule>> CreateSchedule(Model model)
+public async Task<ServiceResult<Schedule>> UpdateSchedule(Model model)
+```
+
+```csharp
+// ❌ ممنوع - هرگز استفاده نکنید
+RuleFor(x => x.DoctorId)
+    .GreaterThan(0)
+    .WithMessage("شناسه پزشک نامعتبر است.");
+    // بدون WithErrorCode
+
+// ✅ صحیح - همیشه از WithErrorCode استفاده کنید
+RuleFor(x => x.DoctorId)
+    .GreaterThan(0)
+    .WithMessage("شناسه پزشک نامعتبر است.")
+    .WithErrorCode("INVALID_DOCTOR_ID");
+```
+
 ---
 
 ## ✅ **استانداردهای اجباری طراحی:**

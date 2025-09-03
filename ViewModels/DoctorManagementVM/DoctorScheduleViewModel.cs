@@ -104,9 +104,19 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public TimeSpan StartTime { get; set; }
 
         /// <summary>
+        /// زمان شروع به صورت string برای JavaScript
+        /// </summary>
+        public string StartTimeString => StartTime.ToString(@"hh\:mm");
+
+        /// <summary>
         /// زمان پایان (برای سازگاری با View)
         /// </summary>
         public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان به صورت string برای JavaScript
+        /// </summary>
+        public string EndTimeString => EndTime.ToString(@"hh\:mm");
 
         /// <summary>
         /// وضعیت فعال (برای سازگاری با View)
@@ -170,7 +180,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                         schedules.Add(new ScheduleItemViewModel
                         {
                             Id = workDay.Id,
-                            Title = $"{workDay.DayName} - {timeRange.StartTime:HH:mm} تا {timeRange.EndTime:HH:mm}",
+                            Title = $"{workDay.DayName} - {timeRange.StartTime:hh\\:mm} تا {timeRange.EndTime:hh\\:mm}",
                             DayOfWeek = workDay.DayName,
                             StartDate = DateTime.Today,
                             EndDate = null,
@@ -200,6 +210,14 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public static DoctorScheduleViewModel FromEntity(DoctorSchedule doctorSchedule)
         {
             if (doctorSchedule == null) return null;
+            
+            // لاگ اطلاعات برای دیباگ
+            var workDaysCount = doctorSchedule.WorkDays?.Count ?? 0;
+            var timeRangesCount = doctorSchedule.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0;
+            
+            // لاگ به فایل (برای دیباگ)
+            System.Diagnostics.Debug.WriteLine($"FromEntity: DoctorId={doctorSchedule.DoctorId}, WorkDays={workDaysCount}, TimeRanges={timeRangesCount}");
+            
             return new DoctorScheduleViewModel
             {
                 Id = doctorSchedule.ScheduleId, // استفاده از ScheduleId به جای Id
@@ -283,10 +301,14 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public static WorkDayViewModel FromEntity(DoctorWorkDay workDay)
         {
             if (workDay == null) return null;
+            
+            var dayNames = new[] { "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه", "شنبه" };
+            
             return new WorkDayViewModel
             {
                 Id = workDay.WorkDayId, // استفاده از WorkDayId به جای Id
                 DayOfWeek = workDay.DayOfWeek,
+                DayName = workDay.DayOfWeek >= 0 && workDay.DayOfWeek < dayNames.Length ? dayNames[workDay.DayOfWeek] : "نامشخص",
                 IsActive = workDay.IsActive,
                 TimeRanges = workDay.TimeRanges?.Select(TimeRangeViewModel.FromEntity).ToList() ?? new List<TimeRangeViewModel>()
             };
@@ -324,10 +346,20 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public TimeSpan StartTime { get; set; }
 
         /// <summary>
+        /// زمان شروع به صورت string برای JavaScript
+        /// </summary>
+        public string StartTimeString => StartTime.ToString(@"hh\:mm");
+
+        /// <summary>
         /// زمان پایان بازه
         /// </summary>
         [Required(ErrorMessage = "زمان پایان الزامی است.")]
         public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// زمان پایان به صورت string برای JavaScript
+        /// </summary>
+        public string EndTimeString => EndTime.ToString(@"hh\:mm");
 
         /// <summary>
         /// نشان‌دهنده فعال بودن بازه زمانی
@@ -343,8 +375,8 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             return new TimeRangeViewModel
             {
                 Id = timeRange.TimeRangeId, // Assuming DoctorTimeRange has an Id
-                StartTime = timeRange.StartTime,
-                EndTime = timeRange.EndTime,
+                StartTime = timeRange.StartTime, // TimeSpan نمی‌تواند null باشد
+                EndTime = timeRange.EndTime, // TimeSpan نمی‌تواند null باشد
                 IsActive = timeRange.IsActive
             };
         }
@@ -365,83 +397,216 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     }
 
     /// <summary>
-    /// ولیدیتور برای مدل برنامه کاری پزشک
+    /// ولیدیتور پیشرفته برای مدل برنامه کاری پزشک
     /// </summary>
     public class DoctorScheduleViewModelValidator : AbstractValidator<DoctorScheduleViewModel>
     {
         public DoctorScheduleViewModelValidator()
         {
+            // اعتبارسنجی شناسه پزشک
             RuleFor(x => x.DoctorId)
                 .GreaterThan(0)
-                .WithMessage("شناسه پزشک نامعتبر است.");
+                .WithMessage("شناسه پزشک نامعتبر است.")
+                .WithErrorCode("INVALID_DOCTOR_ID");
 
+            // اعتبارسنجی مدت زمان نوبت
             RuleFor(x => x.AppointmentDuration)
                 .InclusiveBetween(5, 120)
-                .WithMessage("مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.");
+                .WithMessage("مدت زمان نوبت باید بین 5 تا 120 دقیقه باشد.")
+                .WithErrorCode("INVALID_APPOINTMENT_DURATION");
 
-            // اعتبارسنجی روز هفته
-            RuleFor(x => x.DayOfWeek)
+            // اعتبارسنجی WorkDays (اصلی)
+            RuleFor(x => x.WorkDays)
                 .NotEmpty()
-                .WithMessage("روز هفته باید انتخاب شود.");
+                .WithMessage("حداقل یک روز کاری باید تعیین شود.")
+                .WithErrorCode("NO_WORK_DAYS");
 
-            // اعتبارسنجی زمان شروع
-            RuleFor(x => x.StartTime)
-                .NotEqual(TimeSpan.Zero)
-                .WithMessage("زمان شروع الزامی است.");
+            // اعتبارسنجی تعداد روزهای کاری
+            RuleFor(x => x.WorkDays)
+                .Must(workDays => workDays == null || workDays.Count <= 7)
+                .WithMessage("حداکثر 7 روز کاری می‌تواند تعیین شود.")
+                .WithErrorCode("TOO_MANY_WORK_DAYS");
 
-            // اعتبارسنجی زمان پایان
-            RuleFor(x => x.EndTime)
-                .NotEqual(TimeSpan.Zero)
-                .WithMessage("زمان پایان الزامی است.");
+            // اعتبارسنجی روزهای تکراری
+            RuleFor(x => x.WorkDays)
+                .Must(workDays => workDays == null || workDays.Select(w => w.DayOfWeek).Distinct().Count() == workDays.Count)
+                .WithMessage("روزهای کاری تکراری مجاز نیست.")
+                .WithErrorCode("DUPLICATE_WORK_DAYS");
 
-            // اعتبارسنجی منطقی بودن زمان
-            RuleFor(x => x.EndTime)
-                .GreaterThan(x => x.StartTime)
-                .WithMessage("زمان پایان باید بعد از زمان شروع باشد.");
+            // اعتبارسنجی WorkDays فعال
+            RuleFor(x => x.WorkDays)
+                .Must(workDays => workDays == null || workDays.Any(w => w.IsActive))
+                .WithMessage("حداقل یک روز کاری باید فعال باشد.")
+                .WithErrorCode("NO_ACTIVE_WORK_DAYS");
 
-            // اعتبارسنجی WorkDays (اختیاری برای سازگاری)
+            // اعتبارسنجی جزئیات WorkDays
             When(x => x.WorkDays != null && x.WorkDays.Any(), () =>
             {
                 RuleForEach(x => x.WorkDays)
                     .SetValidator(new WorkDayViewModelValidator());
             });
+
+            // اعتبارسنجی properties flat (برای سازگاری با View)
+            When(x => !string.IsNullOrEmpty(x.DayOfWeek), () =>
+            {
+                RuleFor(x => x.DayOfWeek)
+                    .Must(day => IsValidDayOfWeek(day))
+                    .WithMessage("روز هفته نامعتبر است.")
+                    .WithErrorCode("INVALID_DAY_OF_WEEK");
+            });
+
+            When(x => x.StartTime != TimeSpan.Zero, () =>
+            {
+                RuleFor(x => x.StartTime)
+                    .Must(time => time >= TimeSpan.Zero && time < TimeSpan.FromHours(24))
+                    .WithMessage("زمان شروع نامعتبر است.")
+                    .WithErrorCode("INVALID_START_TIME");
+            });
+
+            When(x => x.EndTime != TimeSpan.Zero, () =>
+            {
+                RuleFor(x => x.EndTime)
+                    .Must(time => time >= TimeSpan.Zero && time < TimeSpan.FromHours(24))
+                    .WithMessage("زمان پایان نامعتبر است.")
+                    .WithErrorCode("INVALID_END_TIME");
+            });
+
+            // اعتبارسنجی منطقی بودن زمان (برای properties flat)
+            When(x => x.StartTime != TimeSpan.Zero && x.EndTime != TimeSpan.Zero, () =>
+            {
+                RuleFor(x => x.EndTime)
+                    .GreaterThan(x => x.StartTime)
+                    .WithMessage("زمان پایان باید بعد از زمان شروع باشد.")
+                    .WithErrorCode("INVALID_TIME_RANGE");
+            });
+        }
+
+        /// <summary>
+        /// بررسی معتبر بودن روز هفته
+        /// </summary>
+        private bool IsValidDayOfWeek(string dayOfWeek)
+        {
+            var validDays = new[] { "شنبه", "یکشنبه", "دوشنبه", "سه‌شنبه", "چهارشنبه", "پنج‌شنبه", "جمعه" };
+            return validDays.Contains(dayOfWeek);
         }
     }
 
     /// <summary>
-    /// ولیدیتور برای مدل روز کاری
+    /// ولیدیتور پیشرفته برای مدل روز کاری
     /// </summary>
     public class WorkDayViewModelValidator : AbstractValidator<WorkDayViewModel>
     {
         public WorkDayViewModelValidator()
         {
+            // اعتبارسنجی شماره روز هفته
             RuleFor(x => x.DayOfWeek)
                 .InclusiveBetween(0, 6)
-                .WithMessage("شماره روز هفته باید بین 0 تا 6 باشد.");
+                .WithMessage("شماره روز هفته باید بین 0 تا 6 باشد.")
+                .WithErrorCode("INVALID_DAY_OF_WEEK_NUMBER");
 
-            RuleForEach(x => x.TimeRanges)
-                .SetValidator(new TimeRangeViewModelValidator());
+            // اعتبارسنجی نام روز هفته
+            RuleFor(x => x.DayName)
+                .NotEmpty()
+                .WithMessage("نام روز هفته الزامی است.")
+                .WithErrorCode("EMPTY_DAY_NAME");
+
+            // اعتبارسنجی TimeRanges
+            RuleFor(x => x.TimeRanges)
+                .NotEmpty()
+                .When(x => x.IsActive)
+                .WithMessage("برای روزهای فعال، حداقل یک بازه زمانی باید تعیین شود.")
+                .WithErrorCode("NO_TIME_RANGES_FOR_ACTIVE_DAY");
+
+            // اعتبارسنجی تعداد بازه‌های زمانی
+            RuleFor(x => x.TimeRanges)
+                .Must(timeRanges => timeRanges == null || timeRanges.Count <= 10)
+                .WithMessage("حداکثر 10 بازه زمانی در روز مجاز است.")
+                .WithErrorCode("TOO_MANY_TIME_RANGES");
+
+            // اعتبارسنجی بازه‌های زمانی تکراری
+            RuleFor(x => x.TimeRanges)
+                .Must(timeRanges => timeRanges == null || !HasOverlappingTimeRanges(timeRanges))
+                .WithMessage("بازه‌های زمانی نباید با هم تداخل داشته باشند.")
+                .WithErrorCode("OVERLAPPING_TIME_RANGES");
+
+            // اعتبارسنجی جزئیات TimeRanges
+            When(x => x.TimeRanges != null && x.TimeRanges.Any(), () =>
+            {
+                RuleForEach(x => x.TimeRanges)
+                    .SetValidator(new TimeRangeViewModelValidator());
+            });
+        }
+
+        /// <summary>
+        /// بررسی تداخل بازه‌های زمانی
+        /// </summary>
+        private bool HasOverlappingTimeRanges(List<TimeRangeViewModel> timeRanges)
+        {
+            if (timeRanges == null || timeRanges.Count <= 1) return false;
+
+            var sortedRanges = timeRanges.OrderBy(t => t.StartTime).ToList();
+            for (int i = 0; i < sortedRanges.Count - 1; i++)
+            {
+                if (sortedRanges[i].EndTime > sortedRanges[i + 1].StartTime)
+                    return true;
+            }
+            return false;
         }
     }
 
     /// <summary>
-    /// ولیدیتور برای مدل بازه زمانی
+    /// ولیدیتور پیشرفته برای مدل بازه زمانی
     /// </summary>
     public class TimeRangeViewModelValidator : AbstractValidator<TimeRangeViewModel>
     {
         public TimeRangeViewModelValidator()
         {
+            // اعتبارسنجی زمان شروع
             RuleFor(x => x.StartTime)
                 .NotEqual(TimeSpan.Zero)
-                .WithMessage("زمان شروع الزامی است.");
+                .WithMessage("زمان شروع الزامی است.")
+                .WithErrorCode("EMPTY_START_TIME");
 
+            // اعتبارسنجی زمان پایان
             RuleFor(x => x.EndTime)
                 .NotEqual(TimeSpan.Zero)
-                .WithMessage("زمان پایان الزامی است.");
+                .WithMessage("زمان پایان الزامی است.")
+                .WithErrorCode("EMPTY_END_TIME");
+
+            // اعتبارسنجی محدوده زمانی
+            RuleFor(x => x.StartTime)
+                .Must(time => time >= TimeSpan.Zero && time < TimeSpan.FromHours(24))
+                .WithMessage("زمان شروع باید بین 00:00 تا 23:59 باشد.")
+                .WithErrorCode("INVALID_START_TIME_RANGE");
 
             RuleFor(x => x.EndTime)
+                .Must(time => time >= TimeSpan.Zero && time < TimeSpan.FromHours(24))
+                .WithMessage("زمان پایان باید بین 00:00 تا 23:59 باشد.")
+                .WithErrorCode("INVALID_END_TIME_RANGE");
+
+            // اعتبارسنجی منطقی بودن زمان
+            RuleFor(x => x.EndTime)
                 .GreaterThan(x => x.StartTime)
-                .WithMessage("زمان پایان باید بعد از زمان شروع باشد.");
+                .WithMessage("زمان پایان باید بعد از زمان شروع باشد.")
+                .WithErrorCode("INVALID_TIME_ORDER");
+
+            // اعتبارسنجی حداقل مدت زمان
+            RuleFor(x => x.EndTime)
+                .Must((timeRange, endTime) => (endTime - timeRange.StartTime).TotalMinutes >= 15)
+                .WithMessage("حداقل مدت زمان هر بازه باید 15 دقیقه باشد.")
+                .WithErrorCode("TOO_SHORT_TIME_RANGE");
+
+            // اعتبارسنجی حداکثر مدت زمان
+            RuleFor(x => x.EndTime)
+                .Must((timeRange, endTime) => (endTime - timeRange.StartTime).TotalMinutes <= 480)
+                .WithMessage("حداکثر مدت زمان هر بازه باید 8 ساعت باشد.")
+                .WithErrorCode("TOO_LONG_TIME_RANGE");
+
+            // اعتبارسنجی وضعیت فعال
+            RuleFor(x => x.IsActive)
+                .NotNull()
+                .WithMessage("وضعیت فعال بودن بازه زمانی الزامی است.")
+                .WithErrorCode("EMPTY_IS_ACTIVE");
         }
     }
 

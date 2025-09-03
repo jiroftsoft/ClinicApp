@@ -30,6 +30,31 @@ public ActionResult ActionName(Model model) // بدون ValidateAntiForgeryToken
 public ActionResult ActionName(Model model)
 ```
 
+### **3. عدم استفاده از ServiceResult Enhanced:**
+```csharp
+// ❌ ممنوع - هرگز استفاده نکنید
+public async Task<string> CreateSchedule(Model model) // return string
+public async Task<Exception> UpdateSchedule(Model model) // return Exception
+
+// ✅ صحیح - همیشه از ServiceResult Enhanced استفاده کنید
+public async Task<ServiceResult<Schedule>> CreateSchedule(Model model)
+public async Task<ServiceResult<Schedule>> UpdateSchedule(Model model)
+```
+
+```csharp
+// ❌ ممنوع - هرگز استفاده نکنید
+RuleFor(x => x.DoctorId)
+    .GreaterThan(0)
+    .WithMessage("شناسه پزشک نامعتبر است.");
+    // بدون WithErrorCode
+
+// ✅ صحیح - همیشه از WithErrorCode استفاده کنید
+RuleFor(x => x.DoctorId)
+    .GreaterThan(0)
+    .WithMessage("شناسه پزشک نامعتبر است.")
+    .WithErrorCode("INVALID_DOCTOR_ID");
+```
+
 ### **2. استفاده از setTimeout غیرقابل اعتماد:**
 ```javascript
 // ❌ ممنوع - هرگز استفاده نکنید
@@ -346,6 +371,38 @@ $.ajax({
        pattern="[A-Za-z0-9\s]+" />
 ```
 
+### **3. ServiceResult Enhanced Validation:**
+```csharp
+// ✅ همیشه این Validation Pattern را استفاده کنید
+public async Task<ServiceResult<Schedule>> CreateSchedule(Model model)
+{
+    var validationResult = new AdvancedValidationResult();
+    
+    if (string.IsNullOrEmpty(model.Title))
+        validationResult.AddError("Title", "عنوان الزامی است.", "REQUIRED_TITLE");
+    
+    if (!validationResult.IsValid)
+        return validationResult.ToAdvancedServiceResult<Schedule>(null, "خطا در اعتبارسنجی");
+    
+    // Main operation
+    var schedule = await _repository.CreateAsync(model.ToEntity());
+    return ServiceResult<Schedule>.Successful(schedule, "برنامه با موفقیت ایجاد شد.");
+}
+```
+
+```csharp
+// ✅ همیشه از WithErrorCode در Validator ها استفاده کنید
+RuleFor(x => x.Title)
+    .NotEmpty()
+    .WithMessage("عنوان الزامی است.")
+    .WithErrorCode("REQUIRED_TITLE");
+
+RuleFor(x => x.Duration)
+    .InclusiveBetween(15, 480)
+    .WithMessage("مدت زمان باید بین 15 تا 480 دقیقه باشد.")
+    .WithErrorCode("INVALID_DURATION");
+```
+
 ---
 
 ## 📊 **Debug و Logging:**
@@ -369,6 +426,65 @@ $.ajax({
         } else {
             console.error('Failed:', data.message);
             // User feedback
+        }
+    },
+    error: function (xhr, status, error) {
+        console.error('AJAX Error:', error);
+        console.error('Status:', xhr.status);
+        console.error('Response:', xhr.responseText);
+    }
+});
+```
+
+### **3. ServiceResult Enhanced Error Handling:**
+```csharp
+// ✅ همیشه این Error Handling Pattern را استفاده کنید
+try
+{
+    var result = await _service.CreateAsync(model);
+    
+    if (result.Success)
+    {
+        _logger.LogInformation("عملیات موفق: {Message}", result.Message);
+        return result;
+    }
+    
+    // Log validation errors
+    foreach (var error in result.ValidationErrors)
+    {
+        _logger.LogWarning("خطای اعتبارسنجی: {Field} - {Message} (کد: {Code})", 
+            error.Field, error.ErrorMessage, error.Code);
+    }
+    
+    return result;
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "خطا در عملیات {OperationName}", "CreateAsync");
+    return ServiceResult<Model>.Failed("خطا در عملیات", "OPERATION_ERROR");
+}
+```
+
+```javascript
+// ✅ همیشه این Error Handling را در JavaScript استفاده کنید
+$.ajax({
+    url: '@Url.Action("Create")',
+    type: 'POST',
+    data: formData,
+    success: function (data) {
+        if (data.success) {
+            console.log('Success:', data.message);
+            // Handle success
+        } else {
+            console.error('Validation failed:', data.message);
+            
+            // Display validation errors
+            if (data.validationErrors && data.validationErrors.length > 0) {
+                data.validationErrors.forEach(function(error) {
+                    console.error('Field: {0}, Error: {1}, Code: {2}', 
+                        error.field, error.errorMessage, error.code);
+                });
+            }
         }
     },
     error: function (xhr, status, error) {

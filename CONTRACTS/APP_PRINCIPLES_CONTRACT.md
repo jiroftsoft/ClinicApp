@@ -77,6 +77,78 @@ $.ajax({
 
 **Security Warning**: Failure to implement Anti-Forgery protection will result in CSRF vulnerabilities!
 
+### 4. ServiceResult Enhanced Usage (MANDATORY)
+**Principle**: **ALWAYS use ServiceResult Enhanced classes for service operations and error handling** to ensure consistent error management across the application.
+
+**Implementation Rules**:
+- ✅ **DO**: Use `ServiceResult` or `ServiceResult<T>` for all service method returns
+- ✅ **DO**: Use `ValidationError` with error codes for validation failures
+- ✅ **DO**: Use `AdvancedValidationResult` for complex validation scenarios
+- ✅ **DO**: Use Factory Methods (`ServiceResult.Successful`, `ServiceResult.Failed`)
+- ✅ **DO**: Include error codes in all validation rules using `WithErrorCode`
+- ❌ **DON'T**: Use `new ServiceResult<T>()` constructor directly
+- ❌ **DON'T**: Use `ValidationResult` name (conflicts with System.ComponentModel.DataAnnotations)
+- ❌ **DON'T**: Return simple strings or exceptions from services
+
+**Example Implementation**:
+```csharp
+// ✅ Correct Approach - Service Method
+public async Task<ServiceResult<DoctorSchedule>> SetDoctorScheduleAsync(DoctorScheduleViewModel model)
+{
+    try
+    {
+        // Validation using AdvancedValidationResult
+        var validationResult = new AdvancedValidationResult();
+        
+        if (model.DoctorId <= 0)
+            validationResult.AddError("DoctorId", "شناسه پزشک الزامی است.", "REQUIRED_DOCTOR_ID");
+        
+        if (!validationResult.IsValid)
+            return validationResult.ToAdvancedServiceResult<DoctorSchedule>(null, "خطا در اعتبارسنجی");
+        
+        // Main operation
+        var schedule = await _repository.CreateAsync(model.ToEntity());
+        
+        return ServiceResult<DoctorSchedule>.Successful(schedule, "برنامه کاری با موفقیت ایجاد شد.");
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "خطا در ایجاد برنامه کاری");
+        return ServiceResult<DoctorSchedule>.Failed("خطا در ایجاد برنامه کاری", "SCHEDULE_CREATION_ERROR");
+    }
+}
+
+// ✅ Correct Approach - Validation Rule
+RuleFor(x => x.DoctorId)
+    .GreaterThan(0)
+    .WithMessage("شناسه پزشک نامعتبر است.")
+    .WithErrorCode("INVALID_DOCTOR_ID");
+
+// ✅ Correct Approach - Controller Usage
+[HttpPost]
+[ValidateAntiForgeryToken]
+public async Task<ActionResult> AssignSchedule(DoctorScheduleViewModel model)
+{
+    var result = await _doctorScheduleService.SetDoctorScheduleAsync(model);
+    
+    if (result.Success)
+    {
+        TempData["SuccessMessage"] = result.Message;
+        return RedirectToAction("Index");
+    }
+    
+    // Display validation errors
+    foreach (var error in result.ValidationErrors)
+    {
+        ModelState.AddModelError(error.Field, error.ErrorMessage);
+    }
+    
+    return View("Schedule", model);
+}
+```
+
+**Reference**: See `CONTRACTS/ServiceResult_Enhanced_Contract.md` for complete usage guidelines.
+
 **Implementation Rules**:
 - ✅ **DO**: Implement static `FromEntity()` methods in ViewModels
 - ✅ **DO**: Use explicit property mapping for full control over conversions

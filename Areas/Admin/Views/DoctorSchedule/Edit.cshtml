@@ -104,11 +104,12 @@
 
     <!-- Edit Form -->
     <div class="edit-form">
-        @using (Html.BeginForm("UpdateSchedule", "DoctorSchedule", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+        @using (Html.BeginForm("AssignSchedule", "DoctorSchedule", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
         {
             @Html.AntiForgeryToken()
             @Html.HiddenFor(m => m.Id)
             @Html.HiddenFor(m => m.DoctorId)
+            <input type="hidden" name="operation" value="update" />
             
             <div class="row">
                 <div class="col-12">

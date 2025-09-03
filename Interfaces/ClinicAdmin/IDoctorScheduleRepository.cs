@@ -36,6 +36,12 @@ public interface IDoctorScheduleRepository
     Task<DoctorSchedule> GetDoctorScheduleWithDetailsAsync(int doctorId);
 
     /// <summary>
+    /// دریافت برنامه کاری پزشک همراه با جزئیات کامل (شامل داده‌های غیرفعال)
+    /// این متد فیلترهای سراسری را دور می‌زند تا تمام داده‌ها را دریافت کند
+    /// </summary>
+    Task<DoctorSchedule> GetDoctorScheduleWithAllDetailsAsync(int doctorId);
+
+    /// <summary>
     /// افزودن برنامه کاری جدید برای پزشک
     /// </summary>
     /// <param name="schedule">برنامه کاری جدید</param>

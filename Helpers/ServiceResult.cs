@@ -174,11 +174,58 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
+        /// افزودن خطای اعتبارسنجی با کد
+        /// </summary>
+        public ServiceResult WithValidationError(string field, string errorMessage, string code)
+        {
+            ValidationErrors.Add(new ValidationError(field, errorMessage, code));
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن خطای اعتبارسنجی با کد و مقدار نامعتبر
+        /// </summary>
+        public ServiceResult WithValidationError(string field, string errorMessage, string code, object invalidValue)
+        {
+            ValidationErrors.Add(new ValidationError(field, errorMessage, code, invalidValue));
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن خطای اعتبارسنجی پیشرفته
+        /// </summary>
+        public ServiceResult WithValidationError(ValidationError error)
+        {
+            ValidationErrors.Add(error);
+            return this;
+        }
+
+        /// <summary>
         /// افزودن چندین خطا به صورت دسته‌ای
         /// </summary>
         public ServiceResult WithValidationErrors(IEnumerable<ValidationError> errors)
         {
             ValidationErrors.AddRange(errors);
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن هشدار
+        /// </summary>
+        public ServiceResult WithWarning(string field, string message, string code = null)
+        {
+            var warning = new ValidationError(field, message, code) { Level = ValidationErrorLevel.Warning };
+            ValidationErrors.Add(warning);
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن اطلاعات
+        /// </summary>
+        public ServiceResult WithInfo(string field, string message, string code = null)
+        {
+            var info = new ValidationError(field, message, code) { Level = ValidationErrorLevel.Info };
+            ValidationErrors.Add(info);
             return this;
         }
 
@@ -437,6 +484,71 @@ namespace ClinicApp.Helpers
             return this;
         }
 
+        /// <summary>
+        /// افزودن خطای اعتبارسنجی
+        /// </summary>
+        public ServiceResult<T> WithValidationError(string field, string errorMessage)
+        {
+            ValidationErrors.Add(new ValidationError(field, errorMessage));
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن خطای اعتبارسنجی با کد
+        /// </summary>
+        public ServiceResult<T> WithValidationError(string field, string errorMessage, string code)
+        {
+            ValidationErrors.Add(new ValidationError(field, errorMessage, code));
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن خطای اعتبارسنجی با کد و مقدار نامعتبر
+        /// </summary>
+        public ServiceResult<T> WithValidationError(string field, string errorMessage, string code, object invalidValue)
+        {
+            ValidationErrors.Add(new ValidationError(field, errorMessage, code, invalidValue));
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن خطای اعتبارسنجی پیشرفته
+        /// </summary>
+        public ServiceResult<T> WithValidationError(ValidationError error)
+        {
+            ValidationErrors.Add(error);
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن چندین خطا به صورت دسته‌ای
+        /// </summary>
+        public ServiceResult<T> WithValidationErrors(IEnumerable<ValidationError> errors)
+        {
+            ValidationErrors.AddRange(errors);
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن هشدار
+        /// </summary>
+        public ServiceResult<T> WithWarning(string field, string message, string code = null)
+        {
+            var warning = new ValidationError(field, message, code) { Level = ValidationErrorLevel.Warning };
+            ValidationErrors.Add(warning);
+            return this;
+        }
+
+        /// <summary>
+        /// افزودن اطلاعات
+        /// </summary>
+        public ServiceResult<T> WithInfo(string field, string message, string code = null)
+        {
+            var info = new ValidationError(field, message, code) { Level = ValidationErrorLevel.Info };
+            ValidationErrors.Add(info);
+            return this;
+        }
+
         #endregion
 
         #region Private Methods
@@ -459,14 +571,58 @@ namespace ClinicApp.Helpers
     /// </summary>
     public class ValidationError
     {
-        public string Field { get; }
-        public string ErrorMessage { get; }
+        public string Field { get; set; }
+        public string ErrorMessage { get; set; }
+        public string Code { get; set; }
+        public object InvalidValue { get; set; }
+        public ValidationErrorLevel Level { get; set; } = ValidationErrorLevel.Error;
+        public string Suggestion { get; set; }
+        public DateTime Timestamp { get; set; } = DateTime.Now;
+        public string TransactionId { get; set; }
+
+        public ValidationError() { }
 
         public ValidationError(string field, string errorMessage)
         {
             Field = field;
             ErrorMessage = errorMessage;
         }
+
+        public ValidationError(string field, string errorMessage, string code)
+        {
+            Field = field;
+            ErrorMessage = errorMessage;
+            Code = code;
+        }
+
+        public ValidationError(string field, string errorMessage, string code, object invalidValue)
+        {
+            Field = field;
+            ErrorMessage = errorMessage;
+            Code = code;
+            InvalidValue = invalidValue;
+        }
+    }
+
+    /// <summary>
+    /// سطح خطای اعتبارسنجی
+    /// </summary>
+    public enum ValidationErrorLevel
+    {
+        /// <summary>
+        /// خطا - عملیات متوقف می‌شود
+        /// </summary>
+        Error = 0,
+
+        /// <summary>
+        /// هشدار - عملیات ادامه می‌یابد اما نیاز به توجه دارد
+        /// </summary>
+        Warning = 1,
+
+        /// <summary>
+        /// اطلاعات - فقط برای اطلاع‌رسانی
+        /// </summary>
+        Info = 2
     }
 
     /// <summary>
@@ -518,6 +674,24 @@ namespace ClinicApp.Helpers
             return ServiceResult.FailedWithValidationErrors(
                 "خطاهای اعتبارسنجی رخ داده است.",
                 errors);
+        }
+
+        public static ServiceResult ValidationError(string field, string message, string code = "VALIDATION_ERROR")
+        {
+            return ServiceResult.Failed("خطا در اعتبارسنجی", code, ErrorCategory.Validation)
+                .WithValidationError(field, message, code);
+        }
+
+        public static ServiceResult Warning(string field, string message, string code = "WARNING")
+        {
+            return ServiceResult.Failed("هشدار", code, ErrorCategory.General)
+                .WithWarning(field, message, code);
+        }
+
+        public static ServiceResult Info(string field, string message, string code = "INFO")
+        {
+            return ServiceResult.Failed("اطلاعات", code, ErrorCategory.General)
+                .WithInfo(field, message, code);
         }
 
         #endregion
@@ -572,7 +746,162 @@ namespace ClinicApp.Helpers
                 SecurityLevel.Critical);
         }
 
+        public static ServiceResult<T> MedicalValidationError<T>(string field, string message, string code = "MEDICAL_VALIDATION_ERROR")
+        {
+            return ServiceResult<T>.Failed("خطا در اعتبارسنجی پزشکی", code, ErrorCategory.Validation)
+                .WithValidationError(field, message, code);
+        }
+
+        public static ServiceResult<T> MedicalWarning<T>(string field, string message, string code = "MEDICAL_WARNING")
+        {
+            return ServiceResult<T>.Failed("هشدار پزشکی", code, ErrorCategory.Medical)
+                .WithWarning(field, message, code);
+        }
+
+        public static ServiceResult<T> MedicalInfo<T>(string field, string message, string code = "MEDICAL_INFO")
+        {
+            return ServiceResult<T>.Failed("اطلاعات پزشکی", code, ErrorCategory.Medical)
+                .WithInfo(field, message, code);
+        }
+
         #endregion
+    }
+
+    /// <summary>
+    /// کلاس نتیجه اعتبارسنجی پیشرفته
+    /// </summary>
+    public class AdvancedValidationResult
+    {
+        /// <summary>
+        /// آیا اعتبارسنجی موفق بوده است
+        /// </summary>
+        public bool IsValid { get; set; }
+
+        /// <summary>
+        /// لیست خطاها
+        /// </summary>
+        public List<ValidationError> Errors { get; set; } = new List<ValidationError>();
+
+        /// <summary>
+        /// لیست هشدارها
+        /// </summary>
+        public List<ValidationError> Warnings { get; set; } = new List<ValidationError>();
+
+        /// <summary>
+        /// لیست اطلاعات
+        /// </summary>
+        public List<ValidationError> Info { get; set; } = new List<ValidationError>();
+
+        /// <summary>
+        /// زمان اعتبارسنجی
+        /// </summary>
+        public DateTime ValidatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// مدت زمان اعتبارسنجی (میلی‌ثانیه)
+        /// </summary>
+        public long ValidationTimeMs { get; set; }
+
+        public AdvancedValidationResult() { }
+
+        public AdvancedValidationResult(bool isValid)
+        {
+            IsValid = isValid;
+        }
+
+        /// <summary>
+        /// اضافه کردن خطا
+        /// </summary>
+        public void AddError(ValidationError error)
+        {
+            Errors.Add(error);
+            if (error.Level == ValidationErrorLevel.Error)
+                IsValid = false;
+        }
+
+        /// <summary>
+        /// اضافه کردن خطا
+        /// </summary>
+        public void AddError(string field, string message, string code = null, object invalidValue = null)
+        {
+            AddError(new ValidationError(field, message, code, invalidValue));
+        }
+
+        /// <summary>
+        /// اضافه کردن هشدار
+        /// </summary>
+        public void AddWarning(string field, string message, string code = null, object invalidValue = null)
+        {
+            var warning = new ValidationError(field, message, code, invalidValue)
+            {
+                Level = ValidationErrorLevel.Warning
+            };
+            Warnings.Add(warning);
+        }
+
+        /// <summary>
+        /// اضافه کردن اطلاعات
+        /// </summary>
+        public void AddInfo(string field, string message, string code = null, object invalidValue = null)
+        {
+            var info = new ValidationError(field, message, code, invalidValue)
+            {
+                Level = ValidationErrorLevel.Info
+            };
+            Info.Add(info);
+        }
+
+        /// <summary>
+        /// بررسی وجود خطا
+        /// </summary>
+        public bool HasErrors => Errors.Count > 0;
+
+        /// <summary>
+        /// بررسی وجود هشدار
+        /// </summary>
+        public bool HasWarnings => Warnings.Count > 0;
+
+        /// <summary>
+        /// بررسی وجود اطلاعات
+        /// </summary>
+        public bool HasInfo => Info.Count > 0;
+
+        /// <summary>
+        /// دریافت تمام پیام‌ها
+        /// </summary>
+        public List<string> GetAllMessages()
+        {
+            var messages = new List<string>();
+            messages.AddRange(Errors.Select(e => $"خطا: {e.ErrorMessage}"));
+            messages.AddRange(Warnings.Select(w => $"هشدار: {w.ErrorMessage}"));
+            messages.AddRange(Info.Select(i => $"اطلاعات: {i.ErrorMessage}"));
+            return messages;
+        }
+
+        /// <summary>
+        /// تبدیل به ServiceResult
+        /// </summary>
+        public ServiceResult<T> ToAdvancedServiceResult<T>(T data = default(T), string message = null)
+        {
+            // استفاده از Factory Method به جای Constructor
+            var result = IsValid 
+                ? ServiceResult<T>.Successful(data, message ?? "اعتبارسنجی موفق")
+                : ServiceResult<T>.Failed(message ?? "اعتبارسنجی ناموفق", "VALIDATION_FAILED");
+            
+            // اضافه کردن خطاها
+            if (Errors.Any())
+                result.WithValidationErrors(Errors);
+            
+            // اضافه کردن هشدارها
+            if (Warnings.Any())
+                result.WithValidationErrors(Warnings);
+            
+            // اضافه کردن اطلاعات
+            if (Info.Any())
+                result.WithValidationErrors(Info);
+            
+            return result;
+        }
     }
 }
 

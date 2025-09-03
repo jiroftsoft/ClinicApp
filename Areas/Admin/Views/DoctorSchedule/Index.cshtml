@@ -17,18 +17,18 @@
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             transition: all 0.3s ease;
         }
-        
-        .schedule-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 30px rgba(0,0,0,0.15);
-        }
-        
+
+            .schedule-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+            }
+
         .status-badge {
             font-size: 0.75rem;
             padding: 0.5rem 1rem;
             border-radius: 20px;
         }
-        
+
         .filter-section {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border-radius: 15px;
@@ -36,7 +36,7 @@
             margin-bottom: 2rem;
             color: white;
         }
-        
+
         .stats-card {
             background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
             border-radius: 15px;
@@ -44,41 +44,41 @@
             padding: 1.5rem;
             margin-bottom: 2rem;
         }
-        
+
         .action-buttons .btn {
             border-radius: 25px;
             margin: 0 0.25rem;
             transition: all 0.3s ease;
         }
-        
-        .action-buttons .btn:hover {
-            transform: scale(1.1);
-        }
-        
+
+            .action-buttons .btn:hover {
+                transform: scale(1.1);
+            }
+
         .modal-content {
             border-radius: 20px;
             border: none;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-        
+
         .modal-header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 20px 20px 0 0;
             border: none;
         }
-        
+
         .form-control, .form-select {
             border-radius: 10px;
             border: 2px solid #e9ecef;
             transition: all 0.3s ease;
         }
-        
-        .form-control:focus, .form-select:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-        
+
+            .form-control:focus, .form-select:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            }
+
         .btn-primary {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
@@ -86,44 +86,43 @@
             padding: 0.75rem 2rem;
             font-weight: 600;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
-        
+
+            .btn-primary:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+            }
+
         .table {
             border-radius: 15px;
             overflow: hidden;
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
-        
-        .table thead th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            font-weight: 600;
-            text-align: center;
-        }
-        
-        .table tbody tr:hover {
-            background-color: rgba(102, 126, 234, 0.05);
-        }
-        
+
+            .table thead th {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                border: none;
+                font-weight: 600;
+                text-align: center;
+            }
+
+            .table tbody tr:hover {
+                background-color: rgba(102, 126, 234, 0.05);
+            }
+
         .pagination .page-link {
             border-radius: 10px;
             margin: 0 0.25rem;
             border: none;
             color: #667eea;
         }
-        
+
         .pagination .page-item.active .page-link {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
         }
     </style>
 }
-
 <div class="container-fluid">
     <!-- Header Section -->
     <div class="row mb-4">
@@ -292,9 +291,9 @@
                                 {
                                     foreach (var item in Model.Items)
                                     {
-                                        <tr data-id="@item.Id" 
+                                        <tr data-id="@item.Id"
                                             data-doctor-id="@item.DoctorId"
-                                            data-day-of-week="@item.DayOfWeek"
+                                            data-day-of-week="@(item.WorkDays?.FirstOrDefault()?.DayName ?? "نامشخص")"
                                             data-is-active="@item.IsActive.ToString().ToLower()">
                                             <td>
                                                 <div class="d-flex align-items-center">
@@ -308,14 +307,26 @@
                                                 </div>
                                             </td>
                                             <td>
-                                                <span class="badge bg-info">@item.DayOfWeek</span>
+                                                <span class="badge bg-info">@(item.WorkDays?.FirstOrDefault()?.DayName ?? "نامشخص")</span>
                                             </td>
                                             <td>
                                                 <div class="text-center">
-                                                    <div class="font-weight-bold">@item.StartTime.ToString(@"HH:mm") - @item.EndTime.ToString(@"HH:mm")</div>
-                                                    <small class="text-muted">@item.WeeklyHours ساعت هفتگی</small>
+                                                    @if (item.WorkDays?.Any() == true && item.WorkDays.First().TimeRanges?.Any() == true)
+                                                    {
+                                                        var firstTimeRange = item.WorkDays.First().TimeRanges.First();
+                                                        <div class="font-weight-bold">
+                                                            @firstTimeRange.StartTime.ToString(@"hh\:mm") - @firstTimeRange.EndTime.ToString(@"hh\:mm")
+                                                        </div>
+                                                        <small class="text-muted">@item.WeeklyHours ساعت هفتگی</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="font-weight-bold text-muted">تعریف نشده</div>
+                                                        <small class="text-muted">0 ساعت هفتگی</small>
+                                                    }
                                                 </div>
                                             </td>
+
                                             <td>
                                                 <span class="badge bg-secondary">@item.AppointmentDuration دقیقه</span>
                                             </td>
@@ -378,14 +389,14 @@
                                             </a>
                                         </li>
                                     }
-                                    
+
                                     @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
                                     {
                                         <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
                                             <a class="page-link" href="#" onclick="loadPage(@i)">@i</a>
                                         </li>
                                     }
-                                    
+
                                     @if (Model.CurrentPage < Model.TotalPages)
                                     {
                                         <li class="page-item">
@@ -520,7 +531,7 @@
     <script src="~/Content/plugins/sweetalert2/sweetalert2@11.js"></script>
     <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
-    
+
     <script>
         $(document).ready(function () {
             // Initialize DataTable
@@ -556,7 +567,7 @@
                     applyFilters();
                 }, 100);
             });
-            
+
             // Add change event handler for doctor filter
             $(document).on('change', '#doctorFilter', function() {
                 // Auto-apply filters when doctor selection changes
@@ -564,18 +575,22 @@
                     applyFilters();
                 }, 100);
             });
-            
+
             // Search functionality
             $('#searchBtn').click(function () {
                 applyFilters();
             });
-            
+
             // Form submission
             $('#addScheduleForm').submit(function (e) {
                 e.preventDefault();
+                console.log('Form submit event triggered');
+
                 if (this.checkValidity()) {
+                    console.log('Form validation passed, calling addSchedule()');
                     addSchedule();
                 } else {
+                    console.log('Form validation failed');
                     e.stopPropagation();
                     $(this).addClass('was-validated');
                 }
@@ -585,11 +600,11 @@
             $('#startTime, #endTime').on('change', function() {
                 validateTimeRange();
             });
-            
+
             // Modal event handlers
             $('#addScheduleModal').on('shown.bs.modal', function () {
                 console.log('Modal shown, checking doctors...');
-                
+
                 // Ensure doctors are loaded when modal is shown
                 if ($('#doctorId option').length <= 1) {
                     console.log('Reloading doctors for modal...');
@@ -600,7 +615,7 @@
                     console.log('Doctors already loaded, refreshing Select2...');
                     refreshSelect2();
                 }
-                
+
                 // Force Select2 to recalculate positioning
                 setTimeout(function() {
                     if ($('#doctorId').hasClass('select2-hidden-accessible')) {
@@ -632,24 +647,24 @@
                             data.data.forEach(function (doctor) {
                                 filterOptions += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
                             });
-                            
+
                             // Options for modal (includes "انتخاب پزشک")
                             var modalOptions = '<option value="">انتخاب پزشک</option>';
                             data.data.forEach(function (doctor) {
                                 modalOptions += '<option value="' + doctor.Id + '">' + doctor.FullName + '</option>';
                             });
-                            
+
                             console.log('Filter options:', filterOptions);
                             console.log('Modal options:', modalOptions);
-                            
+
                             // Update filter dropdown
                             $('#doctorFilter').html(filterOptions);
                             console.log('Filter dropdown updated, options count:', $('#doctorFilter option').length);
-                            
+
                             // Update modal dropdown
                             $('#doctorId').html(modalOptions);
                             console.log('Modal dropdown updated, options count:', $('#doctorId option').length);
-                            
+
                             console.log('Doctors loaded successfully:', data.data.length);
                             resolve(data.data); // Resolve the promise with data
                         } else {
@@ -680,7 +695,7 @@
                 allowClear: true,
                 width: '100%'
             });
-            
+
             // Initialize Select2 for modal doctor selection with proper parent
             $('#doctorId').select2({
                 placeholder: 'انتخاب پزشک',
@@ -688,7 +703,7 @@
                 width: '100%',
                 dropdownParent: $('#addScheduleModal') // Important for modal positioning
             });
-            
+
             console.log('Select2 initialized successfully');
         }
 
@@ -700,10 +715,10 @@
             if ($('#doctorId').hasClass('select2-hidden-accessible')) {
                 $('#doctorId').select2('destroy');
             }
-            
+
             // Re-initialize Select2
             initializeSelect2();
-            
+
             console.log('Select2 refreshed successfully');
         }
 
@@ -711,22 +726,22 @@
             var doctorFilter = $('#doctorFilter').val();
             var dayOfWeekFilter = $('#dayOfWeekFilter').val();
             var statusFilter = $('#statusFilter').val();
-            
+
             // Get DataTable instance
             var table = $('#schedulesTable').DataTable();
-            
+
             // Clear all filters first
             table.search('').columns().search('').draw();
-            
+
             // Apply custom filtering
             $.fn.dataTable.ext.search.push(function(settings, data, dataIndex) {
                 var $row = $(table.row(dataIndex).node());
-                
+
                 // Get values from data attributes
                 var doctorId = $row.data('doctor-id').toString();
                 var dayOfWeek = $row.data('day-of-week');
                 var isActive = $row.data('is-active') === 'true';
-                
+
                 // Apply filters
                 if (doctorFilter && doctorId !== doctorFilter) return false;
                 if (dayOfWeekFilter && dayOfWeek !== dayOfWeekFilter) return false;
@@ -734,16 +749,16 @@
                     var statusValue = statusFilter === 'true';
                     if (isActive !== statusValue) return false;
                 }
-                
+
                 return true;
             });
-            
+
             // Redraw table with filters
             table.draw();
-            
+
             // Remove custom filter function
             $.fn.dataTable.ext.search.pop();
-            
+
             console.log('Filters applied:', {
                 doctor: doctorFilter,
                 dayOfWeek: dayOfWeekFilter,
@@ -754,7 +769,7 @@
         function validateTimeRange() {
             var startTime = $('#startTime').val();
             var endTime = $('#endTime').val();
-            
+
             if (startTime && endTime) {
                 if (startTime >= endTime) {
                     $('#endTime')[0].setCustomValidity('زمان پایان باید بعد از زمان شروع باشد');
@@ -765,41 +780,69 @@
         }
 
         function addSchedule() {
-            var formData = $('#addScheduleForm').serialize();
-            
-            $.ajax({
-                url: '@Url.Action("AddSchedule")',
-                type: 'POST',
-                data: formData,
+            // Prevent multiple submissions
+            if ($('#addScheduleForm').data('submitting')) {
+                console.log('Form already submitting, ignoring request');
+                return;
+            }
+
+            // Validate form
+            if (!$('#addScheduleForm')[0].checkValidity()) {
+                console.log('Form validation failed');
+                $('#addScheduleForm')[0].reportValidity();
+                return;
+            }
+
+            // Mark form as submitting
+            $('#addScheduleForm').data('submitting', true);
+
+                            var formData = $('#addScheduleForm').serialize();
+                formData += '&operation=create';
+                console.log('Submitting form data:', formData);
+                
+                $.ajax({
+                    url: '@Url.Action("QuickScheduleOperation")',
+                    type: 'POST',
+                    data: formData,
                 success: function (data) {
-                if (data.success) {
-                    Swal.fire({
-                        icon: 'success',
-                        title: 'موفقیت!',
-                        text: data.message,
-                        confirmButtonText: 'باشه'
-                    }).then(() => {
-                        $('#addScheduleModal').modal('hide');
-                        location.reload();
-                    });
-                } else {
+                    console.log('Server response:', data);
+
+                    if (data.success) {
+                        console.log('Success - showing success message');
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'موفقیت!',
+                            text: data.message,
+                            confirmButtonText: 'باشه'
+                        }).then(() => {
+                            $('#addScheduleModal').modal('hide');
+                            location.reload();
+                        });
+                    } else {
+                        console.log('Error - showing error message:', data.message);
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا!',
+                            text: data.message,
+                            confirmButtonText: 'باشه'
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('AJAX error:', {xhr: xhr, status: status, error: error});
                     Swal.fire({
                         icon: 'error',
                         title: 'خطا!',
-                        text: data.message,
+                        text: 'خطا در ارتباط با سرور',
                         confirmButtonText: 'باشه'
                     });
+                },
+                complete: function() {
+                    // Reset submitting flag
+                    $('#addScheduleForm').data('submitting', false);
+                    console.log('Request completed, reset submitting flag');
                 }
-            },
-            error: function() {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'خطا!',
-                    text: 'خطا در ارتباط با سرور',
-                    confirmButtonText: 'باشه'
-                });
-            }
-        });
+            });
         }
 
         function viewSchedule(id) {
@@ -823,38 +866,38 @@
                     $.ajax({
                         url: '@Url.Action("ActivateSchedule")',
                         type: 'POST',
-                        data: { 
+                        data: {
                             scheduleId: id,
                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                         },
                         success: function (data) {
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'موفقیت!',
-                                text: data.message,
-                                confirmButtonText: 'باشه'
-                            }).then(() => {
-                                location.reload();
-                            });
-                        } else {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفقیت!',
+                                    text: data.message,
+                                    confirmButtonText: 'باشه'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا!',
+                                    text: data.message,
+                                    confirmButtonText: 'باشه'
+                                });
+                            }
+                        },
+                        error: function() {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا!',
-                                text: data.message,
+                                text: 'خطا در ارتباط با سرور',
                                 confirmButtonText: 'باشه'
                             });
                         }
-                    },
-                    error: function() {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'خطا!',
-                            text: 'خطا در ارتباط با سرور',
-                            confirmButtonText: 'باشه'
-                        });
-                    }
-                });
+                    });
                 }
             });
         }
@@ -873,38 +916,38 @@
                     $.ajax({
                         url: '@Url.Action("RemoveSchedule")',
                         type: 'POST',
-                        data: { 
+                        data: {
                             scheduleId: id,
                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                         },
                         success: function (data) {
-                        if (data.success) {
-                            Swal.fire({
-                                icon: 'success',
-                                title: 'موفقیت!',
-                                text: data.message,
-                                confirmButtonText: 'باشه'
-                            }).then(() => {
-                                location.reload();
-                            });
-                        } else {
+                            if (data.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'موفقیت!',
+                                    text: data.message,
+                                    confirmButtonText: 'باشه'
+                                }).then(() => {
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire({
+                                    icon: 'error',
+                                    title: 'خطا!',
+                                    text: data.message,
+                                    confirmButtonText: 'باشه'
+                                });
+                            }
+                        },
+                        error: function() {
                             Swal.fire({
                                 icon: 'error',
                                 title: 'خطا!',
-                                text: data.message,
+                                text: 'خطا در ارتباط با سرور',
                                 confirmButtonText: 'باشه'
                             });
                         }
-                    },
-                    error: function() {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'خطا!',
-                            text: 'خطا در ارتباط با سرور',
-                            confirmButtonText: 'باشه'
-                        });
-                    }
-                });
+                    });
                 }
             });
         }
@@ -916,13 +959,13 @@
                 dayOfWeek: $('#dayOfWeekFilter').val(),
                 isActive: $('#statusFilter').val()
             };
-            
+
             $.each(filters, function (key, value) {
                 if (value) {
                     url += '&' + key + '=' + value;
                 }
             });
-            
+
             window.location.href = url;
         }
     </script>

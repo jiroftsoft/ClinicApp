@@ -91,7 +91,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (doctorId <= 0)
                 {
                     TempData["Error"] = "شناسه پزشک نامعتبر است.";
-                    return RedirectToAction("Index", "Doctor");
+                    return RedirectToAction("Index", "DoctorSchedule");
                 }
 
                 // بررسی وجود پزشک
@@ -99,81 +99,42 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!doctorResult.Success || doctorResult.Data == null)
                 {
                     TempData["Error"] = "پزشک مورد نظر یافت نشد.";
-                    return RedirectToAction("Index", "Doctor");
+                    return RedirectToAction("Index", "DoctorSchedule");
                 }
 
                 // دریافت برنامه کاری
                 var scheduleResult = await _doctorScheduleService.GetDoctorScheduleAsync(doctorId);
-                if (!scheduleResult.Success)
+                
+                // ایجاد ViewModel با اطلاعات پزشک
+                var viewModel = scheduleResult.Success && scheduleResult.Data != null 
+                    ? scheduleResult.Data 
+                    : new DoctorScheduleViewModel
+                    {
+                        DoctorId = doctorId,
+                        DoctorName = doctorResult.Data.FullName,
+                        NationalCode = doctorResult.Data.NationalCode,
+                        MedicalCouncilCode = doctorResult.Data.MedicalCouncilCode,
+                        SpecializationNames = doctorResult.Data.SpecializationNames ?? new List<string>(),
+                        WorkDays = new List<WorkDayViewModel>(),
+                        AppointmentDuration = 30
+                    };
+
+                // اگر برنامه کاری موجود است، اطلاعات پزشک را به‌روزرسانی کن
+                if (scheduleResult.Success && scheduleResult.Data != null)
                 {
-                    TempData["Error"] = scheduleResult.Message;
-                    return RedirectToAction("Index", "Doctor");
+                    viewModel.DoctorName = doctorResult.Data.FullName;
+                    viewModel.NationalCode = doctorResult.Data.NationalCode;
+                    viewModel.MedicalCouncilCode = doctorResult.Data.MedicalCouncilCode;
+                    viewModel.SpecializationNames = doctorResult.Data.SpecializationNames ?? new List<string>();
                 }
 
-                // اضافه کردن اطلاعات پزشک به ViewModel
-                if (scheduleResult.Data != null)
-                {
-                    scheduleResult.Data.DoctorName = doctorResult.Data.FullName;
-                    scheduleResult.Data.NationalCode = doctorResult.Data.NationalCode;
-                    scheduleResult.Data.MedicalCouncilCode = doctorResult.Data.MedicalCouncilCode;
-                    scheduleResult.Data.SpecializationNames = doctorResult.Data.SpecializationNames ?? new List<string>();
-                }
-
-                return View(scheduleResult.Data);
+                return View(viewModel);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در نمایش برنامه کاری پزشک {DoctorId}", doctorId);
                 TempData["Error"] = "خطا در بارگذاری برنامه کاری پزشک";
-                return RedirectToAction("Index", "Doctor");
-            }
-        }
-
-        /// <summary>
-        /// به‌روزرسانی برنامه کاری پزشک
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> UpdateSchedule(DoctorScheduleViewModel model)
-        {
-            try
-            {
-                _logger.Information("درخواست به‌روزرسانی برنامه کاری پزشک {DoctorId} توسط کاربر {UserId}", model.DoctorId, _currentUserService.UserId);
-
-                if (!ModelState.IsValid)
-                {
-                    TempData["Error"] = "اطلاعات وارد شده صحیح نیست.";
-                    return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
-                }
-
-                // اعتبارسنجی با FluentValidation
-                var validationResult = await _scheduleValidator.ValidateAsync(model);
-                if (!validationResult.IsValid)
-                {
-                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-                    TempData["Error"] = $"خطا در اعتبارسنجی: {errors}";
-                    return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
-                }
-
-                // به‌روزرسانی برنامه کاری
-                var result = await _doctorScheduleService.SetDoctorScheduleAsync(model.DoctorId, model);
-
-                if (!result.Success)
-                {
-                    TempData["Error"] = result.Message;
-                    return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
-                }
-
-                _logger.Information("برنامه کاری پزشک {DoctorId} با موفقیت به‌روزرسانی شد", model.DoctorId);
-
-                TempData["Success"] = "برنامه کاری پزشک با موفقیت به‌روزرسانی شد.";
-                return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در به‌روزرسانی برنامه کاری پزشک {DoctorId}", model.DoctorId);
-                TempData["Error"] = "خطا در به‌روزرسانی برنامه کاری پزشک";
-                return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
+                return RedirectToAction("Index", "DoctorSchedule");
             }
         }
 
@@ -316,6 +277,28 @@ namespace ClinicApp.Areas.Admin.Controllers
         #region AJAX Operations
 
         /// <summary>
+        /// عملیات سریع برنامه کاری (AJAX)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> QuickScheduleOperation(DoctorScheduleViewModel model, string operation = "create")
+        {
+            try
+            {
+                _logger.Information("درخواست عملیات سریع برنامه کاری برای پزشک {DoctorId} - عملیات: {Operation}", 
+                    model.DoctorId, operation);
+
+                // استفاده از AssignSchedule بهبود یافته
+                return await AssignSchedule(model, true, operation);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در عملیات سریع برنامه کاری برای پزشک {DoctorId}", model.DoctorId);
+                return Json(new { success = false, message = "خطا در انجام عملیات" });
+            }
+        }
+
+        /// <summary>
         /// دریافت برنامه کاری پزشک (AJAX)
         /// </summary>
         [HttpGet]
@@ -404,7 +387,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
                     TempData["Error"] = "شناسه پزشک نامعتبر است";
-                    return RedirectToAction("Index", "Doctor");
+                    return RedirectToAction("Index", "DoctorSchedule");
                 }
 
                 // دریافت اطلاعات پزشک
@@ -413,19 +396,25 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
                     TempData["Error"] = doctorResult.Message;
-                    return RedirectToAction("Index", "Doctor");
+                    return RedirectToAction("Index", "DoctorSchedule");
                 }
 
                 var doctor = doctorResult.Data;
 
                 // دریافت برنامه کاری موجود
                 var scheduleResult = await _doctorScheduleService.GetDoctorScheduleAsync(doctorId.Value);
-                var model = scheduleResult.Success ? scheduleResult.Data : new DoctorScheduleViewModel
+                var model = scheduleResult.Success && scheduleResult.Data != null ? scheduleResult.Data : new DoctorScheduleViewModel
                 {
                     DoctorId = doctorId.Value,
                     AppointmentDuration = 30,
                     WorkDays = new List<WorkDayViewModel>()
                 };
+
+                // اطمینان از اینکه WorkDays null نباشد
+                if (model.WorkDays == null)
+                {
+                    model.WorkDays = new List<WorkDayViewModel>();
+                }
 
                 // تنظیم روزهای هفته
                 if (!model.WorkDays.Any())
@@ -452,7 +441,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در نمایش فرم تنظیم برنامه کاری پزشک {DoctorId}", doctorId?.ToString() ?? "null");
                 TempData["Error"] = "خطا در بارگذاری فرم تنظیم برنامه کاری";
-                return RedirectToAction("Index", "Doctor");
+                return RedirectToAction("Index", "DoctorSchedule");
             }
         }
 
@@ -461,16 +450,22 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AssignSchedule(DoctorScheduleViewModel model)
+        public async Task<ActionResult> AssignSchedule(DoctorScheduleViewModel model, bool isAjax = false, string operation = "create")
         {
             try
             {
-                _logger.Information("درخواست تنظیم برنامه کاری پزشک {DoctorId}", model.DoctorId);
+                _logger.Information("درخواست تنظیم برنامه کاری پزشک {DoctorId} - عملیات: {Operation} - AJAX: {IsAjax}", 
+                    model.DoctorId, operation, isAjax);
 
                 if (!ModelState.IsValid)
                 {
+                    var errorMessage = "اطلاعات وارد شده نامعتبر است";
                     _logger.Warning("مدل برنامه کاری نامعتبر برای پزشک {DoctorId}", model.DoctorId);
-                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
+                    
+                    if (isAjax)
+                        return Json(new { success = false, message = errorMessage });
+                    
+                    TempData["Error"] = errorMessage;
                     return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                 }
 
@@ -479,7 +474,13 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!validationResult.IsValid)
                 {
                     var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-                    TempData["Error"] = $"خطا در اعتبارسنجی: {errors}";
+                    var errorMessage = $"خطا در اعتبارسنجی: {errors}";
+                    _logger.Warning("اعتبارسنجی برنامه کاری پزشک {DoctorId} ناموفق بود: {Errors}", model.DoctorId, errors);
+                    
+                    if (isAjax)
+                        return Json(new { success = false, message = errorMessage });
+                    
+                    TempData["Error"] = errorMessage;
                     return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                 }
 
@@ -489,18 +490,35 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!result.Success)
                 {
                     _logger.Warning("تنظیم برنامه کاری پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
+                    
+                    if (isAjax)
+                        return Json(new { success = false, message = result.Message });
+                    
                     TempData["Error"] = result.Message;
                     return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
                 }
 
-                _logger.Information("تنظیم برنامه کاری پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
-                TempData["Success"] = "برنامه کاری پزشک با موفقیت تنظیم شد";
+                var successMessage = operation == "create" ? "برنامه کاری پزشک با موفقیت ایجاد شد" : 
+                                   operation == "update" ? "برنامه کاری پزشک با موفقیت به‌روزرسانی شد" :
+                                   "برنامه کاری پزشک با موفقیت تنظیم شد";
+                
+                _logger.Information("تنظیم برنامه کاری پزشک {DoctorId} با موفقیت انجام شد - عملیات: {Operation}", model.DoctorId, operation);
+                
+                if (isAjax)
+                    return Json(new { success = true, message = successMessage });
+                
+                TempData["Success"] = successMessage;
                 return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در تنظیم برنامه کاری پزشک {DoctorId}", model.DoctorId);
-                TempData["Error"] = "خطا در انجام عملیات تنظیم برنامه کاری";
+                _logger.Error(ex, "خطا در تنظیم برنامه کاری پزشک {DoctorId} - عملیات: {Operation}", model.DoctorId, operation);
+                var errorMessage = "خطا در انجام عملیات تنظیم برنامه کاری";
+                
+                if (isAjax)
+                    return Json(new { success = false, message = errorMessage });
+                
+                TempData["Error"] = errorMessage;
                 return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
             }
         }
@@ -519,7 +537,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
                     TempData["Error"] = "شناسه پزشک نامعتبر است";
-                    return RedirectToAction("Index", "Doctor");
+                    return RedirectToAction("Index", "DoctorSchedule");
                 }
 
                 // دریافت اطلاعات پزشک
@@ -528,7 +546,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
                     TempData["Error"] = doctorResult.Message;
-                    return RedirectToAction("Index", "Doctor");
+                    return RedirectToAction("Index", "DoctorSchedule");
                 }
 
                 var doctor = doctorResult.Data;
@@ -553,7 +571,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در نمایش فرم مسدود کردن بازه زمانی پزشک {DoctorId}", doctorId?.ToString() ?? "null");
                 TempData["Error"] = "خطا در بارگذاری فرم مسدود کردن بازه زمانی";
-                return RedirectToAction("Index", "Doctor");
+                return RedirectToAction("Index", "DoctorSchedule");
             }
         }
 
@@ -612,6 +630,86 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
+        #region Comprehensive Schedule Management
+
+        /// <summary>
+        /// مدیریت جامع برنامه کاری (ایجاد، ویرایش، حذف)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ManageSchedule(DoctorScheduleViewModel model, string action = "create")
+        {
+            try
+            {
+                _logger.Information("درخواست مدیریت برنامه کاری برای پزشک {DoctorId} - عملیات: {Action}", 
+                    model.DoctorId, action);
+
+                switch (action.ToLower())
+                {
+                    case "create":
+                    case "update":
+                        return await AssignSchedule(model, false, action);
+                    
+                    case "delete":
+                        if (model.Id > 0)
+                        {
+                            var deleteResult = await _doctorScheduleService.DeleteDoctorScheduleAsync(model.Id);
+                            if (deleteResult.Success)
+                            {
+                                TempData["Success"] = "برنامه کاری با موفقیت حذف شد";
+                                return RedirectToAction("Index");
+                            }
+                            TempData["Error"] = deleteResult.Message;
+                            return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                        }
+                        break;
+                    
+                    case "activate":
+                        if (model.Id > 0)
+                        {
+                            var activateResult = await _doctorScheduleService.ActivateDoctorScheduleAsync(model.Id);
+                            if (activateResult.Success)
+                            {
+                                TempData["Success"] = "برنامه کاری با موفقیت فعال شد";
+                                return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
+                            }
+                            TempData["Error"] = activateResult.Message;
+                            return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                        }
+                        break;
+                    
+                    case "deactivate":
+                        if (model.Id > 0)
+                        {
+                            var deactivateResult = await _doctorScheduleService.DeactivateDoctorScheduleAsync(model.Id);
+                            if (deactivateResult.Success)
+                            {
+                                TempData["Success"] = "برنامه کاری با موفقیت غیرفعال شد";
+                                return RedirectToAction("Schedule", new { doctorId = model.DoctorId });
+                            }
+                            TempData["Error"] = deactivateResult.Message;
+                            return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                        }
+                        break;
+                    
+                    default:
+                        TempData["Error"] = "عملیات نامعتبر است";
+                        return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+                }
+
+                TempData["Error"] = "خطا در انجام عملیات";
+                return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در مدیریت برنامه کاری برای پزشک {DoctorId} - عملیات: {Action}", model.DoctorId, action);
+                TempData["Error"] = "خطا در انجام عملیات";
+                return RedirectToAction("AssignSchedule", new { doctorId = model.DoctorId });
+            }
+        }
+
+        #endregion
+
         #region Helper Methods
 
         /// <summary>
@@ -635,71 +733,6 @@ namespace ClinicApp.Areas.Admin.Controllers
         #endregion
 
         #region Schedule CRUD Operations
-
-        /// <summary>
-        /// اضافه کردن برنامه کاری جدید
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> AddSchedule(DoctorScheduleViewModel model)
-        {
-            try
-            {
-                _logger.Information("درخواست اضافه کردن برنامه کاری جدید برای پزشک {DoctorId} توسط کاربر {UserId}", model.DoctorId, _currentUserService.UserId);
-
-                if (!ModelState.IsValid)
-                {
-                    return Json(new { success = false, message = "اطلاعات وارد شده صحیح نیست." });
-                }
-
-                // ساخت WorkDays از اطلاعات فرم
-                model.WorkDays = new List<WorkDayViewModel>
-                {
-                    new WorkDayViewModel
-                    {
-                        DayOfWeek = ConvertDayOfWeekToNumber(model.DayOfWeek),
-                        DayName = model.DayOfWeek,
-                        IsActive = true, // همیشه فعال برای برنامه جدید
-                        TimeRanges = new List<TimeRangeViewModel>
-                        {
-                            new TimeRangeViewModel
-                            {
-                                StartTime = model.StartTime,
-                                EndTime = model.EndTime,
-                                IsActive = true // همیشه فعال برای برنامه جدید
-                            }
-                        }
-                    }
-                };
-
-
-
-                // اعتبارسنجی با FluentValidation
-                var validationResult = await _scheduleValidator.ValidateAsync(model);
-                if (!validationResult.IsValid)
-                {
-                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-                    return Json(new { success = false, message = $"خطا در اعتبارسنجی: {errors}" });
-                }
-
-                // اضافه کردن برنامه کاری
-                var result = await _doctorScheduleService.SetDoctorScheduleAsync(model.DoctorId, model);
-
-                if (!result.Success)
-                {
-                    return Json(new { success = false, message = result.Message });
-                }
-
-                _logger.Information("برنامه کاری جدید برای پزشک {DoctorId} با موفقیت اضافه شد", model.DoctorId);
-
-                return Json(new { success = true, message = "برنامه کاری با موفقیت اضافه شد." });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در اضافه کردن برنامه کاری جدید برای پزشک {DoctorId}", model.DoctorId);
-                return Json(new { success = false, message = "خطا در اضافه کردن برنامه کاری" });
-            }
-        }
 
         /// <summary>
         /// ویرایش برنامه کاری
@@ -937,6 +970,49 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Error(ex, "خطا در ویرایش برنامه کاری {ScheduleId}", id);
                 TempData["Error"] = "خطا در بارگذاری برنامه کاری";
                 return RedirectToAction("Index");
+            }
+        }
+
+        #endregion
+
+        #region Debug Actions (فقط برای تست)
+
+        /// <summary>
+        /// اکشن دیباگ برای بررسی داده‌های برنامه کاری پزشک
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> DebugSchedule(int doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست دیباگ برنامه کاری پزشک {DoctorId}", doctorId);
+
+                // دریافت برنامه کاری
+                var scheduleResult = await _doctorScheduleService.GetDoctorScheduleAsync(doctorId);
+                
+                var debugInfo = new
+                {
+                    Success = scheduleResult.Success,
+                    Message = scheduleResult.Message,
+                    HasData = scheduleResult.Data != null,
+                    DoctorId = scheduleResult.Data?.DoctorId,
+                    DoctorName = scheduleResult.Data?.DoctorName,
+                    WorkDaysCount = scheduleResult.Data?.WorkDays?.Count ?? 0,
+                    ActiveWorkDaysCount = scheduleResult.Data?.WorkDays?.Count(w => w.IsActive) ?? 0,
+                    TotalTimeRanges = scheduleResult.Data?.WorkDays?.Sum(w => w.TimeRanges?.Count ?? 0) ?? 0,
+                    ActiveTimeRanges = scheduleResult.Data?.WorkDays?.Sum(w => w.TimeRanges?.Count(t => t.IsActive) ?? 0) ?? 0,
+                    TotalSchedules = scheduleResult.Data?.TotalSchedules ?? 0,
+                    ActiveSchedules = scheduleResult.Data?.ActiveSchedules ?? 0,
+                    TotalTimeSlots = scheduleResult.Data?.TotalTimeSlots ?? 0,
+                    WeeklyHours = scheduleResult.Data?.WeeklyHours ?? 0
+                };
+
+                return Json(debugInfo, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دیباگ برنامه کاری پزشک {DoctorId}", doctorId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
             }
         }
 

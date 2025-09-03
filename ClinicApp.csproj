@@ -691,6 +691,7 @@
     <Content Include="Content\plugins\dropzone\dropzone.js" />
     <Content Include="Content\plugins\dropzone\dropzone.min.css" />
     <Content Include="Content\plugins\dropzone\dropzone.min.js" />
+    <Content Include="Content\plugins\FullCalendar\index.global.min.js" />
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.css" />
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.min.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-date.min.js" />
@@ -3301,6 +3302,8 @@
     <Content Include="Areas\Admin\Views\DoctorSchedule\Edit.cshtml" />
     <Content Include="CONTRACTS\DESIGN_PRINCIPLES_CONTRACT.md" />
     <Content Include="CONTRACTS\FormStandards.md" />
+    <Content Include="CONTRACTS\ServiceResult_Enhanced.md" />
+    <Content Include="CONTRACTS\ServiceResult_Enhanced_Contract.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
