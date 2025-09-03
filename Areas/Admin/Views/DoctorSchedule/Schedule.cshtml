@@ -662,11 +662,10 @@
                             if (timeRange.IsActive) {
                                 // محاسبه تاریخ برای این هفته
                                 var today = new Date();
-                                var dayOfWeek = today.getDay(); // 0 = یکشنبه
-                                var targetDay = workDay.DayOfWeek; // 0 = یکشنبه
-
-                                // محاسبه روز هفته برای تقویم (شنبه = 6)
-                                var calendarDay = (targetDay + 1) % 7;
+                                var targetDay = workDay.DayOfWeekForCalendar; // استفاده از property جدید
+                                
+                                // محاسبه روز هفته برای تقویم (یکشنبه = 0، شنبه = 6)
+                                var calendarDay = targetDay; // حالا مستقیماً از سرور می‌آید
 
                                 var eventDate = new Date(today);
                                 var daysToAdd = (calendarDay - today.getDay() + 7) % 7;

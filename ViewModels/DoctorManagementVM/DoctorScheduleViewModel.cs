@@ -131,7 +131,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// تاریخ پایان (برای سازگاری با View)
         /// </summary>
-        public DateTime? EndDate => null; // نامحدود
+        public DateTime? EndDate => DateTime.Today.AddYears(1); // نامحدود
+
+        /// <summary>
+        /// روز هفته برای کالندر (برای سازگاری با View)
+        /// </summary>
+        public int DayOfWeekForCalendar { get; set; }
 
         /// <summary>
         /// آمار برنامه‌های کاری (برای نمایش در View)
@@ -183,7 +188,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                             Title = $"{workDay.DayName} - {timeRange.StartTime:hh\\:mm} تا {timeRange.EndTime:hh\\:mm}",
                             DayOfWeek = workDay.DayName,
                             StartDate = DateTime.Today,
-                            EndDate = null,
+                            EndDate = DateTime.Today.AddYears(1), // تاریخ پایان معقول به جای null
                             IsActive = workDay.IsActive && timeRange.IsActive,
                             StartTime = timeRange.StartTime,
                             EndTime = timeRange.EndTime,
@@ -286,6 +291,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string DayName { get; set; }
 
         /// <summary>
+        /// روز هفته برای کالندر JavaScript (0=یکشنبه، 6=شنبه)
+        /// </summary>
+        public int DayOfWeekForCalendar { get; set; }
+
+        /// <summary>
         /// نشان‌دهنده فعال بودن روز کاری
         /// </summary>
         public bool IsActive { get; set; } = true;
@@ -309,6 +319,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
                 Id = workDay.WorkDayId, // استفاده از WorkDayId به جای Id
                 DayOfWeek = workDay.DayOfWeek,
                 DayName = workDay.DayOfWeek >= 0 && workDay.DayOfWeek < dayNames.Length ? dayNames[workDay.DayOfWeek] : "نامشخص",
+                DayOfWeekForCalendar = workDay.DayOfWeek, // Populate for calendar
                 IsActive = workDay.IsActive,
                 TimeRanges = workDay.TimeRanges?.Select(TimeRangeViewModel.FromEntity).ToList() ?? new List<TimeRangeViewModel>()
             };
