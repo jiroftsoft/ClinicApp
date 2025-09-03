@@ -3495,6 +3495,7 @@
     <Content Include="Scripts\PersianDateTimePicker\persian-date.min.js" />
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.css" />
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.js" />
+    <Content Include="Scripts\popper.min.js" />
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />

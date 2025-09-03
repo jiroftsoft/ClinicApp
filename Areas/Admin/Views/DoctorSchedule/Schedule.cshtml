@@ -365,6 +365,8 @@
     <div class="spinner"></div>
 </div>
 
+@Html.AntiForgeryToken()
+
 <div class="container-fluid">
     <!-- Doctor Header -->
     <div class="doctor-header">
@@ -381,6 +383,10 @@
                     <i class="fas fa-plus me-2"></i>
                     برنامه جدید
                 </a>
+                <button type="button" class="btn btn-warning ms-2" onclick="debugSchedule()">
+                    <i class="fas fa-bug me-2"></i>
+                    دیباگ
+                </button>
             </div>
         </div>
 
@@ -599,6 +605,35 @@
             $('.loading-overlay').hide();
         }
 
+        // تابع کمکی برای تبدیل تاریخ به فارسی
+        function toPersianDate(date) {
+            try {
+                return date.toLocaleDateString('fa-IR', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    weekday: 'long'
+                });
+            } catch (e) {
+                // fallback در صورت خطا
+                return date.toLocaleDateString('fa-IR');
+            }
+        }
+
+        // تابع کمکی برای نمایش بهتر هفته
+        function getWeekDisplayText(startDate, endDate) {
+            var startPersian = toPersianDate(startDate);
+            var endPersian = toPersianDate(endDate);
+            
+            // اگر در یک ماه باشد
+            if (startDate.getMonth() === endDate.getMonth()) {
+                return `هفته ${startDate.getDate()} تا ${endDate.getDate()} ${startDate.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' })}`;
+            }
+            
+            // اگر در دو ماه مختلف باشد
+            return `هفته ${startDate.getDate()} ${startDate.toLocaleDateString('fa-IR', { month: 'long' })} تا ${endDate.getDate()} ${endDate.toLocaleDateString('fa-IR', { month: 'long', year: 'numeric' })}`;
+        }
+
         function initializeCalendar() {
             var calendarEl = document.getElementById('scheduleCalendar');
             var calendar = new FullCalendar.Calendar(calendarEl, {
@@ -626,7 +661,7 @@
                     day: 'numeric'
                 },
                 editable: false,
-                eventLimit: true,
+                dayMaxEventRows: 3, // جایگزین eventLimit
                 height: 'auto',
                 events: generateScheduleEvents(),
                 eventClick: function(info) {
@@ -646,6 +681,38 @@
                     } else {
                         hideLoading();
                     }
+                },
+                // تنظیمات بهینه‌سازی برای محیط درمانی
+                eventDisplay: 'block',
+                eventTimeFormat: {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: false
+                },
+                // تنظیمات RTL و فارسی
+                buttonText: {
+                    today: 'امروز',
+                    month: 'ماه',
+                    week: 'هفته',
+                    day: 'روز'
+                },
+                // بهبود نمایش عنوان برای محیط درمانی
+                viewDidMount: function(arg) {
+                    // اضافه کردن اطلاعات اضافی به عنوان
+                    var titleEl = arg.el.querySelector('.fc-toolbar-title');
+                    if (titleEl && arg.view.type === 'timeGridWeek') {
+                        var startDate = arg.view.currentStart;
+                        var endDate = arg.view.currentEnd;
+                        
+                        // تنظیم عنوان بهتر برای هفته
+                        var weekText = getWeekDisplayText(startDate, endDate);
+                        titleEl.innerHTML = weekText;
+                        
+                        // اضافه کردن اطلاعات اضافی
+                        var currentDate = new Date();
+                        var persianDate = toPersianDate(currentDate);
+                        titleEl.innerHTML += '<br><small class="text-muted">امروز: ' + persianDate + '</small>';
+                    }
                 }
             });
             calendar.render();
@@ -655,14 +722,28 @@
             var events = [];
             var workDays = @Html.Raw(Json.Encode(Model?.WorkDays ?? new List<ClinicApp.ViewModels.DoctorManagementVM.WorkDayViewModel>()));
 
+            // Debug logging
+            console.log('WorkDays from server:', workDays);
+            console.log('Model data:', @Html.Raw(Json.Encode(Model)));
+
             if (workDays && workDays.length > 0) {
                 workDays.forEach(function(workDay) {
+                    console.log('Processing workDay:', workDay);
+                    
                     if (workDay.IsActive && workDay.TimeRanges) {
+                        console.log('WorkDay is active, TimeRanges:', workDay.TimeRanges);
+                        
                         workDay.TimeRanges.forEach(function(timeRange) {
+                            console.log('Processing timeRange:', timeRange);
+                            
                             if (timeRange.IsActive) {
+                                console.log('TimeRange is active, creating event...');
+                                
                                 // محاسبه تاریخ برای این هفته
                                 var today = new Date();
                                 var targetDay = workDay.DayOfWeekForCalendar; // استفاده از property جدید
+                                
+                                console.log('Target day:', targetDay, 'Today day:', today.getDay());
                                 
                                 // محاسبه روز هفته برای تقویم (یکشنبه = 0، شنبه = 6)
                                 var calendarDay = targetDay; // حالا مستقیماً از سرور می‌آید
@@ -671,9 +752,13 @@
                                 var daysToAdd = (calendarDay - today.getDay() + 7) % 7;
                                 eventDate.setDate(today.getDate() + daysToAdd);
 
+                                console.log('Event date calculated:', eventDate);
+
                                 // تنظیم زمان
                                 var startTimeStr = timeRange.StartTimeString; // استفاده از property جدید
                                 var endTimeStr = timeRange.EndTimeString; // استفاده از property جدید
+                                
+                                console.log('Time strings:', startTimeStr, endTimeStr);
                                 
                                 // تبدیل string به ساعت و دقیقه
                                 var startTime = startTimeStr.split(':');
@@ -685,26 +770,39 @@
                                 var endDateTime = new Date(eventDate);
                                 endDateTime.setHours(parseInt(endTime[0]), parseInt(endTime[1]), 0);
 
-                                events.push({
-                                    title: 'زمان کاری - ' + workDay.DayName,
+                                console.log('Start/End dateTime:', startDateTime, endDateTime);
+
+                                // محاسبه مدت زمان برای نمایش بهتر
+                                var durationMinutes = Math.round((endDateTime - startDateTime) / (1000 * 60));
+
+                                var event = {
+                                    title: `زمان کاری - ${workDay.DayName} (${durationMinutes} دقیقه)`,
                                     start: startDateTime.toISOString(),
                                     end: endDateTime.toISOString(),
                                     className: 'fc-event-working-hours',
                                     backgroundColor: '#28a745',
                                     borderColor: '#28a745',
                                     textColor: '#ffffff',
+                                    allDay: false,
                                     extendedProps: {
                                         workDayId: workDay.Id,
                                         timeRangeId: timeRange.Id,
-                                        dayName: workDay.DayName
+                                        dayName: workDay.DayName,
+                                        duration: durationMinutes,
+                                        startTime: startTimeStr,
+                                        endTime: endTimeStr
                                     }
-                                });
+                                };
+                                
+                                console.log('Created event:', event);
+                                events.push(event);
                             }
                         });
                     }
                 });
             }
 
+            console.log('Final events array:', events);
             return events;
         }
 
@@ -721,20 +819,40 @@
             });
 
             var dayName = info.event.extendedProps.dayName;
+            var duration = info.event.extendedProps.duration;
+            var startTimeStr = info.event.extendedProps.startTime;
+            var endTimeStr = info.event.extendedProps.endTime;
 
             Swal.fire({
                 title: 'جزئیات زمان کاری',
                 html: `
                     <div class="text-right">
-                        <p><strong>روز:</strong> ${dayName}</p>
-                        <p><strong>زمان شروع:</strong> ${startTime}</p>
-                        <p><strong>زمان پایان:</strong> ${endTime}</p>
-                        <p><strong>مدت:</strong> ${info.event.extendedProps.duration || 'نامشخص'} دقیقه</p>
+                        <div class="alert alert-info">
+                            <strong>روز:</strong> ${dayName}
+                        </div>
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>زمان شروع:</strong><br>
+                                <span class="badge bg-primary">${startTimeStr}</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>زمان پایان:</strong><br>
+                                <span class="badge bg-success">${endTimeStr}</span>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <strong>مدت زمان کاری:</strong><br>
+                            <span class="badge bg-warning">${duration} دقیقه</span>
+                        </div>
+                        <div class="mt-3 text-muted">
+                            <small>این زمان برای پذیرش بیماران و مشاوره پزشکی در نظر گرفته شده است.</small>
+                        </div>
                     </div>
                 `,
                 icon: 'info',
                 confirmButtonText: 'باشه',
-                confirmButtonColor: '#28a745'
+                confirmButtonColor: '#28a745',
+                width: '500px'
             });
         }
 
@@ -841,7 +959,7 @@
         }
 
         function editSchedule(scheduleId) {
-            window.location.href = '@Url.Action("EditSchedule")?scheduleId=' + scheduleId;
+            window.location.href = '@Url.Action("Edit")?id=' + scheduleId;
         }
 
         function removeSchedule(scheduleId) {
@@ -891,6 +1009,80 @@
                         complete: function() {
                             hideLoading();
                         }
+                    });
+                }
+            });
+        }
+
+        function debugSchedule() {
+            showLoading();
+            
+            $.ajax({
+                url: '@Url.Action("DebugSchedule", new { doctorId = Model?.DoctorId ?? 0 })',
+                type: 'GET',
+                success: function(response) {
+                    hideLoading();
+                    
+                    var debugHtml = `
+                        <div class="text-right">
+                            <h6>اطلاعات کلی:</h6>
+                            <p><strong>موفقیت:</strong> ${response.Success}</p>
+                            <p><strong>پیام:</strong> ${response.Message || 'بدون پیام'}</p>
+                            <p><strong>داده موجود:</strong> ${response.HasData}</p>
+                            <p><strong>شناسه پزشک:</strong> ${response.DoctorId || 'نامشخص'}</p>
+                            <p><strong>نام پزشک:</strong> ${response.DoctorName || 'نامشخص'}</p>
+                            
+                            <h6 class="mt-3">آمار:</h6>
+                            <p><strong>تعداد روزهای کاری:</strong> ${response.WorkDaysCount}</p>
+                            <p><strong>روزهای کاری فعال:</strong> ${response.ActiveWorkDaysCount}</p>
+                            <p><strong>کل بازه‌های زمانی:</strong> ${response.TotalTimeRanges}</p>
+                            <p><strong>بازه‌های زمانی فعال:</strong> ${response.ActiveTimeRanges}</p>
+                            <p><strong>کل برنامه‌ها:</strong> ${response.TotalSchedules}</p>
+                            <p><strong>برنامه‌های فعال:</strong> ${response.ActiveSchedules}</p>
+                            <p><strong>کل زمان‌ها:</strong> ${response.TotalTimeSlots}</p>
+                            <p><strong>ساعت‌های هفتگی:</strong> ${response.WeeklyHours}</p>
+                        </div>
+                    `;
+                    
+                    if (response.WorkDaysDetails && response.WorkDaysDetails.length > 0) {
+                        debugHtml += '<h6 class="mt-3">جزئیات روزهای کاری:</h6>';
+                        response.WorkDaysDetails.forEach(function(workDay, index) {
+                            debugHtml += `
+                                <div class="border p-2 mb-2">
+                                    <strong>روز ${index + 1}:</strong> ${workDay.DayName} (ID: ${workDay.Id})
+                                    <br>DayOfWeek: ${workDay.DayOfWeek}, DayOfWeekForCalendar: ${workDay.DayOfWeekForCalendar}
+                                    <br>فعال: ${workDay.IsActive}, تعداد بازه‌ها: ${workDay.TimeRangesCount}
+                                </div>
+                            `;
+                            
+                            if (workDay.TimeRanges && workDay.TimeRanges.length > 0) {
+                                workDay.TimeRanges.forEach(function(timeRange, tIndex) {
+                                    debugHtml += `
+                                        <div class="ms-3 text-muted">
+                                            بازه ${tIndex + 1}: ${timeRange.StartTime} - ${timeRange.EndTime}
+                                            <br>StartTimeString: ${timeRange.StartTimeString}, EndTimeString: ${timeRange.EndTimeString}
+                                            <br>فعال: ${timeRange.IsActive}
+                                        </div>
+                                    `;
+                                });
+                            }
+                        });
+                    }
+                    
+                    Swal.fire({
+                        title: 'اطلاعات دیباگ برنامه کاری',
+                        html: debugHtml,
+                        width: '800px',
+                        confirmButtonText: 'باشه',
+                        confirmButtonColor: '#28a745'
+                    });
+                },
+                error: function() {
+                    hideLoading();
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'خطا',
+                        text: 'خطا در دریافت اطلاعات دیباگ'
                     });
                 }
             });

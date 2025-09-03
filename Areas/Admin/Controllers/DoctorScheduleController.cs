@@ -288,8 +288,58 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Information("درخواست عملیات سریع برنامه کاری برای پزشک {DoctorId} - عملیات: {Operation}", 
                     model.DoctorId, operation);
 
-                // استفاده از AssignSchedule بهبود یافته
-                return await AssignSchedule(model, true, operation);
+                // تبدیل داده‌های ساده به ساختار کامل ViewModel
+                var fullModel = new DoctorScheduleViewModel
+                {
+                    DoctorId = model.DoctorId,
+                    AppointmentDuration = model.AppointmentDuration,
+                    DefaultStartTime = model.StartTime,
+                    DefaultEndTime = model.EndTime,
+                    // تبدیل DayOfWeek به WorkDays
+                    WorkDays = new List<WorkDayViewModel>
+                    {
+                        new WorkDayViewModel
+                        {
+                            DayOfWeek = ConvertDayOfWeekToNumber(model.DayOfWeek),
+                            DayName = model.DayOfWeek,
+                            IsActive = true,
+                            TimeRanges = new List<TimeRangeViewModel>
+                            {
+                                new TimeRangeViewModel
+                                {
+                                    StartTime = model.StartTime,
+                                    EndTime = model.EndTime,
+                                    IsActive = true
+                                }
+                            }
+                        }
+                    }
+                };
+
+                // اعتبارسنجی با FluentValidation
+                var validationResult = await _scheduleValidator.ValidateAsync(fullModel);
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    var errorMessage = $"خطا در اعتبارسنجی: {errors}";
+                    _logger.Warning("اعتبارسنجی برنامه کاری سریع پزشک {DoctorId} ناموفق بود: {Errors}", model.DoctorId, errors);
+                    
+                    return Json(new { success = false, message = errorMessage });
+                }
+
+                // تنظیم برنامه کاری پزشک
+                var result = await _doctorScheduleService.SetDoctorScheduleAsync(fullModel.DoctorId, fullModel);
+
+                if (!result.Success)
+                {
+                    _logger.Warning("تنظیم برنامه کاری سریع پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                var successMessage = "برنامه کاری با موفقیت تنظیم شد";
+                _logger.Information("تنظیم برنامه کاری سریع پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
+                
+                return Json(new { success = true, message = successMessage });
             }
             catch (Exception ex)
             {
@@ -1004,7 +1054,26 @@ namespace ClinicApp.Areas.Admin.Controllers
                     TotalSchedules = scheduleResult.Data?.TotalSchedules ?? 0,
                     ActiveSchedules = scheduleResult.Data?.ActiveSchedules ?? 0,
                     TotalTimeSlots = scheduleResult.Data?.TotalTimeSlots ?? 0,
-                    WeeklyHours = scheduleResult.Data?.WeeklyHours ?? 0
+                    WeeklyHours = scheduleResult.Data?.WeeklyHours ?? 0,
+                    // جزئیات کامل WorkDays و TimeRanges
+                    WorkDaysDetails = scheduleResult.Data?.WorkDays?.Select(w => new
+                    {
+                        Id = w.Id,
+                        DayOfWeek = w.DayOfWeek,
+                        DayOfWeekForCalendar = w.DayOfWeekForCalendar,
+                        DayName = w.DayName,
+                        IsActive = w.IsActive,
+                        TimeRangesCount = w.TimeRanges?.Count ?? 0,
+                        TimeRanges = w.TimeRanges?.Select(t => new
+                        {
+                            Id = t.Id,
+                            StartTime = t.StartTime.ToString(@"hh\:mm"),
+                            EndTime = t.EndTime.ToString(@"hh\:mm"),
+                            StartTimeString = t.StartTimeString,
+                            EndTimeString = t.EndTimeString,
+                            IsActive = t.IsActive
+                        }).ToList()
+                    }).ToList()
                 };
 
                 return Json(debugInfo, JsonRequestBehavior.AllowGet);

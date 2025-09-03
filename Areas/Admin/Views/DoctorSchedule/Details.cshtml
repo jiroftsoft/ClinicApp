@@ -188,6 +188,7 @@
         
         <!-- Action Buttons -->
         <div class="action-buttons">
+            @Html.AntiForgeryToken()
             <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-primary btn-action">
                 <i class="fas fa-edit me-2"></i>
                 ویرایش برنامه
@@ -225,7 +226,10 @@
                     $.ajax({
                         url: '@Url.Action("DeactivateSchedule")',
                         type: 'POST',
-                        data: { scheduleId: scheduleId },
+                        data: { 
+                            scheduleId: scheduleId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
@@ -272,7 +276,10 @@
                     $.ajax({
                         url: '@Url.Action("RemoveSchedule")',
                         type: 'POST',
-                        data: { scheduleId: scheduleId },
+                        data: { 
+                            scheduleId: scheduleId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
                         success: function(response) {
                             if (response.success) {
                                 Swal.fire({
