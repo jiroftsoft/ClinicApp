@@ -27,7 +27,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// - انتساب خدمات: DoctorServiceCategoryController
     /// - برنامه زمانی: DoctorScheduleController
     /// </summary>
-    //[Authorize(Roles = "Admin")]
+    //[Authorize(Roles = "Admin,ClinicManager")]
     public class DoctorAssignmentController : Controller
     {
         private readonly IDoctorAssignmentService _doctorAssignmentService;
@@ -74,13 +74,11 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Information("درخواست نمایش صفحه اصلی مدیریت انتسابات پزشکان");
 
-                Response.Cache.SetCacheability(HttpCacheability.NoCache);
-                Response.Cache.SetExpires(DateTime.UtcNow.AddHours(-1));
-                Response.Cache.SetNoStore();
-
-                // ایجاد ViewModel اصلی
+                // ایجاد ViewModel اصلی با مقادیر پیش‌فرض
                 var viewModel = new DoctorAssignmentIndexViewModel
                 {
+                    PageTitle = "مدیریت انتسابات پزشکان",
+                    PageSubtitle = "مدیریت کلی انتسابات پزشکان به دپارتمان‌ها و سرفصل‌های خدماتی",
                     IsDataLoaded = false,
                     LastRefreshTime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
                     IsLoading = true,
@@ -1068,6 +1066,8 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// دریافت لیست انتسابات برای DataTables (Server-side)
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
+        [OutputCache(Duration = 0, VaryByParam = "*", NoStore = true)]
         public async Task<JsonResult> GetAssignments(DataTablesRequest request)
         {
             try
@@ -1075,10 +1075,24 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Information("درخواست AJAX دریافت لیست انتسابات برای DataTables. Draw: {Draw}, Start: {Start}, Length: {Length}", 
                     request.Draw, request.Start, request.Length);
 
+                // اعتبارسنجی درخواست
+                if (request == null)
+                {
+                    _logger.Warning("درخواست DataTables null است");
+                    return Json(new { 
+                        draw = 0,
+                        recordsTotal = 0,
+                        recordsFiltered = 0,
+                        data = new List<object>(),
+                        error = "درخواست نامعتبر است"
+                    });
+                }
+
                 // دریافت انتسابات از سرویس با pagination
                 var result = await _doctorAssignmentService.GetAssignmentsForDataTablesAsync(request);
                 if (!result.Success)
                 {
+                    _logger.Warning("خطا در دریافت انتسابات: {Message}", result.Message);
                     return Json(new { 
                         draw = request.Draw,
                         recordsTotal = 0,
@@ -1087,6 +1101,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                         error = result.Message
                     });
                 }
+
+                _logger.Information("دریافت موفق {Count} انتساب از {Total} کل", 
+                    result.Data.Assignments.Count, result.Data.RecordsTotal);
 
                 return Json(new { 
                     draw = request.Draw,
@@ -1099,7 +1116,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در دریافت لیست انتسابات برای DataTables");
                 return Json(new { 
-                    draw = request.Draw,
+                    draw = request?.Draw ?? 0,
                     recordsTotal = 0,
                     recordsFiltered = 0,
                     data = new List<object>(),
@@ -1108,46 +1125,6 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        /// <summary>
-        /// دریافت لیست انتسابات برای نمایش در جدول (Legacy - برای backward compatibility)
-        /// </summary>
-        [HttpPost]
-        public async Task<JsonResult> GetAssignmentsLegacy(string search = "", int? departmentId = null, string status = "")
-        {
-            try
-            {
-                _logger.Information("درخواست AJAX دریافت لیست انتسابات (Legacy). Search: {Search}, DepartmentId: {DepartmentId}, Status: {Status}", 
-                    search, departmentId, status);
-
-                // دریافت انتسابات از سرویس
-                var result = await _doctorAssignmentService.GetAssignmentStatisticsAsync();
-                if (!result.Success)
-                {
-                    return Json(new { success = false, message = result.Message });
-                }
-
-                // فیلتر کردن نتایج (در حالت واقعی باید از سرویس جداگانه استفاده شود)
-                var assignments = new List<object>
-                {
-                    new {
-                        Id = 1,
-                        DoctorName = "دکتر احمد محمدی",
-                        DoctorNationalCode = "1234567890",
-                        Departments = new[] { new { Name = "دپارتمان داخلی" } },
-                        ServiceCategories = new[] { new { Name = "معاینه عمومی" } },
-                        Status = "active",
-                        AssignmentDate = DateTime.Now.AddDays(-30)
-                    }
-                };
-
-                return Json(new { success = true, data = assignments });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در دریافت لیست انتسابات");
-                return Json(new { success = false, message = "خطا در دریافت داده‌ها" });
-            }
-        }
 
         /// <summary>
         /// دریافت دسته‌بندی‌های خدماتی بر اساس دپارتمان
@@ -1186,74 +1163,6 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        /// <summary>
-        /// انتساب گروهی پزشکان
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> BulkAssign(List<DoctorAssignmentOperationViewModel> models)
-        {
-            try
-            {
-                _logger.Information("درخواست انتساب گروهی {Count} پزشک", models?.Count ?? 0);
-
-                if (models == null || !models.Any())
-                {
-                    return Json(new { success = false, message = "هیچ پزشکی انتخاب نشده است" });
-                }
-
-                var successCount = 0;
-                var errors = new List<string>();
-
-                foreach (var model in models)
-                {
-                    try
-                    {
-                        var result = await _doctorAssignmentService.AssignDoctorToDepartmentWithServicesAsync(
-                            model.DoctorId, 
-                            model.DepartmentId, 
-                            model.ServiceCategoryIds ?? new List<int>());
-
-                        if (result.Success)
-                        {
-                            successCount++;
-                        }
-                        else
-                        {
-                            errors.Add($"پزشک {model.DoctorId}: {result.Message}");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        _logger.Error(ex, "خطا در انتساب پزشک {DoctorId}", model.DoctorId);
-                        errors.Add($"پزشک {model.DoctorId}: خطا در عملیات");
-                    }
-                }
-
-                if (successCount > 0)
-                {
-                    return Json(new { 
-                        success = true, 
-                        successCount = successCount,
-                        errorCount = errors.Count,
-                        errors = errors
-                    });
-                }
-                else
-                {
-                    return Json(new { 
-                        success = false, 
-                        message = "هیچ انتسابی انجام نشد",
-                        errors = errors
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در انتساب گروهی");
-                return Json(new { success = false, message = "خطا در انجام عملیات" });
-            }
-        }
 
         #endregion
 

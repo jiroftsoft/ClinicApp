@@ -831,6 +831,8 @@ namespace ClinicApp.Services.ClinicAdmin
                     }
                 }
 
+                _logger.Information("Found {Count} doctors in database", allDoctors.Count);
+                
                 // تبدیل به ViewModel
                 var allAssignments = allDoctors.Select(d => new DoctorAssignmentListItem
                 {
@@ -868,18 +870,27 @@ namespace ClinicApp.Services.ClinicAdmin
                             IsActive = dsc.IsActive
                         }).ToList()
                 }).ToList();
+                
+                _logger.Information("Converted to {Count} assignment items", allAssignments.Count);
 
                 // اعمال فیلترها
                 var filteredAssignments = ApplyDataTablesFilters(allAssignments, request);
+                _logger.Information("After filtering: {Count} assignments", filteredAssignments.Count);
 
                 // اعمال sorting
                 var sortedAssignments = ApplyDataTablesSorting(filteredAssignments, request);
+                _logger.Information("After sorting: {Count} assignments", sortedAssignments.Count);
 
                 // اعمال pagination
+                _logger.Information("Pagination parameters - Start: {Start}, Length: {Length}, Total: {Total}", 
+                    request.Start, request.Length, sortedAssignments.Count);
+                
                 var pagedAssignments = sortedAssignments
                     .Skip(request.Start)
-                    .Take(request.Length)
+                    .Take(request.Length > 0 ? request.Length : 25) // Default to 25 if Length is 0
                     .ToList();
+                
+                _logger.Information("After pagination: {Count} assignments returned", pagedAssignments.Count);
 
                 var response = new DataTablesResponse
                 {
@@ -888,6 +899,9 @@ namespace ClinicApp.Services.ClinicAdmin
                     RecordsFiltered = filteredAssignments.Count,
                     Assignments = pagedAssignments
                 };
+                
+                _logger.Information("Final response - Draw: {Draw}, RecordsTotal: {RecordsTotal}, RecordsFiltered: {RecordsFiltered}, AssignmentsCount: {AssignmentsCount}", 
+                    response.Draw, response.RecordsTotal, response.RecordsFiltered, response.Assignments.Count);
 
                 _logger.Information("لیست انتسابات برای DataTables با موفقیت بازگردانده شد. Total: {Total}, Filtered: {Filtered}, Returned: {Returned}", 
                     response.RecordsTotal, response.RecordsFiltered, response.Assignments.Count);

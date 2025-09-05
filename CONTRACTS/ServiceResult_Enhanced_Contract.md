@@ -230,3 +230,27 @@ public async Task<ActionResult> AssignSchedule(DoctorScheduleViewModel model)
 **تاریخ ایجاد:** 2025  
 **نسخه:** 1.0  
 **وضعیت:** فعال و اجباری
+
+---
+
+## Integration with AI Compliance Contract
+
+This contract works in conjunction with `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` which defines mandatory rules for AI interactions with the ClinicApp project. All ServiceResult development work must comply with both contracts.
+
+**Key Integration Points for ServiceResult**:
+- All ServiceResult changes must follow Atomic Changes Rule (AI_COMPLIANCE_CONTRACT Section 1)
+
+## Integration with Form Standards Contract
+
+This contract works in conjunction with `form-standards.css` and `AI_COMPLIANCE_CONTRACT.md` (Rules 49-65) which define mandatory standards for form creation and editing. All form-related ServiceResult work must comply with these contracts.
+- Pre-creation verification required for new ServiceResult methods (AI_COMPLIANCE_CONTRACT Section 2)
+- No duplication of existing ServiceResult patterns (AI_COMPLIANCE_CONTRACT Section 3)
+- Mandatory documentation for all ServiceResult changes (AI_COMPLIANCE_CONTRACT Section 4)
+- Stop and approval process required for ServiceResult modifications (AI_COMPLIANCE_CONTRACT Section 5)
+- Security and quality standards enforced (AI_COMPLIANCE_CONTRACT Section 6)
+- Transparent output format required for ServiceResult change proposals (AI_COMPLIANCE_CONTRACT Section 7)
+- No auto-execution of ServiceResult changes (AI_COMPLIANCE_CONTRACT Section 8)
+- Project scope compliance for ServiceResult features (AI_COMPLIANCE_CONTRACT Section 9)
+- Mandatory compliance with all AI interaction rules (AI_COMPLIANCE_CONTRACT Section 10)
+
+**Reference**: See `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` for complete AI interaction guidelines.

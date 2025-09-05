@@ -1,0 +1,475 @@
+/* ========================================
+   قرارداد استاندارد نمایش اطلاعات در فرم‌های جزئیات
+   Information Display Standards Contract CSS
+   ======================================== */
+
+/* ========================================
+   قانون 40: استاندارد نمایش اطلاعات
+   ======================================== */
+
+/* ساختار اصلی فرم‌های جزئیات */
+.details-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.details-header {
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.details-title {
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+    text-align: center;
+}
+
+.details-subtitle {
+    font-size: 1.1rem;
+    margin-top: 0.5rem;
+    opacity: 0.9;
+    text-align: center;
+}
+
+/* ========================================
+   قانون 41: رنگ‌بندی رسمی
+   ======================================== */
+
+/* رنگ‌بندی استاندارد Bootstrap با کنتراست بالا */
+.bg-primary { background-color: #007bff !important; }
+.bg-success { background-color: #28a745 !important; }
+.bg-info { background-color: #17a2b8 !important; }
+.bg-warning { background-color: #ffc107 !important; }
+.bg-danger { background-color: #dc3545 !important; }
+.bg-secondary { background-color: #6c757d !important; }
+.bg-dark { background-color: #343a40 !important; }
+
+/* متن‌ها */
+.text-primary { color: #2c3e50 !important; }
+.text-value { color: #212529 !important; }
+.text-muted { 
+    color: #6c757d !important;
+    font-weight: 500;
+    background-color: #f8f9fa;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    border: 1px solid #e9ecef;
+}
+
+/* ========================================
+   قانون 42: ساختار کارتی
+   ======================================== */
+
+/* Card های استاندارد */
+.details-card {
+    border: 2px solid;
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.details-card.border-primary { border-color: #007bff; }
+.details-card.border-success { border-color: #28a745; }
+.details-card.border-info { border-color: #17a2b8; }
+.details-card.border-warning { border-color: #ffc107; }
+.details-card.border-danger { border-color: #dc3545; }
+.details-card.border-secondary { border-color: #6c757d; }
+.details-card.border-dark { border-color: #343a40; }
+
+.details-card-header {
+    padding: 1rem 1.5rem;
+    border-bottom: none;
+    font-weight: 600;
+}
+
+.details-card-header h4,
+.details-card-header h5 {
+    margin: 0;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.details-card-header i {
+    font-size: 1.2rem;
+}
+
+.details-card-body {
+    padding: 1.5rem;
+    background-color: #ffffff;
+}
+
+/* ========================================
+   قانون 43: نمایش اطلاعات
+   ======================================== */
+
+/* جدول اطلاعات */
+.info-table {
+    background-color: #ffffff;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background-color: #f8f9fa;
+    border-radius: 5px;
+    border-right: 4px solid;
+    transition: all 0.3s ease;
+}
+
+.info-row:hover {
+    background-color: #e9ecef;
+    transform: translateX(2px);
+}
+
+.info-row.border-primary { border-right-color: #007bff; }
+.info-row.border-success { border-right-color: #28a745; }
+.info-row.border-info { border-right-color: #17a2b8; }
+.info-row.border-warning { border-right-color: #ffc107; }
+.info-row.border-danger { border-right-color: #dc3545; }
+.info-row.border-secondary { border-right-color: #6c757d; }
+
+.info-label {
+    font-weight: 600;
+    color: #2c3e50 !important;
+    font-size: 14px;
+    min-width: 140px;
+    text-align: right;
+    background-color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 3px;
+    border: 1px solid;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+}
+
+.info-label.border-primary { border-color: #007bff; }
+.info-label.border-success { border-color: #28a745; }
+.info-label.border-info { border-color: #17a2b8; }
+.info-label.border-warning { border-color: #ffc107; }
+.info-label.border-danger { border-color: #dc3545; }
+.info-label.border-secondary { border-color: #6c757d; }
+
+.info-value {
+    color: #212529 !important;
+    font-weight: 600;
+    text-align: left;
+    background-color: #ffffff;
+    padding: 0.5rem;
+    border-radius: 3px;
+    border: 1px solid #e9ecef;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    margin-left: 1rem;
+}
+
+/* ========================================
+   قانون 44: Badge ها و مقادیر
+   ======================================== */
+
+/* Badge های استاندارد */
+.badge {
+    font-weight: 600;
+    padding: 0.5rem 0.75rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.badge-primary { 
+    background-color: #007bff !important; 
+    color: #ffffff !important; 
+}
+
+.badge-success { 
+    background-color: #28a745 !important; 
+    color: #ffffff !important; 
+}
+
+.badge-warning { 
+    background-color: #ffc107 !important; 
+    color: #212529 !important; 
+}
+
+.badge-danger { 
+    background-color: #dc3545 !important; 
+    color: #ffffff !important; 
+}
+
+.badge-info { 
+    background-color: #17a2b8 !important; 
+    color: #ffffff !important; 
+}
+
+.badge-secondary { 
+    background-color: #6c757d !important; 
+    color: #ffffff !important; 
+}
+
+.badge-dark { 
+    background-color: #343a40 !important; 
+    color: #ffffff !important; 
+}
+
+/* ========================================
+   قانون 45: دسترس‌پذیری
+   ======================================== */
+
+/* فونت و اندازه‌ها */
+.info-label, 
+.info-value {
+    font-size: 14px;
+    min-height: 2rem;
+    display: flex;
+    align-items: center;
+}
+
+.details-card-header h4,
+.details-card-header h5 {
+    font-size: 1.1rem;
+}
+
+/* کنتراست مناسب */
+.details-card-header.bg-primary,
+.details-card-header.bg-success,
+.details-card-header.bg-info,
+.details-card-header.bg-warning,
+.details-card-header.bg-danger,
+.details-card-header.bg-secondary,
+.details-card-header.bg-dark {
+    color: #ffffff !important;
+}
+
+.details-card-header.bg-warning {
+    color: #212529 !important;
+}
+
+/* ========================================
+   قانون 46: بخش‌بندی منطقی
+   ======================================== */
+
+/* بخش‌های استاندارد */
+.info-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-weight: bold;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 0.5rem;
+}
+
+/* آیکون‌های بخش‌ها */
+.section-icon {
+    margin-left: 0.5rem;
+    font-size: 1.1rem;
+}
+
+/* ========================================
+   قانون 47: عملیات سریع
+   ======================================== */
+
+/* بخش عملیات */
+.quick-actions {
+    margin-top: 2rem;
+    text-align: center;
+}
+
+.quick-actions .btn {
+    margin: 0.25rem;
+    min-width: 120px;
+    font-weight: 600;
+}
+
+.quick-actions .btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+/* ========================================
+   قانون 48: CSS یکپارچه
+   ======================================== */
+
+/* استایل‌های مشترک */
+.details-container * {
+    box-sizing: border-box;
+}
+
+/* انیمیشن‌های ملایم */
+.details-card,
+.info-row,
+.btn {
+    transition: all 0.3s ease;
+}
+
+/* Hover effects */
+.details-card:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 768px) {
+    .details-container {
+        padding: 10px;
+    }
+    
+    .details-header {
+        padding: 1.5rem;
+    }
+    
+    .details-title {
+        font-size: 1.5rem;
+    }
+    
+    .info-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .info-label {
+        min-width: auto;
+        width: 100%;
+        justify-content: flex-start;
+        margin-bottom: 0.5rem;
+    }
+    
+    .info-value {
+        margin-left: 0;
+        width: 100%;
+    }
+    
+    .quick-actions .btn {
+        display: block;
+        width: 100%;
+        margin: 0.5rem 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .details-card-body {
+        padding: 1rem;
+    }
+    
+    .info-row {
+        padding: 0.5rem;
+    }
+    
+    .info-label,
+    .info-value {
+        font-size: 13px;
+    }
+}
+
+/* ========================================
+   Print Styles
+   ======================================== */
+
+@media print {
+    .details-container {
+        background-color: white;
+        box-shadow: none;
+    }
+    
+    .details-card {
+        border: 1px solid #000;
+        box-shadow: none;
+        break-inside: avoid;
+    }
+    
+    .quick-actions {
+        display: none;
+    }
+    
+    .info-row {
+        border-right: 2px solid #000;
+    }
+}
+
+/* ========================================
+   Dark Mode Support (Optional)
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    .details-container {
+        background-color: #1a1a1a;
+        color: #ffffff;
+    }
+    
+    .details-card-body {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+    
+    .info-row {
+        background-color: #3d3d3d;
+    }
+    
+    .info-label,
+    .info-value {
+        background-color: #2d2d2d;
+        color: #ffffff;
+    }
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-left { text-align: left; }
+
+.mb-0 { margin-bottom: 0; }
+.mb-1 { margin-bottom: 0.25rem; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-3 { margin-bottom: 1rem; }
+.mb-4 { margin-bottom: 1.5rem; }
+.mb-5 { margin-bottom: 3rem; }
+
+.mt-0 { margin-top: 0; }
+.mt-1 { margin-top: 0.25rem; }
+.mt-2 { margin-top: 0.5rem; }
+.mt-3 { margin-top: 1rem; }
+.mt-4 { margin-top: 1.5rem; }
+.mt-5 { margin-top: 3rem; }
+
+.p-0 { padding: 0; }
+.p-1 { padding: 0.25rem; }
+.p-2 { padding: 0.5rem; }
+.p-3 { padding: 1rem; }
+.p-4 { padding: 1.5rem; }
+.p-5 { padding: 3rem; }
+
+/* ========================================
+   End of Details Standards CSS
+   ======================================== */

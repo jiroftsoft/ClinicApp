@@ -12,12 +12,12 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-user-md"></i>
+                        <i class="fa fa-user"></i>
                         مدیریت صلاحیت‌های خدماتی پزشکان
                     </h3>
                     <div class="card-tools">
                         <button type="button" class="btn btn-primary" id="openAddModalBtn">
-                            <i class="fas fa-plus"></i>
+                            <i class="fa fa-plus"></i>
                             اضافه کردن صلاحیت جدید
                         </button>
                     </div>
@@ -27,7 +27,7 @@
                     {
                         <div class="alert alert-success alert-dismissible fade show" role="alert">
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
-                            <i class="fas fa-check"></i>
+                            <i class="fa fa-check"></i>
                             @TempData["Success"]
                         </div>
                     }
@@ -36,7 +36,7 @@
                     {
                         <div class="alert alert-danger alert-dismissible fade show" role="alert">
                             <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
-                            <i class="fas fa-exclamation-triangle"></i>
+                            <i class="fa fa-warning"></i>
                             @TempData["Error"]
                         </div>
                     }
@@ -72,10 +72,16 @@
                         <div class="col-md-3">
                             <div class="form-group">
                                 <label>&nbsp;</label>
-                                <button type="button" id="searchBtn" class="btn btn-info btn-block">
-                                    <i class="fas fa-search"></i>
-                                    جستجو
-                                </button>
+                                <div class="btn-group btn-block" role="group">
+                                    <button type="button" id="searchBtn" class="btn btn-primary">
+                                        <i class="fa fa-search"></i>
+                                        جستجو
+                                    </button>
+                                    <button type="button" id="clearFiltersBtn" class="btn btn-outline-secondary">
+                                        <i class="fa fa-times"></i>
+                                        حذف فیلتر
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -119,14 +125,14 @@
                                             <td>@(item.GrantedDate?.ToString("yyyy/MM/dd") ?? "-")</td>
                                             <td>
                                                 <div class="btn-group">
-                                                    <button type="button" class="btn btn-sm btn-info" onclick="viewServiceCategory('@item.AssignmentId')" title="مشاهده">
-                                                        <i class="fas fa-eye"></i>
+                                                    <button type="button" class="btn btn-sm btn-primary" onclick="viewServiceCategory('@item.AssignmentId')" title="مشاهده">
+                                                        <i class="fa fa-eye"></i>
                                                     </button>
                                                     <button type="button" class="btn btn-sm btn-warning" onclick="editServiceCategory('@item.AssignmentId')" title="ویرایش">
-                                                        <i class="fas fa-edit"></i>
+                                                        <i class="fa fa-edit"></i>
                                                     </button>
                                                     <button type="button" class="btn btn-sm btn-danger" onclick="removeServiceCategory(@item.DoctorId, @item.ServiceCategoryId)" title="حذف">
-                                                        <i class="fas fa-trash"></i>
+                                                        <i class="fa fa-trash"></i>
                                                     </button>
                                                 </div>
                                             </td>
@@ -137,7 +143,7 @@
                                 {
                                     <tr>
                                         <td colspan="8" class="text-center text-muted">
-                                            <i class="fas fa-info-circle"></i>
+                                            <i class="fa fa-info-circle"></i>
                                             هیچ صلاحیت خدماتی یافت نشد.
                                         </td>
                                     </tr>
@@ -192,10 +198,34 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="serviceCategoryId">سرفصل خدماتی *</label>
-                                <select id="serviceCategoryId" name="ServiceCategoryId" class="form-control" required>
-                                    <option value="">انتخاب سرفصل</option>
+                                <label for="departmentId">دپارتمان *</label>
+                                <select id="departmentId" name="DepartmentId" class="form-control" required>
+                                    <option value="">ابتدا پزشک را انتخاب کنید</option>
                                 </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="serviceCategoryId">سرفصل خدماتی *</label>
+                                <select id="serviceCategoryId" name="ServiceCategoryId" class="form-control" multiple size="5" required>
+                                    <option value="">ابتدا دپارتمان را انتخاب کنید</option>
+                                </select>
+                                <div class="mt-2">
+                                    <button type="button" id="selectAllCategories" class="btn btn-sm btn-outline-primary">
+                                        <i class="fa fa-check-square"></i>
+                                        انتخاب همه
+                                    </button>
+                                    <button type="button" id="deselectAllCategories" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fa fa-square"></i>
+                                        لغو انتخاب همه
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">
+                                    <i class="fa fa-info-circle"></i>
+                                    برای انتخاب چندگانه: Ctrl+Click (Windows) یا Cmd+Click (Mac)
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -527,9 +557,16 @@
 
         function addServiceCategory() {
             var selectedDoctor = $('#doctorId').val();
-            var selectedCategory = $('#serviceCategoryId').val();
-            if (!selectedDoctor || !selectedCategory) {
-                alert('لطفاً پزشک و سرفصل خدماتی را انتخاب کنید.');
+            var selectedDepartment = $('#departmentId').val();
+            var selectedCategories = $('#serviceCategoryId').val();
+            
+            if (!selectedDoctor || !selectedDepartment) {
+                alert('لطفاً پزشک و دپارتمان را انتخاب کنید.');
+                return;
+            }
+            
+            if (!selectedCategories || selectedCategories.length === 0) {
+                alert('لطفاً حداقل یک سرفصل خدماتی را انتخاب کنید.');
                 return;
             }
 
@@ -542,12 +579,27 @@
                 return;
             }
             
-            var formData = $('#addServiceCategoryForm').serialize();
-            console.log('Form data before adding token:', formData);
-            console.log('Submitting addServiceCategory with token');
+            // آماده‌سازی داده‌ها برای ارسال چندین سرفصل
+            var formData = {
+                DoctorId: selectedDoctor,
+                DepartmentId: selectedDepartment,
+                ServiceCategoryIds: selectedCategories,
+                AuthorizationLevel: $('#authorizationLevel').val(),
+                CertificateNumber: $('#certificateNumber').val(),
+                GrantedDate: $('#grantedDate').val(),
+                GrantedDateGregorian: $('#grantedDateGregorian').val(),
+                ExpiryDate: $('#expiryDate').val(),
+                ExpiryDateGregorian: $('#expiryDateGregorian').val(),
+                IsActive: $('#isActive').is(':checked'),
+                Notes: $('#notes').val(),
+                __RequestVerificationToken: token
+            };
+            
+            console.log('Form data for multiple categories:', formData);
+            console.log('Submitting addServiceCategory with multiple categories');
             
             $.ajax({
-                url: '@Url.Action("AddServiceCategory")',
+                url: '@Url.Action("AddMultipleServiceCategories")',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
@@ -673,6 +725,134 @@
             }
         }
 
+        // Event Handler برای انتخاب پزشک
+        $(document).on('change', '#doctorId', function() {
+            var doctorId = $(this).val();
+            if (doctorId) {
+                loadDoctorDepartments(doctorId);
+            } else {
+                // بازنشانی فیلدهای وابسته
+                $('#departmentId').html('<option value="">ابتدا پزشک را انتخاب کنید</option>');
+                $('#serviceCategoryId').html('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+            }
+        });
+
+        // Event Handler برای انتخاب دپارتمان
+        $(document).on('change', '#departmentId', function() {
+            var departmentId = $(this).val();
+            if (departmentId) {
+                loadServiceCategoriesByDepartment(departmentId);
+            } else {
+                // بازنشانی فیلد سرفصل
+                $('#serviceCategoryId').html('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+            }
+        });
+
+        function loadDoctorDepartments(doctorId) {
+            $.ajax({
+                url: '@Url.Action("GetDoctorDepartments")',
+                type: 'GET',
+                data: { doctorId: doctorId },
+                dataType: 'json'
+            })
+            .done(function (data) {
+                var parsed = parseIfString(data);
+                if (parsed && parsed.success && Array.isArray(parsed.data)) {
+                    var options = '<option value="">انتخاب دپارتمان</option>';
+                    parsed.data.forEach(function (department) {
+                        options += '<option value="' + department.Id + '">' + department.Name + '</option>';
+                    });
+                    $('#departmentId').html(options);
+                } else {
+                    console.warn('No departments returned or response malformed.', data);
+                    $('#departmentId').html('<option value="">هیچ دپارتمانی یافت نشد</option>');
+                }
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to load doctor departments:', status, error);
+                $('#departmentId').html('<option value="">خطا در بارگذاری دپارتمان‌ها</option>');
+            });
+        }
+
+        function loadServiceCategoriesByDepartment(departmentId) {
+            $.ajax({
+                url: '@Url.Action("GetServiceCategoriesByDepartment")',
+                type: 'GET',
+                data: { departmentId: departmentId },
+                dataType: 'json'
+            })
+            .done(function (data) {
+                var parsed = parseIfString(data);
+                if (parsed && parsed.success && Array.isArray(parsed.data)) {
+                    var options = '';
+                    parsed.data.forEach(function (category) {
+                        options += '<option value="' + category.Id + '">' + category.Name + '</option>';
+                    });
+                    $('#serviceCategoryId').html(options);
+                } else {
+                    console.warn('No service categories returned or response malformed.', data);
+                    $('#serviceCategoryId').html('<option value="">هیچ سرفصلی یافت نشد</option>');
+                }
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to load service categories by department:', status, error);
+                $('#serviceCategoryId').html('<option value="">خطا در بارگذاری سرفصل‌ها</option>');
+            });
+        }
+
+        // Event Handler برای انتخاب همه سرفصل‌ها
+        $(document).on('click', '#selectAllCategories', function() {
+            $('#serviceCategoryId option').prop('selected', true);
+        });
+
+        // Event Handler برای لغو انتخاب همه سرفصل‌ها
+        $(document).on('click', '#deselectAllCategories', function() {
+            $('#serviceCategoryId option').prop('selected', false);
+        });
+
+        // Event Handler برای حذف فیلترها
+        $(document).on('click', '#clearFiltersBtn', function() {
+            // پاک کردن تمام فیلترها
+            $('#doctorFilter').val('');
+            $('#serviceCategoryFilter').val('');
+            $('#statusFilter').val('');
+            
+            // بارگذاری مجدد صفحه بدون فیلتر
+            var url = '@Url.Action("Index")';
+            window.location.href = url;
+        });
+
+        // Event Handler برای دکمه جستجو
+        $(document).on('click', '#searchBtn', function() {
+            performSearch();
+        });
+
+        // Event Handler برای Enter در فیلترها
+        $(document).on('keypress', '#doctorFilter, #serviceCategoryFilter, #statusFilter', function(e) {
+            if (e.which === 13) { // Enter key
+                performSearch();
+            }
+        });
+
+        function performSearch() {
+            var url = '@Url.Action("Index")';
+            var filters = {
+                doctorId: $('#doctorFilter').val(),
+                serviceCategoryId: $('#serviceCategoryFilter').val(),
+                isActive: $('#statusFilter').val()
+            };
+            
+            var hasFilters = false;
+            $.each(filters, function (key, value) {
+                if (value && value !== '') {
+                    url += (hasFilters ? '&' : '?') + key + '=' + encodeURIComponent(value);
+                    hasFilters = true;
+                }
+            });
+            
+            window.location.href = url;
+        }
+
         function loadPage(page) {
             var url = '@Url.Action("Index")?page=' + page;
             var filters = {
@@ -682,7 +862,7 @@
             };
             $.each(filters, function (key, value) {
                 if (value) {
-                    url += '&' + key + '=' + value;
+                    url += '&' + key + '=' + encodeURIComponent(value);
                 }
             });
             window.location.href = url;

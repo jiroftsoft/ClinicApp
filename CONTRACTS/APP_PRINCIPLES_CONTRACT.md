@@ -792,6 +792,26 @@ This contract is now part of the project's knowledge base and must be referenced
 **Contract Status**: Active and Mandatory
 **Scope**: All ClinicApp Development
 
+---
+
+## Integration with AI Compliance Contract
+
+This contract works in conjunction with `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` which defines mandatory rules for AI interactions with the ClinicApp project. All development work must comply with both contracts.
+
+**Key Integration Points**:
+- All changes must follow Atomic Changes Rule (AI_COMPLIANCE_CONTRACT Section 1)
+- Pre-creation verification required (AI_COMPLIANCE_CONTRACT Section 2)
+- No duplication allowed (AI_COMPLIANCE_CONTRACT Section 3)
+- Mandatory documentation for all changes (AI_COMPLIANCE_CONTRACT Section 4)
+- Stop and approval process required (AI_COMPLIANCE_CONTRACT Section 5)
+- Security and quality standards enforced (AI_COMPLIANCE_CONTRACT Section 6)
+- Transparent output format required (AI_COMPLIANCE_CONTRACT Section 7)
+- No auto-execution allowed (AI_COMPLIANCE_CONTRACT Section 8)
+- Project scope compliance (AI_COMPLIANCE_CONTRACT Section 9)
+- Mandatory compliance with all rules (AI_COMPLIANCE_CONTRACT Section 10)
+
+**Reference**: See `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` for complete AI interaction guidelines.
+
 ### 7. Medical Environment Logging Standards (CRITICAL for Medical Data Integrity)
 **Principle**: Implement comprehensive logging for medical environments using Serilog and Seq to ensure 100% traceability and error resistance.
 

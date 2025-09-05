@@ -1,3 +1,4 @@
+@using ClinicApp.Extensions
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorServiceCategoryViewModel
 @{
     ViewBag.Title = "جزئیات صلاحیت خدماتی پزشک";
@@ -12,101 +13,299 @@
             <div class="card">
                 <div class="card-header">
                     <h3 class="card-title">
-                        <i class="fas fa-eye"></i>
+                        <i class="fa fa-eye"></i>
                         جزئیات صلاحیت خدماتی پزشک
                     </h3>
                     <div class="card-tools">
                         <a href="@Url.Action("Index")" class="btn btn-secondary">
-                            <i class="fas fa-arrow-right"></i>
+                            <i class="fa fa-arrow-right"></i>
                             بازگشت
                         </a>
                         <a href="@Url.Action("Edit", new { assignmentId = Model.AssignmentId })" class="btn btn-warning">
-                            <i class="fas fa-edit"></i>
+                            <i class="fa fa-edit"></i>
                             ویرایش
                         </a>
                     </div>
                 </div>
-                <div class="card-body">
+                <div class="card-body" style="background-color: #fafafa;">
                     @if (TempData["Error"] != null)
                     {
-                        <div class="alert alert-danger alert-dismissible">
+                        <div class="alert alert-danger alert-dismissible" style="border-right: 4px solid #dc3545;">
                             <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <i class="fas fa-exclamation-triangle"></i>
-                            @TempData["Error"]
+                            <i class="fa fa-exclamation-triangle"></i>
+                            <strong>خطا:</strong> @TempData["Error"]
                         </div>
                     }
 
-                    <div class="row">
-                        <div class="col-md-6">
-                            <h5 class="text-primary mb-3">اطلاعات پزشک</h5>
-                            <div class="info-group">
-                                <label class="info-label">نام پزشک:</label>
-                                <span class="info-value">@(Model?.DoctorName ?? "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <label class="info-label">کد پزشک:</label>
-                                <span class="info-value">@(Model?.DoctorId ?? 0)</span>
-                            </div>
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success alert-dismissible" style="border-right: 4px solid #28a745;">
+                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                            <i class="fa fa-check-circle"></i>
+                            <strong>موفق:</strong> @TempData["Success"]
                         </div>
-                        <div class="col-md-6">
-                            <h5 class="text-primary mb-3">اطلاعات دسته‌بندی خدماتی</h5>
-                            <div class="info-group">
-                                <label class="info-label">عنوان دسته‌بندی:</label>
-                                <span class="info-value">@(Model?.ServiceCategoryTitle ?? "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <label class="info-label">کد دسته‌بندی:</label>
-                                <span class="info-value">@(Model?.ServiceCategoryId ?? 0)</span>
+                    }
+
+                    <!-- بخش اصلی اطلاعات -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-primary" style="border-width: 2px;">
+                                <div class="card-header bg-primary text-white">
+                                    <h4 class="card-title mb-0">
+                                        <i class="fa fa-user-md"></i>
+                                        اطلاعات صلاحیت خدماتی پزشک
+                                    </h4>
+                                </div>
+                                <div class="card-body" style="background-color: white;">
+                                    <div class="row">
+                                        <!-- ستون اول: اطلاعات پزشک -->
+                                        <div class="col-md-6">
+                                            <div class="info-section">
+                                                <h5 class="section-title" style="color: #2c3e50 !important; font-weight: 600;">
+                                                    <i class="fa fa-user text-primary" style="color: #007bff !important;"></i>
+                                                    اطلاعات پزشک
+                                                </h5>
+                                                <div class="info-table">
+                                                    <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff;">
+                                                        <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #007bff;">نام کامل پزشک:</label>
+                                                        <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">@(Model?.DoctorName ?? "نامشخص")</span>
+                                                    </div>
+                                                    <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff;">
+                                                        <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #007bff;">کد پزشک:</label>
+                                                        <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                            <span class="badge badge-secondary" style="background-color: #6c757d !important; color: #ffffff !important; font-weight: 600;">@(Model?.DoctorId ?? 0)</span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff;">
+                                                        <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #007bff;">شناسه انتساب:</label>
+                                                        <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                            <span class="badge badge-info" style="background-color: #17a2b8 !important; color: #ffffff !important; font-weight: 600;">@(Model?.AssignmentId ?? "نامشخص")</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- ستون دوم: اطلاعات دسته‌بندی -->
+                                        <div class="col-md-6">
+                                            <div class="info-section">
+                                                <h5 class="section-title" style="color: #2c3e50 !important; font-weight: 600;">
+                                                    <i class="fa fa-tags text-primary" style="color: #007bff !important;"></i>
+                                                    اطلاعات دسته‌بندی خدماتی
+                                                </h5>
+                                                <div class="info-table">
+                                                    <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff;">
+                                                        <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #007bff;">عنوان دسته‌بندی:</label>
+                                                        <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">@(Model?.ServiceCategoryTitle ?? Model?.ServiceCategoryName ?? "نامشخص")</span>
+                                                    </div>
+                                                    <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff;">
+                                                        <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #007bff;">کد دسته‌بندی:</label>
+                                                        <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                            <span class="badge badge-secondary" style="background-color: #6c757d !important; color: #ffffff !important; font-weight: 600;">@(Model?.ServiceCategoryId ?? 0)</span>
+                                                        </span>
+                                                    </div>
+                                                    <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff;">
+                                                        <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #007bff;">دپارتمان:</label>
+                                                        <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">@(Model?.DepartmentName ?? "نامشخص")</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
-                    <hr class="my-4">
-
-                    <div class="row">
+                    <!-- بخش وضعیت و زمان‌بندی -->
+                    <div class="row mb-4">
                         <div class="col-md-6">
-                            <h5 class="text-primary mb-3">جزئیات صلاحیت</h5>
-                            <div class="info-group">
-                                <label class="info-label">سطح صلاحیت:</label>
-                                <span class="info-value">@(Model?.AuthorizationLevel ?? "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <label class="info-label">شماره گواهی:</label>
-                                <span class="info-value">@(Model?.CertificateNumber ?? "-")</span>
-                            </div>
-                            <div class="info-group">
-                                <label class="info-label">وضعیت:</label>
-                                <span class="badge @(Model?.IsActive == true ? "badge-success" : "badge-danger")">
-                                    @(Model?.IsActive == true ? "فعال" : "غیرفعال")
-                                </span>
+                            <div class="card border-success" style="border-width: 2px;">
+                                <div class="card-header bg-success text-white" style="background-color: #28a745 !important;">
+                                    <h5 class="card-title mb-0" style="color: #ffffff !important; font-weight: 600;">
+                                        <i class="fa fa-check-circle" style="color: #ffffff !important;"></i>
+                                        وضعیت صلاحیت
+                                    </h5>
+                                </div>
+                                <div class="card-body" style="background-color: #ffffff;">
+                                    <div class="info-table">
+                                        <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #28a745;">
+                                            <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #28a745;">وضعیت فعلی:</label>
+                                            <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                <span class="badge @(Model?.IsActive == true ? "badge-success" : "badge-danger") badge-lg" style="font-weight: 600;">
+                                                    @(Model?.IsActive == true ? "فعال" : "غیرفعال")
+                                                </span>
+                                            </span>
+                                        </div>
+                                        <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #28a745;">
+                                            <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #28a745;">تاریخ آخرین بررسی:</label>
+                                            <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                @if (Model?.UpdatedAt != null)
+                                                {
+                                                    <span class="badge badge-info" style="background-color: #17a2b8 !important; color: #ffffff !important; font-weight: 600;">@Model.UpdatedAt.Value.ToPersianDate()</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted" style="color: #6c757d !important; background-color: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 3px;">بررسی نشده</span>
+                                                }
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-md-6">
-                            <h5 class="text-primary mb-3">اطلاعات زمانی</h5>
-                            <div class="info-group">
-                                <label class="info-label">تاریخ اعطا:</label>
-                                <span class="info-value">@(Model?.GrantedDate?.ToString("yyyy/MM/dd") ?? "-")</span>
+                            <div class="card border-info" style="border-width: 2px;">
+                                <div class="card-header bg-info text-white" style="background-color: #17a2b8 !important;">
+                                    <h5 class="card-title mb-0" style="color: #ffffff !important; font-weight: 600;">
+                                        <i class="fa fa-calendar" style="color: #ffffff !important;"></i>
+                                        اطلاعات زمان‌بندی
+                                    </h5>
+                                </div>
+                                <div class="card-body" style="background-color: #ffffff;">
+                                    <div class="info-table">
+                                        <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #17a2b8;">
+                                            <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #17a2b8;">تاریخ اعطا:</label>
+                                            <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                @if (Model?.GrantedDate != null)
+                                                {
+                                                    <span class="badge badge-primary" style="background-color: #007bff !important; color: #ffffff !important; font-weight: 600;">@Model.GrantedDate.Value.ToPersianDate()</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted" style="color: #6c757d !important; background-color: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 3px;">تعیین نشده</span>
+                                                }
+                                            </span>
+                                        </div>
+                                        <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #17a2b8;">
+                                            <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #17a2b8;">تاریخ انقضا:</label>
+                                            <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                @if (Model?.ExpiryDate != null)
+                                                {
+                                                    <span class="badge badge-warning" style="background-color: #ffc107 !important; color: #212529 !important; font-weight: 600;">@Model.ExpiryDate.Value.ToPersianDate()</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted" style="color: #6c757d !important; background-color: #f8f9fa; padding: 0.25rem 0.5rem; border-radius: 3px;">نامحدود</span>
+                                                }
+                                            </span>
+                                        </div>
+                                        <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #17a2b8;">
+                                            <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #17a2b8;">تاریخ ایجاد:</label>
+                                            <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef;">
+                                                <span class="badge badge-secondary" style="background-color: #6c757d !important; color: #ffffff !important; font-weight: 600;">@(Model?.CreatedAt.ToPersianDate() ?? "نامشخص")</span>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="info-group">
-                                <label class="info-label">تاریخ انقضا:</label>
-                                <span class="info-value">@(Model?.ExpiryDate?.ToString("yyyy/MM/dd") ?? "-")</span>
+                        </div>
+                    </div>
+
+                    <!-- بخش تاریخچه و حسابرسی -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card border-warning">
+                                <div class="card-header bg-warning text-dark">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fa fa-history"></i>
+                                        تاریخچه و حسابرسی (Audit Trail)
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="info-table">
+                                                <div class="info-row">
+                                                    <label class="info-label">ایجاد شده توسط:</label>
+                                                    <span class="info-value">
+                                                        <i class="fa fa-user text-primary"></i>
+                                                        @(Model?.CreatedBy ?? "نامشخص")
+                                                    </span>
+                                                </div>
+                                                <div class="info-row">
+                                                    <label class="info-label">تاریخ ایجاد:</label>
+                                                    <span class="info-value">
+                                                        <i class="fa fa-calendar text-info"></i>
+                                                        @(Model?.CreatedAt.ToPersianDate() ?? "نامشخص")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="info-table">
+                                                <div class="info-row">
+                                                    <label class="info-label">آخرین ویرایش توسط:</label>
+                                                    <span class="info-value">
+                                                        <i class="fa fa-user text-success"></i>
+                                                        @(Model?.UpdatedBy ?? "ویرایش نشده")
+                                                    </span>
+                                                </div>
+                                                <div class="info-row">
+                                                    <label class="info-label">تاریخ آخرین ویرایش:</label>
+                                                    <span class="info-value">
+                                                        <i class="fa fa-calendar text-warning"></i>
+                                                        @(Model?.UpdatedAt?.ToPersianDate() ?? "ویرایش نشده")
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="info-group">
-                                <label class="info-label">تاریخ ایجاد:</label>
-                                <span class="info-value">@(Model?.CreatedAt.ToString("yyyy/MM/dd") ?? "-")</span>
+                        </div>
+                    </div>
+
+                    <!-- بخش عملیات سریع -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card border-dark">
+                                <div class="card-header bg-dark text-white">
+                                    <h5 class="card-title mb-0">
+                                        <i class="fa fa-cogs"></i>
+                                        عملیات سریع
+                                    </h5>
+                                </div>
+                                <div class="card-body text-center">
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Edit", new { assignmentId = Model.AssignmentId })" 
+                                           class="btn btn-warning btn-lg">
+                                            <i class="fa fa-edit"></i>
+                                            ویرایش صلاحیت
+                                        </a>
+                                        <a href="@Url.Action("ServiceCategoryPermissions", new { doctorId = Model.DoctorId })" 
+                                           class="btn btn-info btn-lg" title="مدیریت تمام صلاحیت‌های این پزشک">
+                                            <i class="fa fa-user-cog"></i>
+                                            مدیریت صلاحیت‌ها
+                                        </a>
+                                        <a href="@Url.Action("Index")" 
+                                           class="btn btn-secondary btn-lg">
+                                            <i class="fa fa-list"></i>
+                                            بازگشت به لیست
+                                        </a>
+                                        <!-- Note: ActivatePermission and DeactivatePermission actions removed from controller -->
+                                        <!-- These buttons are no longer needed as the actions don't exist -->
+                                        <!-- Use Edit action to modify permissions instead -->
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
 
                     @if (!string.IsNullOrEmpty(Model?.Notes))
                     {
-                        <hr class="my-4">
-                        <div class="row">
+                        <div class="row mt-4">
                             <div class="col-12">
-                                <h5 class="text-primary mb-3">توضیحات</h5>
-                                <div class="info-group">
-                                    <label class="info-label">توضیحات:</label>
-                                    <span class="info-value">@Model.Notes</span>
+                                <div class="card border-secondary">
+                                    <div class="card-header bg-secondary text-white">
+                                        <h5 class="card-title mb-0">
+                                            <i class="fa fa-sticky-note"></i>
+                                            توضیحات و یادداشت‌ها
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">@Model.Notes</p>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -118,22 +317,215 @@
 </div>
 
 <style>
-    .info-group {
+    /* استانداردهای فرم‌های رسمی محیط درمانی */
+    .info-section {
+        margin-bottom: 1.5rem;
+    }
+    
+    .section-title {
+        font-weight: bold;
+        color: #2c3e50;
         margin-bottom: 1rem;
-        padding: 0.5rem 0;
-        border-bottom: 1px solid #eee;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .info-table {
+        background-color: #ffffff;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        border-right: 4px solid #007bff;
     }
     
     .info-label {
-        font-weight: bold;
-        color: #666;
-        display: inline-block;
-        width: 120px;
-        margin-left: 1rem;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 14px;
+        min-width: 140px;
+        text-align: right;
+        background-color: #ffffff;
+        padding: 0.5rem;
+        border-radius: 3px;
+        border: 1px solid #e9ecef;
     }
     
     .info-value {
-        color: #333;
+        color: #212529;
+        font-weight: 600;
+        text-align: left;
+        background-color: #ffffff;
+        padding: 0.5rem;
+        border-radius: 3px;
+        border: 1px solid #e9ecef;
+        min-height: 2rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .badge-lg {
+        font-size: 1rem;
+        padding: 0.5rem 1rem;
+    }
+    
+    /* بهبود رنگ‌بندی Badge ها برای خوانایی بهتر */
+    .badge-primary {
+        background-color: #007bff !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #0056b3;
+    }
+    
+    .badge-warning {
+        background-color: #ffc107 !important;
+        color: #212529 !important;
+        font-weight: 600;
+        border: 1px solid #e0a800;
+    }
+    
+    .badge-secondary {
+        background-color: #6c757d !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #545b62;
+    }
+    
+    .badge-success {
+        background-color: #28a745 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #1e7e34;
+    }
+    
+    .badge-danger {
+        background-color: #dc3545 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #bd2130;
+    }
+    
+    .badge-info {
+        background-color: #17a2b8 !important;
+        color: #ffffff !important;
+        font-weight: 600;
+        border: 1px solid #117a8b;
+    }
+    
+    /* بهبود متن‌های muted */
+    .text-muted {
+        color: #6c757d !important;
         font-weight: 500;
+        background-color: #f8f9fa;
+        padding: 0.25rem 0.5rem;
+        border-radius: 3px;
+        border: 1px solid #e9ecef;
+    }
+    
+    .card {
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-radius: 8px;
+    }
+    
+    .card-header {
+        border-radius: 8px 8px 0 0;
+    }
+    
+    /* انیمیشن ساده برای بهبود تجربه کاربری */
+    .info-row:hover {
+        background-color: #e9ecef;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-group .btn {
+        margin: 0 5px;
+    }
+    
+    /* رعایت دسترس‌پذیری */
+    @@media (max-width: 768px) {
+        .info-row {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        
+        .info-label {
+            min-width: auto;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn-group {
+            flex-direction: column;
+        }
+        
+        .btn-group .btn {
+            margin: 5px 0;
+        }
     }
 </style>
+
+<script>
+    // عملیات سریع با AJAX - طبق قانون 35 قرارداد (AJAX Actions)
+    // Note: ActivatePermission and DeactivatePermission functions removed
+    // These functions are no longer needed as the corresponding controller actions don't exist
+    // Use Edit action to modify permissions instead
+    
+    function showAlert(type, message) {
+        // اطمینان از بارگذاری jQuery قبل از استفاده
+        ensureJQueryLoaded(function() {
+            var alertHtml = '<div class="alert alert-' + type + ' alert-dismissible" style="position: fixed; top: 20px; right: 20px; z-index: 9999;">' +
+                           '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
+                           '<strong>' + (type === 'success' ? 'موفق:' : 'خطا:') + '</strong> ' + message +
+                           '</div>';
+            $('body').append(alertHtml);
+            
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 3000);
+        });
+    }
+    
+    // بهینه‌سازی عملکرد - تنظیم Cache برای محیط درمانی
+    // تابع اطمینان از بارگذاری jQuery
+    function ensureJQueryLoaded(callback) {
+        if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function() {
+                ensureJQueryLoaded(callback);
+            }, 100);
+        }
+    }
+    
+    // اجرای کد پس از اطمینان از بارگذاری jQuery
+    ensureJQueryLoaded(function() {
+        $(document).ready(function() {
+            // غیرفعال کردن Cache برای داده‌های پزشکی - طبق قانون 37 قرارداد
+            $.ajaxSetup({
+                cache: false,
+                headers: {
+                    'Cache-Control': 'no-cache, no-store, must-revalidate',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
+                }
+            });
+            
+            // بهبود دسترس‌پذیری - طبق استانداردهای WCAG
+            if (typeof $.fn.tooltip !== 'undefined') {
+                $('[data-toggle="tooltip"]').tooltip();
+            }
+            
+            // Focus management برای کیبورد - طبق قانون دسترس‌پذیری
+            $('.btn-group .btn').on('focus', function() {
+                $(this).addClass('btn-outline-primary');
+            }).on('blur', function() {
+                $(this).removeClass('btn-outline-primary');
+            });
+        });
+    });
+</script>

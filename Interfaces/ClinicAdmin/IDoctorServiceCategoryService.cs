@@ -59,5 +59,36 @@ public interface IDoctorServiceCategoryService
     /// <returns>لیستی از تمام دسته‌بندی‌های خدمات فعال.</returns>
     Task<ServiceResult<List<LookupItemViewModel>>> GetAllServiceCategoriesAsync();
 
+    /// <summary>
+    /// دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی (برای فیلتر "همه پزشکان")
+    /// </summary>
+    /// <param name="searchTerm">عبارت جستجو</param>
+    /// <param name="doctorId">شناسه پزشک (اختیاری)</param>
+    /// <param name="serviceCategoryId">شناسه سرفصل خدماتی (اختیاری)</param>
+    /// <param name="isActive">وضعیت فعال (اختیاری)</param>
+    /// <param name="pageNumber">شماره صفحه</param>
+    /// <param name="pageSize">تعداد آیتم‌ها در هر صفحه</param>
+    /// <returns>نتیجه صفحه‌بندی شده از همه انتصابات پزشکان به سرفصل‌های خدماتی</returns>
+    Task<ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>> GetAllDoctorServiceCategoriesAsync(string searchTerm, int? doctorId, int? serviceCategoryId, bool? isActive, int pageNumber, int pageSize);
+
     #endregion
+
+    #region Department Management (مدیریت دپارتمان‌ها)
+
+    /// <summary>
+    /// دریافت دپارتمان‌های مرتبط با پزشک
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <returns>لیست دپارتمان‌های مرتبط با پزشک</returns>
+    Task<ServiceResult<List<LookupItemViewModel>>> GetDoctorDepartmentsAsync(int doctorId);
+
+    /// <summary>
+    /// دریافت سرفصل‌های خدماتی مرتبط با دپارتمان
+    /// </summary>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <returns>لیست سرفصل‌های خدماتی مرتبط با دپارتمان</returns>
+    Task<ServiceResult<List<LookupItemViewModel>>> GetServiceCategoriesByDepartmentAsync(int departmentId);
+
+    #endregion
+
 }

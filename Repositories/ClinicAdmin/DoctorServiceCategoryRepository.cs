@@ -48,6 +48,9 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 return await _context.DoctorServiceCategories
                     .Where(dsc => dsc.DoctorId == doctorId && dsc.ServiceCategoryId == serviceCategoryId)
+                    .Include(dsc => dsc.Doctor)
+                    .Include(dsc => dsc.ServiceCategory)
+                    .AsNoTracking()
                     .FirstOrDefaultAsync();
             }
             catch (Exception ex)
@@ -74,10 +77,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
             }
             catch (Exception ex)
             {
-                // لاگ خطا برای سیستم‌های پزشکی
-                throw new InvalidOperationException($"خطا در دریافت جزئیات انتصاب پزشک {doctorId} به سرفصل خدماتی {serviceCategoryId}", ex);
+                _logger.Error(ex, "خطا در دریافت انتصاب پزشک به سرفصل خدماتی. DoctorId: {DoctorId}, ServiceCategoryId: {ServiceCategoryId}", doctorId, serviceCategoryId);
+                return null;
             }
         }
+
+
 
         /// <summary>
         /// دریافت لیست انتصابات پزشک به سرفصل‌های خدماتی
@@ -87,7 +92,8 @@ namespace ClinicApp.Repositories.ClinicAdmin
             try
             {
                 var query = _context.DoctorServiceCategories
-                    .Where(dsc => dsc.DoctorId == doctorId)
+                    .Where(dsc => dsc.DoctorId == doctorId && !dsc.IsDeleted)
+                    .Include(dsc => dsc.Doctor)
                     .Include(dsc => dsc.ServiceCategory.Department)
                     .Include(dsc => dsc.CreatedByUser)
                     .AsNoTracking();
@@ -259,8 +265,9 @@ namespace ClinicApp.Repositories.ClinicAdmin
 
                 // حذف نرم
                 existingAssignment.IsDeleted = true;
+                existingAssignment.IsActive = false; // غیرفعال کردن صلاحیت
                 existingAssignment.DeletedAt = DateTime.Now;
-                existingAssignment.DeletedByUserId = doctorServiceCategory.DeletedByUserId ?? _currentUserService.GetCurrentUserId();
+                existingAssignment.DeletedByUserId = _currentUserService.GetCurrentUserId();
 
                 await _context.SaveChangesAsync();
 
@@ -317,10 +324,12 @@ namespace ClinicApp.Repositories.ClinicAdmin
             try
             {
                 return await _context.DoctorServiceCategories
+                    .Include(dsc => dsc.ServiceCategory)
                     .Join(_context.Services,
                           dsc => dsc.ServiceCategoryId,
                           s => s.ServiceCategoryId,
                           (dsc, s) => new { dsc, s })
+                    .AsNoTracking()
                     .AnyAsync(x => x.dsc.DoctorId == doctorId && 
                                   x.s.ServiceId == serviceId && 
                                   x.dsc.IsActive && 
@@ -440,6 +449,159 @@ namespace ClinicApp.Repositories.ClinicAdmin
             {
                 // لاگ خطا برای سیستم‌های پزشکی
                 throw new InvalidOperationException("خطا در ذخیره تغییرات", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی (برای فیلتر "همه پزشکان")
+        /// </summary>
+        public async Task<List<DoctorServiceCategory>> GetAllDoctorServiceCategoriesAsync(string searchTerm, int? doctorId, int? serviceCategoryId, bool? isActive, int pageNumber, int pageSize)
+        {
+            try
+            {
+                IQueryable<DoctorServiceCategory> query = _context.DoctorServiceCategories
+                    .Include(dsc => dsc.Doctor)
+                    .Include(dsc => dsc.ServiceCategory.Department)
+                    .Include(dsc => dsc.CreatedByUser)
+                    .AsNoTracking();
+
+                // فیلتر بر اساس پزشک (اختیاری)
+                if (doctorId.HasValue && doctorId.Value > 0)
+                {
+                    query = query.Where(dsc => dsc.DoctorId == doctorId.Value);
+                }
+
+                // فیلتر بر اساس سرفصل خدماتی (اختیاری)
+                if (serviceCategoryId.HasValue && serviceCategoryId.Value > 0)
+                {
+                    query = query.Where(dsc => dsc.ServiceCategoryId == serviceCategoryId.Value);
+                }
+
+                // فیلتر بر اساس وضعیت فعال (اختیاری)
+                if (isActive.HasValue)
+                {
+                    query = query.Where(dsc => dsc.IsActive == isActive.Value);
+                }
+
+                // اعمال فیلتر جستجو
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(dsc =>
+                        (dsc.Doctor.FirstName != null && dsc.Doctor.FirstName.Contains(searchTerm)) ||
+                        (dsc.Doctor.LastName != null && dsc.Doctor.LastName.Contains(searchTerm)) ||
+                        (dsc.ServiceCategory.Title != null && dsc.ServiceCategory.Title.Contains(searchTerm)) ||
+                        (dsc.ServiceCategory.Department.Name != null && dsc.ServiceCategory.Department.Name.Contains(searchTerm)) ||
+                        (dsc.AuthorizationLevel != null && dsc.AuthorizationLevel.Contains(searchTerm)) ||
+                        (dsc.CertificateNumber != null && dsc.CertificateNumber.Contains(searchTerm))
+                    );
+                }
+
+                // اعمال صفحه‌بندی
+                return await query
+                    .OrderByDescending(dsc => dsc.CreatedAt)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException("خطا در دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد همه انتصابات پزشکان به سرفصل‌های خدماتی
+        /// </summary>
+        public async Task<int> GetAllDoctorServiceCategoriesCountAsync(string searchTerm, int? doctorId, int? serviceCategoryId, bool? isActive)
+        {
+            try
+            {
+                IQueryable<DoctorServiceCategory> query = _context.DoctorServiceCategories
+                    .AsNoTracking();
+
+                // فیلتر بر اساس پزشک (اختیاری)
+                if (doctorId.HasValue && doctorId.Value > 0)
+                {
+                    query = query.Where(dsc => dsc.DoctorId == doctorId.Value);
+                }
+
+                // فیلتر بر اساس سرفصل خدماتی (اختیاری)
+                if (serviceCategoryId.HasValue && serviceCategoryId.Value > 0)
+                {
+                    query = query.Where(dsc => dsc.ServiceCategoryId == serviceCategoryId.Value);
+                }
+
+                // فیلتر بر اساس وضعیت فعال (اختیاری)
+                if (isActive.HasValue)
+                {
+                    query = query.Where(dsc => dsc.IsActive == isActive.Value);
+                }
+
+                // اعمال فیلتر جستجو
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(dsc =>
+                        (dsc.Doctor.FirstName != null && dsc.Doctor.FirstName.Contains(searchTerm)) ||
+                        (dsc.Doctor.LastName != null && dsc.Doctor.LastName.Contains(searchTerm)) ||
+                        (dsc.ServiceCategory.Title != null && dsc.ServiceCategory.Title.Contains(searchTerm)) ||
+                        (dsc.ServiceCategory.Department.Name != null && dsc.ServiceCategory.Department.Name.Contains(searchTerm)) ||
+                        (dsc.AuthorizationLevel != null && dsc.AuthorizationLevel.Contains(searchTerm)) ||
+                        (dsc.CertificateNumber != null && dsc.CertificateNumber.Contains(searchTerm))
+                    );
+                }
+
+                return await query.CountAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException("خطا در دریافت تعداد همه انتصابات پزشکان به سرفصل‌های خدماتی", ex);
+            }
+        }
+
+        #endregion
+
+        #region Department Management (مدیریت دپارتمان‌ها)
+
+        /// <summary>
+        /// دریافت دپارتمان‌های مرتبط با پزشک
+        /// </summary>
+        public async Task<List<Department>> GetDoctorDepartmentsAsync(int doctorId)
+        {
+            try
+            {
+                return await _context.DoctorDepartments
+                    .Where(dd => dd.DoctorId == doctorId && !dd.IsDeleted)
+                    .Include(dd => dd.Department)
+                    .Select(dd => dd.Department)
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت دپارتمان‌های پزشک {doctorId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت سرفصل‌های خدماتی مرتبط با دپارتمان
+        /// </summary>
+        public async Task<List<ServiceCategory>> GetServiceCategoriesByDepartmentAsync(int departmentId)
+        {
+            try
+            {
+                return await _context.ServiceCategories
+                    .Where(sc => sc.DepartmentId == departmentId && !sc.IsDeleted && sc.IsActive)
+                    .AsNoTracking()
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                // لاگ خطا برای سیستم‌های پزشکی
+                throw new InvalidOperationException($"خطا در دریافت سرفصل‌های خدماتی دپارتمان {departmentId}", ex);
             }
         }
 

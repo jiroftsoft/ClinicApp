@@ -673,6 +673,9 @@
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
     <Content Include="Content\css\admin-layout.css" />
+    <Content Include="Content\css\details-standards.css" />
+    <Content Include="Content\css\doctor-assignment-index.css" />
+    <Content Include="Content\css\form-standards.css" />
     <Content Include="Content\css\notifications.css" />
     <Content Include="Content\Images\default-avatar.png" />
     <Content Include="Content\Images\shafa-logo.png" />
@@ -2966,6 +2969,7 @@
     <Content Include="Content\plugins\SweetAlert2\sweetalert2.min.css" />
     <Content Include="Content\toastr.css" />
     <Content Include="Content\toastr.min.css" />
+    <Content Include="CONTRACTS\APP_PRINCIPLES_CONTRACT.md" />
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
@@ -3252,7 +3256,6 @@
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentForm.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_ServiceCategoriesList.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentHistory.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_BulkAssignmentForm.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentFilters.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDepartment\AssignToDepartment.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDepartment\TransferDoctor.cshtml" />
@@ -3281,7 +3284,6 @@
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\ServiceCategoryPermissions.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorSchedule\Schedule.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\Edit.cshtml" />
-    <Content Include="CONTRACTS\APP_PRINCIPLES_CONTRACT.md" />
     <Content Include="Areas\Admin\Views\EmergencyBooking\Index.cshtml" />
     <Content Include="Areas\Admin\Views\EmergencyBooking\Create.cshtml" />
     <Content Include="Areas\Admin\Views\EmergencyBooking\Details.cshtml" />
@@ -3304,6 +3306,8 @@
     <Content Include="CONTRACTS\FormStandards.md" />
     <Content Include="CONTRACTS\ServiceResult_Enhanced.md" />
     <Content Include="CONTRACTS\ServiceResult_Enhanced_Contract.md" />
+    <Content Include="CONTRACTS\AI_COMPLIANCE_CONTRACT.md" />
+    <Content Include="CONTRACTS\DETAILS_DISPLAY_STANDARDS.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

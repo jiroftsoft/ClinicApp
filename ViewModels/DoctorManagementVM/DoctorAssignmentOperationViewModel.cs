@@ -186,6 +186,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string DoctorName { get; set; }
 
         /// <summary>
+        /// کد ملی پزشک (برای نمایش)
+        /// </summary>
+        [Display(Name = "کد ملی پزشک")]
+        public string DoctorNationalCode { get; set; }
+
+        /// <summary>
         /// دلیل حذف انتسابات
         /// </summary>
         [Required(ErrorMessage = "دلیل حذف انتسابات الزامی است")]
@@ -202,10 +208,20 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// آیا وابستگی‌ها بررسی شده‌اند
         /// </summary>
-        [Display(Name = "وابستگی‌ها بررسی شده")]
+        [Display(Name = "وابستگی‌ها بررسی شده‌اند")]
         public bool DependenciesChecked { get; set; } = false;
 
         /// <summary>
+        /// تأیید حذف انتسابات
+        /// </summary>
+        [Display(Name = "تأیید حذف انتسابات")]
+        public bool ConfirmRemoval { get; set; } = false;
+
+        /// <summary>
+        /// تأیید مسئولیت عواقب
+        /// </summary>
+        [Display(Name = "تأیید مسئولیت عواقب")]
+        public bool ConfirmResponsibility { get; set; } = false;
         /// تعداد انتسابات فعال
         /// </summary>
         [Display(Name = "تعداد انتسابات فعال")]

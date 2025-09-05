@@ -208,9 +208,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
             return new DoctorServiceCategoryViewModel
             {
                 DoctorId = doctorServiceCategory.DoctorId,
-                DoctorName = doctorServiceCategory.Doctor?.FullName ?? $"{doctorServiceCategory.Doctor?.FirstName} {doctorServiceCategory.Doctor?.LastName}",
+                DoctorName = !string.IsNullOrEmpty(doctorServiceCategory.Doctor?.FullName) 
+                    ? doctorServiceCategory.Doctor.FullName 
+                    : $"{doctorServiceCategory.Doctor?.FirstName} {doctorServiceCategory.Doctor?.LastName}".Trim(),
                 ServiceCategoryId = doctorServiceCategory.ServiceCategoryId,
                 ServiceCategoryTitle = doctorServiceCategory.ServiceCategory?.Title,
+                ServiceCategoryName = doctorServiceCategory.ServiceCategory?.Title,
                 DepartmentId = doctorServiceCategory.ServiceCategory?.DepartmentId ?? 0,
                 DepartmentName = doctorServiceCategory.ServiceCategory?.Department?.Name,
                 ClinicId = doctorServiceCategory.ServiceCategory?.Department?.ClinicId ?? 0,
@@ -357,7 +360,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     }
 
     /// <summary>
-    /// ViewModel برای فرم انتساب پزشک به دسته‌بندی خدمات
+    /// ViewModel برای فرم انتساب پزشک به دسته‌بندی خدمات (نسخه بروزرسانی شده)
     /// </summary>
     public class DoctorServiceCategoryAssignFormViewModel
     {
@@ -375,6 +378,31 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// لیست دسته‌بندی‌های خدمات موجود برای انتخاب
         /// </summary>
         public List<System.Web.Mvc.SelectListItem> AvailableServiceCategories { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای فیلتر کردن دسته‌بندی‌های خدمات
+        /// </summary>
+        public List<System.Web.Mvc.SelectListItem> AvailableDepartments { get; set; } = new List<System.Web.Mvc.SelectListItem>();
+
+        /// <summary>
+        /// شناسه دپارتمان انتخاب شده برای فیلتر
+        /// </summary>
+        public int? SelectedDepartmentId { get; set; }
+
+        /// <summary>
+        /// آیا انتخاب چندگانه فعال است
+        /// </summary>
+        public bool AllowMultipleSelection { get; set; } = true;
+
+        /// <summary>
+        /// دسته‌بندی‌های انتخاب شده (برای انتخاب چندگانه)
+        /// </summary>
+        public List<int> SelectedServiceCategoryIds { get; set; } = new List<int>();
+
+        /// <summary>
+        /// صلاحیت‌های فعلی پزشک
+        /// </summary>
+        public List<DoctorServiceCategoryViewModel> CurrentPermissions { get; set; } = new List<DoctorServiceCategoryViewModel>();
     }
 
     /// <summary>

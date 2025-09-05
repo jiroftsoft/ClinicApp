@@ -4,6 +4,10 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
 {
     public class DoctorAssignmentIndexViewModel
     {
+        // Page information (replacing ViewBag.Title)
+        public string PageTitle { get; set; } = "مدیریت انتسابات کلی پزشکان";
+        public string PageSubtitle { get; set; } = "مدیریت عملیات انتساب، انتقال و حذف انتسابات پزشکان";
+        
         public AssignmentFilterViewModel Filters { get; set; } = new AssignmentFilterViewModel();
         public AssignmentStatsViewModel Stats { get; set; } = new AssignmentStatsViewModel();
         public List<DoctorAssignmentListItem> Assignments { get; set; } = new List<DoctorAssignmentListItem>();

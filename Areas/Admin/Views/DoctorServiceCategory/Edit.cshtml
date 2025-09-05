@@ -4,158 +4,238 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+<!-- اضافه کردن CSS استاندارد فرم‌ها -->
+@section Styles {
+    <link href="~/Content/css/form-standards.css" rel="stylesheet" />
+}
+
 @Html.AntiForgeryToken()
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">
-                        <i class="fas fa-edit"></i>
-                        ویرایش صلاحیت خدماتی پزشک
-                    </h3>
-                    <div class="card-tools">
-                        <a href="@Url.Action("Index")" class="btn btn-secondary">
-                            <i class="fas fa-arrow-right"></i>
-                            بازگشت
-                        </a>
+<div class="form-container">
+    <!-- Header صفحه -->
+    <div class="form-header">
+        <h1 class="form-title">ویرایش صلاحیت خدماتی پزشک</h1>
+        <p class="form-subtitle">ویرایش و به‌روزرسانی اطلاعات صلاحیت خدماتی</p>
+    </div>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible" style="border-right: 4px solid #dc3545;">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <i class="fa fa-exclamation-triangle"></i>
+            <strong>خطا:</strong> @TempData["Error"]
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible" style="border-right: 4px solid #28a745;">
+            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+            <i class="fa fa-check-circle"></i>
+            <strong>موفق:</strong> @TempData["Success"]
+        </div>
+    }
+
+    @using (Html.BeginForm("Edit", "DoctorServiceCategory", FormMethod.Post, new { @class = "form-horizontal" }))
+    {
+        @Html.AntiForgeryToken()
+        @Html.HiddenFor(m => m.DoctorId)
+        @Html.HiddenFor(m => m.ServiceCategoryId)
+
+        <!-- اطلاعات اصلی -->
+        <div class="form-card">
+            <div class="form-card-header">
+                <h3 class="form-card-title">
+                    <i class="fa fa-user-md"></i>
+                    اطلاعات اصلی
+                </h3>
+            </div>
+            <div class="form-card-body">
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label class="form-label">نام پزشک:</label>
+                            <input type="text" class="form-control" value="@Model.DoctorName" readonly />
+                        </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label class="form-label">کد پزشک:</label>
+                            <input type="text" class="form-control" value="@Model.DoctorId" readonly />
+                        </div>
                     </div>
                 </div>
-                <div class="card-body">
-                    @if (TempData["Error"] != null)
-                    {
-                        <div class="alert alert-danger alert-dismissible">
-                            <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
-                            <i class="fas fa-exclamation-triangle"></i>
-                            @TempData["Error"]
+                
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label class="form-label">عنوان دسته‌بندی:</label>
+                            <input type="text" class="form-control" value="@Model.ServiceCategoryTitle" readonly />
                         </div>
-                    }
-
-                    @using (Html.BeginForm("Edit", "DoctorServiceCategory", FormMethod.Post, new { @class = "form-horizontal" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        @Html.HiddenFor(m => m.DoctorId)
-                        @Html.HiddenFor(m => m.ServiceCategoryId)
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5 class="text-primary mb-3">اطلاعات پزشک</h5>
-                                <div class="form-group">
-                                    <label class="form-label">نام پزشک:</label>
-                                    <input type="text" class="form-control" value="@Model.DoctorName" readonly />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">کد پزشک:</label>
-                                    <input type="text" class="form-control" value="@Model.DoctorId" readonly />
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h5 class="text-primary mb-3">اطلاعات دسته‌بندی خدماتی</h5>
-                                <div class="form-group">
-                                    <label class="form-label">عنوان دسته‌بندی:</label>
-                                    <input type="text" class="form-control" value="@Model.ServiceCategoryTitle" readonly />
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">کد دسته‌بندی:</label>
-                                    <input type="text" class="form-control" value="@Model.ServiceCategoryId" readonly />
-                                </div>
-                            </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label class="form-label">کد دسته‌بندی:</label>
+                            <input type="text" class="form-control" value="@Model.ServiceCategoryId" readonly />
                         </div>
-
-                        <hr class="my-4">
-
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h5 class="text-primary mb-3">تنظیمات صلاحیت</h5>
-                                <div class="form-group">
-                                    <label for="AuthorizationLevel" class="form-label">سطح صلاحیت *</label>
-                                    <select id="AuthorizationLevel" name="AuthorizationLevel" class="form-control" required>
-                                        <option value="پزشک عادی" @(Model.AuthorizationLevel == "پزشک عادی" ? "selected" : "")>پزشک عادی</option>
-                                        <option value="پزشک متخصص" @(Model.AuthorizationLevel == "پزشک متخصص" ? "selected" : "")>پزشک متخصص</option>
-                                        <option value="پزشک فوق تخصص" @(Model.AuthorizationLevel == "پزشک فوق تخصص" ? "selected" : "")>پزشک فوق تخصص</option>
-                                        <option value="استاد" @(Model.AuthorizationLevel == "استاد" ? "selected" : "")>استاد</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label for="CertificateNumber" class="form-label">شماره گواهی</label>
-                                    <input type="text" id="CertificateNumber" name="CertificateNumber" class="form-control" value="@Model.CertificateNumber" />
-                                </div>
-                                <div class="form-group">
-                                    <div class="custom-control custom-switch">
-                                        <input type="checkbox" id="IsActive" name="IsActive" class="custom-control-input" @(Model.IsActive ? "checked" : "") value="true" />
-                                        <input type="hidden" name="IsActive" value="false" />
-                                        <label class="custom-control-label" for="IsActive">صلاحیت فعال</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h5 class="text-primary mb-3">اطلاعات زمانی</h5>
-                                <div class="form-group">
-                                    <label for="GrantedDate" class="form-label">تاریخ اعطا *</label>
-                                    <input type="date" id="GrantedDate" name="GrantedDate" class="form-control" value="@(Model.GrantedDate?.ToString("yyyy-MM-dd"))" required />
-                                </div>
-                                <div class="form-group">
-                                    <label for="ExpiryDate" class="form-label">تاریخ انقضا</label>
-                                    <input type="date" id="ExpiryDate" name="ExpiryDate" class="form-control" value="@(Model.ExpiryDate?.ToString("yyyy-MM-dd"))" />
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="form-group">
-                                    <label for="Notes" class="form-label">توضیحات</label>
-                                    <textarea id="Notes" name="Notes" class="form-control" rows="3" placeholder="توضیحات مربوط به صلاحیت...">@Model.Notes</textarea>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i>
-                                    ذخیره تغییرات
-                                </button>
-                                <a href="@Url.Action("Index")" class="btn btn-secondary">
-                                    <i class="fas fa-times"></i>
-                                    انصراف
-                                </a>
-                            </div>
-                        </div>
-                    }
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
+
+        <!-- تنظیمات صلاحیت -->
+        <div class="form-card">
+            <div class="form-card-header">
+                <h3 class="form-card-title">
+                    <i class="fa fa-cogs"></i>
+                    تنظیمات صلاحیت
+                </h3>
+            </div>
+            <div class="form-card-body">
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="AuthorizationLevel" class="form-label required">سطح صلاحیت</label>
+                            <select id="AuthorizationLevel" name="AuthorizationLevel" class="form-control" required>
+                                <option value="پزشک عادی" @(Model.AuthorizationLevel == "پزشک عادی" ? "selected" : "")>پزشک عادی</option>
+                                <option value="پزشک متخصص" @(Model.AuthorizationLevel == "پزشک متخصص" ? "selected" : "")>پزشک متخصص</option>
+                                <option value="پزشک فوق تخصص" @(Model.AuthorizationLevel == "پزشک فوق تخصص" ? "selected" : "")>پزشک فوق تخصص</option>
+                                <option value="استاد" @(Model.AuthorizationLevel == "استاد" ? "selected" : "")>استاد</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="CertificateNumber" class="form-label">شماره گواهی</label>
+                            <input type="text" id="CertificateNumber" name="CertificateNumber" class="form-control" value="@Model.CertificateNumber" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="GrantedDate" class="form-label required">تاریخ اعطا</label>
+                            <input type="text" id="GrantedDate" name="GrantedDate" class="form-control persian-datepicker" value="@Model.GrantedDateShamsi" required placeholder="انتخاب تاریخ اعطا" />
+                        </div>
+                    </div>
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <label for="ExpiryDate" class="form-label">تاریخ انقضا</label>
+                            <input type="text" id="ExpiryDate" name="ExpiryDate" class="form-control persian-datepicker" value="@Model.ExpiryDateShamsi" placeholder="انتخاب تاریخ انقضا" />
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-col-6">
+                        <div class="form-group">
+                            <div class="custom-control custom-switch">
+                                <input type="checkbox" id="IsActive" name="IsActive" class="custom-control-input" @(Model.IsActive ? "checked" : "") value="true" />
+                                <input type="hidden" name="IsActive" value="false" />
+                                <label class="custom-control-label" for="IsActive">صلاحیت فعال</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- توضیحات -->
+        <div class="form-card">
+            <div class="form-card-header">
+                <h3 class="form-card-title">
+                    <i class="fa fa-comment"></i>
+                    توضیحات
+                </h3>
+            </div>
+            <div class="form-card-body">
+                <div class="form-group">
+                    <label for="Notes" class="form-label">توضیحات</label>
+                    <textarea id="Notes" name="Notes" class="form-control" rows="3" placeholder="توضیحات مربوط به صلاحیت...">@Model.Notes</textarea>
+                </div>
+            </div>
+        </div>
+
+        <!-- عملیات -->
+        <div class="form-actions">
+            <div class="form-actions-left">
+                <a href="@Url.Action("Index")" class="btn-form btn-form-secondary">
+                    <i class="fa fa-arrow-right"></i>
+                    بازگشت به لیست
+                </a>
+            </div>
+            <div class="form-actions-right">
+                <button type="submit" class="btn-form btn-form-primary">
+                    <i class="fa fa-save"></i>
+                    ذخیره تغییرات
+                </button>
+            </div>
+        </div>
+    }
 </div>
 
 @section Scripts {
     <script>
-        $(document).ready(function () {
-            // اعتبارسنجی فرم
-            $('form').submit(function (e) {
-                var isValid = true;
-                
-                // بررسی فیلدهای اجباری
-                if (!$('#AuthorizationLevel').val()) {
-                    $('#AuthorizationLevel').addClass('is-invalid');
-                    isValid = false;
-                } else {
-                    $('#AuthorizationLevel').removeClass('is-invalid');
+        // اطمینان از بارگذاری jQuery
+        function ensureJQueryLoaded(callback) {
+            if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    ensureJQueryLoaded(callback);
+                }, 100);
+            }
+        }
+
+        // اجرای کدهای jQuery
+        ensureJQueryLoaded(function () {
+            $(document).ready(function () {
+                // اعتبارسنجی فرم
+                $('form').submit(function (e) {
+                    var isValid = true;
+                    
+                    // بررسی فیلدهای اجباری
+                    if (!$('#AuthorizationLevel').val()) {
+                        $('#AuthorizationLevel').addClass('is-invalid');
+                        isValid = false;
+                    } else {
+                        $('#AuthorizationLevel').removeClass('is-invalid');
+                    }
+                    
+                    if (!$('#GrantedDate').val()) {
+                        $('#GrantedDate').addClass('is-invalid');
+                        isValid = false;
+                    } else {
+                        $('#GrantedDate').removeClass('is-invalid');
+                    }
+                    
+                    if (!isValid) {
+                        e.preventDefault();
+                        showAlert('error', 'لطفاً فیلدهای اجباری را پر کنید.');
+                    }
+                });
+
+                // نمایش پیام
+                function showAlert(type, message) {
+                    var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+                    var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert" style="border-right: 4px solid ' + (type === 'success' ? '#28a745' : '#dc3545') + ';">' +
+                        '<i class="fa fa-' + (type === 'success' ? 'check-circle' : 'exclamation-triangle') + '"></i> ' +
+                        '<strong>' + (type === 'success' ? 'موفق:' : 'خطا:') + '</strong> ' + message +
+                        '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                        '<span aria-hidden="true">&times;</span>' +
+                        '</button>' +
+                        '</div>';
+                    
+                    $('.form-container').prepend(alertHtml);
+                    
+                    // حذف خودکار پیام بعد از 5 ثانیه
+                    setTimeout(function () {
+                        $('.alert').fadeOut();
+                    }, 5000);
                 }
-                
-                if (!$('#GrantedDate').val()) {
-                    $('#GrantedDate').addClass('is-invalid');
-                    isValid = false;
-                } else {
-                    $('#GrantedDate').removeClass('is-invalid');
-                }
-                
-                if (!isValid) {
-                    e.preventDefault();
-                    alert('لطفاً فیلدهای اجباری را تکمیل کنید.');
-                }
+
+                console.log('Edit form loaded successfully');
             });
         });
     </script>

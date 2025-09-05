@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using AutoMapper;
 using ClinicApp.Core;
+using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -219,54 +220,145 @@ namespace ClinicApp.Services.ClinicAdmin
 
         /// <summary>
         /// به‌روزرسانی اطلاعات صلاحیت ارائه دسته‌بندی خدمات توسط پزشک
+        /// طبق AI_COMPLIANCE_CONTRACT: اعتبارسنجی کامل و مدیریت خطا
         /// </summary>
         public async Task<ServiceResult> UpdateDoctorServiceCategoryAsync(DoctorServiceCategoryViewModel model)
         {
             try
             {
-                _logger.Information("درخواست به‌روزرسانی صلاحیت پزشک {DoctorId} برای دسته‌بندی {ServiceCategoryId}", 
-                    model.DoctorId, model.ServiceCategoryId);
+                _logger.Information("درخواست به‌روزرسانی صلاحیت خدماتی {AssignmentId} توسط کاربر {UserId}", 
+                    model.AssignmentId, _currentUserService.UserId);
 
-                // اعتبارسنجی پارامترها
+                // اعتبارسنجی اولیه
+                if (model == null)
+                {
+                    _logger.Warning("مدل null دریافت شد. کاربر: {UserId}", _currentUserService.UserId);
+                    return ServiceResult.Failed("اطلاعات ارسالی نامعتبر است.");
+                }
+
                 if (model.DoctorId <= 0 || model.ServiceCategoryId <= 0)
                 {
+                    _logger.Warning("شناسه‌های نامعتبر. DoctorId: {DoctorId}, ServiceCategoryId: {ServiceCategoryId}, کاربر: {UserId}", 
+                        model.DoctorId, model.ServiceCategoryId, _currentUserService.UserId);
                     return ServiceResult.Failed("شناسه پزشک یا دسته‌بندی خدمات نامعتبر است.");
+                }
+
+                // اعتبارسنجی فیلدهای اجباری
+                if (string.IsNullOrWhiteSpace(model.AuthorizationLevel))
+                {
+                    _logger.Warning("سطح صلاحیت خالی است. کاربر: {UserId}", _currentUserService.UserId);
+                    return ServiceResult.Failed("سطح صلاحیت الزامی است.");
+                }
+
+                if (!model.GrantedDate.HasValue)
+                {
+                    _logger.Warning("تاریخ اعطا خالی است. کاربر: {UserId}", _currentUserService.UserId);
+                    return ServiceResult.Failed("تاریخ اعطا الزامی است.");
+                }
+
+                // اعتبارسنجی تاریخ‌ها
+                if (model.ExpiryDate.HasValue && model.ExpiryDate.Value <= model.GrantedDate.Value)
+                {
+                    _logger.Warning("تاریخ انقضا باید بعد از تاریخ اعطا باشد. کاربر: {UserId}", _currentUserService.UserId);
+                    return ServiceResult.Failed("تاریخ انقضا باید بعد از تاریخ اعطا باشد.");
                 }
 
                 // بررسی وجود پزشک
                 var doctor = await _doctorRepository.GetByIdAsync(model.DoctorId);
                 if (doctor == null)
                 {
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد. کاربر: {UserId}", model.DoctorId, _currentUserService.UserId);
                     return ServiceResult.Failed("پزشک مورد نظر یافت نشد.");
+                }
+
+                // بررسی وجود دسته‌بندی خدمات
+                var serviceCategory = await _serviceCategoryRepository.GetByIdAsync(model.ServiceCategoryId);
+                if (serviceCategory == null)
+                {
+                    _logger.Warning("دسته‌بندی خدمات با شناسه {ServiceCategoryId} یافت نشد. کاربر: {UserId}", 
+                        model.ServiceCategoryId, _currentUserService.UserId);
+                    return ServiceResult.Failed("دسته‌بندی خدمات مورد نظر یافت نشد.");
                 }
 
                 // بررسی وجود صلاحیت
                 var existingPermission = await _doctorServiceCategoryRepository.GetDoctorServiceCategoryAsync(model.DoctorId, model.ServiceCategoryId);
                 if (existingPermission == null)
                 {
+                    _logger.Warning("صلاحیت خدماتی {AssignmentId} یافت نشد. کاربر: {UserId}", 
+                        model.AssignmentId, _currentUserService.UserId);
                     return ServiceResult.Failed("صلاحیت مورد نظر یافت نشد.");
                 }
 
+                // بررسی تغییرات
+                var hasChanges = false;
+                var changes = new List<string>();
+
+                if (existingPermission.AuthorizationLevel != model.AuthorizationLevel)
+                {
+                    existingPermission.AuthorizationLevel = model.AuthorizationLevel;
+                    changes.Add($"سطح صلاحیت: {model.AuthorizationLevel}");
+                    hasChanges = true;
+                }
+
+                if (existingPermission.CertificateNumber != model.CertificateNumber)
+                {
+                    existingPermission.CertificateNumber = model.CertificateNumber;
+                    changes.Add($"شماره گواهی: {model.CertificateNumber}");
+                    hasChanges = true;
+                }
+
+                if (existingPermission.IsActive != model.IsActive)
+                {
+                    existingPermission.IsActive = model.IsActive;
+                    changes.Add($"وضعیت فعال: {(model.IsActive ? "فعال" : "غیرفعال")}");
+                    hasChanges = true;
+                }
+
+                if (existingPermission.GrantedDate != model.GrantedDate)
+                {
+                    existingPermission.GrantedDate = model.GrantedDate;
+                    changes.Add($"تاریخ اعطا: {model.GrantedDate?.ToString("yyyy/MM/dd")}");
+                    hasChanges = true;
+                }
+
+                if (existingPermission.ExpiryDate != model.ExpiryDate)
+                {
+                    existingPermission.ExpiryDate = model.ExpiryDate;
+                    changes.Add($"تاریخ انقضا: {model.ExpiryDate?.ToString("yyyy/MM/dd")}");
+                    hasChanges = true;
+                }
+
+                if (existingPermission.Notes != model.Notes)
+                {
+                    existingPermission.Notes = model.Notes;
+                    changes.Add($"توضیحات: {model.Notes}");
+                    hasChanges = true;
+                }
+
+                if (!hasChanges)
+                {
+                    _logger.Information("هیچ تغییری در صلاحیت خدماتی {AssignmentId} اعمال نشد. کاربر: {UserId}", 
+                        model.AssignmentId, _currentUserService.UserId);
+                    return ServiceResult.Successful("هیچ تغییری اعمال نشد.");
+                }
+
                 // به‌روزرسانی اطلاعات
-                existingPermission.AuthorizationLevel = model.AuthorizationLevel;
-                existingPermission.CertificateNumber = model.CertificateNumber;
-                existingPermission.IsActive = model.IsActive;
                 existingPermission.UpdatedAt = DateTime.UtcNow;
                 existingPermission.UpdatedByUserId = _currentUserService.UserId;
 
                 await _doctorServiceCategoryRepository.UpdateDoctorServiceCategoryAsync(existingPermission);
                 await _doctorServiceCategoryRepository.SaveChangesAsync();
 
-                _logger.Information("صلاحیت پزشک {DoctorId} برای دسته‌بندی {ServiceCategoryId} با موفقیت به‌روزرسانی شد", 
-                    model.DoctorId, model.ServiceCategoryId);
+                _logger.Information("صلاحیت خدماتی {AssignmentId} با موفقیت به‌روزرسانی شد. تغییرات: {Changes}, کاربر: {UserId}", 
+                    model.AssignmentId, string.Join(", ", changes), _currentUserService.UserId);
 
-                return ServiceResult.Successful("صلاحیت پزشک با موفقیت به‌روزرسانی شد.");
+                return ServiceResult.Successful("صلاحیت خدماتی با موفقیت به‌روزرسانی شد.");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در به‌روزرسانی صلاحیت پزشک {DoctorId} برای دسته‌بندی {ServiceCategoryId}", 
-                    model.DoctorId, model.ServiceCategoryId);
-                return ServiceResult.Failed("خطا در به‌روزرسانی صلاحیت پزشک");
+                _logger.Error(ex, "خطا در به‌روزرسانی صلاحیت خدماتی {AssignmentId}. کاربر: {UserId}", 
+                    model?.AssignmentId, _currentUserService.UserId);
+                return ServiceResult.Failed("خطا در به‌روزرسانی صلاحیت خدماتی");
             }
         }
 
@@ -299,6 +391,117 @@ namespace ClinicApp.Services.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی (برای فیلتر "همه پزشکان")
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>> GetAllDoctorServiceCategoriesAsync(string searchTerm, int? doctorId, int? serviceCategoryId, bool? isActive, int pageNumber, int pageSize)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت همه انتصابات پزشکان به سرفصل‌های خدماتی. صفحه: {PageNumber}, اندازه: {PageSize}", pageNumber, pageSize);
+
+                if (pageNumber <= 0) pageNumber = 1;
+                if (pageSize <= 0) pageSize = 10;
+
+                // دریافت داده‌ها از Repository
+                var doctorServiceCategories = await _doctorServiceCategoryRepository.GetAllDoctorServiceCategoriesAsync(searchTerm, doctorId, serviceCategoryId, isActive, pageNumber, pageSize);
+                var totalCount = await _doctorServiceCategoryRepository.GetAllDoctorServiceCategoriesCountAsync(searchTerm, doctorId, serviceCategoryId, isActive);
+
+                // تبدیل به ViewModel
+                var viewModels = doctorServiceCategories.Select(dsc => new DoctorServiceCategoryViewModel
+                {
+                    DoctorId = dsc.DoctorId,
+                    DoctorName = $"{dsc.Doctor?.FirstName} {dsc.Doctor?.LastName}".Trim(),
+                    ServiceCategoryId = dsc.ServiceCategoryId,
+                    ServiceCategoryName = dsc.ServiceCategory?.Title,
+                    DepartmentName = dsc.ServiceCategory?.Department?.Name,
+                    AuthorizationLevel = dsc.AuthorizationLevel,
+                    CertificateNumber = dsc.CertificateNumber,
+                    IsActive = dsc.IsActive,
+                    GrantedDate = dsc.GrantedDate,
+                    GrantedDateShamsi = dsc.GrantedDate?.ToPersianDateTime(),
+                    ExpiryDate = dsc.ExpiryDate,
+                    ExpiryDateShamsi = dsc.ExpiryDate?.ToPersianDateTime(),
+                    Notes = dsc.Notes,
+                    CreatedAt = dsc.CreatedAt,
+                    CreatedAtShamsi = dsc.CreatedAt.ToPersianDateTime(),
+                    CreatedBy = $"{dsc.CreatedByUser?.FirstName} {dsc.CreatedByUser?.LastName}".Trim()
+                }).ToList();
+
+                var pagedResult = new PagedResult<DoctorServiceCategoryViewModel>(viewModels, totalCount, pageNumber, pageSize);
+
+                _logger.Information("لیست همه انتصابات پزشکان به سرفصل‌های خدماتی با موفقیت دریافت شد. تعداد: {Count}", viewModels.Count);
+
+                return ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>.Successful(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی");
+                return ServiceResult<PagedResult<DoctorServiceCategoryViewModel>>.Failed("خطا در دریافت لیست انتصابات");
+            }
+        }
+
         #endregion
+
+        #region Department Management (مدیریت دپارتمان‌ها)
+
+        /// <summary>
+        /// دریافت دپارتمان‌های مرتبط با پزشک
+        /// </summary>
+        public async Task<ServiceResult<List<LookupItemViewModel>>> GetDoctorDepartmentsAsync(int doctorId)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت دپارتمان‌های پزشک {DoctorId}", doctorId);
+
+                var departments = await _doctorServiceCategoryRepository.GetDoctorDepartmentsAsync(doctorId);
+
+                var lookupItems = departments.Select(d => new LookupItemViewModel
+                {
+                    Id = d.DepartmentId,
+                    Name = d.Name
+                }).ToList();
+
+                _logger.Information("دپارتمان‌های پزشک {DoctorId} با موفقیت دریافت شد. تعداد: {Count}", doctorId, lookupItems.Count);
+
+                return ServiceResult<List<LookupItemViewModel>>.Successful(lookupItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت دپارتمان‌های پزشک {DoctorId}", doctorId);
+                return ServiceResult<List<LookupItemViewModel>>.Failed("خطا در دریافت دپارتمان‌های پزشک");
+            }
+        }
+
+        /// <summary>
+        /// دریافت سرفصل‌های خدماتی مرتبط با دپارتمان
+        /// </summary>
+        public async Task<ServiceResult<List<LookupItemViewModel>>> GetServiceCategoriesByDepartmentAsync(int departmentId)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت سرفصل‌های خدماتی دپارتمان {DepartmentId}", departmentId);
+
+                var serviceCategories = await _doctorServiceCategoryRepository.GetServiceCategoriesByDepartmentAsync(departmentId);
+
+                var lookupItems = serviceCategories.Select(sc => new LookupItemViewModel
+                {
+                    Id = sc.ServiceCategoryId,
+                    Name = sc.Title
+                }).ToList();
+
+                _logger.Information("سرفصل‌های خدماتی دپارتمان {DepartmentId} با موفقیت دریافت شد. تعداد: {Count}", departmentId, lookupItems.Count);
+
+                return ServiceResult<List<LookupItemViewModel>>.Successful(lookupItems);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت سرفصل‌های خدماتی دپارتمان {DepartmentId}", departmentId);
+                return ServiceResult<List<LookupItemViewModel>>.Failed("خطا در دریافت سرفصل‌های خدماتی دپارتمان");
+            }
+        }
+
+        #endregion
+
     }
 }

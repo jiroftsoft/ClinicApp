@@ -160,7 +160,68 @@ $('#modalId').on('shown.bs.modal', function () {
 
 ## 🔧 **الگوهای پیاده‌سازی:**
 
-### **1. Loading Data Pattern:**
+### **1. AJAX Response Parsing Pattern (الزامی برای تمام AJAX calls):**
+```javascript
+// ✅ الگوی صحیح - AJAX Response Parsing
+function performAjaxAction() {
+    $.ajax({
+        url: '@Url.Action("ActionName", "ControllerName")',
+        type: 'POST',
+        dataType: 'json', // الزامی
+        contentType: 'application/x-www-form-urlencoded; charset=UTF-8', // الزامی
+        data: { 
+            param1: value1,
+            param2: value2,
+            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+        },
+        success: function(response) {
+            // Parse response if it's a string (مهم!)
+            if (typeof response === 'string') {
+                try {
+                    response = JSON.parse(response);
+                } catch (e) {
+                    console.error('Error parsing response:', e);
+                    showAlert('error', 'خطا در پردازش پاسخ سرور');
+                    return;
+                }
+            }
+            
+            if (response && response.success === true) {
+                showAlert('success', response.message || 'عملیات با موفقیت انجام شد');
+                // Additional success actions
+            } else {
+                showAlert('error', (response && response.message) || 'خطا در انجام عملیات');
+            }
+        },
+        error: function() {
+            showAlert('error', 'خطا در ارتباط با سرور');
+        }
+    });
+}
+
+// ❌ الگوی نادرست - بدون response parsing
+function badAjaxExample() {
+    $.ajax({
+        url: '@Url.Action("ActionName", "ControllerName")',
+        type: 'POST',
+        // Missing dataType and contentType
+        success: function(response) {
+            // Direct response check without parsing
+            if (response.success) { // ممکن است کار نکند
+                // ...
+            }
+        }
+    });
+}
+```
+
+**نکات مهم:**
+- همیشه `dataType: 'json'` و `contentType` را اضافه کنید
+- همیشه response را parse کنید اگر string است
+- از try-catch برای JSON.parse استفاده کنید
+- همیشه `__RequestVerificationToken` را اضافه کنید
+
+### **2. Loading Data Pattern:**
 ```javascript
 function loadData() {
     return new Promise(function(resolve, reject) {
@@ -522,7 +583,7 @@ $.ajax({
 - **تاریخ ایجاد:** 2025-01-01
 - **نسخه:** 1.0
 - **وضعیت:** فعال
-- **آخرین به‌روزرسانی:** 2025-01-01
+- **آخرین به‌روزرسانی:** جلسه فعلی - یکپارچه‌سازی با قرارداد استاندارد نمایش اطلاعات
 
 ---
 
@@ -531,3 +592,248 @@ $.ajax({
 این قرارداد توسط تیم توسعه ClinicApp تأیید شده و باید در تمام پروژه‌ها رعایت شود.
 
 **⚠️ توجه:** عدم رعایت این قرارداد منجر به خطاهای مکرر و مشکلات عملکردی خواهد شد.
+
+---
+
+## Integration with Details Display Standards Contract
+
+### مرجع قرارداد استاندارد نمایش اطلاعات:
+این قرارداد با `DETAILS_DISPLAY_STANDARDS.md` و `AI_COMPLIANCE_CONTRACT.md` (قوانین 40-48) یکپارچه است.
+
+### الزامات یکپارچه برای فرم‌های جزئیات:
+- **استفاده از فایل CSS مشترک**: `Content/css/details-standards.css`
+- **رعایت ساختار کارتی**: Card با Header و Body
+- **رنگ‌بندی یکپارچه**: پالت رنگ‌های تعریف شده
+- **دسترس‌پذیری کامل**: فونت 14px، کنتراست مناسب
+- **Responsive Design**: سازگاری با موبایل
+
+### فایل‌های مرتبط:
+- `CONTRACTS/DETAILS_DISPLAY_STANDARDS.md` - قرارداد کامل
+- `TEMPLATES/DetailsPageTemplate.cshtml` - قالب استاندارد
+- `Content/css/details-standards.css` - CSS مشترک
+
+### نمونه پیاده‌سازی:
+- `Areas/Admin/Views/DoctorServiceCategory/Details.cshtml` - نمونه کامل
+
+---
+
+## Integration with AI Compliance Contract
+
+This contract works in conjunction with `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` which defines mandatory rules for AI interactions with the ClinicApp project. All form development work must comply with both contracts.
+
+**Key Integration Points for Forms**:
+- All form changes must follow Atomic Changes Rule (AI_COMPLIANCE_CONTRACT Section 1)
+- Pre-creation verification required for new form components (AI_COMPLIANCE_CONTRACT Section 2)
+- No duplication of existing form patterns (AI_COMPLIANCE_CONTRACT Section 3)
+- Mandatory documentation for all form changes (AI_COMPLIANCE_CONTRACT Section 4)
+- Stop and approval process required for form modifications (AI_COMPLIANCE_CONTRACT Section 5)
+- Security standards enforced (Anti-Forgery Token, Input Validation) (AI_COMPLIANCE_CONTRACT Section 6)
+- Transparent output format required for form change proposals (AI_COMPLIANCE_CONTRACT Section 7)
+- No auto-execution of form changes (AI_COMPLIANCE_CONTRACT Section 8)
+- Project scope compliance for form features (AI_COMPLIANCE_CONTRACT Section 9)
+- Mandatory compliance with all AI interaction rules (AI_COMPLIANCE_CONTRACT Section 10)
+
+**Reference**: See `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` for complete AI interaction guidelines.
+
+---
+
+## 🏥 **استانداردهای فرم‌های رسمی محیط درمانی:**
+
+### **1. اصول کلی طراحی فرم‌ها:**
+```markdown
+### اصول اجباری:
+- تمامی فرم‌ها باید رسمی و ساده طراحی شوند
+- استفاده از رنگ‌های اصلی محدود به آبی تیره (primary) و خاکستری (neutral)
+- هیچ‌گونه المان فانتزی (انیمیشن غیرضروری، آیکون‌های کارتونی، پس‌زمینه‌های رنگارنگ) مجاز نیست
+- چینش فرم‌ها باید ساده، خوانا و با ساختار شبکه‌ای (grid-based) باشد
+```
+
+### **2. المان‌های ممنوع در فرم‌ها:**
+```css
+/* ❌ ممنوع - رنگ‌های تند */
+background-color: #FF0000; /* قرمز خام */
+background-color: #FFA500; /* نارنجی خام */
+background-color: #800080; /* بنفش غیررسمی */
+
+/* ❌ ممنوع - انیمیشن‌های غیرضروری */
+animation: bounce 2s infinite;
+transform: rotate(360deg);
+transition: all 2s ease-in-out;
+
+/* ❌ ممنوع - آیکون‌های غیررسمی */
+.fa-smile-o, .fa-heart, .fa-star; /* آیکون‌های فانتزی */
+
+/* ✅ مجاز - فقط برای هشدار ضروری */
+.alert-danger { background-color: #dc3545; } /* قرمز Bootstrap */
+```
+
+### **3. دسترس‌پذیری (Accessibility) اجباری:**
+```css
+/* ✅ اجباری - فونت حداقل 14px */
+.form-control, .form-label {
+    font-size: 14px; /* حداقل اندازه برای افراد مسن */
+    font-family: "Vazirmatn", "Tahoma", sans-serif;
+}
+
+/* ✅ اجباری - کنتراست مناسب */
+.form-control {
+    color: #212529; /* کنتراست بالا */
+    background-color: #ffffff;
+    border: 2px solid #dee2e6;
+}
+
+/* ✅ اجباری - Tab Navigation */
+.form-control:focus {
+    outline: 2px solid #0d6efd;
+    outline-offset: 2px;
+}
+```
+
+### **4. چک‌لیست استاندارد فرم‌های Razor:**
+```html
+<!-- ✅ بخش ۱: ساختار کلی -->
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-4">عنوان صفحه واضح و رسمی</h2>
+            <p class="text-center text-muted mb-4">زیرعنوان هدف فرم در یک جمله</p>
+            
+            <!-- ✅ بخش ۲: طراحی بصری -->
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        @Html.AntiForgeryToken()
+                        
+                        <!-- ✅ بخش ۳: فیلدها و ورودی‌ها -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="patientName" class="form-label">
+                                        نام بیمار <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" id="patientName" name="PatientName" 
+                                           class="form-control" required 
+                                           placeholder="نام کامل بیمار را وارد کنید">
+                                    <div class="invalid-feedback">
+                                        لطفاً نام بیمار را وارد کنید
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    <label for="appointmentDate" class="form-label">
+                                        تاریخ نوبت <span class="text-danger">*</span>
+                                    </label>
+                                    <input type="text" id="appointmentDate" name="AppointmentDate" 
+                                           class="form-control persian-date" required 
+                                           placeholder="انتخاب تاریخ نوبت">
+                                    <div class="invalid-feedback">
+                                        لطفاً تاریخ نوبت را انتخاب کنید
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ✅ بخش ۵: دکمه‌ها -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-center">
+                                <button type="submit" class="btn btn-success me-2">
+                                    <i class="fa fa-save"></i> ثبت نوبت
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-right"></i> بازگشت
+                                </a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+```
+
+### **5. استانداردهای رنگ‌بندی فرم‌ها:**
+```css
+/* ✅ مجاز - رنگ‌های اصلی */
+:root {
+    --primary-blue: #0d6efd;      /* آبی اصلی */
+    --success-green: #198754;     /* سبز ثبت موفق */
+    --neutral-gray: #6c757d;      /* خاکستری بازگشت */
+    --danger-red: #dc3545;        /* قرمز هشدار ضروری */
+    --warning-orange: #fd7e14;    /* نارنجی هشدار */
+}
+
+/* ✅ استفاده صحیح از رنگ‌ها */
+.btn-primary { background-color: var(--primary-blue); }
+.btn-success { background-color: var(--success-green); }
+.btn-secondary { background-color: var(--neutral-gray); }
+.btn-danger { background-color: var(--danger-red); }
+.btn-warning { background-color: var(--warning-orange); }
+```
+
+### **6. استانداردهای اعتبارسنجی:**
+```csharp
+// ✅ پیام‌های خطای رسمی و فارسی
+RuleFor(x => x.PatientName)
+    .NotEmpty()
+    .WithMessage("لطفاً نام بیمار را وارد کنید")
+    .WithErrorCode("REQUIRED_PATIENT_NAME");
+
+RuleFor(x => x.AppointmentDate)
+    .NotEmpty()
+    .WithMessage("لطفاً تاریخ نوبت را انتخاب کنید")
+    .WithErrorCode("REQUIRED_APPOINTMENT_DATE");
+```
+
+### **7. چک‌لیست کامل فرم‌های درمانی:**
+```markdown
+### ✅ بخش ۱: ساختار کلی
+- [ ] عنوان صفحه واضح، رسمی و فارسی است
+- [ ] زیرعنوان هدف فرم را در یک جمله توضیح می‌دهد
+- [ ] فرم فقط شامل فیلدهای ضروری و مرتبط است
+- [ ] ناوبری (بازگشت، ثبت) ساده و در پایین فرم قرار دارد
+
+### ✅ بخش ۲: طراحی بصری
+- [ ] استفاده از رنگ‌ها محدود به: آبی (Primary)، سبز (ثبت موفق)، خاکستری (بازگشت)
+- [ ] پس‌زمینه سفید و ساده بدون تصاویر یا المان‌های اضافی
+- [ ] فونت رسمی: Vazirmatn یا Tahoma، اندازه حداقل ۱۴px
+- [ ] چینش منظم با Grid یا Bootstrap (دو ستونی یا تک ستونی)
+
+### ✅ بخش ۳: فیلدها و ورودی‌ها
+- [ ] هر فیلد Label فارسی و رسمی دارد
+- [ ] فیلدهای اجباری با * یا پیام هشدار مشخص شده‌اند
+- [ ] از ورودی‌های مناسب استفاده شده (TextBox، DropDown، DatePicker)
+- [ ] تاریخ‌ها فقط با Persian DatePicker پیاده‌سازی شده‌اند
+- [ ] هیچ placeholder غیررسمی یا فانتزی استفاده نشده
+
+### ✅ بخش ۴: اعتبارسنجی (Validation)
+- [ ] همه فیلدهای مهم دارای Validation سمت سرور و کلاینت هستند
+- [ ] پیام خطا رسمی و فارسی: «لطفاً نام بیمار را وارد کنید»
+- [ ] هیچ متن غیررسمی یا فانتزی در پیام خطا وجود ندارد
+
+### ✅ بخش ۵: دکمه‌ها (Actions)
+- [ ] فقط دکمه‌های ضروری وجود دارند (ثبت / بازگشت)
+- [ ] رنگ سبز فقط برای ثبت/تایید استفاده شده
+- [ ] رنگ خاکستری فقط برای بازگشت/لغو استفاده شده
+- [ ] دکمه‌ها در پایین و وسط یا راست‌چین فرم قرار دارند
+
+### ✅ بخش ۶: دسترس‌پذیری (Accessibility)
+- [ ] فرم با Tab قابل پیمایش کامل است
+- [ ] همه Labelها به Input مربوطه متصل هستند
+- [ ] کنتراست رنگ‌ها مناسب (خوانا برای همه سنین)
+- [ ] پیام‌های خطا و موفقیت با متن و رنگ قابل فهم نمایش داده می‌شوند
+
+### ✅ بخش ۷: المان‌های ممنوع
+- [ ] هیچ انیمیشن غیرضروری وجود ندارد
+- [ ] هیچ ایموجی یا آیکون غیررسمی استفاده نشده
+- [ ] هیچ رنگ تند یا پس‌زمینه دکوراتیو وجود ندارد
+- [ ] هیچ فیلد اضافی یا غیرمرتبط با فرآیند درمانی وجود ندارد
+```
+
+---
+
+## Integration with Form Standards Contract
+
+این قرارداد با قرارداد استاندارد فرم‌های ایجاد و ویرایش (`form-standards.css`) و قرارداد تبعیت هوش مصنوعی (`AI_COMPLIANCE_CONTRACT.md`) یکپارچه است.

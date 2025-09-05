@@ -1,0 +1,590 @@
+/**
+ * Doctor Assignment Index - Production Ready CSS
+ * 
+ * Features:
+ * - Responsive design
+ * - Accessibility support
+ * - Performance optimized
+ * - Production ready
+ * 
+ * @version 1.0.0
+ * @author ClinicApp Team
+ */
+
+/* ========================================
+   📌 Base Styles
+   ======================================== */
+
+.doctor-assignment-container {
+    min-height: 100vh;
+    background-color: #f8f9fa;
+}
+
+/* ========================================
+   📌 Header Section
+   ======================================== */
+
+.assignment-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 1rem 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.assignment-header h2 {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.assignment-header p {
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+/* ========================================
+   📌 Action Buttons
+   ======================================== */
+
+.btn-assignment {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.btn-assignment:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.btn-assignment:focus {
+    outline: 2px solid #fff;
+    outline-offset: 2px;
+}
+
+/* ========================================
+   📌 Table Styles
+   ======================================== */
+
+.assignment-table {
+    background: white;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.assignment-table h4 {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.assignment-table .table {
+    margin-bottom: 0;
+}
+
+.assignment-table .table thead th {
+    background-color: #343a40;
+    color: white;
+    font-weight: 600;
+    border: none;
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+}
+
+.assignment-table .table tbody td {
+    padding: 1rem 0.75rem;
+    vertical-align: middle;
+    border-color: #e9ecef;
+}
+
+.assignment-table .table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+/* ========================================
+   📌 Badge Styles
+   ======================================== */
+
+.badge {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+
+.badge.bg-primary {
+    background-color: #007bff !important;
+}
+
+.badge.bg-info {
+    background-color: #17a2b8 !important;
+}
+
+.badge.bg-success {
+    background-color: #28a745 !important;
+}
+
+.badge.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+.badge.bg-secondary {
+    background-color: #6c757d !important;
+}
+
+/* ========================================
+   📌 Action Buttons in Table
+   ======================================== */
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+    margin: 0 0.125rem;
+    transition: all 0.2s ease;
+}
+
+.btn-group .btn:hover {
+    transform: scale(1.05);
+}
+
+.btn-group .btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* ========================================
+   📌 Modal Styles
+   ======================================== */
+
+.modal-content {
+    border-radius: 1rem;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 1rem 1rem 0 0;
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-header .modal-title {
+    font-weight: 600;
+    margin: 0;
+}
+
+.modal-header .btn-close {
+    filter: invert(1);
+    opacity: 0.8;
+}
+
+.modal-header .btn-close:hover {
+    opacity: 1;
+}
+
+.modal-body {
+    padding: 2rem;
+}
+
+.modal-footer {
+    border-top: 1px solid #e9ecef;
+    padding: 1.5rem 2rem;
+    border-radius: 0 0 1rem 1rem;
+}
+
+/* ========================================
+   📌 Form Styles
+   ======================================== */
+
+.form-label {
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+.form-select,
+.form-control {
+    border-radius: 0.5rem;
+    border: 1px solid #ced4da;
+    padding: 0.75rem 1rem;
+    transition: all 0.2s ease;
+}
+
+.form-select:focus,
+.form-control:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.form-text {
+    font-size: 0.875rem;
+    color: #6c757d;
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   📌 Loading States
+   ======================================== */
+
+.loading-indicators {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.loading-spinner {
+    display: none;
+}
+
+.loading-spinner.show {
+    display: block;
+}
+
+.loading-progress {
+    display: none;
+}
+
+.loading-progress.show {
+    display: block;
+}
+
+.spinner-border {
+    width: 1.5rem;
+    height: 1.5rem;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+}
+
+/* Modal Loading States */
+.modal-loading-indicators {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-right: auto;
+}
+
+.modal-loading-spinner {
+    display: flex;
+    align-items: center;
+    color: #28a745;
+    font-size: 0.9rem;
+}
+
+.modal-loading-progress {
+    display: flex;
+    align-items: center;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+/* Progress Bar Animations */
+.progress-bar-animated {
+    animation: progress-bar-stripes 1s linear infinite;
+}
+
+@keyframes progress-bar-stripes {
+    0% {
+        background-position: 1rem 0;
+    }
+    100% {
+        background-position: 0 0;
+    }
+}
+
+/* Loading States for Buttons */
+.btn-loading {
+    position: relative;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.btn-loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 1rem;
+    height: 1rem;
+    margin: -0.5rem 0 0 -0.5rem;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
+}
+
+/* Table Loading Overlay */
+.table-loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.table-loading-overlay .spinner-border {
+    width: 3rem;
+    height: 3rem;
+}
+
+/* Skeleton Loading */
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+.skeleton-text {
+    height: 1rem;
+    margin: 0.5rem 0;
+    border-radius: 0.25rem;
+}
+
+.skeleton-button {
+    height: 2.5rem;
+    width: 6rem;
+    border-radius: 0.25rem;
+}
+
+/* ========================================
+   📌 Accessibility
+   ======================================== */
+
+.sr-only {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+.visually-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+
+/* ========================================
+   📌 Responsive Design
+   ======================================== */
+
+@media (max-width: 768px) {
+    .assignment-header {
+        padding: 1.5rem 0;
+        margin-bottom: 1.5rem;
+    }
+    
+    .assignment-header h2 {
+        font-size: 1.5rem;
+    }
+    
+    .assignment-header p {
+        font-size: 1rem;
+    }
+    
+    .btn-assignment {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+    
+    .modal-body {
+        padding: 1.5rem;
+    }
+    
+    .modal-footer {
+        padding: 1rem 1.5rem;
+    }
+    
+    .assignment-table .table thead th,
+    .assignment-table .table tbody td {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 576px) {
+    .assignment-header {
+        padding: 1rem 0;
+        margin-bottom: 1rem;
+    }
+    
+    .assignment-header h2 {
+        font-size: 1.25rem;
+    }
+    
+    .assignment-header p {
+        font-size: 0.9rem;
+    }
+    
+    .btn-assignment {
+        padding: 0.4rem 0.8rem;
+        font-size: 0.8rem;
+    }
+    
+    .modal-body {
+        padding: 1rem;
+    }
+    
+    .modal-footer {
+        padding: 0.75rem 1rem;
+    }
+    
+    .assignment-table .table thead th,
+    .assignment-table .table tbody td {
+        padding: 0.5rem 0.25rem;
+        font-size: 0.8rem;
+    }
+    
+    .btn-group .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   📌 Print Styles
+   ======================================== */
+
+@media print {
+    .assignment-header {
+        background: none !important;
+        color: black !important;
+        box-shadow: none !important;
+    }
+    
+    .btn-assignment,
+    .btn-group,
+    .modal {
+        display: none !important;
+    }
+    
+    .assignment-table {
+        box-shadow: none !important;
+        border: 1px solid #000 !important;
+    }
+    
+    .assignment-table .table thead th {
+        background-color: #f8f9fa !important;
+        color: black !important;
+    }
+}
+
+/* ========================================
+   📌 Dark Mode Support
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    .doctor-assignment-container {
+        background-color: #1a1a1a;
+        color: #e9ecef;
+    }
+    
+    .assignment-table {
+        background: #2d3748;
+        color: #e9ecef;
+    }
+    
+    .assignment-table .table tbody tr:hover {
+        background-color: #4a5568;
+    }
+    
+    .form-select,
+    .form-control {
+        background-color: #2d3748;
+        border-color: #4a5568;
+        color: #e9ecef;
+    }
+    
+    .form-select:focus,
+    .form-control:focus {
+        background-color: #2d3748;
+        border-color: #667eea;
+        color: #e9ecef;
+    }
+}
+
+/* ========================================
+   📌 High Contrast Mode
+   ======================================== */
+
+@media (prefers-contrast: high) {
+    .btn-assignment {
+        border: 2px solid currentColor;
+    }
+    
+    .assignment-table .table thead th {
+        border: 2px solid #fff;
+    }
+    
+    .assignment-table .table tbody td {
+        border: 1px solid #000;
+    }
+    
+    .modal-content {
+        border: 2px solid #000;
+    }
+}
+
+/* ========================================
+   📌 Reduced Motion
+   ======================================== */
+
+@media (prefers-reduced-motion: reduce) {
+    .btn-assignment,
+    .btn-group .btn,
+    .form-select,
+    .form-control {
+        transition: none !important;
+    }
+    
+    .btn-assignment:hover {
+        transform: none !important;
+    }
+    
+    .btn-group .btn:hover {
+        transform: none !important;
+    }
+}

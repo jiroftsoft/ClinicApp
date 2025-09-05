@@ -14,50 +14,7 @@
     <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
-    <style>
-        .stats-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border-radius: 15px;
-            color: white;
-            transition: transform 0.3s ease;
-        }
-
-            .stats-card:hover {
-                transform: translateY(-5px);
-            }
-
-        .stats-icon {
-            font-size: 2.5rem;
-            opacity: 0.8;
-        }
-
-        .assignment-table {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .btn-assignment {
-            border-radius: 25px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-            .btn-assignment:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-            }
-
-        .search-box {
-            background: white;
-            border-radius: 25px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        }
-
-        .loading-spinner {
-            display: none;
-        }
-    </style>
+    <link href="~/Content/css/doctor-assignment-index.css" rel="stylesheet" />
 }
 
 <div class="container-fluid">
@@ -73,11 +30,7 @@
                     <p class="text-muted mb-0">مدیریت عملیات انتساب، انتقال و حذف انتسابات پزشکان - برای عملیات تخصصی به ماژول‌های مربوطه مراجعه شود</p>
                 </div>
                 <div>
-                    <button type="button" class="btn btn-success btn-assignment" onclick="showBulkAssignmentModal()">
-                        <i class="fas fa-users me-2"></i>
-                        انتساب گروهی
-                    </button>
-                    <button type="button" class="btn btn-info btn-assignment" onclick="refreshData()">
+                    <button type="button" class="btn btn-info btn-assignment" id="refreshDataBtn" aria-label="بروزرسانی داده‌ها">
                         <i class="fas fa-sync-alt me-2"></i>
                         بروزرسانی
                     </button>
@@ -99,28 +52,28 @@
                         <i class="fas fa-list me-2"></i>
                         لیست انتسابات پزشکان
                     </h4>
-                    <div class="loading-spinner">
-                        <div class="spinner-border text-primary" role="status">
+                    <div class="loading-spinner" id="tableLoadingSpinner" style="display: none;">
+                        <div class="spinner-border text-primary" role="status" aria-label="در حال بارگذاری داده‌ها">
                             <span class="visually-hidden">در حال بارگذاری...</span>
                         </div>
                     </div>
                 </div>
 
                 <div class="table-responsive">
-                    <table id="assignmentsTable" class="table table-striped table-hover">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>ردیف</th>
-                                <th>نام پزشک</th>
-                                <th>کد ملی</th>
-                                <th>دپارتمان‌ها</th>
-                                <th>سرفصل‌های خدماتی</th>
-                                <th>وضعیت</th>
-                                <th>تاریخ انتساب</th>
-                                <th>عملیات</th>
+                    <table id="assignmentsTable" class="table table-striped table-hover" role="table" aria-label="لیست انتسابات پزشکان">
+                        <thead class="table-dark" role="rowgroup">
+                            <tr role="row">
+                                <th role="columnheader" scope="col" aria-label="ردیف">ردیف</th>
+                                <th role="columnheader" scope="col" aria-label="نام پزشک">نام پزشک</th>
+                                <th role="columnheader" scope="col" aria-label="کد ملی">کد ملی</th>
+                                <th role="columnheader" scope="col" aria-label="دپارتمان‌ها">دپارتمان‌ها</th>
+                                <th role="columnheader" scope="col" aria-label="سرفصل‌های خدماتی">سرفصل‌های خدماتی</th>
+                                <th role="columnheader" scope="col" aria-label="وضعیت">وضعیت</th>
+                                <th role="columnheader" scope="col" aria-label="تاریخ انتساب">تاریخ انتساب</th>
+                                <th role="columnheader" scope="col" aria-label="عملیات">عملیات</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody role="rowgroup">
                             <!-- Data will be loaded via AJAX -->
                         </tbody>
                     </table>
@@ -129,56 +82,10 @@
         </div>
     </div>
 </div>
-
-<!-- Bulk Assignment Modal -->
-<div class="modal fade" id="bulkAssignmentModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-users me-2"></i>
-                    انتساب گروهی پزشکان
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">انتخاب پزشکان</label>
-                        <select id="bulkDoctors" class="form-select" multiple>
-                            <!-- Doctors will be loaded here -->
-                        </select>
-                    </div>
-                    <div class="col-md-6 mb-3">
-                        <label class="form-label">دپارتمان مقصد</label>
-                        <select id="bulkDepartment" class="form-select">
-                            <option value="">انتخاب کنید...</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="row">
-                    <div class="col-12 mb-3">
-                        <label class="form-label">سرفصل‌های خدماتی</label>
-                        <select id="bulkServiceCategories" class="form-select" multiple>
-                            <!-- Service categories will be loaded here -->
-                        </select>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-success" onclick="performBulkAssignment()">
-                    <i class="fas fa-save me-2"></i>
-                    انتساب گروهی
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
 @section Scripts {
     <!-- Scripts are loaded via bundles in _AdminLayout.cshtml -->
     <!-- Additional scripts specific to this page -->
+    <script src="~/Content/plugins/persian-datepicker/persian-datepicker.min.js"></script>
 
     <script>
         let assignmentsTable;
@@ -379,22 +286,79 @@
             console.log('Initial data loaded from ViewBag');
         }
 
-        function populateSelect(selector, data, defaultOption = null, showCode = false) {
-            const select = $(selector);
-            select.empty();
-            if (defaultOption) select.append(`<option value="">${defaultOption}</option>`);
-            data.forEach(item => {
-                const text = showCode ? `${item.FullName} - ${item.NationalCode}` : item.Name;
-                select.append(new Option(text, item.Id));
-            });
-        }
-
         /* -----------------------------
            📌 Actions
         ----------------------------- */
-        function applyFilters() { assignmentsTable.ajax.reload(); }
+        function applyFilters() { 
+            updateUrlWithFilters();
+            assignmentsTable.ajax.reload(); 
+        }
         function refreshTable() { assignmentsTable.ajax.reload(); }
         function refreshData() { assignmentsTable.ajax.reload(); }
+        
+        function resetFilters() {
+            console.log('Resetting filters...');
+            
+            // Use the enhanced clearAllFilters function if available
+            if (typeof window.clearAllFilters === 'function') {
+                window.clearAllFilters();
+            } else {
+                // Fallback to manual reset
+                $('#searchInput').val('');
+                $('#departmentFilter').val('').trigger('change');
+                $('#statusFilter').val('').trigger('change');
+                $('#DateFrom').val('');
+                $('#DateTo').val('');
+                $('#ServiceCategoryId').val('').trigger('change');
+                $('#AssignmentType').val('').trigger('change');
+            }
+            
+            // Clear URL parameters
+            cleanUrl();
+            
+            // Reload table with cleared filters
+            if (assignmentsTable) {
+                assignmentsTable.ajax.reload();
+            } else {
+                console.warn('assignmentsTable not initialized');
+            }
+            
+            console.log('Filters reset successfully');
+        }
+        
+        function cleanUrl() {
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location);
+                url.search = '';
+                window.history.replaceState({}, '', url);
+            }
+        }
+        
+        function updateUrlWithFilters() {
+            if (window.history && window.history.replaceState) {
+                const url = new URL(window.location);
+                const params = new URLSearchParams();
+                
+                const searchTerm = $('#searchInput').val();
+                const departmentId = $('#departmentFilter').val();
+                const status = $('#statusFilter').val();
+                const dateFrom = $('#DateFrom').val();
+                const dateTo = $('#DateTo').val();
+                const serviceCategoryId = $('#ServiceCategoryId').val();
+                const assignmentType = $('#AssignmentType').val();
+                
+                if (searchTerm) params.set('SearchTerm', searchTerm);
+                if (departmentId) params.set('DepartmentId', departmentId);
+                if (status) params.set('Status', status);
+                if (dateFrom) params.set('DateFrom', dateFrom);
+                if (dateTo) params.set('DateTo', dateTo);
+                if (serviceCategoryId) params.set('ServiceCategoryId', serviceCategoryId);
+                if (assignmentType) params.set('AssignmentType', assignmentType);
+                
+                url.search = params.toString();
+                window.history.replaceState({}, '', url);
+            }
+        }
         
         function showBulkAssignmentModal() {
             $('#bulkAssignmentModal').modal('show');
@@ -452,33 +416,102 @@
             }));
 
             showLoading();
-            $.ajax({
-                url: '@Url.Action("BulkAssign", "DoctorAssignment")',
-                type: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({ models: assignments }),
-                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val() }
-            }).done(r => {
-                if (r.success) {
-                    showSuccess('موفق', `${r.successCount} پزشک انتساب شدند`);
-                    $('#bulkAssignmentModal').modal('hide');
-                    refreshTable();
-                } else showError('خطا', r.message);
-            }).fail((xhr, status, error) => {
-                console.error('Bulk assignment error:', status, error);
-                if (xhr.status === 500) {
-                    showError('خطای سرور', 'خطا در پردازش انتساب گروهی');
-                } else {
-                    showError('خطا', 'لطفاً دوباره تلاش کنید');
-                }
-            }).always(hideLoading);
+       
         }
 
         /* -----------------------------
            📌 Utils
         ----------------------------- */
         function initSearchBox() {
-            $('#searchInput').on('keyup', e => { if (e.keyCode === 13) applyFilters(); });
+            // Enhanced search input with debounce
+            let searchTimeout;
+            $('#searchInput').on('input keyup', function(e) {
+                clearTimeout(searchTimeout);
+                if (e.keyCode === 13) {
+                    applyFilters();
+                } else {
+                    searchTimeout = setTimeout(() => {
+                        applyFilters();
+                    }, 500); // 500ms debounce
+                }
+            });
+            
+            // Enhanced filter change events with better handling
+            $('#departmentFilter, #statusFilter, #ServiceCategoryId, #AssignmentType').on('change', function() {
+                console.log('Filter changed:', $(this).attr('id'), $(this).val());
+                applyFilters();
+            });
+            
+            // Enhanced date picker change events
+            $('#DateFrom, #DateTo').on('change', function() {
+                console.log('Date filter changed:', $(this).attr('id'), $(this).val());
+                applyFilters();
+            });
+            
+            // Enhanced button event handlers
+            $('#applyFiltersBtn').on('click', function() {
+                console.log('Apply filters button clicked');
+                applyFilters();
+            });
+            
+            $('#resetFiltersBtn').on('click', function() {
+                console.log('Reset filters button clicked');
+                resetFilters();
+            });
+            
+            $('#exportFiltersBtn').on('click', function() {
+                console.log('Export filters button clicked');
+                if (typeof window.exportFilters === 'function') {
+                    window.exportFilters();
+                }
+            });
+            
+            // Quick filter presets
+            $('#quickFilterPresets').on('change', function() {
+                const preset = $(this).val();
+                console.log('Quick filter preset selected:', preset);
+                if (preset && typeof window.applyFilterPreset === 'function') {
+                    // Get preset from the enhanced filter system
+                    const presets = {
+                        'active_doctors': { status: 'active' },
+                        'recent_assignments': { dateFrom: getDateDaysAgo(30) },
+                        'emergency_department': { departmentId: 1 },
+                        'pending_approval': { status: 'pending' }
+                    };
+                    if (presets[preset]) {
+                        window.applyFilterPreset(presets[preset]);
+                    }
+                }
+            });
+            
+            // Auto-apply filters on page load if URL has parameters
+            loadFiltersFromUrl();
+        }
+        
+        function getDateDaysAgo(days) {
+            const date = new Date();
+            date.setDate(date.getDate() - days);
+            return date.toISOString().split('T')[0];
+        }
+        
+        function loadFiltersFromUrl() {
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            const searchTerm = urlParams.get('SearchTerm');
+            const departmentId = urlParams.get('DepartmentId');
+            const status = urlParams.get('Status');
+            const dateFrom = urlParams.get('DateFrom');
+            const dateTo = urlParams.get('DateTo');
+            const serviceCategoryId = urlParams.get('ServiceCategoryId');
+            const assignmentType = urlParams.get('AssignmentType');
+            
+            if (searchTerm) $('#searchInput').val(searchTerm);
+            if (departmentId) $('#departmentFilter').val(departmentId).trigger('change');
+            if (status) $('#statusFilter').val(status).trigger('change');
+            if (dateFrom) $('#DateFrom').val(dateFrom);
+            if (dateTo) $('#DateTo').val(dateTo);
+            if (serviceCategoryId) $('#ServiceCategoryId').val(serviceCategoryId).trigger('change');
+            if (assignmentType) $('#AssignmentType').val(assignmentType).trigger('change');
         }
 
         function formatDate(dateString) {
@@ -513,5 +546,17 @@
                 alert(title + ': ' + msg);
             }
         }
+        
+        // Make functions globally accessible for HTML onclick events
+        window.resetFilters = resetFilters;
+        window.applyFilters = applyFilters;
+        window.refreshData = refreshData;
+        window.showBulkAssignmentModal = showBulkAssignmentModal;
+        window.viewDetails = viewDetails;
+        window.editAssignment = editAssignment;
+        window.transferDoctor = transferDoctor;
+        window.removeAssignment = removeAssignment;
+        window.performBulkAssignment = performBulkAssignment;
     </script>
 }
+

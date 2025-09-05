@@ -1,0 +1,331 @@
+@*
+    قالب استاندارد برای فرم‌های جزئیات
+    Standard Template for Details Pages
+    
+    نحوه استفاده:
+    1. کپی کردن این فایل
+    2. تغییر نام فایل به Details.cshtml
+    3. تغییر Model و اطلاعات
+    4. اضافه کردن CSS: details-standards.css
+*@
+
+@model YourViewModel
+
+@{
+    ViewBag.Title = "جزئیات " + Model.Title;
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<!-- اضافه کردن CSS استاندارد -->
+@section Styles {
+    <link href="~/Content/css/details-standards.css" rel="stylesheet" />
+}
+
+<div class="details-container">
+    <!-- Header صفحه -->
+    <div class="details-header">
+        <h1 class="details-title">@ViewBag.Title</h1>
+        <p class="details-subtitle">مشاهده و مدیریت اطلاعات @Model.Title</p>
+    </div>
+
+    <!-- بخش اطلاعات اصلی -->
+    <div class="info-section">
+        <div class="details-card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-user section-icon"></i>
+                    اطلاعات اصلی
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">شناسه:</label>
+                        <span class="info-value">
+                            <span class="badge badge-primary">@Model.Id</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">نام:</label>
+                        <span class="info-value">@Model.Name</span>
+                    </div>
+                    
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">توضیحات:</label>
+                        <span class="info-value">
+                            <span class="text-muted">@Model.Description</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بخش وضعیت -->
+    <div class="info-section">
+        <div class="details-card border-success">
+            <div class="card-header bg-success text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-check-circle section-icon"></i>
+                    وضعیت
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-success">
+                        <label class="info-label border-success">وضعیت:</label>
+                        <span class="info-value">
+                            @if (Model.IsActive)
+                            {
+                                <span class="badge badge-success">فعال</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger">غیرفعال</span>
+                            }
+                        </span>
+                    </div>
+                    
+                    <div class="info-row border-success">
+                        <label class="info-label border-success">وضعیت تایید:</label>
+                        <span class="info-value">
+                            @if (Model.IsApproved)
+                            {
+                                <span class="badge badge-success">تایید شده</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-warning">در انتظار تایید</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بخش اطلاعات زمان‌بندی -->
+    <div class="info-section">
+        <div class="details-card border-info">
+            <div class="card-header bg-info text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-calendar section-icon"></i>
+                    اطلاعات زمان‌بندی
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-info">
+                        <label class="info-label border-info">تاریخ ایجاد:</label>
+                        <span class="info-value">
+                            <span class="text-muted">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row border-info">
+                        <label class="info-label border-info">آخرین تغییر:</label>
+                        <span class="info-value">
+                            <span class="text-muted">@Model.UpdatedAt.ToString("yyyy/MM/dd HH:mm")</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row border-info">
+                        <label class="info-label border-info">تاریخ انقضا:</label>
+                        <span class="info-value">
+                            @if (Model.ExpiryDate.HasValue)
+                            {
+                                <span class="text-muted">@Model.ExpiryDate.Value.ToString("yyyy/MM/dd")</span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-secondary">بدون انقضا</span>
+                            }
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بخش تاریخچه و حسابرسی -->
+    <div class="info-section">
+        <div class="details-card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-history section-icon"></i>
+                    تاریخچه و حسابرسی
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-warning">
+                        <label class="info-label border-warning">ایجاد شده توسط:</label>
+                        <span class="info-value">
+                            <span class="badge badge-info">@Model.CreatedBy</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row border-warning">
+                        <label class="info-label border-warning">آخرین تغییر توسط:</label>
+                        <span class="info-value">
+                            <span class="badge badge-info">@Model.UpdatedBy</span>
+                        </span>
+                    </div>
+                    
+                    <div class="info-row border-warning">
+                        <label class="info-label border-warning">تعداد تغییرات:</label>
+                        <span class="info-value">
+                            <span class="badge badge-secondary">@Model.ChangeCount</span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- بخش عملیات سریع -->
+    <div class="quick-actions">
+        <div class="details-card border-dark">
+            <div class="card-header bg-dark text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fa fa-cogs section-icon"></i>
+                    عملیات سریع
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div class="btn-group" role="group">
+                    <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn btn-warning btn-lg">
+                        <i class="fa fa-edit"></i> ویرایش
+                    </a>
+                    
+                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                        <i class="fa fa-list"></i> بازگشت به لیست
+                    </a>
+                    
+                    @if (Model.IsActive)
+                    {
+                        <button type="button" class="btn btn-danger btn-lg" onclick="deactivateItem(@Model.Id)">
+                            <i class="fa fa-ban"></i> غیرفعال کردن
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-success btn-lg" onclick="activateItem(@Model.Id)">
+                            <i class="fa fa-check"></i> فعال کردن
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // تابع فعال کردن
+        function activateItem(id) {
+            if (confirm('آیا مطمئن هستید که می‌خواهید این مورد را فعال کنید؟')) {
+                $.ajax({
+                    url: '@Url.Action("Activate", "YourController")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function (result) {
+                        if (result.success) {
+                            showAlert('success', 'مورد با موفقیت فعال شد');
+                            location.reload();
+                        } else {
+                            showAlert('error', result.message);
+                        }
+                    },
+                    error: function () {
+                        showAlert('error', 'خطا در فعال کردن مورد');
+                    }
+                });
+            }
+        }
+
+        // تابع غیرفعال کردن
+        function deactivateItem(id) {
+            if (confirm('آیا مطمئن هستید که می‌خواهید این مورد را غیرفعال کنید؟')) {
+                $.ajax({
+                    url: '@Url.Action("Deactivate", "YourController")',
+                    type: 'POST',
+                    data: { id: id },
+                    success: function (result) {
+                        if (result.success) {
+                            showAlert('success', 'مورد با موفقیت غیرفعال شد');
+                            location.reload();
+                        } else {
+                            showAlert('error', result.message);
+                        }
+                    },
+                    error: function () {
+                        showAlert('error', 'خطا در غیرفعال کردن مورد');
+                    }
+                });
+            }
+        }
+
+        // تابع نمایش پیام
+        function showAlert(type, message) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                '<span aria-hidden="true">&times;</span>' +
+                '</button>' +
+                '</div>';
+            
+            $('.details-container').prepend(alertHtml);
+            
+            // حذف خودکار پیام بعد از 5 ثانیه
+            setTimeout(function () {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+
+        // اطمینان از بارگذاری jQuery
+        function ensureJQueryLoaded(callback) {
+            if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function () {
+                    ensureJQueryLoaded(callback);
+                }, 100);
+            }
+        }
+
+        // اجرای کدهای jQuery
+        ensureJQueryLoaded(function () {
+            $(document).ready(function () {
+                // کدهای jQuery اینجا
+                console.log('Details page loaded successfully');
+            });
+        });
+    </script>
+}
+
+@*
+    نکات مهم:
+    
+    1. تغییر Model:
+       - YourViewModel را با ViewModel واقعی جایگزین کنید
+       - Properties را با Model واقعی تطبیق دهید
+    
+    2. تغییر Controller:
+       - YourController را با نام Controller واقعی جایگزین کنید
+       - Actions را با Actions واقعی تطبیق دهید
+    
+    3. تغییر اطلاعات:
+       - Model.Id, Model.Name, Model.Description را تغییر دهید
+       - Properties اضافی را اضافه کنید
+    
+    4. اضافه کردن CSS:
+       - details-standards.css را به Layout اضافه کنید
+    
+    5. سفارشی‌سازی:
+       - بخش‌های اضافی را اضافه کنید
+       - رنگ‌ها را تغییر دهید
+       - عملیات جدید را اضافه کنید
+*@

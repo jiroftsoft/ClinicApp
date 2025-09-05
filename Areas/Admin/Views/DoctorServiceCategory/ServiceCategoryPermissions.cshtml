@@ -372,20 +372,9 @@
                                 }
                                 
                                 <div class="action-buttons">
-                                    @if (permission.IsActive)
-                                    {
-                                        <button class="btn btn-warning btn-action" onclick="deactivatePermission('@permission.AssignmentId')">
-                                            <i class="fas fa-pause me-1"></i>
-                                            غیرفعال کردن
-                                        </button>
-                                    }
-                                    else
-                                    {
-                                        <button class="btn btn-success btn-action" onclick="activatePermission('@permission.AssignmentId')">
-                                            <i class="fas fa-play me-1"></i>
-                                            فعال کردن
-                                        </button>
-                                    }
+                                    <!-- Note: ActivatePermission and DeactivatePermission actions removed from controller -->
+                                    <!-- These buttons are no longer needed as the actions don't exist -->
+                                    <!-- Use Edit action to modify permissions instead -->
                                     
                                     <button class="btn btn-info btn-action" onclick="editPermission('@permission.AssignmentId')">
                                         <i class="fas fa-edit me-1"></i>
@@ -437,110 +426,17 @@
             $('.loading-overlay').hide();
         }
 
-        function activatePermission(permissionId) {
-            Swal.fire({
-                title: 'فعال کردن صلاحیت',
-                text: 'آیا از فعال کردن این صلاحیت اطمینان دارید؟',
-                icon: 'question',
-                showCancelButton: true,
-                confirmButtonText: 'بله، فعال کن',
-                cancelButtonText: 'انصراف',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    showLoading();
-                    
-                    $.ajax({
-                        url: '@Url.Action("ActivatePermission")',
-                        type: 'POST',
-                        data: { permissionId: permissionId },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'موفق',
-                                    text: 'صلاحیت با موفقیت فعال شد',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطا',
-                                    text: response.message || 'خطا در فعال کردن صلاحیت'
-                                });
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'خطا',
-                                text: 'خطا در ارتباط با سرور'
-                            });
-                        },
-                        complete: function() {
-                            hideLoading();
-                        }
-                    });
-                }
-            });
-        }
-
-        function deactivatePermission(permissionId) {
-            Swal.fire({
-                title: 'غیرفعال کردن صلاحیت',
-                text: 'آیا از غیرفعال کردن این صلاحیت اطمینان دارید؟',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonText: 'بله، غیرفعال کن',
-                cancelButtonText: 'انصراف',
-                reverseButtons: true
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    showLoading();
-                    
-                    $.ajax({
-                        url: '@Url.Action("DeactivatePermission")',
-                        type: 'POST',
-                        data: { permissionId: permissionId },
-                        success: function(response) {
-                            if (response.success) {
-                                Swal.fire({
-                                    icon: 'success',
-                                    title: 'موفق',
-                                    text: 'صلاحیت با موفقیت غیرفعال شد',
-                                    timer: 2000,
-                                    showConfirmButton: false
-                                }).then(() => {
-                                    location.reload();
-                                });
-                            } else {
-                                Swal.fire({
-                                    icon: 'error',
-                                    title: 'خطا',
-                                    text: response.message || 'خطا در غیرفعال کردن صلاحیت'
-                                });
-                            }
-                        },
-                        error: function() {
-                            Swal.fire({
-                                icon: 'error',
-                                title: 'خطا',
-                                text: 'خطا در ارتباط با سرور'
-                            });
-                        },
-                        complete: function() {
-                            hideLoading();
-                        }
-                    });
-                }
-            });
-        }
+        // Note: ActivatePermission and DeactivatePermission functions removed
+        // These functions are no longer needed as the corresponding controller actions don't exist
+        // Use Edit action to modify permissions instead
 
         function editPermission(permissionId) {
-            window.location.href = '@Url.Action("EditPermission")?permissionId=' + permissionId;
+            // Use assignmentId directly for Edit action
+            if (permissionId && permissionId.includes('_')) {
+                window.location.href = '@Url.Action("Edit")?assignmentId=' + encodeURIComponent(permissionId);
+            } else {
+                showAlert('error', 'شناسه صلاحیت نامعتبر است.');
+            }
         }
 
         function removePermission(permissionId) {
@@ -557,26 +453,62 @@
                 if (result.isConfirmed) {
                     showLoading();
                     
+                    // Parse permissionId to get doctorId and serviceCategoryId
+                    var parts = permissionId.split('_');
+                    if (parts.length !== 2) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'خطا',
+                            text: 'شناسه صلاحیت نامعتبر است.'
+                        });
+                        hideLoading();
+                        return;
+                    }
+                    
+                    var doctorId = parseInt(parts[0]);
+                    var categoryId = parseInt(parts[1]); // Use categoryId parameter name
+                    
                     $.ajax({
-                        url: '@Url.Action("RemovePermission")',
+                        url: '@Url.Action("RemoveServiceCategory")',
                         type: 'POST',
-                        data: { permissionId: permissionId },
+                        dataType: 'json',
+                        contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                        data: { 
+                            doctorId: doctorId,
+                            categoryId: categoryId,
+                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                        },
                         success: function(response) {
-                            if (response.success) {
+                            console.log('Response received:', response); // Debug log
+                            console.log('Response type:', typeof response); // Debug log
+                            console.log('Response success:', response?.success); // Debug log
+                            
+                            // Parse response if it's a string
+                            if (typeof response === 'string') {
+                                try {
+                                    response = JSON.parse(response);
+                                    console.log('Parsed response:', response); // Debug log
+                                } catch (e) {
+                                    console.error('Error parsing response:', e); // Debug log
+                                }
+                            }
+                            
+                            if (response && response.success === true) {
                                 Swal.fire({
                                     icon: 'success',
                                     title: 'موفق',
-                                    text: 'صلاحیت با موفقیت حذف شد',
+                                    text: response.message || 'صلاحیت با موفقیت حذف شد',
                                     timer: 2000,
                                     showConfirmButton: false
                                 }).then(() => {
                                     location.reload();
                                 });
                             } else {
+                                console.log('Error condition - response:', response); // Debug log
                                 Swal.fire({
                                     icon: 'error',
                                     title: 'خطا',
-                                    text: response.message || 'خطا در حذف صلاحیت'
+                                    text: (response && response.message) || 'خطا در حذف صلاحیت'
                                 });
                             }
                         },

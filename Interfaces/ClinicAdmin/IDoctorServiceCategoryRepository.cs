@@ -36,6 +36,7 @@ public interface IDoctorServiceCategoryRepository
     /// <returns>ارتباط پزشک-سرفصل خدماتی همراه با جزئیات</returns>
     Task<DoctorServiceCategory> GetDoctorServiceCategoryWithDetailsAsync(int doctorId, int serviceCategoryId);
 
+
     /// <summary>
     /// دریافت لیست انتصابات پزشک به سرفصل‌های خدماتی
     /// </summary>
@@ -118,6 +119,46 @@ public interface IDoctorServiceCategoryRepository
     /// ذخیره تمام تغییرات در انتظار به پایگاه داده
     /// </summary>
     Task SaveChangesAsync();
+
+    /// <summary>
+    /// دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی (برای فیلتر "همه پزشکان")
+    /// </summary>
+    /// <param name="searchTerm">عبارت جستجو</param>
+    /// <param name="doctorId">شناسه پزشک (اختیاری)</param>
+    /// <param name="serviceCategoryId">شناسه سرفصل خدماتی (اختیاری)</param>
+    /// <param name="isActive">وضعیت فعال (اختیاری)</param>
+    /// <param name="pageNumber">شماره صفحه</param>
+    /// <param name="pageSize">تعداد آیتم‌ها در هر صفحه</param>
+    /// <returns>لیست همه انتصابات پزشکان به سرفصل‌های خدماتی</returns>
+    Task<List<DoctorServiceCategory>> GetAllDoctorServiceCategoriesAsync(string searchTerm, int? doctorId, int? serviceCategoryId, bool? isActive, int pageNumber, int pageSize);
+
+    /// <summary>
+    /// دریافت تعداد همه انتصابات پزشکان به سرفصل‌های خدماتی
+    /// </summary>
+    /// <param name="searchTerm">عبارت جستجو</param>
+    /// <param name="doctorId">شناسه پزشک (اختیاری)</param>
+    /// <param name="serviceCategoryId">شناسه سرفصل خدماتی (اختیاری)</param>
+    /// <param name="isActive">وضعیت فعال (اختیاری)</param>
+    /// <returns>تعداد همه انتصابات پزشکان به سرفصل‌های خدماتی</returns>
+    Task<int> GetAllDoctorServiceCategoriesCountAsync(string searchTerm, int? doctorId, int? serviceCategoryId, bool? isActive);
+
+    #endregion
+
+    #region Department Management (مدیریت دپارتمان‌ها)
+
+    /// <summary>
+    /// دریافت دپارتمان‌های مرتبط با پزشک
+    /// </summary>
+    /// <param name="doctorId">شناسه پزشک</param>
+    /// <returns>لیست دپارتمان‌های مرتبط با پزشک</returns>
+    Task<List<Department>> GetDoctorDepartmentsAsync(int doctorId);
+
+    /// <summary>
+    /// دریافت سرفصل‌های خدماتی مرتبط با دپارتمان
+    /// </summary>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <returns>لیست سرفصل‌های خدماتی مرتبط با دپارتمان</returns>
+    Task<List<ServiceCategory>> GetServiceCategoriesByDepartmentAsync(int departmentId);
 
     #endregion
 }
