@@ -85,6 +85,14 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string TimelineMarkerClass => GetTimelineMarkerClass(ActionType);
         public string TimelineIcon => GetTimelineIcon(ActionType);
 
+        // Properties for View compatibility
+        public string Date => ActionDate.ToString("yyyy/MM/dd");
+        public string Time => ActionDate.ToString("HH:mm");
+        public string OperationType => ActionType;
+        public string Title => ActionTitle;
+        public string Description => ActionDescription;
+        public string ModifiedBy => PerformedBy;
+
         // Static helper methods
         public static string GetActionTypeText(string actionType)
         {

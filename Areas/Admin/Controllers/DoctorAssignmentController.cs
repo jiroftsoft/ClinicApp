@@ -18,9 +18,11 @@ using System.Web.Caching;
 namespace ClinicApp.Areas.Admin.Controllers
 {
     /// <summary>
-    /// کنترلر مدیریت انتسابات کلی پزشکان
-    /// مسئولیت اصلی: مدیریت عملیات انتساب، انتقال و حذف انتسابات پزشکان
+    /// کنترلر مدیریت انتسابات پزشکان
+    /// مسئولیت اصلی: مدیریت عملیات انتساب پزشکان به دپارتمان‌ها و سرفصل‌های خدماتی
+    /// 
     /// Actions تخصصی به کنترولرهای مربوطه منتقل شده‌اند:
+    /// - حذف انتسابات: DoctorRemovalController
     /// - تاریخچه: DoctorHistoryController
     /// - گزارش‌گیری: DoctorReportingController
     /// - انتساب دپارتمان: DoctorDepartmentController
@@ -28,17 +30,16 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// - برنامه زمانی: DoctorScheduleController
     /// </summary>
     //[Authorize(Roles = "Admin,ClinicManager")]
-    public class DoctorAssignmentController : Controller
+    public class DoctorAssignmentController : Shared.BaseAssignmentController
     {
-        private readonly IDoctorAssignmentService _doctorAssignmentService;
-        private readonly IDoctorCrudService _doctorService;
-        private readonly IDoctorDepartmentService _doctorDepartmentService;
-        private readonly IDoctorServiceCategoryService _doctorServiceCategoryService;
-        private readonly IDoctorAssignmentHistoryService _historyService;
+        #region Private Fields (فیلدهای خصوصی)
+
         private readonly IValidator<DoctorAssignmentOperationViewModel> _operationValidator;
-        private readonly IValidator<DoctorTransferViewModel> _transferValidator;
-        private readonly IValidator<DoctorAssignmentRemovalViewModel> _removalValidator;
-        private readonly ILogger _logger;
+        private readonly IValidator<DoctorAssignmentEditViewModel> _editValidator;
+
+        #endregion
+
+        #region Constructor (سازنده)
 
         public DoctorAssignmentController(
             IDoctorAssignmentService doctorAssignmentService,
@@ -47,19 +48,14 @@ namespace ClinicApp.Areas.Admin.Controllers
             IDoctorServiceCategoryService doctorServiceCategoryService,
             IDoctorAssignmentHistoryService historyService,
             IValidator<DoctorAssignmentOperationViewModel> operationValidator,
-            IValidator<DoctorTransferViewModel> transferValidator,
-            IValidator<DoctorAssignmentRemovalViewModel> removalValidator)
+            IValidator<DoctorAssignmentEditViewModel> editValidator)
+            : base(doctorAssignmentService, doctorService, doctorDepartmentService, doctorServiceCategoryService, historyService)
         {
-            _doctorAssignmentService = doctorAssignmentService ?? throw new ArgumentNullException(nameof(doctorAssignmentService));
-            _doctorService = doctorService ?? throw new ArgumentNullException(nameof(doctorService));
-            _doctorDepartmentService = doctorDepartmentService ?? throw new ArgumentNullException(nameof(doctorDepartmentService));
-            _doctorServiceCategoryService = doctorServiceCategoryService ?? throw new ArgumentNullException(nameof(doctorServiceCategoryService));
-            _historyService = historyService ?? throw new ArgumentNullException(nameof(historyService));
             _operationValidator = operationValidator ?? throw new ArgumentNullException(nameof(operationValidator));
-            _transferValidator = transferValidator ?? throw new ArgumentNullException(nameof(transferValidator));
-            _removalValidator = removalValidator ?? throw new ArgumentNullException(nameof(removalValidator));
-            _logger = Log.ForContext<DoctorAssignmentController>();
+            _editValidator = editValidator ?? throw new ArgumentNullException(nameof(editValidator));
         }
+
+        #endregion
 
         #region Main Actions (اکشن‌های اصلی)
 
@@ -74,99 +70,28 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Information("درخواست نمایش صفحه اصلی مدیریت انتسابات پزشکان");
 
-                // ایجاد ViewModel اصلی با مقادیر پیش‌فرض
-                var viewModel = new DoctorAssignmentIndexViewModel
-                {
-                    PageTitle = "مدیریت انتسابات پزشکان",
-                    PageSubtitle = "مدیریت کلی انتسابات پزشکان به دپارتمان‌ها و سرفصل‌های خدماتی",
-                    IsDataLoaded = false,
-                    LastRefreshTime = DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss"),
-                    IsLoading = true,
-                    LoadingMessage = "در حال بارگذاری داده‌ها..."
-                };
-
-                // دریافت آمار واقعی از سرویس
-                var statsResult = await _doctorAssignmentService.GetAssignmentStatisticsAsync();
-                viewModel.Stats = statsResult.Success ? statsResult.Data : new AssignmentStatsViewModel
-                {
-                    TotalAssignments = 0,
-                    ActiveAssignments = 0,
-                    InactiveAssignments = 0,
-                    AssignedDoctors = 0,
-                    ActiveDepartments = 0,
-                    ServiceCategories = 0,
-                    CompletionPercentage = 0,
-                    LastUpdate = DateTime.Now
-                };
-
-                // ایجاد فیلتر ViewModel
-                viewModel.Filters = new AssignmentFilterViewModel();
+                // دریافت ViewModel کاملاً آماده از سرویس
+                var viewModelResult = await _doctorAssignmentService.GetDoctorAssignmentIndexViewModelAsync();
                 
-                // دریافت دپارتمان‌های واقعی برای فیلتر
-                var departmentsResult = await _doctorDepartmentService.GetAllDepartmentsAsync();
-                if (departmentsResult.Success && departmentsResult.Data?.Count > 0)
+                if (!viewModelResult.Success)
                 {
-                    viewModel.Filters.Departments = departmentsResult.Data.Select(d => new ViewModels.DoctorManagementVM.SelectListItem
-                    {
-                        Text = d.Name,
-                        Value = d.Id.ToString(),
-                        Selected = false
-                    }).ToList();
-                }
-                else
-                {
-                    viewModel.Filters.Departments = new List<ViewModels.DoctorManagementVM.SelectListItem>
-                    {
-                        new ViewModels.DoctorManagementVM.SelectListItem { Text = "هیچ دپارتمانی یافت نشد", Value = "", Selected = true }
-                    };
+                    _logger.Warning("خطا در آماده‌سازی ViewModel: {Message}", viewModelResult.Message);
+                    TempData["ErrorMessage"] = "خطا در بارگذاری صفحه اصلی";
+                    return RedirectToAction("Index", "Home");
                 }
 
-                // اضافه کردن گزینه "همه دپارتمان‌ها" در ابتدای لیست
-                viewModel.Filters.Departments.Insert(0, new ViewModels.DoctorManagementVM.SelectListItem 
-                { 
-                    Text = "همه دپارتمان‌ها", 
-                    Value = "", 
-                    Selected = true 
-                });
+                var viewModel = viewModelResult.Data;
 
-                // دریافت دسته‌بندی‌های خدماتی برای فیلتر
-                var serviceCategoriesResult = await _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
-                if (serviceCategoriesResult.Success && serviceCategoriesResult.Data?.Count > 0)
-                {
-                    viewModel.Filters.ServiceCategories = serviceCategoriesResult.Data.Select(sc => new ViewModels.DoctorManagementVM.SelectListItem
-                    {
-                        Text = sc.Name,
-                        Value = sc.Id.ToString(),
-                        Selected = false
-                    }).ToList();
-                }
-                else
-                {
-                    viewModel.Filters.ServiceCategories = new List<ViewModels.DoctorManagementVM.SelectListItem>
-                    {
-                        new ViewModels.DoctorManagementVM.SelectListItem { Text = "هیچ دسته‌بندی یافت نشد", Value = "", Selected = true }
-                    };
-                }
-
-                // اضافه کردن گزینه "همه دسته‌بندی‌ها" در ابتدای لیست
-                viewModel.Filters.ServiceCategories.Insert(0, new ViewModels.DoctorManagementVM.SelectListItem 
-                { 
-                    Text = "همه دسته‌بندی‌ها", 
-                    Value = "", 
-                    Selected = true 
-                });
-
-                // ارسال داده‌ها به ViewBag برای Partial Views
-                ViewBag.Departments = viewModel.Filters.Departments;
-                ViewBag.ServiceCategories = viewModel.Filters.ServiceCategories;
-
-                // تنظیم وضعیت نهایی
-                viewModel.IsDataLoaded = true;
-                viewModel.IsLoading = false;
-                viewModel.LoadingMessage = "";
+                // تنظیم ViewBag برای باندل‌ها (طبق قرارداد بهینه‌سازی ویوها)
+                ViewBag.Title = viewModel.PageTitle;
+                ViewBag.RequireDataTables = true;        // برای جدول‌ها
+                ViewBag.RequireSelect2 = true;           // برای فیلترهای dropdown
+                ViewBag.RequireDatePicker = true;        // برای فیلتر تاریخ
+                ViewBag.RequireFormValidation = true;    // برای اعتبارسنجی فرم‌ها
 
                 _logger.Information("صفحه اصلی مدیریت انتسابات با موفقیت نمایش داده شد. TotalAssignments: {TotalAssignments}, ActiveAssignments: {ActiveAssignments}", 
                     viewModel.Stats.TotalAssignments, viewModel.Stats.ActiveAssignments);
+                
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -235,6 +160,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     ServiceCategoryId = dsc.ServiceCategoryId,
                     ServiceCategoryTitle = dsc.ServiceCategoryTitle,
+                    ServiceCategoryName = dsc.ServiceCategoryTitle, // اضافه کردن ServiceCategoryName
                     IsActive = dsc.IsActive,
                     GrantedDate = dsc.GrantedDate,
                     CertificateNumber = dsc.CertificateNumber
@@ -286,61 +212,277 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // Assignments Action
+
+        // AssignToDepartment GET Action
+        #endregion
+
+        #region Edit Actions (اکشن‌های ویرایش)
+
         /// <summary>
-        /// نمایش لیست انتسابات پزشک
+        /// نمایش فرم ویرایش انتسابات پزشک
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Assignments(int? doctorId)
+        public async Task<ActionResult> Edit(int? id)
         {
             try
             {
-                _logger.Information("درخواست نمایش انتسابات پزشک {DoctorId}", doctorId);
+                _logger.Information("درخواست نمایش فرم ویرایش انتسابات پزشک {DoctorId}", id);
 
-                if (!doctorId.HasValue || doctorId.Value <= 0)
+                if (!id.HasValue || id.Value <= 0)
                 {
-                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
+                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", id);
                     TempData["ErrorMessage"] = "شناسه پزشک نامعتبر است";
                     return RedirectToAction("Index");
                 }
 
                 // دریافت اطلاعات پزشک
-                var doctorResult = await _doctorService.GetDoctorDetailsAsync(doctorId.Value);
+                var doctorResult = await _doctorService.GetDoctorDetailsAsync(id.Value);
                 if (!doctorResult.Success)
                 {
-                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
+                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", id.Value);
                     TempData["ErrorMessage"] = doctorResult.Message;
                     return RedirectToAction("Index");
                 }
 
                 var doctor = doctorResult.Data;
 
-                // دریافت انتسابات پزشک
-                var assignmentsResult = await _doctorAssignmentService.GetDoctorAssignmentsAsync(doctorId.Value);
+                // دریافت انتسابات فعلی پزشک
+                var assignmentsResult = await _doctorAssignmentService.GetDoctorAssignmentsAsync(id.Value);
                 if (!assignmentsResult.Success)
                 {
-                    _logger.Warning("انتسابات پزشک {DoctorId} یافت نشد", doctorId);
+                    _logger.Warning("انتسابات پزشک {DoctorId} یافت نشد", id.Value);
                     TempData["ErrorMessage"] = assignmentsResult.Message;
                     return RedirectToAction("Index");
                 }
 
                 var assignments = assignmentsResult.Data;
 
-                ViewBag.Doctor = new { FullName = $"{doctor.FirstName} {doctor.LastName}", NationalCode = doctor.NationalCode };
-                ViewBag.DoctorId = doctorId.Value;
+                // دریافت لیست‌های موجود برای انتخاب
+                var departmentsTask = _doctorDepartmentService.GetDepartmentsAsSelectListAsync();
+                var serviceCategoriesTask = _doctorServiceCategoryService.GetServiceCategoriesAsSelectListAsync();
 
-                _logger.Information("انتسابات پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
-                return View(assignments);
+                await Task.WhenAll(departmentsTask, serviceCategoriesTask);
+
+                var departmentsResult = await departmentsTask;
+                var serviceCategoriesResult = await serviceCategoriesTask;
+
+                // ایجاد ViewModel برای ویرایش
+                var detailsViewModel = new DoctorAssignmentDetailsViewModel
+                {
+                    DoctorId = id.Value,
+                    DoctorName = doctor.FullName,
+                    DoctorNationalCode = doctor.NationalCode,
+                    DoctorSpecialization = string.Join("، ", doctor.SpecializationNames),
+                    MedicalCouncilNumber = doctor.MedicalCouncilCode,
+                    LastUpdateTime = DateTime.Now,
+                    Departments = assignments.DoctorDepartments.Select(dd => new DoctorDepartmentViewModel
+                    {
+                        DepartmentId = dd.DepartmentId,
+                        DepartmentName = dd.DepartmentName,
+                        IsActive = dd.IsActive,
+                        CreatedAt = dd.CreatedAt,
+                        Role = dd.Role
+                    }).ToList(),
+                    ServiceCategories = assignments.DoctorServiceCategories.Select(dsc => new DoctorServiceCategoryViewModel
+                    {
+                        ServiceCategoryId = dsc.ServiceCategoryId,
+                        ServiceCategoryTitle = dsc.ServiceCategoryTitle,
+                        IsActive = dsc.IsActive,
+                        GrantedDate = dsc.GrantedDate,
+                        CertificateNumber = dsc.CertificateNumber
+                    }).ToList()
+                };
+
+                // محاسبه آمار
+                detailsViewModel.TotalActiveAssignments = 
+                    (detailsViewModel.Departments?.Count(d => d.IsActive) ?? 0) + 
+                    (detailsViewModel.ServiceCategories?.Count(s => s.IsActive) ?? 0);
+
+                detailsViewModel.ActiveDepartmentCount = detailsViewModel.Departments?.Count(d => d.IsActive) ?? 0;
+                detailsViewModel.ActiveServiceCategoryCount = detailsViewModel.ServiceCategories?.Count(s => s.IsActive) ?? 0;
+                detailsViewModel.IsMultiDepartment = detailsViewModel.ActiveDepartmentCount > 1;
+
+                // تبدیل به EditViewModel
+                var editViewModel = DoctorAssignmentEditViewModel.FromDetailsViewModel(detailsViewModel);
+                
+                // تنظیم لیست‌های موجود
+                if (departmentsResult.Success)
+                {
+                    editViewModel.AvailableDepartments = departmentsResult.Data;
+                }
+                
+                if (serviceCategoriesResult.Success)
+                {
+                    editViewModel.AvailableServiceCategories = serviceCategoriesResult.Data;
+                }
+
+                // تنظیم ViewBag برای باندل‌ها
+                ViewBag.Title = "ویرایش انتسابات پزشک";
+                ViewBag.RequireSelect2 = true;
+                ViewBag.RequireFormValidation = true;
+                ViewBag.RequireDatePicker = true;
+
+                _logger.Information("فرم ویرایش انتسابات پزشک {DoctorId} با موفقیت نمایش داده شد", id.Value);
+                return View(editViewModel);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در نمایش انتسابات پزشک {DoctorId}", doctorId?.ToString() ?? "null");
-                TempData["ErrorMessage"] = "خطا در بارگذاری انتسابات پزشک";
+                _logger.Error(ex, "خطا در نمایش فرم ویرایش انتسابات پزشک {DoctorId}", id?.ToString() ?? "null");
+                TempData["ErrorMessage"] = "خطا در بارگذاری فرم ویرایش";
                 return RedirectToAction("Index");
             }
         }
 
-        // AssignToDepartment GET Action
+        /// <summary>
+        /// پردازش ویرایش انتسابات پزشک
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit(DoctorAssignmentEditViewModel model)
+        {
+            try
+            {
+                _logger.Information("درخواست ویرایش انتسابات پزشک {DoctorId}", model.DoctorId);
+
+                if (!ModelState.IsValid)
+                {
+                    _logger.Warning("مدل ویرایش نامعتبر برای پزشک {DoctorId}", model.DoctorId);
+                    TempData["ErrorMessage"] = "اطلاعات وارد شده نامعتبر است";
+                    
+                    // بارگذاری مجدد لیست‌ها
+                    await ReloadEditViewModelListsAsync(model);
+                    return View(model);
+                }
+
+                // اعتبارسنجی اضافی
+                if (model.DoctorId <= 0)
+                {
+                    ModelState.AddModelError("", "شناسه پزشک نامعتبر است");
+                    return View(model);
+                }
+
+                // 🔄 PRODUCTION LOG: شروع پردازش ویرایش انتسابات
+                _logger.Information("🔄 PRODUCTION LOG: شروع پردازش ویرایش انتسابات پزشک {DoctorId}", model.DoctorId);
+                _logger.Information("📊 تغییرات درخواستی: حذف {RemoveCount}, دپارتمان جدید {DeptCount}, سرفصل جدید {ServiceCount}", 
+                    model.AssignmentsToRemove?.Count ?? 0, 
+                    model.NewDepartmentIds?.Count ?? 0,
+                    model.NewServiceCategoryIds?.Count ?? 0);
+
+                // اعتبارسنجی با FluentValidation
+                var validationResult = await _editValidator.ValidateAsync(model);
+                if (!validationResult.IsValid)
+                {
+                    _logger.Warning("⚠️ اعتبارسنجی EditViewModel ناموفق: {@Errors}", validationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+                    
+                    foreach (var error in validationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    }
+                    
+                    // بارگذاری مجدد لیست‌ها
+                    await ReloadEditViewModelListsAsync(model);
+                    return View(model);
+                }
+
+                // اعتبارسنجی تاریخ اعمال
+                if (model.EffectiveDate.HasValue && model.EffectiveDate.Value < DateTime.Now.Date)
+                {
+                    _logger.Warning("⚠️ تاریخ اعمال در گذشته است: {EffectiveDate}", model.EffectiveDate);
+                    ModelState.AddModelError("EffectiveDate", "تاریخ اعمال نمی‌تواند در گذشته باشد");
+                    
+                    await ReloadEditViewModelListsAsync(model);
+                    return View(model);
+                }
+
+                // فراخوانی سرویس برای به‌روزرسانی انتسابات
+                var updateResult = await _doctorAssignmentService.UpdateDoctorAssignmentsFromEditAsync(model);
+                
+                if (!updateResult.Success)
+                {
+                    _logger.Error("❌ خطا در به‌روزرسانی انتسابات: {Message}", updateResult.Message);
+                    TempData["ErrorMessage"] = updateResult.Message;
+                    
+                    // بارگذاری مجدد لیست‌ها
+                    await ReloadEditViewModelListsAsync(model);
+                    return View(model);
+                }
+
+                // ✅ موفقیت
+                _logger.Information("✅ PRODUCTION LOG: ویرایش انتسابات پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
+                _logger.Information("📈 آمار نهایی: حذف {RemoveCount}, اضافه دپارتمان {DeptCount}, اضافه سرفصل {ServiceCount}", 
+                    model.AssignmentsToRemove?.Count ?? 0, 
+                    model.NewDepartmentIds?.Count ?? 0,
+                    model.NewServiceCategoryIds?.Count ?? 0);
+                
+                TempData["SuccessMessage"] = "انتسابات با موفقیت ویرایش شد";
+                return RedirectToAction("Details", new { id = model.DoctorId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ویرایش انتسابات پزشک {DoctorId}", model.DoctorId);
+                TempData["ErrorMessage"] = "خطا در ویرایش انتسابات";
+                
+                // بارگذاری مجدد لیست‌ها در صورت خطا
+                try
+                {
+                    var departmentsTask = _doctorDepartmentService.GetDepartmentsAsSelectListAsync();
+                    var serviceCategoriesTask = _doctorServiceCategoryService.GetServiceCategoriesAsSelectListAsync();
+                    await Task.WhenAll(departmentsTask, serviceCategoriesTask);
+                    
+                    if (departmentsTask.Result.Success)
+                        model.AvailableDepartments = departmentsTask.Result.Data;
+                    if (serviceCategoriesTask.Result.Success)
+                        model.AvailableServiceCategories = serviceCategoriesTask.Result.Data;
+                }
+                catch (Exception reloadEx)
+                {
+                    _logger.Error(reloadEx, "خطا در بارگذاری مجدد لیست‌ها");
+                }
+                
+                return View(model);
+            }
+        }
+
+        /// <summary>
+        /// بارگذاری مجدد لیست‌های مورد نیاز برای EditViewModel
+        /// </summary>
+        private async Task ReloadEditViewModelListsAsync(DoctorAssignmentEditViewModel model)
+        {
+            try
+            {
+                _logger.Information("🔄 بارگذاری مجدد لیست‌های EditViewModel برای پزشک {DoctorId}", model.DoctorId);
+
+                var departmentsTask = _doctorDepartmentService.GetDepartmentsAsSelectListAsync();
+                var serviceCategoriesTask = _doctorServiceCategoryService.GetServiceCategoriesAsSelectListAsync();
+                await Task.WhenAll(departmentsTask, serviceCategoriesTask);
+                
+                if (departmentsTask.Result.Success)
+                {
+                    model.AvailableDepartments = departmentsTask.Result.Data;
+                    _logger.Information("✅ {Count} دپارتمان بارگذاری شد", model.AvailableDepartments.Count);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ خطا در بارگذاری دپارتمان‌ها: {Message}", departmentsTask.Result.Message);
+                }
+
+                if (serviceCategoriesTask.Result.Success)
+                {
+                    model.AvailableServiceCategories = serviceCategoriesTask.Result.Data;
+                    _logger.Information("✅ {Count} سرفصل خدماتی بارگذاری شد", model.AvailableServiceCategories.Count);
+                }
+                else
+                {
+                    _logger.Warning("⚠️ خطا در بارگذاری سرفصل‌های خدماتی: {Message}", serviceCategoriesTask.Result.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در بارگذاری مجدد لیست‌های EditViewModel");
+            }
+        }
+
+
         #endregion
 
         #region Assignment Operations (عملیات انتساب)
@@ -382,8 +524,18 @@ namespace ClinicApp.Areas.Admin.Controllers
                     IsActive = true
                 };
 
-                // دریافت لیست دپارتمان‌های فعال
-                var departmentsResult = await _doctorDepartmentService.GetAllDepartmentsAsync();
+                // اجرای همزمان فراخوانی‌های دیتابیس
+                var departmentsTask = _doctorDepartmentService.GetAllDepartmentsAsync();
+                var serviceCategoriesTask = _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
+                var assignmentsTask = _doctorAssignmentService.GetDoctorAssignmentsAsync(doctorId.Value);
+
+                await Task.WhenAll(departmentsTask, serviceCategoriesTask, assignmentsTask);
+
+                var departmentsResult = await departmentsTask;
+                var serviceCategoriesResult = await serviceCategoriesTask;
+                var assignmentsResult = await assignmentsTask;
+
+                // بررسی نتایج
                 if (!departmentsResult.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست دپارتمان‌ها");
@@ -391,10 +543,6 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return RedirectToAction("Index");
                 }
 
-                ViewBag.Departments = departmentsResult.Data.Select(d => new { Value = d.Id, Text = d.Name }).ToList();
-
-                // دریافت لیست دسته‌بندی‌های خدماتی فعال
-                var serviceCategoriesResult = await _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
                 if (!serviceCategoriesResult.Success)
                 {
                     _logger.Warning("خطا در دریافت لیست دسته‌بندی‌های خدماتی");
@@ -402,10 +550,10 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return RedirectToAction("Index");
                 }
 
+                // تنظیم ViewBag
+                ViewBag.Departments = departmentsResult.Data.Select(d => new { Value = d.Id, Text = d.Name }).ToList();
                 ViewBag.ServiceCategories = serviceCategoriesResult.Data.Select(sc => new { Value = sc.Id, Text = sc.Name }).ToList();
 
-                // دریافت آمار انتسابات فعلی
-                var assignmentsResult = await _doctorAssignmentService.GetDoctorAssignmentsAsync(doctorId.Value);
                 if (assignmentsResult.Success)
                 {
                     ViewBag.ActiveAssignments = assignmentsResult.Data.TotalActiveAssignments;
@@ -475,7 +623,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Information("انتساب پزشک {DoctorId} به دپارتمان {DepartmentId} با موفقیت انجام شد", 
                     model.DoctorId, model.DepartmentId);
                 TempData["SuccessMessage"] = "انتساب پزشک با موفقیت انجام شد";
-                return RedirectToAction("Assignments", new { doctorId = model.DoctorId });
+                return RedirectToAction("Details", new { id = model.DoctorId });
             }
             catch (Exception ex)
             {
@@ -485,254 +633,9 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // TransferDoctor GET Action
-        /// <summary>
-        /// نمایش فرم انتقال پزشک بین دپارتمان‌ها (عملیات کلی)
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult> TransferDoctor(int? doctorId)
-        {
-            try
-            {
-                _logger.Information("درخواست نمایش فرم انتقال پزشک {DoctorId}", doctorId);
-
-                if (!doctorId.HasValue || doctorId.Value <= 0)
-                {
-                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
-                    TempData["ErrorMessage"] = "شناسه پزشک نامعتبر است";
-                    return RedirectToAction("Index");
-                }
-
-                // دریافت اطلاعات پزشک
-                var doctorResult = await _doctorService.GetDoctorDetailsAsync(doctorId.Value);
-                if (!doctorResult.Success)
-                {
-                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
-                    TempData["ErrorMessage"] = doctorResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                var doctor = doctorResult.Data;
-
-                // دریافت انتسابات فعلی پزشک
-                var assignmentsResult = await _doctorAssignmentService.GetDoctorAssignmentsAsync(doctorId.Value);
-                if (!assignmentsResult.Success)
-                {
-                    _logger.Warning("انتسابات پزشک {DoctorId} یافت نشد", doctorId);
-                    TempData["ErrorMessage"] = assignmentsResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                var assignments = assignmentsResult.Data;
-
-                // تعیین دپارتمان فعلی (اولین دپارتمان فعال)
-                var currentDepartment = assignments.DoctorDepartments.FirstOrDefault(dd => dd.IsActive);
-                
-                var model = new DoctorTransferViewModel
-                {
-                    DoctorId = doctorId.Value,
-                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
-                    DoctorNationalCode = doctor.NationalCode,
-                    FromDepartmentId = currentDepartment?.DepartmentId ?? 0,
-                    FromDepartmentName = currentDepartment?.DepartmentName ?? "بدون دپارتمان",
-                    PreserveServiceCategories = true
-                };
-
-                // دریافت لیست دپارتمان‌های فعال برای انتخاب مقصد
-                var departmentsResult = await _doctorDepartmentService.GetAllDepartmentsAsync();
-                if (!departmentsResult.Success)
-                {
-                    _logger.Warning("خطا در دریافت لیست دپارتمان‌ها");
-                    TempData["ErrorMessage"] = departmentsResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                ViewBag.Departments = departmentsResult.Data
-                    .Where(d => d.Id != currentDepartment?.DepartmentId) // حذف دپارتمان فعلی از لیست
-                    .Select(d => new { Value = d.Id, Text = d.Name })
-                    .ToList();
-
-                _logger.Information("فرم انتقال پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در نمایش فرم انتقال پزشک {DoctorId}", doctorId?.ToString() ?? "null");
-                TempData["ErrorMessage"] = "خطا در بارگذاری فرم انتقال";
-                return RedirectToAction("Index");
-            }
-        }
-
-        /// <summary>
-        /// پردازش انتقال پزشک بین دپارتمان‌ها (عملیات کلی)
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> TransferDoctor(DoctorTransferViewModel model)
-        {
-            try
-            {
-                _logger.Information("درخواست انتقال پزشک {DoctorId} از دپارتمان {FromDepartmentId} به {ToDepartmentId}", 
-                    model.DoctorId, model.FromDepartmentId, model.ToDepartmentId);
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.Warning("مدل انتقال نامعتبر برای پزشک {DoctorId}", model.DoctorId);
-                    TempData["ErrorMessage"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                var validationResult = await _transferValidator.ValidateAsync(model);
-                if (!validationResult.IsValid)
-                {
-                    _logger.Warning("اعتبارسنجی انتقال پزشک {DoctorId} ناموفق بود", model.DoctorId);
-                    foreach (var error in validationResult.Errors)
-                    {
-                        ModelState.AddModelError("", error.ErrorMessage);
-                    }
-                    TempData["ErrorMessage"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                // انتقال پزشک بین دپارتمان‌ها
-                var result = await _doctorAssignmentService.TransferDoctorBetweenDepartmentsAsync(
-                    model.DoctorId, 
-                    model.FromDepartmentId, 
-                    model.ToDepartmentId, 
-                    model.PreserveServiceCategories);
-
-                if (!result.Success)
-                {
-                    _logger.Warning("انتقال پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
-                    TempData["ErrorMessage"] = result.Message;
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                _logger.Information("انتقال پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
-                TempData["SuccessMessage"] = "انتقال پزشک با موفقیت انجام شد";
-                return RedirectToAction("Assignments", new { doctorId = model.DoctorId });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در انتقال پزشک {DoctorId}", model.DoctorId);
-                TempData["ErrorMessage"] = "خطا در انجام عملیات انتقال";
-                return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-            }
-        }
-
         #endregion
 
-        #region Removal Operations (عملیات حذف)
-
-        /// <summary>
-        /// نمایش فرم حذف انتسابات پزشک
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult> RemoveAssignments(int? doctorId)
-        {
-            try
-            {
-                _logger.Information("درخواست نمایش فرم حذف انتسابات پزشک {DoctorId}", doctorId);
-
-                if (!doctorId.HasValue || doctorId.Value <= 0)
-                {
-                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
-                    TempData["ErrorMessage"] = "شناسه پزشک نامعتبر است";
-                    return RedirectToAction("Index");
-                }
-
-                // دریافت اطلاعات پزشک
-                    var doctorResult = await _doctorService.GetDoctorDetailsAsync(doctorId.Value);
-                if (!doctorResult.Success)
-                {
-                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
-                    TempData["ErrorMessage"] = doctorResult.Message;
-                    return RedirectToAction("Index");
-                }
-
-                var doctor = doctorResult.Data;
-
-                // دریافت تعداد انتسابات فعال
-                var activeAssignmentsResult = await _doctorAssignmentService.GetActiveAssignmentsCountAsync(doctorId.Value);
-                var activeAssignmentsCount = activeAssignmentsResult.Success ? activeAssignmentsResult.Data : 0;
-
-                // بررسی وابستگی‌ها
-                var dependenciesResult = await _doctorAssignmentService.GetDoctorDependenciesAsync(doctorId.Value);
-                var dependencies = dependenciesResult.Success ? dependenciesResult.Data : new DoctorDependencyInfo();
-
-                var model = new DoctorAssignmentRemovalViewModel
-                {
-                    DoctorId = doctorId.Value,
-                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
-                    ActiveAssignmentsCount = activeAssignmentsCount,
-                    DependenciesChecked = true,
-                    IsPermanentRemoval = false
-                };
-
-                _logger.Information("فرم حذف انتسابات پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
-                return View(model);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در نمایش فرم حذف انتسابات پزشک {DoctorId}", doctorId?.ToString() ?? "null");
-                TempData["ErrorMessage"] = "خطا در بارگذاری فرم حذف";
-                return RedirectToAction("Index");
-            }
-        }
-
-        /// <summary>
-        /// پردازش حذف انتسابات پزشک
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> RemoveAssignments(DoctorAssignmentRemovalViewModel model)
-        {
-            try
-            {
-                _logger.Information("درخواست حذف انتسابات پزشک {DoctorId}", model.DoctorId);
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.Warning("مدل حذف نامعتبر برای پزشک {DoctorId}", model.DoctorId);
-                    TempData["ErrorMessage"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("RemoveAssignments", new { doctorId = model.DoctorId });
-                }
-
-                var validationResult = await _removalValidator.ValidateAsync(model);
-                if (!validationResult.IsValid)
-                {
-                    _logger.Warning("اعتبارسنجی حذف انتسابات پزشک {DoctorId} ناموفق بود", model.DoctorId);
-                    foreach (var error in validationResult.Errors)
-                    {
-                        ModelState.AddModelError("", error.ErrorMessage);
-                    }
-                    TempData["ErrorMessage"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("RemoveAssignments", new { doctorId = model.DoctorId });
-                }
-
-                // حذف کامل انتسابات پزشک
-                var result = await _doctorAssignmentService.RemoveAllDoctorAssignmentsAsync(model.DoctorId);
-
-                if (!result.Success)
-                {
-                    _logger.Warning("حذف انتسابات پزشک {DoctorId} ناموفق بود: {Message}", model.DoctorId, result.Message);
-                    TempData["ErrorMessage"] = result.Message;
-                    return RedirectToAction("RemoveAssignments", new { doctorId = model.DoctorId });
-                }
-
-                _logger.Information("حذف انتسابات پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
-                TempData["SuccessMessage"] = "حذف انتسابات با موفقیت انجام شد";
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در حذف انتسابات پزشک {DoctorId}", model.DoctorId);
-                TempData["ErrorMessage"] = "خطا در انجام عملیات حذف";
-                return RedirectToAction("RemoveAssignments", new { doctorId = model.DoctorId });
-            }
-        }
-
-        // AJAX Actions
+      
         [HttpPost]
         public async Task<JsonResult> GetDoctorAssignments(int doctorId)
         {
@@ -876,8 +779,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // Export Actions
-        #endregion
+
 
         #region Export Operations (عملیات خروجی)
 
@@ -935,7 +837,9 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
-        // Remove Assignment Action
+        #endregion
+
+        #region Remove Assignment Actions (عملیات حذف انتساب)
         [HttpPost]
         public async Task<JsonResult> RemoveAssignment(int id)
         {
@@ -959,7 +863,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                 return Json(new { success = false, message = "خطا در حذف انتساب" });
             }
         }
-
+#endregion
         // Reporting Actions
         // Actions تخصصی به کنترولرهای مربوطه منتقل شده‌اند:
         // - AssignmentReport و GetAssignmentStatistics → DoctorReportingController
@@ -1055,13 +959,236 @@ namespace ClinicApp.Areas.Admin.Controllers
 
         #endregion
 
-        #endregion
-
-        #region AJAX Operations (عملیات AJAX)
+        #region DataTables Actions (اکشن‌های DataTables)
 
         /// <summary>
-        /// دریافت لیست انتسابات برای نمایش در جدول
+        /// تست ساده برای بررسی ساختار داده
         /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> TestDataStructure()
+        {
+            try
+            {
+                var result = await _doctorAssignmentService.GetAssignmentsForDataTableAsync(0, 5, "", "", "", "", "");
+                if (result.Success)
+                {
+                    return Json(new { 
+                        success = true, 
+                        message = "داده‌ها با موفقیت دریافت شد",
+                        sampleData = result.Data.Data.Take(2).ToList(),
+                        totalRecords = result.Data.RecordsTotal
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تست ساختار داده");
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت داده‌های انتسابات برای DataTables
+        /// </summary>
+        [HttpPost]
+        [OutputCache(Duration = 0, VaryByParam = "*", NoStore = true)]
+        public async Task<JsonResult> GetAssignmentsData(DataTablesRequest request)
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX دریافت داده‌های انتسابات برای DataTables. Draw: {Draw}, Start: {Start}, Length: {Length}",
+                    request.Draw, request.Start, request.Length);
+
+                // دریافت فیلترها از درخواست
+                var departmentId = Request.Form["departmentId"];
+                var serviceCategoryId = Request.Form["serviceCategoryId"];
+                var dateFrom = Request.Form["dateFrom"];
+                var dateTo = Request.Form["dateTo"];
+                var searchTerm = Request.Form["searchTerm"];
+
+                // دریافت داده‌ها از سرویس
+                var result = await _doctorAssignmentService.GetAssignmentsForDataTableAsync(
+                    request.Start, 
+                    request.Length, 
+                    request.Search?.Value, 
+                    departmentId, 
+                    serviceCategoryId, 
+                    dateFrom, 
+                    dateTo);
+
+                if (!result.Success)
+                {
+                    _logger.Warning("خطا در دریافت داده‌های انتسابات: {Message}", result.Message);
+                    return Json(new
+                    {
+                        draw = request.Draw,
+                        recordsTotal = 0,
+                        recordsFiltered = 0,
+                        data = new List<object>()
+                    });
+                }
+
+                var data = result.Data;
+                var totalRecords = result.Data.RecordsTotal;
+                var filteredRecords = result.Data.RecordsFiltered;
+
+                // تبدیل به فرمت DataTables
+                var dataTablesData = data.Data.Cast<DoctorAssignmentListItem>().Select(assignment => new
+                {
+                    doctorName = assignment.DoctorName ?? "نامشخص",
+                    departmentName = assignment.Departments?.FirstOrDefault()?.Name ?? "نامشخص",
+                    serviceCategoryName = assignment.ServiceCategories?.FirstOrDefault()?.Name ?? "نامشخص",
+                    assignmentDate = assignment.AssignmentDate ?? "نامشخص",
+                    status = GetStatusBadge(assignment.Status),
+                    doctorId = assignment.DoctorId
+                }).ToList();
+
+                _logger.Information("داده‌های انتسابات با موفقیت بازگردانده شد. Total: {Total}, Filtered: {Filtered}", 
+                    totalRecords, filteredRecords);
+
+                return Json(new
+                {
+                    draw = request.Draw,
+                    recordsTotal = totalRecords,
+                    recordsFiltered = filteredRecords,
+                    data = dataTablesData
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت داده‌های انتسابات برای DataTables");
+                return Json(new
+                {
+                    draw = request.Draw,
+                    recordsTotal = 0,
+                    recordsFiltered = 0,
+                    data = new List<object>(),
+                    error = $"خطا در دریافت داده‌ها: {ex.Message}"
+                });
+            }
+        }
+
+        /// <summary>
+        /// فیلتر کردن انتسابات
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> FilterAssignments(AssignmentFilterViewModel filter)
+        {
+            try
+            {
+                _logger.Information("درخواست AJAX فیلتر کردن انتسابات");
+
+                // اعتبارسنجی فیلتر
+                if (filter == null)
+                {
+                    return Json(new { success = false, message = "فیلتر نامعتبر است" });
+                }
+
+                // دریافت داده‌های فیلتر شده
+                var result = await _doctorAssignmentService.GetFilteredAssignmentsAsync(filter);
+                
+                if (!result.Success)
+                {
+                    _logger.Warning("خطا در فیلتر کردن انتسابات: {Message}", result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                _logger.Information("فیلتر انتسابات با موفقیت اعمال شد. تعداد نتایج: {Count}", result.Data.Count);
+
+                return Json(new { success = true, data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در فیلتر کردن انتسابات");
+                return Json(new { success = false, message = "خطا در اعمال فیلتر" });
+            }
+        }
+
+        /// <summary>
+        /// خروجی Excel انتسابات
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ExportAssignments(AssignmentFilterViewModel filter)
+        {
+            try
+            {
+                _logger.Information("درخواست خروجی Excel انتسابات");
+
+                // دریافت داده‌ها
+                var result = await _doctorAssignmentService.GetFilteredAssignmentsAsync(filter ?? new AssignmentFilterViewModel());
+                
+                if (!result.Success)
+                {
+                    _logger.Warning("خطا در دریافت داده‌ها برای خروجی: {Message}", result.Message);
+                    TempData["ErrorMessage"] = "خطا در آماده‌سازی خروجی";
+                    return RedirectToAction("Index");
+                }
+
+                var assignments = result.Data;
+
+                // ایجاد فایل Excel
+                var excelContent = GenerateExcelContent(assignments);
+                var fileName = $"DoctorAssignments_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
+
+                _logger.Information("خروجی Excel با موفقیت ایجاد شد. تعداد رکوردها: {Count}", assignments.Count);
+
+                return File(excelContent, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ایجاد خروجی Excel");
+                TempData["ErrorMessage"] = "خطا در ایجاد خروجی";
+                return RedirectToAction("Index");
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods (متدهای کمکی)
+
+        /// <summary>
+        /// تولید Badge وضعیت
+        /// </summary>
+        private string GetStatusBadge(string status)
+        {
+            return status?.ToLower() switch
+            {
+                "active" => "<span class='badge badge-success'>فعال</span>",
+                "inactive" => "<span class='badge badge-danger'>غیرفعال</span>",
+                "pending" => "<span class='badge badge-warning'>در انتظار</span>",
+                _ => "<span class='badge badge-secondary'>نامشخص</span>"
+            };
+        }
+
+        /// <summary>
+        /// تولید محتوای Excel
+        /// </summary>
+        private byte[] GenerateExcelContent(List<DoctorAssignmentListItem> assignments)
+        {
+            // این متد باید با استفاده از EPPlus یا ClosedXML پیاده‌سازی شود
+            // فعلاً یک پیاده‌سازی ساده
+            var content = "نام پزشک,دپارتمان,سرفصل خدماتی,تاریخ انتساب,وضعیت\n";
+            
+            foreach (var assignment in assignments)
+            {
+                content += $"{assignment.DoctorName ?? "نامشخص"},";
+                content += $"{assignment.Departments?.FirstOrDefault()?.Name ?? "نامشخص"},";
+                content += $"{assignment.ServiceCategories?.FirstOrDefault()?.Name ?? "نامشخص"},";
+                content += $"{assignment.AssignmentDate ?? "نامشخص"},";
+                content += $"{assignment.Status}\n";
+            }
+
+            return System.Text.Encoding.UTF8.GetBytes(content);
+        }
+
+        #endregion
+
         /// <summary>
         /// دریافت لیست انتسابات برای DataTables (Server-side)
         /// </summary>
@@ -1069,17 +1196,18 @@ namespace ClinicApp.Areas.Admin.Controllers
         [ValidateAntiForgeryToken]
         [OutputCache(Duration = 0, VaryByParam = "*", NoStore = true)]
         public async Task<JsonResult> GetAssignments(DataTablesRequest request)
-        {
-            try
-            {
-                _logger.Information("درخواست AJAX دریافت لیست انتسابات برای DataTables. Draw: {Draw}, Start: {Start}, Length: {Length}", 
+                {
+                    try
+                    {
+                _logger.Information("درخواست AJAX دریافت لیست انتسابات برای DataTables. Draw: {Draw}, Start: {Start}, Length: {Length}",
                     request.Draw, request.Start, request.Length);
 
                 // اعتبارسنجی درخواست
                 if (request == null)
                 {
                     _logger.Warning("درخواست DataTables null است");
-                    return Json(new { 
+                    return Json(new
+                    {
                         draw = 0,
                         recordsTotal = 0,
                         recordsFiltered = 0,
@@ -1093,7 +1221,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!result.Success)
                 {
                     _logger.Warning("خطا در دریافت انتسابات: {Message}", result.Message);
-                    return Json(new { 
+                    return Json(new
+                    {
                         draw = request.Draw,
                         recordsTotal = 0,
                         recordsFiltered = 0,
@@ -1102,20 +1231,22 @@ namespace ClinicApp.Areas.Admin.Controllers
                     });
                 }
 
-                _logger.Information("دریافت موفق {Count} انتساب از {Total} کل", 
-                    result.Data.Assignments.Count, result.Data.RecordsTotal);
+                _logger.Information("دریافت موفق {Count} انتساب از {Total} کل",
+                    result.Data.Data.Count, result.Data.RecordsTotal);
 
-                return Json(new { 
+                return Json(new
+                {
                     draw = request.Draw,
                     recordsTotal = result.Data.RecordsTotal,
                     recordsFiltered = result.Data.RecordsFiltered,
-                    data = result.Data.Assignments
+                    data = result.Data.Data
                 });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت لیست انتسابات برای DataTables");
-                return Json(new { 
+                return Json(new
+                {
                     draw = request?.Draw ?? 0,
                     recordsTotal = 0,
                     recordsFiltered = 0,
@@ -1127,7 +1258,7 @@ namespace ClinicApp.Areas.Admin.Controllers
 
 
         /// <summary>
-        /// دریافت دسته‌بندی‌های خدماتی بر اساس دپارتمان
+        /// دریافت دسته‌بندی‌های خدماتی بر اساس دپارتمان (بهینه‌شده)
         /// </summary>
         [HttpGet]
         public async Task<JsonResult> GetServiceCategoriesByDepartment(int departmentId)
@@ -1141,19 +1272,20 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return Json(new { success = false, message = "شناسه دپارتمان معتبر نیست" }, JsonRequestBehavior.AllowGet);
                 }
 
-                // دریافت دسته‌بندی‌های خدماتی از سرویس
-                var result = await _doctorServiceCategoryService.GetAllServiceCategoriesAsync();
+                // دریافت سرفصل‌های خدماتی مربوط به دپارتمان مشخص
+                var result = await _doctorServiceCategoryService.GetServiceCategoriesByDepartmentAsync(departmentId);
                 if (!result.Success)
                 {
+                    _logger.Warning("خطا در دریافت سرفصل‌های خدماتی دپارتمان {DepartmentId}: {Message}", departmentId, result.Message);
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                // فیلتر کردن بر اساس دپارتمان (در حالت واقعی باید از سرویس جداگانه استفاده شود)
+                // تبدیل به فرمت مورد نیاز JavaScript
                 var categories = result.Data
-                    .Where(c => c.Id == departmentId) // استفاده از Id به جای DepartmentId
                     .Select(c => new { Id = c.Id, Name = c.Name })
                     .ToList();
 
+                _logger.Information("تعداد {Count} دسته‌بندی خدماتی برای دپارتمان {DepartmentId} یافت شد", categories.Count, departmentId);
                 return Json(new { success = true, data = categories }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
@@ -1163,9 +1295,102 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
+        // AssignmentHistory و متدهای مربوطه به DoctorHistoryController منتقل شده‌اند
+
+        #region AJAX Actions (عملیات AJAX)
+
+        /// <summary>
+        /// دریافت اطلاعات پزشک برای AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDoctorInfo(int doctorId)
+        {
+            try
+            {
+                var doctorResult = await GetDoctorAsync(doctorId);
+                if (!doctorResult.Success)
+                {
+                    return Json(new { success = false, message = doctorResult.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var doctor = doctorResult.Data;
+                return Json(new { 
+                    success = true, 
+                    data = new {
+                        name = doctor.FullName,
+                        nationalCode = doctor.NationalCode,
+                        specialization = doctor.SpecializationNames?.FirstOrDefault() ?? "نامشخص"
+                    }
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت اطلاعات پزشک {DoctorId}", doctorId);
+                return Json(new { success = false, message = "خطا در دریافت اطلاعات پزشک" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// پیش‌نمایش انتسابات قبل از ذخیره
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> PreviewAssignments(DoctorAssignmentOperationViewModel model)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return Json(new { success = false, message = "اطلاعات ارسالی نامعتبر است" });
+                }
+
+                // دریافت اطلاعات پزشک
+                var doctorResult = await GetDoctorAsync(model.DoctorId);
+                if (!doctorResult.Success)
+                {
+                    return Json(new { success = false, message = "پزشک یافت نشد" });
+                }
+
+                var doctor = doctorResult.Data;
+                var html = "<div class='alert alert-info'>پیش‌نمایش انتسابات برای " + doctor.FullName + " آماده است</div>";
+
+                return Json(new { success = true, html = html });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پیش‌نمایش انتسابات");
+                return Json(new { success = false, message = "خطا در پیش‌نمایش انتسابات" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست انتسابات پزشک برای AJAX (نسخه جدید)
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDoctorAssignmentsAjax(int doctorId)
+        {
+            try
+            {
+                var assignmentsResult = await GetDoctorAssignmentsAsync(doctorId);
+                if (!assignmentsResult.Success)
+                {
+                    return Json(new { success = false, message = assignmentsResult.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new { success = true, data = assignmentsResult.Data }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت انتسابات پزشک {DoctorId}", doctorId);
+                return Json(new { success = false, message = "خطا در دریافت انتسابات" }, JsonRequestBehavior.AllowGet);
+            }
+        }
 
         #endregion
 
-        // AssignmentHistory و متدهای مربوطه به DoctorHistoryController منتقل شده‌اند
+        #region Helper Methods (متدهای کمکی)
+
+
+        #endregion
     }
 }

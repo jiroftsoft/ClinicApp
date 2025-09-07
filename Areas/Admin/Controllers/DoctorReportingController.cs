@@ -1,7 +1,6 @@
 using System;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using AutoMapper;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -11,7 +10,8 @@ using FluentValidation;
 using Serilog;
 using System.Collections.Generic;
 using ClinicApp.Models;
-using ClinicApp.Repositories.ClinicAdmin; // Added for List
+using ClinicApp.Repositories.ClinicAdmin;
+using DoctorDependencyInfo = ClinicApp.Models.DoctorDependencyInfo; // Added for List
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -30,8 +30,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         public DoctorReportingController(
             IDoctorReportingService doctorReportingService,
             IDoctorCrudService doctorCrudService,
-            ICurrentUserService currentUserService,
-            IMapper mapper)
+            ICurrentUserService currentUserService)
         {
             _doctorReportingService = doctorReportingService ?? throw new ArgumentNullException(nameof(doctorReportingService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));

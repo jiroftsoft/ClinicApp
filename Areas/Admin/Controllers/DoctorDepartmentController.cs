@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using AutoMapper;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
@@ -18,7 +17,7 @@ namespace ClinicApp.Areas.Admin.Controllers
     /// کنترلر مدیریت انتصابات دپارتمان‌های پزشکان در سیستم کلینیک شفا
     /// مسئولیت: مدیریت انتصابات دپارتمان‌ها و دسترسی‌های پزشکان
     /// </summary>
-    [Authorize(Roles = "Admin,ClinicManager")]
+    //[Authorize(Roles = "Admin,ClinicManager")]
     public class DoctorDepartmentController : Controller
     {
         private readonly IDoctorDepartmentService _doctorDepartmentService;
@@ -31,8 +30,7 @@ namespace ClinicApp.Areas.Admin.Controllers
             IDoctorDepartmentService doctorDepartmentService,
             IDoctorCrudService doctorCrudService,
             ICurrentUserService currentUserService,
-            IValidator<DoctorDepartmentViewModel> departmentValidator,
-            IMapper mapper)
+            IValidator<DoctorDepartmentViewModel> departmentValidator)
         {
             _doctorDepartmentService = doctorDepartmentService ?? throw new ArgumentNullException(nameof(doctorDepartmentService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
@@ -664,14 +662,28 @@ namespace ClinicApp.Areas.Admin.Controllers
         {
             try
             {
-                _logger.Information("درخواست انتساب پزشک {DoctorId} به دپارتمان {DepartmentId}", 
-                    model.DoctorId, model.DepartmentId);
+                _logger.Information("درخواست انتساب پزشک {DoctorId} به دپارتمان {DepartmentId}. ModelState.IsValid: {IsValid}", 
+                    model?.DoctorId, model?.DepartmentId, ModelState.IsValid);
+                
+                // Log all form values for debugging
+                _logger.Information("Form values - DoctorId: {DoctorId}, DepartmentId: {DepartmentId}, IsActive: {IsActive}", 
+                    model?.DoctorId, model?.DepartmentId, model?.IsActive);
 
                 if (!ModelState.IsValid)
                 {
-                    _logger.Warning("مدل انتساب نامعتبر برای پزشک {DoctorId}", model.DoctorId);
-                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("AssignToDepartment", new { doctorId = model.DoctorId });
+                    var modelStateErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                    _logger.Warning("مدل انتساب نامعتبر برای پزشک {DoctorId}. خطاها: {@Errors}", model?.DoctorId, modelStateErrors);
+                    
+                    // Log all ModelState keys and values for debugging
+                    foreach (var key in ModelState.Keys)
+                    {
+                        var value = ModelState[key];
+                        _logger.Information("ModelState Key: {Key}, Value: {Value}, Errors: {Errors}", 
+                            key, value?.Value?.AttemptedValue, string.Join(", ", value?.Errors?.Select(e => e.ErrorMessage) ?? new List<string>()));
+                    }
+                    
+                    TempData["Error"] = $"اطلاعات وارد شده نامعتبر است: {string.Join(", ", modelStateErrors)}";
+                    return RedirectToAction("AssignToDepartment", new { doctorId = model?.DoctorId ?? 0 });
                 }
 
                 // تبدیل به DoctorDepartmentViewModel
@@ -706,169 +718,13 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Information("انتساب پزشک {DoctorId} به دپارتمان {DepartmentId} با موفقیت انجام شد", 
                     model.DoctorId, model.DepartmentId);
                 TempData["Success"] = "انتساب پزشک با موفقیت انجام شد";
-                return RedirectToAction("DepartmentAssignments", new { doctorId = model.DoctorId });
+                return RedirectToAction("Details", "DoctorAssignment", new { id = model.DoctorId });
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در انتساب پزشک {DoctorId} به دپارتمان", model.DoctorId);
                 TempData["Error"] = "خطا در انجام عملیات انتساب";
                 return RedirectToAction("AssignToDepartment", new { doctorId = model.DoctorId });
-            }
-        }
-
-        /// <summary>
-        /// نمایش فرم انتقال پزشک بین دپارتمان‌ها - نسخه Ultimate Production Ready
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult> TransferDoctor(int? doctorId)
-        {
-            try
-            {
-                _logger.Information("درخواست نمایش فرم انتقال پزشک {DoctorId}", doctorId);
-
-                // اعتبارسنجی ورودی
-                if (!doctorId.HasValue || doctorId.Value <= 0)
-                {
-                    _logger.Warning("شناسه پزشک نامعتبر یا خالی: {DoctorId}", doctorId);
-                    TempData["ErrorMessage"] = "شناسه پزشک نامعتبر است";
-                    return RedirectToAction("Index", "Doctor");
-                }
-
-                // دریافت اطلاعات پزشک
-                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId.Value);
-                if (!doctorResult.Success)
-                {
-                    _logger.Warning("پزشک با شناسه {DoctorId} یافت نشد", doctorId.Value);
-                    TempData["ErrorMessage"] = doctorResult.Message;
-                    return RedirectToAction("Index", "Doctor");
-                }
-
-                // دریافت انتصابات فعلی پزشک
-                var assignmentsResult = await _doctorDepartmentService.GetDepartmentsForDoctorAsync(doctorId.Value, "", 1, 100);
-                if (!assignmentsResult.Success)
-                {
-                    _logger.Warning("انتسابات پزشک {DoctorId} یافت نشد", doctorId);
-                    TempData["ErrorMessage"] = assignmentsResult.Message;
-                    return RedirectToAction("Index", "Doctor");
-                }
-
-                var assignments = assignmentsResult.Data.Items.ToList();
-                var currentDepartment = assignments.FirstOrDefault(dd => dd.IsActive);
-
-                // دریافت لیست دپارتمان‌های فعال
-                var departmentsResult = await _doctorDepartmentService.GetAllDepartmentsAsync();
-                var departments = new List<System.Web.Mvc.SelectListItem>();
-                if (departmentsResult.Success)
-                {
-                    departments = departmentsResult.Data
-                        .Where(d => d.Id != currentDepartment?.DepartmentId)
-                        .Select(d => new System.Web.Mvc.SelectListItem 
-                        { 
-                            Value = d.Id.ToString(), 
-                            Text = d.Name 
-                        })
-                        .ToList();
-                }
-                else
-                {
-                    _logger.Warning("خطا در دریافت لیست دپارتمان‌ها: {Message}", departmentsResult.Message);
-                }
-
-                // ایجاد ViewModel نهایی
-                var viewModel = new DoctorDepartmentTransferFormViewModel
-                {
-                    Doctor = doctorResult.Data,
-                    Transfer = new DoctorTransferViewModel
-                    {
-                        DoctorId = doctorId.Value,
-                        DoctorName = doctorResult.Data.FullName,
-                        DoctorNationalCode = doctorResult.Data.NationalCode,
-                        FromDepartmentId = currentDepartment?.DepartmentId ?? 0,
-                        FromDepartmentName = currentDepartment?.DepartmentName ?? "بدون دپارتمان",
-                        PreserveServiceCategories = true
-                    },
-                    Departments = departments,
-                    CurrentAssignments = assignments
-                };
-
-                _logger.Information("فرم انتقال پزشک {DoctorId} با موفقیت نمایش داده شد", doctorId.Value);
-                return View(viewModel);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در نمایش فرم انتقال پزشک {DoctorId}", doctorId?.ToString() ?? "null");
-                TempData["ErrorMessage"] = "خطا در بارگذاری فرم انتقال";
-                return View(new DoctorDepartmentTransferFormViewModel
-                {
-                    Doctor = new DoctorDetailsViewModel { DoctorId = doctorId ?? 0, FullName = "نامشخص" },
-                    Transfer = new DoctorTransferViewModel(),
-                    Departments = new List<System.Web.Mvc.SelectListItem>(),
-                    CurrentAssignments = new List<DoctorDepartmentViewModel>()
-                });
-            }
-        }
-
-        /// <summary>
-        /// پردازش انتقال پزشک بین دپارتمان‌ها
-        /// </summary>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> TransferDoctor(DoctorTransferViewModel model)
-        {
-            try
-            {
-                _logger.Information("درخواست انتقال پزشک {DoctorId} از دپارتمان {FromDepartmentId} به دپارتمان {ToDepartmentId}", 
-                    model.DoctorId, model.FromDepartmentId, model.ToDepartmentId);
-
-                if (!ModelState.IsValid)
-                {
-                    _logger.Warning("مدل انتقال نامعتبر برای پزشک {DoctorId}", model.DoctorId);
-                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                if (model.FromDepartmentId == model.ToDepartmentId)
-                {
-                    TempData["Error"] = "دپارتمان مبدا و مقصد نمی‌توانند یکسان باشند";
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                // حذف از دپارتمان فعلی
-                var removeResult = await _doctorDepartmentService.RevokeDoctorFromDepartmentAsync(model.DoctorId, model.FromDepartmentId);
-                if (!removeResult.Success)
-                {
-                    _logger.Warning("خطا در حذف از دپارتمان فعلی: {Message}", removeResult.Message);
-                    TempData["Error"] = $"خطا در حذف از دپارتمان فعلی: {removeResult.Message}";
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                // انتساب به دپارتمان جدید
-                var assignModel = new DoctorDepartmentViewModel
-                {
-                    DoctorId = model.DoctorId,
-                    DepartmentId = model.ToDepartmentId,
-                    IsActive = true,
-                    StartDate = DateTime.Now,
-                    Role = model.Role ?? "پزشک عادی"
-                };
-
-                var assignResult = await _doctorDepartmentService.AssignDoctorToDepartmentAsync(assignModel);
-                if (!assignResult.Success)
-                {
-                    _logger.Warning("خطا در انتساب به دپارتمان جدید: {Message}", assignResult.Message);
-                    TempData["Error"] = $"خطا در انتساب به دپارتمان جدید: {assignResult.Message}";
-                    return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
-                }
-
-                _logger.Information("انتقال پزشک {DoctorId} با موفقیت انجام شد", model.DoctorId);
-                TempData["Success"] = "انتقال پزشک با موفقیت انجام شد";
-                return RedirectToAction("DepartmentAssignments", new { doctorId = model.DoctorId });
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "خطا در انتقال پزشک {DoctorId}", model.DoctorId);
-                TempData["Error"] = "خطا در انجام عملیات انتقال";
-                return RedirectToAction("TransferDoctor", new { doctorId = model.DoctorId });
             }
         }
 

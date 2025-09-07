@@ -26,6 +26,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string AssignmentId => $"{DoctorId}_{DepartmentId}";
 
         /// <summary>
+        /// شناسه یکتا برای View (برای سازگاری با View)
+        /// </summary>
+        public int Id => DepartmentId;
+
+        /// <summary>
         /// شناسه پزشک
         /// </summary>
         public int DoctorId { get; set; }
@@ -46,6 +51,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Display(Name = "نام دپارتمان")]
         public string DepartmentName { get; set; }
+
+        /// <summary>
+        /// کد دپارتمان (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "کد دپارتمان")]
+        public string DepartmentCode => DepartmentId.ToString();
 
         /// <summary>
         /// شناسه کلینیک مربوط به دپارتمان
@@ -320,10 +331,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         public DoctorDetailsViewModel Doctor { get; set; } = new DoctorDetailsViewModel();
 
-        /// <summary>
-        /// مدل انتقال
-        /// </summary>
-        public DoctorTransferViewModel Transfer { get; set; } = new DoctorTransferViewModel();
+  
 
         /// <summary>
         /// لیست دپارتمان‌ها برای dropdown

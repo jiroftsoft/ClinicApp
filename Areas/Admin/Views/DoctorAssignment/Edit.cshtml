@@ -1,0 +1,539 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentEditViewModel
+@using ClinicApp.Extensions
+@{
+    ViewBag.Title = "ویرایش انتسابات پزشک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="content-wrapper">
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">ویرایش انتسابات پزشک</h1>
+                    <p class="text-muted">@Model.DoctorName - @Model.DoctorNationalCode</p>
+                </div>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home", new { area = "Admin" })">خانه</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">مدیریت انتسابات</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Details", new { id = Model.DoctorId })">جزئیات</a></li>
+                        <li class="breadcrumb-item active">ویرایش</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <section class="content">
+        <div class="container-fluid">
+            
+            @using (Html.BeginForm("Edit", "DoctorAssignment", FormMethod.Post, new { @class = "form-horizontal", role = "form", id = "editAssignmentForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.DoctorId)
+
+                <!-- اطلاعات پزشک -->
+                <div class="card border-primary" style="border-width: 2px;">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-user-md"></i>
+                            اطلاعات پزشک
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 5px;">
+                                    <label class="info-label" style="color: #2c3e50; font-weight: 600; min-width: 140px; text-align: right;">
+                                        نام کامل:
+                                    </label>
+                                    <span class="info-value" style="color: #212529; font-weight: 600;">
+                                        @Model.DoctorName
+                                    </span>
+                                </div>
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 5px;">
+                                    <label class="info-label" style="color: #2c3e50; font-weight: 600; min-width: 140px; text-align: right;">
+                                        کد ملی:
+                                    </label>
+                                    <span class="info-value" style="color: #212529; font-weight: 600;">
+                                        @Model.DoctorNationalCode
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 5px;">
+                                    <label class="info-label" style="color: #2c3e50; font-weight: 600; min-width: 140px; text-align: right;">
+                                        تخصص:
+                                    </label>
+                                    <span class="info-value" style="color: #212529; font-weight: 600;">
+                                        @Model.DoctorSpecialization
+                                    </span>
+                                </div>
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #007bff; padding: 0.75rem; margin-bottom: 1rem; border-radius: 5px;">
+                                    <label class="info-label" style="color: #2c3e50; font-weight: 600; min-width: 140px; text-align: right;">
+                                        شماره نظام پزشکی:
+                                    </label>
+                                    <span class="info-value" style="color: #212529; font-weight: 600;">
+                                        @Model.MedicalCouncilNumber
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- آمار انتسابات -->
+                <div class="card border-success" style="border-width: 2px;">
+                    <div class="card-header bg-success text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-chart-bar"></i>
+                            آمار انتسابات فعلی
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-success">@Model.TotalActiveAssignments</h3>
+                                    <p class="text-muted">کل انتسابات</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-info">@Model.ActiveDepartmentCount</h3>
+                                    <p class="text-muted">دپارتمان‌ها</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="text-warning">@Model.ActiveServiceCategoryCount</h3>
+                                    <p class="text-muted">سرفصل‌های خدماتی</p>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center">
+                                    <h3 class="@(Model.IsActive ? "text-success" : "text-danger")">
+                                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                                    </h3>
+                                    <p class="text-muted">وضعیت</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- انتسابات دپارتمان موجود -->
+                <div class="card border-info" style="border-width: 2px;">
+                    <div class="card-header bg-info text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-building"></i>
+                            انتسابات دپارتمان موجود
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.DepartmentAssignments != null && Model.DepartmentAssignments.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 50px;">انتخاب</th>
+                                            <th>دپارتمان</th>
+                                            <th>نقش</th>
+                                            <th>تاریخ انتساب</th>
+                                            <th>وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (int i = 0; i < Model.DepartmentAssignments.Count; i++)
+                                        {
+                                            var assignment = Model.DepartmentAssignments[i];
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check">
+                                                        @Html.CheckBoxFor(m => m.DepartmentAssignments[i].IsSelectedForRemoval, new { @class = "form-check-input assignment-checkbox", data_assignment_id = assignment.Id, data_assignment_type = "department" })
+                                                        @Html.HiddenFor(m => m.DepartmentAssignments[i].Id)
+                                                        @Html.HiddenFor(m => m.DepartmentAssignments[i].DepartmentId)
+                                                        @Html.HiddenFor(m => m.DepartmentAssignments[i].DepartmentName)
+                                                        @Html.HiddenFor(m => m.DepartmentAssignments[i].Role)
+                                                        @Html.HiddenFor(m => m.DepartmentAssignments[i].IsActive)
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <strong>@assignment.DepartmentName</strong>
+                                                    <br>
+                                                    <small class="text-muted">@assignment.DepartmentCode</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-secondary">@assignment.Role</span>
+                                                </td>
+                                                <td>@(assignment.AssignmentDate?.ToPersianDate())</td>
+                                                <td>
+                                                    <span class="badge @(assignment.IsActive ? "badge-success" : "badge-danger")">
+                                                        @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                هیچ انتساب دپارتمانی یافت نشد.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- انتسابات سرفصل خدماتی موجود -->
+                <div class="card border-warning" style="border-width: 2px;">
+                    <div class="card-header bg-warning text-dark">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-list-alt"></i>
+                            انتسابات سرفصل‌های خدماتی موجود
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        @if (Model.ServiceCategoryAssignments != null && Model.ServiceCategoryAssignments.Any())
+                        {
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-striped">
+                                    <thead class="thead-light">
+                                        <tr>
+                                            <th style="width: 50px;">انتخاب</th>
+                                            <th>سرفصل خدماتی</th>
+                                            <th>سطح دسترسی</th>
+                                            <th>شماره گواهی</th>
+                                            <th>تاریخ اعطا</th>
+                                            <th>وضعیت</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @for (int i = 0; i < Model.ServiceCategoryAssignments.Count; i++)
+                                        {
+                                            var assignment = Model.ServiceCategoryAssignments[i];
+                                            <tr>
+                                                <td>
+                                                    <div class="form-check">
+                                                        @Html.CheckBoxFor(m => m.ServiceCategoryAssignments[i].IsSelectedForRemoval, new { @class = "form-check-input assignment-checkbox", data_assignment_id = assignment.Id, data_assignment_type = "servicecategory" })
+                                                        @Html.HiddenFor(m => m.ServiceCategoryAssignments[i].Id)
+                                                        @Html.HiddenFor(m => m.ServiceCategoryAssignments[i].ServiceCategoryId)
+                                                        @Html.HiddenFor(m => m.ServiceCategoryAssignments[i].ServiceCategoryName)
+                                                        @Html.HiddenFor(m => m.ServiceCategoryAssignments[i].AuthorizationLevel)
+                                                        @Html.HiddenFor(m => m.ServiceCategoryAssignments[i].IsActive)
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <strong>@assignment.ServiceCategoryName</strong>
+                                                    <br>
+                                                    <small class="text-muted">@assignment.ServiceCategoryCode</small>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-info">@assignment.AuthorizationLevel</span>
+                                                </td>
+                                                <td>@assignment.CertificateNumber</td>
+                                                <td>@(assignment.GrantedDate?.ToPersianDate())</td>
+                                                <td>
+                                                    <span class="badge @(assignment.IsActive ? "badge-success" : "badge-danger")">
+                                                        @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                هیچ انتساب سرفصل خدماتی یافت نشد.
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- اضافه کردن انتسابات جدید -->
+                <div class="card border-dark" style="border-width: 2px;">
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-plus"></i>
+                            اضافه کردن انتسابات جدید
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">دپارتمان‌های جدید:</label>
+                                    <select name="NewDepartmentIds" id="newDepartments" class="form-control" multiple="multiple">
+                                        @foreach (var item in Model.AvailableDepartments)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
+                                    @Html.ValidationMessageFor(m => m.NewDepartmentIds, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">سرفصل‌های خدماتی جدید:</label>
+                                    <select name="NewServiceCategoryIds" id="newServiceCategories" class="form-control" multiple="multiple">
+                                        @foreach (var item in Model.AvailableServiceCategories)
+                                        {
+                                            <option value="@item.Value">@item.Text</option>
+                                        }
+                                    </select>
+                                    @Html.ValidationMessageFor(m => m.NewServiceCategoryIds, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- یادداشت‌ها و توضیحات -->
+                <div class="card border-secondary" style="border-width: 2px;">
+                    <div class="card-header bg-secondary text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-edit"></i>
+                            یادداشت‌ها و توضیحات
+                        </h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">یادداشت‌های ویرایش:</label>
+                                    @Html.TextAreaFor(m => m.EditNotes, new { @class = "form-control", rows = 4, placeholder = "یادداشت‌های مربوط به تغییرات..." })
+                                    @Html.ValidationMessageFor(m => m.EditNotes, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">دلیل تغییرات:</label>
+                                    @Html.TextAreaFor(m => m.ChangeReason, new { @class = "form-control", rows = 4, placeholder = "دلیل انجام این تغییرات..." })
+                                    @Html.ValidationMessageFor(m => m.ChangeReason, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(m => m.ApplyImmediately, new { @class = "form-check-input" })
+                                        <label class="form-check-label" for="ApplyImmediately">
+                                            اعمال فوری تغییرات
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label">تاریخ اعمال:</label>
+                                    @Html.TextBoxFor(m => m.EffectiveDate, new { @class = "form-control persian-datepicker", placeholder = "تاریخ اعمال تغییرات..." })
+                                    @Html.ValidationMessageFor(m => m.EffectiveDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- دکمه‌های عملیات -->
+                <div class="card border-dark" style="border-width: 2px;">
+                    <div class="card-header bg-dark text-white">
+                        <h4 class="card-title mb-0">
+                            <i class="fas fa-cogs"></i>
+                            عملیات
+                        </h4>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-info btn-lg" id="previewChangesBtn">
+                                <i class="fas fa-eye"></i> پیش‌نمایش تغییرات
+                            </button>
+                            <button type="submit" class="btn btn-success btn-lg" id="saveChangesBtn">
+                                <i class="fas fa-save"></i> ذخیره تغییرات
+                            </button>
+                            <a href="@Url.Action("Details", new { id = Model.DoctorId })" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-right"></i> بازگشت به جزئیات
+                            </a>
+                            <a href="@Url.Action("Index")" class="btn btn-info btn-lg">
+                                <i class="fas fa-list"></i> بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/app/utility.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Initialize Select2 for multi-select lists
+            $('#newDepartments').select2({
+                placeholder: "انتخاب دپارتمان‌های جدید...",
+                allowClear: true,
+                dir: "rtl"
+            });
+
+            $('#newServiceCategories').select2({
+                placeholder: "انتخاب سرفصل‌های خدماتی جدید...",
+                allowClear: true,
+                dir: "rtl"
+            });
+
+            // Initialize Persian DatePicker
+            $('.persian-datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                }
+            });
+
+            // Preview changes button
+            $('#previewChangesBtn').click(function() {
+                var selectedDepartments = $('#newDepartments').val() || [];
+                var selectedServiceCategories = $('#newServiceCategories').val() || [];
+                var selectedForRemoval = $('.assignment-checkbox:checked').length;
+                
+                var message = 'تغییرات پیش‌نهادی:\n\n';
+                message += '• دپارتمان‌های جدید: ' + selectedDepartments.length + '\n';
+                message += '• سرفصل‌های خدماتی جدید: ' + selectedServiceCategories.length + '\n';
+                message += '• انتسابات برای حذف: ' + selectedForRemoval + '\n\n';
+                message += 'آیا از این تغییرات اطمینان دارید؟';
+                
+                if (confirm(message)) {
+                    $('#saveChangesBtn').click();
+                }
+            });
+
+            // فیلتر سرفصل‌های خدماتی بر اساس دپارتمان انتخاب شده
+            $('#newDepartments').on('change', function() {
+                var selectedDepartments = $(this).val() || [];
+                var $serviceCategories = $('#newServiceCategories');
+                
+                if (selectedDepartments.length === 0) {
+                    // اگر هیچ دپارتمانی انتخاب نشده، همه سرفصل‌ها را نمایش بده
+                    $serviceCategories.find('option').show();
+                    $serviceCategories.trigger('change');
+                } else {
+                    // مخفی کردن همه سرفصل‌ها
+                    $serviceCategories.find('option').hide();
+                    
+                    // نمایش سرفصل‌های مربوط به دپارتمان‌های انتخاب شده
+                    var allValidCategoryIds = [];
+                    
+                    $.each(selectedDepartments, function(index, departmentId) {
+                        loadServiceCategoriesByDepartment(departmentId, function(categoryIds) {
+                            allValidCategoryIds = allValidCategoryIds.concat(categoryIds);
+                            
+                            // اگر آخرین دپارتمان است، همه سرفصل‌های معتبر را نمایش بده
+                            if (index === selectedDepartments.length - 1) {
+                                $.each(allValidCategoryIds, function(i, categoryId) {
+                                    $('#newServiceCategories option[value="' + categoryId + '"]').show();
+                                });
+                                $serviceCategories.trigger('change');
+                            }
+                        });
+                    });
+                }
+            });
+            
+            // تابع بارگذاری سرفصل‌های خدماتی بر اساس دپارتمان
+            function loadServiceCategoriesByDepartment(departmentId, callback) {
+                $.ajax({
+                    url: '@Url.Action("GetServiceCategoriesByDepartment", "DoctorAssignment")',
+                    type: 'GET',
+                    data: { departmentId: departmentId },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response && response.success && response.data) {
+                            var categoryIds = response.data.map(function(category) {
+                                return category.Id.toString();
+                            });
+                            callback(categoryIds);
+                        } else {
+                            console.log('خطا در دریافت سرفصل‌های خدماتی برای دپارتمان ' + departmentId + ': ' + (response.message || 'نامشخص'));
+                            callback([]);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.log('خطا در بارگذاری سرفصل‌های خدماتی برای دپارتمان ' + departmentId + ': ' + error);
+                        callback([]);
+                    }
+                });
+            }
+
+            // Form validation and data preparation
+            $('#editAssignmentForm').on('submit', function(e) {
+                var hasChanges = false;
+                
+                // Check if any new assignments are selected
+                if ($('#newDepartments').val() && $('#newDepartments').val().length > 0) {
+                    hasChanges = true;
+                }
+                
+                if ($('#newServiceCategories').val() && $('#newServiceCategories').val().length > 0) {
+                    hasChanges = true;
+                }
+                
+                // Check if any assignments are selected for removal
+                if ($('.assignment-checkbox:checked').length > 0) {
+                    hasChanges = true;
+                }
+                
+                if (!hasChanges) {
+                    e.preventDefault();
+                    alert('لطفاً حداقل یک تغییر انتخاب کنید.');
+                    return false;
+                }
+                
+                // Collect assignments to remove
+                var assignmentsToRemove = [];
+                $('.assignment-checkbox:checked').each(function() {
+                    var assignmentId = $(this).data('assignment-id');
+                    if (assignmentId) {
+                        assignmentsToRemove.push(assignmentId);
+                    }
+                });
+                
+                // Add hidden fields for assignments to remove
+                if (assignmentsToRemove.length > 0) {
+                    // Remove existing hidden fields
+                    $('input[name="AssignmentsToRemove"]').remove();
+                    
+                    // Add new hidden fields
+                    assignmentsToRemove.forEach(function(id) {
+                        $('<input>').attr({
+                            type: 'hidden',
+                            name: 'AssignmentsToRemove',
+                            value: id
+                        }).appendTo('#editAssignmentForm');
+                    });
+                }
+                
+                // Final confirmation
+                if (!confirm('آیا از ذخیره تغییرات اطمینان دارید؟')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+}

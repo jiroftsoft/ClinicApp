@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using FluentValidation;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {
@@ -77,90 +78,6 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
     }
 
     /// <summary>
-    /// مدل عملیات انتقال پزشک بین دپارتمان‌ها
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. انتقال پزشک از یک دپارتمان به دپارتمان دیگر
-    /// 2. حفظ صلاحیت‌های خدماتی (اختیاری)
-    /// 3. مدیریت تراکنش‌های چندگانه
-    /// 4. اعتبارسنجی کامل قبل از انتقال
-    /// </summary>
-    public class DoctorTransferViewModel
-    {
-        /// <summary>
-        /// شناسه پزشک
-        /// </summary>
-        [Required(ErrorMessage = "شناسه پزشک الزامی است")]
-        [Range(1, int.MaxValue, ErrorMessage = "شناسه پزشک نامعتبر است")]
-        [Display(Name = "شناسه پزشک")]
-        public int DoctorId { get; set; }
-
-        /// <summary>
-        /// نام پزشک (برای نمایش)
-        /// </summary>
-        [Display(Name = "نام پزشک")]
-        public string DoctorName { get; set; }
-
-        /// <summary>
-        /// کد ملی پزشک (برای نمایش)
-        /// </summary>
-        [Display(Name = "کد ملی پزشک")]
-        public string DoctorNationalCode { get; set; }
-
-        /// <summary>
-        /// شناسه دپارتمان مبدا
-        /// </summary>
-        [Required(ErrorMessage = "شناسه دپارتمان مبدا الزامی است")]
-        [Range(1, int.MaxValue, ErrorMessage = "شناسه دپارتمان مبدا نامعتبر است")]
-        [Display(Name = "دپارتمان مبدا")]
-        public int FromDepartmentId { get; set; }
-
-        /// <summary>
-        /// نام دپارتمان مبدا (برای نمایش)
-        /// </summary>
-        [Display(Name = "نام دپارتمان مبدا")]
-        public string FromDepartmentName { get; set; }
-
-        /// <summary>
-        /// شناسه دپارتمان مقصد
-        /// </summary>
-        [Required(ErrorMessage = "شناسه دپارتمان مقصد الزامی است")]
-        [Range(1, int.MaxValue, ErrorMessage = "شناسه دپارتمان مقصد نامعتبر است")]
-        [Display(Name = "دپارتمان مقصد")]
-        public int ToDepartmentId { get; set; }
-
-        /// <summary>
-        /// نام دپارتمان مقصد (برای نمایش)
-        /// </summary>
-        [Display(Name = "نام دپارتمان مقصد")]
-        public string ToDepartmentName { get; set; }
-
-        /// <summary>
-        /// نقش پزشک در دپارتمان
-        /// </summary>
-        [Display(Name = "نقش پزشک")]
-        public string Role { get; set; }
-
-        /// <summary>
-        /// آیا صلاحیت‌های خدماتی حفظ شوند
-        /// </summary>
-        [Display(Name = "حفظ صلاحیت‌های خدماتی")]
-        public bool PreserveServiceCategories { get; set; } = true;
-
-        /// <summary>
-        /// توضیحات انتقال
-        /// </summary>
-        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد")]
-        [Display(Name = "توضیحات انتقال")]
-        public string TransferReason { get; set; }
-
-        /// <summary>
-        /// آیا دپارتمان مبدا و مقصد متفاوت هستند
-        /// </summary>
-        public bool IsValidTransfer => FromDepartmentId != ToDepartmentId;
-    }
-
-    /// <summary>
     /// مدل عملیات حذف کامل انتسابات پزشک
     /// 
     /// ویژگی‌های کلیدی:
@@ -232,5 +149,37 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Display(Name = "دارای انتسابات فعال")]
         public bool HasActiveAssignments => ActiveAssignmentsCount > 0;
+    }
+
+    /// <summary>
+    /// ولیدیتور برای مدل حذف انتسابات پزشک
+    /// </summary>
+    public class DoctorAssignmentRemovalViewModelValidator : AbstractValidator<DoctorAssignmentRemovalViewModel>
+    {
+        public DoctorAssignmentRemovalViewModelValidator()
+        {
+            RuleFor(x => x.DoctorId)
+                .GreaterThan(0)
+                .WithMessage("شناسه پزشک نامعتبر است");
+
+            RuleFor(x => x.RemovalReason)
+                .NotEmpty()
+                .WithMessage("دلیل حذف انتسابات الزامی است")
+                .MaximumLength(500)
+                .WithMessage("دلیل حذف نمی‌تواند بیشتر از 500 کاراکتر باشد");
+
+            RuleFor(x => x.ConfirmRemoval)
+                .Equal(true)
+                .WithMessage("باید حذف انتسابات را تأیید کنید");
+
+            RuleFor(x => x.ConfirmResponsibility)
+                .Equal(true)
+                .WithMessage("باید مسئولیت عواقب حذف را تأیید کنید");
+
+            RuleFor(x => x.DependenciesChecked)
+                .Equal(true)
+                .WithMessage("باید وابستگی‌ها بررسی شده باشند")
+                .When(x => x.HasActiveAssignments);
+        }
     }
 }

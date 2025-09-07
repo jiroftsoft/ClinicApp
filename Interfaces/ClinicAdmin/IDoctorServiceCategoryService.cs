@@ -60,6 +60,13 @@ public interface IDoctorServiceCategoryService
     Task<ServiceResult<List<LookupItemViewModel>>> GetAllServiceCategoriesAsync();
 
     /// <summary>
+    /// دریافت لیست سرفصل‌های خدماتی به صورت SelectListItem برای استفاده در View
+    /// </summary>
+    /// <param name="addAllOption">آیا گزینه "همه" اضافه شود</param>
+    /// <returns>لیست SelectListItem برای dropdown</returns>
+    Task<ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>> GetServiceCategoriesAsSelectListAsync(bool addAllOption = false);
+
+    /// <summary>
     /// دریافت لیست همه انتصابات پزشکان به سرفصل‌های خدماتی (برای فیلتر "همه پزشکان")
     /// </summary>
     /// <param name="searchTerm">عبارت جستجو</param>

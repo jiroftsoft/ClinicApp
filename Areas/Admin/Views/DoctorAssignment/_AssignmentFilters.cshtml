@@ -1,0 +1,109 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.AssignmentFilterViewModel
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-filter"></i>
+            فیلترها و جستجو
+        </h3>
+        <div class="card-tools">
+            <button type="button" class="btn btn-tool" data-card-widget="collapse" title="جمع‌آوری">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <form id="filterForm" method="get">
+            <div class="row">
+                <!-- جستجوی کلی -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="doctorSearchFilter">جستجو:</label>
+                        <input type="text" 
+                               class="form-control" 
+                               id="doctorSearchFilter" 
+                               name="searchTerm" 
+                               placeholder="نام پزشک، کد ملی، تخصص..."
+                               value="@Model.SearchTerm">
+                    </div>
+                </div>
+
+                <!-- فیلتر دپارتمان -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="departmentFilter">دپارتمان:</label>
+                        @Html.DropDownListFor(m => m.DepartmentId, 
+                            new SelectList(Model.Departments, "Value", "Text", Model.DepartmentId), 
+                            new { @class = "form-control select2", @id = "departmentFilter" })
+                    </div>
+                </div>
+
+                <!-- فیلتر سرفصل خدماتی -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="serviceCategoryFilter">سرفصل خدماتی:</label>
+                        @Html.DropDownListFor(m => m.ServiceCategoryId, 
+                            new SelectList(Model.ServiceCategories, "Value", "Text", Model.ServiceCategoryId), 
+                            new { @class = "form-control select2", @id = "serviceCategoryFilter" })
+                    </div>
+                </div>
+
+                <!-- فیلتر وضعیت -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="statusFilter">وضعیت:</label>
+                        <select class="form-control" id="statusFilter" name="status">
+                            <option value="">همه</option>
+                            <option value="Active" @(Model.Status == "Active" ? "selected" : "")>فعال</option>
+                            <option value="Inactive" @(Model.Status == "Inactive" ? "selected" : "")>غیرفعال</option>
+                            <option value="Pending" @(Model.Status == "Pending" ? "selected" : "")>در انتظار</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- فیلتر تاریخ از -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="dateFromFilter">تاریخ از:</label>
+                        <input type="text" 
+                               class="form-control persian-datepicker" 
+                               id="dateFromFilter" 
+                               name="dateFrom" 
+                               placeholder="انتخاب تاریخ"
+                               value="@Model.DateFrom">
+                    </div>
+                </div>
+
+                <!-- فیلتر تاریخ تا -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="dateToFilter">تاریخ تا:</label>
+                        <input type="text" 
+                               class="form-control persian-datepicker" 
+                               id="dateToFilter" 
+                               name="dateTo" 
+                               placeholder="انتخاب تاریخ"
+                               value="@Model.DateTo">
+                    </div>
+                </div>
+
+                <!-- دکمه‌های عملیات -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label>&nbsp;</label>
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-primary" id="applyFiltersBtn">
+                                <i class="fas fa-search"></i> اعمال فیلتر
+                            </button>
+                            <button type="button" class="btn btn-secondary" id="clearFiltersBtn">
+                                <i class="fas fa-times"></i> پاک کردن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

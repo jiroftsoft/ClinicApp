@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 // طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم
 // از Factory Method Pattern استفاده می‌کنیم
-using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -15,7 +14,6 @@ using ClinicApp.Models.Entities;
 using FluentValidation;
 using Serilog;
 using System.Web;
-using System.Configuration;
 
 namespace ClinicApp.Areas.Admin.Controllers
 {

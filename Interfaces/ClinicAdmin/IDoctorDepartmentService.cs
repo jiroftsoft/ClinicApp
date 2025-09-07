@@ -66,5 +66,12 @@ public interface IDoctorDepartmentService
     /// <returns>لیستی از تمام دپارتمان‌های فعال.</returns>
     Task<ServiceResult<List<LookupItemViewModel>>> GetAllDepartmentsAsync();
 
+    /// <summary>
+    /// دریافت لیست دپارتمان‌ها به صورت SelectListItem برای استفاده در View
+    /// </summary>
+    /// <param name="addAllOption">آیا گزینه "همه" اضافه شود</param>
+    /// <returns>لیست SelectListItem برای dropdown</returns>
+    Task<ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>> GetDepartmentsAsSelectListAsync(bool addAllOption = false);
+
     #endregion
 }

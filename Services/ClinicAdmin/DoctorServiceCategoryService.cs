@@ -501,6 +501,49 @@ namespace ClinicApp.Services.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// دریافت لیست سرفصل‌های خدماتی به صورت SelectListItem برای استفاده در View
+        /// </summary>
+        public async Task<ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>> GetServiceCategoriesAsSelectListAsync(bool addAllOption = false)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت لیست سرفصل‌های خدماتی به صورت SelectList");
+
+                var serviceCategoriesResult = await GetAllServiceCategoriesAsync();
+                if (!serviceCategoriesResult.Success)
+                {
+                    return ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>.Failed(serviceCategoriesResult.Message);
+                }
+
+                var selectList = serviceCategoriesResult.Data.Select(sc => new ClinicApp.ViewModels.DoctorManagementVM.SelectListItem
+                {
+                    Text = sc.Name,
+                    Value = sc.Id.ToString(),
+                    Selected = false
+                }).ToList();
+
+                if (addAllOption)
+                {
+                    selectList.Insert(0, new ClinicApp.ViewModels.DoctorManagementVM.SelectListItem
+                    {
+                        Text = "همه سرفصل‌های خدماتی",
+                        Value = "",
+                        Selected = true
+                    });
+                }
+
+                _logger.Information("لیست سرفصل‌های خدماتی به صورت SelectList با موفقیت دریافت شد. تعداد: {Count}", selectList.Count);
+
+                return ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>.Successful(selectList);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست سرفصل‌های خدماتی به صورت SelectList");
+                return ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>.Failed("خطا در دریافت لیست سرفصل‌های خدماتی");
+            }
+        }
+
         #endregion
 
     }

@@ -328,6 +328,49 @@ namespace ClinicApp.Services.ClinicAdmin
             }
         }
 
+        /// <summary>
+        /// دریافت لیست دپارتمان‌ها به صورت SelectListItem برای استفاده در View
+        /// </summary>
+        public async Task<ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>> GetDepartmentsAsSelectListAsync(bool addAllOption = false)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت لیست دپارتمان‌ها به صورت SelectList");
+
+                var departmentsResult = await GetAllDepartmentsAsync();
+                if (!departmentsResult.Success)
+                {
+                    return ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>.Failed(departmentsResult.Message);
+                }
+
+                var selectList = departmentsResult.Data.Select(d => new ClinicApp.ViewModels.DoctorManagementVM.SelectListItem
+                {
+                    Text = d.Name,
+                    Value = d.Id.ToString(),
+                    Selected = false
+                }).ToList();
+
+                if (addAllOption)
+                {
+                    selectList.Insert(0, new ClinicApp.ViewModels.DoctorManagementVM.SelectListItem
+                    {
+                        Text = "همه دپارتمان‌ها",
+                        Value = "",
+                        Selected = true
+                    });
+                }
+
+                _logger.Information("لیست دپارتمان‌ها به صورت SelectList با موفقیت دریافت شد. تعداد: {Count}", selectList.Count);
+
+                return ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>.Successful(selectList);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست دپارتمان‌ها به صورت SelectList");
+                return ServiceResult<List<ClinicApp.ViewModels.DoctorManagementVM.SelectListItem>>.Failed("خطا در دریافت لیست دپارتمان‌ها");
+            }
+        }
+
         #endregion
     }
 }

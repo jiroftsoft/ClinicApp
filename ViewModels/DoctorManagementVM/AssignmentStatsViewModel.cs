@@ -17,6 +17,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         [Display(Name = "پزشکان انتساب شده")]
         public int AssignedDoctors { get; set; }
 
+        [Display(Name = "کل پزشکان")]
+        public int TotalDoctors { get; set; }
+
         [Display(Name = "دپارتمان‌های فعال")]
         public int ActiveDepartments { get; set; }
 

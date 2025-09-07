@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
@@ -42,6 +43,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string LastModifiedDate { get; set; }
         public string ModifiedBy { get; set; }
         public bool IsActive { get; set; }
+        public DateTime? CreatedDate { get; set; }
         
         // Helper properties for UI
         public string StatusText => GetStatusText(Status);

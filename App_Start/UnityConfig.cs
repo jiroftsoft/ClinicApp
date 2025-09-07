@@ -368,8 +368,8 @@ namespace ClinicApp
                 
                 // ثبت Validator برای عملیات انتساب پزشکان
                 container.RegisterType<IValidator<DoctorAssignmentOperationViewModel>, DoctorAssignmentOperationViewModelValidator>(new PerRequestLifetimeManager());
-                container.RegisterType<IValidator<DoctorTransferViewModel>, DoctorTransferViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<DoctorAssignmentRemovalViewModel>, DoctorAssignmentRemovalViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<DoctorAssignmentEditViewModel>, DoctorAssignmentEditViewModelValidator>(new PerRequestLifetimeManager());
 
                 // Register Specialization Validators
                 container.RegisterType<IValidator<SpecializationCreateEditViewModel>, SpecializationCreateEditViewModelValidator>(new PerRequestLifetimeManager());

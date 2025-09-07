@@ -19,6 +19,7 @@
 - [ ] `DESIGN_PRINCIPLES_CONTRACT.md` - اصول طراحی
 - [ ] `FormStandards.md` - استانداردهای فرم‌ها
 - [ ] `ControllerStandards.md` - استانداردهای کنترلرها
+- [ ] `DATATABLES_STANDARDS_CONTRACT.md` - استانداردهای DataTables
 - [ ] سایر قراردادهای مرتبط
 
 #### **1.2 اعلام خلاصه (۱-۲ جمله) از بندهایی که مرتبط با درخواست فعلی هستند:**
@@ -196,6 +197,28 @@ rg "Identifier" || true
 
 ---
 
+## **📊 چک‌لیست ویژه DataTables:**
+
+### **قبل از پیاده‌سازی DataTables:**
+- [ ] بررسی قرارداد `DATATABLES_STANDARDS_CONTRACT.md`
+- [ ] طراحی ViewModel با computed properties
+- [ ] تنظیم AntiForgeryToken در View
+- [ ] طراحی JavaScript با data-* attributes
+
+### **بعد از پیاده‌سازی DataTables:**
+- [ ] تست JSON response با حروف کوچک (`draw`, `data`, `recordsTotal`)
+- [ ] تست Error handling
+- [ ] تست AntiForgeryToken
+- [ ] تست Column mapping
+- [ ] تست Performance
+
+### **خطاهای رایج DataTables:**
+- [ ] `Cannot read properties of undefined (reading 'length')` → ساختار JSON نادرست
+- [ ] `DataTables warning: Ajax error` → مشکل در AntiForgeryToken
+- [ ] `TypeError: Cannot read properties of undefined` → Property names با حروف بزرگ
+
+---
+
 ## **🔄 به‌روزرسانی قرارداد:**
 
 این قرارداد باید در صورت:
@@ -207,7 +230,7 @@ rg "Identifier" || true
 
 ---
 
-**نسخه**: 1.0  
+**نسخه**: 1.1  
 **تاریخ ایجاد**: 2025-01-04  
-**آخرین به‌روزرسانی**: 2025-01-04  
+**آخرین به‌روزرسانی**: 2025-01-15  
 **وضعیت**: فعال

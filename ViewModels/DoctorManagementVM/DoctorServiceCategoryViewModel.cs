@@ -27,6 +27,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string AssignmentId => $"{DoctorId}_{ServiceCategoryId}";
 
         /// <summary>
+        /// شناسه یکتا برای View (برای سازگاری با View)
+        /// </summary>
+        public int Id => ServiceCategoryId;
+
+        /// <summary>
         /// شناسه پزشک
         /// </summary>
         public int DoctorId { get; set; }
@@ -53,6 +58,12 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Display(Name = "نام دسته‌بندی")]
         public string ServiceCategoryName { get; set; }
+
+        /// <summary>
+        /// کد دسته‌بندی خدمات (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "کد دسته‌بندی")]
+        public string ServiceCategoryCode => ServiceCategoryId.ToString();
 
         /// <summary>
         /// شناسه دپارتمان مربوط به دسته‌بندی خدمات

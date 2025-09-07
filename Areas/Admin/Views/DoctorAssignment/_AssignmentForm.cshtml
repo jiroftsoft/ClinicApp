@@ -1,0 +1,141 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentOperationViewModel
+@{
+    bool isEdit = ViewBag.IsEdit ?? false;
+    string formTitle = isEdit ? "ویرایش انتساب پزشک" : "انتساب جدید پزشک";
+    string submitText = isEdit ? "به‌روزرسانی انتساب" : "ایجاد انتساب";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            <i class="fas fa-user-md"></i>
+            @formTitle
+        </h3>
+    </div>
+    <div class="card-body">
+        @using (Html.BeginForm(isEdit ? "Edit" : "Assign", "DoctorAssignment", FormMethod.Post, new { @class = "form-horizontal", id = "assignmentForm" }))
+        {
+            @Html.AntiForgeryToken()
+            @Html.HiddenFor(m => m.DoctorId)
+
+            <div class="row">
+                <!-- اطلاعات پزشک -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">کد ملی پزشک:</label>
+                        <div class="input-group">
+                            @Html.TextBoxFor(m => m.DoctorNationalCode, new { @class = "form-control", @readonly = "readonly" })
+                            <div class="input-group-append">
+                                <button type="button" class="btn btn-outline-info" id="searchDoctorBtn">
+                                    <i class="fas fa-search"></i> جستجو
+                                </button>
+                            </div>
+                        </div>
+                        @Html.ValidationMessageFor(m => m.DoctorNationalCode, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="control-label">نام پزشک:</label>
+                        @Html.TextBoxFor(m => m.DoctorName, new { @class = "form-control", @readonly = "readonly" })
+                        @Html.ValidationMessageFor(m => m.DoctorName, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- انتخاب دپارتمان‌ها -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="control-label">دپارتمان‌ها:</label>
+                        <div id="departmentsContainer">
+                            <!-- دپارتمان‌ها از طریق AJAX بارگذاری می‌شوند -->
+                        </div>
+                        @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- انتخاب سرفصل‌های خدماتی -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="control-label">سرفصل‌های خدماتی:</label>
+                        <div id="serviceCategoriesContainer">
+                            <!-- سرفصل‌ها از طریق AJAX بارگذاری می‌شوند -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- یادداشت‌ها -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <label class="control-label">یادداشت‌ها:</label>
+                        @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = 4, placeholder = "یادداشت‌های مربوط به انتساب..." })
+                        @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+                    </div>
+                </div>
+            </div>
+
+            <!-- گزینه‌های اضافی -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <div class="form-check">
+                            @Html.CheckBoxFor(m => m.ApplyImmediately, new { @class = "form-check-input" })
+                            <label class="form-check-label" for="ApplyImmediately">
+                                اعمال فوری انتساب
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- دکمه‌های عملیات -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="form-group">
+                        <button type="button" class="btn btn-info" id="previewBtn">
+                            <i class="fas fa-eye"></i> پیش‌نمایش
+                        </button>
+                        <button type="submit" class="btn btn-success" id="submitBtn">
+                            <i class="fas fa-save"></i> @submitText
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="saveDraftBtn">
+                            <i class="fas fa-file-alt"></i> ذخیره پیش‌نویس
+                        </button>
+                        <a href="@Url.Action("Index")" class="btn btn-default">
+                            <i class="fas fa-arrow-left"></i> بازگشت
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal پیش‌نمایش -->
+<div class="modal fade" id="previewModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">پیش‌نمایش انتساب</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="previewContent">
+                <!-- محتوای پیش‌نمایش -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-success" id="confirmSubmitBtn">
+                    <i class="fas fa-check"></i> تأیید و ارسال
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

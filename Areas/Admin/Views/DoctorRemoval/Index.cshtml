@@ -1,0 +1,445 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorRemovalIndexViewModel
+@{
+    ViewBag.Title = Model.PageTitle;
+    ViewBag.RequireDataTables = true;
+    ViewBag.RequireSelect2 = true;
+    ViewBag.RequireDatePicker = true;
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary" style="border-width: 2px;">
+                <div class="card-header bg-primary text-white" style="background-color: #007bff !important;">
+                    <h4 class="card-title mb-0" style="color: #ffffff !important; font-weight: 600;">
+                        <i class="fa fa-user-times" style="color: #ffffff !important;"></i>
+                        @Model.PageTitle
+                    </h4>
+                </div>
+                <div class="card-body" style="background-color: #ffffff;">
+                    <p class="card-text text-muted mb-0">
+                        <i class="fa fa-info-circle"></i>
+                        @Model.PageSubtitle
+                    </p>
+                    @if (!string.IsNullOrEmpty(Model.LastRefreshTime))
+                    {
+                        <small class="text-muted">
+                            <i class="fa fa-clock-o"></i>
+                            آخرین به‌روزرسانی: @Model.LastRefreshTime
+                        </small>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    @if (Model.Statistics != null)
+    {
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card border-info" style="border-width: 2px;">
+                    <div class="card-header bg-info text-white" style="background-color: #17a2b8 !important;">
+                        <h5 class="card-title mb-0" style="color: #ffffff !important; font-weight: 600;">
+                            <i class="fa fa-bar-chart" style="color: #ffffff !important;"></i>
+                            آمار کلی انتسابات
+                        </h5>
+                    </div>
+                    <div class="card-body" style="background-color: #ffffff;">
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #17a2b8;">
+                                    <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #17a2b8;">
+                                        کل انتسابات:
+                                    </label>
+                                    <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">
+                                        <span class="badge badge-info" style="background-color: #17a2b8 !important; color: #ffffff !important; font-weight: 600;">
+                                            @Model.Statistics.TotalAssignments
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #28a745;">
+                                    <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #28a745;">
+                                        انتسابات فعال:
+                                    </label>
+                                    <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">
+                                        <span class="badge badge-success" style="background-color: #28a745 !important; color: #ffffff !important; font-weight: 600;">
+                                            @Model.Statistics.ActiveAssignments
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #ffc107;">
+                                    <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #ffc107;">
+                                        انتسابات غیرفعال:
+                                    </label>
+                                    <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">
+                                        <span class="badge badge-warning" style="background-color: #ffc107 !important; color: #212529 !important; font-weight: 600;">
+                                            @Model.Statistics.InactiveAssignments
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <div class="info-row" style="background-color: #f8f9fa; border-right: 4px solid #6c757d;">
+                                    <label class="info-label" style="color: #2c3e50 !important; background-color: #ffffff; border: 1px solid #6c757d;">
+                                        کل پزشکان:
+                                    </label>
+                                    <span class="info-value" style="color: #212529 !important; background-color: #ffffff; border: 1px solid #e9ecef; font-weight: 600;">
+                                        <span class="badge badge-secondary" style="background-color: #6c757d !important; color: #ffffff !important; font-weight: 600;">
+                                            @Model.Statistics.TotalDoctors
+                                        </span>
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-secondary" style="border-width: 2px;">
+                <div class="card-header bg-secondary text-white" style="background-color: #6c757d !important;">
+                    <h5 class="card-title mb-0" style="color: #ffffff !important; font-weight: 600;">
+                        <i class="fa fa-filter" style="color: #ffffff !important;"></i>
+                        فیلترهای جستجو
+                    </h5>
+                </div>
+                <div class="card-body" style="background-color: #ffffff;">
+                    <form id="filtersForm" class="form-horizontal">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="doctorName" class="form-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                        نام پزشک:
+                                    </label>
+                                    <input type="text" id="doctorName" name="doctorName" class="form-control" 
+                                           placeholder="جستجو بر اساس نام پزشک..." 
+                                           value="@(Model.Filters?.DoctorName)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="nationalCode" class="form-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                        کد ملی:
+                                    </label>
+                                    <input type="text" id="nationalCode" name="nationalCode" class="form-control" 
+                                           placeholder="جستجو بر اساس کد ملی..." 
+                                           value="@(Model.Filters?.NationalCode)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="departmentId" class="form-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                        دپارتمان:
+                                    </label>
+                                    <select id="departmentId" name="departmentId" class="form-control select2" style="height: 45px;">
+                                        <option value="">همه دپارتمان‌ها</option>
+                                        @if (Model.Filters?.Departments != null)
+                                        {
+                                            foreach (var dept in Model.Filters.Departments)
+                                            {
+                                                <option value="@dept.Value" @(Model.Filters.DepartmentId?.ToString() == dept.Value ? "selected" : "")>
+                                                    @dept.Text
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="serviceCategoryId" class="form-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                        سرفصل خدماتی:
+                                    </label>
+                                    <select id="serviceCategoryId" name="serviceCategoryId" class="form-control select2" style="height: 45px;">
+                                        <option value="">همه سرفصل‌ها</option>
+                                        @if (Model.Filters?.ServiceCategories != null)
+                                        {
+                                            foreach (var category in Model.Filters.ServiceCategories)
+                                            {
+                                                <option value="@category.Value" @(Model.Filters.ServiceCategoryId?.ToString() == category.Value ? "selected" : "")>
+                                                    @category.Text
+                                                </option>
+                                            }
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="minAssignmentsCount" class="form-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                        حداقل تعداد انتسابات:
+                                    </label>
+                                    <input type="number" id="minAssignmentsCount" name="minAssignmentsCount" class="form-control" 
+                                           placeholder="حداقل تعداد انتسابات..." 
+                                           value="@(Model.Filters?.MinAssignmentsCount)">
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <div class="form-check">
+                                        <input type="checkbox" id="showOnlyActiveAssignments" name="showOnlyActiveAssignments" 
+                                               class="form-check-input" @(Model.Filters?.ShowOnlyActiveAssignments == true ? "checked" : "")>
+                                        <label for="showOnlyActiveAssignments" class="form-check-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                            فقط انتسابات فعال
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input type="checkbox" id="showOnlyWithoutDependencies" name="showOnlyWithoutDependencies" 
+                                               class="form-check-input" @(Model.Filters?.ShowOnlyWithoutDependencies == true ? "checked" : "")>
+                                        <label for="showOnlyWithoutDependencies" class="form-check-label" style="color: #2c3e50 !important; font-weight: 600;">
+                                            فقط بدون وابستگی
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-actions text-center">
+                                    <button type="button" id="searchBtn" class="btn btn-primary btn-lg">
+                                        <i class="fa fa-search"></i>
+                                        جستجو
+                                    </button>
+                                    <button type="button" id="clearFiltersBtn" class="btn btn-secondary btn-lg">
+                                        <i class="fa fa-refresh"></i>
+                                        پاک کردن فیلترها
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Doctors List Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-success" style="border-width: 2px;">
+                <div class="card-header bg-success text-white" style="background-color: #28a745 !important;">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5 class="card-title mb-0" style="color: #ffffff !important; font-weight: 600;">
+                                <i class="fa fa-list" style="color: #ffffff !important;"></i>
+                                لیست پزشکان قابل حذف انتسابات
+                            </h5>
+                        </div>
+                        <div class="col-md-6 text-right">
+                            <div class="btn-group" role="group">
+                                <button type="button" id="selectAllBtn" class="btn btn-outline-light btn-sm">
+                                    <i class="fa fa-check-square-o"></i>
+                                    انتخاب همه
+                                </button>
+                                <button type="button" id="deselectAllBtn" class="btn btn-outline-light btn-sm">
+                                    <i class="fa fa-square-o"></i>
+                                    لغو انتخاب همه
+                                </button>
+                                <button type="button" id="bulkRemovalBtn" class="btn btn-warning btn-sm" disabled>
+                                    <i class="fa fa-trash"></i>
+                                    حذف دسته‌ای
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body" style="background-color: #ffffff;">
+                    @if (Model.IsLoading)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="sr-only">در حال بارگذاری...</span>
+                            </div>
+                            <p class="mt-3 text-muted">@Model.LoadingMessage</p>
+                        </div>
+                    }
+                    else if (Model.Doctors != null && Model.Doctors.Any())
+                    {
+                        <div class="table-responsive">
+                            <table id="doctorsTable" class="table table-striped table-hover">
+                                <thead class="thead-light">
+                                    <tr>
+                                        <th width="50">
+                                            <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                                        </th>
+                                        <th>نام پزشک</th>
+                                        <th>کد ملی</th>
+                                        <th>تخصص</th>
+                                        <th>تعداد انتسابات</th>
+                                        <th>وضعیت</th>
+                                        <th>آخرین انتساب</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var doctor in Model.Doctors)
+                                    {
+                                        <tr data-doctor-id="@doctor.DoctorId">
+                                            <td>
+                                                <input type="checkbox" class="form-check-input doctor-checkbox" 
+                                                       value="@doctor.DoctorId" @(doctor.IsSelected ? "checked" : "")>
+                                            </td>
+                                            <td>
+                                                <strong style="color: #2c3e50 !important;">@doctor.DoctorName</strong>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">@doctor.NationalCode</span>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">@doctor.Specialization</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info" style="background-color: #17a2b8 !important; color: #ffffff !important;">
+                                                    @doctor.TotalAssignments
+                                                </span>
+                                                @if (doctor.ActiveAssignments > 0)
+                                                {
+                                                    <span class="badge badge-success" style="background-color: #28a745 !important; color: #ffffff !important;">
+                                                        @doctor.ActiveAssignments فعال
+                                                    </span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge @doctor.StatusBadgeClass" style="font-weight: 600;">
+                                                    @doctor.StatusText
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="text-muted">@doctor.FormattedLastAssignmentDate</span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("RemoveAssignments", new { doctorId = doctor.DoctorId })" 
+                                                       class="btn btn-warning btn-sm" title="حذف انتسابات">
+                                                        <i class="fa fa-trash"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-info btn-sm viewDetailsBtn" 
+                                                            data-doctor-id="@doctor.DoctorId" title="مشاهده جزئیات">
+                                                        <i class="fa fa-eye"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fa fa-info-circle fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">هیچ پزشکی یافت نشد</h5>
+                            <p class="text-muted">لطفاً فیلترهای جستجو را تغییر دهید</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTables
+            if ($.fn.DataTable) {
+                $('#doctorsTable').DataTable({
+                    "language": {
+                        "url": "/Content/plugins/DataTables/js/fa.json"
+                    },
+                    "pageLength": 25,
+                    "order": [[1, "asc"]],
+                    "columnDefs": [
+                        { "orderable": false, "targets": [0, 7] }
+                    ]
+                });
+            }
+
+            // Initialize Select2
+            if ($.fn.select2) {
+                $('.select2').select2({
+                    placeholder: "انتخاب کنید...",
+                    allowClear: true
+                });
+            }
+
+            // Search functionality
+            $('#searchBtn').on('click', function() {
+                // TODO: Implement search functionality
+                console.log('Search clicked');
+            });
+
+            // Clear filters
+            $('#clearFiltersBtn').on('click', function() {
+                $('#filtersForm')[0].reset();
+                $('.select2').val(null).trigger('change');
+            });
+
+            // Select all functionality
+            $('#selectAllCheckbox, #selectAllBtn').on('change click', function() {
+                var isChecked = $('#selectAllCheckbox').is(':checked');
+                $('.doctor-checkbox').prop('checked', isChecked);
+                updateBulkRemovalButton();
+            });
+
+            // Individual checkbox change
+            $('.doctor-checkbox').on('change', function() {
+                updateBulkRemovalButton();
+                updateSelectAllCheckbox();
+            });
+
+            // Bulk removal
+            $('#bulkRemovalBtn').on('click', function() {
+                var selectedIds = $('.doctor-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (selectedIds.length === 0) {
+                    alert('لطفاً حداقل یک پزشک را انتخاب کنید');
+                    return;
+                }
+
+                if (confirm('آیا از حذف انتسابات ' + selectedIds.length + ' پزشک اطمینان دارید؟')) {
+                    // TODO: Implement bulk removal
+                    console.log('Bulk removal for:', selectedIds);
+                }
+            });
+
+            // View details
+            $('.viewDetailsBtn').on('click', function() {
+                var doctorId = $(this).data('doctor-id');
+                // TODO: Implement view details
+                console.log('View details for doctor:', doctorId);
+            });
+
+            function updateBulkRemovalButton() {
+                var selectedCount = $('.doctor-checkbox:checked').length;
+                $('#bulkRemovalBtn').prop('disabled', selectedCount === 0);
+                if (selectedCount > 0) {
+                    $('#bulkRemovalBtn').html('<i class="fa fa-trash"></i> حذف دسته‌ای (' + selectedCount + ')');
+                } else {
+                    $('#bulkRemovalBtn').html('<i class="fa fa-trash"></i> حذف دسته‌ای');
+                }
+            }
+
+            function updateSelectAllCheckbox() {
+                var totalCheckboxes = $('.doctor-checkbox').length;
+                var checkedCheckboxes = $('.doctor-checkbox:checked').length;
+                $('#selectAllCheckbox').prop('checked', totalCheckboxes === checkedCheckboxes);
+            }
+        });
+    </script>
+}

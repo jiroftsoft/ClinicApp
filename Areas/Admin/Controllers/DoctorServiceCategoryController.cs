@@ -833,7 +833,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     DoctorId = doctorId.Value,
                     DoctorName = $"{doctor.FirstName} {doctor.LastName}",
                     IsActive = true,
-                    GrantedDate = DateTime.Now
+                    GrantedDate = DateTime.Now.Date // فقط تاریخ بدون زمان
                 };
 
                 // دریافت لیست دسته‌بندی‌های خدمات فعال
@@ -884,7 +884,7 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 var viewModel = new DoctorServiceCategoryAssignFormViewModel
                 {
-                    Doctor = doctor,
+                    Doctor = doctor, // doctor از GetDoctorDetailsAsync می‌آید و FirstName/LastName دارد
                     Assignment = assignment,
                     AvailableServiceCategories = availableServiceCategories,
                     AvailableDepartments = availableDepartments,
@@ -912,14 +912,37 @@ namespace ClinicApp.Areas.Admin.Controllers
         {
             try
             {
-                _logger.Information("درخواست انتساب پزشک {DoctorId} به دسته‌بندی‌های خدمات انتخاب شده", 
-                    model.Assignment.DoctorId);
+                _logger.Information("🏥 PRODUCTION LOG: درخواست انتساب پزشک {DoctorId} به دسته‌بندی‌های خدمات. کاربر: {UserId}, IP: {IPAddress}, زمان: {Timestamp}", 
+                    model?.Assignment?.DoctorId, _currentUserService.UserId, GetClientIPAddress(), DateTime.Now);
+
+                // Log all form values for production debugging
+                _logger.Information("🏥 PRODUCTION LOG: مقادیر فرم - DoctorId: {DoctorId}, SelectedCategories: {Categories}, GrantedDate: {GrantedDate}, CertificateNumber: {CertificateNumber}", 
+                    model?.Assignment?.DoctorId, 
+                    string.Join(",", model?.SelectedServiceCategoryIds ?? new List<int>()), 
+                    model?.Assignment?.GrantedDate, 
+                    model?.Assignment?.CertificateNumber);
+
+                // حذف خطاهای validation مربوط به فیلدهای نمایشی
+                ModelState.Remove("Doctor.FirstName");
+                ModelState.Remove("Doctor.LastName");
+                ModelState.Remove("Doctor.FullName");
 
                 if (!ModelState.IsValid)
                 {
-                    _logger.Warning("مدل انتساب نامعتبر برای پزشک {DoctorId}", model.Assignment.DoctorId);
-                    TempData["Error"] = "اطلاعات وارد شده نامعتبر است";
-                    return RedirectToAction("AssignToServiceCategory", new { doctorId = model.Assignment.DoctorId });
+                    var modelStateErrors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                    _logger.Warning("🏥 PRODUCTION LOG: مدل انتساب نامعتبر برای پزشک {DoctorId}. خطاها: {@Errors}", 
+                        model?.Assignment?.DoctorId, modelStateErrors);
+                    
+                    // Log all ModelState keys and values for production debugging
+                    foreach (var key in ModelState.Keys)
+                    {
+                        var value = ModelState[key];
+                        _logger.Information("🏥 PRODUCTION LOG: ModelState Key: {Key}, Value: {Value}, Errors: {Errors}", 
+                            key, value?.Value?.AttemptedValue, string.Join(", ", value?.Errors?.Select(e => e.ErrorMessage) ?? new List<string>()));
+                    }
+                    
+                    TempData["Error"] = $"اطلاعات وارد شده نامعتبر است: {string.Join(", ", modelStateErrors)}";
+                    return RedirectToAction("AssignToServiceCategory", new { doctorId = model?.Assignment?.DoctorId ?? 0 });
                 }
 
                 // بررسی انتخاب دسته‌بندی‌های خدمات
@@ -943,7 +966,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                             DoctorId = model.Assignment.DoctorId,
                             ServiceCategoryId = serviceCategoryId,
                             IsActive = true,
-                            GrantedDate = DateTime.Now,
+                            GrantedDate = model.Assignment.GrantedDate ?? DateTime.Now.Date,
                             AuthorizationLevel = model.Assignment.AuthorizationLevel,
                             CertificateNumber = model.Assignment.CertificateNumber,
                             Notes = model.Assignment.Notes
@@ -964,21 +987,21 @@ namespace ClinicApp.Areas.Admin.Controllers
                         if (result.Success)
                         {
                             successCount++;
-                            _logger.Information("پزشک {DoctorId} با موفقیت به دسته‌بندی خدمات {ServiceCategoryId} انتساب یافت", 
-                                model.Assignment.DoctorId, serviceCategoryId);
+                            _logger.Information("🏥 PRODUCTION LOG: ✅ موفقیت - پزشک {DoctorId} با موفقیت به دسته‌بندی خدمات {ServiceCategoryId} انتساب یافت. کاربر: {UserId}, زمان: {Timestamp}", 
+                                model.Assignment.DoctorId, serviceCategoryId, _currentUserService.UserId, DateTime.Now);
                         }
                         else
                         {
                             errorMessages.Add($"دسته‌بندی {serviceCategoryId}: {result.Message}");
-                            _logger.Warning("خطا در انتساب پزشک {DoctorId} به دسته‌بندی خدمات {ServiceCategoryId}: {Message}", 
-                                model.Assignment.DoctorId, serviceCategoryId, result.Message);
+                            _logger.Warning("🏥 PRODUCTION LOG: ❌ خطا در انتساب پزشک {DoctorId} به دسته‌بندی خدمات {ServiceCategoryId}: {Message}. کاربر: {UserId}, زمان: {Timestamp}", 
+                                model.Assignment.DoctorId, serviceCategoryId, result.Message, _currentUserService.UserId, DateTime.Now);
                         }
                     }
                     catch (Exception ex)
                     {
                         errorMessages.Add($"دسته‌بندی {serviceCategoryId}: خطای غیرمنتظره");
-                        _logger.Error(ex, "خطای غیرمنتظره در انتساب پزشک {DoctorId} به دسته‌بندی خدمات {ServiceCategoryId}", 
-                            model.Assignment.DoctorId, serviceCategoryId);
+                        _logger.Error(ex, "🏥 PRODUCTION LOG: 💥 خطای غیرمنتظره در انتساب پزشک {DoctorId} به دسته‌بندی خدمات {ServiceCategoryId}. کاربر: {UserId}, زمان: {Timestamp}", 
+                            model.Assignment.DoctorId, serviceCategoryId, _currentUserService.UserId, DateTime.Now);
                     }
                 }
 
@@ -991,20 +1014,26 @@ namespace ClinicApp.Areas.Admin.Controllers
                         message += $". خطاها: {string.Join(", ", errorMessages.Take(3))}";
                     }
                     TempData["Success"] = message;
+                    
+                    _logger.Information("🏥 PRODUCTION LOG: 🎉 عملیات انتساب تکمیل شد - موفقیت: {SuccessCount}, خطا: {ErrorCount}, پزشک: {DoctorId}, کاربر: {UserId}, زمان: {Timestamp}", 
+                        successCount, errorMessages.Count, model.Assignment.DoctorId, _currentUserService.UserId, DateTime.Now);
                 }
                 else
                 {
                     TempData["Error"] = $"هیچ انتسابی انجام نشد. خطاها: {string.Join(", ", errorMessages)}";
+                    
+                    _logger.Warning("🏥 PRODUCTION LOG: ⚠️ عملیات انتساب ناموفق - خطا: {ErrorCount}, پزشک: {DoctorId}, کاربر: {UserId}, زمان: {Timestamp}", 
+                        errorMessages.Count, model.Assignment.DoctorId, _currentUserService.UserId, DateTime.Now);
                 }
 
                 return RedirectToAction("ServiceCategoryPermissions", new { doctorId = model.Assignment.DoctorId });
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطای غیرمنتظره در انتساب پزشک {DoctorId} به دسته‌بندی‌های خدمات", 
-                    model.Assignment?.DoctorId);
+                _logger.Error(ex, "🏥 PRODUCTION LOG: 💥 خطای غیرمنتظره در انتساب پزشک {DoctorId} به دسته‌بندی‌های خدمات. کاربر: {UserId}, IP: {IPAddress}, زمان: {Timestamp}", 
+                    model?.Assignment?.DoctorId, _currentUserService.UserId, GetClientIPAddress(), DateTime.Now);
                 TempData["Error"] = "خطا در انتساب پزشک به دسته‌بندی‌های خدمات";
-                return RedirectToAction("AssignToServiceCategory", new { doctorId = model.Assignment?.DoctorId });
+                return RedirectToAction("AssignToServiceCategory", new { doctorId = model?.Assignment?.DoctorId });
             }
         }
 

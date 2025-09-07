@@ -1,717 +1,398 @@
 @model ClinicApp.ViewModels.DoctorManagementVM.DoctorAssignmentDetailsViewModel
-@* صفحه جزئیات انتسابات کلی پزشک - برای عملیات تخصصی به ماژول‌های مربوطه مراجعه شود *@
 @{
-    ViewBag.Title = "جزئیات انتسابات کلی پزشک";
+    ViewBag.Title = "جزئیات انتسابات پزشک";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-@section Styles {
-    <link href="~/Content/plugins/sweetalert2/sweetalert2.min.css" rel="stylesheet" />
-    <style>
-        /* Main Styles */
-        .details-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .info-section {
-            border-left: 4px solid #667eea;
-            padding-left: 20px;
-            margin-bottom: 25px;
-        }
-
-        .info-section h5 {
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .doctor-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 10px;
-            padding: 25px;
-        }
-
-        .assignment-badge {
-            border-radius: 20px;
-            padding: 8px 16px;
-            font-weight: 500;
-        }
-
-        .department-card {
-            border: 1px solid #e9ecef;
-            border-radius: 10px;
-            transition: all 0.3s ease;
-        }
-
-        .department-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .service-category-item {
-            background: #f8f9fa;
-            border-radius: 8px;
-            padding: 10px;
-            margin-bottom: 8px;
-            border-left: 3px solid #28a745;
-        }
-
-        .stats-item {
-            text-align: center;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            margin-bottom: 15px;
-        }
-
-        .stats-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .timeline-item {
-            position: relative;
-            padding-left: 30px;
-            margin-bottom: 20px;
-        }
-
-        .timeline-item::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #667eea;
-        }
-
-        .timeline-item::after {
-            content: '';
-            position: absolute;
-            left: 5px;
-            top: 12px;
-            width: 2px;
-            height: calc(100% + 8px);
-            background: #e9ecef;
-        }
-
-        .timeline-item:last-child::after {
-            display: none;
-        }
-
-        /* Accessibility Improvements */
-        .btn:focus {
-            outline: 2px solid #667eea;
-            outline-offset: 2px;
-        }
-
-        .stats-item:focus-within {
-            outline: 2px solid #667eea;
-            outline-offset: 2px;
-        }
-
-        /* Loading States */
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 255, 255, 0.8);
-            display: none;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-spinner {
-            width: 50px;
-            height: 50px;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @@keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        /* Responsive Improvements */
-        @@media (max-width: 768px) {
-            .doctor-header {
-                padding: 15px;
-            }
-
-            .stats-item {
-                margin-bottom: 10px;
-            }
-
-            .stats-number {
-                font-size: 1.5rem;
-            }
-
-            .btn-group {
-                flex-direction: column;
-            }
-
-            .btn-group .btn {
-                margin-bottom: 5px;
-            }
-        }
-
-        /* Print Styles */
-        @@media print {
-            /* Hide unnecessary elements */
-            .action-buttons,
-            .btn,
-            .loading-overlay,
-            .swal2-container {
-                display: none !important;
-            }
-
-            /* Improve print layout */
-            .container-fluid {
-                max-width: none;
-                padding: 0;
-            }
-
-            .doctor-header {
-                background: #667eea !important;
-                color: white !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-
-            .stats-item {
-                border: 1px solid #ddd;
-                page-break-inside: avoid;
-            }
-
-            .assignment-item,
-            .service-category-item {
-                page-break-inside: avoid;
-                border: 1px solid #ddd;
-            }
-
-            /* Ensure proper page breaks */
-            .timeline-item {
-                page-break-inside: avoid;
-            }
-
-            /* Add page numbers */
-            @@page {
-                margin: 1cm;
-            }
-
-            /* Header for each page */
-            .doctor-header::after {
-                content: "صفحه " counter(page);
-                position: absolute;
-                bottom: 10px;
-                right: 20px;
-                font-size: 12px;
-                opacity: 0.7;
-            }
-        }
-
-        /* High Contrast Mode Support */
-        @@media (prefers-contrast: high) {
-            .doctor-header {
-                background: #000 !important;
-                color: #fff !important;
-            }
-
-            .stats-item {
-                border: 2px solid #000;
-            }
-
-            .btn {
-                border: 2px solid currentColor;
-            }
-        }
-
-        /* Reduced Motion Support */
-        @@media (prefers-reduced-motion: reduce) {
-            .department-card:hover,
-            .btn:hover {
-                transform: none;
-            }
-
-            .loading-spinner {
-                animation: none;
-            }
-        }
-    </style>
-}
-
-<div class="container-fluid">
-    <!-- Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h2 class="mb-0 text-primary">
-                        <i class="fas fa-user-md me-2"></i>
-                        جزئیات انتسابات پزشک
-                    </h2>
-                    <p class="text-muted mb-0">مشاهده کامل اطلاعات انتسابات و صلاحیت‌های پزشک</p>
+<div class="content-wrapper">
+    <!-- Content Header (Page header) -->
+    <div class="content-header">
+        <div class="container-fluid">
+            <div class="row mb-2">
+                <div class="col-sm-6">
+                    <h1 class="m-0">جزئیات انتسابات پزشک</h1>
+                    <p class="text-muted">@Model.DoctorName - @Model.DoctorNationalCode</p>
                 </div>
-                <div>
-                    <a href="@Url.Action("Index", "DoctorAssignment")" class="btn btn-outline-secondary me-2">
-                        <i class="fas fa-arrow-right me-2"></i>
-                        بازگشت به لیست
-                    </a>
-                    <button type="button" class="btn btn-info me-2" onclick="refreshData()" title="بروزرسانی (Ctrl+R)">
-                        <i class="fas fa-sync-alt me-2"></i>
-                        بروزرسانی
-                    </button>
-                    <button type="button" class="btn btn-warning me-2" onclick="printDetails()" title="چاپ (Ctrl+P)">
-                        <i class="fas fa-print me-2"></i>
-                        چاپ
-                    </button>
-                    <button type="button" class="btn btn-secondary me-2" onclick="exportDetails()" title="خروجی (Ctrl+E)">
-                        <i class="fas fa-download me-2"></i>
-                        خروجی
-                    </button>
-                    <a href="@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-success">
-                        <i class="fas fa-plus me-2"></i>
-                        انتساب جدید
-                    </a>
+                <div class="col-sm-6">
+                    <ol class="breadcrumb float-sm-right">
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home", new { area = "Admin" })">خانه</a></li>
+                        <li class="breadcrumb-item"><a href="@Url.Action("Index")">مدیریت انتسابات</a></li>
+                        <li class="breadcrumb-item active">جزئیات</li>
+                    </ol>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Doctor Information Header -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="doctor-header">
-                <div class="row align-items-center">
-                    <div class="col-md-8">
-                        <h3 class="mb-2">
-                            <i class="fas fa-user-md me-2"></i>
-                                                         @Html.DisplayFor(m => m.DoctorName)
-                        </h3>
-                        <p class="mb-1 opacity-75">
-                            <i class="fas fa-id-card me-2"></i>
-                                                         کد ملی: @Html.DisplayFor(m => m.DoctorNationalCode)
-                        </p>
-                                            <p class="mb-0 opacity-75">
-                        <i class="fas fa-calendar me-2"></i>
-                        تاریخ آخرین بروزرسانی: <span id="lastUpdateTime">@DateTime.Now.ToString("yyyy/MM/dd")</span>
-                    </p>
-                    <p class="mb-0 opacity-75">
-                        <i class="fas fa-sync-alt me-2"></i>
-                        <span id="lastRefreshTime">آخرین بروزرسانی: -</span>
-                    </p>
-                    </div>
-                    <div class="col-md-4 text-end">
-                        <div class="d-flex justify-content-end">
-                            <div class="text-center me-4">
-                                <h4 class="mb-1" id="totalAssignments">@Model.TotalActiveAssignments</h4>
-                                <small class="opacity-75">کل انتسابات</small>
-                            </div>
-                            <div class="text-center me-4">
-                                <h4 class="mb-1" id="activeDepartments">@Model.ActiveDepartmentCount</h4>
-                                <small class="opacity-75">دپارتمان‌ها</small>
-                            </div>
-                            <div class="text-center">
-                                <h4 class="mb-1" id="activeServiceCategories">@Model.ActiveServiceCategoryCount</h4>
-                                <small class="opacity-75">صلاحیت‌ها</small>
-                            </div>
+    <!-- Main content -->
+    <section class="content">
+        <div class="container-fluid">
+            
+            <!-- اطلاعات پزشک -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-md"></i>
+                        اطلاعات پزشک
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>نام کامل:</strong></td>
+                                    <td>@Model.DoctorName</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>کد ملی:</strong></td>
+                                    <td>@Model.DoctorNationalCode</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>تخصص:</strong></td>
+                                    <td>@Model.DoctorSpecialization</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>شماره نظام پزشکی:</strong></td>
+                                    <td>@Model.DoctorLicenseNumber</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <td><strong>وضعیت:</strong></td>
+                                    <td>
+                                        <span class="badge @(Model.IsActive ? "badge-success" : "badge-danger")">
+                                            @(Model.IsActive ? "فعال" : "غیرفعال")
+                                        </span>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><strong>تاریخ ثبت:</strong></td>
+                                    <td>@Model.RegistrationDate</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>آخرین بروزرسانی:</strong></td>
+                                    <td>@Model.LastModifiedDate</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>تعداد انتسابات:</strong></td>
+                                    <td>
+                                        <span class="badge badge-info">@Model.TotalAssignments</span>
+                                    </td>
+                                </tr>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
 
-    <!-- Statistics -->
-    <div class="row mb-4">
-        <div class="col-md-3">
-            <div class="stats-item">
-                <div class="stats-number" data-stat-type="totalActiveAssignments">@Model.TotalActiveAssignments</div>
-                <div class="text-muted">کل انتسابات فعال</div>
+            <!-- انتسابات دپارتمان -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-building"></i>
+                        انتسابات دپارتمان
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("AssignToDepartment", "DoctorDepartment", new { doctorId = Model.DoctorId })" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i>
+                            انتساب جدید
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.DepartmentAssignments != null && Model.DepartmentAssignments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>دپارتمان</th>
+                                        <th>نقش</th>
+                                        <th>تاریخ انتساب</th>
+                                        <th>وضعیت</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var assignment in Model.DepartmentAssignments)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@assignment.DepartmentName</strong>
+                                                <br>
+                                                <small class="text-muted">@assignment.DepartmentCode</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-secondary">@assignment.Role</span>
+                                            </td>
+                                            <td>@assignment.AssignmentDate</td>
+                                            <td>
+                                                <span class="badge @(assignment.IsActive ? "badge-success" : "badge-danger")">
+                                                    @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("Edit", "DoctorDepartment", new { id = assignment.Id })" 
+                                                       class="btn btn-sm btn-warning" title="ویرایش">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" 
+                                                            class="btn btn-sm @(assignment.IsActive ? "btn-danger" : "btn-success")"
+                                                            onclick="toggleAssignmentStatus(@assignment.Id, @assignment.IsActive.ToString().ToLower())"
+                                                            title="@(assignment.IsActive ? "غیرفعال کردن" : "فعال کردن")">
+                                                        <i class="fas @(assignment.IsActive ? "fa-pause" : "fa-play")"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            هیچ انتساب دپارتمانی یافت نشد.
+                            <a href="@Url.Action("AssignToDepartment", "DoctorDepartment", new { doctorId = Model.DoctorId })" 
+                               class="btn btn-primary btn-sm ml-2">
+                                <i class="fas fa-plus"></i>
+                                انتساب جدید
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-item">
-                <div class="stats-number" data-stat-type="activeDepartmentCount">@Model.ActiveDepartmentCount</div>
-                <div class="text-muted">دپارتمان‌های فعال</div>
+
+            <!-- انتسابات سرفصل خدماتی -->
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list-alt"></i>
+                        انتسابات سرفصل خدماتی
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" 
+                           class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i>
+                            انتساب جدید
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.ServiceCategoryAssignments != null && Model.ServiceCategoryAssignments.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>سرفصل خدماتی</th>
+                                        <th>سطح دسترسی</th>
+                                        <th>شماره گواهی</th>
+                                        <th>تاریخ اعطا</th>
+                                        <th>وضعیت</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var assignment in Model.ServiceCategoryAssignments)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@assignment.ServiceCategoryName</strong>
+                                                <br>
+                                                <small class="text-muted">@assignment.ServiceCategoryCode</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">@assignment.AuthorizationLevel</span>
+                                            </td>
+                                            <td>@assignment.CertificateNumber</td>
+                                            <td>@assignment.GrantedDate</td>
+                                            <td>
+                                                <span class="badge @(assignment.IsActive ? "badge-success" : "badge-danger")">
+                                                    @(assignment.IsActive ? "فعال" : "غیرفعال")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="@Url.Action("Edit", "DoctorServiceCategory", new { id = assignment.Id})" 
+                                                       class="btn btn-sm btn-warning" title="ویرایش">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" 
+                                                            class="btn btn-sm @(assignment.IsActive ? "btn-danger" : "btn-success")"
+                                                            onclick="toggleServiceAssignmentStatus(@assignment.Id, @assignment.IsActive.ToString().ToLower())"
+                                                            title="@(assignment.IsActive ? "غیرفعال کردن" : "فعال کردن")">
+                                                        <i class="fas @(assignment.IsActive ? "fa-pause" : "fa-play")"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            هیچ انتساب سرفصل خدماتی یافت نشد.
+                            <a href="@Url.Action("AssignToServiceCategory", "DoctorServiceCategory", new { doctorId = Model.DoctorId })" 
+                               class="btn btn-primary btn-sm ml-2">
+                                <i class="fas fa-plus"></i>
+                                انتساب جدید
+                            </a>
+                        </div>
+                    }
+                </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-item">
-                <div class="stats-number" data-stat-type="activeServiceCategoryCount">@Model.ActiveServiceCategoryCount</div>
-                <div class="text-muted">صلاحیت‌های فعال</div>
+
+            <!-- تاریخچه تغییرات -->
+            @if (Model.AssignmentHistory != null && Model.AssignmentHistory.Any())
+            {
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-history"></i>
+                            تاریخچه تغییرات
+                        </h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="timeline">
+                            @foreach (var history in Model.AssignmentHistory)
+                            {
+                                <div class="time-label">
+                                    <span class="bg-blue">@history.Date</span>
+                                </div>
+                                <div>
+                                    <i class="fas @GetHistoryIcon(history.OperationType) bg-@GetHistoryColor(history.OperationType)"></i>
+                                    <div class="timeline-item">
+                                        <span class="time">
+                                            <i class="fas fa-clock"></i> @history.Time
+                                        </span>
+                                        <h3 class="timeline-header">
+                                            @history.Title
+                                        </h3>
+                                        <div class="timeline-body">
+                                            @history.Description
+                                        </div>
+                                        <div class="timeline-footer">
+                                            <small class="text-muted">
+                                                توسط: @history.ModifiedBy
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- دکمه‌های عملیات -->
+            <div class="card">
+                <div class="card-body text-center">
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت به لیست
+                    </a>
+                    <a href="@Url.Action("Edit", new { id = Model.DoctorId })" class="btn btn-warning">
+                        <i class="fas fa-edit"></i>
+                        ویرایش انتسابات
+                    </a>
+                    <a href="@Url.Action("RemoveAssignments", "DoctorRemoval", new { id = Model.DoctorId })" 
+                       class="btn btn-danger">
+                        <i class="fas fa-trash"></i>
+                        حذف انتسابات
+                    </a>
+                </div>
             </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-item">
-                <div class="stats-number">@(Model.IsMultiDepartment ? "چندگانه" : "تک")</div>
-                <div class="text-muted">نوع انتساب</div>
-            </div>
-        </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="row">
-        <!-- Department Assignments -->
-        <div class="col-md-6 mb-4">
-            @Html.Partial("_PartialViews/_DoctorAssignmentsList", Model.Departments)
         </div>
-
-        <!-- Service Categories -->
-        <div class="col-md-6 mb-4">
-            @Html.Partial("_PartialViews/_ServiceCategoriesList", Model.ServiceCategories)
-        </div>
-    </div>
-
-    <!-- Assignment History -->
-    <div class="row">
-        <div class="col-12">
-            @Html.Partial("_PartialViews/_AssignmentHistory", Model.History)
-        </div>
-    </div>
-
-    <!-- Action Buttons -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-center action-buttons">
-                <a href="@Url.Action("AssignToDepartment", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-success me-3">
-                    <i class="fas fa-plus me-2"></i>
-                    انتساب جدید
-                </a>
-                <a href="@Url.Action("TransferDoctor", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-warning me-3">
-                    <i class="fas fa-exchange-alt me-2"></i>
-                    انتقال پزشک
-                </a>
-                <a href="@Url.Action("RemoveAssignments", "DoctorAssignment", new { doctorId = Model.DoctorId })" class="btn btn-danger me-3">
-                    <i class="fas fa-trash me-2"></i>
-                    حذف انتسابات
-                </a>
-                <a href="@Url.Action("Index", "DoctorAssignment")" class="btn btn-secondary">
-                    <i class="fas fa-arrow-right me-2"></i>
-                    بازگشت
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Loading Overlay -->
-<div class="loading-overlay" id="loadingOverlay">
-    <div class="loading-spinner"></div>
+    </section>
 </div>
 
 @section Scripts {
-    <script src="~/content/plugins/sweetalert2/sweetalert2@11.js"></script>
-
     <script>
-        // Global variables
-        let refreshInterval;
-        let isRefreshing = false;
-        const REFRESH_INTERVAL = 300000; // 5 minutes
-        const DOCTOR_ID = @Model.DoctorId;
-
-        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        (function() {
-            function ensureJQuery(callback) {
-                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
-                    callback();
-                } else {
-                    setTimeout(function() {
-                        ensureJQuery(callback);
-                    }, 50);
-                }
-            }
-
-            ensureJQuery(function() {
-                $(document).ready(function () {
-                    initializePage();
-                });
-            });
-
-        // Wrapper function to ensure jQuery is available
-        function withJQuery(callback) {
-            if (typeof $ !== 'undefined') {
-                callback();
-            } else {
-                setTimeout(() => withJQuery(callback), 100);
-            }
-        }
-
-        function initializePage() {
-            withJQuery(function() {
-                // Initialize auto-refresh with better control
-                startAutoRefresh();
-                
-                // Initialize keyboard shortcuts
-                initializeKeyboardShortcuts();
-                
-                // Initialize print functionality
-                initializePrintFunctionality();
-                
-                // Initialize export functionality
-                initializeExportFunctionality();
-                
-                // Show last refresh time
-                updateLastRefreshTime();
-            });
-        }
-
-        function startAutoRefresh() {
-            withJQuery(function() {
-                // Clear existing interval
-                if (refreshInterval) {
-                    clearInterval(refreshInterval);
-                }
-                
-                // Start new interval
-                refreshInterval = setInterval(function () {
-                    if (!isRefreshing) {
-                        refreshData();
-                    }
-                }, REFRESH_INTERVAL);
-            });
-        }
-
-        function stopAutoRefresh() {
-            withJQuery(function() {
-                if (refreshInterval) {
-                    clearInterval(refreshInterval);
-                    refreshInterval = null;
-                }
-            });
-        }
-
-        async function refreshData() {
-            if (isRefreshing) return;
+        function toggleAssignmentStatus(assignmentId, isActive) {
+            var action = isActive ? 'غیرفعال' : 'فعال';
+            var message = 'آیا از ' + action + ' کردن این انتساب اطمینان دارید؟';
             
-            isRefreshing = true;
+            if (confirm(message)) {
+                $.ajax({
+                    url: '@Url.Action("ToggleAssignmentStatus", "DoctorDepartment")',
+                    type: 'POST',
+                    data: { id: assignmentId },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('خطا در تغییر وضعیت: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('خطا در ارتباط با سرور');
+                    }
+                });
+            }
+        }
+
+        function toggleServiceAssignmentStatus(assignmentId, isActive) {
+            var action = isActive ? 'غیرفعال' : 'فعال';
+            var message = 'آیا از ' + action + ' کردن این انتساب اطمینان دارید؟';
             
-            try {
-                withJQuery(function() {
-                    // Show loading indicator
-                    Swal.fire({
-                        title: 'در حال بروزرسانی...',
-                        text: 'اطلاعات در حال بروزرسانی است',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
+            if (confirm(message)) {
+                $.ajax({
+                    url: '@Url.Action("ToggleAssignmentStatus", "DoctorServiceCategory")',
+                    type: 'POST',
+                    data: { id: assignmentId },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('خطا در تغییر وضعیت: ' + response.message);
                         }
-                    });
-                });
-
-                // Use AJAX to refresh data instead of full page reload
-                const response = await fetch(`@Url.Action("GetDoctorDetailsPartial", "DoctorAssignment")/${DOCTOR_ID}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    error: function() {
+                        alert('خطا در ارتباط با سرور');
                     }
                 });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.success) {
-                        updatePageData(data.data);
-                        showSuccess('بروزرسانی موفق', 'اطلاعات با موفقیت بروزرسانی شد');
-                    } else {
-                        showError('خطا در بروزرسانی', data.message);
-                    }
-                } else {
-                    throw new Error('خطا در ارتباط با سرور');
-                }
-            } catch (error) {
-                console.error('خطا در بروزرسانی:', error);
-                showError('خطا در بروزرسانی', 'لطفاً دوباره تلاش کنید');
-            } finally {
-                isRefreshing = false;
-                updateLastRefreshTime();
             }
         }
-
-        function updatePageData(data) {
-            withJQuery(function() {
-                // Update statistics
-                $('.stats-number').each(function() {
-                    const statType = $(this).data('stat-type');
-                    if (data.stats && data.stats[statType] !== undefined) {
-                        $(this).text(data.stats[statType]);
-                    }
-                });
-
-                // Update doctor header info
-                if (data.doctorInfo) {
-                    $('#doctorName').text(data.doctorInfo.name);
-                    $('#doctorNationalCode').text(data.doctorInfo.nationalCode);
-                    $('#lastUpdateTime').text(data.doctorInfo.lastUpdate);
-                }
-
-                // Update assignments count in header
-                if (data.headerStats) {
-                    $('#totalAssignments').text(data.headerStats.totalActiveAssignments);
-                    $('#activeDepartments').text(data.headerStats.activeDepartmentCount);
-                    $('#activeServiceCategories').text(data.headerStats.activeServiceCategoryCount);
-                }
-            });
-        }
-
-        function updateLastRefreshTime() {
-            withJQuery(function() {
-                const now = new Date();
-                const timeString = now.toLocaleTimeString('fa-IR');
-                $('#lastRefreshTime').text(`آخرین بروزرسانی: ${timeString}`);
-            });
-        }
-
-        function initializeKeyboardShortcuts() {
-            withJQuery(function() {
-                $(document).keydown(function (e) {
-                    // Ctrl+R for refresh
-                    if (e.ctrlKey && e.keyCode === 82) {
-                        e.preventDefault();
-                        refreshData();
-                    }
-
-                    // Ctrl+P for print
-                    if (e.ctrlKey && e.keyCode === 80) {
-                        e.preventDefault();
-                        printDetails();
-                    }
-
-                    // Ctrl+E for export
-                    if (e.ctrlKey && e.keyCode === 69) {
-                        e.preventDefault();
-                        exportDetails();
-                    }
-
-                    // Escape to stop auto-refresh
-                    if (e.keyCode === 27) {
-                        stopAutoRefresh();
-                        showInfo('بروزرسانی خودکار متوقف شد', 'برای فعال‌سازی مجدد F5 را فشار دهید');
-                    }
-                });
-            });
-        }
-
-        function initializePrintFunctionality() {
-            withJQuery(function() {
-                // Add print button event listener
-                $(document).on('click', '#printButton', function() {
-                    printDetails();
-                });
-            });
-        }
-
-        function printDetails() {
-            withJQuery(function() {
-                // Hide action buttons before printing
-                $('.action-buttons').addClass('d-none');
-                
-                // Print the page
-                window.print();
-                
-                // Show action buttons after printing
-                setTimeout(() => {
-                    $('.action-buttons').removeClass('d-none');
-                }, 1000);
-            });
-        }
-
-        function initializeExportFunctionality() {
-            withJQuery(function() {
-                // Add export button event listener
-                $(document).on('click', '#exportButton', function() {
-                    exportDetails();
-                });
-            });
-        }
-
-        async function exportDetails() {
-            try {
-                withJQuery(function() {
-                    Swal.fire({
-                        title: 'در حال آماده‌سازی...',
-                        text: 'فایل در حال آماده‌سازی است',
-                        allowOutsideClick: false,
-                        didOpen: () => {
-                            Swal.showLoading();
-                        }
-                    });
-                });
-
-                const response = await fetch(`@Url.Action("ExportDoctorDetails", "DoctorAssignment")/${DOCTOR_ID}`, {
-                    method: 'GET',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                });
-
-                if (response.ok) {
-                    const blob = await response.blob();
-                    const url = window.URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `doctor-assignments-${DOCTOR_ID}.pdf`;
-                    document.body.appendChild(a);
-                    a.click();
-                    window.URL.revokeObjectURL(url);
-                    document.body.removeChild(a);
-
-                    showSuccess('آماده شد!', 'فایل با موفقیت دانلود شد');
-                } else {
-                    throw new Error('خطا در آماده‌سازی فایل');
-                }
-            } catch (error) {
-                console.error('خطا در export:', error);
-                showError('خطا در export', 'لطفاً دوباره تلاش کنید');
-            }
-        }
-
-        // Utility functions
-        function showSuccess(title, message) {
-            withJQuery(function() {
-                Swal.fire({
-                    title: title,
-                    text: message,
-                    icon: 'success',
-                    confirmButtonText: 'باشه'
-                });
-            });
-        }
-
-        function showError(title, message) {
-            withJQuery(function() {
-                Swal.fire({
-                    title: title,
-                    text: message,
-                    icon: 'error',
-                    confirmButtonText: 'باشه'
-                });
-            });
-        }
-
-        function showInfo(title, message) {
-            withJQuery(function() {
-                Swal.fire({
-                    title: title,
-                    text: message,
-                    icon: 'info',
-                    confirmButtonText: 'باشه'
-                });
-            });
-        }
-
-        // Cleanup on page unload
-        window.addEventListener('beforeunload', function() {
-            stopAutoRefresh();
-        });
     </script>
+}
+
+@functions {
+    string GetHistoryIcon(string operationType)
+    {
+        return operationType switch
+        {
+            "Create" => "fa-plus",
+            "Update" => "fa-edit",
+            "Delete" => "fa-trash",
+            "Activate" => "fa-play",
+            "Deactivate" => "fa-pause",
+            _ => "fa-info"
+        };
+    }
+
+    string GetHistoryColor(string operationType)
+    {
+        return operationType switch
+        {
+            "Create" => "green",
+            "Update" => "blue",
+            "Delete" => "red",
+            "Activate" => "green",
+            "Deactivate" => "orange",
+            _ => "gray"
+        };
+    }
 }

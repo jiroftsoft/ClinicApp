@@ -46,16 +46,46 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public string MedicalCouncilNumber { get; set; }
 
         /// <summary>
+        /// شماره پروانه پزشک (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "شماره پروانه")]
+        public string DoctorLicenseNumber => MedicalCouncilNumber;
+
+        /// <summary>
         /// تاریخ آخرین بروزرسانی
         /// </summary>
         [Display(Name = "آخرین بروزرسانی")]
         public DateTime LastUpdateTime { get; set; }
 
         /// <summary>
+        /// آیا پزشک فعال است (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "وضعیت فعال")]
+        public bool IsActive => TotalActiveAssignments > 0;
+
+        /// <summary>
+        /// تاریخ ثبت (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "تاریخ ثبت")]
+        public DateTime? RegistrationDate => FirstAssignmentDate;
+
+        /// <summary>
+        /// تاریخ آخرین تغییر (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "آخرین تغییر")]
+        public DateTime LastModifiedDate => LastUpdateTime;
+
+        /// <summary>
         /// تعداد کل انتسابات فعال
         /// </summary>
         [Display(Name = "کل انتسابات فعال")]
         public int TotalActiveAssignments { get; set; }
+
+        /// <summary>
+        /// تعداد کل انتسابات (برای سازگاری با View)
+        /// </summary>
+        [Display(Name = "تعداد کل انتسابات")]
+        public int TotalAssignments => TotalActiveAssignments;
 
         /// <summary>
         /// تعداد دپارتمان‌های فعال
@@ -81,14 +111,29 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         public List<DoctorDepartmentViewModel> Departments { get; set; } = new List<DoctorDepartmentViewModel>();
 
         /// <summary>
+        /// لیست انتسابات دپارتمان‌ها (برای سازگاری با View)
+        /// </summary>
+        public List<DoctorDepartmentViewModel> DepartmentAssignments => Departments;
+
+        /// <summary>
         /// لیست صلاحیت‌های خدماتی
         /// </summary>
         public List<DoctorServiceCategoryViewModel> ServiceCategories { get; set; } = new List<DoctorServiceCategoryViewModel>();
 
         /// <summary>
+        /// لیست انتسابات سرفصل‌های خدماتی (برای سازگاری با View)
+        /// </summary>
+        public List<DoctorServiceCategoryViewModel> ServiceCategoryAssignments => ServiceCategories;
+
+        /// <summary>
         /// تاریخچه انتسابات
         /// </summary>
         public List<AssignmentHistoryViewModel> History { get; set; } = new List<AssignmentHistoryViewModel>();
+
+        /// <summary>
+        /// تاریخچه انتسابات (برای سازگاری با View)
+        /// </summary>
+        public List<AssignmentHistoryViewModel> AssignmentHistory => History;
 
         /// <summary>
         /// آمار کلی برای نمایش در کارت‌ها

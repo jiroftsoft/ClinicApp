@@ -439,6 +439,7 @@
     <Compile Include="Areas\Admin\Controllers\DoctorDashboardController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorDepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorHistoryController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DoctorRemovalController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorReportingController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorScheduleController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorServiceCategoryController.cs" />
@@ -448,6 +449,7 @@
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Shared\BaseAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\SpecializationController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
@@ -561,12 +563,14 @@
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\AssignmentPreviewViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\BlockTimeRangeViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\BulkAssignmentViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentFilterViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentStatsViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DataTablesResponse.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentDetailsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentEditViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorAssignmentOperationViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorHistoryViewModels.cs" />
@@ -580,6 +584,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\DoctorDashboardViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorDepartmentViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorDetailsViewModel.cs" />
+    <Compile Include="ViewModels\DoctorManagementVM\DoctorRemovalIndexViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorScheduleViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorSearchViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\DoctorServiceCategoryViewModel.cs" />
@@ -698,6 +703,7 @@
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.css" />
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.min.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-date.min.js" />
+    <Content Include="Content\plugins\persian-datepicker\persian-datepicker-helper.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.css" />
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.js" />
     <Content Include="Content\plugins\select2\css\select2.css" />
@@ -2974,6 +2980,9 @@
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Scripts\aos.js" />
+    <Content Include="Scripts\app\assignment-form.js" />
+    <Content Include="Scripts\app\doctor-assignment-index.js" />
+    <Content Include="Scripts\app\utility.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
     <Content Include="Scripts\bootstrap.esm.js" />
@@ -3244,21 +3253,7 @@
     <Content Include="Areas\Admin\Views\Specialization\Create.cshtml" />
     <Content Include="Areas\Admin\Views\Specialization\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Specialization\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\AssignToDepartment.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\TransferDoctor.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\RemoveAssignments.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\AssignmentReport.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\Assignments.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentStats.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_DoctorAssignmentsList.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentForm.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_ServiceCategoriesList.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentHistory.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorAssignment\_PartialViews\_AssignmentFilters.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorDepartment\AssignToDepartment.cshtml" />
-    <Content Include="Areas\Admin\Views\DoctorDepartment\TransferDoctor.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\AssignToServiceCategory.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\Details.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorServiceCategory\Index.cshtml" />
@@ -3308,6 +3303,16 @@
     <Content Include="CONTRACTS\ServiceResult_Enhanced_Contract.md" />
     <Content Include="CONTRACTS\AI_COMPLIANCE_CONTRACT.md" />
     <Content Include="CONTRACTS\DETAILS_DISPLAY_STANDARDS.md" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_AssignmentFilters.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_AssignmentStats.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_AssignmentPreview.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Assign.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorAssignment\_AssignmentForm.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorRemoval\RemoveAssignments.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorRemoval\Index.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3556,6 +3561,8 @@
     <Content Include="TOAST_UNDEFINED_FIX.md" />
     <Content Include="Views\Shared\_PersianDatePickerTemplate.cshtml" />
     <Content Include="Views\Shared\_PersianDatePickerExample.cshtml" />
+    <Content Include="TEMPLATES\DetailsPageTemplate.cshtml" />
+    <Content Include="TEMPLATES\README.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

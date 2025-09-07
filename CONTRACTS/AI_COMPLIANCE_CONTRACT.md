@@ -5,7 +5,129 @@
 
 ---
 
-## 1. قانون تغییرات اتمی (Atomic Changes Rule)
+## 1. قانون بهینه‌سازی ویوها (View Optimization Rule)
+
+### اصول اجباری:
+- **همه ویوها باید طبق قرارداد بهینه‌سازی ویوها طراحی شوند**
+- **از باندل‌های بهینه‌شده استفاده کنید**
+- **بارگذاری انتخابی فایل‌ها**
+- **بهبود عملکرد و مدیریت حافظه**
+
+### پیاده‌سازی:
+```csharp
+// ✅ صحیح - تنظیم ViewBag برای باندل‌ها
+[HttpGet]
+public async Task<ActionResult> YourAction()
+{
+    ViewBag.Title = "عنوان صفحه";
+    ViewBag.RequireDataTables = true;        // برای جدول‌ها
+    ViewBag.RequireSelect2 = true;           // برای فیلترهای dropdown
+    ViewBag.RequireDatePicker = true;        // برای فیلتر تاریخ
+    ViewBag.RequireFormValidation = true;    // برای اعتبارسنجی فرم‌ها
+    return View();
+}
+
+// ❌ نادرست - بارگذاری مستقیم فایل‌ها
+@section Styles {
+    <link href="~/Content/plugins/DataTables/css/dataTables.bootstrap4.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+}
+```
+
+### مثال عملی:
+```markdown
+## بهینه‌سازی مجاز:
+- استفاده از ViewBag برای کنترل باندل‌ها
+- حذف CSS/JS های تکراری از View
+- استفاده از Conditional Scripts در AdminLayout
+
+## بهینه‌سازی غیرمجاز:
+- بارگذاری مستقیم فایل‌های CSS/JS در View
+- عدم استفاده از باندل‌های بهینه‌شده
+- بارگذاری فایل‌های غیرضروری
+```
+
+### مرجع کامل:
+برای جزئیات کامل، به فایل `VIEW_OPTIMIZATION_CONTRACT.md` مراجعه کنید.
+
+---
+
+## 2. قانون DataTables JSON Response (DataTables JSON Response Rule)
+
+### اصول اجباری:
+- **همه پاسخ‌های AJAX برای DataTables باید ساختار JSON صحیح داشته باشند**
+- **Property names باید با حروف کوچک باشند**
+- **ساختار response باید مطابق استاندارد DataTables باشد**
+
+### ساختار صحیح JSON Response:
+```csharp
+// ✅ صحیح - ساختار DataTables
+return Json(new
+{
+    draw = request.Draw,                    // شماره درخواست
+    recordsTotal = totalRecords,            // کل رکوردها
+    recordsFiltered = filteredRecords,      // رکوردهای فیلتر شده
+    data = dataTablesData                   // داده‌های جدول
+});
+
+// ❌ نادرست - استفاده از DataTablesResponse class
+return Json(new DataTablesResponse
+{
+    Draw = request.Draw,                    // اشتباه: حروف بزرگ
+    RecordsTotal = totalRecords,            // اشتباه: حروف بزرگ
+    RecordsFiltered = filteredRecords,      // اشتباه: حروف بزرگ
+    Data = dataTablesData                   // اشتباه: حروف بزرگ
+});
+```
+
+### مدیریت خطا در DataTables:
+```csharp
+// ✅ صحیح - مدیریت خطا
+try
+{
+    // منطق اصلی
+    return Json(new
+    {
+        draw = request.Draw,
+        recordsTotal = totalRecords,
+        recordsFiltered = filteredRecords,
+        data = dataTablesData
+    });
+}
+catch (Exception ex)
+{
+    _logger.Error(ex, "خطا در DataTables");
+    return Json(new
+    {
+        draw = request.Draw,
+        recordsTotal = 0,
+        recordsFiltered = 0,
+        data = new List<object>(),
+        error = $"خطا در دریافت داده‌ها: {ex.Message}"
+    });
+}
+```
+
+### نکات مهم:
+1. **Property Names**: همیشه از حروف کوچک استفاده کنید (`draw`, `data`, `recordsTotal`)
+2. **Error Handling**: در صورت خطا، `data` را به `List<object>()` خالی تنظیم کنید
+3. **Logging**: همیشه خطاها را لاگ کنید
+4. **AntiForgeryToken**: برای POST requests از AntiForgeryToken استفاده کنید
+
+### خطاهای رایج:
+- `Cannot read properties of undefined (reading 'length')` → ساختار JSON نادرست
+- `DataTables warning: Ajax error` → مشکل در AntiForgeryToken یا URL
+- `TypeError: Cannot read properties of undefined` → Property names با حروف بزرگ
+
+### مرجع کامل:
+- [DATATABLES_STANDARDS_CONTRACT.md](./DATATABLES_STANDARDS_CONTRACT.md) - قرارداد کامل DataTables
+- [DataTables Server-side Processing](https://datatables.net/manual/server-side)
+- [DoctorAssignmentController.cs](../Areas/Admin/Controllers/DoctorAssignmentController.cs)
+- [doctor-assignment-index.js](../Scripts/app/doctor-assignment-index.js)
+
+---
+
+## 3. قانون تغییرات اتمی (Atomic Changes Rule)
 
 ### اصول اجباری:
 - **هر تغییر باید کوچک، مرحله‌ای و مستقل (Atomic) باشد**

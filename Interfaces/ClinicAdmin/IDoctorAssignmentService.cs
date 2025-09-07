@@ -5,6 +5,7 @@ using ClinicApp.Helpers;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models;
+using DoctorDependencyInfo = ClinicApp.Models.DoctorDependencyInfo;
 
 namespace ClinicApp.Interfaces.ClinicAdmin;
 
@@ -50,21 +51,19 @@ public interface IDoctorAssignmentService
     Task<ServiceResult> AssignDoctorToDepartmentWithServicesAsync(int doctorId, int departmentId, List<int> serviceCategoryIds);
 
     /// <summary>
-    /// انتقال پزشک بین دپارتمان‌ها با حفظ صلاحیت‌های خدماتی.
-    /// </summary>
-    /// <param name="doctorId">شناسه پزشک.</param>
-    /// <param name="fromDepartmentId">شناسه دپارتمان مبدا.</param>
-    /// <param name="toDepartmentId">شناسه دپارتمان مقصد.</param>
-    /// <param name="preserveServiceCategories">آیا صلاحیت‌های خدماتی حفظ شوند.</param>
-    /// <returns>نتیجه عملیات انتقال.</returns>
-    Task<ServiceResult> TransferDoctorBetweenDepartmentsAsync(int doctorId, int fromDepartmentId, int toDepartmentId, bool preserveServiceCategories = true);
-
-    /// <summary>
     /// حذف کامل تمام انتسابات یک پزشک.
     /// </summary>
     /// <param name="doctorId">شناسه پزشک.</param>
     /// <returns>نتیجه عملیات حذف.</returns>
     Task<ServiceResult> RemoveAllDoctorAssignmentsAsync(int doctorId);
+
+    /// <summary>
+    /// به‌روزرسانی انتسابات پزشک از طریق EditViewModel
+    /// این متد برای فرم ویرایش انتسابات طراحی شده است
+    /// </summary>
+    /// <param name="editModel">مدل ویرایش انتسابات</param>
+    /// <returns>نتیجه عملیات به‌روزرسانی</returns>
+    Task<ServiceResult> UpdateDoctorAssignmentsFromEditAsync(DoctorAssignmentEditViewModel editModel);
 
     #endregion
 
@@ -75,6 +74,13 @@ public interface IDoctorAssignmentService
     /// </summary>
     /// <returns>نتیجه حاوی آمار انتسابات.</returns>
     Task<ServiceResult<AssignmentStatsViewModel>> GetAssignmentStatisticsAsync();
+
+    /// <summary>
+    /// آماده‌سازی کامل ViewModel برای صفحه اصلی مدیریت انتسابات
+    /// شامل آمار، فیلترها و تنظیمات اولیه
+    /// </summary>
+    /// <returns>ViewModel کاملاً آماده برای نمایش</returns>
+    Task<ServiceResult<DoctorAssignmentIndexViewModel>> GetDoctorAssignmentIndexViewModelAsync();
 
     /// <summary>
     /// دریافت اطلاعات وابستگی‌های پزشک برای بررسی امکان حذف.
@@ -96,6 +102,33 @@ public interface IDoctorAssignmentService
     /// <param name="request">درخواست DataTables شامل pagination و filtering.</param>
     /// <returns>نتیجه حاوی لیست انتسابات با pagination.</returns>
     Task<ServiceResult<DataTablesResponse>> GetAssignmentsForDataTablesAsync(DataTablesRequest request);
+
+    /// <summary>
+    /// دریافت انتسابات برای DataTables با فیلترهای پیشرفته
+    /// </summary>
+    /// <param name="start">شروع pagination</param>
+    /// <param name="length">تعداد رکورد در هر صفحه</param>
+    /// <param name="searchValue">مقدار جستجو</param>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <param name="serviceCategoryId">شناسه سرفصل خدماتی</param>
+    /// <param name="dateFrom">تاریخ از</param>
+    /// <param name="dateTo">تاریخ تا</param>
+    /// <returns>نتیجه حاوی داده‌های DataTables</returns>
+    Task<ServiceResult<DataTablesResponse>> GetAssignmentsForDataTableAsync(
+        int start, 
+        int length, 
+        string searchValue, 
+        string departmentId, 
+        string serviceCategoryId, 
+        string dateFrom, 
+        string dateTo);
+
+    /// <summary>
+    /// دریافت انتسابات فیلتر شده
+    /// </summary>
+    /// <param name="filter">فیلترهای اعمال شده</param>
+    /// <returns>نتیجه حاوی انتسابات فیلتر شده</returns>
+    Task<ServiceResult<List<DoctorAssignmentListItem>>> GetFilteredAssignmentsAsync(AssignmentFilterViewModel filter);
 
     #endregion
 
