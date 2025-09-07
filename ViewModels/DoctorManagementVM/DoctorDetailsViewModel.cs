@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models;
 using ClinicApp.Helpers;
 using ClinicApp.Extensions;
 using FluentValidation;
@@ -245,6 +246,26 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// </summary>
         [Display(Name = "بیوگرافی")]
         public string Biography { get; set; }
+
+        /// <summary>
+        /// تعداد انتسابات فعال
+        /// </summary>
+        public int ActiveAssignmentsCount { get; set; }
+
+        /// <summary>
+        /// اطلاعات وابستگی‌ها
+        /// </summary>
+        public DoctorDependencyInfo Dependencies { get; set; }
+
+        /// <summary>
+        /// انتسابات دپارتمان
+        /// </summary>
+        public List<LookupItemViewModel> DepartmentAssignments { get; set; } = new List<LookupItemViewModel>();
+
+        /// <summary>
+        /// انتسابات سرفصل‌های خدماتی
+        /// </summary>
+        public List<LookupItemViewModel> ServiceCategoryAssignments { get; set; } = new List<LookupItemViewModel>();
 
         /// <summary>
         /// تعداد کل نوبت‌های پزشک

@@ -11,6 +11,7 @@ using ClinicApp.ViewModels.DoctorManagementVM;
 using FluentValidation;
 using Serilog;
 using DoctorDependencyInfo = ClinicApp.Models.DoctorDependencyInfo;
+using SelectListItem = ClinicApp.ViewModels.DoctorManagementVM.SelectListItem;
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -381,7 +382,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// <summary>
         /// دریافت لیست پزشکان قابل حذف انتسابات
         /// </summary>
-        private async Task<ServiceResult<List<DoctorRemovalListItem>>> GetDoctorsForRemovalAsync()
+        private async Task<ServiceResult<List<DoctorRemovalListItem>>> GetDoctorsForRemovalAsync(DoctorRemovalFiltersViewModel filters = null)
         {
             try
             {
@@ -391,7 +392,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                 var searchFilter = new DoctorSearchViewModel
                 {
                     PageNumber = 1,
-                    PageSize = 1000 // دریافت همه پزشکان
+                    PageSize = 1000, // دریافت همه پزشکان
+                    SearchTerm = filters?.DoctorName,
+                    DepartmentId = filters?.DepartmentId
                 };
                 var doctorsResult = await _doctorService.GetDoctorsAsync(searchFilter);
                 if (!doctorsResult.Success)
@@ -410,8 +413,24 @@ namespace ClinicApp.Areas.Admin.Controllers
                         var activeAssignmentsCount = activeAssignmentsResult.Success ? activeAssignmentsResult.Data : 0;
 
                         // دریافت وابستگی‌ها
-                        var dependenciesResult = await _doctorAssignmentService.GetDoctorDependenciesAsync(doctor.Id);
+                        var dependenciesResult = await _doctorAssignmentService.GetDoctorDependenciesAsync(doctor.DoctorId);
                         var dependencies = dependenciesResult.Success ? dependenciesResult.Data : new DoctorDependencyInfo();
+
+                        // اعمال فیلترهای اضافی
+                        if (filters != null)
+                        {
+                            // فیلتر حداقل تعداد انتسابات
+                            if (filters.MinAssignmentsCount.HasValue && activeAssignmentsCount < filters.MinAssignmentsCount.Value)
+                                continue;
+
+                            // فیلتر فقط انتسابات فعال
+                            if (filters.ShowOnlyActiveAssignments && activeAssignmentsCount == 0)
+                                continue;
+
+                            // فیلتر فقط بدون وابستگی
+                            if (filters.ShowOnlyWithoutDependencies && (dependencies.HasActiveDepartmentAssignments || dependencies.TotalFutureAppointments > 0))
+                                continue;
+                        }
 
                         // ایجاد آیتم لیست
                         var listItem = new DoctorRemovalListItem
@@ -443,6 +462,130 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در دریافت لیست پزشکان قابل حذف");
                 return ServiceResult<List<DoctorRemovalListItem>>.Failed("خطا در دریافت لیست پزشکان");
+            }
+        }
+
+        /// <summary>
+        /// جستجوی پزشکان بر اساس فیلترها (AJAX)
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> SearchDoctors(DoctorRemovalFiltersViewModel filters)
+        {
+            try
+            {
+                _logger.Information("🔍 درخواست جستجوی پزشکان با فیلترها: {@Filters}", filters);
+
+                // دریافت لیست پزشکان با فیلترها
+                var doctorsResult = await GetDoctorsForRemovalAsync(filters);
+                var doctors = doctorsResult.Success ? doctorsResult.Data : new List<DoctorRemovalListItem>();
+
+                // دریافت فیلترها
+                var updatedFilters = await GetRemovalFiltersAsync();
+
+                // ایجاد ViewModel
+                var viewModel = DoctorRemovalIndexViewModel.CreateWithData(
+                    new AssignmentStatsViewModel(), // آمار کلی
+                    doctors,
+                    updatedFilters
+                );
+
+                return PartialView("_DoctorsList", viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در جستجوی پزشکان");
+                return Json(new { success = false, message = "خطا در جستجو" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات پزشک (AJAX)
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetDoctorDetails(int doctorId)
+        {
+            try
+            {
+                _logger.Information("🔍 درخواست دریافت جزئیات پزشک: {DoctorId}", doctorId);
+
+                // دریافت اطلاعات پزشک
+                var doctorResult = await _doctorService.GetDoctorDetailsAsync(doctorId);
+                if (!doctorResult.Success)
+                {
+                    return PartialView("_DoctorDetailsError", "پزشک یافت نشد");
+                }
+
+                var doctor = doctorResult.Data;
+
+                // دریافت انتسابات فعال
+                var activeAssignmentsResult = await _doctorAssignmentService.GetActiveAssignmentsCountAsync(doctorId);
+                var activeAssignmentsCount = activeAssignmentsResult.Success ? activeAssignmentsResult.Data : 0;
+
+                // دریافت وابستگی‌ها
+                var dependenciesResult = await _doctorAssignmentService.GetDoctorDependenciesAsync(doctorId);
+                var dependencies = dependenciesResult.Success ? dependenciesResult.Data : new DoctorDependencyInfo();
+
+                // دریافت انتسابات دپارتمان
+                var departmentAssignmentsResult = await _doctorServiceCategoryService.GetDoctorDepartmentsAsync(doctorId);
+                var departmentAssignments = departmentAssignmentsResult.Success ? departmentAssignmentsResult.Data : new List<LookupItemViewModel>();
+
+                // دریافت انتسابات سرفصل‌های خدماتی (ساده شده)
+                var serviceCategoryAssignments = new List<LookupItemViewModel>();
+
+                var viewModel = new DoctorDetailsViewModel
+                {
+                    DoctorId = doctor.DoctorId,
+                    FirstName = doctor.FirstName,
+                    LastName = doctor.LastName,
+                    FullName = doctor.FullName,
+                    NationalCode = doctor.NationalCode,
+                    MedicalCouncilCode = doctor.MedicalCouncilCode,
+                    SpecializationNames = doctor.SpecializationNames,
+                    IsActive = doctor.IsActive,
+                    ActiveAssignmentsCount = activeAssignmentsCount,
+                    Dependencies = dependencies,
+                    DepartmentAssignments = departmentAssignments,
+                    ServiceCategoryAssignments = serviceCategoryAssignments
+                };
+
+                return PartialView("_DoctorDetails", viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت جزئیات پزشک");
+                return PartialView("_DoctorDetailsError", "خطا در دریافت جزئیات");
+            }
+        }
+
+        /// <summary>
+        /// دریافت سرفصل‌های خدماتی بر اساس دپارتمان (AJAX)
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetServiceCategoriesByDepartment(int departmentId)
+        {
+            try
+            {
+                _logger.Information("🔍 درخواست دریافت سرفصل‌های خدماتی برای دپارتمان: {DepartmentId}", departmentId);
+
+                var serviceCategories = await _doctorServiceCategoryService.GetServiceCategoriesByDepartmentAsync(departmentId);
+                
+                if (serviceCategories.Success)
+                {
+                    var selectList = serviceCategories.Data.Select(sc => new SelectListItem
+                    {
+                        Value = sc.Id.ToString(),
+                        Text = sc.Name
+                    }).ToList();
+
+                    return Json(new { success = true, data = selectList });
+                }
+
+                return Json(new { success = false, message = "خطا در دریافت سرفصل‌ها" });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت سرفصل‌های خدماتی");
+                return Json(new { success = false, message = "خطا در دریافت سرفصل‌ها" });
             }
         }
 

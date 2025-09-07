@@ -3313,6 +3313,9 @@
     <Content Include="Areas\Admin\Views\DoctorAssignment\_AssignmentForm.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorRemoval\RemoveAssignments.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorRemoval\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorRemoval\_DoctorDetails.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorRemoval\_DoctorDetailsError.cshtml" />
+    <Content Include="Areas\Admin\Views\DoctorRemoval\_DoctorsList.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

@@ -1,0 +1,215 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorDetailsViewModel
+
+<div class="row">
+    <!-- اطلاعات کلی پزشک -->
+    <div class="col-md-6">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fa fa-user"></i>
+                    اطلاعات کلی
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-4"><strong>نام:</strong></div>
+                    <div class="col-8">@Model.FullName</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>کد ملی:</strong></div>
+                    <div class="col-8">@Model.NationalCode</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>شماره نظام:</strong></div>
+                    <div class="col-8">@Model.MedicalCouncilCode</div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>تخصص:</strong></div>
+                    <div class="col-8">
+                        @if (Model.SpecializationNames != null && Model.SpecializationNames.Any())
+                        {
+                            @Html.Raw(string.Join(", ", Model.SpecializationNames))
+                        }
+                        else
+                        {
+                            <span class="text-muted">نامشخص</span>
+                        }
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-4"><strong>وضعیت:</strong></div>
+                    <div class="col-8">
+                        @if (Model.IsActive)
+                        {
+                            <span class="badge badge-success">فعال</span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-danger">غیرفعال</span>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار انتسابات -->
+    <div class="col-md-6">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fa fa-bar-chart"></i>
+                    آمار انتسابات
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row mb-2">
+                    <div class="col-6"><strong>انتسابات فعال:</strong></div>
+                    <div class="col-6">
+                        <span class="badge badge-success">@Model.ActiveAssignmentsCount</span>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6"><strong>دپارتمان‌ها:</strong></div>
+                    <div class="col-6">
+                        <span class="badge badge-primary">@Model.DepartmentAssignments.Count</span>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6"><strong>سرفصل‌ها:</strong></div>
+                    <div class="col-6">
+                        <span class="badge badge-warning">@Model.ServiceCategoryAssignments.Count</span>
+                    </div>
+                </div>
+                <div class="row mb-2">
+                    <div class="col-6"><strong>نوبت‌های آینده:</strong></div>
+                    <div class="col-6">
+                        <span class="badge badge-info">@Model.Dependencies.TotalFutureAppointments</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- انتسابات دپارتمان -->
+@if (Model.DepartmentAssignments.Any())
+{
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="mb-0">
+                        <i class="fa fa-building"></i>
+                        انتسابات دپارتمان
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>دپارتمان</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ انتساب</th>
+                                    <th>تاریخ پایان</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var assignment in Model.DepartmentAssignments)
+                                {
+                                    <tr>
+                                        <td>@assignment.Name</td>
+                                        <td>
+                                            <span class="badge badge-success">فعال</span>
+                                        </td>
+                                        <td>نامشخص</td>
+                                        <td>نامشخص</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- انتسابات سرفصل‌های خدماتی -->
+@if (Model.ServiceCategoryAssignments.Any())
+{
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fa fa-list"></i>
+                        انتسابات سرفصل‌های خدماتی
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>سرفصل خدماتی</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ انتساب</th>
+                                    <th>تاریخ پایان</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var assignment in Model.ServiceCategoryAssignments)
+                                {
+                                    <tr>
+                                        <td>@assignment.Name</td>
+                                        <td>
+                                            <span class="badge badge-success">فعال</span>
+                                        </td>
+                                        <td>نامشخص</td>
+                                        <td>نامشخص</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- وابستگی‌ها -->
+@if (Model.Dependencies.HasActiveDepartmentAssignments || Model.Dependencies.TotalFutureAppointments > 0)
+{
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="mb-0">
+                        <i class="fa fa-exclamation-triangle"></i>
+                        وابستگی‌ها (موانع حذف)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Dependencies.HasActiveDepartmentAssignments)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fa fa-building"></i>
+                            <strong>انتسابات فعال دپارتمان:</strong> این پزشک دارای انتسابات فعال در دپارتمان‌ها است.
+                        </div>
+                    }
+                    
+                    @if (Model.Dependencies.TotalFutureAppointments > 0)
+                    {
+                        <div class="alert alert-info">
+                            <i class="fa fa-calendar"></i>
+                            <strong>نوبت‌های آینده:</strong> این پزشک دارای @Model.Dependencies.TotalFutureAppointments نوبت آینده است.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+}

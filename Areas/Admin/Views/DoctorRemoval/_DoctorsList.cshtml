@@ -1,0 +1,82 @@
+@model ClinicApp.ViewModels.DoctorManagementVM.DoctorRemovalIndexViewModel
+
+@if (Model.Doctors != null && Model.Doctors.Any())
+{
+    <div class="table-responsive">
+        <table id="doctorsTable" class="table table-striped table-hover">
+            <thead class="thead-light">
+                <tr>
+                    <th width="50">
+                        <input type="checkbox" id="selectAllCheckbox" class="form-check-input">
+                    </th>
+                    <th>نام پزشک</th>
+                    <th>کد ملی</th>
+                    <th>تخصص</th>
+                    <th>تعداد انتسابات</th>
+                    <th>وضعیت</th>
+                    <th>آخرین انتساب</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var doctor in Model.Doctors)
+                {
+                    <tr data-doctor-id="@doctor.DoctorId">
+                        <td>
+                            <input type="checkbox" class="form-check-input doctor-checkbox" 
+                                   value="@doctor.DoctorId" @(doctor.IsSelected ? "checked" : "")>
+                        </td>
+                        <td>
+                            <strong style="color: #2c3e50 !important;">@doctor.DoctorName</strong>
+                        </td>
+                        <td>
+                            <span class="text-muted">@doctor.NationalCode</span>
+                        </td>
+                        <td>
+                            <span class="text-muted">@doctor.Specialization</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-info" style="background-color: #17a2b8 !important; color: #ffffff !important;">
+                                @doctor.TotalAssignments
+                            </span>
+                            @if (doctor.ActiveAssignments > 0)
+                            {
+                                <span class="badge badge-success" style="background-color: #28a745 !important; color: #ffffff !important;">
+                                    @doctor.ActiveAssignments فعال
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @doctor.StatusBadgeClass" style="font-weight: 600;">
+                                @doctor.StatusText
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-muted">@doctor.FormattedLastAssignmentDate</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="@Url.Action("RemoveAssignments", new { doctorId = doctor.DoctorId })" 
+                                   class="btn btn-warning btn-sm" title="حذف انتسابات">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                                <button type="button" class="btn btn-info btn-sm viewDetailsBtn" 
+                                        data-doctor-id="@doctor.DoctorId" title="مشاهده جزئیات">
+                                    <i class="fa fa-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fa fa-info-circle fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">هیچ پزشکی یافت نشد</h5>
+        <p class="text-muted">لطفاً فیلترهای جستجو را تغییر دهید</p>
+    </div>
+}
