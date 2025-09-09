@@ -1,0 +1,214 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceProvider.InsuranceProviderDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات ارائه‌دهنده بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .insurance-details-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .detail-row {
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem 0;
+        }
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        .detail-value {
+            color: #6c757d;
+            font-size: 1.1rem;
+        }
+        .status-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
+        .provider-code {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            border: 1px solid #dee2e6;
+        }
+        .btn-action {
+            margin: 0.25rem;
+            font-weight: 600;
+        }
+        .info-icon {
+            color: #17a2b8;
+            margin-left: 0.5rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>جزئیات ارائه‌دهنده بیمه</h2>
+                <div>
+                    <a href="@Url.Action("Edit", "InsuranceProvider", new { id = Model.InsuranceProviderId })" class="btn btn-warning btn-action">
+                        <i class="fas fa-edit"></i> ویرایش
+                    </a>
+                    <a href="@Url.Action("Index", "InsuranceProvider")" class="btn btn-secondary btn-action">
+                        <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <div class="insurance-details-card">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-hospital info-icon"></i>نام ارائه‌دهنده بیمه
+                                    </div>
+                                    <div class="detail-value">
+                                        <strong>@Model.Name</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-code info-icon"></i>کد ارائه‌دهنده بیمه
+                                    </div>
+                                    <div class="detail-value">
+                                        <span class="provider-code">@Model.Code</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="detail-row">
+                            <div class="detail-label">
+                                <i class="fas fa-address-card info-icon"></i>اطلاعات تماس
+                            </div>
+                            <div class="detail-value">
+                                @if (!string.IsNullOrEmpty(Model.ContactInfo))
+                                {
+                                    @Model.ContactInfo
+                                }
+                                else
+                                {
+                                    <span class="text-muted">اطلاعات تماس ثبت نشده است</span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="detail-row">
+                            <div class="detail-label">
+                                <i class="fas fa-toggle-on info-icon"></i>وضعیت
+                            </div>
+                            <div class="detail-value">
+                                @if (Model.IsActive)
+                                {
+                                    <span class="badge badge-success status-badge">
+                                        <i class="fas fa-check-circle"></i> فعال
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-danger status-badge">
+                                        <i class="fas fa-times-circle"></i> غیرفعال
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="detail-row">
+                            <div class="detail-label">
+                                <i class="fas fa-chart-bar info-icon"></i>تعداد طرح‌های بیمه
+                            </div>
+                            <div class="detail-value">
+                                <span class="badge badge-info">@Model.InsurancePlanCount طرح بیمه</span>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h5 class="mb-3">
+                            <i class="fas fa-history"></i> اطلاعات ردیابی
+                        </h5>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-calendar-plus info-icon"></i>تاریخ ایجاد
+                                    </div>
+                                    <div class="detail-value">
+                                        @Model.CreatedAtShamsi
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-user-plus info-icon"></i>ایجادکننده
+                                    </div>
+                                    <div class="detail-value">
+                                        @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
+                                        {
+                                            @Model.CreatedByUserName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">نامشخص</span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="detail-row">
+                                        <div class="detail-label">
+                                            <i class="fas fa-calendar-edit info-icon"></i>تاریخ آخرین به‌روزرسانی
+                                        </div>
+                                        <div class="detail-value">
+                                            @Model.UpdatedAtShamsi
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="detail-row">
+                                        <div class="detail-label">
+                                            <i class="fas fa-user-edit info-icon"></i>آخرین به‌روزرساننده
+                                        </div>
+                                        <div class="detail-value">
+                                            @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                                            {
+                                                @Model.UpdatedByUserName
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">نامشخص</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

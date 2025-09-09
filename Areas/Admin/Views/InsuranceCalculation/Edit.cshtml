@@ -1,0 +1,576 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceCalculation.InsuranceCalculationViewModel
+@{
+    ViewBag.Title = "ویرایش محاسبه بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.Partial("_NotificationMessages")
+
+@section Styles {
+    <style>
+        /* Medical Environment Color Scheme - طبق قرارداد */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        .form-container {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .form-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .form-card-header {
+            border-bottom: 2px solid var(--medical-primary);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-card-title {
+            color: var(--medical-primary);
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--medical-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control {
+            border: 1px solid var(--medical-border);
+            border-radius: 0.375rem;
+            padding: 0.75rem;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+
+        .form-control:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: var(--medical-danger);
+        }
+
+        .form-control.is-valid {
+            border-color: var(--medical-success);
+        }
+
+        .invalid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--medical-danger);
+        }
+
+        .valid-feedback {
+            display: block;
+            width: 100%;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: var(--medical-success);
+        }
+
+        .info-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .info-box .info-text {
+            color: #0066cc;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .warning-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .warning-box .warning-text {
+            color: #856404;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
+        .calculation-preview {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin: 2rem 0;
+            border: 1px solid var(--medical-border);
+        }
+
+        .calculation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .calculation-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--medical-border);
+        }
+
+        .calculation-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .calculation-label {
+            font-size: 0.9rem;
+            color: var(--medical-text-muted);
+            font-weight: 500;
+        }
+
+        .service-amount { color: var(--medical-primary); }
+        .insurance-share { color: var(--medical-success); }
+        .patient-share { color: var(--medical-danger); }
+        .coverage-percent { color: var(--medical-info); }
+        .deductible { color: var(--medical-warning); }
+
+        .btn-primary {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            border-color: #1a3469;
+        }
+
+        .btn-secondary {
+            background-color: var(--medical-secondary);
+            border-color: var(--medical-secondary);
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #4e555b;
+        }
+
+        .btn-calculate {
+            background-color: var(--medical-info);
+            border-color: var(--medical-info);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-calculate:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+
+        .date-picker {
+            position: relative;
+        }
+
+        .date-picker .form-control {
+            padding-right: 2.5rem;
+        }
+
+        .date-picker .date-icon {
+            position: absolute;
+            right: 0.75rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--medical-text-muted);
+            pointer-events: none;
+        }
+
+        .readonly-field {
+            background-color: var(--medical-light);
+            color: var(--medical-text-muted);
+        }
+
+        @@media (max-width: 768px) {
+            .form-container {
+                padding: 1rem;
+            }
+            
+            .calculation-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .calculation-value {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-edit text-primary"></i>
+                    ویرایش محاسبه بیمه
+                </h2>
+                <div>
+                    <a href="@Url.Action("Details", new { id = ViewBag.CalculationId })" class="btn btn-secondary me-2">
+                        <i class="fas fa-eye"></i> جزئیات
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i> بازگشت
+                    </a>
+                </div>
+            </div>
+
+            <div class="form-container">
+                @using (Html.BeginForm("Edit", "InsuranceCalculation", new { id = ViewBag.CalculationId }, FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate", id = "editForm" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <!-- Patient Information (Read-only) -->
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <h4 class="form-card-title">
+                                <i class="fas fa-user"></i>
+                                اطلاعات بیمار
+                            </h4>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PatientId, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.PatientId, Model.PatientSelectList, "انتخاب بیمار", new { @class = "form-control readonly-field", @readonly = "readonly" })
+                            <div class="info-box">
+                                <p class="info-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    اطلاعات بیمار قابل تغییر نیست. برای تغییر بیمار، محاسبه جدید ایجاد کنید.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.PatientInsuranceId, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.PatientInsuranceId, Model.PatientInsuranceSelectList, "انتخاب بیمه بیمار", new { @class = "form-control readonly-field", @readonly = "readonly" })
+                            <div class="info-box">
+                                <p class="info-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    اطلاعات بیمه بیمار قابل تغییر نیست. برای تغییر بیمه، محاسبه جدید ایجاد کنید.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Service Information (Read-only) -->
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <h4 class="form-card-title">
+                                <i class="fas fa-stethoscope"></i>
+                                اطلاعات خدمت
+                            </h4>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ServiceId, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.ServiceId, Model.ServiceSelectList, "انتخاب خدمت", new { @class = "form-control readonly-field", @readonly = "readonly" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ServiceCategoryId, new { @class = "form-label" })
+                            @Html.DropDownListFor(m => m.ServiceCategoryId, Model.ServiceCategorySelectList, "انتخاب دسته‌بندی خدمت", new { @class = "form-control readonly-field", @readonly = "readonly" })
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.ServiceAmount, new { @class = "form-label" })
+                            @Html.TextBoxFor(m => m.ServiceAmount, new { @class = "form-control", type = "number", min = "0", step = "1000", placeholder = "مبلغ خدمت به ریال", required = "required" })
+                            @Html.ValidationMessageFor(m => m.ServiceAmount, "", new { @class = "invalid-feedback" })
+                            <div class="warning-box">
+                                <p class="warning-text">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    تغییر مبلغ خدمت باعث تغییر محاسبات سهم بیمه و بیمار خواهد شد.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculation Details -->
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <h4 class="form-card-title">
+                                <i class="fas fa-calculator"></i>
+                                جزئیات محاسبه
+                            </h4>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CoveragePercent, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.CoveragePercent, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.1", placeholder = "درصد پوشش" })
+                                    @Html.ValidationMessageFor(m => m.CoveragePercent, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Deductible, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.Deductible, new { @class = "form-control", type = "number", min = "0", step = "1000", placeholder = "فرانشیز به ریال" })
+                                    @Html.ValidationMessageFor(m => m.Deductible, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.InsuranceShare, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.InsuranceShare, new { @class = "form-control", type = "number", min = "0", step = "1000", placeholder = "سهم بیمه به ریال" })
+                                    @Html.ValidationMessageFor(m => m.InsuranceShare, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.PatientShare, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control", type = "number", min = "0", step = "1000", placeholder = "سهم بیمار به ریال" })
+                                    @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Copay, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.Copay, new { @class = "form-control", type = "number", min = "0", step = "1000", placeholder = "کوپه به ریال (اختیاری)" })
+                                    @Html.ValidationMessageFor(m => m.Copay, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CoverageOverride, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.CoverageOverride, new { @class = "form-control", type = "number", min = "0", max = "100", step = "0.1", placeholder = "پوشش خاص (اختیاری)" })
+                                    @Html.ValidationMessageFor(m => m.CoverageOverride, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information -->
+                    <div class="form-card">
+                        <div class="form-card-header">
+                            <h4 class="form-card-title">
+                                <i class="fas fa-info-circle"></i>
+                                اطلاعات تکمیلی
+                            </h4>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CalculationDate, new { @class = "form-label" })
+                                    <div class="date-picker">
+                                        @Html.TextBoxFor(m => m.CalculationDate, new { @class = "form-control", type = "date", required = "required" })
+                                        <i class="fas fa-calendar-alt date-icon"></i>
+                                    </div>
+                                    @Html.ValidationMessageFor(m => m.CalculationDate, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CalculationType, new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.CalculationType, new { @class = "form-control", placeholder = "نوع محاسبه", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.CalculationType, "", new { @class = "invalid-feedback" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            @Html.LabelFor(m => m.Notes, new { @class = "form-label" })
+                            @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = "4", placeholder = "یادداشت‌ها (اختیاری)" })
+                            @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "invalid-feedback" })
+                        </div>
+                    </div>
+
+                    <!-- Calculation Preview -->
+                    <div id="calculationPreview" class="calculation-preview">
+                        <h4 class="form-card-title text-center">
+                            <i class="fas fa-chart-pie"></i>
+                            پیش‌نمایش محاسبه
+                        </h4>
+                        <div class="calculation-grid">
+                            <div class="calculation-card">
+                                <div class="calculation-value service-amount" id="previewServiceAmount">0</div>
+                                <div class="calculation-label">مبلغ خدمت</div>
+                            </div>
+                            <div class="calculation-card">
+                                <div class="calculation-value coverage-percent" id="previewCoveragePercent">0%</div>
+                                <div class="calculation-label">درصد پوشش</div>
+                            </div>
+                            <div class="calculation-card">
+                                <div class="calculation-value deductible" id="previewDeductible">0</div>
+                                <div class="calculation-label">فرانشیز</div>
+                            </div>
+                            <div class="calculation-card">
+                                <div class="calculation-value insurance-share" id="previewInsuranceShare">0</div>
+                                <div class="calculation-label">سهم بیمه</div>
+                            </div>
+                            <div class="calculation-card">
+                                <div class="calculation-value patient-share" id="previewPatientShare">0</div>
+                                <div class="calculation-label">سهم بیمار</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Form Actions -->
+                    <div class="text-center">
+                        <button type="button" class="btn btn-calculate me-3" onclick="previewCalculation()">
+                            <i class="fas fa-eye"></i> پیش‌نمایش محاسبه
+                        </button>
+                        <button type="submit" class="btn btn-primary me-3">
+                            <i class="fas fa-save"></i> ذخیره تغییرات
+                        </button>
+                        <button type="button" class="btn btn-secondary" onclick="resetForm()">
+                            <i class="fas fa-undo"></i> بازنشانی فرم
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Form validation
+            (function() {
+                'use strict';
+                window.addEventListener('load', function() {
+                    var forms = document.getElementsByClassName('needs-validation');
+                    var validation = Array.prototype.filter.call(forms, function(form) {
+                        form.addEventListener('submit', function(event) {
+                            if (form.checkValidity() === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            form.classList.add('was-validated');
+                        }, false);
+                    });
+                }, false);
+            })();
+
+            // Real-time validation
+            $('.form-control:not(.readonly-field)').on('input', function() {
+                validateField($(this));
+            });
+
+            // Auto-calculate when service amount changes
+            $('#ServiceAmount, #CoveragePercent, #Deductible').on('input', function() {
+                autoCalculate();
+            });
+
+            // Initial preview
+            previewCalculation();
+        });
+
+        function validateField(field) {
+            var value = field.val();
+            var isValid = true;
+
+            if (field.attr('required') && (!value || value.trim() === '')) {
+                isValid = false;
+            }
+
+            if (field.attr('type') === 'number') {
+                var numValue = parseFloat(value);
+                if (value && (isNaN(numValue) || numValue < 0)) {
+                    isValid = false;
+                }
+            }
+
+            if (isValid) {
+                field.removeClass('is-invalid').addClass('is-valid');
+            } else {
+                field.removeClass('is-valid').addClass('is-invalid');
+            }
+        }
+
+        function autoCalculate() {
+            var serviceAmount = parseFloat($('#ServiceAmount').val()) || 0;
+            var coveragePercent = parseFloat($('#CoveragePercent').val()) || 0;
+            var deductible = parseFloat($('#Deductible').val()) || 0;
+
+            if (serviceAmount > 0 && coveragePercent > 0) {
+                var coverableAmount = Math.max(0, serviceAmount - deductible);
+                var insuranceShare = (coverableAmount * coveragePercent) / 100;
+                var patientShare = serviceAmount - insuranceShare;
+
+                $('#InsuranceShare').val(Math.round(insuranceShare));
+                $('#PatientShare').val(Math.round(patientShare));
+            }
+        }
+
+        function previewCalculation() {
+            var serviceAmount = parseFloat($('#ServiceAmount').val()) || 0;
+            var coveragePercent = parseFloat($('#CoveragePercent').val()) || 0;
+            var deductible = parseFloat($('#Deductible').val()) || 0;
+            var insuranceShare = parseFloat($('#InsuranceShare').val()) || 0;
+            var patientShare = parseFloat($('#PatientShare').val()) || 0;
+
+            if (serviceAmount > 0) {
+                $('#previewServiceAmount').text(serviceAmount.toLocaleString());
+                $('#previewCoveragePercent').text(coveragePercent.toFixed(1) + '%');
+                $('#previewDeductible').text(deductible.toLocaleString());
+                $('#previewInsuranceShare').text(insuranceShare.toLocaleString());
+                $('#previewPatientShare').text(patientShare.toLocaleString());
+
+                $('#calculationPreview').show();
+            } else {
+                $('#calculationPreview').hide();
+            }
+        }
+
+        function resetForm() {
+            if (confirm('آیا مطمئن هستید که می‌خواهید تغییرات را لغو کنید؟')) {
+                location.reload();
+            }
+        }
+    </script>
+}

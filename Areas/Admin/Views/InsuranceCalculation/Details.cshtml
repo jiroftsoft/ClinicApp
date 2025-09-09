@@ -1,0 +1,558 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceCalculation.InsuranceCalculationDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات محاسبه بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.Partial("_NotificationMessages")
+
+@section Styles {
+    <style>
+        /* Medical Environment Color Scheme - طبق قرارداد */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        .details-container {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .details-header {
+            border-bottom: 3px solid var(--medical-primary);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .calculation-id {
+            font-family: 'Courier New', monospace;
+            background-color: var(--medical-light);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            border: 1px solid var(--medical-border);
+            display: inline-block;
+        }
+
+        .validity-badge {
+            font-size: 1rem;
+            padding: 0.7rem 1.5rem;
+            border-radius: 25px;
+            font-weight: 600;
+            display: inline-block;
+        }
+
+        .validity-valid {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .validity-invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .info-section {
+            background-color: var(--medical-light);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .section-title {
+            color: var(--medical-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--medical-primary);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--medical-text);
+            flex: 0 0 40%;
+        }
+
+        .info-value {
+            color: var(--medical-text);
+            flex: 1;
+            text-align: left;
+        }
+
+        .amount-section {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin: 2rem 0;
+            border: 1px solid var(--medical-border);
+        }
+
+        .amount-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .amount-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--medical-border);
+        }
+
+        .amount-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .amount-label {
+            font-size: 0.9rem;
+            color: var(--medical-text-muted);
+            font-weight: 500;
+        }
+
+        .service-amount { color: var(--medical-primary); }
+        .insurance-share { color: var(--medical-success); }
+        .patient-share { color: var(--medical-danger); }
+        .coverage-percent { color: var(--medical-info); }
+        .deductible { color: var(--medical-warning); }
+
+        .patient-info {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+        }
+
+        .service-info {
+            background-color: #f3e5f5;
+            border: 1px solid #e1bee7;
+        }
+
+        .insurance-info {
+            background-color: #e8f5e8;
+            border: 1px solid #c8e6c9;
+        }
+
+        .calculation-info {
+            background-color: #fff3e0;
+            border: 1px solid #ffcc02;
+        }
+
+        .audit-info {
+            background-color: #fce4ec;
+            border: 1px solid #f8bbd9;
+        }
+
+        .btn-action {
+            margin: 0.5rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+            padding: 0.75rem 1.5rem;
+        }
+
+        .btn-edit {
+            background-color: var(--medical-warning);
+            border-color: var(--medical-warning);
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background-color: #e0a800;
+            border-color: #d39e00;
+        }
+
+        .btn-delete {
+            background-color: var(--medical-danger);
+            border-color: var(--medical-danger);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+        .btn-validity {
+            background-color: var(--medical-success);
+            border-color: var(--medical-success);
+            color: white;
+        }
+
+        .btn-validity:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+
+        .btn-secondary {
+            background-color: var(--medical-secondary);
+            border-color: var(--medical-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #4e555b;
+        }
+
+        .notes-section {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--medical-border);
+            margin-top: 1.5rem;
+        }
+
+        .notes-content {
+            background: white;
+            padding: 1rem;
+            border-radius: 0.375rem;
+            border: 1px solid #dee2e6;
+            min-height: 100px;
+            white-space: pre-wrap;
+        }
+
+        @@media (max-width: 768px) {
+            .details-container {
+                padding: 1rem;
+            }
+            
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .info-label {
+                margin-bottom: 0.5rem;
+            }
+            
+            .amount-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .amount-value {
+                font-size: 1.5rem;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-calculator text-primary"></i>
+                    جزئیات محاسبه بیمه
+                </h2>
+                <div>
+                    <a href="@Url.Action("Edit", new { id = Model.InsuranceCalculationId })" class="btn btn-edit">
+                        <i class="fas fa-edit"></i> ویرایش
+                    </a>
+                    @if (Model.IsValid)
+                    {
+                        <button type="button" class="btn btn-validity" onclick="updateValidity(false)">
+                            <i class="fas fa-ban"></i> نامعتبر کردن
+                        </button>
+                    }
+                    else
+                    {
+                        <button type="button" class="btn btn-validity" onclick="updateValidity(true)">
+                            <i class="fas fa-check"></i> معتبر کردن
+                        </button>
+                    }
+                    <a href="@Url.Action("Delete", new { id = Model.InsuranceCalculationId })" class="btn btn-delete">
+                        <i class="fas fa-trash"></i> حذف
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i> بازگشت
+                    </a>
+                </div>
+            </div>
+
+            <div class="details-container">
+                <!-- Details Header -->
+                <div class="details-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="calculation-id">محاسبه #@Model.InsuranceCalculationId</span>
+                        </div>
+                        <span class="validity-badge @(Model.IsValid ? "validity-valid" : "validity-invalid")">
+                            @Model.IsValidText
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Patient Information -->
+                <div class="info-section patient-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-user text-primary"></i>
+                        اطلاعات بیمار
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">نام بیمار:</span>
+                        <span class="info-value">@Model.PatientName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">کد ملی:</span>
+                        <span class="info-value">@Model.PatientNationalCode</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PatientBirthDateShamsi))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">تاریخ تولد:</span>
+                            <span class="info-value">@Model.PatientBirthDateShamsi</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.PatientPhoneNumber))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">شماره تماس:</span>
+                            <span class="info-value">@Model.PatientPhoneNumber</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Service Information -->
+                <div class="info-section service-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-stethoscope text-primary"></i>
+                        اطلاعات خدمت
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">نام خدمت:</span>
+                        <span class="info-value">@Model.ServiceName</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.ServiceCategoryName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">دسته‌بندی خدمت:</span>
+                            <span class="info-value">@Model.ServiceCategoryName</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Insurance Information -->
+                <div class="info-section insurance-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-shield-alt text-primary"></i>
+                        اطلاعات بیمه
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">نام طرح بیمه:</span>
+                        <span class="info-value">@Model.InsurancePlanName</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.InsurancePlanCode))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">کد طرح بیمه:</span>
+                            <span class="info-value">@Model.InsurancePlanCode</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.InsuranceProviderName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">ارائه‌دهنده بیمه:</span>
+                            <span class="info-value">@Model.InsuranceProviderName</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.InsuranceType))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">نوع بیمه:</span>
+                            <span class="info-value">@Model.InsuranceType</span>
+                        </div>
+                    }
+                    <div class="info-row">
+                        <span class="info-label">بیمه اصلی:</span>
+                        <span class="info-value">@Model.IsPrimaryInsuranceText</span>
+                    </div>
+                </div>
+
+                <!-- Calculation Details -->
+                <div class="amount-section">
+                    <h4 class="section-title text-center">
+                        <i class="fas fa-chart-pie text-primary"></i>
+                        جزئیات محاسبه
+                    </h4>
+                    <div class="amount-grid">
+                        <div class="amount-card">
+                            <div class="amount-value service-amount">@Model.ServiceAmount.ToString("N0")</div>
+                            <div class="amount-label">مبلغ خدمت (ریال)</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value coverage-percent">@Model.CoveragePercent.ToString("N1")%</div>
+                            <div class="amount-label">درصد پوشش</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value deductible">@Model.Deductible.ToString("N0")</div>
+                            <div class="amount-label">فرانشیز (ریال)</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value insurance-share">@Model.InsuranceShare.ToString("N0")</div>
+                            <div class="amount-label">سهم بیمه (ریال)</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value patient-share">@Model.PatientShare.ToString("N0")</div>
+                            <div class="amount-label">سهم بیمار (ریال)</div>
+                        </div>
+                        @if (Model.Copay.HasValue)
+                        {
+                            <div class="amount-card">
+                                <div class="amount-value patient-share">@(Model.Copay?.ToString("N0") ?? "0")</div>
+                                <div class="amount-label">کوپه (ریال)</div>
+                            </div>
+                        }
+                        @if (Model.CoverageOverride.HasValue)
+                        {
+                            <div class="amount-card">
+                                <div class="amount-value coverage-percent">@(Model.CoverageOverride?.ToString("N1") ?? "0")%</div>
+                                <div class="amount-label">پوشش خاص</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Calculation Information -->
+                <div class="info-section calculation-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-calculator text-primary"></i>
+                        اطلاعات محاسبه
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">تاریخ محاسبه:</span>
+                        <span class="info-value">@Model.CalculationDateShamsi</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.CalculationType))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">نوع محاسبه:</span>
+                            <span class="info-value">@Model.CalculationType</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.ReceptionDateShamsi))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">تاریخ پذیرش:</span>
+                            <span class="info-value">@Model.ReceptionDateShamsi</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.AppointmentDateShamsi))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">تاریخ قرار ملاقات:</span>
+                            <span class="info-value">@Model.AppointmentDateShamsi</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Audit Information -->
+                <div class="info-section audit-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-history text-primary"></i>
+                        اطلاعات ردیابی
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">تاریخ ایجاد:</span>
+                        <span class="info-value">@Model.CreatedAtShamsi</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">ایجادکننده:</span>
+                            <span class="info-value">@Model.CreatedByUserName</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.UpdatedAtShamsi))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">تاریخ آخرین به‌روزرسانی:</span>
+                            <span class="info-value">@Model.UpdatedAtShamsi</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">به‌روزرسانی‌کننده:</span>
+                            <span class="info-value">@Model.UpdatedByUserName</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Notes -->
+                @if (!string.IsNullOrEmpty(Model.Notes))
+                {
+                    <div class="notes-section">
+                        <h4 class="section-title">
+                            <i class="fas fa-sticky-note text-primary"></i>
+                            یادداشت‌ها
+                        </h4>
+                        <div class="notes-content">@Model.Notes</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateValidity(isValid) {
+            var message = isValid ? 'آیا مطمئن هستید که می‌خواهید این محاسبه را معتبر کنید؟' : 'آیا مطمئن هستید که می‌خواهید این محاسبه را نامعتبر کنید؟';
+            
+            if (confirm(message)) {
+                $.ajax({
+                    url: '@Url.Action("UpdateValidity", "InsuranceCalculation")/@Model.InsuranceCalculationId',
+                    type: 'POST',
+                    data: { isValid: isValid },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('خطا در به‌روزرسانی وضعیت اعتبار');
+                        }
+                    },
+                    error: function() {
+                        alert('خطا در به‌روزرسانی وضعیت اعتبار');
+                    }
+                });
+            }
+        }
+    </script>
+}

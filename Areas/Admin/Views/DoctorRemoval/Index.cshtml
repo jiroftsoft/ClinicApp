@@ -286,117 +286,105 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
+            // Global variables
+            var isInitialized = false;
+
             // Initialize DataTables
-            if ($.fn.DataTable) {
-                $('#doctorsTable').DataTable({
-                    "language": {
-                        "url": "/Content/plugins/DataTables/js/fa.json"
-                    },
-                    "pageLength": 25,
-                    "order": [[1, "asc"]],
-                    "columnDefs": [
-                        { "orderable": false, "targets": [0, 7] }
-                    ]
-                });
+            function initializeDataTables() {
+                if ($.fn.DataTable) {
+                    var $table = $('#doctorsTable');
+                    
+                    // Check if table exists and has DataTable
+                    if ($table.length > 0 && $.fn.DataTable.isDataTable('#doctorsTable')) {
+                        try {
+                            $table.DataTable().destroy();
+                        } catch (e) {
+                            console.warn('DataTable destroy failed:', e);
+                        }
+                    }
+                    
+                    // Initialize DataTable only if table exists
+                    if ($table.length > 0) {
+                        $table.DataTable({
+                            "language": {
+                                "url": "/Content/plugins/DataTables/js/fa.json"
+                            },
+                            "pageLength": 25,
+                            "order": [[1, "asc"]],
+                            "columnDefs": [
+                                { "orderable": false, "targets": [0, 7] }
+                            ]
+                        });
+                    }
+                }
             }
 
             // Initialize Select2
-            if ($.fn.select2) {
-                $('.select2').select2({
-                    placeholder: "انتخاب کنید...",
-                    allowClear: true
-                });
+            function initializeSelect2() {
+                if ($.fn.select2) {
+                    // Destroy existing Select2 if it exists
+                    $('.select2').each(function() {
+                        if ($(this).hasClass('select2-hidden-accessible')) {
+                            $(this).select2('destroy');
+                        }
+                    });
+                    
+                    $('.select2').select2({
+                        placeholder: "انتخاب کنید...",
+                        allowClear: true
+                    });
+                }
             }
 
-            // Search functionality
-            $('#searchBtn').on('click', function() {
-                performSearch();
-            });
-
-            // Department change - cascade to service categories
-            $('#departmentId').on('change', function() {
-                var departmentId = $(this).val();
-                var serviceCategorySelect = $('#serviceCategoryId');
+            // Update bulk removal button state
+            function updateBulkRemovalButton() {
+                var selectedCount = $('.doctor-checkbox:checked').length;
+                var bulkBtn = $('#bulkRemovalBtn');
                 
-                if (departmentId) {
-                    // Show loading
-                    serviceCategorySelect.prop('disabled', true);
-                    serviceCategorySelect.html('<option value="">در حال بارگذاری...</option>');
-                    
-                    // Get service categories for selected department
-                    $.post('@Url.Action("GetServiceCategoriesByDepartment", "DoctorRemoval")', 
-                        { departmentId: departmentId },
-                        function(response) {
-                            if (response.success) {
-                                serviceCategorySelect.html('<option value="">همه سرفصل‌ها</option>');
-                                $.each(response.data, function(index, item) {
-                                    serviceCategorySelect.append('<option value="' + item.Value + '">' + item.Text + '</option>');
-                                });
-                            } else {
-                                serviceCategorySelect.html('<option value="">خطا در بارگذاری</option>');
-                            }
-                            serviceCategorySelect.prop('disabled', false);
-                            serviceCategorySelect.trigger('change');
-                        }
-                    ).fail(function() {
-                        serviceCategorySelect.html('<option value="">خطا در بارگذاری</option>');
-                        serviceCategorySelect.prop('disabled', false);
-                    });
+                if (selectedCount > 0) {
+                    bulkBtn.prop('disabled', false).text('حذف انتسابات (' + selectedCount + ')');
                 } else {
-                    // Reset to all service categories
-                    serviceCategorySelect.html('<option value="">همه سرفصل‌ها</option>');
-                    @if (Model.Filters?.ServiceCategories != null)
-                    {
-                        foreach (var category in Model.Filters.ServiceCategories)
-                        {
-                            <text>
-                            serviceCategorySelect.append('<option value="@category.Value">@category.Text</option>');
-                            </text>
-                        }
-                    }
+                    bulkBtn.prop('disabled', true).text('حذف انتسابات');
                 }
-            });
+            }
 
-            // Clear filters
-            $('#clearFiltersBtn').on('click', function() {
-                $('#filtersForm')[0].reset();
-                $('.select2').val(null).trigger('change');
-            });
-
-            // Select all functionality
-            $('#selectAllCheckbox, #selectAllBtn').on('change click', function() {
-                var isChecked = $('#selectAllCheckbox').is(':checked');
-                $('.doctor-checkbox').prop('checked', isChecked);
-                updateBulkRemovalButton();
-            });
-
-            // Individual checkbox change
-            $('.doctor-checkbox').on('change', function() {
-                updateBulkRemovalButton();
-                updateSelectAllCheckbox();
-            });
-
-            // Bulk removal
-            $('#bulkRemovalBtn').on('click', function() {
-                var selectedIds = $('.doctor-checkbox:checked').map(function() {
-                    return $(this).val();
-                }).get();
-
-                if (selectedIds.length === 0) {
-                    alert('لطفاً حداقل یک پزشک را انتخاب کنید');
-                    return;
+            // Update select all checkbox state
+            function updateSelectAllCheckbox() {
+                var totalCheckboxes = $('.doctor-checkbox').length;
+                var checkedCheckboxes = $('.doctor-checkbox:checked').length;
+                var selectAllCheckbox = $('#selectAllCheckbox');
+                
+                if (checkedCheckboxes === 0) {
+                    selectAllCheckbox.prop('indeterminate', false).prop('checked', false);
+                } else if (checkedCheckboxes === totalCheckboxes) {
+                    selectAllCheckbox.prop('indeterminate', false).prop('checked', true);
+                } else {
+                    selectAllCheckbox.prop('indeterminate', true);
                 }
+            }
 
-                if (confirm('آیا از حذف انتسابات ' + selectedIds.length + ' پزشک اطمینان دارید؟')) {
-                    performBulkRemoval(selectedIds);
+            // Initialize table events
+            function initializeTableEvents() {
+                // Initialize DataTables
+                initializeDataTables();
+                
+                // Only bind events if table exists
+                if ($('#doctorsTable').length > 0) {
+                    // Select all functionality
+                    $('#selectAllCheckbox, #selectAllBtn').off('change click').on('change click', function() {
+                        var isChecked = $('#selectAllCheckbox').is(':checked');
+                        $('.doctor-checkbox').prop('checked', isChecked);
+                        updateBulkRemovalButton();
+                        updateSelectAllCheckbox();
+                    });
+
+                    // Individual checkbox change
+                    $('.doctor-checkbox').off('change').on('change', function() {
+                        updateBulkRemovalButton();
+                        updateSelectAllCheckbox();
+                    });
                 }
-            });
-
-            // View details
-            $(document).on('click', '.viewDetailsBtn', function() {
-                var doctorId = $(this).data('doctor-id');
-                showDoctorDetails(doctorId);
-            });
+            }
 
             // Search function
             function performSearch() {
@@ -411,15 +399,26 @@
                 };
 
                 // Show loading
-                $('#doctorsTable').closest('.card-body').html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="sr-only">در حال جستجو...</span></div><p class="mt-3 text-muted">در حال جستجو...</p></div>');
+                var tableContainer = $('#doctorsTable').closest('.card-body');
+                tableContainer.html('<div class="text-center py-5"><div class="spinner-border text-primary" role="status"><span class="sr-only">در حال جستجو...</span></div><p class="mt-3 text-muted">در حال جستجو...</p></div>');
 
                 $.post('@Url.Action("SearchDoctors", "DoctorRemoval")', formData)
                     .done(function(response) {
-                        $('#doctorsTable').closest('.card-body').html(response);
-                        initializeTableEvents();
+                        if (response && response.trim()) {
+                            tableContainer.html(response);
+                            // Wait a bit for DOM to be ready, then initialize
+                            setTimeout(function() {
+                                if ($('#doctorsTable').length > 0) {
+                                    initializeTableEvents();
+                                }
+                            }, 100);
+                        } else {
+                            tableContainer.html('<div class="text-center py-5"><i class="fa fa-info-circle fa-3x text-info mb-3"></i><h5 class="text-info">نتیجه‌ای یافت نشد</h5><p class="text-muted">لطفاً فیلترهای جستجو را تغییر دهید</p></div>');
+                        }
                     })
-                    .fail(function() {
-                        $('#doctorsTable').closest('.card-body').html('<div class="text-center py-5"><i class="fa fa-exclamation-triangle fa-3x text-danger mb-3"></i><h5 class="text-danger">خطا در جستجو</h5><p class="text-muted">لطفاً دوباره تلاش کنید</p></div>');
+                    .fail(function(xhr, status, error) {
+                        console.error('Search error:', error);
+                        tableContainer.html('<div class="text-center py-5"><i class="fa fa-exclamation-triangle fa-3x text-danger mb-3"></i><h5 class="text-danger">خطا در جستجو</h5><p class="text-muted">لطفاً دوباره تلاش کنید</p></div>');
                     });
             }
 
@@ -488,46 +487,101 @@
                     });
             }
 
-            // Initialize table events after AJAX load
-            function initializeTableEvents() {
-                // Reinitialize DataTables
-                if ($.fn.DataTable) {
-                    $('#doctorsTable').DataTable({
-                        "language": {
-                            "url": "/Content/plugins/DataTables/js/fa.json"
-                        },
-                        "pageLength": 25,
-                        "order": [[1, "asc"]],
-                        "columnDefs": [
-                            { "orderable": false, "targets": [0, 7] }
-                        ]
-                    });
-                }
-
-                // Reinitialize Select2
-                if ($.fn.select2) {
-                    $('.select2').select2({
-                        placeholder: "انتخاب کنید...",
-                        allowClear: true
-                    });
+            // Initialize everything
+            function initializeAll() {
+                if (!isInitialized) {
+                    // Initialize Select2 first (always available)
+                    initializeSelect2();
+                    
+                    // Initialize table events only if table exists
+                    if ($('#doctorsTable').length > 0) {
+                        initializeTableEvents();
+                    }
+                    
+                    isInitialized = true;
                 }
             }
 
-            function updateBulkRemovalButton() {
-                var selectedCount = $('.doctor-checkbox:checked').length;
-                $('#bulkRemovalBtn').prop('disabled', selectedCount === 0);
-                if (selectedCount > 0) {
-                    $('#bulkRemovalBtn').html('<i class="fa fa-trash"></i> حذف دسته‌ای (' + selectedCount + ')');
+            // Event handlers
+            $('#searchBtn').on('click', function() {
+                performSearch();
+            });
+
+            // Department change - cascade to service categories
+            $('#departmentId').on('change', function() {
+                var departmentId = $(this).val();
+                var serviceCategorySelect = $('#serviceCategoryId');
+                
+                if (departmentId) {
+                    // Show loading
+                    serviceCategorySelect.prop('disabled', true);
+                    serviceCategorySelect.html('<option value="">در حال بارگذاری...</option>');
+                    
+                    // Get service categories for selected department
+                    $.post('@Url.Action("GetServiceCategoriesByDepartment", "DoctorRemoval")', 
+                        { departmentId: departmentId },
+                        function(response) {
+                            if (response && response.success && response.data) {
+                                serviceCategorySelect.html('<option value="">همه سرفصل‌ها</option>');
+                                $.each(response.data, function(index, item) {
+                                    serviceCategorySelect.append('<option value="' + item.Value + '">' + item.Text + '</option>');
+                                });
+                            } else {
+                                serviceCategorySelect.html('<option value="">خطا در بارگذاری</option>');
+                            }
+                            serviceCategorySelect.prop('disabled', false);
+                            serviceCategorySelect.trigger('change');
+                        }
+                    ).fail(function(xhr, status, error) {
+                        console.error('Error loading service categories:', error);
+                        serviceCategorySelect.html('<option value="">خطا در بارگذاری</option>');
+                        serviceCategorySelect.prop('disabled', false);
+                    });
                 } else {
-                    $('#bulkRemovalBtn').html('<i class="fa fa-trash"></i> حذف دسته‌ای');
+                    // Reset to all service categories
+                    serviceCategorySelect.html('<option value="">همه سرفصل‌ها</option>');
+                    @if (Model.Filters?.ServiceCategories != null)
+                    {
+                        foreach (var category in Model.Filters.ServiceCategories)
+                        {
+                            <text>
+                            serviceCategorySelect.append('<option value="@category.Value">@category.Text</option>');
+                            </text>
+                        }
+                    }
                 }
-            }
+            });
 
-            function updateSelectAllCheckbox() {
-                var totalCheckboxes = $('.doctor-checkbox').length;
-                var checkedCheckboxes = $('.doctor-checkbox:checked').length;
-                $('#selectAllCheckbox').prop('checked', totalCheckboxes === checkedCheckboxes);
-            }
+            // Clear filters
+            $('#clearFiltersBtn').on('click', function() {
+                $('#filtersForm')[0].reset();
+                $('.select2').val(null).trigger('change');
+            });
+
+            // Bulk removal
+            $('#bulkRemovalBtn').on('click', function() {
+                var selectedIds = $('.doctor-checkbox:checked').map(function() {
+                    return $(this).val();
+                }).get();
+
+                if (selectedIds.length === 0) {
+                    alert('لطفاً حداقل یک پزشک را انتخاب کنید');
+                    return;
+                }
+
+                if (confirm('آیا از حذف انتسابات ' + selectedIds.length + ' پزشک اطمینان دارید؟')) {
+                    performBulkRemoval(selectedIds);
+                }
+            });
+
+            // View details
+            $(document).on('click', '.viewDetailsBtn', function() {
+                var doctorId = $(this).data('doctor-id');
+                showDoctorDetails(doctorId);
+            });
+
+            // Initialize everything on page load
+            initializeAll();
         });
     </script>
 }

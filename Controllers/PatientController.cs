@@ -34,20 +34,17 @@ namespace ClinicApp.Controllers
     public class PatientController : Controller
     {
         private readonly IPatientService _patientService;
-        private readonly IInsuranceService _insuranceService;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
         private readonly IAppSettings _appSettings;
 
         public PatientController(
             IPatientService patientService,
-            IInsuranceService insuranceService,
             ILogger logger,
             ICurrentUserService currentUserService,
             IAppSettings appSettings)
         {
             _patientService = patientService;
-            _insuranceService = insuranceService;
             _log = logger.ForContext<PatientController>();
             _currentUserService = currentUserService;
             _appSettings = appSettings;
@@ -182,7 +179,7 @@ namespace ClinicApp.Controllers
             try
             {
                 var viewModel = new PatientCreateEditViewModel();
-                await PopulateInsuranceList(viewModel);
+                //await PopulateInsuranceList(viewModel);
 
                 _log.Information(
                     "صفحه ایجاد بیمار با موفقیت بارگیری شد. User: {UserName} (Id: {UserId})",
@@ -214,42 +211,7 @@ namespace ClinicApp.Controllers
                 "درخواست ایجاد بیمار جدید با کد ملی {NationalCode}. User: {UserName} (Id: {UserId})",
                 model.NationalCode, _currentUserService.UserName, _currentUserService.UserId);
 
-            // اعتبارسنجی دستی برای بیمه
-            if (model.InsuranceId <= 0)
-            {
-                // دریافت لیست بیمه‌ها از سرویس
-                var insurancesResult = await _insuranceService.GetActiveInsurancesAsync();
-                InsuranceViewModel freeInsurance = null;
-
-                // بررسی موفقیت عملیات و دسترسی به داده‌ها
-                if (insurancesResult.Success && insurancesResult.Data != null)
-                {
-                    // جستجوی بیمه آزاد در لیست بیمه‌ها
-                    freeInsurance = insurancesResult.Data.FirstOrDefault(i => i.Name == SystemConstants.FreeInsuranceName);
-                }
-                else
-                {
-                    _log.Warning(
-                        "دریافت لیست بیمه‌ها ناموفق بود. Error: {Error}. User: {UserName} (Id: {UserId})",
-                        insurancesResult.Message, _currentUserService.UserName, _currentUserService.UserId);
-                }
-
-                if (freeInsurance != null)
-                {
-                    model.InsuranceId = freeInsurance.InsuranceId;
-                    _log.Information(
-                        "بیمه آزاد به عنوان پیش‌فرض برای بیمار جدید انتخاب شد. NationalCode: {NationalCode}",
-                        model.NationalCode);
-                }
-                else
-                {
-                    _log.Error(
-                        "بیمه آزاد در سیستم یافت نشد. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
-                        model.NationalCode, _currentUserService.UserName, _currentUserService.UserId);
-
-                    ModelState.AddModelError("InsuranceId", "سیستم به درستی پیکربندی نشده است. لطفاً با پشتیبانی تماس بگیرید.");
-                }
-            }
+            // اعتبارسنجی بیمه حذف شد - از PatientInsurance استفاده کنید
 
             if (!ModelState.IsValid)
             {
@@ -258,8 +220,7 @@ namespace ClinicApp.Controllers
                     model.NationalCode, ModelState.Values.SelectMany(v => v.Errors),
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                // پر کردن لیست بیمه‌ها برای نمایش مجدد فرم
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
                 return View(model);
             }
 
@@ -281,7 +242,7 @@ namespace ClinicApp.Controllers
                     model.NationalCode, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                 ModelState.AddModelError("", result.Message);
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
                 return View(model);
             }
             catch (Exception ex)
@@ -292,7 +253,7 @@ namespace ClinicApp.Controllers
                     model.NationalCode, _currentUserService.UserName, _currentUserService.UserId);
 
                 ModelState.AddModelError("", "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.");
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
                 return View(model);
             }
         }
@@ -334,7 +295,7 @@ namespace ClinicApp.Controllers
                 }
 
                 var model = result.Data;
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
 
                 _log.Information(
                     "صفحه ویرایش بیمار شناسه {PatientId} با موفقیت بارگیری شد. User: {UserName} (Id: {UserId})",
@@ -375,41 +336,41 @@ namespace ClinicApp.Controllers
                 model.PatientId, model.NationalCode, _currentUserService.UserName, _currentUserService.UserId);
 
             // اعتبارسنجی دستی برای بیمه
-            if (model.InsuranceId <= 0)
-            {
-                // دریافت لیست بیمه‌ها از سرویس
-                var insurancesResult = await _insuranceService.GetActiveInsurancesAsync();
-                InsuranceViewModel freeInsurance = null;
+            //if (model.InsuranceId <= 0)
+            //{
+            //    // دریافت لیست بیمه‌ها از سرویس
+            //    //var insurancesResult = await _insuranceService.GetActiveInsurancesAsync();
+            //    InsuranceViewModel freeInsurance = null;
 
-                // بررسی موفقیت عملیات و دسترسی به داده‌ها
-                if (insurancesResult.Success && insurancesResult.Data != null)
-                {
-                    // جستجوی بیمه آزاد در لیست بیمه‌ها
-                    freeInsurance = insurancesResult.Data.FirstOrDefault(i => i.Name == SystemConstants.FreeInsuranceName);
-                }
-                else
-                {
-                    _log.Warning(
-                        "دریافت لیست بیمه‌ها ناموفق بود. Error: {Error}. User: {UserName} (Id: {UserId})",
-                        insurancesResult.Message, _currentUserService.UserName, _currentUserService.UserId);
-                }
+            //    //// بررسی موفقیت عملیات و دسترسی به داده‌ها
+            //    //if (insurancesResult.Success && insurancesResult.Data != null)
+            //    //{
+            //    //    // جستجوی بیمه آزاد در لیست بیمه‌ها
+            //    //    freeInsurance = insurancesResult.Data.FirstOrDefault(i => i.Name == SystemConstants.FreeInsuranceName);
+            //    //}
+            //    //else
+            //    //{
+            //    //    _log.Warning(
+            //    //        "دریافت لیست بیمه‌ها ناموفق بود. Error: {Error}. User: {UserName} (Id: {UserId})",
+            //    //        insurancesResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+            //    //}
 
-                if (freeInsurance != null)
-                {
-                    model.InsuranceId = freeInsurance.InsuranceId;
-                    _log.Information(
-                        "بیمه آزاد به عنوان پیش‌فرض برای بیمار شناسه {PatientId} انتخاب شد.",
-                        model.PatientId);
-                }
-                else
-                {
-                    _log.Error(
-                        "بیمه آزاد در سیستم یافت نشد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
-                        model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+            //    if (freeInsurance != null)
+            //    {
+            //        model.InsuranceId = freeInsurance.InsuranceId;
+            //        _log.Information(
+            //            "بیمه آزاد به عنوان پیش‌فرض برای بیمار شناسه {PatientId} انتخاب شد.",
+            //            model.PatientId);
+            //    }
+            //    else
+            //    {
+            //        _log.Error(
+            //            "بیمه آزاد در سیستم یافت نشد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+            //            model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                    ModelState.AddModelError("InsuranceId", "سیستم به درستی پیکربندی نشده است. لطفاً با پشتیبانی تماس بگیرید.");
-                }
-            }
+            //        ModelState.AddModelError("InsuranceId", "سیستم به درستی پیکربندی نشده است. لطفاً با پشتیبانی تماس بگیرید.");
+            //    }
+            //}
 
             if (!ModelState.IsValid)
             {
@@ -418,7 +379,7 @@ namespace ClinicApp.Controllers
                     model.PatientId, ModelState.Values.SelectMany(v => v.Errors),
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
                 return View(model);
             }
 
@@ -440,7 +401,7 @@ namespace ClinicApp.Controllers
                     model.PatientId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                 ModelState.AddModelError("", result.Message);
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
                 return View(model);
             }
             catch (Exception ex)
@@ -451,7 +412,7 @@ namespace ClinicApp.Controllers
                     model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
 
                 ModelState.AddModelError("", "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.");
-                await PopulateInsuranceList(model);
+                // PopulateInsuranceList حذف شد
                 return View(model);
             }
         }
@@ -510,66 +471,7 @@ namespace ClinicApp.Controllers
         /// <summary>
         /// پر کردن لیست بیمه‌ها برای نمایش در ویو
         /// </summary>
-        /// <summary>
-        /// پر کردن لیست بیمه‌ها برای نمایش در ویو
-        /// </summary>
-        private async Task PopulateInsuranceList(PatientCreateEditViewModel model)
-        {
-            try
-            {
-                var insurancesResult = await _insuranceService.GetActiveInsurancesAsync();
-
-                if (insurancesResult.Success && insurancesResult.Data != null && insurancesResult.Data.Any())
-                {
-                    model.Insurances = insurancesResult.Data.Select(i => new SelectListItem
-                    {
-                        Value = i.InsuranceId.ToString(),
-                        Text = i.Name,
-                        Selected = i.InsuranceId == model.InsuranceId
-                    }).ToList();
-                }
-                else
-                {
-                    _log.Warning(
-                        "هیچ بیمه‌ای در سیستم یافت نشد یا عملیات با خطا مواجه شد. Error: {Error}. User: {UserName} (Id: {UserId})",
-                        insurancesResult.Message, _currentUserService.UserName, _currentUserService.UserId);
-
-                    // اگر بیمه آزاد وجود داشته باشد، آن را به عنوان گزینه پیش‌فرض اضافه می‌کنیم
-                    var freeInsuranceResult = await _insuranceService.GetFreeInsuranceAsync();
-                    if (freeInsuranceResult.Success && freeInsuranceResult.Data != null)
-                    {
-                        model.Insurances = new List<SelectListItem>
-                {
-                    new SelectListItem
-                    {
-                        Value = freeInsuranceResult.Data.InsuranceId.ToString(),
-                        Text = freeInsuranceResult.Data.Name,
-                        Selected = freeInsuranceResult.Data.InsuranceId == model.InsuranceId
-                    }
-                };
-
-                        _log.Information(
-                            "بیمه آزاد به عنوان گزینه پیش‌فرض اضافه شد. User: {UserName} (Id: {UserId})",
-                            _currentUserService.UserName, _currentUserService.UserId);
-                    }
-                    else
-                    {
-                        model.Insurances = new List<SelectListItem>();
-                        TempData["ErrorMessage"] = "هیچ بیمه‌ای در سیستم یافت نشد. لطفاً با پشتیبانی تماس بگیرید.";
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(
-                    ex,
-                    "خطای سیستمی در دریافت لیست بیمه‌ها. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
-
-                model.Insurances = new List<SelectListItem>();
-                TempData["ErrorMessage"] = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
-            }
-        }
+        // PopulateInsuranceList حذف شد - از PatientInsurance استفاده کنید
 
         #endregion
     }

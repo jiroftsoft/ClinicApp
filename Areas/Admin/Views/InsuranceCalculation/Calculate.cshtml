@@ -1,0 +1,148 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceCalculation.InsuranceCalculationViewModel
+@{
+    ViewBag.Title = "محاسبه بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calculator"></i>
+                        محاسبه بیمه
+                    </h3>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("CalculatePatientShare", "InsuranceCalculation", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.PatientId, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.PatientId, Model.PatientSelectList, "انتخاب بیمار", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.ServiceId, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.ServiceId, Model.ServiceSelectList, "انتخاب خدمت", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.ServiceId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.PatientInsuranceId, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.PatientInsuranceId, Model.PatientInsuranceSelectList, "انتخاب بیمه بیمار", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.PatientInsuranceId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CalculationDate, new { @class = "control-label" })
+                                    @Html.TextBoxFor(m => m.CalculationDate, "{0:yyyy/MM/dd}", new { @class = "form-control persian-datepicker", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.CalculationDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.ServiceAmount, new { @class = "control-label" })
+                                    @Html.TextBoxFor(m => m.ServiceAmount, new { @class = "form-control", type = "number", step = "0.01", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.ServiceAmount, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.CalculationType, new { @class = "control-label" })
+                                    @Html.TextBoxFor(m => m.CalculationType, new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.CalculationType, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Notes, new { @class = "control-label" })
+                                    @Html.TextAreaFor(m => m.Notes, new { @class = "form-control", rows = 3 })
+                                    @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="col-md-offset-2 col-md-10">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-calculator"></i>
+                                    محاسبه سهم بیمار
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fas fa-list"></i>
+                                    بازگشت به لیست
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                autoClose: true,
+                initialValue: false,
+                calendar: {
+                    persian: {
+                        locale: 'fa',
+                        showHint: true,
+                        leapYearMode: 'algorithmic'
+                    }
+                }
+            });
+
+            // Load patient insurances when patient changes
+            $('#PatientId').change(function() {
+                var patientId = $(this).val();
+                if (patientId) {
+                    loadPatientInsurances(patientId);
+                } else {
+                    $('#PatientInsuranceId').empty().append('<option value="">انتخاب بیمه بیمار</option>');
+                }
+            });
+
+            function loadPatientInsurances(patientId) {
+                $.ajax({
+                    url: '@Url.Action("GetPatientInsurances", "InsuranceCalculation")',
+                    type: 'POST',
+                    data: { patientId: patientId },
+                    success: function(data) {
+                        var select = $('#PatientInsuranceId');
+                        select.empty().append('<option value="">انتخاب بیمه بیمار</option>');
+                        $.each(data, function(index, item) {
+                            select.append('<option value="' + item.value + '">' + item.text + '</option>');
+                        });
+                    },
+                    error: function() {
+                        console.error('خطا در بارگذاری بیمه‌های بیمار');
+                    }
+                });
+            }
+        });
+    </script>
+}

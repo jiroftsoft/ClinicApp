@@ -1,0 +1,216 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceProvider.InsuranceProviderIndexViewModel
+@{
+    ViewBag.Title = "مدیریت ارائه‌دهندگان بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.AntiForgeryToken()
+
+@section Styles {
+    <style>
+        /* Medical Environment Color Scheme */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        .insurance-provider-card {
+            border: 1px solid var(--medical-border);
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        .insurance-provider-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+        .search-panel {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 0.35rem;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .btn-action {
+            margin: 0.125rem;
+            font-size: 0.875rem;
+        }
+        .table-responsive {
+            border-radius: 0.35rem;
+            overflow: hidden;
+        }
+        .pagination-info {
+            font-size: 0.875rem;
+            color: #858796;
+        }
+        .table th {
+            background-color: #f8f9fc;
+            border-color: #e3e6f0;
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        .table td {
+            vertical-align: middle;
+            font-size: 0.875rem;
+        }
+        .status-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+        }
+        .provider-code {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.8rem;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <h2 class="text-center mb-4">مدیریت ارائه‌دهندگان بیمه</h2>
+            
+            <!-- Search Panel -->
+            <div class="search-panel">
+                <div class="row">
+                    <div class="col-md-8">
+                        <div class="form-group">
+                            <label for="searchTerm" class="text-white">جستجو در ارائه‌دهندگان بیمه:</label>
+                            <input type="text" id="searchTerm" class="form-control" placeholder="نام، کد یا اطلاعات تماس ارائه‌دهنده بیمه...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-group">
+                            <label class="text-white">&nbsp;</label>
+                            <div>
+                                <button type="button" id="searchBtn" class="btn btn-light btn-block">
+                                    <i class="fas fa-search"></i> جستجو
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <a href="@Url.Action("Create", "InsuranceProvider")" class="btn btn-success">
+                        <i class="fas fa-plus"></i> افزودن ارائه‌دهنده بیمه جدید
+                    </a>
+                    <button type="button" id="refreshBtn" class="btn btn-info">
+                        <i class="fas fa-sync-alt"></i> به‌روزرسانی
+                    </button>
+                </div>
+            </div>
+
+            <!-- Insurance Providers List -->
+            <div class="card insurance-provider-card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-hospital"></i> لیست ارائه‌دهندگان بیمه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="insuranceProviderListContainer">
+                        <!-- Content will be loaded here via AJAX -->
+                        <div class="text-center">
+                            <i class="fas fa-spinner fa-spin fa-2x text-muted"></i>
+                            <p class="text-muted mt-2">در حال بارگیری...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            let currentPage = 1;
+            let currentSearchTerm = '';
+
+            // Load initial data
+            loadInsuranceProviders();
+
+            // Search functionality
+            $('#searchBtn').click(function() {
+                currentSearchTerm = $('#searchTerm').val();
+                currentPage = 1;
+                loadInsuranceProviders();
+            });
+
+            // Enter key search
+            $('#searchTerm').keypress(function(e) {
+                if (e.which === 13) {
+                    $('#searchBtn').click();
+                }
+            });
+
+            // Refresh functionality
+            $('#refreshBtn').click(function() {
+                currentSearchTerm = '';
+                $('#searchTerm').val('');
+                currentPage = 1;
+                loadInsuranceProviders();
+            });
+
+            // Load insurance providers function
+            function loadInsuranceProviders() {
+                $.ajax({
+                    url: '@Url.Action("LoadProviders", "InsuranceProvider")',
+                    type: 'POST',
+                    dataType: 'html',
+                    contentType: 'application/x-www-form-urlencoded; charset=UTF-8',
+                    data: {
+                        searchTerm: currentSearchTerm,
+                        page: currentPage,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        $('#insuranceProviderListContainer').html(response);
+                    },
+                    error: function() {
+                        $('#insuranceProviderListContainer').html(
+                            '<div class="alert alert-danger text-center">' +
+                            '<i class="fas fa-exclamation-triangle"></i> خطا در بارگیری اطلاعات' +
+                            '</div>'
+                        );
+                    }
+                });
+            }
+
+            // Pagination
+            $(document).on('click', '.pagination a', function(e) {
+                e.preventDefault();
+                const page = $(this).data('page');
+                if (page) {
+                    currentPage = page;
+                    loadInsuranceProviders();
+                }
+            });
+
+            // Delete confirmation
+            $(document).on('click', '.btn-delete', function(e) {
+                e.preventDefault();
+                const url = $(this).attr('href');
+                const name = $(this).data('name');
+                
+                if (confirm('آیا از حذف ارائه‌دهنده بیمه "' + name + '" اطمینان دارید؟')) {
+                    window.location.href = url;
+                }
+            });
+        });
+    </script>
+}

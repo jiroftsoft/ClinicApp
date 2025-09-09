@@ -1,0 +1,168 @@
+@model ClinicApp.ViewModels.Insurance.PatientInsurance.PatientInsuranceCreateEditViewModel
+
+@using (Html.BeginForm(Model.PatientInsuranceId > 0 ? "Edit" : "Create", "PatientInsurance", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    
+    if (Model.PatientInsuranceId > 0)
+    {
+        @Html.HiddenFor(m => m.PatientInsuranceId)
+    }
+
+    <div class="form-section">
+        <h4 class="section-title">
+            <i class="fas fa-user"></i> انتخاب بیمار
+        </h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.PatientId, new { @class = "form-label" })
+                    @Html.DropDownListFor(m => m.PatientId, Model.PatientSelectList, "انتخاب بیمار...", new { @class = "form-control", required = "required" })
+                    @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <label class="form-label">اطلاعات بیمار</label>
+                    <div id="patient-info" class="patient-info-display" style="display: none;">
+                        <div class="patient-details">
+                            <strong id="patient-name"></strong><br>
+                            <small id="patient-code" class="text-muted"></small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h4 class="section-title">
+            <i class="fas fa-shield-alt"></i> اطلاعات بیمه
+        </h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.InsurancePlanId, new { @class = "form-label" })
+                    @Html.DropDownListFor(m => m.InsurancePlanId, Model.InsurancePlanSelectList, "انتخاب طرح بیمه...", new { @class = "form-control", required = "required" })
+                    @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.PolicyNumber, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.PolicyNumber, new { @class = "form-control", placeholder = "شماره بیمه", required = "required" })
+                    @Html.ValidationMessageFor(m => m.PolicyNumber, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h4 class="section-title">
+            <i class="fas fa-calendar"></i> دوره اعتبار
+        </h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.StartDate, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.StartDate, "{0:yyyy/MM/dd}", new { @class = "form-control persian-datepicker", required = "required" })
+                    @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    @Html.LabelFor(m => m.EndDate, new { @class = "form-label" })
+                    @Html.TextBoxFor(m => m.EndDate, "{0:yyyy/MM/dd}", new { @class = "form-control persian-datepicker" })
+                    @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h4 class="section-title">
+            <i class="fas fa-cog"></i> تنظیمات
+        </h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="form-check">
+                        @Html.CheckBoxFor(m => m.IsPrimary, new { @class = "form-check-input" })
+                        @Html.LabelFor(m => m.IsPrimary, new { @class = "form-check-label" })
+                    </div>
+                    <small class="form-text text-muted">اگر این گزینه انتخاب شود، سایر بیمه‌های این بیمار به بیمه تکمیلی تبدیل می‌شوند</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="form-group">
+                    <div class="form-check">
+                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                        @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                    </div>
+                    <small class="form-text text-muted">بیمه غیرفعال در محاسبات و خدمات استفاده نمی‌شود</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-actions text-center">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="fas fa-save"></i> @(Model.PatientInsuranceId > 0 ? "به‌روزرسانی" : "ایجاد") بیمه بیمار
+        </button>
+        <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary btn-lg">
+            <i class="fas fa-arrow-right"></i> بازگشت
+        </a>
+    </div>
+}
+
+<script>
+$(document).ready(function() {
+    // Initialize Persian DatePicker
+    $('.persian-datepicker').persianDatepicker({
+        format: 'YYYY/MM/DD',
+        autoClose: true,
+        initialValue: false,
+        calendar: {
+            persian: {
+                locale: 'fa',
+                showHint: true,
+                leapYearMode: 'algorithmic'
+            }
+        }
+    });
+
+    // Load patient info when patient is selected
+    $('#PatientId').change(function() {
+        var patientId = $(this).val();
+        if (patientId) {
+            $.ajax({
+                url: '@Url.Action("GetPatientInfo", "PatientInsurance")',
+                type: 'GET',
+                data: { patientId: patientId },
+                success: function(data) {
+                    if (data.success) {
+                        $('#patient-name').text(data.patientName);
+                        $('#patient-code').text('کد بیمار: ' + data.patientCode);
+                        $('#patient-info').show();
+                    }
+                }
+            });
+        } else {
+            $('#patient-info').hide();
+        }
+    });
+
+    // Form validation
+    $('.needs-validation').on('submit', function(event) {
+        if (this.checkValidity() === false) {
+            event.preventDefault();
+            event.stopPropagation();
+        }
+        $(this).addClass('was-validated');
+    });
+});
+</script>

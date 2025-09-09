@@ -1570,6 +1570,7 @@ namespace ClinicApp.Models.Entities
         /// این لیست برای نمایش تمام تعرفه‌های بیمه‌ای موجود برای این خدمت استفاده می‌شود
         /// </summary>
         public virtual ICollection<InsuranceTariff> Tariffs { get; set; } = new HashSet<InsuranceTariff>();
+        public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
 
         public bool IsActive { get; set; }
         public string Notes { get; set; }
@@ -1692,80 +1693,71 @@ namespace ClinicApp.Models.Entities
 
     #endregion
 
-    #region Insurance
+    #region Insurance (Legacy Model - REMOVED)
+    // مدل قدیمی Insurance حذف شد
+    // از مدل‌های جدید استفاده کنید: InsuranceProvider, InsurancePlan, PlanService, PatientInsurance
 
     /// <summary>
-    /// مدل بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// مدل ارائه‌دهنده بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
     /// 
     /// ویژگی‌های کلیدی:
-    /// 1. پشتیبانی از سهم پیش‌فرض بیمه و بیمار برای تمام خدمات
-    /// 2. مدیریت کامل تعرفه‌های خاص برای هر خدمت
-    /// 3. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
-    /// 4. ارتباط با کاربران ایجاد کننده، ویرایش کننده و حذف کننده برای ردیابی دقیق
-    /// 5. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط
+    /// 1. مدیریت ارائه‌دهندگان بیمه (تأمین اجتماعی، پارسیان، و...)
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده، ویرایش کننده و حذف کننده برای ردیابی دقیق
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط
     /// </summary>
-    public class Insurance : ISoftDelete, ITrackable
+    public class InsuranceProvider : ISoftDelete, ITrackable
     {
         /// <summary>
-        /// شناسه بیمه
+        /// شناسه ارائه‌دهنده بیمه
         /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
         /// </summary>
-        public int InsuranceId { get; set; }
+        public int InsuranceProviderId { get; set; }
 
         /// <summary>
-        /// نام بیمه
-        /// مثال: "تأمین اجتماعی"، "بیمه آزاد"، "بیمه نیروهای مسلح"
+        /// نام ارائه‌دهنده بیمه
+        /// مثال: "تأمین اجتماعی"، "بیمه پارسیان"، "بیمه نیروهای مسلح"
         /// </summary>
-        [Required(ErrorMessage = "نام بیمه الزامی است.")]
-        [MaxLength(250, ErrorMessage = "نام بیمه نمی‌تواند بیش از 250 کاراکتر باشد.")]
+        [Required(ErrorMessage = "نام ارائه‌دهنده بیمه الزامی است.")]
+        [MaxLength(250, ErrorMessage = "نام ارائه‌دهنده بیمه نمی‌تواند بیش از 250 کاراکتر باشد.")]
         public string Name { get; set; }
 
         /// <summary>
-        /// توضیحات بیمه
-        /// مثال: "توضیحات کامل درباره شرایط و محدودیت‌های بیمه"
+        /// کد ارائه‌دهنده بیمه
+        /// مثال: "SSO", "PARSIAN", "IRAN"
         /// </summary>
-        [MaxLength(1000, ErrorMessage = "توضیحات بیمه نمی‌تواند بیش از 1000 کاراکتر باشد.")]
-        public string Description { get; set; }
+        [Required(ErrorMessage = "کد ارائه‌دهنده بیمه الزامی است.")]
+        [MaxLength(50, ErrorMessage = "کد ارائه‌دهنده بیمه نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string Code { get; set; }
 
         /// <summary>
-        /// سهم پیش‌فرض بیمار به درصد
-        /// مثال: 30 = 30%
-        /// این مقدار برای تمام خدمات اعمال می‌شود مگر اینکه برای خدمت خاص تعرفه متفاوتی تعریف شده باشد
+        /// اطلاعات تماس ارائه‌دهنده بیمه
+        /// شامل آدرس، تلفن، ایمیل و سایر اطلاعات تماس
         /// </summary>
-        [Required(ErrorMessage = "سهم پیش‌فرض بیمار الزامی است.")]
-        [Range(0, 100, ErrorMessage = "سهم بیمار باید بین 0 تا 100 درصد باشد.")]
-        public decimal DefaultPatientShare { get; set; }
+        [MaxLength(1000, ErrorMessage = "اطلاعات تماس نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+        public string ContactInfo { get; set; }
 
         /// <summary>
-        /// سهم پیش‌فرض بیمه به درصد
-        /// مثال: 70 = 70%
-        /// این مقدار برای تمام خدمات اعمال می‌شود مگر اینکه برای خدمت خاص تعرفه متفاوتی تعریف شده باشد
-        /// </summary>
-        [Required(ErrorMessage = "سهم پیش‌فرض بیمه الزامی است.")]
-        [Range(0, 100, ErrorMessage = "سهم بیمه باید بین 0 تا 100 درصد باشد.")]
-        public decimal DefaultInsurerShare { get; set; }
-
-        /// <summary>
-        /// آیا بیمه فعال است؟
-        /// این فیلد برای غیرفعال کردن بیمه‌های قدیمی یا منقضی شده استفاده می‌شود
+        /// آیا ارائه‌دهنده بیمه فعال است؟
+        /// این فیلد برای غیرفعال کردن ارائه‌دهندگان قدیمی یا منقضی شده استفاده می‌شود
         /// </summary>
         public bool IsActive { get; set; } = true;
 
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>
-        /// نشان‌دهنده وضعیت حذف شدن بیمه
+        /// نشان‌دهنده وضعیت حذف شدن ارائه‌دهنده بیمه
         /// در سیستم‌های پزشکی، حذف فیزیکی اطلاعات مجاز نیست و از سیستم حذف نرم استفاده می‌شود
         /// </summary>
         public bool IsDeleted { get; set; }
 
         /// <summary>
-        /// تاریخ و زمان حذف بیمه
+        /// تاریخ و زمان حذف ارائه‌دهنده بیمه
         /// این اطلاعات برای ردیابی عملیات‌های حساس در سیستم‌های پزشکی حیاتی است
         /// </summary>
         public DateTime? DeletedAt { get; set; }
 
         /// <summary>
-        /// شناسه کاربری که بیمه را حذف کرده است
+        /// شناسه کاربری که ارائه‌دهنده بیمه را حذف کرده است
         /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
         /// </summary>
         public string DeletedByUserId { get; set; }
@@ -1779,13 +1771,13 @@ namespace ClinicApp.Models.Entities
 
         #region پیاده‌سازی ITrackable (مدیریت ردیابی)
         /// <summary>
-        /// تاریخ و زمان ایجاد بیمه
+        /// تاریخ و زمان ایجاد ارائه‌دهنده بیمه
         /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
         /// </summary>
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         /// <summary>
-        /// شناسه کاربری که بیمه را ایجاد کرده است
+        /// شناسه کاربری که ارائه‌دهنده بیمه را ایجاد کرده است
         /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
         /// </summary>
         public string CreatedByUserId { get; set; }
@@ -1797,13 +1789,171 @@ namespace ClinicApp.Models.Entities
         public virtual ApplicationUser CreatedByUser { get; set; }
 
         /// <summary>
-        /// تاریخ و زمان آخرین ویرایش بیمه
+        /// تاریخ و زمان آخرین ویرایش ارائه‌دهنده بیمه
         /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
         /// </summary>
         public DateTime? UpdatedAt { get; set; }
 
         /// <summary>
-        /// شناسه کاربری که بیمه را ویرایش کرده است
+        /// شناسه کاربری که ارائه‌دهنده بیمه را ویرایش کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ویرایش کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        #region روابط
+        // رابطه با مدل قدیمی Insurance حذف شد
+
+        /// <summary>
+        /// لیست طرح‌های بیمه مرتبط با این ارائه‌دهنده
+        /// این لیست برای نمایش تمام طرح‌های بیمه موجود برای این ارائه‌دهنده استفاده می‌شود
+        /// </summary>
+        public virtual ICollection<InsurancePlan> InsurancePlans { get; set; } = new HashSet<InsurancePlan>();
+        #endregion
+    }
+
+    /// <summary>
+    /// مدل طرح بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت طرح‌های بیمه تحت هر ارائه‌دهنده
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده، ویرایش کننده و حذف کننده برای ردیابی دقیق
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط
+    /// </summary>
+    public class InsurancePlan : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه طرح بیمه
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int InsurancePlanId { get; set; }
+
+        /// <summary>
+        /// شناسه ارائه‌دهنده بیمه
+        /// این فیلد برای ارتباط با ارائه‌دهنده بیمه استفاده می‌شود
+        /// </summary>
+        [Required(ErrorMessage = "ارائه‌دهنده بیمه الزامی است.")]
+        public int InsuranceProviderId { get; set; }
+
+        /// <summary>
+        /// کد طرح بیمه
+        /// مثال: "SSO-BASIC", "PARSIAN-PREMIUM", "IRAN-STANDARD"
+        /// </summary>
+        [Required(ErrorMessage = "کد طرح بیمه الزامی است.")]
+        [MaxLength(100, ErrorMessage = "کد طرح بیمه نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string PlanCode { get; set; }
+
+        /// <summary>
+        /// نام طرح بیمه
+        /// مثال: "طرح پایه تأمین اجتماعی"، "طرح طلایی پارسیان"
+        /// </summary>
+        [Required(ErrorMessage = "نام طرح بیمه الزامی است.")]
+        [MaxLength(250, ErrorMessage = "نام طرح بیمه نمی‌تواند بیش از 250 کاراکتر باشد.")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// توضیحات طرح بیمه
+        /// این فیلد برای ذخیره اطلاعات اضافی و توضیحات مربوط به طرح بیمه استفاده می‌شود
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// درصد پوشش بیمه
+        /// مثال: 70 = 70% پوشش بیمه
+        /// </summary>
+        [Required(ErrorMessage = "درصد پوشش بیمه الزامی است.")]
+        [Range(0, 100, ErrorMessage = "درصد پوشش بیمه باید بین 0 تا 100 باشد.")]
+        public decimal CoveragePercent { get; set; }
+
+        /// <summary>
+        /// فرانشیز (مبلغی که بیمار باید پرداخت کند)
+        /// مثال: 50000 = 50,000 تومان فرانشیز
+        /// </summary>
+        [Required(ErrorMessage = "فرانشیز الزامی است.")]
+        [Range(0, double.MaxValue, ErrorMessage = "فرانشیز نمی‌تواند منفی باشد.")]
+        public decimal Deductible { get; set; }
+
+        /// <summary>
+        /// تاریخ اعتبار از
+        /// تاریخ شروع اعتبار طرح بیمه
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ شروع اعتبار الزامی است.")]
+        public DateTime ValidFrom { get; set; }
+
+        /// <summary>
+        /// تاریخ اعتبار تا
+        /// تاریخ پایان اعتبار طرح بیمه
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ پایان اعتبار الزامی است.")]
+        public DateTime ValidTo { get; set; }
+
+        /// <summary>
+        /// آیا طرح بیمه فعال است؟
+        /// این فیلد برای غیرفعال کردن طرح‌های قدیمی یا منقضی شده استفاده می‌شود
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
+        /// <summary>
+        /// نشان‌دهنده وضعیت حذف شدن طرح بیمه
+        /// در سیستم‌های پزشکی، حذف فیزیکی اطلاعات مجاز نیست و از سیستم حذف نرم استفاده می‌شود
+        /// </summary>
+        public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان حذف طرح بیمه
+        /// این اطلاعات برای ردیابی عملیات‌های حساس در سیستم‌های پزشکی حیاتی است
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که طرح بیمه را حذف کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر حذف کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر حذف کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable (مدیریت ردیابی)
+        /// <summary>
+        /// تاریخ و زمان ایجاد طرح بیمه
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که طرح بیمه را ایجاد کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ایجاد کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ایجاد کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش طرح بیمه
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که طرح بیمه را ویرایش کرده است
         /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
         /// </summary>
         public string UpdatedByUserId { get; set; }
@@ -1817,133 +1967,774 @@ namespace ClinicApp.Models.Entities
 
         #region روابط
         /// <summary>
-        /// لیست تعرفه‌های بیمه
-        /// این لیست برای نمایش تمام تعرفه‌های خدمات موجود برای این بیمه استفاده می‌شود
+        /// ارجاع به ارائه‌دهنده بیمه
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات ارائه‌دهنده بیمه ضروری است
         /// </summary>
-        public virtual ICollection<InsuranceTariff> Tariffs { get; set; } = new HashSet<InsuranceTariff>();
+        public virtual InsuranceProvider InsuranceProvider { get; set; }
 
         /// <summary>
-        /// لیست بیماران تحت پوشش این بیمه
-        /// این لیست برای نمایش تمام بیمارانی که تحت پوشش این بیمه هستند استفاده می‌شود
+        /// لیست خدمات طرح بیمه
+        /// این لیست برای نمایش تمام خدمات موجود برای این طرح بیمه استفاده می‌شود
         /// </summary>
-        public virtual ICollection<Patient> Patients { get; set; } = new HashSet<Patient>();
+        public virtual ICollection<PlanService> PlanServices { get; set; } = new HashSet<PlanService>();
 
         /// <summary>
-        /// لیست پذیرش‌های مرتبط با این بیمه
-        /// این لیست برای گزارش‌گیری و تحلیل‌های مالی استفاده می‌شود
+        /// لیست بیمه‌های بیماران مرتبط با این طرح
+        /// این لیست برای نمایش تمام بیمارانی که تحت پوشش این طرح هستند استفاده می‌شود
         /// </summary>
-        public virtual ICollection<Reception> Receptions { get; set; } = new HashSet<Reception>();
+        public virtual ICollection<PatientInsurance> PatientInsurances { get; set; } = new HashSet<PatientInsurance>();
+        public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
         #endregion
     }
 
     /// <summary>
-    /// پیکربندی مدل بیمه برای Entity Framework
+    /// مدل خدمات طرح بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت خدمات تحت پوشش هر طرح بیمه
+    /// 2. امکان تعریف سهم بیمار و پوشش خاص برای هر خدمت
+    /// 3. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 4. ارتباط با کاربران ایجاد کننده، ویرایش کننده و حذف کننده برای ردیابی دقیق
+    /// </summary>
+    public class PlanService : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه خدمات طرح بیمه
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int PlanServiceId { get; set; }
+
+        /// <summary>
+        /// شناسه طرح بیمه
+        /// این فیلد برای ارتباط با طرح بیمه استفاده می‌شود
+        /// </summary>
+        [Required(ErrorMessage = "طرح بیمه الزامی است.")]
+        public int InsurancePlanId { get; set; }
+
+        /// <summary>
+        /// شناسه دسته‌بندی خدمت
+        /// این فیلد برای ارتباط با دسته‌بندی خدمت استفاده می‌شود
+        /// </summary>
+        [Required(ErrorMessage = "دسته‌بندی خدمت الزامی است.")]
+        public int ServiceCategoryId { get; set; }
+
+        /// <summary>
+        /// سهم بیمار به درصد (اختیاری)
+        /// اگر تعریف نشود، از سهم پیش‌فرض طرح بیمه استفاده می‌شود
+        /// مثال: 30 = 30% سهم بیمار
+        /// </summary>
+        [Range(0, 100, ErrorMessage = "سهم بیمار باید بین 0 تا 100 درصد باشد.")]
+        public decimal? Copay { get; set; }
+
+        /// <summary>
+        /// پوشش خاص به درصد (اختیاری)
+        /// اگر تعریف نشود، از پوشش پیش‌فرض طرح بیمه استفاده می‌شود
+        /// مثال: 70 = 70% پوشش بیمه
+        /// </summary>
+        [Range(0, 100, ErrorMessage = "پوشش بیمه باید بین 0 تا 100 درصد باشد.")]
+        public decimal? CoverageOverride { get; set; }
+
+        /// <summary>
+        /// آیا این خدمت تحت پوشش است؟
+        /// این فیلد برای تعریف خدماتی که تحت پوشش نیستند استفاده می‌شود
+        /// </summary>
+        public bool IsCovered { get; set; } = true;
+
+        #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
+        /// <summary>
+        /// نشان‌دهنده وضعیت حذف شدن خدمات طرح بیمه
+        /// در سیستم‌های پزشکی، حذف فیزیکی اطلاعات مجاز نیست و از سیستم حذف نرم استفاده می‌شود
+        /// </summary>
+        public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان حذف خدمات طرح بیمه
+        /// این اطلاعات برای ردیابی عملیات‌های حساس در سیستم‌های پزشکی حیاتی است
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که خدمات طرح بیمه را حذف کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر حذف کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر حذف کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable (مدیریت ردیابی)
+        /// <summary>
+        /// تاریخ و زمان ایجاد خدمات طرح بیمه
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که خدمات طرح بیمه را ایجاد کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ایجاد کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ایجاد کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش خدمات طرح بیمه
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که خدمات طرح بیمه را ویرایش کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ویرایش کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        #region روابط
+        /// <summary>
+        /// ارجاع به طرح بیمه
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات طرح بیمه ضروری است
+        /// </summary>
+        public virtual InsurancePlan InsurancePlan { get; set; }
+
+        /// <summary>
+        /// ارجاع به دسته‌بندی خدمت
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات دسته‌بندی خدمت ضروری است
+        /// </summary>
+        public virtual ServiceCategory ServiceCategory { get; set; }
+        #endregion
+    }
+
+    /// <summary>
+    /// مدل بیمه‌های بیمار - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت بیمه‌های متعدد برای هر بیمار (اصلی و تکمیلی)
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده، ویرایش کننده و حذف کننده برای ردیابی دقیق
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط
+    /// </summary>
+    public class PatientInsurance : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه بیمه بیمار
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int PatientInsuranceId { get; set; }
+
+        /// <summary>
+        /// شناسه بیمار
+        /// این فیلد برای ارتباط با بیمار استفاده می‌شود
+        /// </summary>
+        [Required(ErrorMessage = "بیمار الزامی است.")]
+        public int PatientId { get; set; }
+
+        /// <summary>
+        /// شناسه طرح بیمه
+        /// این فیلد برای ارتباط با طرح بیمه استفاده می‌شود
+        /// </summary>
+        [Required(ErrorMessage = "طرح بیمه الزامی است.")]
+        public int InsurancePlanId { get; set; }
+
+        /// <summary>
+        /// شماره بیمه‌نامه
+        /// شماره بیمه‌نامه بیمار در سیستم بیمه
+        /// </summary>
+        [Required(ErrorMessage = "شماره بیمه‌نامه الزامی است.")]
+        [MaxLength(100, ErrorMessage = "شماره بیمه‌نامه نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string PolicyNumber { get; set; }
+
+        /// <summary>
+        /// شماره کارت بیمه
+        /// شماره کارت بیمه بیمار
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "شماره کارت بیمه نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string CardNumber { get; set; }
+
+        /// <summary>
+        /// تاریخ شروع بیمه
+        /// تاریخ شروع اعتبار بیمه بیمار
+        /// </summary>
+        [Required(ErrorMessage = "تاریخ شروع بیمه الزامی است.")]
+        public DateTime StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان بیمه
+        /// تاریخ پایان اعتبار بیمه بیمار (اختیاری)
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// آیا این بیمه اصلی است؟
+        /// این فیلد برای تشخیص بیمه اصلی از تکمیلی استفاده می‌شود
+        /// </summary>
+        public bool IsPrimary { get; set; } = false;
+
+        /// <summary>
+        /// آیا بیمه فعال است؟
+        /// این فیلد برای غیرفعال کردن بیمه‌های منقضی شده استفاده می‌شود
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// اولویت بیمه
+        /// 1 = اصلی، 2 = تکمیلی اول، 3 = تکمیلی دوم و...
+        /// </summary>
+        [Required(ErrorMessage = "اولویت بیمه الزامی است.")]
+        [Range(1, 10, ErrorMessage = "اولویت بیمه باید بین 1 تا 10 باشد.")]
+        public int Priority { get; set; } = 1;
+
+        #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
+        /// <summary>
+        /// نشان‌دهنده وضعیت حذف شدن بیمه بیمار
+        /// در سیستم‌های پزشکی، حذف فیزیکی اطلاعات مجاز نیست و از سیستم حذف نرم استفاده می‌شود
+        /// </summary>
+        public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان حذف بیمه بیمار
+        /// این اطلاعات برای ردیابی عملیات‌های حساس در سیستم‌های پزشکی حیاتی است
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که بیمه بیمار را حذف کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر حذف کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر حذف کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable (مدیریت ردیابی)
+        /// <summary>
+        /// تاریخ و زمان ایجاد بیمه بیمار
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که بیمه بیمار را ایجاد کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ایجاد کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ایجاد کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش بیمه بیمار
+        /// این اطلاعات برای گزارش‌گیری و ردیابی در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که بیمه بیمار را ویرایش کرده است
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات کاربر ویرایش کننده ضروری است
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        #region روابط
+        /// <summary>
+        /// ارجاع به بیمار
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات بیمار ضروری است
+        /// </summary>
+        public virtual Patient Patient { get; set; }
+
+        /// <summary>
+        /// ارجاع به طرح بیمه
+        /// این ناوبری برای دسترسی مستقیم به اطلاعات طرح بیمه ضروری است
+        /// </summary>
+        public virtual InsurancePlan InsurancePlan { get; set; }
+        public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
+        #endregion
+    }
+
+    // InsuranceConfig حذف شد - مدل قدیمی Insurance حذف شده است
+
+    /// <summary>
+    /// پیکربندی مدل ارائه‌دهنده بیمه برای Entity Framework
     /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
     /// </summary>
-    public class InsuranceConfig : EntityTypeConfiguration<Insurance>
+    public class InsuranceProviderConfig : EntityTypeConfiguration<InsuranceProvider>
     {
-        public InsuranceConfig()
+        public InsuranceProviderConfig()
         {
-            ToTable("Insurances");
-            HasKey(i => i.InsuranceId);
+            ToTable("InsuranceProviders");
+            HasKey(ip => ip.InsuranceProviderId);
 
             // ویژگی‌های اصلی
-            Property(i => i.Name)
+            Property(ip => ip.Name)
                 .IsRequired()
                 .HasMaxLength(250)
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_Name")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_Name")));
 
-            Property(i => i.Description)
+            Property(ip => ip.Code)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_Code")));
+
+            Property(ip => ip.ContactInfo)
                 .IsOptional()
                 .HasMaxLength(1000);
 
-            // سهم‌های پیش‌فرض
-            Property(i => i.DefaultPatientShare)
-                .IsRequired()
-                .HasPrecision(5, 2);
-
-            Property(i => i.DefaultInsurerShare)
-                .IsRequired()
-                .HasPrecision(5, 2);
-
             // وضعیت فعال بودن
-            Property(i => i.IsActive)
+            Property(ip => ip.IsActive)
                 .IsRequired()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_IsActive")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_IsActive")));
 
             // پیاده‌سازی ISoftDelete
-            Property(i => i.IsDeleted)
+            Property(ip => ip.IsDeleted)
                 .IsRequired()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_IsDeleted")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_IsDeleted")));
 
-            Property(i => i.DeletedAt)
+            Property(ip => ip.DeletedAt)
                 .IsOptional()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_DeletedAt")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_DeletedAt")));
 
             // پیاده‌سازی ITrackable
-            Property(i => i.CreatedAt)
+            Property(ip => ip.CreatedAt)
                 .IsRequired()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_CreatedAt")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_CreatedAt")));
 
-            Property(i => i.CreatedByUserId)
+            Property(ip => ip.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(ip => ip.UpdatedAt)
                 .IsOptional()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_CreatedByUserId")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_UpdatedAt")));
 
-            Property(i => i.UpdatedAt)
+            Property(ip => ip.UpdatedByUserId)
                 .IsOptional()
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_UpdatedAt")));
+                .HasMaxLength(128);
 
-            Property(i => i.UpdatedByUserId)
+            Property(ip => ip.DeletedByUserId)
                 .IsOptional()
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_UpdatedByUserId")));
-
-            Property(i => i.DeletedByUserId)
-                .IsOptional()
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Insurance_DeletedByUserId")));
+                .HasMaxLength(128);
 
             // روابط
-            HasRequired(i => i.CreatedByUser)
+            HasOptional(ip => ip.CreatedByUser)
                 .WithMany()
-                .HasForeignKey(i => i.CreatedByUserId)
+                .HasForeignKey(ip => ip.CreatedByUserId)
                 .WillCascadeOnDelete(false);
 
-            HasOptional(i => i.DeletedByUser)
+            HasOptional(ip => ip.UpdatedByUser)
                 .WithMany()
-                .HasForeignKey(i => i.DeletedByUserId)
+                .HasForeignKey(ip => ip.UpdatedByUserId)
                 .WillCascadeOnDelete(false);
 
-            HasOptional(i => i.UpdatedByUser)
+            HasOptional(ip => ip.DeletedByUser)
                 .WithMany()
-                .HasForeignKey(i => i.UpdatedByUserId)
+                .HasForeignKey(ip => ip.DeletedByUserId)
                 .WillCascadeOnDelete(false);
 
-            HasMany(i => i.Tariffs)
-                .WithRequired(t => t.Insurance)
-                .HasForeignKey(t => t.InsuranceId)
+            // رابطه با مدل قدیمی Insurance حذف شد
+
+            HasMany(ip => ip.InsurancePlans)
+                .WithRequired(plan => plan.InsuranceProvider)
+                .HasForeignKey(plan => plan.InsuranceProviderId)
                 .WillCascadeOnDelete(false);
 
-            HasMany(i => i.Patients)
-                .WithRequired(p => p.Insurance)
-                .HasForeignKey(p => p.InsuranceId)
+            // ایندکس‌های ترکیبی برای بهبود عملکرد
+            HasIndex(ip => new { ip.IsActive, ip.IsDeleted })
+                .HasName("IX_InsuranceProvider_IsActive_IsDeleted");
+
+            HasIndex(ip => new { ip.Code, ip.IsActive })
+                .HasName("IX_InsuranceProvider_Code_IsActive");
+        }
+    }
+
+    /// <summary>
+    /// پیکربندی مدل طرح بیمه برای Entity Framework
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class InsurancePlanConfig : EntityTypeConfiguration<InsurancePlan>
+    {
+        public InsurancePlanConfig()
+        {
+            ToTable("InsurancePlans");
+            HasKey(plan => plan.InsurancePlanId);
+
+            // ویژگی‌های اصلی
+            Property(plan => plan.InsuranceProviderId)
+                .IsRequired();
+
+            Property(plan => plan.PlanCode)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_PlanCode")));
+
+            Property(plan => plan.Name)
+                .IsRequired()
+                .HasMaxLength(250)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_Name")));
+
+            Property(plan => plan.Description)
+                .IsOptional()
+                .HasMaxLength(500);
+
+            Property(plan => plan.CoveragePercent)
+                .IsRequired()
+                .HasPrecision(5, 2);
+
+            Property(plan => plan.Deductible)
+                .IsRequired()
+                .HasPrecision(18, 2);
+
+            Property(plan => plan.ValidFrom)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_ValidFrom")));
+
+            Property(plan => plan.ValidTo)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_ValidTo")));
+
+            // وضعیت فعال بودن
+            Property(plan => plan.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_IsActive")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(plan => plan.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_IsDeleted")));
+
+            Property(plan => plan.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(plan => plan.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_CreatedAt")));
+
+            Property(plan => plan.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(plan => plan.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_UpdatedAt")));
+
+            Property(plan => plan.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(plan => plan.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // روابط
+            HasRequired(plan => plan.InsuranceProvider)
+                .WithMany(ip => ip.InsurancePlans)
+                .HasForeignKey(plan => plan.InsuranceProviderId)
                 .WillCascadeOnDelete(false);
 
-            HasMany(i => i.Receptions)
-                .WithRequired(r => r.Insurance)
-                .HasForeignKey(r => r.InsuranceId)
+            HasOptional(plan => plan.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(plan => plan.CreatedByUserId)
                 .WillCascadeOnDelete(false);
 
-            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
-            HasIndex(i => new { i.IsActive, i.IsDeleted })
-                .HasName("IX_Insurance_IsActive_IsDeleted");
+            HasOptional(plan => plan.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(plan => plan.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(plan => plan.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(plan => plan.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasMany(plan => plan.PlanServices)
+                .WithRequired(ps => ps.InsurancePlan)
+                .HasForeignKey(ps => ps.InsurancePlanId)
+                .WillCascadeOnDelete(false);
+
+            HasMany(plan => plan.PatientInsurances)
+                .WithRequired(pi => pi.InsurancePlan)
+                .HasForeignKey(pi => pi.InsurancePlanId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد
+            HasIndex(plan => new { plan.InsuranceProviderId, plan.IsActive, plan.IsDeleted })
+                .HasName("IX_InsurancePlan_Provider_IsActive_IsDeleted");
+
+            HasIndex(plan => new { plan.ValidFrom, plan.ValidTo, plan.IsActive })
+                .HasName("IX_InsurancePlan_Validity_IsActive");
+        }
+    }
+
+    /// <summary>
+    /// پیکربندی مدل خدمات طرح بیمه برای Entity Framework
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class PlanServiceConfig : EntityTypeConfiguration<PlanService>
+    {
+        public PlanServiceConfig()
+        {
+            ToTable("PlanServices");
+            HasKey(ps => ps.PlanServiceId);
+
+            // ویژگی‌های اصلی
+            Property(ps => ps.InsurancePlanId)
+                .IsRequired();
+
+            Property(ps => ps.ServiceCategoryId)
+                .IsRequired();
+
+            Property(ps => ps.Copay)
+                .IsOptional()
+                .HasPrecision(5, 2);
+
+            Property(ps => ps.CoverageOverride)
+                .IsOptional()
+                .HasPrecision(5, 2);
+
+            Property(ps => ps.IsCovered)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PlanService_IsCovered")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(ps => ps.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PlanService_IsDeleted")));
+
+            Property(ps => ps.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PlanService_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(ps => ps.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PlanService_CreatedAt")));
+
+            Property(ps => ps.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(ps => ps.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PlanService_UpdatedAt")));
+
+            Property(ps => ps.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(ps => ps.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // روابط
+            HasRequired(ps => ps.InsurancePlan)
+                .WithMany(plan => plan.PlanServices)
+                .HasForeignKey(ps => ps.InsurancePlanId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(ps => ps.ServiceCategory)
+                .WithMany()
+                .HasForeignKey(ps => ps.ServiceCategoryId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ps => ps.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ps => ps.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ps => ps.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(ps => ps.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد
+            HasIndex(ps => new { ps.InsurancePlanId, ps.ServiceCategoryId, ps.IsDeleted })
+                .IsUnique()
+                .HasName("IX_PlanService_Plan_Category_IsDeleted");
+
+            HasIndex(ps => new { ps.InsurancePlanId, ps.IsCovered, ps.IsDeleted })
+                .HasName("IX_PlanService_Plan_IsCovered_IsDeleted");
+        }
+    }
+
+    /// <summary>
+    /// پیکربندی مدل بیمه‌های بیمار برای Entity Framework
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class PatientInsuranceConfig : EntityTypeConfiguration<PatientInsurance>
+    {
+        public PatientInsuranceConfig()
+        {
+            ToTable("PatientInsurances");
+            HasKey(pi => pi.PatientInsuranceId);
+
+            // ویژگی‌های اصلی
+            Property(pi => pi.PatientId)
+                .IsRequired();
+
+            Property(pi => pi.InsurancePlanId)
+                .IsRequired();
+
+            Property(pi => pi.PolicyNumber)
+                .IsRequired()
+                .HasMaxLength(100)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_PolicyNumber")));
+
+            Property(pi => pi.CardNumber)
+                .IsOptional()
+                .HasMaxLength(50)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_CardNumber")));
+
+            Property(pi => pi.StartDate)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_StartDate")));
+
+            Property(pi => pi.EndDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_EndDate")));
+
+            Property(pi => pi.IsPrimary)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_IsPrimary")));
+
+            Property(pi => pi.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_IsActive")));
+
+            Property(pi => pi.Priority)
+                .IsRequired();
+
+            // پیاده‌سازی ISoftDelete
+            Property(pi => pi.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_IsDeleted")));
+
+            Property(pi => pi.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(pi => pi.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_CreatedAt")));
+
+            Property(pi => pi.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(pi => pi.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_UpdatedAt")));
+
+            Property(pi => pi.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            Property(pi => pi.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128);
+
+            // روابط
+            HasRequired(pi => pi.Patient)
+                .WithMany(p => p.PatientInsurances)
+                .HasForeignKey(pi => pi.PatientId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(pi => pi.InsurancePlan)
+                .WithMany(plan => plan.PatientInsurances)
+                .HasForeignKey(pi => pi.InsurancePlanId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(pi => pi.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(pi => pi.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(pi => pi.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(pi => pi.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(pi => pi.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(pi => pi.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد
+            HasIndex(pi => new { pi.PatientId, pi.IsActive, pi.IsDeleted })
+                .HasName("IX_PatientInsurance_Patient_IsActive_IsDeleted");
+
+            HasIndex(pi => new { pi.PatientId, pi.Priority, pi.IsActive })
+                .HasName("IX_PatientInsurance_Patient_Priority_IsActive");
+
+            HasIndex(pi => new { pi.InsurancePlanId, pi.IsActive, pi.IsDeleted })
+                .HasName("IX_PatientInsurance_Plan_IsActive_IsDeleted");
+
+            HasIndex(pi => new { pi.StartDate, pi.EndDate, pi.IsActive })
+                .HasName("IX_PatientInsurance_Validity_IsActive");
         }
     }
 
@@ -1992,6 +2783,18 @@ namespace ClinicApp.Models.Entities
         public string LastName { get; set; }
 
         /// <summary>
+        /// نام کامل بیمار (محاسبه شده)
+        /// </summary>
+        [NotMapped]
+        public string FullName => $"{FirstName} {LastName}".Trim();
+
+        /// <summary>
+        /// کد بیمار (منحصر به فرد)
+        /// </summary>
+        [MaxLength(20, ErrorMessage = "کد بیمار نمی‌تواند بیش از 20 کاراکتر باشد.")]
+        public string PatientCode { get; set; }
+
+        /// <summary>
         /// تاریخ تولد بیمار
         /// </summary>
         public DateTime? BirthDate { get; set; }
@@ -2014,14 +2817,7 @@ namespace ClinicApp.Models.Entities
         [Required(ErrorMessage = "جنسیت الزامی است.")]
         public Gender Gender { get; set; }
 
-        /// <summary>
-        /// شناسه بیمه
-        /// توجه: در سیستم کلینیک شفا، هر بیمار حتماً باید یک بیمه داشته باشد.
-        /// در صورتی که بیمار بیمه‌ای را انتخاب نکند، به طور خودکار بیمه "آزاد" به عنوان بیمه پیش‌فرض در نظر گرفته می‌شود.
-        /// بیمه "آزاد" به این معنی است که بیمار تمام هزینه‌ها را خودش پرداخت می‌کند (سهم بیمه 0% و سهم بیمار 100%).
-        /// </summary>
-        [Required(ErrorMessage = "بیمه الزامی است.")]
-        public int InsuranceId { get; set; }
+        // InsuranceId حذف شد - از PatientInsurance استفاده کنید
 
         /// <summary>
         /// تاریخ آخرین ورود بیمار به سیستم
@@ -2104,11 +2900,7 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public virtual ApplicationUser ApplicationUser { get; set; }
 
-        /// <summary>
-        /// ارجاع به بیمه مرتبط با این بیمار
-        /// این ارتباط برای نمایش اطلاعات بیمه بیمار در سیستم‌های پزشکی ضروری است
-        /// </summary>
-        public virtual Insurance Insurance { get; set; }
+        // رابطه با مدل قدیمی Insurance حذف شد
 
         /// <summary>
         /// لیست پذیرش‌های مرتبط با این بیمار
@@ -2122,7 +2914,12 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public virtual ICollection<Appointment> Appointments { get; set; } = new HashSet<Appointment>();
 
-
+        /// <summary>
+        /// لیست بیمه‌های مرتبط با این بیمار
+        /// این لیست برای نمایش تمام بیمه‌های ثبت شده برای این بیمار استفاده می‌شود
+        /// </summary>
+        public virtual ICollection<PatientInsurance> PatientInsurances { get; set; } = new HashSet<PatientInsurance>();
+        public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
 
         #endregion
     }
@@ -2209,10 +3006,7 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Patient_DeletedByUserId")));
 
-            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
-            Property(p => p.InsuranceId)
-                .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Patient_InsuranceId")));
+            // ایندکس InsuranceId حذف شد
 
             Property(p => p.LastLoginDate)
                 .IsOptional()
@@ -2225,10 +3019,7 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(p => p.ApplicationUserId)
                 .WillCascadeOnDelete(false);
 
-            HasRequired(p => p.Insurance)
-                .WithMany(i => i.Patients)
-                .HasForeignKey(p => p.InsuranceId)
-                .WillCascadeOnDelete(false);
+            // رابطه با مدل قدیمی Insurance حذف شد
 
             HasMany(p => p.Receptions)
                 .WithRequired(r => r.Patient)
@@ -2240,12 +3031,16 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(a => a.PatientId)
                 .WillCascadeOnDelete(false);
 
+            HasMany(p => p.PatientInsurances)
+                .WithRequired(pi => pi.Patient)
+                .HasForeignKey(pi => pi.PatientId)
+                .WillCascadeOnDelete(false);
+
             // ایندکس‌های ترکیبی برای گزارش‌گیری و جستجوهای رایج در سیستم‌های پزشکی
             HasIndex(p => new { p.LastName, p.FirstName })
                 .HasName("IX_Patient_LastName_FirstName");
 
-            HasIndex(p => new { p.InsuranceId, p.LastLoginDate })
-                .HasName("IX_Patient_InsuranceId_LastLoginDate");
+            // ایندکس ترکیبی InsuranceId حذف شد
         }
     }
 
@@ -2387,12 +3182,7 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public int InsuranceTariffId { get; set; }
 
-        /// <summary>
-        /// شناسه بیمه
-        /// این فیلد ارتباط با جدول بیمه‌ها را برقرار می‌کند
-        /// </summary>
-        [Required(ErrorMessage = "بیمه الزامی است.")]
-        public int InsuranceId { get; set; }
+        // InsuranceId حذف شد - از PlanService استفاده کنید
 
         /// <summary>
         /// شناسه خدمت
@@ -2487,11 +3277,19 @@ namespace ClinicApp.Models.Entities
         #endregion
 
         #region روابط
+        // رابطه با مدل قدیمی Insurance حذف شد
+
         /// <summary>
-        /// ارجاع به بیمه مرتبط با این تعرفه
-        /// این ارتباط برای نمایش اطلاعات بیمه در سیستم‌های پزشکی ضروری است
+        /// شناسه طرح بیمه (اختیاری - برای سازگاری با سیستم جدید)
+        /// این فیلد برای اتصال تعرفه به طرح بیمه جدید استفاده می‌شود
         /// </summary>
-        public virtual Insurance Insurance { get; set; }
+        public int? InsurancePlanId { get; set; }
+
+        /// <summary>
+        /// ارجاع به طرح بیمه
+        /// این ارتباط برای نمایش اطلاعات طرح بیمه در سیستم‌های پزشکی ضروری است
+        /// </summary>
+        public virtual InsurancePlan InsurancePlan { get; set; }
 
         /// <summary>
         /// ارجاع به خدمت مرتبط با این تعرفه
@@ -2568,19 +3366,25 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_DeletedByUserId")));
 
-            // ایندکس‌های ترکیبی برای بهبود عملکرد در سیستم‌های پزشکی
-            Property(t => t.InsuranceId)
+            // ایندکس InsuranceId حذف شد
+
+            // فیلدهای جدید برای سیستم بیمه جدید
+            Property(t => t.InsurancePlanId)
+                .IsOptional()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_InsuranceId")));
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_InsurancePlanId")));
 
             Property(t => t.ServiceId)
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_ServiceId")));
 
             // روابط
-            HasRequired(t => t.Insurance)
-                .WithMany(i => i.Tariffs)
-                .HasForeignKey(t => t.InsuranceId)
+            // رابطه با مدل قدیمی Insurance حذف شد
+
+            // رابطه با سیستم بیمه جدید
+            HasOptional(t => t.InsurancePlan)
+                .WithMany()
+                .HasForeignKey(t => t.InsurancePlanId)
                 .WillCascadeOnDelete(false);
 
             HasRequired(t => t.Service)
@@ -2603,10 +3407,387 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(t => t.UpdatedByUserId)
                 .WillCascadeOnDelete(false);
 
-            // ایندکس یونیک برای جلوگیری از تکرار تعرفه برای یک بیمه و خدمت خاص
-            HasIndex(t => new { t.InsuranceId, t.ServiceId })
-                .IsUnique()
-                .HasName("IX_InsuranceTariff_Insurance_Service_Unique");
+            // ایندکس یونیک InsuranceId حذف شد
+        }
+    }
+
+    #endregion
+
+    #region InsuranceCalculation
+
+    /// <summary>
+    /// مدل محاسبات بیمه - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. ذخیره تاریخچه محاسبات بیمه برای خدمات مختلف
+    /// 2. پشتیبانی از انواع مختلف محاسبات (Service, Reception, Appointment)
+    /// 3. مدیریت سهم بیمار و بیمه
+    /// 4. پشتیبانی از Copay و Coverage Override
+    /// 5. ردیابی کامل تغییرات و Audit Trail
+    /// 6. بهینه‌سازی عملکرد با Indexing
+    /// 7. رعایت استانداردهای پزشکی ایران
+    /// 
+    /// نکته حیاتی: این مدل برای ذخیره تاریخچه محاسبات بیمه طراحی شده است
+    /// </summary>
+    public class InsuranceCalculation : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه محاسبه بیمه
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int InsuranceCalculationId { get; set; }
+
+        /// <summary>
+        /// شناسه بیمار
+        /// </summary>
+        public int PatientId { get; set; }
+
+        /// <summary>
+        /// شناسه خدمت
+        /// </summary>
+        public int ServiceId { get; set; }
+
+        /// <summary>
+        /// شناسه طرح بیمه
+        /// </summary>
+        public int InsurancePlanId { get; set; }
+
+        /// <summary>
+        /// شناسه بیمه بیمار
+        /// </summary>
+        public int PatientInsuranceId { get; set; }
+
+        /// <summary>
+        /// مبلغ کل خدمت
+        /// </summary>
+        public decimal ServiceAmount { get; set; }
+
+        /// <summary>
+        /// سهم بیمه
+        /// </summary>
+        public decimal InsuranceShare { get; set; }
+
+        /// <summary>
+        /// سهم بیمار
+        /// </summary>
+        public decimal PatientShare { get; set; }
+
+        /// <summary>
+        /// Copay (سهم بیمار ثابت)
+        /// </summary>
+        public decimal? Copay { get; set; }
+
+        /// <summary>
+        /// Coverage Override (پوشش خاص)
+        /// </summary>
+        public decimal? CoverageOverride { get; set; }
+
+        /// <summary>
+        /// درصد پوشش بیمه
+        /// </summary>
+        public decimal CoveragePercent { get; set; }
+
+        /// <summary>
+        /// فرانشیز
+        /// </summary>
+        public decimal? Deductible { get; set; }
+
+        /// <summary>
+        /// تاریخ محاسبه
+        /// </summary>
+        public DateTime CalculationDate { get; set; }
+
+        /// <summary>
+        /// نوع محاسبه (Service, Reception, Appointment)
+        /// </summary>
+        public string CalculationType { get; set; }
+
+        /// <summary>
+        /// وضعیت اعتبار محاسبه
+        /// </summary>
+        public bool IsValid { get; set; }
+
+        /// <summary>
+        /// توضیحات
+        /// </summary>
+        public string Notes { get; set; }
+
+        /// <summary>
+        /// شناسه پذیرش (در صورت وجود)
+        /// </summary>
+        public int? ReceptionId { get; set; }
+
+        /// <summary>
+        /// شناسه قرار ملاقات (در صورت وجود)
+        /// </summary>
+        public int? AppointmentId { get; set; }
+
+        #region Navigation Properties
+
+        /// <summary>
+        /// بیمار
+        /// </summary>
+        public virtual Patient Patient { get; set; }
+
+        /// <summary>
+        /// خدمت
+        /// </summary>
+        public virtual Service Service { get; set; }
+
+        /// <summary>
+        /// طرح بیمه
+        /// </summary>
+        public virtual InsurancePlan InsurancePlan { get; set; }
+
+        /// <summary>
+        /// بیمه بیمار
+        /// </summary>
+        public virtual PatientInsurance PatientInsurance { get; set; }
+
+        /// <summary>
+        /// پذیرش (در صورت وجود)
+        /// </summary>
+        public virtual Reception Reception { get; set; }
+
+        /// <summary>
+        /// قرار ملاقات (در صورت وجود)
+        /// </summary>
+        public virtual Appointment Appointment { get; set; }
+
+        /// <summary>
+        /// کاربر ایجادکننده
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// کاربر به‌روزرسانی‌کننده
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+
+        /// <summary>
+        /// کاربر حذف‌کننده
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+
+        #endregion
+
+        #region ISoftDelete Implementation
+
+        /// <summary>
+        /// وضعیت حذف نرم
+        /// </summary>
+        public bool IsDeleted { get; set; }
+
+        /// <summary>
+        /// تاریخ حذف
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر حذف‌کننده
+        /// </summary>
+        public string DeletedByUserId { get; set; }
+
+        #endregion
+
+        #region ITrackable Implementation
+
+        /// <summary>
+        /// تاریخ ایجاد
+        /// </summary>
+        public DateTime CreatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر ایجادکننده
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// تاریخ به‌روزرسانی
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربر به‌روزرسانی‌کننده
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی Entity Framework برای مدل InsuranceCalculation
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class InsuranceCalculationConfig : EntityTypeConfiguration<InsuranceCalculation>
+    {
+        public InsuranceCalculationConfig()
+        {
+            ToTable("InsuranceCalculations");
+            HasKey(ic => ic.InsuranceCalculationId);
+
+            // ویژگی‌های اصلی
+            Property(ic => ic.ServiceAmount)
+                .IsRequired()
+                .HasPrecision(18, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_ServiceAmount")));
+
+            Property(ic => ic.InsuranceShare)
+                .IsRequired()
+                .HasPrecision(18, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_InsuranceShare")));
+
+            Property(ic => ic.PatientShare)
+                .IsRequired()
+                .HasPrecision(18, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_PatientShare")));
+
+            Property(ic => ic.Copay)
+                .IsOptional()
+                .HasPrecision(18, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_Copay")));
+
+            Property(ic => ic.CoverageOverride)
+                .IsOptional()
+                .HasPrecision(18, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CoverageOverride")));
+
+            Property(ic => ic.CoveragePercent)
+                .IsRequired()
+                .HasPrecision(5, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CoveragePercent")));
+
+            Property(ic => ic.Deductible)
+                .IsOptional()
+                .HasPrecision(18, 2)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_Deductible")));
+
+            Property(ic => ic.CalculationDate)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CalculationDate")));
+
+            Property(ic => ic.CalculationType)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CalculationType")));
+
+            Property(ic => ic.IsValid)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_IsValid")));
+
+            Property(ic => ic.Notes)
+                .IsOptional()
+                .HasMaxLength(1000);
+
+            // پیاده‌سازی ISoftDelete
+            Property(ic => ic.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_IsDeleted")));
+
+            Property(ic => ic.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(ic => ic.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CreatedAt")));
+
+            Property(ic => ic.CreatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CreatedByUserId")));
+
+            Property(ic => ic.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_UpdatedAt")));
+
+            Property(ic => ic.UpdatedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_UpdatedByUserId")));
+
+            Property(ic => ic.DeletedByUserId)
+                .IsOptional()
+                .HasMaxLength(128)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_DeletedByUserId")));
+
+            // ایندکس‌های ترکیبی
+            HasIndex(ic => new { ic.PatientId, ic.CalculationDate })
+                .HasName("IX_InsuranceCalculation_PatientId_CalculationDate");
+
+            HasIndex(ic => new { ic.InsurancePlanId, ic.CalculationDate })
+                .HasName("IX_InsuranceCalculation_InsurancePlanId_CalculationDate");
+
+            HasIndex(ic => new { ic.ServiceId, ic.CalculationDate })
+                .HasName("IX_InsuranceCalculation_ServiceId_CalculationDate");
+
+            HasIndex(ic => new { ic.CalculationType, ic.IsValid })
+                .HasName("IX_InsuranceCalculation_CalculationType_IsValid");
+
+            // روابط
+            HasRequired(ic => ic.Patient)
+                .WithMany(p => p.InsuranceCalculations)
+                .HasForeignKey(ic => ic.PatientId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(ic => ic.Service)
+                .WithMany(s => s.InsuranceCalculations)
+                .HasForeignKey(ic => ic.ServiceId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(ic => ic.InsurancePlan)
+                .WithMany(ip => ip.InsuranceCalculations)
+                .HasForeignKey(ic => ic.InsurancePlanId)
+                .WillCascadeOnDelete(false);
+
+            HasRequired(ic => ic.PatientInsurance)
+                .WithMany(pi => pi.InsuranceCalculations)
+                .HasForeignKey(ic => ic.PatientInsuranceId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ic => ic.Reception)
+                .WithMany(r => r.InsuranceCalculations)
+                .HasForeignKey(ic => ic.ReceptionId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ic => ic.Appointment)
+                .WithMany(a => a.InsuranceCalculations)
+                .HasForeignKey(ic => ic.AppointmentId)
+                .WillCascadeOnDelete(false);
+
+            // روابط با ApplicationUser
+            HasOptional(ic => ic.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(ic => ic.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ic => ic.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(ic => ic.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(ic => ic.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(ic => ic.DeletedByUserId)
+                .WillCascadeOnDelete(false);
         }
     }
 
@@ -3384,6 +4565,18 @@ namespace ClinicApp.Models.Entities
         [MaxLength(500, ErrorMessage = "توضیحات نمی‌تواند بیش از 500 کاراکتر باشد.")]
         public string Notes { get; set; }
 
+        /// <summary>
+        /// شناسه بیمه فعال بیمار در زمان رزرو (اختیاری)
+        /// این فیلد برای ردیابی بیمه‌ای که در زمان رزرو فعال بوده است
+        /// </summary>
+        public int? ActivePatientInsuranceId { get; set; }
+
+        /// <summary>
+        /// ارجاع به بیمه فعال بیمار در زمان رزرو
+        /// این ارتباط برای نمایش اطلاعات بیمه‌ای که در زمان رزرو فعال بوده است
+        /// </summary>
+        public virtual PatientInsurance ActivePatientInsurance { get; set; }
+
         #region پیاده‌سازی ISoftDelete
         public bool IsDeleted { get; set; } = false;
         public DateTime? DeletedAt { get; set; }
@@ -3819,6 +5012,12 @@ namespace ClinicApp.Models.Entities
             Property(aps => aps.Notes)
                 .HasMaxLength(500);
 
+            // فیلدهای جدید برای سیستم بیمه جدید
+            Property(aps => aps.ActivePatientInsuranceId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_AppointmentSlot_ActivePatientInsuranceId")));
+
             // پیاده‌سازی ISoftDelete
             Property(aps => aps.IsDeleted)
                 .IsRequired();
@@ -3859,6 +5058,12 @@ namespace ClinicApp.Models.Entities
             HasOptional(aps => aps.Appointment)
                 .WithMany()
                 .HasForeignKey(aps => aps.AppointmentId)
+                .WillCascadeOnDelete(false);
+
+            // رابطه با سیستم بیمه جدید
+            HasOptional(aps => aps.ActivePatientInsurance)
+                .WithMany()
+                .HasForeignKey(aps => aps.ActivePatientInsuranceId)
                 .WillCascadeOnDelete(false);
 
             HasOptional(aps => aps.CreatedByUser)
@@ -5947,11 +7152,7 @@ namespace ClinicApp.Models.Entities
         [Required(ErrorMessage = "پزشک الزامی است.")]
         public int DoctorId { get; set; }
 
-        /// <summary>
-        /// شناسه بیمه
-        /// </summary>
-        [Required(ErrorMessage = "بیمه الزامی است.")]
-        public int InsuranceId { get; set; }
+        // InsuranceId حذف شد - از PatientInsurance استفاده کنید
 
         /// <summary>
         /// تاریخ پذیرش
@@ -6056,11 +7257,19 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public virtual Doctor Doctor { get; set; }
 
+        // رابطه با مدل قدیمی Insurance حذف شد
+
         /// <summary>
-        /// ارجاع به بیمه
-        /// این ارتباط برای نمایش اطلاعات بیمه در سیستم‌های پزشکی ضروری است
+        /// شناسه بیمه فعال بیمار در زمان پذیرش
+        /// این فیلد برای ردیابی بیمه‌ای که در زمان پذیرش فعال بوده است
         /// </summary>
-        public virtual Insurance Insurance { get; set; }
+        public int? ActivePatientInsuranceId { get; set; }
+
+        /// <summary>
+        /// ارجاع به بیمه فعال بیمار در زمان پذیرش
+        /// این ارتباط برای نمایش اطلاعات بیمه‌ای که در زمان پذیرش فعال بوده است
+        /// </summary>
+        public virtual PatientInsurance ActivePatientInsurance { get; set; }
 
         /// <summary>
         /// لیست آیتم‌های پذیرش
@@ -6079,6 +7288,7 @@ namespace ClinicApp.Models.Entities
         /// این لیست برای نمایش تمام چاپ‌های رسید مرتبط با این پذیرش استفاده می‌شود
         /// </summary>
         public virtual ICollection<ReceiptPrint> ReceiptPrints { get; set; } = new HashSet<ReceiptPrint>();
+        public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
         #endregion
 
         // محاسبه هوشمند پرداخت
@@ -6166,9 +7376,13 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Reception_DoctorId")));
 
-            Property(r => r.InsuranceId)
+            // ایندکس InsuranceId حذف شد
+
+            // فیلدهای جدید برای سیستم بیمه جدید
+            Property(r => r.ActivePatientInsuranceId)
+                .IsOptional()
                 .HasColumnAnnotation("Index",
-                    new IndexAnnotation(new IndexAttribute("IX_Reception_InsuranceId")));
+                    new IndexAnnotation(new IndexAttribute("IX_Reception_ActivePatientInsuranceId")));
 
             // روابط
             HasRequired(r => r.Patient)
@@ -6181,9 +7395,12 @@ namespace ClinicApp.Models.Entities
                 .HasForeignKey(r => r.DoctorId)
                 .WillCascadeOnDelete(false);
 
-            HasRequired(r => r.Insurance)
-                .WithMany(i => i.Receptions)
-                .HasForeignKey(r => r.InsuranceId)
+            // رابطه با مدل قدیمی Insurance حذف شد
+
+            // رابطه با سیستم بیمه جدید
+            HasOptional(r => r.ActivePatientInsurance)
+                .WithMany()
+                .HasForeignKey(r => r.ActivePatientInsuranceId)
                 .WillCascadeOnDelete(false);
 
             HasMany(r => r.ReceptionItems)
@@ -6208,8 +7425,7 @@ namespace ClinicApp.Models.Entities
             HasIndex(r => new { r.DoctorId, r.ReceptionDate, r.Status })
                 .HasName("IX_Reception_DoctorId_Date_Status");
 
-            HasIndex(r => new { r.InsuranceId, r.ReceptionDate, r.Status })
-                .HasName("IX_Reception_InsuranceId_Date_Status");
+            // ایندکس ترکیبی InsuranceId حذف شد
         }
     }
 
@@ -6610,6 +7826,7 @@ namespace ClinicApp.Models.Entities
         /// ارجاع به تراکنش پرداخت
         /// </summary>
         public virtual PaymentTransaction PaymentTransaction { get; set; }
+        public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
 
         /// <summary>
         /// ارجاع به دسته‌بندی خدمت

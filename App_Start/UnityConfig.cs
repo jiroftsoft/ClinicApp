@@ -9,6 +9,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Repositories;
 using ClinicApp.Services;
 using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Validators;
 using FluentValidation;
 using Microsoft.AspNet.Identity;
@@ -25,6 +26,11 @@ using ClinicApp.Repositories.ClinicAdmin;
 using ClinicApp.Services.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.ViewModels.SpecializationManagementVM;
+using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Repositories.Insurance;
+using ClinicApp.Services.Insurance;
+using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
+using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -294,7 +300,6 @@ namespace ClinicApp
                 container.RegisterType<IDepartmentManagementService, DepartmentManagementService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceCategoryService, ServiceCategoryService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
-                container.RegisterType<IInsuranceService, InsuranceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
                 container.RegisterType<ApplicationUserManager>();
                 // ثبت سرویس‌های ارتباطی پزشکی
@@ -373,6 +378,30 @@ namespace ClinicApp
 
                 // Register Specialization Validators
                 container.RegisterType<IValidator<SpecializationCreateEditViewModel>, SpecializationCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+
+                // Register Insurance Module Repositories
+                container.RegisterType<IInsuranceProviderRepository, InsuranceProviderRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsurancePlanRepository, InsurancePlanRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientInsuranceRepository, PatientInsuranceRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IPlanServiceRepository, PlanServiceRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceCalculationRepository, InsuranceCalculationRepository>(new PerRequestLifetimeManager());
+
+                // Register Insurance Module Services
+                container.RegisterType<IInsuranceProviderService, InsuranceProviderService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsurancePlanService, InsurancePlanService>(new PerRequestLifetimeManager());
+                container.RegisterType<IPatientInsuranceService, PatientInsuranceService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceCalculationService, InsuranceCalculationService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceValidationService, InsuranceValidationService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsurancePlanDependencyService, InsurancePlanDependencyService>(new PerRequestLifetimeManager());
+
+                // Register Message Notification Service
+                container.RegisterType<IMessageNotificationService, MessageNotificationService>(new PerRequestLifetimeManager());
+
+                // Register Insurance Validators
+                container.RegisterType<IValidator<InsurancePlanCreateEditViewModel>, InsurancePlanCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<InsuranceCalculationViewModel>, InsuranceCalculationViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<PatientInsuranceCreateEditViewModel>, PatientInsuranceCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+
 
                 // طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم
                 // از Factory Method Pattern استفاده می‌کنیم

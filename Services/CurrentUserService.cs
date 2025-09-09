@@ -425,7 +425,7 @@ namespace ClinicApp.Services
 
                 return await _context.Patients
                     .Include(p => p.ApplicationUser)
-                    .Include(p => p.Insurance)
+                    //.Include(p => p.Insurance)
                     .FirstOrDefaultAsync(p => p.ApplicationUserId == UserId && !p.IsDeleted);
             }
             catch (Exception ex)

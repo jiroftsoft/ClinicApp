@@ -54,8 +54,7 @@ namespace ClinicApp.ViewModels
         [DataType(DataType.MultilineText)]
         public string Address { get; set; }
 
-        [Display(Name = "بیمه")]
-        public string InsuranceName { get; set; }
+        // InsuranceName حذف شد - از PatientInsurance استفاده کنید
 
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
@@ -153,15 +152,7 @@ namespace ClinicApp.ViewModels
         [MaxLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از {1} کاراکتر باشد.")]
         public string Address { get; set; }
 
-        [Display(Name = "بیمه")]
-        [Required(ErrorMessage = "انتخاب {0} الزامی است.")]
-        public int InsuranceId { get; set; }
-
-        [Display(Name = "نام بیمه")]
-        public string InsuranceName { get; set; }
-
-        [NotMapped]
-        public IEnumerable<SelectListItem> Insurances { get; set; }
+        // InsuranceId و InsuranceName حذف شد - از PatientInsurance استفاده کنید
 
         [Display(Name = "نام پزشک معالج")]
         [MaxLength(200, ErrorMessage = "نام پزشک نمی‌تواند بیش از {1} کاراکتر باشد.")]
@@ -209,8 +200,7 @@ namespace ClinicApp.ViewModels
         [Display(Name = "شماره موبایل")]
         public string PhoneNumber { get; set; }
 
-        [Display(Name = "بیمه")]
-        public string InsuranceName { get; set; }
+        // InsuranceName حذف شد - از PatientInsurance استفاده کنید
 
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
@@ -284,8 +274,7 @@ namespace ClinicApp.ViewModels
         [Display(Name = "ایمیل")]
         public string Email { get; set; }
 
-        [Display(Name = "بیمه")]
-        public int InsuranceId { get; set; }
+        // InsuranceId حذف شد - از PatientInsurance استفاده کنید
 
         [Display(Name = "نام بیمه")]
         public string InsuranceName { get; set; }

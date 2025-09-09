@@ -1,0 +1,174 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceProvider.InsuranceProviderDetailsViewModel
+@{
+    ViewBag.Title = "حذف ارائه‌دهنده بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .delete-confirmation-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-left: 4px solid #dc3545;
+        }
+        .warning-icon {
+            color: #dc3545;
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+        .provider-info {
+            background-color: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            border: 1px solid #dee2e6;
+            margin: 1rem 0;
+        }
+        .provider-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            color: #495057;
+        }
+        .provider-code {
+            font-family: 'Courier New', monospace;
+            background-color: #e9ecef;
+            padding: 0.5rem 1rem;
+            border-radius: 0.3rem;
+            font-size: 1rem;
+            border: 1px solid #ced4da;
+        }
+        .btn-delete {
+            background-color: #dc3545;
+            border-color: #dc3545;
+            font-weight: 600;
+        }
+        .btn-delete:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+        .btn-cancel {
+            background-color: #6c757d;
+            border-color: #6c757d;
+            font-weight: 600;
+        }
+        .btn-cancel:hover {
+            background-color: #5a6268;
+            border-color: #545b62;
+        }
+        .impact-warning {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .impact-warning .warning-text {
+            color: #856404;
+            font-weight: 500;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>حذف ارائه‌دهنده بیمه</h2>
+                <a href="@Url.Action("Index", "InsuranceProvider")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right"></i> بازگشت به لیست
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-md-8">
+                    <div class="delete-confirmation-card">
+                        <div class="text-center">
+                            <i class="fas fa-exclamation-triangle warning-icon"></i>
+                            <h3 class="text-danger mb-3">آیا از حذف این ارائه‌دهنده بیمه اطمینان دارید؟</h3>
+                        </div>
+
+                        <div class="provider-info">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">نام ارائه‌دهنده بیمه:</label>
+                                        <div class="provider-name">@Model.Name</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">کد ارائه‌دهنده بیمه:</label>
+                                        <div class="provider-code">@Model.Code</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">اطلاعات تماس:</label>
+                                <div>
+                                    @if (!string.IsNullOrEmpty(Model.ContactInfo))
+                                    {
+                                        @Model.ContactInfo
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">اطلاعات تماس ثبت نشده است</span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">وضعیت:</label>
+                                <div>
+                                    @if (Model.IsActive)
+                                    {
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> فعال
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-danger">
+                                            <i class="fas fa-times-circle"></i> غیرفعال
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">تعداد طرح‌های بیمه:</label>
+                                <div>
+                                    <span class="badge badge-info">@Model.InsurancePlanCount طرح بیمه</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (Model.InsurancePlanCount > 0)
+                        {
+                            <div class="impact-warning">
+                                <div class="warning-text">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>هشدار:</strong> این ارائه‌دهنده بیمه دارای @Model.InsurancePlanCount طرح بیمه است. 
+                                    حذف آن ممکن است بر عملکرد سیستم تأثیر بگذارد.
+                                </div>
+                            </div>
+                        }
+
+                        <div class="text-center mt-4">
+                            <form method="post" action="@Url.Action("Delete", "InsuranceProvider", new { id = Model.InsuranceProviderId })" class="d-inline">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-delete btn-lg me-3" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این ارائه‌دهنده بیمه را حذف کنید؟ این عمل قابل بازگشت نیست.')">
+                                    <i class="fas fa-trash-alt"></i> حذف ارائه‌دهنده بیمه
+                                </button>
+                            </form>
+                            <a href="@Url.Action("Index", "InsuranceProvider")" class="btn btn-cancel btn-lg">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -433,6 +433,7 @@
     <Compile Include="App_Start\UnityMvcActivator.cs" />
     <Compile Include="Areas\Admin\AdminAreaRegistration.cs" />
     <Compile Include="Areas\Admin\Controllers\AppointmentAvailabilityController.cs" />
+    <Compile Include="Areas\Admin\Controllers\BaseController.cs" />
     <Compile Include="Areas\Admin\Controllers\ClinicController.cs" />
     <Compile Include="Areas\Admin\Controllers\DepartmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorController.cs" />
@@ -445,12 +446,15 @@
     <Compile Include="Areas\Admin\Controllers\DoctorServiceCategoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\EmergencyBookingController.cs" />
-    <Compile Include="Areas\Admin\Controllers\InsuranceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\Shared\BaseAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\SpecializationController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceCalculationController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\InsurancePlanController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceProviderController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
@@ -496,27 +500,24 @@
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
-    <Compile Include="Interfaces\IInsuranceService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
     <Compile Include="Interfaces\INotificationTemplateService.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceCalculationRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceCalculationService.cs" />
+    <Compile Include="Interfaces\Insurance\IInsurancePlanRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsurancePlanService.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceProviderRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceProviderService.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceValidationService.cs" />
+    <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
+    <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
-    <Compile Include="Migrations\202508281413337_CreateClinicDataBase.cs" />
-    <Compile Include="Migrations\202508281413337_CreateClinicDataBase.Designer.cs">
-      <DependentUpon>202508281413337_CreateClinicDataBase.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202508282054043_OneMigration.cs" />
-    <Compile Include="Migrations\202508282054043_OneMigration.Designer.cs">
-      <DependentUpon>202508282054043_OneMigration.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202508291341167_DoctorAssignmentHistory.cs" />
-    <Compile Include="Migrations\202508291341167_DoctorAssignmentHistory.Designer.cs">
-      <DependentUpon>202508291341167_DoctorAssignmentHistory.cs</DependentUpon>
-    </Compile>
-    <Compile Include="Migrations\202509021215300_EnhancedDoctorScheduleModule.cs" />
-    <Compile Include="Migrations\202509021215300_EnhancedDoctorScheduleModule.Designer.cs">
-      <DependentUpon>202509021215300_EnhancedDoctorScheduleModule.cs</DependentUpon>
+    <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
+    <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.Designer.cs">
+      <DependentUpon>202509090447343_CreateDatabaseClinic.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
@@ -533,6 +534,11 @@
     <Compile Include="Repositories\ClinicAdmin\SpecializationRepository.cs" />
     <Compile Include="Repositories\ClinicRepository.cs" />
     <Compile Include="Repositories\DepartmentRepository.cs" />
+    <Compile Include="Repositories\Insurance\InsuranceCalculationRepository.cs" />
+    <Compile Include="Repositories\Insurance\InsurancePlanRepository.cs" />
+    <Compile Include="Repositories\Insurance\InsuranceProviderRepository.cs" />
+    <Compile Include="Repositories\Insurance\PatientInsuranceRepository.cs" />
+    <Compile Include="Repositories\Insurance\PlanServiceRepository.cs" />
     <Compile Include="Repositories\ServiceCategoryRepository.cs" />
     <Compile Include="Repositories\ServiceRepository.cs" />
     <Compile Include="Services\AsanakSmsService.cs" />
@@ -554,7 +560,14 @@
     <Compile Include="Services\ClinicManagementService.cs" />
     <Compile Include="Services\CurrentUserService.cs" />
     <Compile Include="Services\DepartmentManagementService.cs" />
-    <Compile Include="Services\InsuranceService.cs" />
+    <Compile Include="Services\IMessageNotificationService.cs" />
+    <Compile Include="Services\Insurance\InsuranceCalculationService.cs" />
+    <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
+    <Compile Include="Services\Insurance\InsurancePlanService.cs" />
+    <Compile Include="Services\Insurance\InsuranceProviderService.cs" />
+    <Compile Include="Services\Insurance\InsuranceValidationService.cs" />
+    <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
+    <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
@@ -595,6 +608,28 @@
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleConflict.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationViewModels.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationDetailsViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationIndexPageViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationIndexViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationResultViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceValidationViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanDetailsViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanIndexPageViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanIndexViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsurancePlan\PlanServiceViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderDetailsViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderIndexViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceCreateEditViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceDetailsViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexItemViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexPageViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
@@ -656,6 +691,9 @@
     <Compile Include="ViewModels\Validators\Class1.cs" />
     <Compile Include="ViewModels\Validators\ClinicCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\InsuranceCalculationViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\InsurancePlanCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\PatientInsuranceCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ServiceCategoryCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ServiceCreateEditViewModelValidator.cs" />
   </ItemGroup>
@@ -3194,17 +3232,8 @@
     <Content Include="Content\Fonts\yekan-font\Yekan.eot" />
     <Content Include="Content\Fonts\yekan-font\Yekan.ttf" />
     <Content Include="Content\Fonts\yekan-font\Yekan.woff" />
-    <Content Include="Areas\Admin\Views\Insurance\_InsuranceListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_InsuranceTariffsListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_CreateInsurance.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_EditInsurance.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\ManageTariffs.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_AddTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_ErrorPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Shared\_SuccessPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\_EditTariffPartial.cshtml" />
     <Content Include="Areas\Admin\Views\Clinic\Index.cshtml" />
     <Content Include="Areas\Admin\Views\Clinic\Details.cshtml" />
     <Content Include="Areas\Admin\Views\Clinic\Create.cshtml" />
@@ -3316,6 +3345,31 @@
     <Content Include="Areas\Admin\Views\DoctorRemoval\_DoctorDetails.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorRemoval\_DoctorDetailsError.cshtml" />
     <Content Include="Areas\Admin\Views\DoctorRemoval\_DoctorsList.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceCalculation\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsurancePlan\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\InsurancePlan\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\InsurancePlan\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\InsurancePlan\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\InsurancePlan\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceProvider\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceProvider\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceProvider\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceProvider\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceProvider\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceProvider\_InsuranceProviderListPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\Shared\_NotificationMessages.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceCalculation\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceCalculation\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceCalculation\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceCalculation\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceCalculation\Calculate.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceCard.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceForm.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3573,6 +3627,7 @@
     <Folder Include="Areas\Receptionist\Data\" />
     <Folder Include="Areas\Receptionist\Views\Reception\" />
     <Folder Include="Constants\" />
+    <Folder Include="Validators\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -3599,17 +3654,8 @@
     <Content Include="Scripts\bootstrap.bundle.js.map" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Migrations\202508281413337_CreateClinicDataBase.resx">
-      <DependentUpon>202508281413337_CreateClinicDataBase.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202508282054043_OneMigration.resx">
-      <DependentUpon>202508282054043_OneMigration.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202508291341167_DoctorAssignmentHistory.resx">
-      <DependentUpon>202508291341167_DoctorAssignmentHistory.cs</DependentUpon>
-    </EmbeddedResource>
-    <EmbeddedResource Include="Migrations\202509021215300_EnhancedDoctorScheduleModule.resx">
-      <DependentUpon>202509021215300_EnhancedDoctorScheduleModule.cs</DependentUpon>
+    <EmbeddedResource Include="Migrations\202509090447343_CreateDatabaseClinic.resx">
+      <DependentUpon>202509090447343_CreateDatabaseClinic.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

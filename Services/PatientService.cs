@@ -69,7 +69,7 @@ namespace ClinicApp.Services
                 NationalCode = patient.NationalCode,
                 FullName = $"{patient.FirstName} {patient.LastName}",
                 PhoneNumber = patient.PhoneNumber,
-                InsuranceName = patient.Insurance?.Name,
+                // InsuranceName حذف شد
                 CreatedAt = patient.CreatedAt,
                 CreatedAtShamsi = patient.CreatedAt.ToPersianDateTime(),
                 BirthDateShamsi = patient.BirthDate.HasValue ?
@@ -96,8 +96,8 @@ namespace ClinicApp.Services
                     patient.BirthDate.Value.ToPersianDate() : null,
                 Address = patient.Address,
                 PhoneNumber = patient.PhoneNumber,
-                InsuranceId = patient.InsuranceId,
-                InsuranceName = patient.Insurance?.Name,
+                // InsuranceId حذف شد
+                // InsuranceName حذف شد
                 CreatedAt = patient.CreatedAt,
                 CreatedAtShamsi = patient.CreatedAt.ToPersianDateTime(),
                 CreatedByUser = patient.CreatedByUser != null ?
@@ -135,8 +135,8 @@ namespace ClinicApp.Services
                     patient.BirthDate.Value.ToPersianDate() : null,
                 Address = patient.Address,
                 PhoneNumber = patient.PhoneNumber,
-                InsuranceId = patient.InsuranceId,
-                InsuranceName = patient.Insurance?.Name,
+                // InsuranceId حذف شد
+                // InsuranceName حذف شد
                 CreatedAt = patient.CreatedAt,
                 CreatedAtShamsi = patient.CreatedAt.ToPersianDateTime(),
                 CreatedByUser = patient.CreatedByUser != null ?
@@ -190,7 +190,7 @@ namespace ClinicApp.Services
                 patient.BirthDate = null;
             }
 
-            patient.InsuranceId = model.InsuranceId;
+            // InsuranceId حذف شد
         }
 
         /// <summary>
@@ -228,19 +228,7 @@ namespace ClinicApp.Services
                         SecurityLevel.Low);
                 }
 
-                // 4. دریافت بیمه آزاد به عنوان پیش‌فرض
-                var freeInsurance = await _context.Insurances
-                    .FirstOrDefaultAsync(i => i.Name == SystemConstants.FreeInsuranceName && !i.IsDeleted);
-
-                if (freeInsurance == null)
-                {
-                    _log.Error("بیمه آزاد در پایگاه داده یافت نشد. لطفاً ابتدا بیمه آزاد را ایجاد کنید.");
-                    return ServiceResult.Failed(
-                        "سیستم به درستی پیکربندی نشده است. لطفاً با پشتیبانی تماس بگیرید.",
-                        "SYSTEM_CONFIG_ERROR",
-                        ErrorCategory.General,
-                        SecurityLevel.High);
-                }
+                // 4. بیمه آزاد حذف شد - از PatientInsurance استفاده کنید
 
                 // 5. بررسی وجود کاربر با کد ملی
                 var userByNationalCode = await _userManager.FindByNationalCodeAsync(normalizedNationalCode);
@@ -248,7 +236,7 @@ namespace ClinicApp.Services
                 {
                     // بازیابی پروفایل بیمار موجود
                     var patientProfile = await _context.Patients
-                        .Include(p => p.Insurance)
+                        // Include Insurance حذف شد
                         .FirstOrDefaultAsync(p => p.ApplicationUserId == userByNationalCode.Id && !p.IsDeleted);
 
                     if (patientProfile != null)
@@ -376,7 +364,7 @@ namespace ClinicApp.Services
                             Address = model.Address,
                             PhoneNumber = normalizedPhoneNumber,
                             LastLoginDate = DateTime.UtcNow,
-                            InsuranceId = model.InsuranceId > 0 ? model.InsuranceId : freeInsurance.InsuranceId,
+                            // InsuranceId حذف شد
                             ApplicationUserId = newUser.Id,
                             CreatedAt = DateTime.UtcNow,
                             CreatedByUserId = _currentUserService.UserId,
@@ -445,7 +433,7 @@ namespace ClinicApp.Services
 
                 // ساخت پرس‌وجو
                 var query = _context.Patients
-                    .Include(p => p.Insurance)
+                    // Include Insurance حذف شد
                     .Include(p => p.CreatedByUser)
                     .Include(p => p.UpdatedByUser)
                     .Where(p => !p.IsDeleted);
@@ -525,7 +513,7 @@ namespace ClinicApp.Services
             {
                 // مرحله 1: دریافت موجودیت کامل بیمار از دیتابیس
                 var patientEntity = await _context.Patients
-                    .Include(p => p.Insurance)
+                    // Include Insurance حذف شد
                     .Include(p => p.CreatedByUser)
                     .Include(p => p.UpdatedByUser)
                     .Include(p => p.Receptions)
@@ -597,7 +585,7 @@ namespace ClinicApp.Services
             try
             {
                 var patient = await _context.Patients
-                    .Include(p => p.Insurance)
+                    // Include Insurance حذف شد
                     .Include(p => p.CreatedByUser)
                     .Include(p => p.UpdatedByUser)
                     .Where(p => p.PatientId == patientId && !p.IsDeleted)
@@ -708,21 +696,7 @@ namespace ClinicApp.Services
                         SecurityLevel.Low);
                 }
 
-                // دریافت بیمه آزاد به عنوان پیش‌فرض
-                var freeInsurance = await _context.Insurances
-                    .FirstOrDefaultAsync(i => i.Name == SystemConstants.FreeInsuranceName && !i.IsDeleted);
-
-                if (freeInsurance == null)
-                {
-                    _log.Error("بیمه آزاد در پایگاه داده یافت نشد. کاربر: {UserName} (شناسه: {UserId})",
-                        _currentUserService.UserName, _currentUserService.UserId);
-
-                    return ServiceResult.Failed(
-                        "سیستم به درستی پیکربندی نشده است. لطفاً با پشتیبانی تماس بگیرید.",
-                        "SYSTEM_CONFIG_ERROR",
-                        ErrorCategory.General,
-                        SecurityLevel.High);
-                }
+                // بیمه آزاد حذف شد - از PatientInsurance استفاده کنید
 
                 // ایجاد بیمار جدید
                 var patient = new Patient
@@ -753,9 +727,7 @@ namespace ClinicApp.Services
                     }
                 }
 
-                // تنظیم بیمه
-                patient.InsuranceId = model.InsuranceId > 0 ?
-                    model.InsuranceId : freeInsurance.InsuranceId;
+                // تنظیم بیمه حذف شد - از PatientInsurance استفاده کنید
 
                 // تنظیمات ردیابی
                 patient.IsDeleted = false;
@@ -800,7 +772,7 @@ namespace ClinicApp.Services
             {
                 // دریافت بیمار
                 var patient = await _context.Patients
-                    .Include(p => p.Insurance)
+                    // Include Insurance حذف شد
                     .Where(p => p.PatientId == model.PatientId && !p.IsDeleted)
                     .FirstOrDefaultAsync();
 

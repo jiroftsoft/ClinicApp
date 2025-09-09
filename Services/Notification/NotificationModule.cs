@@ -31,6 +31,32 @@ namespace ClinicApp.Services.Notification
         /// </summary>
         Critical = 4
     }
+
+    /// <summary>
+    /// انواع پیام‌های اعلان در سیستم کلینیک
+    /// </summary>
+    public enum NotificationType
+    {
+        /// <summary>
+        /// پیام موفقیت
+        /// </summary>
+        Success,
+
+        /// <summary>
+        /// پیام خطا
+        /// </summary>
+        Error,
+
+        /// <summary>
+        /// پیام هشدار
+        /// </summary>
+        Warning,
+
+        /// <summary>
+        /// پیام اطلاعاتی
+        /// </summary>
+        Info
+    }
     #endregion
 
     #region Core Request Models
@@ -265,6 +291,65 @@ namespace ClinicApp.Services.Notification
         /// </summary>
         [Required, MaxLength(1000)]
         public string Message { get; set; }
+
+        /// <summary>
+        /// نوع پیام اعلان
+        /// </summary>
+        public NotificationType Type { get; set; }
+
+        /// <summary>
+        /// زمان ایجاد پیام
+        /// </summary>
+        public DateTime Timestamp { get; set; }
+
+        /// <summary>
+        /// آیکون پیام
+        /// </summary>
+        public string Icon { get; set; }
+
+        /// <summary>
+        /// کلاس CSS پیام
+        /// </summary>
+        public string CssClass { get; set; }
+
+        /// <summary>
+        /// سازنده پیش‌فرض
+        /// </summary>
+        public NotificationMessage()
+        {
+            Timestamp = DateTime.Now;
+        }
+
+        /// <summary>
+        /// سازنده با پارامتر
+        /// </summary>
+        public NotificationMessage(string message, NotificationType type)
+        {
+            Message = message;
+            Type = type;
+            Timestamp = DateTime.Now;
+
+            // تنظیم آیکون و CSS class بر اساس نوع
+            switch (type)
+            {
+                case NotificationType.Success:
+                    Icon = "fas fa-check-circle";
+                    CssClass = "alert-success";
+                    break;
+                case NotificationType.Error:
+                    Icon = "fas fa-exclamation-circle";
+                    CssClass = "alert-danger";
+                    break;
+                case NotificationType.Warning:
+                    Icon = "fas fa-exclamation-triangle";
+                    CssClass = "alert-warning";
+                    break;
+                case NotificationType.Info:
+                    Icon = "fas fa-info-circle";
+                    CssClass = "alert-info";
+                    break;
+            }
+        }
     }
 
     /// <summary>

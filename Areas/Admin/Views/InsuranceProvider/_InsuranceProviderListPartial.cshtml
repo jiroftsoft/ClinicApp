@@ -1,0 +1,148 @@
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.Insurance.InsuranceProvider.InsuranceProviderIndexViewModel>
+
+@if (Model != null && Model.Items != null && Model.Items.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>نام</th>
+                    <th>کد</th>
+                    <th>اطلاعات تماس</th>
+                    <th>وضعیت</th>
+                    <th>تاریخ ایجاد</th>
+                    <th>ایجادکننده</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model.Items)
+                {
+                    <tr>
+                        <td>
+                            <strong>@item.Name</strong>
+                        </td>
+                        <td>
+                            <span class="provider-code">@item.Code</span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.ContactInfo))
+                            {
+                                <span title="@item.ContactInfo">@(item.ContactInfo.Length > 30 ? item.ContactInfo.Substring(0, 30) + "..." : item.ContactInfo)</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.IsActive)
+                            {
+                                <span class="badge badge-success status-badge">
+                                    <i class="fas fa-check-circle"></i> فعال
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge badge-danger status-badge">
+                                    <i class="fas fa-times-circle"></i> غیرفعال
+                                </span>
+                            }
+                        </td>
+                        <td>
+                            <span title="@item.CreatedAt.ToString("yyyy/MM/dd HH:mm")">@item.CreatedAtShamsi</span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.CreatedByUserName))
+                            {
+                                <span>@item.CreatedByUserName</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a href="@Url.Action("Details", "InsuranceProvider", new { id = item.InsuranceProviderId })" 
+                                   class="btn btn-sm btn-info btn-action" title="جزئیات">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="@Url.Action("Edit", "InsuranceProvider", new { id = item.InsuranceProviderId })" 
+                                   class="btn btn-sm btn-warning btn-action" title="ویرایش">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                <a href="@Url.Action("Delete", "InsuranceProvider", new { id = item.InsuranceProviderId })" 
+                                   class="btn btn-sm btn-danger btn-action btn-delete" 
+                                   title="حذف"
+                                   data-name="@item.Name">
+                                    <i class="fas fa-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination -->
+    if (Model.TotalItems > Model.PageSize)
+    {
+        <div class="row">
+            <div class="col-md-6">
+                <div class="pagination-info">
+                    نمایش @((Model.PageNumber - 1) * Model.PageSize + 1) تا @(Math.Min(Model.PageNumber * Model.PageSize, Model.TotalItems)) 
+                    از @Model.TotalItems مورد
+                </div>
+            </div>
+            <div class="col-md-6">
+                <nav aria-label="صفحه‌بندی">
+                    <ul class="pagination justify-content-end">
+                        @if (Model.PageNumber > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="#" data-page="@(Model.PageNumber - 1)">
+                                    <i class="fas fa-chevron-right"></i> قبلی
+                                </a>
+                            </li>
+                        }
+                        
+                        @{
+                            int startPage = Math.Max(1, Model.PageNumber - 2);
+                            int endPage = Math.Min((int)Math.Ceiling((double)Model.TotalItems / Model.PageSize), Model.PageNumber + 2);
+                        }
+                        
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == Model.PageNumber ? "active" : "")">
+                                <a class="page-link" href="#" data-page="@i">@i</a>
+                            </li>
+                        }
+                        
+                        @if (Model.PageNumber < (int)Math.Ceiling((double)Model.TotalItems / Model.PageSize))
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="#" data-page="@(Model.PageNumber + 1)">
+                                    بعدی <i class="fas fa-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <div class="text-center py-5">
+        <i class="fas fa-hospital fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">هیچ ارائه‌دهنده بیمه‌ای یافت نشد</h5>
+        <p class="text-muted">برای افزودن ارائه‌دهنده بیمه جدید، روی دکمه "افزودن ارائه‌دهنده بیمه جدید" کلیک کنید.</p>
+        <a href="@Url.Action("Create", "InsuranceProvider")" class="btn btn-success">
+            <i class="fas fa-plus"></i> افزودن ارائه‌دهنده بیمه جدید
+        </a>
+    </div>
+}
+

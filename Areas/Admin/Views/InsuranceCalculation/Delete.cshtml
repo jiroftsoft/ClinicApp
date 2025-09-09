@@ -1,0 +1,411 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceCalculation.InsuranceCalculationDetailsViewModel
+@{
+    ViewBag.Title = "حذف محاسبه بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.Partial("_NotificationMessages")
+
+@section Styles {
+    <style>
+        /* Medical Environment Color Scheme - طبق قرارداد */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        .delete-container {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .delete-header {
+            border-bottom: 3px solid var(--medical-danger);
+            padding-bottom: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .delete-warning {
+            background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+            border: 2px solid var(--medical-danger);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin: 2rem 0;
+            text-align: center;
+        }
+
+        .warning-icon {
+            font-size: 3rem;
+            color: var(--medical-danger);
+            margin-bottom: 1rem;
+        }
+
+        .warning-title {
+            color: var(--medical-danger);
+            font-weight: 700;
+            font-size: 1.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .warning-text {
+            color: #721c24;
+            font-size: 1.1rem;
+            margin-bottom: 0;
+        }
+
+        .calculation-id {
+            font-family: 'Courier New', monospace;
+            background-color: var(--medical-light);
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            border: 1px solid var(--medical-border);
+            display: inline-block;
+        }
+
+        .info-section {
+            background-color: var(--medical-light);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .section-title {
+            color: var(--medical-primary);
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid var(--medical-primary);
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: var(--medical-text);
+            flex: 0 0 40%;
+        }
+
+        .info-value {
+            color: var(--medical-text);
+            flex: 1;
+            text-align: left;
+        }
+
+        .amount-section {
+            background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
+            padding: 2rem;
+            border-radius: 0.5rem;
+            margin: 2rem 0;
+            border: 1px solid var(--medical-border);
+        }
+
+        .amount-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .amount-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--medical-border);
+        }
+
+        .amount-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .amount-label {
+            font-size: 0.9rem;
+            color: var(--medical-text-muted);
+            font-weight: 500;
+        }
+
+        .service-amount { color: var(--medical-primary); }
+        .insurance-share { color: var(--medical-success); }
+        .patient-share { color: var(--medical-danger); }
+        .coverage-percent { color: var(--medical-info); }
+        .deductible { color: var(--medical-warning); }
+
+        .patient-info {
+            background-color: #e3f2fd;
+            border: 1px solid #bbdefb;
+        }
+
+        .service-info {
+            background-color: #f3e5f5;
+            border: 1px solid #e1bee7;
+        }
+
+        .insurance-info {
+            background-color: #e8f5e8;
+            border: 1px solid #c8e6c9;
+        }
+
+        .btn-delete {
+            background-color: var(--medical-danger);
+            border-color: var(--medical-danger);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            margin: 0.5rem;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+        .btn-cancel {
+            background-color: var(--medical-secondary);
+            border-color: var(--medical-secondary);
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            margin: 0.5rem;
+        }
+
+        .btn-cancel:hover {
+            background-color: #545b62;
+            border-color: #4e555b;
+        }
+
+        .btn-secondary {
+            background-color: var(--medical-secondary);
+            border-color: var(--medical-secondary);
+            color: white;
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #4e555b;
+        }
+
+        @@media (max-width: 768px) {
+            .delete-container {
+                padding: 1rem;
+            }
+            
+            .info-row {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .info-label {
+                margin-bottom: 0.5rem;
+            }
+            
+            .amount-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .amount-value {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-trash text-danger"></i>
+                    حذف محاسبه بیمه
+                </h2>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    <i class="fas fa-arrow-right"></i> بازگشت
+                </a>
+            </div>
+
+            <div class="delete-container">
+                <!-- Delete Header -->
+                <div class="delete-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="calculation-id">محاسبه #@Model.InsuranceCalculationId</span>
+                        </div>
+                        <span class="badge bg-danger fs-6">در انتظار حذف</span>
+                    </div>
+                </div>
+
+                <!-- Delete Warning -->
+                <div class="delete-warning">
+                    <div class="warning-icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                    </div>
+                    <div class="warning-title">هشدار حذف</div>
+                    <div class="warning-text">
+                        آیا مطمئن هستید که می‌خواهید این محاسبه بیمه را حذف کنید؟<br>
+                        این عمل قابل بازگشت نیست و تمام اطلاعات مربوط به این محاسبه از سیستم حذف خواهد شد.
+                    </div>
+                </div>
+
+                <!-- Patient Information -->
+                <div class="info-section patient-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-user text-primary"></i>
+                        اطلاعات بیمار
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">نام بیمار:</span>
+                        <span class="info-value">@Model.PatientName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">کد ملی:</span>
+                        <span class="info-value">@Model.PatientNationalCode</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PatientBirthDateShamsi))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">تاریخ تولد:</span>
+                            <span class="info-value">@Model.PatientBirthDateShamsi</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Service Information -->
+                <div class="info-section service-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-stethoscope text-primary"></i>
+                        اطلاعات خدمت
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">نام خدمت:</span>
+                        <span class="info-value">@Model.ServiceName</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.ServiceCategoryName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">دسته‌بندی خدمت:</span>
+                            <span class="info-value">@Model.ServiceCategoryName</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Insurance Information -->
+                <div class="info-section insurance-info">
+                    <h4 class="section-title">
+                        <i class="fas fa-shield-alt text-primary"></i>
+                        اطلاعات بیمه
+                    </h4>
+                    <div class="info-row">
+                        <span class="info-label">نام طرح بیمه:</span>
+                        <span class="info-value">@Model.InsurancePlanName</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.InsurancePlanCode))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">کد طرح بیمه:</span>
+                            <span class="info-value">@Model.InsurancePlanCode</span>
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.InsuranceProviderName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">ارائه‌دهنده بیمه:</span>
+                            <span class="info-value">@Model.InsuranceProviderName</span>
+                        </div>
+                    }
+                </div>
+
+                <!-- Calculation Details -->
+                <div class="amount-section">
+                    <h4 class="section-title text-center">
+                        <i class="fas fa-chart-pie text-primary"></i>
+                        جزئیات محاسبه
+                    </h4>
+                    <div class="amount-grid">
+                        <div class="amount-card">
+                            <div class="amount-value service-amount">@Model.ServiceAmount.ToString("N0")</div>
+                            <div class="amount-label">مبلغ خدمت (ریال)</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value coverage-percent">@Model.CoveragePercent.ToString("N1")%</div>
+                            <div class="amount-label">درصد پوشش</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value deductible">@Model.Deductible.ToString("N0")</div>
+                            <div class="amount-label">فرانشیز (ریال)</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value insurance-share">@Model.InsuranceShare.ToString("N0")</div>
+                            <div class="amount-label">سهم بیمه (ریال)</div>
+                        </div>
+                        <div class="amount-card">
+                            <div class="amount-value patient-share">@Model.PatientShare.ToString("N0")</div>
+                            <div class="amount-label">سهم بیمار (ریال)</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="text-center">
+                    @using (Html.BeginForm("DeleteConfirmed", "InsuranceCalculation", new { id = Model.InsuranceCalculationId }, FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-delete" onclick="return confirmDelete()">
+                            <i class="fas fa-trash"></i> حذف محاسبه
+                        </button>
+                    }
+                    <a href="@Url.Action("Details", new { id = Model.InsuranceCalculationId })" class="btn btn-cancel">
+                        <i class="fas fa-times"></i> لغو
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function confirmDelete() {
+            return confirm('آیا مطمئن هستید که می‌خواهید این محاسبه بیمه را حذف کنید؟\n\nاین عمل قابل بازگشت نیست!');
+        }
+
+        // Prevent accidental form submission
+        $(document).ready(function() {
+            $('form').on('submit', function(e) {
+                if (!confirmDelete()) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+}

@@ -66,6 +66,35 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // Insurance Routes
+            context.MapRoute(
+                name: "Admin_InsuranceProvider_Index",
+                url: "Admin/InsuranceProvider/{action}/{id}",
+                defaults: new { controller = "InsuranceProvider", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            context.MapRoute(
+                name: "Admin_InsurancePlan_Index",
+                url: "Admin/InsurancePlan/{action}/{id}",
+                defaults: new { controller = "InsurancePlan", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            context.MapRoute(
+                name: "Admin_PatientInsurance_Index",
+                url: "Admin/PatientInsurance/{action}/{id}",
+                defaults: new { controller = "PatientInsurance", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            context.MapRoute(
+                name: "Admin_InsuranceCalculation_Index",
+                url: "Admin/InsuranceCalculation/{action}/{id}",
+                defaults: new { controller = "InsuranceCalculation", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
             context.MapRoute(
                 name: "Admin_Insurance_ManageTariffs",
                 url: "Admin/Insurance/ManageTariffs/{insuranceId}",

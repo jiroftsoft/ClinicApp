@@ -1,0 +1,639 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceCalculation.InsuranceCalculationIndexPageViewModel
+@{
+    ViewBag.Title = "مدیریت محاسبات بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@Html.Partial("_NotificationMessages")
+
+@section Styles {
+    <style>
+        /* Medical Environment Color Scheme - طبق قرارداد */
+        :root {
+            --medical-primary: #2c5aa0;
+            --medical-secondary: #6c757d;
+            --medical-success: #28a745;
+            --medical-danger: #dc3545;
+            --medical-warning: #ffc107;
+            --medical-info: #17a2b8;
+            --medical-light: #f8f9fa;
+            --medical-dark: #343a40;
+            --medical-border: #dee2e6;
+            --medical-text: #495057;
+            --medical-text-muted: #6c757d;
+        }
+
+        .form-container {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .form-card {
+            background: #ffffff;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .form-card-header {
+            border-bottom: 2px solid var(--medical-primary);
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-card-title {
+            color: var(--medical-primary);
+            font-weight: 600;
+            font-size: 1.2rem;
+            margin: 0;
+        }
+
+        .calculation-card {
+            background: #ffffff;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--medical-border);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .calculation-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        }
+
+        .calculation-header {
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .calculation-id {
+            font-family: 'Courier New', monospace;
+            background-color: var(--medical-light);
+            padding: 0.3rem 0.8rem;
+            border-radius: 0.3rem;
+            font-size: 0.9rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .patient-info {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .service-info {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .insurance-info {
+            background-color: #e8f5e8;
+            color: #2e7d32;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .amount-display {
+            background-color: var(--medical-light);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid var(--medical-border);
+            text-align: center;
+        }
+
+        .amount-value {
+            font-size: 1.3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .amount-label {
+            font-size: 0.9rem;
+            color: var(--medical-text-muted);
+            font-weight: 500;
+        }
+
+        .service-amount { color: var(--medical-primary); }
+        .insurance-share { color: var(--medical-success); }
+        .patient-share { color: var(--medical-danger); }
+
+        .validity-badge {
+            font-size: 0.9rem;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-weight: 600;
+        }
+
+        .validity-valid {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .validity-invalid {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .calculation-date {
+            background-color: #fff3cd;
+            border: 1px solid #ffeaa7;
+            padding: 0.8rem;
+            border-radius: 0.5rem;
+            margin: 1rem 0;
+        }
+
+        .calculation-date-label {
+            font-size: 0.9rem;
+            color: #856404;
+            font-weight: 500;
+        }
+
+        .calculation-date-value {
+            font-weight: 600;
+            color: #856404;
+        }
+
+        .btn-action {
+            margin: 0.25rem;
+            font-weight: 600;
+            border-radius: 0.375rem;
+        }
+
+        .btn-view {
+            background-color: var(--medical-info);
+            border-color: var(--medical-info);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background-color: #138496;
+            border-color: #117a8b;
+        }
+
+        .btn-edit {
+            background-color: var(--medical-warning);
+            border-color: var(--medical-warning);
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background-color: #e0a800;
+            border-color: #d39e00;
+        }
+
+        .btn-delete {
+            background-color: var(--medical-danger);
+            border-color: var(--medical-danger);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #c82333;
+            border-color: #bd2130;
+        }
+
+        .btn-validity {
+            background-color: var(--medical-success);
+            border-color: var(--medical-success);
+            color: white;
+        }
+
+        .btn-validity:hover {
+            background-color: #218838;
+            border-color: #1e7e34;
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, var(--medical-primary), #1e3a8a);
+            color: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stats-number {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stats-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .search-filters {
+            background-color: var(--medical-light);
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            margin-bottom: 2rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .filter-group {
+            margin-bottom: 1rem;
+        }
+
+        .filter-label {
+            font-weight: 600;
+            color: var(--medical-text);
+            margin-bottom: 0.5rem;
+        }
+
+        .form-control:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+
+        .btn-primary {
+            background-color: var(--medical-primary);
+            border-color: var(--medical-primary);
+            font-weight: 600;
+        }
+
+        .btn-primary:hover {
+            background-color: #1e3a8a;
+            border-color: #1a3469;
+        }
+
+        .btn-secondary {
+            background-color: var(--medical-secondary);
+            border-color: var(--medical-secondary);
+            font-weight: 600;
+        }
+
+        .btn-secondary:hover {
+            background-color: #545b62;
+            border-color: #4e555b;
+        }
+
+        .pagination-info {
+            background-color: var(--medical-light);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            border: 1px solid var(--medical-border);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 3rem;
+            color: var(--medical-text-muted);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        @@media (max-width: 768px) {
+            .form-container {
+                padding: 1rem;
+            }
+            
+            .calculation-card {
+                padding: 1rem;
+            }
+            
+            .amount-display {
+                padding: 0.8rem;
+            }
+            
+            .amount-value {
+                font-size: 1.1rem;
+            }
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- Header -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2>
+                    <i class="fas fa-calculator text-primary"></i>
+                    مدیریت محاسبات بیمه
+                </h2>
+                <div>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> محاسبه جدید
+                    </a>
+                    <a href="@Url.Action("Index", "InsuranceProvider")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i> بازگشت به بیمه
+                    </a>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.TotalCount</div>
+                        <div class="stats-label">کل محاسبات</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.InsuranceCalculations.Count(c => c.IsValid)</div>
+                        <div class="stats-label">محاسبات معتبر</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.InsuranceCalculations.Count(c => !c.IsValid)</div>
+                        <div class="stats-label">محاسبات نامعتبر</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stats-card">
+                        <div class="stats-number">@Model.TotalPages</div>
+                        <div class="stats-label">تعداد صفحات</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search and Filters -->
+            <div class="search-filters">
+                @using (Html.BeginForm("Index", "InsuranceCalculation", FormMethod.Get, new { @class = "row" }))
+                {
+                    <div class="col-md-3">
+                        <div class="filter-group">
+                            <label class="filter-label">جستجو</label>
+                            @Html.TextBoxFor(m => m.SearchTerm, new { @class = "form-control", placeholder = "جستجو در نام بیمار، خدمت یا طرح بیمه..." })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="filter-group">
+                            <label class="filter-label">بیمار</label>
+                            @Html.DropDownListFor(m => m.PatientId, Model.PatientSelectList, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="filter-group">
+                            <label class="filter-label">خدمت</label>
+                            @Html.DropDownListFor(m => m.ServiceId, Model.ServiceSelectList, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="filter-group">
+                            <label class="filter-label">طرح بیمه</label>
+                            @Html.DropDownListFor(m => m.PlanId, Model.InsurancePlanSelectList, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="col-md-2">
+                        <div class="filter-group">
+                            <label class="filter-label">وضعیت اعتبار</label>
+                            @Html.DropDownListFor(m => m.IsValid, Model.ValiditySelectList, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="col-md-1">
+                        <div class="filter-group">
+                            <label class="filter-label">&nbsp;</label>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-search"></i>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pagination Info -->
+            @if (Model.HasData)
+            {
+                <div class="pagination-info">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <span class="text-muted">
+                                نمایش @((Model.CurrentPage - 1) * Model.PageSize + 1) تا @(Math.Min(Model.CurrentPage * Model.PageSize, Model.TotalCount)) 
+                                از @Model.TotalCount محاسبه
+                            </span>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            @if (Model.HasSearchFilters)
+                            {
+                                <a href="@Url.Action("Index")" class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-times"></i> پاک کردن فیلترها
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Calculations List -->
+            @if (Model.HasData)
+            {
+                <div class="row">
+                    @foreach (var calculation in Model.InsuranceCalculations)
+                    {
+                        <div class="col-lg-6 col-xl-4">
+                            <div class="calculation-card">
+                                <!-- Header -->
+                                <div class="calculation-header">
+                                    <div class="d-flex justify-content-between align-items-start">
+                                        <div>
+                                            <span class="calculation-id">#@calculation.InsuranceCalculationId</span>
+                                        </div>
+                                        <span class="validity-badge @(calculation.IsValid ? "validity-valid" : "validity-invalid")">
+                                            @calculation.IsValidText
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Patient Info -->
+                                <div class="patient-info mb-2">
+                                    <i class="fas fa-user"></i>
+                                    @calculation.PatientName
+                                    <small class="text-muted">(@calculation.PatientNationalCode)</small>
+                                </div>
+
+                                <!-- Service Info -->
+                                <div class="service-info mb-2">
+                                    <i class="fas fa-stethoscope"></i>
+                                    @calculation.ServiceName
+                                </div>
+
+                                <!-- Insurance Info -->
+                                <div class="insurance-info mb-3">
+                                    <i class="fas fa-shield-alt"></i>
+                                    @calculation.InsurancePlanName
+                                </div>
+
+                                <!-- Amounts -->
+                                <div class="row mb-3">
+                                    <div class="col-4">
+                                        <div class="amount-display">
+                                            <div class="amount-value service-amount">@calculation.ServiceAmount.ToString("N0")</div>
+                                            <div class="amount-label">مبلغ خدمت</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="amount-display">
+                                            <div class="amount-value insurance-share">@calculation.InsuranceShare.ToString("N0")</div>
+                                            <div class="amount-label">سهم بیمه</div>
+                                        </div>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="amount-display">
+                                            <div class="amount-value patient-share">@calculation.PatientShare.ToString("N0")</div>
+                                            <div class="amount-label">سهم بیمار</div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Calculation Date -->
+                                <div class="calculation-date">
+                                    <div class="calculation-date-label">تاریخ محاسبه:</div>
+                                    <div class="calculation-date-value">@calculation.CalculationDateShamsi</div>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="text-center">
+                                    <a href="@Url.Action("Details", new { id = calculation.InsuranceCalculationId })" 
+                                       class="btn btn-sm btn-view">
+                                        <i class="fas fa-eye"></i> جزئیات
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = calculation.InsuranceCalculationId })" 
+                                       class="btn btn-sm btn-edit">
+                                        <i class="fas fa-edit"></i> ویرایش
+                                    </a>
+                                    @if (calculation.IsValid)
+                                    {
+                                        <button type="button" class="btn btn-sm btn-validity" 
+                                                onclick="updateValidity(@calculation.InsuranceCalculationId, false)">
+                                            <i class="fas fa-ban"></i> نامعتبر
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button" class="btn btn-sm btn-validity" 
+                                                onclick="updateValidity(@calculation.InsuranceCalculationId, true)">
+                                            <i class="fas fa-check"></i> معتبر
+                                        </button>
+                                    }
+                                    <a href="@Url.Action("Delete", new { id = calculation.InsuranceCalculationId })" 
+                                       class="btn btn-sm btn-delete">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Pagination -->
+                if (Model.TotalPages > 1)
+                {
+                    <nav aria-label="صفحه‌بندی محاسبات بیمه">
+                        <ul class="pagination justify-content-center">
+                            @if (Model.CurrentPage > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage - 1, searchTerm = Model.SearchTerm, patientId = Model.PatientId, serviceId = Model.ServiceId, planId = Model.PlanId, isValid = Model.IsValid })">
+                                        <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
+                            {
+                                <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = i, searchTerm = Model.SearchTerm, patientId = Model.PatientId, serviceId = Model.ServiceId, planId = Model.PlanId, isValid = Model.IsValid })">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+
+                            @if (Model.CurrentPage < Model.TotalPages)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" href="@Url.Action("Index", new { page = Model.CurrentPage + 1, searchTerm = Model.SearchTerm, patientId = Model.PatientId, serviceId = Model.ServiceId, planId = Model.PlanId, isValid = Model.IsValid })">
+                                        <i class="fas fa-chevron-left"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
+            }
+            else
+            {
+                <div class="no-data">
+                    <i class="fas fa-calculator"></i>
+                    <h4>هیچ محاسبه بیمه‌ای یافت نشد</h4>
+                    <p class="text-muted">
+                        @if (Model.HasSearchFilters)
+                        {
+                            <text>با فیلترهای اعمال شده هیچ محاسبه‌ای یافت نشد. لطفاً فیلترها را تغییر دهید.</text>
+                        }
+                        else
+                        {
+                            <text>هنوز هیچ محاسبه بیمه‌ای ثبت نشده است.</text>
+                        }
+                    </p>
+                    @if (!Model.HasSearchFilters)
+                    {
+                        <a href="@Url.Action("Create")" class="btn btn-primary">
+                            <i class="fas fa-plus"></i> ایجاد اولین محاسبه
+                        </a>
+                    }
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function updateValidity(calculationId, isValid) {
+            if (confirm(isValid ? 'آیا مطمئن هستید که می‌خواهید این محاسبه را معتبر کنید؟' : 'آیا مطمئن هستید که می‌خواهید این محاسبه را نامعتبر کنید؟')) {
+                $.ajax({
+                    url: '@Url.Action("UpdateValidity", "InsuranceCalculation")/' + calculationId,
+                    type: 'POST',
+                    data: { isValid: isValid },
+                    headers: {
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('خطا در به‌روزرسانی وضعیت اعتبار');
+                        }
+                    },
+                    error: function() {
+                        alert('خطا در به‌روزرسانی وضعیت اعتبار');
+                    }
+                });
+            }
+        }
+
+        // Auto-submit form on filter change
+        $(document).ready(function() {
+            $('.search-filters select').on('change', function() {
+                $(this).closest('form').submit();
+            });
+        });
+    </script>
+}

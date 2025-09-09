@@ -68,8 +68,13 @@ namespace ClinicApp.Models
         public DbSet<Department> Departments { get; set; }
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
         public DbSet<Service> Services { get; set; }
-        public DbSet<Insurance> Insurances { get; set; }
+        // DbSet<Insurance> حذف شد - مدل قدیمی Insurance حذف شده است
         public DbSet<InsuranceTariff> InsuranceTariffs { get; set; }
+        public DbSet<InsuranceProvider> InsuranceProviders { get; set; }
+        public DbSet<InsurancePlan> InsurancePlans { get; set; }
+        public DbSet<PlanService> PlanServices { get; set; }
+        public DbSet<PatientInsurance> PatientInsurances { get; set; }
+        public DbSet<InsuranceCalculation> InsuranceCalculations { get; set; }
         public DbSet<Patient> Patients { get; set; }
         public DbSet<Doctor> Doctors { get; set; }
         public DbSet<Reception> Receptions { get; set; }
@@ -126,7 +131,15 @@ namespace ClinicApp.Models
             // 6. فعال‌سازی Dynamic Filters برای سیستم‌های پیچیده پزشکی
             modelBuilder.Filter("ActiveClinics", (Clinic c) => c.IsActive, true);
             modelBuilder.Filter("ActiveDepartments", (Department d) => d.IsActive, true);
-            modelBuilder.Filter("ActiveInsurances", (Insurance i) => i.IsActive, true);
+            // فیلتر ActiveInsurances حذف شد - مدل قدیمی Insurance حذف شده است
+            
+            // فیلترهای جدید برای سیستم بیمه
+            modelBuilder.Filter("ActiveInsuranceProviders", (InsuranceProvider ip) => ip.IsActive, true);
+            modelBuilder.Filter("ActiveInsurancePlans", (InsurancePlan plan) => plan.IsActive, true);
+            modelBuilder.Filter("ActivePlanServices", (PlanService ps) => ps.IsCovered, true);
+            modelBuilder.Filter("ActivePatientInsurances", (PatientInsurance pi) => pi.IsActive, true);
+            modelBuilder.Filter("ActiveInsuranceCalculations", (InsuranceCalculation ic) => ic.IsValid, true);
+            
             modelBuilder.Filter("ActiveDoctors", (Doctor d) => d.IsActive, true);
             modelBuilder.Filter("ActiveDoctorSchedules", (DoctorSchedule ds) => ds.IsActive, true);
             modelBuilder.Filter("ActiveDoctorWorkDays", (DoctorWorkDay wd) => wd.IsActive, true);
