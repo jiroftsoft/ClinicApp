@@ -2735,6 +2735,14 @@ namespace ClinicApp.Models.Entities
 
             HasIndex(pi => new { pi.StartDate, pi.EndDate, pi.IsActive })
                 .HasName("IX_PatientInsurance_Validity_IsActive");
+
+            // ایندکس ترکیبی برای جستجوی سریع بیمه‌های فعال بیمار
+            HasIndex(pi => new { pi.PatientId, pi.IsActive, pi.Priority, pi.IsDeleted })
+                .HasName("IX_PatientInsurance_PatientId_IsActive_Priority_IsDeleted");
+
+            // ایندکس ترکیبی برای جستجو بر اساس تاریخ شروع و پایان
+            HasIndex(pi => new { pi.StartDate, pi.EndDate, pi.IsActive, pi.IsDeleted })
+                .HasName("IX_PatientInsurance_StartDate_EndDate_IsActive_IsDeleted");
         }
     }
 
@@ -2810,6 +2818,13 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         [MaxLength(50, ErrorMessage = "شماره تلفن نمی‌تواند بیش از 50 کاراکتر باشد.")]
         public string PhoneNumber { get; set; }
+
+        /// <summary>
+        /// آدرس ایمیل بیمار
+        /// </summary>
+        [MaxLength(256, ErrorMessage = "آدرس ایمیل نمی‌تواند بیش از 256 کاراکتر باشد.")]
+        [EmailAddress(ErrorMessage = "فرمت آدرس ایمیل صحیح نیست.")]
+        public string Email { get; set; }
         /// <summary>
         /// جنسیت بیمار
         /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
@@ -2969,6 +2984,12 @@ namespace ClinicApp.Models.Entities
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_Patient_PhoneNumber")));
 
+            Property(p => p.Email)
+                .IsOptional()
+                .HasMaxLength(256)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Patient_Email")));
+
             // پیاده‌سازی ISoftDelete
             Property(p => p.IsDeleted)
                 .IsRequired()
@@ -3039,6 +3060,22 @@ namespace ClinicApp.Models.Entities
             // ایندکس‌های ترکیبی برای گزارش‌گیری و جستجوهای رایج در سیستم‌های پزشکی
             HasIndex(p => new { p.LastName, p.FirstName })
                 .HasName("IX_Patient_LastName_FirstName");
+
+            // ایندکس ترکیبی برای جستجوی سریع
+            HasIndex(p => new { p.IsDeleted, p.CreatedAt })
+                .HasName("IX_Patient_IsDeleted_CreatedAt");
+
+            // ایندکس ترکیبی برای جستجو بر اساس کد ملی و وضعیت حذف
+            HasIndex(p => new { p.NationalCode, p.IsDeleted })
+                .HasName("IX_Patient_NationalCode_IsDeleted");
+
+            // ایندکس ترکیبی برای جستجو بر اساس شماره تلفن و وضعیت حذف
+            HasIndex(p => new { p.PhoneNumber, p.IsDeleted })
+                .HasName("IX_Patient_PhoneNumber_IsDeleted");
+
+            // ایندکس ترکیبی برای جستجو بر اساس نام و نام خانوادگی
+            HasIndex(p => new { p.FirstName, p.LastName, p.IsDeleted })
+                .HasName("IX_Patient_FirstName_LastName_IsDeleted");
 
             // ایندکس ترکیبی InsuranceId حذف شد
         }

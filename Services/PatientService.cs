@@ -5,6 +5,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using Microsoft.AspNet.Identity;
 using Serilog;
 using System;
@@ -431,11 +432,9 @@ namespace ClinicApp.Services
                 searchTerm = string.IsNullOrWhiteSpace(searchTerm) ? "" : searchTerm.Trim();
                 string normalizedSearchTerm = PersianNumberHelper.ToEnglishNumbers(searchTerm);
 
-                // ساخت پرس‌وجو
+                // ساخت پرس‌وجو - بهینه‌سازی برای Read-Only Operations
                 var query = _context.Patients
-                    // Include Insurance حذف شد
-                    .Include(p => p.CreatedByUser)
-                    .Include(p => p.UpdatedByUser)
+                    .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
                     .Where(p => !p.IsDeleted);
 
                 // اعمال فیلتر جستجو
@@ -513,10 +512,13 @@ namespace ClinicApp.Services
             {
                 // مرحله 1: دریافت موجودیت کامل بیمار از دیتابیس
                 var patientEntity = await _context.Patients
-                    // Include Insurance حذف شد
                     .Include(p => p.CreatedByUser)
                     .Include(p => p.UpdatedByUser)
-                    .Include(p => p.Receptions)
+                    .Include(p => p.Receptions.Select(r => r.ReceptionItems))
+                    .Include(p => p.Receptions.Select(r => r.Transactions))
+                    .Include(p => p.Receptions.Select(r => r.Doctor))
+                    .Include(p => p.PatientInsurances.Select(pi => pi.InsurancePlan.InsuranceProvider))
+                    .Include(p => p.Appointments.Select(a => a.Doctor))
                     .Where(p => p.PatientId == patientId && !p.IsDeleted)
                     .FirstOrDefaultAsync();
 
@@ -536,13 +538,13 @@ namespace ClinicApp.Services
                 // مرحله 2: نگاشت موجودیت به ViewModel
                 var patientViewModel = ConvertToPatientDetailsViewModel(patientEntity);
 
-                // محاسبه مانده بدهی بیمار
+                // محاسبه مانده بدهی بیمار - رفع مشکل null
                 var totalDebt = await _context.PaymentTransactions
                     .Where(t => t.Reception.PatientId == patientId &&
                                t.Method == PaymentMethod.Debt &&
                                t.Status == PaymentStatus.Success &&
                                !t.IsDeleted)
-                    .SumAsync(t => t.Amount);
+                    .SumAsync(t => (decimal?)t.Amount) ?? 0;
 
                 patientViewModel.DebtBalance = totalDebt;
 
@@ -585,9 +587,9 @@ namespace ClinicApp.Services
             try
             {
                 var patient = await _context.Patients
-                    // Include Insurance حذف شد
                     .Include(p => p.CreatedByUser)
                     .Include(p => p.UpdatedByUser)
+                    .Include(p => p.PatientInsurances.Select(pi => pi.InsurancePlan))
                     .Where(p => p.PatientId == patientId && !p.IsDeleted)
                     .FirstOrDefaultAsync();
 
@@ -635,6 +637,7 @@ namespace ClinicApp.Services
 
         /// <summary>
         /// ایجاد یک بیمار جدید با رعایت تمام استانداردهای امنیتی و پزشکی
+        /// این متد هم ApplicationUser و هم Patient ایجاد می‌کند
         /// </summary>
         public async Task<ServiceResult> CreatePatientAsync(PatientCreateEditViewModel model)
         {
@@ -698,6 +701,25 @@ namespace ClinicApp.Services
 
                 // بیمه آزاد حذف شد - از PatientInsurance استفاده کنید
 
+                // ایجاد ApplicationUser جدید
+                var newUser = new ApplicationUser
+                {
+                    UserName = normalizedNationalCode, // کد ملی به عنوان نام کاربری
+                    PhoneNumber = normalizedPhoneNumber,
+                    PhoneNumberConfirmed = true,
+                    FirstName = model.FirstName,
+                    LastName = model.LastName,
+                    NationalCode = normalizedNationalCode,
+                    Gender = model.Gender,
+                    Address = model.Address,
+                    Email = model.Email,
+                    EmailConfirmed = false,
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = _currentUserService.UserId,
+                    IsDeleted = false
+                };
+
                 // ایجاد بیمار جدید
                 var patient = new Patient
                 {
@@ -705,9 +727,10 @@ namespace ClinicApp.Services
                     FirstName = model.FirstName,
                     LastName = model.LastName,
                     PhoneNumber = normalizedPhoneNumber,
+                    Email = model.Email,
                     Gender = model.Gender,
                     Address = model.Address,
-       
+                    PatientCode = model.PatientCode
                 };
 
                 // تبدیل تاریخ شمسی به میلادی
@@ -736,16 +759,56 @@ namespace ClinicApp.Services
                 patient.UpdatedAt = null;
                 patient.UpdatedByUserId = null;
 
-                // افزودن به دیتابیس
-                _context.Patients.Add(patient);
-                await _context.SaveChangesAsync();
+                // تراکنش امن برای ثبت همزمان در AspNetUsers و Patients
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        // ایجاد کاربر در Identity
+                        var identityResult = await _userManager.CreateAsync(newUser);
+                        if (!identityResult.Succeeded)
+                        {
+                            transaction.Rollback();
+                            _log.Warning("ایجاد کاربر شکست خورد. کد ملی: {NationalCode}، خطاها: {@Errors}",
+                                normalizedNationalCode, identityResult.Errors);
+
+                            return ServiceResult.FailedWithValidationErrors(
+                                "خطاهای اعتبارسنجی رخ داده است.",
+                                identityResult.Errors.Select(e => new ValidationError("Identity", e)),
+                                "IDENTITY_VALIDATION_ERROR");
+                        }
+
+                        // اختصاص نقش "Patient"
+                        await _userManager.AddToRoleAsync(newUser.Id, AppRoles.Patient);
+
+                        // تنظیم ApplicationUserId
+                        patient.ApplicationUserId = newUser.Id;
+
+                        // افزودن به دیتابیس
+                        _context.Patients.Add(patient);
+                        await _context.SaveChangesAsync();
+
+                        transaction.Commit();
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        _log.Error(ex, "تراکنش در حین ایجاد بیمار جدید شکست خورد. کد ملی: {NationalCode}",
+                            normalizedNationalCode);
+                        return ServiceResult.Failed(
+                            "خطای سیستمی رخ داد. عملیات لغو شد.",
+                            "TRANSACTION_ERROR",
+                            ErrorCategory.General,
+                            SecurityLevel.High);
+                    }
+                }
 
                 _log.Information("بیمار جدید با موفقیت ایجاد شد. کد ملی: {NationalCode}", normalizedNationalCode);
                 return ServiceResult.Successful(
                     "بیمار با موفقیت ایجاد شد.",
                     operationName: "CreatePatient",
-                    userId: _currentUserService.UserId,
-                    userFullName: _currentUserService.UserName,
+                    userId: newUser.Id,
+                    userFullName: newUser.FullName,
                     securityLevel: SecurityLevel.Medium);
             }
             catch (Exception ex)
@@ -880,6 +943,107 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// بررسی وابستگی‌های بیمار قبل از حذف - طبق استانداردهای سیستم‌های درمانی
+        /// </summary>
+        public async Task<ServiceResult> CheckPatientDependenciesAsync(int patientId)
+        {
+            _log.Information(
+                "بررسی وابستگی‌های بیمار شناسه {PatientId}. کاربر: {UserName} (شناسه: {UserId})",
+                patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت بیمار با تمام وابستگی‌ها
+                var patient = await _context.Patients
+                    .Include(p => p.Receptions)
+                    .Include(p => p.Appointments)
+                    .Include(p => p.PatientInsurances)
+                    .Where(p => p.PatientId == patientId && !p.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (patient == null)
+                {
+                    return ServiceResult.Failed(
+                        "بیمار مورد نظر یافت نشد یا قبلاً حذف شده است.",
+                        "PATIENT_NOT_FOUND",
+                        ErrorCategory.NotFound,
+                        SecurityLevel.Medium);
+                }
+
+                var dependencies = new List<string>();
+
+                // بررسی پذیرش‌های فعال
+                var activeReceptions = patient.Receptions.Where(r =>
+                    r.Status == ReceptionStatus.Pending ||
+                    r.Status == ReceptionStatus.InProgress).ToList();
+
+                if (activeReceptions.Any())
+                {
+                    dependencies.Add($"پذیرش‌های فعال ({activeReceptions.Count} مورد)");
+                }
+
+                // بررسی نوبت‌های آینده
+                var futureAppointments = patient.Appointments.Where(a =>
+                    a.AppointmentDate > DateTime.Now &&
+                    a.Status != AppointmentStatus.Cancelled).ToList();
+
+                if (futureAppointments.Any())
+                {
+                    dependencies.Add($"نوبت‌های آینده ({futureAppointments.Count} مورد)");
+                }
+
+                // بررسی بیمه‌های فعال
+                var activeInsurances = patient.PatientInsurances.Where(pi =>
+                    pi.IsActive && pi.EndDate == null || pi.EndDate > DateTime.Now).ToList();
+
+                if (activeInsurances.Any())
+                {
+                    dependencies.Add($"بیمه‌های فعال ({activeInsurances.Count} مورد)");
+                }
+
+                // بررسی تراکنش‌های مالی
+                var hasFinancialTransactions = await _context.PaymentTransactions
+                    .AnyAsync(t => t.Reception.PatientId == patientId && !t.IsDeleted);
+
+                if (hasFinancialTransactions)
+                {
+                    dependencies.Add("تراکنش‌های مالی");
+                }
+
+                if (dependencies.Any())
+                {
+                    var message = $"امکان حذف بیمار وجود ندارد. وابستگی‌های موجود: {string.Join("، ", dependencies)}. " +
+                                 "لطفاً ابتدا وابستگی‌ها را برطرف کنید.";
+
+                    _log.Warning("امکان حذف بیمار شناسه {PatientId} وجود ندارد. وابستگی‌ها: {Dependencies}", 
+                        patientId, string.Join(", ", dependencies));
+
+                    return ServiceResult.Failed(
+                        message,
+                        "DEPENDENCIES_EXIST",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                return ServiceResult.Successful(
+                    "هیچ وابستگی‌ای برای حذف بیمار وجود ندارد.",
+                    operationName: "CheckPatientDependencies",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطای سیستمی در بررسی وابستگی‌های بیمار شناسه {PatientId}", patientId);
+                return ServiceResult.Failed(
+                    "خطا در بررسی وابستگی‌های بیمار. لطفاً دوباره تلاش کنید.",
+                    "DEPENDENCY_CHECK_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
         /// حذف نرم (Soft-delete) یک بیمار با رعایت تمام استانداردهای پزشکی و حفظ اطلاعات مالی
         /// </summary>
         public async Task<ServiceResult> DeletePatientAsync(int patientId)
@@ -961,6 +1125,314 @@ namespace ClinicApp.Services
                     "DELETE_ERROR",
                     ErrorCategory.General,
                     SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود کد ملی در سیستم - برای جلوگیری از تکرار
+        /// </summary>
+        public async Task<bool> CheckNationalCodeExistsAsync(string nationalCode)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(nationalCode))
+                {
+                    return false;
+                }
+
+                _log.Information("بررسی وجود کد ملی: {NationalCode}. User: {UserName} (Id: {UserId})",
+                    nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                var exists = await _context.Patients
+                    .Where(p => !p.IsDeleted && p.NationalCode == nationalCode)
+                    .AnyAsync();
+
+                _log.Information("نتیجه بررسی کد ملی {NationalCode}: {Exists}. User: {UserName} (Id: {UserId})",
+                    nationalCode, exists, _currentUserService.UserName, _currentUserService.UserId);
+
+                return exists;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وجود کد ملی {NationalCode}. User: {UserName} (Id: {UserId})",
+                    nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+                return false; // در صورت خطا، false برمی‌گردانیم تا کاربر بتواند ادامه دهد
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات بیمه‌های فعال بیمار
+        /// </summary>
+        public async Task<ServiceResult<List<PatientInsuranceViewModel>>> GetPatientInsurancesAsync(int patientId, int pageNumber = 1, int pageSize = 10)
+        {
+            _log.Information(
+                "درخواست اطلاعات بیمه‌های بیمار شناسه {PatientId}. صفحه: {PageNumber}, اندازه: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                patientId, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی ورودی‌ها
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+
+                // ساخت پرس‌وجو
+                var query = _context.PatientInsurances
+                    .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
+                    .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Where(pi => pi.PatientId == patientId && !pi.IsDeleted && pi.IsActive);
+
+                // محاسبه تعداد کل
+                int totalItems = await query.CountAsync();
+
+                // اعمال صفحه‌بندی
+                var patientInsurances = await query
+                    .OrderBy(pi => pi.Priority)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var viewModels = patientInsurances.Select(pi => new PatientInsuranceViewModel
+                {
+                    PatientInsuranceId = pi.PatientInsuranceId,
+                    PatientId = pi.PatientId,
+                    InsurancePlanId = pi.InsurancePlanId,
+                    InsurancePlanName = pi.InsurancePlan?.Name,
+                    InsuranceProviderName = pi.InsurancePlan?.InsuranceProvider?.Name,
+                    PolicyNumber = pi.PolicyNumber,
+                    IsPrimary = pi.IsPrimary,
+                    Priority = pi.Priority,
+                    StartDate = pi.StartDate,
+                    EndDate = pi.EndDate,
+                    StartDateShamsi = pi.StartDate.ToPersianDate(),
+                    EndDateShamsi = pi.EndDate.ToPersianDate(),
+                    IsActive = pi.IsActive
+                }).ToList();
+
+                _log.Information(
+                    "دریافت اطلاعات بیمه‌های بیمار شناسه {PatientId} با موفقیت انجام شد. تعداد بیمه‌ها: {Count}, کل: {TotalItems}, صفحه: {PageNumber}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientId, viewModels.Count, totalItems, pageNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientInsuranceViewModel>>.Successful(
+                    viewModels,
+                    "اطلاعات بیمه‌های بیمار با موفقیت دریافت شد.",
+                    operationName: "GetPatientInsurances",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت اطلاعات بیمه‌های بیمار شناسه {PatientId}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientInsuranceViewModel>>.Failed(
+                    "خطا در دریافت اطلاعات بیمه‌ها. لطفاً دوباره تلاش کنید.",
+                    "GET_INSURANCES_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تاریخچه نوبت‌های بیمار
+        /// </summary>
+        public async Task<ServiceResult<List<PatientAppointmentViewModel>>> GetPatientAppointmentsAsync(int patientId, int pageNumber = 1, int pageSize = 10)
+        {
+            _log.Information(
+                "درخواست تاریخچه نوبت‌های بیمار شناسه {PatientId}. صفحه: {PageNumber}, اندازه: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                patientId, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی ورودی‌ها
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+
+                // ساخت پرس‌وجو
+                var query = _context.Appointments
+                    .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
+                    .Include(a => a.Doctor)
+                    .Include(a => a.ServiceCategory)
+                    .Where(a => a.PatientId == patientId && !a.IsDeleted);
+
+                // محاسبه تعداد کل
+                int totalItems = await query.CountAsync();
+
+                // اعمال صفحه‌بندی
+                var appointments = await query
+                    .OrderByDescending(a => a.AppointmentDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var viewModels = appointments.Select(a => new PatientAppointmentViewModel
+                {
+                    AppointmentId = a.AppointmentId,
+                    PatientId = a.PatientId ?? 0,
+                    DoctorId = a.DoctorId,
+                    DoctorName = a.Doctor?.FullName,
+                    AppointmentDate = a.AppointmentDate,
+                    AppointmentDateShamsi = a.AppointmentDate.ToPersianDateTime(),
+                    Status = a.Status,
+                    StatusText = GetAppointmentStatusText(a.Status),
+                    Price = a.Price,
+                    ServiceCategoryName = a.ServiceCategory?.Title,
+                    Notes = a.Description,
+                    CreatedAt = a.CreatedAt,
+                    CreatedAtShamsi = a.CreatedAt.ToPersianDateTime()
+                }).ToList();
+
+                _log.Information(
+                    "دریافت تاریخچه نوبت‌های بیمار شناسه {PatientId} با موفقیت انجام شد. تعداد نوبت‌ها: {Count}, کل: {TotalItems}, صفحه: {PageNumber}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientId, viewModels.Count, totalItems, pageNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientAppointmentViewModel>>.Successful(
+                    viewModels,
+                    "تاریخچه نوبت‌های بیمار با موفقیت دریافت شد.",
+                    operationName: "GetPatientAppointments",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت تاریخچه نوبت‌های بیمار شناسه {PatientId}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientAppointmentViewModel>>.Failed(
+                    "خطا در دریافت تاریخچه نوبت‌ها. لطفاً دوباره تلاش کنید.",
+                    "GET_APPOINTMENTS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تاریخچه پذیرش‌های بیمار
+        /// </summary>
+        public async Task<ServiceResult<List<PatientReceptionViewModel>>> GetPatientReceptionsAsync(int patientId, int pageNumber = 1, int pageSize = 10)
+        {
+            _log.Information(
+                "درخواست تاریخچه پذیرش‌های بیمار شناسه {PatientId}. صفحه: {PageNumber}, اندازه: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                patientId, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی ورودی‌ها
+                if (pageNumber < 1) pageNumber = 1;
+                if (pageSize < 1) pageSize = 10;
+                if (pageSize > 100) pageSize = 100;
+
+                // ساخت پرس‌وجو
+                var query = _context.Receptions
+                    .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
+                    .Include(r => r.Doctor)
+                    .Include(r => r.ReceptionItems)
+                    .Include(r => r.Transactions)
+                    .Include(r => r.ActivePatientInsurance.InsurancePlan.InsuranceProvider)
+                    .Where(r => r.PatientId == patientId && !r.IsDeleted);
+
+                // محاسبه تعداد کل
+                int totalItems = await query.CountAsync();
+
+                // اعمال صفحه‌بندی
+                var receptions = await query
+                    .OrderByDescending(r => r.ReceptionDate)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var viewModels = receptions.Select(r => new PatientReceptionViewModel
+                {
+                    ReceptionId = r.ReceptionId,
+                    PatientId = r.PatientId,
+                    DoctorId = r.DoctorId,
+                    DoctorName = r.Doctor?.FullName,
+                    ReceptionDate = r.ReceptionDate,
+                    ReceptionDateShamsi = r.ReceptionDate.ToPersianDateTime(),
+                    Status = r.Status,
+                    StatusText = GetReceptionStatusText(r.Status),
+                    TotalAmount = r.TotalAmount,
+                    PatientCoPay = r.PatientCoPay,
+                    InsurerShareAmount = r.InsurerShareAmount,
+                    InsuranceProviderName = r.ActivePatientInsurance?.InsurancePlan?.InsuranceProvider?.Name,
+                    IsPaid = r.IsPaid,
+                    ServicesCount = r.ReceptionItems?.Count ?? 0,
+                    PaymentsCount = r.Transactions?.Count(t => t.Status == PaymentStatus.Success) ?? 0,
+                    CreatedAt = r.CreatedAt,
+                    CreatedAtShamsi = r.CreatedAt.ToPersianDateTime()
+                }).ToList();
+
+                _log.Information(
+                    "دریافت تاریخچه پذیرش‌های بیمار شناسه {PatientId} با موفقیت انجام شد. تعداد پذیرش‌ها: {Count}, کل: {TotalItems}, صفحه: {PageNumber}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientId, viewModels.Count, totalItems, pageNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientReceptionViewModel>>.Successful(
+                    viewModels,
+                    "تاریخچه پذیرش‌های بیمار با موفقیت دریافت شد.",
+                    operationName: "GetPatientReceptions",
+                    userId: _currentUserService.UserId,
+                    userFullName: _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت تاریخچه پذیرش‌های بیمار شناسه {PatientId}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientReceptionViewModel>>.Failed(
+                    "خطا در دریافت تاریخچه پذیرش‌ها. لطفاً دوباره تلاش کنید.",
+                    "GET_RECEPTIONS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// تبدیل وضعیت نوبت به متن فارسی
+        /// </summary>
+        private string GetAppointmentStatusText(AppointmentStatus status)
+        {
+            switch (status)
+            {
+                case AppointmentStatus.Available:
+                    return "در دسترس";
+                case AppointmentStatus.Scheduled:
+                    return "ثبت شده";
+                case AppointmentStatus.Pending:
+                    return "در انتظار";
+                case AppointmentStatus.Completed:
+                    return "انجام شده";
+                case AppointmentStatus.Cancelled:
+                    return "لغو شده";
+                case AppointmentStatus.NoShow:
+                    return "عدم حضور";
+                default:
+                    return "نامشخص";
+            }
+        }
+
+        /// <summary>
+        /// تبدیل وضعیت پذیرش به متن فارسی
+        /// </summary>
+        private string GetReceptionStatusText(ReceptionStatus status)
+        {
+            switch (status)
+            {
+                case ReceptionStatus.Pending:
+                    return "در انتظار";
+                case ReceptionStatus.Completed:
+                    return "تکمیل شده";
+                case ReceptionStatus.Cancelled:
+                    return "لغو شده";
+                case ReceptionStatus.InProgress:
+                    return "در حال انجام";
+                case ReceptionStatus.NeedsAdditionalPayment:
+                    return "نیاز به پرداخت بیشتر";
+                default:
+                    return "نامشخص";
             }
         }
     }

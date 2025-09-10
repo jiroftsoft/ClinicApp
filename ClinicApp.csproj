@@ -519,6 +519,14 @@
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.Designer.cs">
       <DependentUpon>202509090447343_CreateDatabaseClinic.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509100536185_CreateEmailOnPatient.cs" />
+    <Compile Include="Migrations\202509100536185_CreateEmailOnPatient.Designer.cs">
+      <DependentUpon>202509100536185_CreateEmailOnPatient.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509100635589_EnhancePerformance.cs" />
+    <Compile Include="Migrations\202509100635589_EnhancePerformance.Designer.cs">
+      <DependentUpon>202509100635589_EnhancePerformance.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
     <Compile Include="Repositories\Class1.cs" />
@@ -630,6 +638,7 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexPageViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
@@ -693,6 +702,7 @@
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\InsuranceCalculationViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\InsurancePlanCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\PatientCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\PatientInsuranceCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ServiceCategoryCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ServiceCreateEditViewModelValidator.cs" />
@@ -3618,8 +3628,8 @@
     <Content Include="TOAST_UNDEFINED_FIX.md" />
     <Content Include="Views\Shared\_PersianDatePickerTemplate.cshtml" />
     <Content Include="Views\Shared\_PersianDatePickerExample.cshtml" />
-    <Content Include="TEMPLATES\DetailsPageTemplate.cshtml" />
     <Content Include="TEMPLATES\README.md" />
+    <Content Include="Views\Patient\_PatientInsurancesPartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -3656,6 +3666,12 @@
   <ItemGroup>
     <EmbeddedResource Include="Migrations\202509090447343_CreateDatabaseClinic.resx">
       <DependentUpon>202509090447343_CreateDatabaseClinic.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509100536185_CreateEmailOnPatient.resx">
+      <DependentUpon>202509100536185_CreateEmailOnPatient.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509100635589_EnhancePerformance.resx">
+      <DependentUpon>202509100635589_EnhancePerformance.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

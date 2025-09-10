@@ -1,169 +1,348 @@
-﻿@{
-    ViewBag.Title = "مدیریت بیماران";
+﻿@model ClinicApp.ViewModels.PatientIndexPageViewModel
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="card shadow-sm">
-    <div class="card-header">
-        <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">@ViewBag.Title</h4>
-            @Html.ActionLink("ثبت بیمار جدید", "Create", null, new { @class = "btn btn-success" })
-        </div>
-    </div>
-    <div class="card-body">
-        <div class="row mb-3">
-            <div class="col-md-6">
-                <div class="input-group">
-                    <input type="text" id="search-input" class="form-control" placeholder="جستجو بر اساس نام، کد ملی..." />
-                    <div class="input-group-append">
-                        <button id="search-button" class="btn btn-primary" type="button">
-                            <i class="fa fa-search"></i> جستجو
-                        </button>
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fa fa-users me-2"></i>
+                            مدیریت بیماران
+                        </h4>
+                        <div class="btn-group" role="group">
+                            @Html.ActionLink("ثبت بیمار جدید", "Create", null, new { 
+                                @class = "btn btn-success btn-sm",
+                                @title = "افزودن بیمار جدید به سیستم"
+                            })
+                            <button type="button" class="btn btn-info btn-sm" id="refresh-btn" title="بروزرسانی لیست">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
 
-        <div id="patient-list-container">
-            <div id="loading-spinner" class="text-center p-5">
-                <i class="fa fa-spinner fa-spin fa-3x"></i>
-                <p class="mt-2">در حال بارگذاری اطلاعات...</p>
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-search me-2"></i>
+                        جستجو و فیلتر
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-search"></i>
+                                </span>
+                                <input type="text" 
+                                       id="search-input" 
+                                       class="form-control" 
+                                       placeholder="جستجو بر اساس نام، کد ملی، شماره تلفن..." 
+                                       aria-label="جستجو در بیماران"
+                                       autocomplete="off" />
+                                <button id="search-button" 
+                                        class="btn btn-primary" 
+                                        type="button"
+                                        title="جستجو">
+                                    <i class="fa fa-search me-1"></i>
+                                    جستجو
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select id="gender-filter" class="form-select">
+                                <option value="">همه جنسیت‌ها</option>
+                                <option value="Male">مرد</option>
+                                <option value="Female">زن</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="button" id="clear-filters" class="btn btn-outline-secondary w-100">
+                                <i class="fa fa-times me-1"></i>
+                                پاک کردن فیلترها
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fa fa-list me-2"></i>
+                            لیست بیماران
+                        </h6>
+                        <span id="results-count" class="badge bg-primary">0 بیمار</span>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Loading Spinner -->
+                    <div id="loading-spinner" class="text-center p-5" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                        <p class="mt-3 text-muted">در حال بارگذاری اطلاعات بیماران...</p>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="patient-list-container">
+                        <!-- Dynamic content will be loaded here -->
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-state" class="text-center p-5" style="display: none;">
+                        <i class="fa fa-users fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">هیچ بیماری یافت نشد</h5>
+                        <p class="text-muted">لطفاً معیارهای جستجو را تغییر دهید یا بیمار جدیدی اضافه کنید.</p>
+                        @Html.ActionLink("افزودن بیمار جدید", "Create", null, new { 
+                            @class = "btn btn-success",
+                            @title = "افزودن بیمار جدید"
+                        })
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="delete-confirm-modal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="delete-confirm-modal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">تایید حذف</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    تایید حذف بیمار
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
             </div>
             <div class="modal-body">
-                <p>آیا از حذف بیمار <strong id="patient-name-to-delete"></strong> اطمینان دارید؟</p>
+                <div class="alert alert-warning">
+                    <i class="fa fa-warning me-2"></i>
+                    <strong>هشدار:</strong> این عمل قابل بازگشت نیست!
+                </div>
+                <p>آیا از حذف بیمار <strong id="patient-name-to-delete" class="text-danger"></strong> اطمینان دارید؟</p>
+                <div class="bg-light p-3 rounded">
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        تمام اطلاعات مرتبط با این بیمار نیز حذف خواهد شد.
+                    </small>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                <button type="button" id="confirm-delete-button" class="btn btn-danger">حذف کن</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" id="confirm-delete-button" class="btn btn-danger">
+                    <i class="fa fa-trash me-1"></i>
+                    حذف کن
+                </button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Success/Error Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="success-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="fa fa-check-circle me-2"></i>
+            <strong class="me-auto">موفقیت</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="success-message">
+            عملیات با موفقیت انجام شد.
+        </div>
+    </div>
+    
+    <div id="error-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            <strong class="me-auto">خطا</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="error-message">
+            خطایی رخ داده است.
+        </div>
+    </div>
+</div>
 
 @section Scripts {
-    @* اطمینان از وجود AntiForgeryToken برای ارسال با AJAX *@
     @Html.AntiForgeryToken()
-
+    
     <script type="text/javascript">
-        $(document).ready(function () {
-            var patientToDeleteId = null;
+        $(document).ready(function () {
+            var patientToDeleteId = null;
+            var currentPage = 1;
+            var currentSearchTerm = '';
+            var currentGenderFilter = '';
 
-            // ۱. بارگذاری اولیه لیست
-            loadPatientList(1, '');
+            // Initialize
+            loadPatientList(1, '', '');
 
-            // ۲. مدیریت جستجو
-            $('#search-button').on('click', function() {
-                var searchTerm = $('#search-input').val();
-                loadPatientList(1, searchTerm); // همیشه از صفحه ۱ شروع کن
-            });
+            // Search functionality
+            $('#search-button').on('click', function() {
+                currentSearchTerm = $('#search-input').val().trim();
+                currentGenderFilter = $('#gender-filter').val();
+                loadPatientList(1, currentSearchTerm, currentGenderFilter);
+            });
 
-            $('#search-input').on('keypress', function(e) {
-                if (e.which === 13) { // کلید Enter
-                    $('#search-button').click();
-                }
-            });
+            $('#search-input').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('#search-button').click();
+                }
+            });
 
-            // ۳. مدیریت صفحه‌بندی (با event delegation)
-            $('#patient-list-container').on('click', '.page-link', function (e) {
-                e.preventDefault();
-                var page = $(this).data('page');
-                var searchTerm = $('#search-input').val(); // حفظ مقدار جستجو
-                if(page) loadPatientList(page, searchTerm);
-            });
+            // Gender filter
+            $('#gender-filter').on('change', function() {
+                currentGenderFilter = $(this).val();
+                loadPatientList(1, currentSearchTerm, currentGenderFilter);
+            });
 
-            // ۴. مدیریت باز کردن مودال حذف
-            $('#patient-list-container').on('click', '.delete-btn', function () {
-                patientToDeleteId = $(this).data('id');
-                var patientName = $(this).data('name');
-                $('#patient-name-to-delete').text(patientName);
-                $('#delete-confirm-modal').modal('show');
-            });
+            // Clear filters
+            $('#clear-filters').on('click', function() {
+                $('#search-input').val('');
+                $('#gender-filter').val('');
+                currentSearchTerm = '';
+                currentGenderFilter = '';
+                loadPatientList(1, '', '');
+            });
 
-            // ۵. مدیریت تایید نهایی حذف
-            $('#confirm-delete-button').on('click', function() {
-                if (patientToDeleteId) {
-                    deletePatient(patientToDeleteId);
-                }
-            });
-        });
+            // Refresh button
+            $('#refresh-btn').on('click', function() {
+                loadPatientList(currentPage, currentSearchTerm, currentGenderFilter);
+            });
 
-        // تابع اصلی بارگذاری لیست با AJAX
-        function loadPatientList(pageNumber, searchTerm) {
-            var container = $('#patient-list-container');
-            var spinner = $('#loading-spinner');
-            var token = $('input[name="__RequestVerificationToken"]').val(); // دریافت توکن امنیتی
+            // Pagination
+            $('#patient-list-container').on('click', '.page-link', function (e) {
+                e.preventDefault();
+                var page = $(this).data('page');
+                if (page) {
+                    currentPage = page;
+                    loadPatientList(page, currentSearchTerm, currentGenderFilter);
+                }
+            });
 
-            $.ajax({
-                url: '@Url.Action("LoadPatients", "Patient")',
-                type: 'POST', // تغییر به POST برای امنیت بیشتر و ارسال توکن
-                data: {
-                    __RequestVerificationToken: token,
-                    page: pageNumber,
-                    searchTerm: searchTerm
-                },
-                beforeSend: function () {
-                    container.html(spinner.prop('outerHTML'));
-                    spinner.show();
-                },
-                success: function (result) {
-                    container.html(result);
-                },
-                error: function (xhr, status, error) {
-                    container.html('<div class="alert alert-danger">خطا در بارگذاری اطلاعات. لطفاً دوباره تلاش کنید.</div>');
-                    console.error("AJAX Error: ", status, error);
-                }
-            });
-        }
+            // Delete modal
+            $('#patient-list-container').on('click', '.delete-btn', function () {
+                patientToDeleteId = $(this).data('id');
+                var patientName = $(this).data('name');
+                $('#patient-name-to-delete').text(patientName);
+                $('#delete-confirm-modal').modal('show');
+            });
 
-        // تابع حذف بیمار با AJAX
-  // This function is in your Index.cshtml
-function deletePatient(id) {
-    var token = $('input[name="__RequestVerificationToken"]').val();
-    var deleteButton = $('#confirm-delete-button'); // Get the confirm button
+            // Confirm delete
+            $('#confirm-delete-button').on('click', function() {
+                if (patientToDeleteId) {
+                    deletePatient(patientToDeleteId);
+                }
+            });
+        });
 
-    $.ajax({
-        url: '@Url.Action("Delete", "Patient")',
-        type: 'POST',
-        data: {
-            __RequestVerificationToken: token,
-            id: id
-        },
-        beforeSend: function() {
-            // Disable the button and show a spinner to prevent double-clicks
-            deleteButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm"></span> در حال حذف...');
-        },
-        success: function (response) {
-            $('#delete-confirm-modal').modal('hide');
-            if (response.success) {
-                toastr.success("بیمار با موفقیت حذف شد.");
-                // Refresh the list; the soft-deleted patient will now be filtered out.
-                loadPatientList(1, $('#search-input').val());
-            } else {
-                toastr.error(response.message || "An error occurred while deleting the patient.");
-            }
-        },
-        error: function () {
-            $('#delete-confirm-modal').modal('hide');
-            toastr.error("A communication error occurred. Please try again.");
-        },
-        complete: function() {
-            // Re-enable the button and restore its text
-            deleteButton.prop('disabled', false).html('حذف کن');
+        function loadPatientList(pageNumber, searchTerm, genderFilter) {
+            var container = $('#patient-list-container');
+            var spinner = $('#loading-spinner');
+            var emptyState = $('#empty-state');
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            $.ajax({
+                url: '@Url.Action("LoadPatients", "Patient")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    page: pageNumber,
+                    searchTerm: searchTerm,
+                    genderFilter: genderFilter
+                },
+                beforeSend: function () {
+                    container.hide();
+                    emptyState.hide();
+                    spinner.show();
+                },
+                success: function (result) {
+                    container.html(result).show();
+                    spinner.hide();
+                    
+                    // Update results count
+                    var count = $(result).find('.patient-item').length;
+                    $('#results-count').text(count + ' بیمار');
+                    
+                    if (count === 0) {
+                        emptyState.show();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    spinner.hide();
+                    container.html(`
+                        <div class="alert alert-danger m-3">
+                            <i class="fa fa-exclamation-triangle me-2"></i>
+                            خطا در بارگذاری اطلاعات. لطفاً دوباره تلاش کنید.
+                        </div>
+                    `).show();
+                    console.error("AJAX Error: ", status, error);
+                }
+            });
         }
-    });
-}
+
+        function deletePatient(id) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var deleteButton = $('#confirm-delete-button');
+
+            $.ajax({
+                url: '@Url.Action("DeleteConfirmed", "Patient", new { id = "__ID__" })'.replace('__ID__', id),
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token
+                },
+                beforeSend: function() {
+                    deleteButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>در حال حذف...');
+                },
+                success: function (response) {
+                    $('#delete-confirm-modal').modal('hide');
+                    if (response.success) {
+                        showToast('success', 'بیمار با موفقیت حذف شد.');
+                        loadPatientList(1, currentSearchTerm, currentGenderFilter);
+                    } else {
+                        showToast('error', response.message || 'خطایی در حذف بیمار رخ داده است.');
+                    }
+                },
+                error: function () {
+                    $('#delete-confirm-modal').modal('hide');
+                    showToast('error', 'خطای ارتباطی. لطفاً دوباره تلاش کنید.');
+                },
+                complete: function() {
+                    deleteButton.prop('disabled', false).html('<i class="fa fa-trash me-1"></i>حذف کن');
+                }
+            });
+        }
+
+        function showToast(type, message) {
+            var toastId = type === 'success' ? '#success-toast' : '#error-toast';
+            var messageId = type === 'success' ? '#success-message' : '#error-message';
+            
+            $(messageId).text(message);
+            var toast = new bootstrap.Toast(document.querySelector(toastId));
+            toast.show();
+        }
     </script>
 }

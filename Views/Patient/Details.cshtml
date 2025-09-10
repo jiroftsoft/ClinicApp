@@ -1,42 +1,369 @@
-﻿@model ClinicApp.ViewModels.PatientDetailsViewModel
+﻿@using ClinicApp.Models.Entities
+@model ClinicApp.ViewModels.PatientDetailsPageViewModel
 
-@{
-    ViewBag.Title = "جزئیات بیمار: " + Model.FullName;
-}
-
-<div class="card shadow-sm">
-    <div class="card-header">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- ✅ بخش ۱: ساختار کلی -->
+            <h2 class="text-center mb-4">@Model.PageTitle</h2>
+            <p class="text-center text-muted mb-4">@Model.PageSubtitle</p>
+            
+            <!-- ✅ بخش ۲: طراحی بصری - اطلاعات اصلی بیمار -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-info text-white">
         <div class="d-flex justify-content-between align-items-center">
-            <h4 class="mb-0">@ViewBag.Title</h4>
-            <div>
-                @Html.ActionLink("بازگشت به لیست", "Index", null, new { @class = "btn btn-secondary" })
-                @Html.ActionLink("ویرایش", "Edit", new { id = Model.PatientId }, new { @class = "btn btn-warning" })
+                        <h4 class="mb-0">
+                            <i class="fas fa-user-circle me-2"></i>
+                            اطلاعات شخصی بیمار
+                        </h4>
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("Edit", new { id = Model.PatientInfo.PatientId })" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit me-1"></i> ویرایش
+                            </a>
+                            <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                                <i class="fas fa-arrow-right me-1"></i> بازگشت
+                            </a>
             </div>
         </div>
     </div>
     <div class="card-body">
-        <dl class="row">
-            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.FullName)</dt>
-            <dd class="col-sm-9">@Html.DisplayFor(model => model.FullName)</dd>
-
-            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.NationalCode)</dt>
-            <dd class="col-sm-9">@Html.DisplayFor(model => model.NationalCode)</dd>
-
-            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.PhoneNumber)</dt>
-            <dd class="col-sm-9">@Html.DisplayFor(model => model.PhoneNumber)</dd>
-
-            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.BirthDate)</dt>
-            <dd class="col-sm-9">
-                @(string.IsNullOrEmpty(Model.BirthDate) || Model.BirthDate == "-" ? "-" : Model.BirthDate)
-            </dd>
-
-            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.Address)</dt>
-            <dd class="col-sm-9">
-                @(string.IsNullOrWhiteSpace(Model.Address) ? "-" : Model.Address)
-            </dd>
-
-            <dt class="col-sm-3">@Html.DisplayNameFor(model => model.CreatedAt)</dt>
-            <dd class="col-sm-9">@Html.DisplayFor(model => model.CreatedAt)</dd>
-        </dl>
+                    <div class="row g-3">
+                        <!-- نام و نام خانوادگی -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.FullName)
+                                </label>
+                                <div class="info-value">
+                                    <strong class="text-primary">@Html.DisplayFor(model => model.PatientInfo.FullName)</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- کد ملی -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-id-card me-2 text-info"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.NationalCode)
+                                </label>
+                                <div class="info-value">
+                                    <code class="bg-light px-2 py-1 rounded">@Html.DisplayFor(model => model.PatientInfo.NationalCode)</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- جنسیت -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas @(Model.PatientInfo.Gender == Gender.Male ? "fa-male" : "fa-female") me-2 text-success"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.Gender)
+                                </label>
+                                <div class="info-value">
+                                    <span class="badge @(Model.PatientInfo.Gender == Gender.Male ? "bg-primary" : "bg-danger")">
+                                        <i class="fas @(Model.PatientInfo.Gender == Gender.Male ? "fa-male" : "fa-female") me-1"></i>
+                                        @Model.PatientInfo.GenderDisplay
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- شماره موبایل -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-phone me-2 text-warning"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.PhoneNumber)
+                                </label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrEmpty(Model.PatientInfo.PhoneNumber))
+                                    {
+                                        <a href="tel:@Model.PatientInfo.PhoneNumber" class="text-decoration-none">
+                                            <i class="fas fa-phone me-1"></i>@Model.PatientInfo.PhoneNumber
+                                        </a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- تاریخ تولد -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-calendar-alt me-2 text-info"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.BirthDateShamsi)
+                                </label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrEmpty(Model.PatientInfo.BirthDateShamsi) && Model.PatientInfo.BirthDateShamsi != "-")
+                                    {
+                                        <span class="text-dark">@Model.PatientInfo.BirthDateShamsi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- آدرس -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-map-marker-alt me-2 text-danger"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.Address)
+                                </label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrWhiteSpace(Model.PatientInfo.Address))
+                                    {
+                                        <span class="text-dark">@Model.PatientInfo.Address</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ✅ بخش ۳: اطلاعات سیستم -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle me-2"></i>
+                        اطلاعات سیستم
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- تاریخ ایجاد -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-plus-circle me-2 text-success"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.CreatedAtShamsi)
+                                </label>
+                                <div class="info-value">
+                                    <span class="text-dark">@Model.PatientInfo.CreatedAtShamsi</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- ایجاد شده توسط -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-user-plus me-2 text-primary"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.CreatedByUser)
+                                </label>
+                                <div class="info-value">
+                                    <span class="text-dark">@Model.PatientInfo.CreatedByUser</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- آخرین ویرایش -->
+                        @if (!string.IsNullOrEmpty(Model.PatientInfo.UpdatedAtShamsi))
+                        {
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">
+                                        <i class="fas fa-edit me-2 text-warning"></i>
+                                        @Html.DisplayNameFor(model => model.PatientInfo.UpdatedAtShamsi)
+                                    </label>
+                                    <div class="info-value">
+                                        <span class="text-dark">@Model.PatientInfo.UpdatedAtShamsi</span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="info-item">
+                                    <label class="info-label">
+                                        <i class="fas fa-user-edit me-2 text-info"></i>
+                                        @Html.DisplayNameFor(model => model.PatientInfo.UpdatedByUser)
+                                    </label>
+                                    <div class="info-value">
+                                        <span class="text-dark">@Model.PatientInfo.UpdatedByUser</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ✅ بخش ۴: بیمه‌های بیمار -->
+            @if (Model.HasInsurance)
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-success text-white">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">
+                                <i class="fas fa-shield-alt me-2"></i>
+                                بیمه‌های بیمار (@Model.InsuranceCount)
+                            </h5>
+                            <a href="@Url.Action("Create", "PatientInsurance", new { patientId = Model.PatientInfo.PatientId })" class="btn btn-light btn-sm">
+                                <i class="fas fa-plus me-1"></i> افزودن بیمه
+                            </a>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        @Html.Partial("_PatientInsurancesPartial", Model.PatientInfo.PatientInsurances)
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="card shadow-sm">
+                    <div class="card-header bg-warning text-dark">
+                        <h5 class="mb-0">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            بیمه‌های بیمار
+                        </h5>
+                    </div>
+                    <div class="card-body text-center">
+                        <div class="alert alert-warning" role="alert">
+                            <i class="fas fa-info-circle me-2"></i>
+                            این بیمار هنوز بیمه‌ای ثبت نشده است.
+                        </div>
+                        <a href="@Url.Action("Create", "PatientInsurance", new { patientId = Model.PatientInfo.PatientId })" class="btn btn-success">
+                            <i class="fas fa-plus me-1"></i> افزودن بیمه جدید
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
     </div>
 </div>
+
+@section Styles {
+    <style>
+        /* ✅ استایل‌های مخصوص صفحه جزئیات طبق قرارداد FormStandards */
+        .info-item {
+            margin-bottom: 1rem;
+        }
+        
+        .info-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #212529;
+            padding: 0.5rem 0;
+        }
+        
+        .card-header {
+            border-radius: 0.375rem 0.375rem 0 0 !important;
+        }
+        
+        .card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        
+        .btn-group .btn {
+            border-radius: 0.25rem;
+        }
+        
+        /* ✅ رنگ‌بندی رسمی طبق قرارداد */
+        .bg-info {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%) !important;
+        }
+        
+        .bg-success {
+            background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+        }
+        
+        .bg-warning {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+        }
+        
+        .bg-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #545b62 100%) !important;
+        }
+        
+        /* ✅ دسترس‌پذیری */
+        .info-label i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        .info-value a:hover {
+            text-decoration: underline !important;
+        }
+        
+        /* ✅ Responsive Design */
+        @@media (max-width: 768px) {
+            .btn-group {
+                flex-direction: column;
+                width: 100%;
+            }
+            
+            .btn-group .btn {
+                margin-bottom: 0.25rem;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // ✅ بهبود تجربه کاربری
+            $('.info-value a[href^="tel:"]').on('click', function() {
+                console.log('تماس با بیمار:', $(this).text());
+            });
+            
+            // ✅ نمایش پیام‌های موفقیت/خطا
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>
+                showAlert('success', '@TempData["SuccessMessage"]');
+                </text>
+            }
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                showAlert('error', '@TempData["ErrorMessage"]');
+                </text>
+            }
+        });
+        
+        // ✅ تابع نمایش پیام‌ها
+        function showAlert(type, message) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            var icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            var alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${icon} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            $('.container-fluid').prepend(alertHtml);
+            
+            // حذف خودکار بعد از 5 ثانیه
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+    </script>
+}

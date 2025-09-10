@@ -1,74 +1,270 @@
-﻿@model ClinicApp.ViewModels.PatientCreateEditViewModel
-@{
-    ViewBag.Title = "ویرایش اطلاعات بیمار";
-}
+﻿@using ClinicApp.Models.Entities
+@model ClinicApp.ViewModels.PatientCreateEditPageViewModel
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow-sm">
-            <div class="card-header bg-warning text-dark">
-                <h4 class="mb-0"><i class="fas fa-user-edit me-2"></i>@ViewBag.Title</h4>
-            </div>
-            <div class="card-body">
-                @using (Html.BeginForm("Edit", "Patient", FormMethod.Post, new { id = "edit-patient-form", role = "form" }))
-                {
-                    @Html.AntiForgeryToken()
-                    @Html.ValidationSummary(true, "", new { @class = "text-danger" })
-
-                    // **مهمترین فیلد در فرم ویرایش**
-                    // این فیلد مخفی، شناسه بیمار را برای به‌روزرسانی به سرور ارسال می‌کند
-                    @Html.HiddenFor(model => model.PatientId)
-
-                    <div class="row g-3">
-                        <div class="col-md-6">
-                            @Html.LabelFor(model => model.FirstName, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.FirstName, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.FirstName, "", new { @class = "text-danger" })
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- ✅ بخش ۱: ساختار کلی -->
+            <h2 class="text-center mb-4">@Model.PageTitle</h2>
+            <p class="text-center text-muted mb-4">@Model.PageSubtitle</p>
+            
+            <!-- ✅ بخش ۲: طراحی بصری -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-edit me-2"></i>
+                        @Model.PageTitle
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Edit", "Patient", FormMethod.Post, new { id = "edit-patient-form", @class = "needs-validation", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        
+                        <!-- ✅ فیلد مخفی برای شناسه بیمار -->
+                        @Html.HiddenFor(model => model.FormModel.PatientId)
+                        
+                        <!-- ✅ Progress Indicator -->
+                        <div class="mb-4">
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-warning" role="progressbar" id="form-progress" style="width: 100%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block text-center">
+                                <span id="progress-text">100% تکمیل شده</span>
+                            </small>
                         </div>
-
-                        <div class="col-md-6">
-                            @Html.LabelFor(model => model.LastName, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.LastName, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.LastName, "", new { @class = "text-danger" })
+                        
+                        <!-- ✅ بخش ۳: فیلدها و ورودی‌ها -->
+                        <div class="row g-3">
+                            <!-- اطلاعات شخصی -->
+                            <div class="col-12">
+                                <h5 class="text-primary mb-3">
+                                    <i class="fas fa-user me-2"></i>
+                                    اطلاعات شخصی
+                                </h5>
+                            </div>
+                            
+                            <!-- نام -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.FirstName, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.FormModel.FirstName, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "نام بیمار را وارد کنید",
+                                            required = "required"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.FirstName, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً نام بیمار را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- نام خانوادگی -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.LastName, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.FormModel.LastName, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "نام خانوادگی بیمار را وارد کنید",
+                                            required = "required"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.LastName, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً نام خانوادگی بیمار را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- اطلاعات شناسایی -->
+                            <div class="col-12">
+                                <h5 class="text-info mb-3">
+                                    <i class="fas fa-id-card me-2"></i>
+                                    اطلاعات شناسایی
+                                </h5>
+                            </div>
+                            
+                            <!-- کد ملی -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.NationalCode, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.FormModel.NationalCode, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "کد ملی ۱۰ رقمی را وارد کنید",
+                                            required = "required",
+                                            maxlength = "10",
+                                            minlength = "10"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.NationalCode, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً کد ملی ۱۰ رقمی را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- کد بیمار -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.PatientCode, new { @class = "form-label" })
+                                    @Html.EditorFor(model => model.FormModel.PatientCode, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "کد بیمار (اختیاری)",
+                                            maxlength = "20"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.PatientCode, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً کد بیمار را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- اطلاعات تماس -->
+                            <div class="col-12">
+                                <h5 class="text-success mb-3">
+                                    <i class="fas fa-phone me-2"></i>
+                                    اطلاعات تماس
+                                </h5>
+                            </div>
+                            
+                            <!-- شماره موبایل -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.PhoneNumber, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.EditorFor(model => model.FormModel.PhoneNumber, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "شماره موبایل ۱۱ رقمی را وارد کنید",
+                                            required = "required",
+                                            maxlength = "11",
+                                            minlength = "11"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.PhoneNumber, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً شماره موبایل ۱۱ رقمی را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- ایمیل -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.Email, new { @class = "form-label" })
+                                    @Html.EditorFor(model => model.FormModel.Email, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "ایمیل بیمار را وارد کنید",
+                                            type = "email",
+                                            maxlength = "256"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.Email, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً ایمیل معتبر وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- اطلاعات تکمیلی -->
+                            <div class="col-12">
+                                <h5 class="text-warning mb-3">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    اطلاعات تکمیلی
+                                </h5>
+                            </div>
+                            
+                            <!-- جنسیت -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.Gender, new { @class = "form-label fw-bold" })
+                                    <span class="text-danger">*</span>
+                                    @Html.DropDownListFor(model => model.FormModel.Gender, 
+                                        new SelectList(Enum.GetValues(typeof(Gender)).Cast<Gender>().Select(g => new { 
+                                            Value = (int)g, 
+                                            Text = g == Gender.Male ? "مرد" : "زن" 
+                                        }), "Value", "Text", (int)Model.FormModel.Gender), 
+                                        "انتخاب جنسیت", 
+                                        new { 
+                                            @class = "form-select", 
+                                            required = "required"
+                                        })
+                                    @Html.ValidationMessageFor(model => model.FormModel.Gender, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً جنسیت را انتخاب کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- تاریخ تولد -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.BirthDateShamsi, new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.FormModel.BirthDateShamsi, new { 
+                                        @class = "form-control persian-datepicker", 
+                                        id = "birthdate-picker", 
+                                        autocomplete = "off",
+                                        placeholder = "انتخاب تاریخ تولد"
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.BirthDateShamsi, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً تاریخ تولد را انتخاب کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- نام پزشک معالج -->
+                            <div class="col-md-6">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.DoctorName, new { @class = "form-label" })
+                                    @Html.EditorFor(model => model.FormModel.DoctorName, new { 
+                                        htmlAttributes = new { 
+                                            @class = "form-control", 
+                                            placeholder = "نام پزشک معالج را وارد کنید",
+                                            maxlength = "200"
+                                        } 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.DoctorName, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً نام پزشک معالج را وارد کنید</div>
+                                </div>
+                            </div>
+                            
+                            <!-- آدرس -->
+                            <div class="col-12">
+                                <h5 class="text-secondary mb-3">
+                                    <i class="fas fa-map-marker-alt me-2"></i>
+                                    آدرس
+                                </h5>
+                            </div>
+                            
+                            <div class="col-12">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(model => model.FormModel.Address, new { @class = "form-label" })
+                                    @Html.TextAreaFor(model => model.FormModel.Address, 4, 0, new { 
+                                        @class = "form-control", 
+                                        placeholder = "آدرس کامل بیمار را وارد کنید",
+                                        maxlength = "500"
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FormModel.Address, "", new { @class = "text-danger" })
+                                    <div class="invalid-feedback">لطفاً آدرس را وارد کنید</div>
+                                </div>
+                            </div>
                         </div>
-
-                        <div class="col-md-6">
-                            @Html.LabelFor(model => model.NationalCode, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.NationalCode, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.NationalCode, "", new { @class = "text-danger" })
+                        
+                        <hr class="my-4">
+                        
+                        <!-- ✅ بخش ۵: دکمه‌ها -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-center">
+                                <button type="submit" id="submit-button" class="btn btn-primary me-2">
+                                    <span id="submit-button-text">
+                                        <i class="fa fa-save me-1"></i> ذخیره تغییرات
+                                    </span>
+                                    <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-right me-1"></i> بازگشت
+                                </a>
+                            </div>
                         </div>
-
-                        <div class="col-md-6">
-                            @Html.LabelFor(model => model.PhoneNumber, new { @class = "form-label" })
-                            @Html.EditorFor(model => model.PhoneNumber, new { htmlAttributes = new { @class = "form-control" } })
-                            @Html.ValidationMessageFor(model => model.PhoneNumber, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-md-6">
-                            @Html.LabelFor(model => model.BirthDatePersian, new { @class = "form-label" })
-                            @Html.TextBoxFor(model => model.BirthDatePersian, new { @class = "form-control", id = "birthdate-picker", autocomplete = "off" })
-                            @Html.ValidationMessageFor(model => model.BirthDatePersian, "", new { @class = "text-danger" })
-                        </div>
-
-                        <div class="col-12">
-                            @Html.LabelFor(model => model.Address, new { @class = "form-label" })
-                            @Html.TextAreaFor(model => model.Address, 4, 0, new { @class = "form-control" })
-                            @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="d-flex justify-content-end">
-                        @Html.ActionLink("انصراف", "Index", null, new { @class = "btn btn-outline-secondary me-2" })
-                        <button type="submit" id="submit-button" class="btn btn-primary">
-                            <span id="submit-button-text">
-                                <i class="fas fa-save me-2"></i>ذخیره تغییرات
-                            </span>
-                            <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
-                        </button>
-                    </div>
-                }
+                    }
+                </div>
             </div>
         </div>
     </div>
@@ -76,12 +272,11 @@
 
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
-
+    
     <script type="text/javascript">
         $(document).ready(function () {
-
-            // ۱. پیکربندی بهینه تقویم شمسی
-            $("#birthdate-picker").pDatepicker({
+            // ✅ پیکربندی پیشرفته تقویم شمسی طبق قرارداد FormStandards
+            $('.persian-datepicker').pDatepicker({
                 format: 'YYYY/MM/DD',            // فرمت نمایش شمسی به کاربر
                 autoClose: true,                 // بستن خودکار بعد از انتخاب
                 initialValue: false,             // بدون مقدار اولیه
@@ -149,23 +344,195 @@
                 }
             });
 
-            // ۲. مدیریت وضعیت دکمه ثبت
-            $('#edit-patient-form').on('submit', function () {
-                if ($(this).valid()) {
+            // ✅ مدیریت وضعیت دکمه ثبت طبق قرارداد FormStandards
+            $('#edit-patient-form').on('submit', function (e) {
+                e.preventDefault();
+                
+                if (this.checkValidity()) {
+                    // نمایش loading state
                     $('#submit-button').prop('disabled', true);
                     $('#submit-button-text').hide();
                     $('#submit-button-spinner').show();
+                    
+                    // ارسال فرم
+                    this.submit();
+                } else {
+                    e.stopPropagation();
+                    $(this).addClass('was-validated');
                 }
             });
 
-            // ۳. بهبود نمایش خطاهای اعتبارسنجی
+            // ✅ بهبود نمایش خطاهای اعتبارسنجی طبق قرارداد FormStandards
             $.validator.setDefaults({
-                highlight: function (element) { $(element).addClass('is-invalid'); },
-                unhighlight: function (element) { $(element).removeClass('is-invalid'); }
+                highlight: function (element) { 
+                    $(element).addClass('is-invalid'); 
+                },
+                unhighlight: function (element) { 
+                    $(element).removeClass('is-invalid'); 
+                }
             });
 
-             // ۴. نمایش خطاهای سرور با Toastr
-             @Html.Partial("_ValidationToasts")
+            // ✅ اعتبارسنجی کد ملی
+            $.validator.addMethod("nationalCode", function(value, element) {
+                if (value.length !== 10) return false;
+                
+                var sum = 0;
+                for (var i = 0; i < 9; i++) {
+                    sum += parseInt(value[i]) * (10 - i);
+                }
+                var remainder = sum % 11;
+                var checkDigit = remainder < 2 ? remainder : 11 - remainder;
+                
+                return checkDigit === parseInt(value[9]);
+            }, "کد ملی وارد شده معتبر نیست");
+
+            // ✅ بررسی تکراری بودن کد ملی (برای Edit - فقط اگر کد ملی تغییر کرده باشد)
+            $.validator.addMethod("uniqueNationalCodeEdit", function(value, element) {
+                if (value === "") return true;
+                
+                var originalNationalCode = '@Model.FormModel.NationalCode';
+                if (value === originalNationalCode) return true; // اگر کد ملی تغییر نکرده، OK است
+                
+                var isValid = true;
+                $.ajax({
+                    url: '@Url.Action("CheckNationalCodeExists", "Patient")',
+                    type: 'POST',
+                    data: { nationalCode: value },
+                    async: false,
+                    success: function(response) {
+                        isValid = !response.exists;
+                    },
+                    error: function() {
+                        isValid = false;
+                    }
+                });
+                
+                return isValid;
+            }, "این کد ملی قبلاً ثبت شده است");
+
+            // ✅ اعتبارسنجی شماره موبایل
+            $.validator.addMethod("mobileNumber", function(value, element) {
+                return /^09[0-9]{9}$/.test(value);
+            }, "شماره موبایل باید با 09 شروع شده و 11 رقم باشد");
+
+            // ✅ اعتبارسنجی ایمیل
+            $.validator.addMethod("persianEmail", function(value, element) {
+                if (value === "") return true; // اختیاری
+                return /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
+            }, "فرمت ایمیل صحیح نیست");
+
+            // ✅ اعتبارسنجی کد بیمار
+            $.validator.addMethod("patientCode", function(value, element) {
+                if (value === "") return true; // اختیاری
+                return /^[A-Za-z0-9\-_]+$/.test(value);
+            }, "کد بیمار باید شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد");
+
+            // ✅ اعتبارسنجی نام پزشک
+            $.validator.addMethod("doctorName", function(value, element) {
+                if (value === "") return true; // اختیاری
+                return /^[\u0600-\u06FF\s\u200C\u200D\u064B\u064C\u064D\u064E\u064F\u0650\u0651\u0652\u0653\u0654\u0655\u0656\u0657\u0658\u0659\u065A\u065B\u065C\u065D\u065E\u065F\u0670\u0671\u0672\u0673\u0674\u0675\u0676\u0677\u0678\u0679\u067A\u067B\u067C\u067D\u067E\u067F\u0680\u0681\u0682\u0683\u0684\u0685\u0686\u0687\u0688\u0689\u068A\u068B\u068C\u068D\u068E\u068F\u0690\u0691\u0692\u0693\u0694\u0695\u0696\u0697\u0698\u0699\u069A\u069B\u069C\u069D\u069E\u069F\u06A0\u06A1\u06A2\u06A3\u06A4\u06A5\u06A6\u06A7\u06A8\u06A9\u06AA\u06AB\u06AC\u06AD\u06AE\u06AF\u06B0\u06B1\u06B2\u06B3\u06B4\u06B5\u06B6\u06B7\u06B8\u06B9\u06BA\u06BB\u06BC\u06BD\u06BE\u06BF\u06C0\u06C1\u06C2\u06C3\u06C4\u06C5\u06C6\u06C7\u06C8\u06C9\u06CA\u06CB\u06CC\u06CD\u06CE\u06CF\u06D0\u06D1\u06D2\u06D3\u06D4\u06D5\u06D6\u06D7\u06D8\u06D9\u06DA\u06DB\u06DC\u06DD\u06DE\u06DF\u06E0\u06E1\u06E2\u06E3\u06E4\u06E5\u06E6\u06E7\u06E8\u06E9\u06EA\u06EB\u06EC\u06ED\u06EE\u06EF\u06F0\u06F1\u06F2\u06F3\u06F4\u06F5\u06F6\u06F7\u06F8\u06F9\u06FA\u06FB\u06FC\u06FD\u06FE\u06FF]+$/.test(value);
+            }, "نام پزشک باید شامل حروف فارسی باشد");
+
+            // ✅ Form Progress Indicator - Safe Version for Edit
+            function updateFormProgress() {
+                try {
+                    var totalFields = 8; // تعداد کل فیلدهای مهم
+                    var filledFields = 0;
+                    
+                    // Helper function برای بررسی ایمن مقدار فیلد
+                    function isFieldFilled(selector) {
+                        var element = $(selector);
+                        if (element.length === 0) return false;
+                        var value = element.val();
+                        return value && value.toString().trim() !== '';
+                    }
+                    
+                    // بررسی فیلدهای پر شده
+                    if (isFieldFilled('#FormModel_FirstName')) filledFields++;
+                    if (isFieldFilled('#FormModel_LastName')) filledFields++;
+                    if (isFieldFilled('#FormModel_NationalCode')) filledFields++;
+                    if (isFieldFilled('#FormModel_PhoneNumber')) filledFields++;
+                    if (isFieldFilled('#FormModel_Gender')) filledFields++;
+                    if (isFieldFilled('#FormModel_BirthDateShamsi')) filledFields++;
+                    if (isFieldFilled('#FormModel_Email')) filledFields++;
+                    if (isFieldFilled('#FormModel_Address')) filledFields++;
+                    
+                    var progress = Math.round((filledFields / totalFields) * 100);
+                    
+                    // به‌روزرسانی progress bar
+                    var progressBar = $('#form-progress');
+                    var progressText = $('#progress-text');
+                    
+                    if (progressBar.length > 0) {
+                        progressBar.css('width', progress + '%');
+                    }
+                    
+                    if (progressText.length > 0) {
+                        progressText.text(progress + '% تکمیل شده');
+                    }
+                    
+                    // تغییر رنگ بر اساس درصد
+                    if (progressBar.length > 0) {
+                        if (progress < 30) {
+                            progressBar.removeClass('bg-success bg-warning').addClass('bg-danger');
+                        } else if (progress < 70) {
+                            progressBar.removeClass('bg-danger bg-success').addClass('bg-warning');
+                        } else {
+                            progressBar.removeClass('bg-danger bg-warning').addClass('bg-success');
+                        }
+                    }
+                } catch (error) {
+                    console.error('خطا در updateFormProgress:', error);
+                }
+            }
+            
+            // ✅ اعمال Progress Indicator روی فیلدها
+            $('#edit-patient-form input, #edit-patient-form select, #edit-patient-form textarea').on('input change', function() {
+                updateFormProgress();
+            });
+            
+            // ✅ اعمال قوانین اعتبارسنجی
+            $('#edit-patient-form').validate({
+                rules: {
+                    'FormModel.NationalCode': {
+                        required: true,
+                        nationalCode: true,
+                        uniqueNationalCodeEdit: true
+                    },
+                    'FormModel.PhoneNumber': {
+                        required: true,
+                        mobileNumber: true
+                    },
+                    'FormModel.Email': {
+                        persianEmail: true
+                    },
+                    'FormModel.PatientCode': {
+                        patientCode: true
+                    },
+                    'FormModel.DoctorName': {
+                        doctorName: true
+                    }
+                },
+                messages: {
+                    'FormModel.NationalCode': {
+                        required: "لطفاً کد ملی را وارد کنید",
+                        nationalCode: "کد ملی وارد شده معتبر نیست"
+                    },
+                    'FormModel.PhoneNumber': {
+                        required: "لطفاً شماره موبایل را وارد کنید",
+                        mobileNumber: "شماره موبایل باید با 09 شروع شده و 11 رقم باشد"
+                    },
+                    'FormModel.Email': {
+                        persianEmail: "فرمت ایمیل صحیح نیست"
+                    },
+                    'FormModel.PatientCode': {
+                        patientCode: "کد بیمار باید شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد"
+                    },
+                    'FormModel.DoctorName': {
+                        doctorName: "نام پزشک باید شامل حروف فارسی باشد"
+                    }
+                }
+            });
         });
     </script>
 }

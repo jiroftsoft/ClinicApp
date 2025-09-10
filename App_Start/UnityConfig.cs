@@ -401,6 +401,7 @@ namespace ClinicApp
                 container.RegisterType<IValidator<InsurancePlanCreateEditViewModel>, InsurancePlanCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<InsuranceCalculationViewModel>, InsuranceCalculationViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<PatientInsuranceCreateEditViewModel>, PatientInsuranceCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<PatientCreateEditViewModel>, PatientCreateEditViewModelValidator>(new PerRequestLifetimeManager());
 
 
                 // طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم

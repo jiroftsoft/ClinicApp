@@ -1,55 +1,362 @@
-﻿@model ClinicApp.ViewModels.PatientDetailsViewModel
-@{
-    ViewBag.Title = "تأیید حذف بیمار";
-}
+﻿@using ClinicApp.Models.Entities
+@model ClinicApp.ViewModels.PatientDeletePageViewModel
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card border-danger shadow-sm">
-            <div class="card-header bg-danger text-white">
-                <h4 class="mb-0"><i class="fas fa-exclamation-triangle me-2"></i>@ViewBag.Title</h4>
-            </div>
-            <div class="card-body">
-                <p class="lead">آیا از حذف بیمار زیر اطمینان دارید؟ این عملیات غیرقابل بازگشت است.</p>
-                <hr />
-
-                <dl class="row">
-                    <dt class="col-sm-4">
-                        @Html.DisplayNameFor(model => model.FullName)
-                    </dt>
-                    <dd class="col-sm-8">
-                        @Html.DisplayFor(model => model.FullName)
-                    </dd>
-
-                    <dt class="col-sm-4">
-                        @Html.DisplayNameFor(model => model.NationalCode)
-                    </dt>
-                    <dd class="col-sm-8">
-                        @Html.DisplayFor(model => model.NationalCode)
-                    </dd>
-
-                    <dt class="col-sm-4">
-                        @Html.DisplayNameFor(model => model.PhoneNumber)
-                    </dt>
-                    <dd class="col-sm-8">
-                        @Html.DisplayFor(model => model.PhoneNumber)
-                    </dd>
-                </dl>
-
-                @using (Html.BeginForm())
-                {
-                    @Html.AntiForgeryToken()
-                    @Html.HiddenFor(model => model.PatientId)
-
-                    <hr />
-                    <div class="d-flex justify-content-end">
-                        @Html.ActionLink("انصراف", "Index", null, new { @class = "btn btn-outline-secondary me-2" })
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash-alt me-2"></i> بله، حذف کن
-                        </button>
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-xl-6">
+            <!-- ✅ بخش ۱: ساختار کلی -->
+            <h2 class="text-center mb-4 text-danger">@Model.PageTitle</h2>
+            <p class="text-center text-muted mb-4">@Model.PageSubtitle</p>
+            
+            <!-- ✅ بخش ۲: هشدار اصلی -->
+            <div class="alert alert-danger border-danger shadow-sm" role="alert">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">⚠️ هشدار مهم</h5>
+                        <p class="mb-0">@Model.DeleteWarning</p>
                     </div>
-                }
+                </div>
+            </div>
+            
+            <!-- ✅ بخش ۳: اطلاعات بیمار برای تأیید -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-times me-2"></i>
+                        اطلاعات بیمار برای حذف
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- نام و نام خانوادگی -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-user me-2 text-primary"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.FullName)
+                                </label>
+                                <div class="info-value">
+                                    <strong class="text-primary">@Html.DisplayFor(model => model.PatientInfo.FullName)</strong>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- کد ملی -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-id-card me-2 text-info"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.NationalCode)
+                                </label>
+                                <div class="info-value">
+                                    <code class="bg-light px-2 py-1 rounded">@Html.DisplayFor(model => model.PatientInfo.NationalCode)</code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- جنسیت -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas @(Model.PatientInfo.Gender == Gender.Male ? "fa-male" : "fa-female") me-2 text-success"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.Gender)
+                                </label>
+                                <div class="info-value">
+                                    <span class="badge @(Model.PatientInfo.Gender == Gender.Male ? "bg-primary" : "bg-danger")">
+                                        <i class="fas @(Model.PatientInfo.Gender == Gender.Male ? "fa-male" : "fa-female") me-1"></i>
+                                        @Model.PatientInfo.GenderDisplay
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- شماره موبایل -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-phone me-2 text-warning"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.PhoneNumber)
+                                </label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrEmpty(Model.PatientInfo.PhoneNumber))
+                                    {
+                                        <span class="text-dark">@Model.PatientInfo.PhoneNumber</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- تاریخ تولد -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-calendar-alt me-2 text-info"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.BirthDateShamsi)
+                                </label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrEmpty(Model.PatientInfo.BirthDateShamsi) && Model.PatientInfo.BirthDateShamsi != "-")
+                                    {
+                                        <span class="text-dark">@Model.PatientInfo.BirthDateShamsi</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- تاریخ ایجاد -->
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">
+                                    <i class="fas fa-plus-circle me-2 text-success"></i>
+                                    @Html.DisplayNameFor(model => model.PatientInfo.CreatedAtShamsi)
+                                </label>
+                                <div class="info-value">
+                                    <span class="text-dark">@Model.PatientInfo.CreatedAtShamsi</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- ✅ بخش ۴: هشدار بیمه‌ها -->
+            @if (Model.HasInsurance)
+            {
+                <div class="alert alert-warning border-warning shadow-sm" role="alert">
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-shield-alt fa-2x me-3"></i>
+                        <div>
+                            <h5 class="alert-heading mb-1">⚠️ هشدار بیمه</h5>
+                            <p class="mb-0">
+                                این بیمار دارای <strong>@Model.InsuranceCount بیمه</strong> است. 
+                                حذف بیمار باعث حذف تمام بیمه‌های مرتبط نیز خواهد شد.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            }
+            
+            <!-- ✅ بخش ۵: فرم حذف -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-dark text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash-alt me-2"></i>
+                        تأیید نهایی حذف
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info border-info" role="alert">
+                        <i class="fas fa-info-circle me-2"></i>
+                        @Model.ConfirmationMessage
+                    </div>
+                    
+                    @using (Html.BeginForm("DeleteConfirmed", "Patient", new { id = Model.PatientInfo.PatientId }, FormMethod.Post, new { @class = "delete-form", @id = "deleteForm" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.PatientInfo.PatientId)
+                        
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="@Url.Action("Index")" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-right me-2"></i>
+                                انصراف و بازگشت
+                            </a>
+                            <button type="submit" class="btn btn-danger btn-lg" id="deleteButton">
+                                <i class="fas fa-trash-alt me-2"></i>
+                                بله، حذف کن
+                            </button>
+                        </div>
+                    }
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Styles {
+    <style>
+        /* ✅ استایل‌های مخصوص صفحه حذف طبق قرارداد FormStandards */
+        .info-item {
+            margin-bottom: 1rem;
+        }
+        
+        .info-label {
+            display: block;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+            font-size: 14px;
+        }
+        
+        .info-value {
+            font-size: 16px;
+            color: #212529;
+            padding: 0.5rem 0;
+        }
+        
+        .card-header {
+            border-radius: 0.375rem 0.375rem 0 0 !important;
+        }
+        
+        .card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.375rem;
+        }
+        
+        /* ✅ رنگ‌بندی رسمی طبق قرارداد */
+        .bg-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%) !important;
+        }
+        
+        .bg-dark {
+            background: linear-gradient(135deg, #343a40 0%, #23272b 100%) !important;
+        }
+        
+        /* ✅ دسترس‌پذیری */
+        .info-label i {
+            width: 20px;
+            text-align: center;
+        }
+        
+        /* ✅ انیمیشن‌های حذف */
+        .delete-form {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+        }
+        
+        .btn-outline-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(108, 117, 125, 0.3);
+        }
+        
+        /* ✅ Responsive Design */
+        @media (max-width: 768px) {
+            .d-flex.gap-3 {
+                flex-direction: column;
+                gap: 1rem !important;
+            }
+            
+            .btn-lg {
+                width: 100%;
+            }
+        }
+        
+        /* ✅ استایل‌های هشدار */
+        .alert {
+            border-radius: 0.5rem;
+        }
+        
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border-color: #dc3545;
+        }
+        
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border-color: #ffc107;
+        }
+        
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            border-color: #17a2b8;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // ✅ تأیید حذف با دوبار کلیک
+            let clickCount = 0;
+            const deleteButton = $('#deleteButton');
+            const originalText = deleteButton.html();
+            
+            deleteButton.on('click', function(e) {
+                e.preventDefault();
+                clickCount++;
+                
+                if (clickCount === 1) {
+                    // اولین کلیک - تغییر متن
+                    deleteButton.html('<i class="fas fa-exclamation-triangle me-2"></i> مطمئن هستید؟');
+                    deleteButton.removeClass('btn-danger').addClass('btn-warning');
+                    
+                    // بازگشت به حالت اول بعد از 3 ثانیه
+                    setTimeout(function() {
+                        clickCount = 0;
+                        deleteButton.html(originalText);
+                        deleteButton.removeClass('btn-warning').addClass('btn-danger');
+                    }, 3000);
+                } else if (clickCount === 2) {
+                    // دومین کلیک - ارسال فرم
+                    deleteButton.html('<i class="fas fa-spinner fa-spin me-2"></i> در حال حذف...');
+                    deleteButton.prop('disabled', true);
+                    
+                    // ارسال فرم
+                    $('#deleteForm').submit();
+                }
+            });
+            
+            // ✅ نمایش پیام‌های موفقیت/خطا
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <text>
+                showAlert('success', '@TempData["SuccessMessage"]');
+                </text>
+            }
+            
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <text>
+                showAlert('error', '@TempData["ErrorMessage"]');
+                </text>
+            }
+            
+            // ✅ جلوگیری از بستن تصادفی صفحه
+            let formChanged = false;
+            
+            $('#deleteForm').on('submit', function() {
+                formChanged = true;
+            });
+            
+            $(window).on('beforeunload', function(e) {
+                if (!formChanged) {
+                    e.preventDefault();
+                    e.returnValue = 'آیا مطمئن هستید که می‌خواهید صفحه را ترک کنید؟';
+                    return e.returnValue;
+                }
+            });
+        });
+        
+        // ✅ تابع نمایش پیام‌ها
+        function showAlert(type, message) {
+            var alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            var icon = type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle';
+            
+            var alertHtml = `
+                <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                    <i class="fas ${icon} me-2"></i>
+                    ${message}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            `;
+            
+            $('.container-fluid').prepend(alertHtml);
+            
+            // حذف خودکار بعد از 5 ثانیه
+            setTimeout(function() {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+    </script>
+}
