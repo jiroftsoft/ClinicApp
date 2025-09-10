@@ -430,32 +430,34 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// نوع اسلات (برای سازگاری با Views)
         /// </summary>
         [Display(Name = "نوع اسلات")]
-        public string Type 
-        { 
-            get 
+        public string Type
+        {
+            get
             {
-                if (AppointmentType.HasValue)
+                if (!AppointmentType.HasValue)
+                    return "نامشخص";
+
+                return AppointmentType.Value switch
                 {
-                    switch (AppointmentType.Value)
-                    {
-                        case Models.Entities.AppointmentType.Regular:
-                            return "عادی";
-                        case Models.Entities.AppointmentType.Urgent:
-                            return "فوری";
-                        case Models.Entities.AppointmentType.Specialist:
-                            return "تخصصی";
-                        case Models.Entities.AppointmentType.FollowUp:
-                            return "پیگیری";
-                        case Models.Entities.AppointmentType.Consultation:
-                            return "مشاوره";
-                        default:
-                            return "نامشخص";
-                    }
-                }
-                return "نامشخص";
+                    Models.Entities.AppointmentType.GeneralVisit => "عادی",
+                    Models.Entities.AppointmentType.SpecialistVisit => "تخصصی",
+                    Models.Entities.AppointmentType.SubSpecialistVisit => "فوق‌تخصصی",
+                    Models.Entities.AppointmentType.InitialExamination => "اولیه",
+                    Models.Entities.AppointmentType.FollowUp => "پیگیری",
+                    Models.Entities.AppointmentType.Consultation => "مشاوره",
+                    Models.Entities.AppointmentType.Emergency => "فوری",
+                    Models.Entities.AppointmentType.Cancellation => "کنسلی",
+                    // سایر موارد تشخیصی/درمانی
+                    Models.Entities.AppointmentType.Laboratory or
+                        Models.Entities.AppointmentType.Imaging or
+                        Models.Entities.AppointmentType.Vaccination or
+                        Models.Entities.AppointmentType.Injection or
+                        Models.Entities.AppointmentType.MedicalProcedure => "خدمات",
+
+                    _ => "نامشخص"
+                };
             }
         }
-
         /// <summary>
         /// شناسه نوبت موجود (اگر رزرو شده)
         /// </summary>

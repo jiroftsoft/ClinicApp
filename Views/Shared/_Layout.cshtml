@@ -472,12 +472,12 @@
 
 
             // --- 5. Display TempData messages from the server ---
-@if (TempData["SuccessMessage"] != null) {
-    <text>toastr.success("@Html.Raw(TempData["SuccessMessage"])", "موفقیت");</text>
-}
-        @if (TempData["ErrorMessage"] != null) {
-            <text>toastr.error("@Html.Raw(TempData["ErrorMessage"])", "خطا");</text>
-        }
+            @if (TempData["SuccessMessage"] != null) {
+                <text>toastr.success("@Html.Raw(TempData["SuccessMessage"])", "موفقیت");</text>
+            }
+            @if (TempData["ErrorMessage"] != null) {
+                <text>toastr.error("@Html.Raw(TempData["ErrorMessage"])", "خطا");</text>
+            }
 
         });
     </script>

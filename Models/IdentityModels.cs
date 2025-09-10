@@ -103,6 +103,10 @@ namespace ClinicApp.Models
         public DbSet<DoctorSpecialization> DoctorSpecializations { get; set; }
         public DbSet<DoctorAssignmentHistory> DoctorAssignmentHistories { get; set; }
 
+        // ========== موجودیت‌های جدید برای تاریخچه پزشکی و گزارش‌گیری ==========
+        public DbSet<MedicalHistory> MedicalHistories { get; set; }
+        public DbSet<Report> Reports { get; set; }
+
         #endregion
 
         #region Core Overrides (سیستم‌های حیاتی)
@@ -150,6 +154,10 @@ namespace ClinicApp.Models
             modelBuilder.Filter("ActiveAppointmentSlots", (AppointmentSlot aps) => aps.IsActive, true);
             modelBuilder.Filter("ActiveScheduleExceptions", (ScheduleException se) => se.IsActive, true);
             modelBuilder.Filter("ActiveScheduleTemplates", (ScheduleTemplate st) => st.IsActive, true);
+
+            // ========== فیلترهای جدید برای تاریخچه پزشکی و گزارش‌گیری ==========
+            modelBuilder.Filter("ActiveMedicalHistories", (MedicalHistory mh) => mh.IsActive, true);
+            modelBuilder.Filter("DownloadableReports", (Report r) => r.IsDownloadable, true);
 
 
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس

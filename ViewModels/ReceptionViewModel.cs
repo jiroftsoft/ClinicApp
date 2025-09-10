@@ -1,4 +1,5 @@
 ﻿using ClinicApp.Models.Entities;
+using ClinicApp.ViewModels.Reception;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -19,6 +20,22 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "نام بیمار")]
         public string PatientFullName { get; set; } // برای نمایش نام بعد از جستجو
+
+        // اطلاعات استعلام کمکی
+        [Display(Name = "کد ملی برای استعلام")]
+        public string NationalCodeForInquiry { get; set; }
+
+        [Display(Name = "تاریخ تولد برای استعلام")]
+        public DateTime? BirthDateForInquiry { get; set; }
+
+        [Display(Name = "تاریخ تولد شمسی برای استعلام")]
+        public string BirthDateShamsiForInquiry { get; set; }
+
+        [Display(Name = "نتیجه استعلام")]
+        public PatientInquiryViewModel InquiryResult { get; set; }
+
+        [Display(Name = "وضعیت استعلام")]
+        public bool IsInquiryCompleted { get; set; }
 
         // اطلاعات پزشک
         [Required(ErrorMessage = "باید یک پزشک انتخاب شود.")]

@@ -1,0 +1,321 @@
+@{
+    ViewBag.Title = "تست توکن امنیتی KeyA";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- ✅ بخش ۱: هدر صفحه -->
+            <div class="card border-primary mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-key me-2"></i>
+                        تست توکن امنیتی KeyA
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">
+                        این صفحه برای بررسی ارتباط با توکن امنیتی KeyA (شناسه: TR127256) طراحی شده است.
+                        لطفاً توکن را به پورت USB متصل کنید و سپس تست‌ها را اجرا کنید.
+                    </p>
+                </div>
+            </div>
+
+            <!-- ✅ بخش ۲: کنترل‌های تست -->
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="card border-info">
+                        <div class="card-header bg-info text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-search me-2"></i>
+                                بررسی وجود توکن
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="tokenId" class="form-label">شناسه توکن:</label>
+                                <input type="text" class="form-control" id="tokenId" value="TR127256" readonly>
+                            </div>
+                            <button type="button" class="btn btn-info" id="checkTokenBtn">
+                                <i class="fas fa-search me-2"></i>
+                                بررسی وجود توکن
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6">
+                    <div class="card border-success">
+                        <div class="card-header bg-success text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-cogs me-2"></i>
+                                تست کامل ارتباط
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-muted mb-3">
+                                این تست شامل بررسی وجود، اعتبارسنجی و دسترسی به توکن است.
+                            </p>
+                            <button type="button" class="btn btn-success" id="testConnectionBtn">
+                                <i class="fas fa-cogs me-2"></i>
+                                تست کامل ارتباط
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ بخش ۳: نتایج تست -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-secondary">
+                        <div class="card-header bg-secondary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-chart-line me-2"></i>
+                                نتایج تست
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div id="testResults">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-info-circle fa-2x mb-3"></i>
+                                    <p>هنوز تستی اجرا نشده است. لطفاً یکی از دکمه‌های بالا را کلیک کنید.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ✅ بخش ۴: لیست دستگاه‌های USB -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="mb-0">
+                                <i class="fas fa-usb me-2"></i>
+                                دستگاه‌های USB متصل
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <button type="button" class="btn btn-warning mb-3" id="refreshUsbBtn">
+                                <i class="fas fa-sync-alt me-2"></i>
+                                بروزرسانی لیست
+                            </button>
+                            <div id="usbDevicesList">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-usb fa-2x mb-3"></i>
+                                    <p>برای مشاهده لیست دستگاه‌های USB، دکمه "بروزرسانی لیست" را کلیک کنید.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ✅ بخش ۵: JavaScript -->
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // تنظیمات اولیه
+            var token = $('input[name="__RequestVerificationToken"]').val();
+
+            // بررسی وجود توکن
+            $('#checkTokenBtn').click(function() {
+                var tokenId = $('#tokenId').val();
+                var btn = $(this);
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال بررسی...');
+                
+                $.ajax({
+                    url: '@Url.Action("CheckTokenPresence", "TokenTest")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        tokenId: tokenId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showTokenStatus(response.data);
+                        } else {
+                            showError('خطا در بررسی توکن: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        showError('خطا در ارتباط با سرور');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="fas fa-search me-2"></i>بررسی وجود توکن');
+                    }
+                });
+            });
+
+            // تست کامل ارتباط
+            $('#testConnectionBtn').click(function() {
+                var tokenId = $('#tokenId').val();
+                var btn = $(this);
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال تست...');
+                
+                $.ajax({
+                    url: '@Url.Action("TestTokenConnection", "TokenTest")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token,
+                        tokenId: tokenId
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showTestResults(response.data);
+                        } else {
+                            showError('خطا در تست توکن: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        showError('خطا در ارتباط با سرور');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="fas fa-cogs me-2"></i>تست کامل ارتباط');
+                    }
+                });
+            });
+
+            // بروزرسانی لیست USB
+            $('#refreshUsbBtn').click(function() {
+                var btn = $(this);
+                
+                btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال بروزرسانی...');
+                
+                $.ajax({
+                    url: '@Url.Action("GetUsbDevices", "TokenTest")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: token
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            showUsbDevices(response.data);
+                        } else {
+                            showError('خطا در دریافت لیست USB: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        showError('خطا در ارتباط با سرور');
+                    },
+                    complete: function() {
+                        btn.prop('disabled', false).html('<i class="fas fa-sync-alt me-2"></i>بروزرسانی لیست');
+                    }
+                });
+            });
+
+            // نمایش وضعیت توکن
+            function showTokenStatus(data) {
+                var statusClass = data.isConnected && data.isValid ? 'success' : 'danger';
+                var statusIcon = data.isConnected && data.isValid ? 'check-circle' : 'times-circle';
+                
+                var html = `
+                    <div class="alert alert-${statusClass}">
+                        <h6><i class="fas fa-${statusIcon} me-2"></i>وضعیت توکن: ${data.status}</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>شناسه توکن:</strong> ${data.tokenId}<br>
+                                <strong>وضعیت اتصال:</strong> ${data.isConnected ? 'متصل' : 'غیرمتصل'}<br>
+                                <strong>اعتبار:</strong> ${data.isValid ? 'معتبر' : 'نامعتبر'}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>زمان بررسی:</strong> ${data.checkTime}<br>
+                                <strong>اطلاعات دستگاه:</strong> ${data.deviceInfo || 'نامشخص'}
+                            </div>
+                        </div>
+                        ${data.errorMessage ? `<hr><div class="text-danger"><strong>خطا:</strong> ${data.errorMessage}</div>` : ''}
+                    </div>
+                `;
+                
+                $('#testResults').html(html);
+            }
+
+            // نمایش نتایج تست
+            function showTestResults(data) {
+                var statusClass = data.isSuccessful ? 'success' : 'warning';
+                var statusIcon = data.isSuccessful ? 'check-circle' : 'exclamation-triangle';
+                
+                var testsHtml = '';
+                data.tests.forEach(function(test) {
+                    var testClass = test.isPassed ? 'success' : 'danger';
+                    var testIcon = test.isPassed ? 'check' : 'times';
+                    
+                    testsHtml += `
+                        <div class="alert alert-${testClass} mb-2">
+                            <i class="fas fa-${testIcon} me-2"></i>
+                            <strong>${test.testName}:</strong> ${test.details}
+                        </div>
+                    `;
+                });
+                
+                var html = `
+                    <div class="alert alert-${statusClass}">
+                        <h6><i class="fas fa-${statusIcon} me-2"></i>نتیجه کلی: ${data.overallStatus}</h6>
+                        <hr>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <strong>شناسه توکن:</strong> ${data.tokenId}<br>
+                                <strong>زمان تست:</strong> ${data.testTime}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>وضعیت کلی:</strong> ${data.isSuccessful ? 'موفق' : 'ناموفق'}<br>
+                                <strong>تعداد تست‌ها:</strong> ${data.tests.length}
+                            </div>
+                        </div>
+                        <hr>
+                        <h6>جزئیات تست‌ها:</h6>
+                        ${testsHtml}
+                    </div>
+                `;
+                
+                $('#testResults').html(html);
+            }
+
+            // نمایش لیست دستگاه‌های USB
+            function showUsbDevices(devices) {
+                var html = '<div class="list-group">';
+                
+                devices.forEach(function(device) {
+                    var isKeyA = device.toLowerCase().includes('keya') || device.toLowerCase().includes('security token');
+                    var itemClass = isKeyA ? 'list-group-item-success' : 'list-group-item-light';
+                    var icon = isKeyA ? 'key' : 'usb';
+                    
+                    html += `
+                        <div class="list-group-item ${itemClass}">
+                            <i class="fas fa-${icon} me-2"></i>
+                            ${device}
+                            ${isKeyA ? '<span class="badge bg-success ms-2">توکن امنیتی</span>' : ''}
+                        </div>
+                    `;
+                });
+                
+                html += '</div>';
+                
+                if (devices.length === 0) {
+                    html = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>هیچ دستگاه USB یافت نشد.</div>';
+                }
+                
+                $('#usbDevicesList').html(html);
+            }
+
+            // نمایش خطا
+            function showError(message) {
+                var html = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        ${message}
+                    </div>
+                `;
+                $('#testResults').html(html);
+            }
+        });
+    </script>
+}

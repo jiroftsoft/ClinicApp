@@ -689,9 +689,19 @@ namespace ClinicApp.Controllers
                     TempData["ErrorMessage"] = result.Message;
                     
                     // بازگرداندن صفحه حذف با پیام خطا
-                    pageModel.PageTitle = $"تأیید حذف بیمار: {pageModel.PatientInfo.FullName}";
-                    pageModel.PageSubtitle = "این عملیات غیرقابل بازگشت است";
-                    pageModel.LastUpdated = DateTime.Now;
+                    if (pageModel?.PatientInfo != null)
+                    {
+                        pageModel.PageTitle = $"تأیید حذف بیمار: {pageModel.PatientInfo.FullName}";
+                    }
+                    else
+                    {
+                        pageModel = new PatientDeletePageViewModel
+                        {
+                            PageTitle = "خطا در حذف بیمار",
+                            PageSubtitle = "این عملیات غیرقابل بازگشت است",
+                            LastUpdated = DateTime.Now
+                        };
+                    }
                     
                     return View(pageModel);
                 }
@@ -706,9 +716,19 @@ namespace ClinicApp.Controllers
                 TempData["ErrorMessage"] = "خطای سیستمی رخ داده است. لطفاً بعداً مجدداً تلاش کنید.";
                 
                 // بازگرداندن صفحه حذف با پیام خطا
-                pageModel.PageTitle = $"تأیید حذف بیمار: {pageModel.PatientInfo.FullName}";
-                pageModel.PageSubtitle = "این عملیات غیرقابل بازگشت است";
-                pageModel.LastUpdated = DateTime.Now;
+                if (pageModel?.PatientInfo != null)
+                {
+                    pageModel.PageTitle = $"تأیید حذف بیمار: {pageModel.PatientInfo.FullName}";
+                }
+                else
+                {
+                    pageModel = new PatientDeletePageViewModel
+                    {
+                        PageTitle = "خطا در حذف بیمار",
+                        PageSubtitle = "این عملیات غیرقابل بازگشت است",
+                        LastUpdated = DateTime.Now
+                    };
+                }
                 
                 return View(pageModel);
             }

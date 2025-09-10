@@ -515,7 +515,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                         PhoneNumber = "09123456789",
                         NationalCode = "1234567890",
                         Age = 35,
-                        AppointmentType = AppointmentType.Regular,
+                        AppointmentType = AppointmentType.Consultation,
                         Priority = "عادی",
                         Symptoms = "سردرد و سرگیجه"
                     } : null,

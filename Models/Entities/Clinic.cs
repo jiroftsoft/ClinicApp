@@ -59,6 +59,78 @@ namespace ClinicApp.Models.Entities
     }
 
     /// <summary>
+    /// اولویت نوبت
+    /// </summary>
+    public enum AppointmentPriority : byte
+    {
+        [Display(Name = "عادی")]
+        Normal = 0,
+        [Display(Name = "بالا")]
+        High = 1,
+        [Display(Name = "فوری")]
+        Urgent = 2,
+        [Display(Name = "اورژانس")]
+        Emergency = 3
+    }
+
+    /// <summary>
+    /// نوع پذیرش
+    /// </summary>
+    public enum ReceptionType : byte
+    {
+        [Display(Name = "عادی")]
+        Normal = 0,
+        [Display(Name = "اورژانس")]
+        Emergency = 1,
+        [Display(Name = "ویژه")]
+        Special = 2,
+        [Display(Name = "آنلاین")]
+        Online = 3
+    }
+
+    /// <summary>
+    /// نوع تاریخچه پزشکی
+    /// </summary>
+    public enum MedicalHistoryType : byte
+    {
+        [Display(Name = "بیماری")]
+        Disease = 0,
+        [Display(Name = "جراحی")]
+        Surgery = 1,
+        [Display(Name = "آسیب")]
+        Injury = 2,
+        [Display(Name = "دارو")]
+        Medication = 3,
+        [Display(Name = "آلرژی")]
+        Allergy = 4,
+        [Display(Name = "سابقه خانوادگی")]
+        FamilyHistory = 5,
+        [Display(Name = "سایر")]
+        Other = 6
+    }
+
+    /// <summary>
+    /// نوع گزارش
+    /// </summary>
+    public enum ReportType : byte
+    {
+        [Display(Name = "گزارش مالی")]
+        Financial = 0,
+        [Display(Name = "گزارش بیماران")]
+        Patients = 1,
+        [Display(Name = "گزارش نوبت‌ها")]
+        Appointments = 2,
+        [Display(Name = "گزارش پذیرش")]
+        Receptions = 3,
+        [Display(Name = "گزارش پزشکان")]
+        Doctors = 4,
+        [Display(Name = "گزارش بیمه")]
+        Insurance = 5,
+        [Display(Name = "گزارش عملکرد")]
+        Performance = 6
+    }
+
+    /// <summary>
     /// روش‌های پرداخت (ادغام شده برای کل سیستم)
     /// </summary>
     public enum PaymentMethod : byte
@@ -2839,6 +2911,45 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public DateTime? LastLoginDate { get; set; }
 
+        /// <summary>
+        /// گروه خونی بیمار
+        /// این اطلاعات برای سیستم‌های پزشکی بسیار حیاتی است
+        /// </summary>
+        [MaxLength(10, ErrorMessage = "گروه خونی نمی‌تواند بیش از 10 کاراکتر باشد.")]
+        public string BloodType { get; set; }
+
+        /// <summary>
+        /// حساسیت‌های بیمار
+        /// این اطلاعات برای جلوگیری از عوارض جانبی داروها ضروری است
+        /// </summary>
+        [MaxLength(1000, ErrorMessage = "حساسیت‌ها نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+        public string Allergies { get; set; }
+
+        /// <summary>
+        /// بیماری‌های مزمن بیمار
+        /// این اطلاعات برای تشخیص و درمان صحیح ضروری است
+        /// </summary>
+        [MaxLength(1000, ErrorMessage = "بیماری‌های مزمن نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+        public string ChronicDiseases { get; set; }
+
+        /// <summary>
+        /// نام تماس اضطراری
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "نام تماس اضطراری نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string EmergencyContactName { get; set; }
+
+        /// <summary>
+        /// شماره تماس اضطراری
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "شماره تماس اضطراری نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string EmergencyContactPhone { get; set; }
+
+        /// <summary>
+        /// رابطه با تماس اضطراری
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "رابطه با تماس اضطراری نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string EmergencyContactRelationship { get; set; }
+
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>
         /// نشان‌دهنده وضعیت حذف شدن بیمار
@@ -2936,8 +3047,528 @@ namespace ClinicApp.Models.Entities
         public virtual ICollection<PatientInsurance> PatientInsurances { get; set; } = new HashSet<PatientInsurance>();
         public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
 
+        /// <summary>
+        /// لیست تاریخچه پزشکی بیمار
+        /// این لیست برای نمایش تمام تاریخچه پزشکی بیمار استفاده می‌شود
+        /// </summary>
+        public virtual ICollection<MedicalHistory> MedicalHistories { get; set; } = new HashSet<MedicalHistory>();
+
         #endregion
     }
+
+    #region MedicalHistory
+
+    /// <summary>
+    /// مدل تاریخچه پزشکی بیماران - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت کامل تاریخچه پزشکی بیماران با توجه به استانداردهای سیستم‌های درمانی
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات پزشکی
+    /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
+    /// 5. دسته‌بندی انواع مختلف تاریخچه پزشکی (بیماری، جراحی، دارو، آلرژی و...)
+    /// </summary>
+    public class MedicalHistory : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه تاریخچه پزشکی
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int MedicalHistoryId { get; set; }
+
+        /// <summary>
+        /// شناسه بیمار
+        /// </summary>
+        [Required(ErrorMessage = "بیمار الزامی است.")]
+        public int PatientId { get; set; }
+
+        /// <summary>
+        /// نوع تاریخچه پزشکی
+        /// </summary>
+        [Required(ErrorMessage = "نوع تاریخچه پزشکی الزامی است.")]
+        public MedicalHistoryType Type { get; set; }
+
+        /// <summary>
+        /// عنوان تاریخچه پزشکی
+        /// </summary>
+        [Required(ErrorMessage = "عنوان الزامی است.")]
+        [MaxLength(200, ErrorMessage = "عنوان نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        public string Title { get; set; }
+
+        /// <summary>
+        /// توضیحات کامل
+        /// </summary>
+        [MaxLength(2000, ErrorMessage = "توضیحات نمی‌تواند بیش از 2000 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// تاریخ شروع
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// آیا هنوز فعال است؟
+        /// </summary>
+        public bool IsActive { get; set; } = true;
+
+        /// <summary>
+        /// شدت (برای بیماری‌ها)
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "شدت نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string Severity { get; set; }
+
+        /// <summary>
+        /// نام پزشک معالج
+        /// </summary>
+        [MaxLength(100, ErrorMessage = "نام پزشک نمی‌تواند بیش از 100 کاراکتر باشد.")]
+        public string DoctorName { get; set; }
+
+        /// <summary>
+        /// نام بیمارستان یا مرکز درمانی
+        /// </summary>
+        [MaxLength(200, ErrorMessage = "نام مرکز درمانی نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        public string MedicalCenter { get; set; }
+
+        /// <summary>
+        /// فایل‌های ضمیمه (مسیر فایل‌ها)
+        /// </summary>
+        [MaxLength(1000, ErrorMessage = "مسیر فایل‌ها نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+        public string Attachments { get; set; }
+
+        #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
+        /// <summary>
+        /// نشان‌دهنده وضعیت حذف شدن تاریخچه پزشکی
+        /// در سیستم‌های پزشکی، حذف فیزیکی اطلاعات مجاز نیست
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ و زمان حذف تاریخچه پزشکی
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که تاریخچه پزشکی را حذف کرده است
+        /// </summary>
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر حذف کننده
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable (مدیریت ردیابی)
+        /// <summary>
+        /// تاریخ و زمان ایجاد تاریخچه پزشکی
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که تاریخچه پزشکی را ایجاد کرده است
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ایجاد کننده
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش تاریخچه پزشکی
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که تاریخچه پزشکی را ویرایش کرده است
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+
+        #region روابط
+        /// <summary>
+        /// ارجاع به بیمار
+        /// </summary>
+        public virtual Patient Patient { get; set; }
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی مدل تاریخچه پزشکی برای Entity Framework
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class MedicalHistoryConfig : EntityTypeConfiguration<MedicalHistory>
+    {
+        public MedicalHistoryConfig()
+        {
+            ToTable("MedicalHistories");
+            HasKey(mh => mh.MedicalHistoryId);
+
+            // ویژگی‌های اصلی
+            Property(mh => mh.Type)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_Type")));
+
+            Property(mh => mh.Title)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            Property(mh => mh.Description)
+                .IsOptional()
+                .HasMaxLength(2000);
+
+            Property(mh => mh.StartDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_StartDate")));
+
+            Property(mh => mh.IsActive)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_IsActive")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(mh => mh.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_IsDeleted")));
+
+            Property(mh => mh.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(mh => mh.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_CreatedAt")));
+
+            Property(mh => mh.CreatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_CreatedByUserId")));
+
+            Property(mh => mh.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_UpdatedAt")));
+
+            Property(mh => mh.UpdatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_UpdatedByUserId")));
+
+            Property(mh => mh.DeletedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_MedicalHistory_DeletedByUserId")));
+
+            // روابط
+            HasRequired(mh => mh.Patient)
+                .WithMany(p => p.MedicalHistories)
+                .HasForeignKey(mh => mh.PatientId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(mh => mh.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(mh => mh.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(mh => mh.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(mh => mh.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(mh => mh.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(mh => mh.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد
+            HasIndex(mh => new { mh.PatientId, mh.Type, mh.IsActive })
+                .HasName("IX_MedicalHistory_PatientId_Type_IsActive");
+
+            HasIndex(mh => new { mh.PatientId, mh.IsDeleted })
+                .HasName("IX_MedicalHistory_PatientId_IsDeleted");
+
+            HasIndex(mh => new { mh.Type, mh.StartDate, mh.IsActive })
+                .HasName("IX_MedicalHistory_Type_StartDate_IsActive");
+        }
+    }
+
+    #endregion
+
+    #region Report
+
+    /// <summary>
+    /// مدل گزارش‌های سیستم - طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت کامل گزارش‌های سیستم با توجه به استانداردهای سیستم‌های درمانی
+    /// 2. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات گزارش‌ها
+    /// 3. ارتباط با کاربران ایجاد کننده و مدیریت ردیابی کامل
+    /// 4. مدیریت کامل تاریخ‌ها و اطلاعات کاربران مرتبط برای استانداردهای پزشکی
+    /// 5. دسته‌بندی انواع مختلف گزارش‌ها (مالی، بیماران، نوبت‌ها، پذیرش و...)
+    /// </summary>
+    public class Report : ISoftDelete, ITrackable
+    {
+        /// <summary>
+        /// شناسه گزارش
+        /// این شناسه به صورت خودکار توسط سیستم تولید می‌شود
+        /// </summary>
+        public int ReportId { get; set; }
+
+        /// <summary>
+        /// نام گزارش
+        /// </summary>
+        [Required(ErrorMessage = "نام گزارش الزامی است.")]
+        [MaxLength(200, ErrorMessage = "نام گزارش نمی‌تواند بیش از 200 کاراکتر باشد.")]
+        public string Name { get; set; }
+
+        /// <summary>
+        /// نوع گزارش
+        /// </summary>
+        [Required(ErrorMessage = "نوع گزارش الزامی است.")]
+        public ReportType Type { get; set; }
+
+        /// <summary>
+        /// توضیحات گزارش
+        /// </summary>
+        [MaxLength(1000, ErrorMessage = "توضیحات نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+        public string Description { get; set; }
+
+        /// <summary>
+        /// پارامترهای گزارش (JSON)
+        /// </summary>
+        [MaxLength(2000, ErrorMessage = "پارامترها نمی‌تواند بیش از 2000 کاراکتر باشد.")]
+        public string Parameters { get; set; }
+
+        /// <summary>
+        /// تاریخ شروع گزارش
+        /// </summary>
+        public DateTime? StartDate { get; set; }
+
+        /// <summary>
+        /// تاریخ پایان گزارش
+        /// </summary>
+        public DateTime? EndDate { get; set; }
+
+        /// <summary>
+        /// مسیر فایل گزارش
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "مسیر فایل نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string FilePath { get; set; }
+
+        /// <summary>
+        /// وضعیت تولید گزارش
+        /// </summary>
+        [MaxLength(50, ErrorMessage = "وضعیت نمی‌تواند بیش از 50 کاراکتر باشد.")]
+        public string Status { get; set; } = "Pending";
+
+        /// <summary>
+        /// تعداد رکوردهای گزارش
+        /// </summary>
+        public int? RecordCount { get; set; }
+
+        /// <summary>
+        /// حجم فایل گزارش (بایت)
+        /// </summary>
+        public long? FileSize { get; set; }
+
+        /// <summary>
+        /// آیا گزارش قابل دانلود است؟
+        /// </summary>
+        public bool IsDownloadable { get; set; } = true;
+
+        /// <summary>
+        /// تاریخ انقضای گزارش
+        /// </summary>
+        public DateTime? ExpiryDate { get; set; }
+
+        #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
+        /// <summary>
+        /// نشان‌دهنده وضعیت حذف شدن گزارش
+        /// در سیستم‌های پزشکی، حذف فیزیکی اطلاعات مجاز نیست
+        /// </summary>
+        public bool IsDeleted { get; set; } = false;
+
+        /// <summary>
+        /// تاریخ و زمان حذف گزارش
+        /// </summary>
+        public DateTime? DeletedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که گزارش را حذف کرده است
+        /// </summary>
+        public string DeletedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر حذف کننده
+        /// </summary>
+        public virtual ApplicationUser DeletedByUser { get; set; }
+        #endregion
+
+        #region پیاده‌سازی ITrackable (مدیریت ردیابی)
+        /// <summary>
+        /// تاریخ و زمان ایجاد گزارش
+        /// </summary>
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
+
+        /// <summary>
+        /// شناسه کاربری که گزارش را ایجاد کرده است
+        /// </summary>
+        public string CreatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ایجاد کننده
+        /// </summary>
+        public virtual ApplicationUser CreatedByUser { get; set; }
+
+        /// <summary>
+        /// تاریخ و زمان آخرین ویرایش گزارش
+        /// </summary>
+        public DateTime? UpdatedAt { get; set; }
+
+        /// <summary>
+        /// شناسه کاربری که گزارش را ویرایش کرده است
+        /// </summary>
+        public string UpdatedByUserId { get; set; }
+
+        /// <summary>
+        /// ارجاع به کاربر ویرایش کننده
+        /// </summary>
+        public virtual ApplicationUser UpdatedByUser { get; set; }
+        #endregion
+    }
+
+    /// <summary>
+    /// پیکربندی مدل گزارش‌ها برای Entity Framework
+    /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
+    /// </summary>
+    public class ReportConfig : EntityTypeConfiguration<Report>
+    {
+        public ReportConfig()
+        {
+            ToTable("Reports");
+            HasKey(r => r.ReportId);
+
+            // ویژگی‌های اصلی
+            Property(r => r.Name)
+                .IsRequired()
+                .HasMaxLength(200);
+
+            Property(r => r.Type)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_Type")));
+
+            Property(r => r.Description)
+                .IsOptional()
+                .HasMaxLength(1000);
+
+            Property(r => r.Parameters)
+                .IsOptional()
+                .HasMaxLength(2000);
+
+            Property(r => r.StartDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_StartDate")));
+
+            Property(r => r.EndDate)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_EndDate")));
+
+            Property(r => r.Status)
+                .IsRequired()
+                .HasMaxLength(50)
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_Status")));
+
+            Property(r => r.IsDownloadable)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_IsDownloadable")));
+
+            // پیاده‌سازی ISoftDelete
+            Property(r => r.IsDeleted)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_IsDeleted")));
+
+            Property(r => r.DeletedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_DeletedAt")));
+
+            // پیاده‌سازی ITrackable
+            Property(r => r.CreatedAt)
+                .IsRequired()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_CreatedAt")));
+
+            Property(r => r.CreatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_CreatedByUserId")));
+
+            Property(r => r.UpdatedAt)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_UpdatedAt")));
+
+            Property(r => r.UpdatedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_UpdatedByUserId")));
+
+            Property(r => r.DeletedByUserId)
+                .IsOptional()
+                .HasColumnAnnotation("Index",
+                    new IndexAnnotation(new IndexAttribute("IX_Report_DeletedByUserId")));
+
+            // روابط
+            HasOptional(r => r.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.CreatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(r => r.UpdatedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.UpdatedByUserId)
+                .WillCascadeOnDelete(false);
+
+            HasOptional(r => r.DeletedByUser)
+                .WithMany()
+                .HasForeignKey(r => r.DeletedByUserId)
+                .WillCascadeOnDelete(false);
+
+            // ایندکس‌های ترکیبی برای بهبود عملکرد
+            HasIndex(r => new { r.Type, r.Status, r.IsDeleted })
+                .HasName("IX_Report_Type_Status_IsDeleted");
+
+            HasIndex(r => new { r.CreatedByUserId, r.CreatedAt })
+                .HasName("IX_Report_CreatedByUserId_CreatedAt");
+
+            HasIndex(r => new { r.StartDate, r.EndDate, r.Type })
+                .HasName("IX_Report_StartDate_EndDate_Type");
+        }
+    }
+
+    #endregion
 
     /// <summary>
     /// پیکربندی مدل بیماران برای Entity Framework
@@ -7226,6 +7857,34 @@ namespace ClinicApp.Models.Entities
         /// </summary>
         public ReceptionStatus Status { get; set; } = ReceptionStatus.Pending;
 
+        /// <summary>
+        /// نوع پذیرش
+        /// </summary>
+        [Required(ErrorMessage = "نوع پذیرش الزامی است.")]
+        public ReceptionType Type { get; set; } = ReceptionType.Normal;
+
+        /// <summary>
+        /// اولویت پذیرش
+        /// </summary>
+        [Required(ErrorMessage = "اولویت پذیرش الزامی است.")]
+        public AppointmentPriority Priority { get; set; } = AppointmentPriority.Normal;
+
+        /// <summary>
+        /// یادداشت‌های پذیرش
+        /// </summary>
+        [MaxLength(1000, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از 1000 کاراکتر باشد.")]
+        public string Notes { get; set; }
+
+        /// <summary>
+        /// آیا پذیرش اورژانس است؟
+        /// </summary>
+        public bool IsEmergency { get; set; } = false;
+
+        /// <summary>
+        /// آیا پذیرش به صورت آنلاین انجام شده است؟
+        /// </summary>
+        public bool IsOnlineReception { get; set; } = false;
+
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>
         /// نشان‌دهنده وضعیت حذف شدن پذیرش
@@ -7792,6 +8451,34 @@ namespace ClinicApp.Models.Entities
         /// شناسه دسته‌بندی خدمت
         /// </summary>
         public int? ServiceCategoryId { get; set; }
+
+        /// <summary>
+        /// مدت زمان ویزیت (به دقیقه)
+        /// </summary>
+        [Range(5, 480, ErrorMessage = "مدت زمان ویزیت باید بین 5 تا 480 دقیقه باشد.")]
+        public int Duration { get; set; } = 30;
+
+        /// <summary>
+        /// اولویت نوبت
+        /// </summary>
+        [Required(ErrorMessage = "اولویت نوبت الزامی است.")]
+        public AppointmentPriority Priority { get; set; } = AppointmentPriority.Normal;
+
+        /// <summary>
+        /// آیا نوبت اورژانس است؟
+        /// </summary>
+        public bool IsEmergency { get; set; } = false;
+
+        /// <summary>
+        /// آیا نوبت به صورت آنلاین رزرو شده است؟
+        /// </summary>
+        public bool IsOnlineBooking { get; set; } = false;
+
+        /// <summary>
+        /// راه‌حل تداخل نوبت (در صورت وجود)
+        /// </summary>
+        [MaxLength(500, ErrorMessage = "راه‌حل تداخل نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string ConflictResolution { get; set; }
 
         #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
         /// <summary>

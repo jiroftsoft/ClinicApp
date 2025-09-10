@@ -276,6 +276,9 @@
     <Reference Include="System.ClientModel, Version=1.0.0.0, Culture=neutral, PublicKeyToken=92742159e12e44c8, processorArchitecture=MSIL">
       <HintPath>packages\System.ClientModel.1.0.0\lib\netstandard2.0\System.ClientModel.dll</HintPath>
     </Reference>
+    <Reference Include="System.CodeDom, Version=9.0.0.9, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>packages\System.CodeDom.9.0.9\lib\net462\System.CodeDom.dll</HintPath>
+    </Reference>
     <Reference Include="System.ComponentModel.Annotations, Version=4.2.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>packages\System.ComponentModel.Annotations.4.4.1\lib\net461\System.ComponentModel.Annotations.dll</HintPath>
     </Reference>
@@ -301,6 +304,7 @@
     <Reference Include="System.IO.Pipelines, Version=9.0.0.8, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.IO.Pipelines.9.0.8\lib\net462\System.IO.Pipelines.dll</HintPath>
     </Reference>
+    <Reference Include="System.Management" />
     <Reference Include="System.Memory, Version=4.0.5.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>packages\System.Memory.4.6.3\lib\net462\System.Memory.dll</HintPath>
     </Reference>
@@ -455,6 +459,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\InsurancePlanController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceProviderController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
+    <Compile Include="Controllers\TokenTestController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
@@ -500,6 +505,7 @@
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
+    <Compile Include="Interfaces\IExternalInquiryService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
@@ -514,6 +520,7 @@
     <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
+    <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.Designer.cs">
@@ -526,6 +533,14 @@
     <Compile Include="Migrations\202509100635589_EnhancePerformance.cs" />
     <Compile Include="Migrations\202509100635589_EnhancePerformance.Designer.cs">
       <DependentUpon>202509100635589_EnhancePerformance.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509100950227_Reception-01.cs" />
+    <Compile Include="Migrations\202509100950227_Reception-01.Designer.cs">
+      <DependentUpon>202509100950227_Reception-01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509101002438_CreateTwoTable.cs" />
+    <Compile Include="Migrations\202509101002438_CreateTwoTable.Designer.cs">
+      <DependentUpon>202509101002438_CreateTwoTable.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
@@ -568,6 +583,7 @@
     <Compile Include="Services\ClinicManagementService.cs" />
     <Compile Include="Services\CurrentUserService.cs" />
     <Compile Include="Services\DepartmentManagementService.cs" />
+    <Compile Include="Services\ExternalInquiryService.cs" />
     <Compile Include="Services\IMessageNotificationService.cs" />
     <Compile Include="Services\Insurance\InsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
@@ -578,6 +594,7 @@
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
+    <Compile Include="Services\SecurityTokenService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
@@ -640,6 +657,7 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
     <Compile Include="Areas\Receptionist\ReceptionistAreaRegistration.cs" />
@@ -3282,8 +3300,6 @@
     <Content Include="Content\Fonts\vazirmatn\Vazirmatn[wght].woff2" />
     <Content Include="Areas\Admin\Views\Service\EditCategory.cshtml" />
     <Content Include="Areas\Admin\Views\Service\Report.cshtml" />
-    <Content Include="FINAL_FIX_SUMMARY.md" />
-    <Content Include="MEDICAL_TROUBLESHOOTING.md" />
     <Content Include="Areas\Admin\Views\Doctor\Index.cshtml" />
     <Content Include="Areas\Admin\Views\Doctor\Create.cshtml" />
     <Content Include="Areas\Admin\Views\Doctor\Details.cshtml" />
@@ -3622,14 +3638,11 @@
     <Content Include="Views\Shared\_ValidationToasts.cshtml" />
     <Content Include="Views\Account\CompleteRegistration.cshtml" />
     <Content Include="Views\Shared\_Layout.cshtml" />
-    <Content Include="SERVICE_DELETION_DEBUG.md" />
-    <Content Include="SERVICE_DELETION_FIX.md" />
-    <Content Include="SERVICE_FILTERS_FIX.md" />
-    <Content Include="TOAST_UNDEFINED_FIX.md" />
     <Content Include="Views\Shared\_PersianDatePickerTemplate.cshtml" />
     <Content Include="Views\Shared\_PersianDatePickerExample.cshtml" />
     <Content Include="TEMPLATES\README.md" />
     <Content Include="Views\Patient\_PatientInsurancesPartial.cshtml" />
+    <Content Include="Views\TokenTest\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -3672,6 +3685,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509100635589_EnhancePerformance.resx">
       <DependentUpon>202509100635589_EnhancePerformance.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509100950227_Reception-01.resx">
+      <DependentUpon>202509100950227_Reception-01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509101002438_CreateTwoTable.resx">
+      <DependentUpon>202509101002438_CreateTwoTable.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

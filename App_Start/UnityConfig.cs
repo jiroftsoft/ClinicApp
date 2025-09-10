@@ -397,6 +397,10 @@ namespace ClinicApp
                 // Register Message Notification Service
                 container.RegisterType<IMessageNotificationService, MessageNotificationService>(new PerRequestLifetimeManager());
 
+                // Register External Inquiry and Security Token Services
+                container.RegisterType<IExternalInquiryService, ExternalInquiryService>(new PerRequestLifetimeManager());
+                container.RegisterType<ISecurityTokenService, SecurityTokenService>(new PerRequestLifetimeManager());
+
                 // Register Insurance Validators
                 container.RegisterType<IValidator<InsurancePlanCreateEditViewModel>, InsurancePlanCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<InsuranceCalculationViewModel>, InsuranceCalculationViewModelValidator>(new PerRequestLifetimeManager());
