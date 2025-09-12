@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Doctor;
 
 namespace ClinicApp.Repositories.ClinicAdmin
 {

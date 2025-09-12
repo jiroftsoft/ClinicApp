@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Entity;
 using System.Threading.Tasks;
+using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities;
 
 namespace ClinicApp.Extensions;

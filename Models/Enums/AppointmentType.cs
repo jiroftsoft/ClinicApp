@@ -1,8 +1,6 @@
-using System.ComponentModel;
+﻿using System.ComponentModel;
 
-namespace ClinicApp.Models.Entities;
-
-using System.ComponentModel;
+namespace ClinicApp.Models.Enums;
 
 public enum AppointmentType
 {

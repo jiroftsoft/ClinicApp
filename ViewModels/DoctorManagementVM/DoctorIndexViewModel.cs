@@ -4,6 +4,8 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using ClinicApp.Extensions;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {

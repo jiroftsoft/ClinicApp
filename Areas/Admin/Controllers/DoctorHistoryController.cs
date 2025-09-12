@@ -10,6 +10,8 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 using Serilog;
 using SelectListItem = System.Web.WebPages.Html.SelectListItem;
 
@@ -53,12 +55,12 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// صفحه اصلی تاریخچه پزشکان
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Index(int? doctorId = null, string actionType = null, 
+        public async Task<ActionResult> Index(int? doctorId = null, string actionType = null,
             DateTime? startDate = null, DateTime? endDate = null, int page = 1)
         {
             try
             {
-                _logger.Information("درخواست نمایش صفحه اصلی تاریخچه پزشکان. DoctorId: {DoctorId}, ActionType: {ActionType}, Page: {Page}", 
+                _logger.Information("درخواست نمایش صفحه اصلی تاریخچه پزشکان. DoctorId: {DoctorId}, ActionType: {ActionType}, Page: {Page}",
                     doctorId, actionType, page);
 
                 // تنظیم پارامترهای پیش‌فرض
@@ -136,7 +138,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     Departments = departments
                 };
 
-                _logger.Information("صفحه اصلی تاریخچه پزشکان با موفقیت نمایش داده شد. تعداد رکوردها: {Count}", 
+                _logger.Information("صفحه اصلی تاریخچه پزشکان با موفقیت نمایش داده شد. تعداد رکوردها: {Count}",
                     viewModel.Histories.Count);
 
                 return View(viewModel);
@@ -222,13 +224,13 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// جستجوی پیشرفته در تاریخچه - بهینه‌سازی شده برای محیط عملیاتی
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Search(string searchTerm = null, int? doctorId = null, 
-            string actionType = null, DateTime? startDate = null, DateTime? endDate = null, 
+        public async Task<ActionResult> Search(string searchTerm = null, int? doctorId = null,
+            string actionType = null, DateTime? startDate = null, DateTime? endDate = null,
             string performedBy = null, int? departmentId = null, string importance = null, int page = 1)
         {
             try
             {
-                _logger.Information("درخواست جستجوی پیشرفته در تاریخچه. SearchTerm: {SearchTerm}, DoctorId: {DoctorId}, Page: {Page}", 
+                _logger.Information("درخواست جستجوی پیشرفته در تاریخچه. SearchTerm: {SearchTerm}, DoctorId: {DoctorId}, Page: {Page}",
                     searchTerm, doctorId, page);
 
                 // تنظیم پارامترهای پیش‌فرض
@@ -239,8 +241,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                 var (doctors, departments) = await LoadSearchDataAsync();
 
                 // اگر هیچ parameter ارسال نشده، صفحه خالی نمایش داده شود
-                if (string.IsNullOrEmpty(searchTerm) && !doctorId.HasValue && string.IsNullOrEmpty(actionType) && 
-                    !startDate.HasValue && !endDate.HasValue && string.IsNullOrEmpty(performedBy) && 
+                if (string.IsNullOrEmpty(searchTerm) && !doctorId.HasValue && string.IsNullOrEmpty(actionType) &&
+                    !startDate.HasValue && !endDate.HasValue && string.IsNullOrEmpty(performedBy) &&
                     !departmentId.HasValue && string.IsNullOrEmpty(importance) && page == 1)
                 {
                     var emptyViewModel = CreateEmptySearchViewModel(doctors, departments);
@@ -257,7 +259,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     }
                 }
 
-                var searchResult = await _historyService.SearchHistoryAsync(searchTerm, actionType, importanceEnum, 
+                var searchResult = await _historyService.SearchHistoryAsync(searchTerm, actionType, importanceEnum,
                     departmentId, performedBy, startDate, endDate, page, pageSize);
 
                 if (!searchResult.Success)
@@ -276,7 +278,7 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 var viewModel = CreateSearchViewModel(filteredData, searchTerm, doctorId, actionType, startDate, endDate, performedBy, departmentId, importance, page, pageSize, doctors, departments);
 
-                _logger.Information("جستجوی پیشرفته تاریخچه با موفقیت انجام شد. تعداد نتایج: {Count}", 
+                _logger.Information("جستجوی پیشرفته تاریخچه با موفقیت انجام شد. تعداد نتایج: {Count}",
                     viewModel.Histories.Count);
 
                 return View(viewModel);
@@ -302,7 +304,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         {
             try
             {
-                _logger.Information("درخواست گزارش آماری تاریخچه. StartDate: {StartDate}, EndDate: {EndDate}", 
+                _logger.Information("درخواست گزارش آماری تاریخچه. StartDate: {StartDate}, EndDate: {EndDate}",
                     startDate, endDate);
 
                 var result = await _historyService.GetHistoryStatisticsAsync(startDate, endDate);
@@ -314,14 +316,14 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 var statistics = result.Data;
-                
+
                 // ایجاد ViewModel پیشرفته
                 var advancedStatistics = new DoctorHistoryAdvancedStatisticsViewModel
                 {
                     StartDate = startDate ?? DateTime.Now.AddMonths(-1),
                     EndDate = endDate ?? DateTime.Now,
                     GeneratedAt = DateTime.Now,
-                    
+
                     // آمار کلی
                     TotalRecords = statistics.TotalHistoryRecords,
                     CriticalRecords = statistics.CriticalRecords,
@@ -330,7 +332,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     AssignmentCount = statistics.AssignmentsCount,
                     RemovalCount = statistics.RemovalsCount,
                     UpdateCount = statistics.UpdatesCount,
-                    
+
                     // آمار ماهانه (نمونه)
                     MonthlyStatistics = new List<MonthlyStatisticsViewModel>
                     {
@@ -347,7 +349,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                             UpdatesCount = statistics.UpdatesCount
                         }
                     },
-                    
+
                     // آمار پزشکان (نمونه)
                     DoctorActivity = new List<DoctorActivityStatisticsViewModel>
                     {
@@ -362,7 +364,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                             AverageOperationsPerMonth = 5.5m
                         }
                     },
-                    
+
                     // آمار کاربران (نمونه)
                     UserActivity = new List<UserActivityStatisticsViewModel>
                     {
@@ -376,7 +378,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                             AverageOperationsPerDay = 2.5m
                         }
                     },
-                    
+
                     // آمار دپارتمان‌ها (نمونه)
                     DepartmentActivity = new List<DepartmentActivityStatisticsViewModel>
                     {
@@ -430,7 +432,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         {
             try
             {
-                _logger.Information("درخواست گزارش تاریخچه پزشک {DoctorId}. StartDate: {StartDate}, EndDate: {EndDate}", 
+                _logger.Information("درخواست گزارش تاریخچه پزشک {DoctorId}. StartDate: {StartDate}, EndDate: {EndDate}",
                     doctorId, startDate, endDate);
 
                 if (doctorId <= 0)
@@ -471,9 +473,9 @@ namespace ClinicApp.Areas.Admin.Controllers
                     UpdatesCount = histories.Count(h => h.ActionType == "Update"),
                     RemovalCount = histories.Count(h => h.ActionType == "Removal"),
                     UpdateCount = histories.Count(h => h.ActionType == "Update"),
-                    CriticalRecords = histories.Count(h => h.Importance == Models.Entities.AssignmentHistoryImportance.Critical),
-                    ImportantRecords = histories.Count(h => h.Importance == Models.Entities.AssignmentHistoryImportance.Important),
-                    NormalRecords = histories.Count(h => h.Importance == Models.Entities.AssignmentHistoryImportance.Normal),
+                    CriticalRecords = histories.Count(h => h.Importance == AssignmentHistoryImportance.Critical),
+                    ImportantRecords = histories.Count(h => h.Importance == AssignmentHistoryImportance.Important),
+                    NormalRecords = histories.Count(h => h.Importance == AssignmentHistoryImportance.Normal),
                     HistoryItems = histories.Select(h => new AssignmentHistoryViewModel
                     {
                         Id = h.Id,
@@ -585,7 +587,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     return Json(new { success = false, message = result.Message });
                 }
 
-                _logger.Information("پاکسازی تاریخچه قدیمی با موفقیت انجام شد. تعداد رکوردهای حذف شده: {Count}", 
+                _logger.Information("پاکسازی تاریخچه قدیمی با موفقیت انجام شد. تعداد رکوردهای حذف شده: {Count}",
                     result.Data);
                 return Json(new { success = true, message = $"تعداد {result.Data} رکورد قدیمی حذف شد" });
             }
@@ -604,12 +606,12 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// دریافت تاریخچه به صورت AJAX
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetHistoryAjax(int? doctorId = null, string actionType = null, 
+        public async Task<JsonResult> GetHistoryAjax(int? doctorId = null, string actionType = null,
             DateTime? startDate = null, DateTime? endDate = null, int page = 1, int pageSize = 20)
         {
             try
             {
-                _logger.Information("درخواست AJAX دریافت تاریخچه. DoctorId: {DoctorId}, Page: {Page}", 
+                _logger.Information("درخواست AJAX دریافت تاریخچه. DoctorId: {DoctorId}, Page: {Page}",
                     doctorId, page);
 
                 var historyResult = await GetFilteredHistoryAsync(doctorId, actionType, startDate, endDate, page, pageSize);
@@ -661,10 +663,10 @@ namespace ClinicApp.Areas.Admin.Controllers
                 {
                     doctors = doctorsResult.Data.Items
                         .Where(d => d.IsActive)
-                        .Select(d => new System.Web.Mvc.SelectListItem 
-                        { 
-                            Value = d.Id.ToString(), 
-                            Text = d.FullName 
+                        .Select(d => new System.Web.Mvc.SelectListItem
+                        {
+                            Value = d.Id.ToString(),
+                            Text = d.FullName
                         })
                         .ToList();
                 }
@@ -678,10 +680,10 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (departmentsResult.Success)
                 {
                     departments = departmentsResult.Data
-                        .Select(d => new System.Web.Mvc.SelectListItem 
-                        { 
-                            Value = d.Id.ToString(), 
-                            Text = d.Name 
+                        .Select(d => new System.Web.Mvc.SelectListItem
+                        {
+                            Value = d.Id.ToString(),
+                            Text = d.Name
                         })
                         .ToList();
                 }
@@ -718,7 +720,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// <summary>
         /// ایجاد ViewModel خطا برای جستجو
         /// </summary>
-        private DoctorHistorySearchViewModel CreateErrorSearchViewModel(string searchTerm, int? doctorId, string actionType, 
+        private DoctorHistorySearchViewModel CreateErrorSearchViewModel(string searchTerm, int? doctorId, string actionType,
             DateTime? startDate, DateTime? endDate, string performedBy, int? departmentId, string importance,
             List<System.Web.Mvc.SelectListItem> doctors, List<System.Web.Mvc.SelectListItem> departments)
         {
@@ -746,8 +748,8 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// <summary>
         /// ایجاد ViewModel کامل برای جستجو
         /// </summary>
-        private DoctorHistorySearchViewModel CreateSearchViewModel(List<Models.Entities.DoctorAssignmentHistory> data, 
-            string searchTerm, int? doctorId, string actionType, DateTime? startDate, DateTime? endDate, 
+        private DoctorHistorySearchViewModel CreateSearchViewModel(List<DoctorAssignmentHistory> data,
+            string searchTerm, int? doctorId, string actionType, DateTime? startDate, DateTime? endDate,
             string performedBy, int? departmentId, string importance, int page, int pageSize,
             List<System.Web.Mvc.SelectListItem> doctors, List<System.Web.Mvc.SelectListItem> departments)
         {
@@ -827,7 +829,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         /// <summary>
         /// دریافت تاریخچه فیلتر شده
         /// </summary>
-        private async Task<ServiceResult<List<Models.Entities.DoctorAssignmentHistory>>> GetFilteredHistoryAsync(
+        private async Task<ServiceResult<List<DoctorAssignmentHistory>>> GetFilteredHistoryAsync(
             int? doctorId, string actionType, DateTime? startDate, DateTime? endDate, int page, int pageSize)
         {
             if (doctorId.HasValue)

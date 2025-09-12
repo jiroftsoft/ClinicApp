@@ -188,7 +188,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
-        public static InsuranceCalculationDetailsViewModel FromEntity(Models.Entities.InsuranceCalculation entity)
+        public static InsuranceCalculationDetailsViewModel FromEntity(Models.Entities.Insurance.InsuranceCalculation entity)
         {
             if (entity == null) return null;
 

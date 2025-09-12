@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Notification;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Interfaces;
 

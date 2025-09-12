@@ -2,6 +2,7 @@
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.DoctorManagementVM;
 

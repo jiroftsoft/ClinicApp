@@ -1,0 +1,302 @@
+using ClinicApp.Models.Entities;
+using ClinicApp.Helpers;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using ClinicApp.Models.Entities.Payment;
+using ClinicApp.Models.Enums;
+
+namespace ClinicApp.Interfaces.Payment
+{
+    /// <summary>
+    /// Repository Interface برای مدیریت تراکنش‌های پرداخت
+    /// طراحی شده طبق اصول SRP - مسئولیت: مدیریت CRUD تراکنش‌های پرداخت
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. مدیریت کامل تراکنش‌های پرداخت (POS، آنلاین، نقدی)
+    /// 2. پشتیبانی از Soft Delete برای حفظ اطلاعات مالی
+    /// 3. بهینه‌سازی برای عملکرد بالا (10k+ تراکنش)
+    /// 4. پشتیبانی از فیلترهای پیشرفته
+    /// 5. ردیابی کامل Audit Trail
+    /// </summary>
+    public interface IPaymentTransactionRepository
+    {
+        #region CRUD Operations
+
+        /// <summary>
+        /// دریافت تراکنش پرداخت بر اساس شناسه
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <returns>تراکنش پرداخت یا null</returns>
+        Task<PaymentTransaction> GetByIdAsync(int transactionId);
+
+        /// <summary>
+        /// دریافت تمام تراکنش‌های پرداخت
+        /// </summary>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetAllAsync(int pageNumber = 1, int pageSize = 50);
+
+        /// <summary>
+        /// افزودن تراکنش پرداخت جدید
+        /// </summary>
+        /// <param name="transaction">تراکنش پرداخت</param>
+        /// <returns>تراکنش اضافه شده</returns>
+        Task<PaymentTransaction> AddAsync(PaymentTransaction transaction);
+
+        /// <summary>
+        /// ایجاد تراکنش پرداخت جدید
+        /// </summary>
+        /// <param name="transaction">تراکنش پرداخت</param>
+        /// <returns>تراکنش ایجاد شده</returns>
+        Task<PaymentTransaction> CreateAsync(PaymentTransaction transaction);
+
+        /// <summary>
+        /// به‌روزرسانی تراکنش پرداخت
+        /// </summary>
+        /// <param name="transaction">تراکنش پرداخت</param>
+        /// <returns>تراکنش به‌روزرسانی شده</returns>
+        Task<PaymentTransaction> UpdateAsync(PaymentTransaction transaction);
+
+        /// <summary>
+        /// حذف نرم تراکنش پرداخت
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <param name="deletedByUserId">شناسه کاربر حذف کننده</param>
+        /// <returns>نتیجه عملیات</returns>
+        Task<ServiceResult> SoftDeleteAsync(int transactionId, string deletedByUserId);
+
+        #endregion
+
+        #region Query Operations
+
+        /// <summary>
+        /// دریافت تراکنش‌های پرداخت بر اساس پذیرش
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetByReceptionIdAsync(int receptionId);
+
+        /// <summary>
+        /// دریافت تراکنش‌های پرداخت بر اساس بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetByPatientIdAsync(int patientId, int pageNumber = 1, int pageSize = 50);
+
+        /// <summary>
+        /// دریافت تراکنش‌های پرداخت بر اساس روش پرداخت
+        /// </summary>
+        /// <param name="paymentMethod">روش پرداخت</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetByPaymentMethodAsync(PaymentMethod paymentMethod, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 50);
+
+        /// <summary>
+        /// دریافت تراکنش‌های پرداخت بر اساس وضعیت
+        /// </summary>
+        /// <param name="status">وضعیت تراکنش</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetByStatusAsync(PaymentStatus status, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 50);
+
+        /// <summary>
+        /// دریافت تعداد تراکنش‌های پرداخت بر اساس وضعیت
+        /// </summary>
+        /// <param name="status">وضعیت تراکنش</param>
+        /// <returns>تعداد تراکنش‌ها</returns>
+        Task<int> GetTransactionCountByStatusAsync(PaymentStatus status);
+
+        /// <summary>
+        /// دریافت تراکنش‌های پرداخت بر اساس تاریخ
+        /// </summary>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetByDateRangeAsync(DateTime startDate, DateTime endDate, int pageNumber = 1, int pageSize = 50);
+
+        /// <summary>
+        /// دریافت تراکنش‌های پرداخت بر اساس مبلغ
+        /// </summary>
+        /// <param name="minAmount">حداقل مبلغ</param>
+        /// <param name="maxAmount">حداکثر مبلغ</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> GetByAmountRangeAsync(decimal minAmount, decimal maxAmount, DateTime? startDate = null, DateTime? endDate = null, int pageNumber = 1, int pageSize = 50);
+
+        #endregion
+
+        #region Search Operations
+
+        /// <summary>
+        /// جستجوی تراکنش‌های پرداخت
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> SearchAsync(string searchTerm, int pageNumber = 1, int pageSize = 50);
+
+        /// <summary>
+        /// جستجوی پیشرفته تراکنش‌های پرداخت
+        /// </summary>
+        /// <param name="filters">فیلترهای جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست تراکنش‌ها</returns>
+        Task<IEnumerable<PaymentTransaction>> AdvancedSearchAsync(PaymentTransactionSearchFilters filters, int pageNumber = 1, int pageSize = 50);
+
+        #endregion
+
+        #region Statistics Operations
+
+        /// <summary>
+        /// دریافت آمار تراکنش‌های پرداخت
+        /// </summary>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <returns>آمار تراکنش‌ها</returns>
+        Task<PaymentTransactionStatistics> GetStatisticsAsync(DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// دریافت آمار تراکنش‌های پرداخت بر اساس روش پرداخت
+        /// </summary>
+        /// <param name="paymentMethod">روش پرداخت</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <returns>آمار تراکنش‌ها</returns>
+        Task<PaymentTransactionStatistics> GetStatisticsByPaymentMethodAsync(PaymentMethod paymentMethod, DateTime startDate, DateTime endDate);
+
+        /// <summary>
+        /// دریافت آمار تراکنش‌های پرداخت روزانه
+        /// </summary>
+        /// <param name="date">تاریخ</param>
+        /// <returns>آمار روزانه</returns>
+        Task<DailyPaymentStatistics> GetDailyStatisticsAsync(DateTime date);
+
+        /// <summary>
+        /// دریافت آمار تراکنش‌های پرداخت ماهانه
+        /// </summary>
+        /// <param name="year">سال</param>
+        /// <param name="month">ماه</param>
+        /// <returns>آمار ماهانه</returns>
+        Task<MonthlyPaymentStatistics> GetMonthlyStatisticsAsync(int year, int month);
+
+        #endregion
+
+        #region Validation Operations
+
+        /// <summary>
+        /// بررسی وجود تراکنش پرداخت
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <returns>true اگر وجود دارد</returns>
+        Task<bool> ExistsAsync(int transactionId);
+
+        /// <summary>
+        /// بررسی وجود تراکنش پرداخت بر اساس شماره تراکنش
+        /// </summary>
+        /// <param name="transactionId">شماره تراکنش</param>
+        /// <returns>true اگر وجود دارد</returns>
+        Task<bool> ExistsByTransactionIdAsync(string transactionId);
+
+        /// <summary>
+        /// دریافت تعداد تراکنش‌های پرداخت
+        /// </summary>
+        /// <param name="filters">فیلترهای شمارش</param>
+        /// <returns>تعداد تراکنش‌ها</returns>
+        Task<int> GetCountAsync(PaymentTransactionSearchFilters filters = null);
+
+        #endregion
+    }
+
+    /// <summary>
+    /// فیلترهای جستجوی تراکنش‌های پرداخت
+    /// </summary>
+    public class PaymentTransactionSearchFilters
+    {
+        public int? ReceptionId { get; set; }
+        public int? PatientId { get; set; }
+        public int? PosTerminalId { get; set; }
+        public int? PaymentGatewayId { get; set; }
+        public int? OnlinePaymentId { get; set; }
+        public int? CashSessionId { get; set; }
+        public PaymentMethod? PaymentMethod { get; set; }
+        public PaymentStatus? Status { get; set; }
+        public decimal? MinAmount { get; set; }
+        public decimal? MaxAmount { get; set; }
+        public DateTime? StartDate { get; set; }
+        public DateTime? EndDate { get; set; }
+        public string TransactionId { get; set; }
+        public string ReferenceCode { get; set; }
+        public string ReceiptNo { get; set; }
+        public string CreatedByUserId { get; set; }
+        public bool? IsDeleted { get; set; }
+    }
+
+    /// <summary>
+    /// آمار تراکنش‌های پرداخت
+    /// </summary>
+    public class PaymentTransactionStatistics
+    {
+        public int TotalTransactions { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal AverageAmount { get; set; }
+        public decimal MinAmount { get; set; }
+        public decimal MaxAmount { get; set; }
+        public int SuccessfulTransactions { get; set; }
+        public int FailedTransactions { get; set; }
+        public int PendingTransactions { get; set; }
+        public int CanceledTransactions { get; set; }
+        public decimal SuccessRate { get; set; }
+        public Dictionary<PaymentMethod, int> TransactionsByMethod { get; set; }
+        public Dictionary<PaymentStatus, int> TransactionsByStatus { get; set; }
+    }
+
+    /// <summary>
+    /// آمار روزانه پرداخت‌ها
+    /// </summary>
+    public class DailyPaymentStatistics
+    {
+        public DateTime Date { get; set; }
+        public int TotalTransactions { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal CashAmount { get; set; }
+        public decimal PosAmount { get; set; }
+        public decimal OnlineAmount { get; set; }
+        public decimal DebtAmount { get; set; }
+        public int CashTransactions { get; set; }
+        public int PosTransactions { get; set; }
+        public int OnlineTransactions { get; set; }
+        public int DebtTransactions { get; set; }
+    }
+
+    /// <summary>
+    /// آمار ماهانه پرداخت‌ها
+    /// </summary>
+    public class MonthlyPaymentStatistics
+    {
+        public int Year { get; set; }
+        public int Month { get; set; }
+        public int TotalTransactions { get; set; }
+        public decimal TotalAmount { get; set; }
+        public decimal AverageDailyAmount { get; set; }
+        public int TotalDays { get; set; }
+        public int ActiveDays { get; set; }
+        public Dictionary<int, DailyPaymentStatistics> DailyStatistics { get; set; }
+    }
+}

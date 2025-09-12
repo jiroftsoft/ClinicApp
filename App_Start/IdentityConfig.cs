@@ -20,6 +20,7 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Threading;
 using System.Threading.Tasks;
+using ClinicApp.Models.Core;
 
 namespace ClinicApp
 {

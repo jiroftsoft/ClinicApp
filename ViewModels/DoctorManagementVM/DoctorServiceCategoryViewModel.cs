@@ -6,6 +6,7 @@ using ClinicApp.Helpers;
 using FluentValidation;
 using System.Collections.Generic;
 using System.Web.Mvc;
+using ClinicApp.Models.Entities.Doctor;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {

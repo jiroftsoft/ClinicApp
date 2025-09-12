@@ -14,6 +14,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
 using System.Web.Mvc;
+using ClinicApp.Models.Core;
+using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Entities.Patient;
 using Log = Serilog.Log;
 
 namespace ClinicApp.Helpers
@@ -279,12 +283,12 @@ namespace ClinicApp.Helpers
                 Task.FromResult(true);
 
             public Task<Doctor> GetDoctorInfoAsync() =>
-                Task.FromResult<Doctor>(null);
+                Task.FromResult((Doctor)null);
 
             public Task<Patient> GetPatientInfoAsync() =>
                 Task.FromResult(IsPatient ?
                     _userManager.FindById(UserId)?.Patients?.FirstOrDefault() :
-                    null);
+                    (Patient)null);
 
             public string GetSystemUserId() =>
                 SystemUsers.SystemUserId;
@@ -362,12 +366,12 @@ namespace ClinicApp.Helpers
                 Task.FromResult(true);
 
             public Task<Doctor> GetDoctorInfoAsync() =>
-                Task.FromResult<Doctor>(null);
+                Task.FromResult((Doctor)null);
 
             public Task<Patient> GetPatientInfoAsync() =>
                 Task.FromResult(IsPatient ?
                     _userManager.FindById(UserId)?.Patients?.FirstOrDefault() :
-                    null);
+                    (Patient)null);
 
             public string GetSystemUserId() =>
                 SystemUsers.SystemUserId;
@@ -436,7 +440,7 @@ namespace ClinicApp.Helpers
                 Task.FromResult(true);
 
             public Task<Doctor> GetDoctorInfoAsync() =>
-                Task.FromResult<Doctor>(null);
+                Task.FromResult((Doctor)null);
 
             public Task<Patient> GetPatientInfoAsync() =>
                 Task.FromResult<Patient>(null);

@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models;
 using ClinicApp.Interfaces;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 using Serilog;
 
 namespace ClinicApp.Repositories.ClinicAdmin

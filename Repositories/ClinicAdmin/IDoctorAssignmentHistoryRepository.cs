@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Core;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Repositories.ClinicAdmin
 {

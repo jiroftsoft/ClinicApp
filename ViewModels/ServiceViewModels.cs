@@ -4,6 +4,7 @@ using ClinicApp.Models.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.ViewModels
 {

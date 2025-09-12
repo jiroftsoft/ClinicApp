@@ -1,0 +1,60 @@
+{
+  "updateTimestamp": "2025-01-15T10:30:00Z",
+  "contractsProcessed": 3,
+  "knowledgeBaseUpdated": true,
+  "keyRules": [
+    {
+      "ruleId": "ATOMIC_CHANGES",
+      "description": "تغییرات اتمی و کوچک - حداکثر یک فایل در هر گام",
+      "priority": "CRITICAL",
+      "applicableTo": ["ALL_CHANGES"]
+    },
+    {
+      "ruleId": "PRE_CREATION_VERIFICATION",
+      "description": "بررسی قبل از ایجاد - جستجوی کامل پروژه",
+      "priority": "CRITICAL",
+      "applicableTo": ["NEW_CLASSES", "NEW_METHODS", "NEW_VIEWS"]
+    },
+    {
+      "ruleId": "NO_DUPLICATION",
+      "description": "ممنوعیت تکرار - بازاستفاده از موجودات",
+      "priority": "CRITICAL",
+      "applicableTo": ["ALL_CREATIONS"]
+    },
+    {
+      "ruleId": "HUMAN_APPROVAL",
+      "description": "توقف و انتظار تایید - عبارت I APPROVE APPLY",
+      "priority": "CRITICAL",
+      "applicableTo": ["ALL_CHANGES"]
+    },
+    {
+      "ruleId": "SECURITY_QUALITY",
+      "description": "امنیت و کیفیت - SOLID, Clean Architecture, امنیت",
+      "priority": "CRITICAL",
+      "applicableTo": ["ALL_CODE"]
+    },
+    {
+      "ruleId": "PREFLIGHT_CHECKLIST",
+      "description": "چک‌لیست پیش‌پرواز - 9 مرحله بررسی اجباری",
+      "priority": "CRITICAL",
+      "applicableTo": ["ALL_TASKS"]
+    },
+    {
+      "ruleId": "ATOMIC_WORKFLOW",
+      "description": "روند اجرایی اتمیک - 9 مرحله اجرا",
+      "priority": "CRITICAL",
+      "applicableTo": ["ALL_EXECUTIONS"]
+    }
+  ],
+  "currentProjectState": {
+    "lastCompilation": "SUCCESS",
+    "errors": 0,
+    "warnings": 132,
+    "receptionModuleStatus": "COMPILED_SUCCESSFULLY"
+  },
+  "nextSteps": [
+    "آماده برای مرحله بعدی - تست‌های واحد",
+    "آماده برای مرحله بعدی - تست‌های Integration",
+    "آماده برای مرحله بعدی - بهینه‌سازی Performance"
+  ]
+}

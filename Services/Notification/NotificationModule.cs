@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Services.Notification
 {

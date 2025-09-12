@@ -7,6 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web.Mvc;
 using ClinicApp.Interfaces;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.ViewModels
 {

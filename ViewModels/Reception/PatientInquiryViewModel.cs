@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Reception
 {

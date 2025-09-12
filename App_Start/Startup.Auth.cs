@@ -6,6 +6,7 @@ using Microsoft.Owin;
 using Microsoft.Owin.Security.Cookies;
 using Owin;
 using System;
+using ClinicApp.Models.Core;
 
 namespace ClinicApp
 {

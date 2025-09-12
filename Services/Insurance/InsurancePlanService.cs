@@ -9,6 +9,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using Serilog;
 

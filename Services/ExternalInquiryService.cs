@@ -6,6 +6,7 @@ using System;
 using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Services
 {

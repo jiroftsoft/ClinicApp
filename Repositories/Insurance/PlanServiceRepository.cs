@@ -8,6 +8,7 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Insurance;
 using Serilog;
 
 namespace ClinicApp.Repositories.Insurance

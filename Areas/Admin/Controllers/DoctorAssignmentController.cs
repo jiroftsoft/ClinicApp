@@ -14,6 +14,7 @@ using Microsoft.AspNet.Identity;
 using Serilog;
 using System.Web;
 using System.Web.Caching;
+using ClinicApp.Models.Entities.Doctor;
 
 namespace ClinicApp.Areas.Admin.Controllers
 {
@@ -144,7 +145,7 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 // دریافت تاریخچه انتسابات
                 var historyResult = await _doctorAssignmentService.GetDoctorAssignmentHistoryAsync(id.Value, 1, 10);
-                var assignmentHistory = historyResult.Success ? historyResult.Data : new List<Models.Entities.DoctorAssignmentHistory>();
+                var assignmentHistory = historyResult.Success ? historyResult.Data : new List<DoctorAssignmentHistory>();
 
                 // تبدیل به ViewModel های تخصصی
                 var departmentViewModels = assignments.DoctorDepartments.Select(dd => new DoctorDepartmentViewModel
@@ -821,7 +822,7 @@ namespace ClinicApp.Areas.Admin.Controllers
 
                 // دریافت تاریخچه انتسابات
                 var historyResult = await _doctorAssignmentService.GetDoctorAssignmentHistoryAsync(id, 1, 50);
-                var assignmentHistory = historyResult.Success ? historyResult.Data : new List<Models.Entities.DoctorAssignmentHistory>();
+                var assignmentHistory = historyResult.Success ? historyResult.Data : new List<DoctorAssignmentHistory>();
 
                 // ایجاد PDF (فعلاً یک فایل متنی ساده)
                 var content = GenerateDoctorDetailsText(doctorDetails, assignments, assignmentHistory);
@@ -877,7 +878,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         private string GenerateDoctorDetailsText(
             DoctorDetailsViewModel doctor,
             DoctorAssignmentsViewModel assignments,
-            List<Models.Entities.DoctorAssignmentHistory> history)
+            List<DoctorAssignmentHistory> history)
         {
             var content = new System.Text.StringBuilder();
 

@@ -5,6 +5,7 @@ using ClinicApp.Helpers;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Doctor;
 using DoctorDependencyInfo = ClinicApp.Models.DoctorDependencyInfo;
 
 namespace ClinicApp.Interfaces.ClinicAdmin;

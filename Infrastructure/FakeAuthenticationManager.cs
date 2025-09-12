@@ -1,8 +1,8 @@
-﻿using System;
+﻿using Microsoft.Owin.Security;
+using System;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using Microsoft.Owin.Security;
 
 namespace ClinicApp.Infrastructure;
 
@@ -42,3 +42,4 @@ public class FakeAuthenticationManager : IAuthenticationManager
     public void SignOut(AuthenticationProperties properties, params string[] authenticationTypes) { }
     public void SignOut(params string[] authenticationTypes) { }
 }
+

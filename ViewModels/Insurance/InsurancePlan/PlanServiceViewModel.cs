@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Entities.Insurance;
 
 namespace ClinicApp.ViewModels.Insurance.InsurancePlan
 {
@@ -50,7 +51,7 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
-        public static PlanServiceViewModel FromEntity(Models.Entities.PlanService entity)
+        public static PlanServiceViewModel FromEntity(PlanService entity)
         {
             if (entity == null) return null;
 

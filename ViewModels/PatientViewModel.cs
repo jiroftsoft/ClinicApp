@@ -9,6 +9,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Web.Mvc;
+using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels
 {

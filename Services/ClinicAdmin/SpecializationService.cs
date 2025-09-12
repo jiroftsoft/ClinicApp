@@ -6,6 +6,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
 using FluentValidation;
 using FluentValidation.Results;
 using Serilog;

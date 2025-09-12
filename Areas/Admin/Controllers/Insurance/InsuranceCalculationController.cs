@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 using ClinicApp.Services;

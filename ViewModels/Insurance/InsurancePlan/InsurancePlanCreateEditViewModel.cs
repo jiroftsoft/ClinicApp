@@ -91,7 +91,7 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
-        public static InsurancePlanCreateEditViewModel FromEntity(Models.Entities.InsurancePlan entity)
+        public static InsurancePlanCreateEditViewModel FromEntity(Models.Entities.Insurance.InsurancePlan entity)
         {
             if (entity == null) return null;
 
@@ -113,9 +113,9 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         /// <summary>
         /// ✅ یک Entity جدید از روی ViewModel می‌سازد.
         /// </summary>
-        public Models.Entities.InsurancePlan ToEntity()
+        public Models.Entities.Insurance.InsurancePlan ToEntity()
         {
-            return new Models.Entities.InsurancePlan
+            return new Models.Entities.Insurance.InsurancePlan
             {
                 InsurancePlanId = this.InsurancePlanId,
                 Name = this.Name?.Trim(),
@@ -133,7 +133,7 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         /// <summary>
         /// ✅ یک Entity موجود را بر اساس داده‌های این ViewModel به‌روزرسانی می‌کند.
         /// </summary>
-        public void MapToEntity(Models.Entities.InsurancePlan entity)
+        public void MapToEntity(Models.Entities.Insurance.InsurancePlan entity)
         {
             if (entity == null) return;
 

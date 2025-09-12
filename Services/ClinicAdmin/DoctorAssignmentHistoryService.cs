@@ -6,6 +6,8 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 using ClinicApp.Repositories.ClinicAdmin;
 using ClinicApp.Services;
 using ClinicApp.ViewModels.DoctorManagementVM;

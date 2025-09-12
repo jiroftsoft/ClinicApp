@@ -27,6 +27,7 @@ using ClinicApp.Services.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.ViewModels.SpecializationManagementVM;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Models.Core;
 using ClinicApp.Repositories.Insurance;
 using ClinicApp.Services.Insurance;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
@@ -400,6 +401,10 @@ namespace ClinicApp
                 // Register External Inquiry and Security Token Services
                 container.RegisterType<IExternalInquiryService, ExternalInquiryService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISecurityTokenService, SecurityTokenService>(new PerRequestLifetimeManager());
+
+                // ثبت سرویس‌های پذیرش
+                container.RegisterType<IReceptionRepository, ReceptionRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IReceptionService, ReceptionService>(new PerRequestLifetimeManager());
 
                 // Register Insurance Validators
                 container.RegisterType<IValidator<InsurancePlanCreateEditViewModel>, InsurancePlanCreateEditViewModelValidator>(new PerRequestLifetimeManager());

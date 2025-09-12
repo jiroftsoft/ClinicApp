@@ -3,6 +3,7 @@ using ClinicApp.ViewModels;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.Interfaces.ClinicAdmin
 {

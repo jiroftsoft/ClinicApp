@@ -4,6 +4,7 @@ using System;
 using System.Linq;
 using System.Security.Claims;
 using System.Security.Principal;
+using ClinicApp.Models.Core;
 
 namespace ClinicApp.Helpers;
 

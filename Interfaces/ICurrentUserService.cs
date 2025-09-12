@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Entities.Patient;
 
 namespace ClinicApp.Interfaces;
 

@@ -4,9 +4,12 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels
 {
+  
+
     /// <summary>
     /// ViewModel برای فرم پذیرش اصلی در محل.
     /// این ViewModel پیچیده‌ترین ViewModel است که تمام داده‌ها را برای پذیرش جدید مدیریت می‌کند.
@@ -32,16 +35,36 @@ namespace ClinicApp.ViewModels
         public string BirthDateShamsiForInquiry { get; set; }
 
         [Display(Name = "نتیجه استعلام")]
-        public PatientInquiryViewModel InquiryResult { get; set; }
+        public Reception.PatientInquiryViewModel InquiryResult { get; set; }
 
         [Display(Name = "وضعیت استعلام")]
         public bool IsInquiryCompleted { get; set; }
+
+        // Properties for Controller
+        [Display(Name = "تاریخ پذیرش")]
+        public DateTime ReceptionDate { get; set; }
+
+        [Display(Name = "تاریخ پذیرش (شمسی)")]
+        public string ReceptionDateShamsi { get; set; }
+
+        [Display(Name = "آیا اورژانس است")]
+        public bool IsEmergency { get; set; }
+
+        [Display(Name = "آیا پذیرش آنلاین است")]
+        public bool IsOnlineReception { get; set; }
+
+        [Display(Name = "نوع پذیرش")]
+        public ReceptionType Type { get; set; }
 
         // اطلاعات پزشک
         [Required(ErrorMessage = "باید یک پزشک انتخاب شود.")]
         [Display(Name = "پزشک معالج")]
         public int DoctorId { get; set; }
         public IEnumerable<SelectListItem> DoctorList { get; set; } // برای منوی انتخاب پزشک
+
+        // اطلاعات خدمت (برای Controller)
+        [Display(Name = "شناسه خدمت")]
+        public int ServiceId { get; set; }
 
         // اطلاعات خدمات (پشتیبانی از افزودن چندین خدمت)
         [Required(ErrorMessage = "باید حداقل یک خدمت انتخاب شود.")]
@@ -61,13 +84,454 @@ namespace ClinicApp.ViewModels
         public PaymentMethod PaymentMethod { get; set; }
 
         [Display(Name = "شناسه تراکنش POS")]
-        public string TransactionId { get; set; }
+        public string PosTransactionId { get; set; }
+
+        [Display(Name = "مبلغ پرداخت شده")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "مبلغ پرداخت شده نمی‌تواند منفی باشد.")]
+        public decimal PaidAmount { get; set; }
+
+        [Display(Name = "مبلغ باقی‌مانده")]
+        [DataType(DataType.Currency)]
+        public decimal RemainingAmount { get; set; }
+
+        // اطلاعات بیمه
+        [Display(Name = "بیمه اولیه")]
+        public int? PrimaryInsuranceId { get; set; }
+
+        [Display(Name = "بیمه تکمیلی")]
+        public int? SecondaryInsuranceId { get; set; }
+
+        [Display(Name = "سهم بیمه")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
+        public decimal InsuranceShare { get; set; }
+
+        [Display(Name = "سهم بیمار")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
+        public decimal PatientShare { get; set; }
+
+        [Display(Name = "یادداشت‌ها")]
+        [StringLength(1000, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از ۱۰۰۰ کاراکتر باشد.")]
+        public string Notes { get; set; }
 
         public ReceptionCreateViewModel()
         {
             SelectedServiceIds = new List<int>();
             DoctorList = new List<SelectListItem>();
             ServiceList = new List<SelectListItem>();
+            ReceptionDate = DateTime.Now;
+            IsInquiryCompleted = false;
+            TotalAmount = 0;
+            PaidAmount = 0;
+            InsuranceShare = 0;
+            PatientShare = 0;
+            Type = ReceptionType.Normal;
+            InquiryResult = new Reception.PatientInquiryViewModel();
+        }
+    }
+
+    /// <summary>
+    /// ViewModel برای ویرایش پذیرش موجود
+    /// </summary>
+    public class ReceptionEditViewModel
+    {
+        public int ReceptionId { get; set; }
+
+        // اطلاعات بیمار
+        [Required(ErrorMessage = "باید یک بیمار انتخاب شود.")]
+        [Display(Name = "بیمار")]
+        public int PatientId { get; set; }
+
+        [Display(Name = "نام بیمار")]
+        public string PatientFullName { get; set; }
+
+        // اطلاعات پزشک
+        [Required(ErrorMessage = "باید یک پزشک انتخاب شود.")]
+        [Display(Name = "پزشک معالج")]
+        public int DoctorId { get; set; }
+
+        [Display(Name = "نام پزشک")]
+        public string DoctorFullName { get; set; }
+
+        // اطلاعات خدمات
+        [Required(ErrorMessage = "باید حداقل یک خدمت انتخاب شود.")]
+        [Display(Name = "خدمات")]
+        public List<int> SelectedServiceIds { get; set; }
+
+        [Display(Name = "خدمات انتخاب شده")]
+        public string SelectedServicesNames { get; set; }
+
+        // اطلاعات پذیرش
+        [Required(ErrorMessage = "تاریخ پذیرش الزامی است.")]
+        [Display(Name = "تاریخ پذیرش")]
+        [DataType(DataType.DateTime)]
+        public DateTime ReceptionDate { get; set; }
+
+        [Display(Name = "تاریخ پذیرش (شمسی)")]
+        public string ReceptionDateShamsi { get; set; }
+
+        [Display(Name = "نوع پذیرش")]
+        public ReceptionType Type { get; set; }
+
+        [Display(Name = "اولویت")]
+        public AppointmentPriority Priority { get; set; }
+
+        [Display(Name = "آیا اورژانس است")]
+        public bool IsEmergency { get; set; }
+
+        [Display(Name = "آیا پذیرش آنلاین است")]
+        public bool IsOnlineReception { get; set; }
+
+        [Display(Name = "یادداشت‌ها")]
+        [StringLength(1000, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از ۱۰۰۰ کاراکتر باشد.")]
+        public string Notes { get; set; }
+
+        // اطلاعات پرداخت
+        [Required]
+        [Display(Name = "مجموع مبلغ")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "مجموع مبلغ نمی‌تواند منفی باشد.")]
+        public decimal TotalAmount { get; set; }
+
+        [Required(ErrorMessage = "لطفاً یک روش پرداخت انتخاب کنید.")]
+        [Display(Name = "روش پرداخت")]
+        public PaymentMethod PaymentMethod { get; set; }
+
+        [Display(Name = "شناسه تراکنش POS")]
+        [StringLength(50, ErrorMessage = "شناسه تراکنش نمی‌تواند بیش از ۵۰ کاراکتر باشد.")]
+        public string PosTransactionId { get; set; }
+
+        [Display(Name = "مبلغ پرداخت شده")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "مبلغ پرداخت شده نمی‌تواند منفی باشد.")]
+        public decimal PaidAmount { get; set; }
+
+        [Display(Name = "مبلغ باقی‌مانده")]
+        [DataType(DataType.Currency)]
+        public decimal RemainingAmount { get; set; }
+
+        // اطلاعات بیمه
+        [Display(Name = "بیمه اولیه")]
+        public int? PrimaryInsuranceId { get; set; }
+
+        [Display(Name = "بیمه تکمیلی")]
+        public int? SecondaryInsuranceId { get; set; }
+
+        [Display(Name = "سهم بیمه")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
+        public decimal InsuranceShare { get; set; }
+
+        [Display(Name = "سهم بیمار")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
+        public decimal PatientShare { get; set; }
+
+        // اطلاعات وضعیت
+        [Display(Name = "وضعیت پذیرش")]
+        public ReceptionStatus Status { get; set; }
+
+        [Display(Name = "تاریخ ایجاد")]
+        public DateTime CreatedAt { get; set; }
+
+        [Display(Name = "تاریخ آخرین ویرایش")]
+        public DateTime? UpdatedAt { get; set; }
+
+        // لیست‌های کمکی
+        public IEnumerable<SelectListItem> DoctorList { get; set; }
+        public IEnumerable<SelectListItem> ServiceList { get; set; }
+        public IEnumerable<SelectListItem> InsuranceList { get; set; }
+        public IEnumerable<SelectListItem> PaymentMethodList { get; set; }
+
+        public ReceptionEditViewModel()
+        {
+            SelectedServiceIds = new List<int>();
+            DoctorList = new List<SelectListItem>();
+            ServiceList = new List<SelectListItem>();
+            InsuranceList = new List<SelectListItem>();
+            PaymentMethodList = new List<SelectListItem>();
+            CreatedAt = DateTime.Now;
+            TotalAmount = 0;
+            PaidAmount = 0;
+            InsuranceShare = 0;
+            PatientShare = 0;
+            Status = ReceptionStatus.Pending;
+            Type = ReceptionType.Normal;
+        }
+    }
+
+    /// <summary>
+    /// ViewModel برای جستجو و فیلتر پذیرش‌ها
+    /// </summary>
+    public class ReceptionSearchViewModel
+    {
+        [Display(Name = "کد ملی بیمار")]
+        [StringLength(10, ErrorMessage = "کد ملی باید ۱۰ رقم باشد.")]
+        public string PatientNationalCode { get; set; }
+
+        [Display(Name = "نام بیمار")]
+        [StringLength(100, ErrorMessage = "نام بیمار نمی‌تواند بیش از ۱۰۰ کاراکتر باشد.")]
+        public string PatientName { get; set; }
+
+        [Display(Name = "نام پزشک")]
+        [StringLength(100, ErrorMessage = "نام پزشک نمی‌تواند بیش از ۱۰۰ کاراکتر باشد.")]
+        public string DoctorName { get; set; }
+
+        [Display(Name = "تاریخ شروع")]
+        [DataType(DataType.Date)]
+        public DateTime? StartDate { get; set; }
+
+        [Display(Name = "تاریخ پایان")]
+        [DataType(DataType.Date)]
+        public DateTime? EndDate { get; set; }
+
+        [Display(Name = "وضعیت پذیرش")]
+        public ReceptionStatus? Status { get; set; }
+
+        [Display(Name = "نوع پذیرش")]
+        public ReceptionType? Type { get; set; }
+
+        [Display(Name = "آیا اورژانس است")]
+        public bool? IsEmergency { get; set; }
+
+        [Display(Name = "آیا پذیرش آنلاین است")]
+        public bool? IsOnlineReception { get; set; }
+
+        [Display(Name = "مبلغ حداقل")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "مبلغ حداقل نمی‌تواند منفی باشد.")]
+        public decimal? MinAmount { get; set; }
+
+        [Display(Name = "مبلغ حداکثر")]
+        [DataType(DataType.Currency)]
+        [Range(0, double.MaxValue, ErrorMessage = "مبلغ حداکثر نمی‌تواند منفی باشد.")]
+        public decimal? MaxAmount { get; set; }
+
+        [Display(Name = "روش پرداخت")]
+        public PaymentMethod? PaymentMethod { get; set; }
+
+        [Display(Name = "بیمه")]
+        public int? InsuranceId { get; set; }
+
+        // اطلاعات صفحه‌بندی
+        [Display(Name = "شماره صفحه")]
+        [Range(1, int.MaxValue, ErrorMessage = "شماره صفحه باید بزرگتر از صفر باشد.")]
+        public int PageNumber { get; set; } = 1;
+
+        [Display(Name = "اندازه صفحه")]
+        [Range(1, 100, ErrorMessage = "اندازه صفحه باید بین ۱ تا ۱۰۰ باشد.")]
+        public int PageSize { get; set; } = 10;
+
+        [Display(Name = "مرتب‌سازی بر اساس")]
+        public string SortBy { get; set; } = "ReceptionDate";
+
+        [Display(Name = "ترتیب مرتب‌سازی")]
+        public string SortOrder { get; set; } = "desc";
+
+        // لیست‌های کمکی
+        public IEnumerable<SelectListItem> StatusList { get; set; }
+        public IEnumerable<SelectListItem> TypeList { get; set; }
+        public IEnumerable<SelectListItem> PaymentMethodList { get; set; }
+        public IEnumerable<SelectListItem> InsuranceList { get; set; }
+
+        public ReceptionSearchViewModel()
+        {
+            StatusList = new List<SelectListItem>();
+            TypeList = new List<SelectListItem>();
+            PaymentMethodList = new List<SelectListItem>();
+            InsuranceList = new List<SelectListItem>();
+            PageNumber = 1;
+            PageSize = 10;
+            SortBy = "ReceptionDate";
+            SortOrder = "desc";
+            StartDate = DateTime.Now.AddDays(-30);
+            EndDate = DateTime.Now;
+        }
+    }
+
+    /// <summary>
+    /// ViewModel برای گزارش‌گیری از پذیرش‌ها
+    /// </summary>
+    public class ReceptionReportViewModel
+    {
+        [Display(Name = "عنوان گزارش")]
+        [Required(ErrorMessage = "عنوان گزارش الزامی است.")]
+        [StringLength(200, ErrorMessage = "عنوان گزارش نمی‌تواند بیش از ۲۰۰ کاراکتر باشد.")]
+        public string ReportTitle { get; set; }
+
+        [Display(Name = "نوع گزارش")]
+        [Required(ErrorMessage = "نوع گزارش الزامی است.")]
+        public ReportType ReportType { get; set; }
+
+        [Display(Name = "تاریخ شروع")]
+        [Required(ErrorMessage = "تاریخ شروع الزامی است.")]
+        [DataType(DataType.Date)]
+        public DateTime StartDate { get; set; }
+
+        [Display(Name = "تاریخ پایان")]
+        [Required(ErrorMessage = "تاریخ پایان الزامی است.")]
+        [DataType(DataType.Date)]
+        public DateTime EndDate { get; set; }
+
+        [Display(Name = "گروه‌بندی بر اساس")]
+        public string GroupBy { get; set; } = "Date";
+
+        [Display(Name = "فیلتر وضعیت")]
+        public ReceptionStatus? StatusFilter { get; set; }
+
+        [Display(Name = "فیلتر نوع")]
+        public ReceptionType? TypeFilter { get; set; }
+
+        [Display(Name = "فیلتر پزشک")]
+        public int? DoctorFilter { get; set; }
+
+        [Display(Name = "فیلتر بیمه")]
+        public int? InsuranceFilter { get; set; }
+
+        [Display(Name = "شامل اورژانس")]
+        public bool IncludeEmergency { get; set; } = true;
+
+        [Display(Name = "شامل پذیرش آنلاین")]
+        public bool IncludeOnline { get; set; } = true;
+
+        [Display(Name = "فرمت خروجی")]
+        public string OutputFormat { get; set; } = "PDF";
+
+        // نتایج گزارش
+        public List<ReceptionReportDataViewModel> ReportData { get; set; }
+        public ReceptionReportSummaryViewModel Summary { get; set; }
+
+        // لیست‌های کمکی
+        public IEnumerable<SelectListItem> ReportTypeList { get; set; }
+        public IEnumerable<SelectListItem> GroupByList { get; set; }
+        public IEnumerable<SelectListItem> StatusList { get; set; }
+        public IEnumerable<SelectListItem> TypeList { get; set; }
+        public IEnumerable<SelectListItem> DoctorList { get; set; }
+        public IEnumerable<SelectListItem> InsuranceList { get; set; }
+        public IEnumerable<SelectListItem> OutputFormatList { get; set; }
+
+        public ReceptionReportViewModel()
+        {
+            ReportData = new List<ReceptionReportDataViewModel>();
+            Summary = new ReceptionReportSummaryViewModel();
+            ReportTypeList = new List<SelectListItem>();
+            GroupByList = new List<SelectListItem>();
+            StatusList = new List<SelectListItem>();
+            TypeList = new List<SelectListItem>();
+            DoctorList = new List<SelectListItem>();
+            InsuranceList = new List<SelectListItem>();
+            OutputFormatList = new List<SelectListItem>();
+            StartDate = DateTime.Now.AddDays(-30);
+            EndDate = DateTime.Now;
+            GroupBy = "Date";
+            IncludeEmergency = true;
+            IncludeOnline = true;
+            OutputFormat = "PDF";
+            ReportType = ReportType.Daily;
+        }
+    }
+
+    /// <summary>
+    /// ViewModel برای داده‌های گزارش پذیرش
+    /// </summary>
+    public class ReceptionReportDataViewModel
+    {
+        [Display(Name = "تاریخ")]
+        public string Date { get; set; }
+
+        [Display(Name = "تعداد پذیرش")]
+        public int ReceptionCount { get; set; }
+
+        [Display(Name = "مجموع مبلغ")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal TotalAmount { get; set; }
+
+        [Display(Name = "میانگین مبلغ")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal AverageAmount { get; set; }
+
+        [Display(Name = "تعداد اورژانس")]
+        public int EmergencyCount { get; set; }
+
+        [Display(Name = "تعداد آنلاین")]
+        public int OnlineCount { get; set; }
+
+        [Display(Name = "تعداد پرداخت نقدی")]
+        public int CashPaymentCount { get; set; }
+
+        [Display(Name = "تعداد پرداخت کارتی")]
+        public int CardPaymentCount { get; set; }
+
+        [Display(Name = "تعداد پرداخت بیمه")]
+        public int InsurancePaymentCount { get; set; }
+
+        public ReceptionReportDataViewModel()
+        {
+            // Constructor for initialization if needed
+            Date = DateTime.Now.ToString("yyyy-MM-dd");
+            ReceptionCount = 0;
+            TotalAmount = 0;
+            AverageAmount = 0;
+            EmergencyCount = 0;
+            OnlineCount = 0;
+            CashPaymentCount = 0;
+            CardPaymentCount = 0;
+            InsurancePaymentCount = 0;
+        }
+    }
+
+    /// <summary>
+    /// ViewModel برای خلاصه گزارش پذیرش
+    /// </summary>
+    public class ReceptionReportSummaryViewModel
+    {
+        [Display(Name = "کل پذیرش‌ها")]
+        public int TotalReceptions { get; set; }
+
+        [Display(Name = "کل مبلغ")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal TotalAmount { get; set; }
+
+        [Display(Name = "میانگین مبلغ")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal AverageAmount { get; set; }
+
+        [Display(Name = "بیشترین مبلغ")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal MaxAmount { get; set; }
+
+        [Display(Name = "کمترین مبلغ")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal MinAmount { get; set; }
+
+        [Display(Name = "کل اورژانس")]
+        public int TotalEmergency { get; set; }
+
+        [Display(Name = "کل آنلاین")]
+        public int TotalOnline { get; set; }
+
+        [Display(Name = "درصد اورژانس")]
+        [DisplayFormat(DataFormatString = "{0:P1}")]
+        public decimal EmergencyPercentage { get; set; }
+
+        [Display(Name = "درصد آنلاین")]
+        [DisplayFormat(DataFormatString = "{0:P1}")]
+        public decimal OnlinePercentage { get; set; }
+
+        public ReceptionReportSummaryViewModel()
+        {
+            // Constructor for initialization if needed
+            TotalReceptions = 0;
+            TotalAmount = 0;
+            AverageAmount = 0;
+            MaxAmount = 0;
+            MinAmount = 0;
+            TotalEmergency = 0;
+            TotalOnline = 0;
+            EmergencyPercentage = 0;
+            OnlinePercentage = 0;
         }
     }
 
@@ -93,6 +557,23 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "وضعیت")]
         public string Status { get; set; }
+
+        // Properties for Controller
+        [Display(Name = "عنوان صفحه")]
+        public string PageTitle { get; set; }
+
+        [Display(Name = "تاریخ فعلی")]
+        public DateTime CurrentDate { get; set; }
+
+        [Display(Name = "تاریخ فعلی (شمسی)")]
+        public string CurrentDateShamsi { get; set; }
+
+        public ReceptionIndexViewModel()
+        {
+            CurrentDate = DateTime.Now;
+            PageTitle = "مدیریت پذیرش‌ها";
+            TotalAmount = 0;
+        }
     }
 
     /// <summary>
@@ -108,11 +589,20 @@ namespace ClinicApp.ViewModels
         [Display(Name = "کد ملی")]
         public string PatientNationalCode { get; set; }
 
+        [Display(Name = "شماره تماس بیمار")]
+        public string PatientPhoneNumber { get; set; }
+
         [Display(Name = "نام پزشک")]
         public string DoctorFullName { get; set; }
 
+        [Display(Name = "تخصص پزشک")]
+        public string DoctorSpecialization { get; set; }
+
         [Display(Name = "تاریخ پذیرش")]
         public string ReceptionDate { get; set; }
+
+        [Display(Name = "نوع پذیرش")]
+        public string Type { get; set; }
 
         [Display(Name = "وضعیت")]
         public string Status { get; set; }
@@ -121,17 +611,64 @@ namespace ClinicApp.ViewModels
         [DisplayFormat(DataFormatString = "{0:N0}")]
         public decimal TotalAmount { get; set; }
 
-        [Display(Name = "مبلغ پرداختی")]
+        [Display(Name = "مبلغ پرداخت شده")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
-        public decimal AmountPaid { get; set; }
+        public decimal PaidAmount { get; set; }
+
+        [Display(Name = "مبلغ پرداخت شده")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal AmountPaid => PaidAmount;
+
+        [Display(Name = "مبلغ باقی‌مانده")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal RemainingAmount => TotalAmount - PaidAmount;
+
+        [Display(Name = "روش پرداخت")]
+        public string PaymentMethod { get; set; }
+
+        [Display(Name = "شناسه تراکنش POS")]
+        public string PosTransactionId { get; set; }
+
+        [Display(Name = "بیمه اولیه")]
+        public string PrimaryInsurance { get; set; }
+
+        [Display(Name = "بیمه تکمیلی")]
+        public string SecondaryInsurance { get; set; }
+
+        [Display(Name = "سهم بیمه")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal InsuranceShare { get; set; }
+
+        [Display(Name = "سهم بیمار")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal PatientShare { get; set; }
+
+        [Display(Name = "یادداشت‌ها")]
+        public string Notes { get; set; }
+
+        [Display(Name = "تاریخ ایجاد")]
+        public DateTime CreatedAt { get; set; }
+
+        [Display(Name = "آخرین ویرایش")]
+        public DateTime? UpdatedAt { get; set; }
+
+        [Display(Name = "ایجاد کننده")]
+        public string CreatedBy { get; set; }
 
         public List<ReceptionItemViewModel> Services { get; set; }
-        public List<PaymentViewModel> Payments { get; set; }
+        public List<ClinicApp.ViewModels.Payment.ReceptionPaymentViewModel> Payments { get; set; }
 
         public ReceptionDetailsViewModel()
         {
             Services = new List<ReceptionItemViewModel>();
-            Payments = new List<PaymentViewModel>();
+            Payments = new List<ClinicApp.ViewModels.Payment.ReceptionPaymentViewModel>();
+            CreatedAt = DateTime.Now;
+            TotalAmount = 0;
+            PaidAmount = 0;
+            InsuranceShare = 0;
+            PatientShare = 0;
+            Status = "در انتظار";
+            Type = "عادی";
         }
     }
 
@@ -140,6 +677,12 @@ namespace ClinicApp.ViewModels
     /// </summary>
     public class ReceptionItemViewModel
     {
+        [Display(Name = "نام خدمت")]
+        public string ServiceName { get; set; }
+
+        [Display(Name = "دسته‌بندی خدمت")]
+        public string ServiceCategory { get; set; }
+
         [Display(Name = "خدمت")]
         public string ServiceTitle { get; set; }
 
@@ -152,8 +695,18 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "مجموع")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal TotalPrice => Quantity * Price;
+
+        [Display(Name = "مجموع")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
         public decimal LineTotal => Quantity * Price;
+
+        public ReceptionItemViewModel()
+        {
+            // Constructor for initialization if needed
+        }
     }
+
 
     /// <summary>
     /// ViewModel فرعی برای نمایش جزئیات یک پرداخت انجام‌شده برای پذیرش.
@@ -172,6 +725,11 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "شناسه تراکنش")]
         public string TransactionId { get; set; }
+
+        public PaymentViewModel()
+        {
+            // Constructor for initialization if needed
+        }
     }
 
     /// <summary>
@@ -213,6 +771,11 @@ namespace ClinicApp.ViewModels
 
         // ✅ افزودن روش پرداخت برای نمایش
         public string PaymentMethod { get; set; }
+
+        public ReceiptPrintViewModel()
+        {
+            Services = new List<ReceptionItemViewModel>();
+        }
     }
     public class ReceptionFilterViewModel
     {
@@ -222,6 +785,11 @@ namespace ClinicApp.ViewModels
         public DateTime? DateTo { get; set; }
         public int PageNumber { get; set; } = 1;
         public int PageSize { get; set; } = 20;
+
+        public ReceptionFilterViewModel()
+        {
+            // Constructor for initialization if needed
+        }
     }
 
 }

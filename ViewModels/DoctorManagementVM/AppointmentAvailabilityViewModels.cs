@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {
@@ -424,8 +425,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// نوع نوبت
         /// </summary>
         [Display(Name = "نوع نوبت")]
-        public AppointmentType? AppointmentType { get; set; }
-
+        public AppointmentType AppointmentType { get; set; }
         /// <summary>
         /// نوع اسلات (برای سازگاری با Views)
         /// </summary>
@@ -434,30 +434,30 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         {
             get
             {
-                if (!AppointmentType.HasValue)
-                    return "نامشخص";
 
-                return AppointmentType.Value switch
+                return AppointmentType switch
                 {
-                    Models.Entities.AppointmentType.GeneralVisit => "عادی",
-                    Models.Entities.AppointmentType.SpecialistVisit => "تخصصی",
-                    Models.Entities.AppointmentType.SubSpecialistVisit => "فوق‌تخصصی",
-                    Models.Entities.AppointmentType.InitialExamination => "اولیه",
-                    Models.Entities.AppointmentType.FollowUp => "پیگیری",
-                    Models.Entities.AppointmentType.Consultation => "مشاوره",
-                    Models.Entities.AppointmentType.Emergency => "فوری",
-                    Models.Entities.AppointmentType.Cancellation => "کنسلی",
-                    // سایر موارد تشخیصی/درمانی
-                    Models.Entities.AppointmentType.Laboratory or
-                        Models.Entities.AppointmentType.Imaging or
-                        Models.Entities.AppointmentType.Vaccination or
-                        Models.Entities.AppointmentType.Injection or
-                        Models.Entities.AppointmentType.MedicalProcedure => "خدمات",
+                    AppointmentType.GeneralVisit => "ویزیت عمومی",
+                    AppointmentType.SpecialistVisit => "ویزیت تخصصی",
+                    AppointmentType.SubSpecialistVisit => "ویزیت فوق‌تخصصی",
+                    AppointmentType.InitialExamination => "معاینه اولیه",
+                    AppointmentType.FollowUp => "معاینه پیگیری",
+                    AppointmentType.Consultation => "مشاوره",
+                    AppointmentType.Emergency => "اورژانس",
+                    AppointmentType.Cancellation => "کنسلی",
+
+                    AppointmentType.Laboratory => "آزمایش",
+                    AppointmentType.Imaging => "تصویربرداری",
+                    AppointmentType.Vaccination => "واکسیناسیون",
+                    AppointmentType.Injection => "تزریق",
+                    AppointmentType.MedicalProcedure => "اقدام درمانی",
 
                     _ => "نامشخص"
                 };
             }
         }
+
+
         /// <summary>
         /// شناسه نوبت موجود (اگر رزرو شده)
         /// </summary>
@@ -486,9 +486,9 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// نمایش وضعیت اسلات (برای سازگاری با Views)
         /// </summary>
         [Display(Name = "نمایش وضعیت")]
-        public string StatusDisplay 
-        { 
-            get 
+        public string StatusDisplay
+        {
+            get
             {
                 if (IsAvailable)
                     return "در دسترس";

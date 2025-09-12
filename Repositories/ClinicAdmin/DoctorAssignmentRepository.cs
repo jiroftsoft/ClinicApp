@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Repositories.ClinicAdmin
 {

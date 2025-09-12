@@ -14,6 +14,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Web.WebPages.Html;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.Services;
 

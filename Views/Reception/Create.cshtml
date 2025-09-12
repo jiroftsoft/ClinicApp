@@ -1,0 +1,589 @@
+@using ClinicApp.ViewModels
+@model ClinicApp.ViewModels.ReceptionCreateViewModel
+
+@{
+    ViewBag.Title = "پذیرش جدید";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <!-- ✅ بخش ۱: ساختار کلی -->
+            <h2 class="text-center mb-4">پذیرش جدید</h2>
+            <p class="text-center text-muted mb-4">ثبت پذیرش جدید برای بیمار در کلینیک شفا</p>
+            
+            <!-- ✅ بخش ۲: طراحی بصری -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-user-plus me-2"></i>
+                        فرم پذیرش جدید
+                    </h4>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Create", "Reception", FormMethod.Post, new { id = "create-reception-form", @class = "needs-validation", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                        
+                        <!-- ✅ Progress Indicator -->
+                        <div class="mb-4">
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar bg-success" role="progressbar" id="form-progress" style="width: 0%"></div>
+                            </div>
+                            <small class="text-muted mt-1 d-block text-center">
+                                <span id="progress-text">0% تکمیل شده</span>
+                            </small>
+                        </div>
+
+                        <!-- ✅ بخش ۱: اطلاعات بیمار -->
+                        <div class="form-section mb-4">
+                            <div class="form-section-header">
+                                <i class="fas fa-user text-primary me-2"></i>
+                                <h5 class="mb-0">اطلاعات بیمار</h5>
+                            </div>
+                            <div class="form-section-body">
+                                <div class="row g-3">
+                                    <!-- جستجوی بیمار -->
+                                    <div class="col-md-6">
+                                        <label for="patient-search" class="form-label">جستجوی بیمار <span class="text-danger">*</span></label>
+                                        <div class="input-group">
+                                            <input type="text" id="patient-search" class="form-control" placeholder="کد ملی یا نام بیمار">
+                                            <button type="button" class="btn btn-outline-primary" id="search-patient-btn">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                        <div id="patient-search-results" class="mt-2"></div>
+                                    </div>
+
+                                    <!-- انتخاب بیمار -->
+                                    <div class="col-md-6">
+                                        <label for="PatientId" class="form-label">بیمار انتخاب شده <span class="text-danger">*</span></label>
+                                        @Html.DropDownListFor(model => model.PatientId, new SelectList(new List<object>(), "Value", "Text"), "ابتدا بیمار را جستجو کنید", new { @class = "form-select", id = "patient-select" })
+                                        @Html.ValidationMessageFor(model => model.PatientId, "", new { @class = "text-danger" })
+                                        <div id="selected-patient-info" class="mt-2"></div>
+                                    </div>
+                                </div>
+
+                                <!-- استعلام کمکی -->
+                                <div class="row g-3 mt-3">
+                                    <div class="col-md-4">
+                                        <label for="NationalCodeForInquiry" class="form-label">کد ملی برای استعلام</label>
+                                        @Html.TextBoxFor(model => model.NationalCodeForInquiry, new { @class = "form-control", placeholder = "کد ملی ۱۰ رقمی" })
+                                        @Html.ValidationMessageFor(model => model.NationalCodeForInquiry, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="BirthDateForInquiry" class="form-label">تاریخ تولد برای استعلام</label>
+                                        @Html.TextBoxFor(model => model.BirthDateForInquiry, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                        @Html.ValidationMessageFor(model => model.BirthDateForInquiry, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label">&nbsp;</label>
+                                        <div class="d-grid">
+                                            <button type="button" class="btn btn-outline-info" id="inquiry-btn">
+                                                <i class="fas fa-search me-1"></i> استعلام هویت
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ بخش ۲: اطلاعات پزشک -->
+                        <div class="form-section mb-4">
+                            <div class="form-section-header">
+                                <i class="fas fa-user-md text-primary me-2"></i>
+                                <h5 class="mb-0">اطلاعات پزشک</h5>
+                            </div>
+                            <div class="form-section-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="DoctorId" class="form-label">پزشک معالج <span class="text-danger">*</span></label>
+                                        @Html.DropDownListFor(model => model.DoctorId, Model.DoctorList, "انتخاب پزشک", new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(model => model.DoctorId, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="ReceptionDate" class="form-label">تاریخ پذیرش <span class="text-danger">*</span></label>
+                                        @Html.TextBoxFor(model => model.ReceptionDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
+                                        @Html.ValidationMessageFor(model => model.ReceptionDate, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ بخش ۳: اطلاعات خدمات -->
+                        <div class="form-section mb-4">
+                            <div class="form-section-header">
+                                <i class="fas fa-stethoscope text-primary me-2"></i>
+                                <h5 class="mb-0">اطلاعات خدمات</h5>
+                            </div>
+                            <div class="form-section-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <label for="service-category" class="form-label">دسته‌بندی خدمات</label>
+                                        <select id="service-category" class="form-select">
+                                            <option value="">انتخاب دسته‌بندی</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="services" class="form-label">خدمات <span class="text-danger">*</span></label>
+                                        <select id="services" class="form-select" multiple>
+                                            <option value="">ابتدا دسته‌بندی را انتخاب کنید</option>
+                                        </select>
+                                        @Html.ValidationMessageFor(model => model.SelectedServiceIds, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                                <div class="mt-3">
+                                    <label class="form-label">خدمات انتخاب شده:</label>
+                                    <div id="selected-services" class="border rounded p-2 min-height-50">
+                                        <span class="text-muted">هیچ خدمتی انتخاب نشده است</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ بخش ۴: اطلاعات پرداخت -->
+                        <div class="form-section mb-4">
+                            <div class="form-section-header">
+                                <i class="fas fa-money-bill-wave text-primary me-2"></i>
+                                <h5 class="mb-0">اطلاعات پرداخت</h5>
+                            </div>
+                            <div class="form-section-body">
+                                <div class="row g-3">
+                                    <div class="col-md-4">
+                                        <label for="TotalAmount" class="form-label">مجموع مبلغ <span class="text-danger">*</span></label>
+                                        @Html.TextBoxFor(model => model.TotalAmount, new { @class = "form-control", type = "number", step = "1000", placeholder = "مبلغ به تومان" })
+                                        @Html.ValidationMessageFor(model => model.TotalAmount, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="PaymentMethod" class="form-label">روش پرداخت <span class="text-danger">*</span></label>
+                                        @Html.DropDownListFor(model => model.PaymentMethod, new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.PaymentMethod)).Cast<ClinicApp.Models.Entities.PaymentMethod>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب روش پرداخت", new { @class = "form-select" })
+                                        @Html.ValidationMessageFor(model => model.PaymentMethod, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="PosTransactionId" class="form-label">شناسه تراکنش POS</label>
+                                        @Html.TextBoxFor(model => model.PosTransactionId, new { @class = "form-control", placeholder = "شناسه تراکنش" })
+                                        @Html.ValidationMessageFor(model => model.PosTransactionId, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-md-4">
+                                        <label for="PaidAmount" class="form-label">مبلغ پرداخت شده</label>
+                                        @Html.TextBoxFor(model => model.PaidAmount, new { @class = "form-control", type = "number", step = "1000", placeholder = "مبلغ پرداخت شده" })
+                                        @Html.ValidationMessageFor(model => model.PaidAmount, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="InsuranceShare" class="form-label">سهم بیمه</label>
+                                        @Html.TextBoxFor(model => model.InsuranceShare, new { @class = "form-control", type = "number", step = "1000", placeholder = "سهم بیمه" })
+                                        @Html.ValidationMessageFor(model => model.InsuranceShare, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="PatientShare" class="form-label">سهم بیمار</label>
+                                        @Html.TextBoxFor(model => model.PatientShare, new { @class = "form-control", type = "number", step = "1000", placeholder = "سهم بیمار" })
+                                        @Html.ValidationMessageFor(model => model.PatientShare, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ بخش ۵: اطلاعات اضافی -->
+                        <div class="form-section mb-4">
+                            <div class="form-section-header">
+                                <i class="fas fa-info-circle text-primary me-2"></i>
+                                <h5 class="mb-0">اطلاعات اضافی</h5>
+                            </div>
+                            <div class="form-section-body">
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(model => model.IsEmergency, new { @class = "form-check-input" })
+                                            <label class="form-check-label" for="IsEmergency">
+                                                پذیرش اورژانس
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(model => model.IsOnlineReception, new { @class = "form-check-input" })
+                                            <label class="form-check-label" for="IsOnlineReception">
+                                                پذیرش آنلاین
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row g-3 mt-2">
+                                    <div class="col-12">
+                                        <label for="Notes" class="form-label">یادداشت‌ها</label>
+                                        @Html.TextAreaFor(model => model.Notes, new { @class = "form-control", rows = 3, placeholder = "یادداشت‌های اضافی..." })
+                                        @Html.ValidationMessageFor(model => model.Notes, "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ✅ بخش ۶: دکمه‌ها -->
+                        <div class="row mt-4">
+                            <div class="col-12 text-center">
+                                <button type="submit" id="submit-button" class="btn btn-success me-2">
+                                    <span id="submit-button-text">
+                                        <i class="fa fa-save me-1"></i> ثبت پذیرش
+                                    </span>
+                                    <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
+                                </button>
+                                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                    <i class="fa fa-arrow-right me-1"></i> بازگشت
+                                </a>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @Scripts.Render("~/bundles/jqueryval")
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            // ✅ بارگذاری اولیه داده‌ها
+            loadServiceCategories();
+            loadDoctors();
+
+            // ✅ جستجوی بیمار
+            $('#search-patient-btn').on('click', function () {
+                var searchTerm = $('#patient-search').val().trim();
+                if (searchTerm.length >= 2) {
+                    searchPatients(searchTerm);
+                } else {
+                    showError('لطفاً حداقل ۲ کاراکتر وارد کنید');
+                }
+            });
+
+            // ✅ انتخاب بیمار
+            $('#patient-select').on('change', function () {
+                var patientId = $(this).val();
+                if (patientId) {
+                    loadPatientInfo(patientId);
+                } else {
+                    $('#selected-patient-info').empty();
+                }
+            });
+
+            // ✅ انتخاب دسته‌بندی خدمات
+            $('#service-category').on('change', function () {
+                var categoryId = $(this).val();
+                if (categoryId) {
+                    loadServicesByCategory(categoryId);
+                } else {
+                    $('#services').empty().append('<option value="">ابتدا دسته‌بندی را انتخاب کنید</option>');
+                }
+            });
+
+            // ✅ انتخاب خدمات
+            $('#services').on('change', function () {
+                updateSelectedServices();
+            });
+
+            // ✅ استعلام هویت
+            $('#inquiry-btn').on('click', function () {
+                var nationalCode = $('#NationalCodeForInquiry').val().trim();
+                var birthDate = $('#BirthDateForInquiry').val();
+                
+                if (nationalCode && birthDate) {
+                    inquiryPatientIdentity(nationalCode, birthDate);
+                } else {
+                    showError('لطفاً کد ملی و تاریخ تولد را وارد کنید');
+                }
+            });
+
+            // ✅ ارسال فرم
+            $('#create-reception-form').on('submit', function (e) {
+                e.preventDefault();
+                
+                // اعتبارسنجی
+                if (!validateForm()) {
+                    return;
+                }
+
+                // ارسال AJAX
+                submitForm();
+            });
+
+            // ✅ توابع کمکی
+            function searchPatients(searchTerm) {
+                $.ajax({
+                    url: '@Url.Action("SearchPatientsByName", "Reception")',
+                    type: 'GET',
+                    data: { searchTerm: searchTerm, pageNumber: 1, pageSize: 10 },
+                    beforeSend: function () {
+                        $('#patient-search-results').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> در حال جستجو...</div>');
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            displayPatientSearchResults(response.data);
+                        } else {
+                            showError('خطا در جستجو: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        showError('خطا در ارتباط با سرور');
+                    }
+                });
+            }
+
+            function displayPatientSearchResults(data) {
+                var results = $('#patient-search-results');
+                results.empty();
+
+                if (data.items && data.items.length > 0) {
+                    var html = '<div class="list-group">';
+                    $.each(data.items, function (index, patient) {
+                        html += '<a href="#" class="list-group-item list-group-item-action" onclick="selectPatient(' + patient.patientId + ', \'' + patient.fullName + '\')">';
+                        html += '<div class="d-flex w-100 justify-content-between">';
+                        html += '<h6 class="mb-1">' + patient.fullName + '</h6>';
+                        html += '<small>' + patient.nationalCode + '</small>';
+                        html += '</div>';
+                        html += '<p class="mb-1">' + patient.phoneNumber + '</p>';
+                        html += '</a>';
+                    });
+                    html += '</div>';
+                    results.html(html);
+                } else {
+                    results.html('<div class="alert alert-info">هیچ بیمار یافت نشد</div>');
+                }
+            }
+
+            function selectPatient(patientId, patientName) {
+                $('#patient-select').val(patientId);
+                $('#selected-patient-info').html('<div class="alert alert-success"><i class="fas fa-check me-1"></i>بیمار انتخاب شد: ' + patientName + '</div>');
+                $('#patient-search-results').empty();
+                updateProgress();
+            }
+
+            function loadPatientInfo(patientId) {
+                // بارگذاری اطلاعات بیمار
+                updateProgress();
+            }
+
+            function loadServiceCategories() {
+                $.ajax({
+                    url: '@Url.Action("GetServiceCategories", "Reception")',
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.success) {
+                            var select = $('#service-category');
+                            select.empty().append('<option value="">انتخاب دسته‌بندی</option>');
+                            $.each(response.data, function (index, category) {
+                                select.append('<option value="' + category.id + '">' + category.name + '</option>');
+                            });
+                        }
+                    }
+                });
+            }
+
+            function loadServicesByCategory(categoryId) {
+                $.ajax({
+                    url: '@Url.Action("GetServicesByCategory", "Reception")',
+                    type: 'GET',
+                    data: { categoryId: categoryId },
+                    success: function (response) {
+                        if (response.success) {
+                            var select = $('#services');
+                            select.empty();
+                            $.each(response.data, function (index, service) {
+                                select.append('<option value="' + service.id + '">' + service.name + ' - ' + service.price + ' تومان</option>');
+                            });
+                        }
+                    }
+                });
+            }
+
+            function updateSelectedServices() {
+                var selected = $('#services').val();
+                var selectedDiv = $('#selected-services');
+                
+                if (selected && selected.length > 0) {
+                    var html = '';
+                    $.each(selected, function (index, serviceId) {
+                        var serviceText = $('#services option[value="' + serviceId + '"]').text();
+                        html += '<span class="badge bg-primary me-1 mb-1">' + serviceText + '</span>';
+                    });
+                    selectedDiv.html(html);
+                } else {
+                    selectedDiv.html('<span class="text-muted">هیچ خدمتی انتخاب نشده است</span>');
+                }
+                
+                updateProgress();
+            }
+
+            function inquiryPatientIdentity(nationalCode, birthDate) {
+                $.ajax({
+                    url: '@Url.Action("InquiryPatientIdentity", "Reception")',
+                    type: 'POST',
+                    data: {
+                        nationalCode: nationalCode,
+                        birthDate: birthDate,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    beforeSend: function () {
+                        $('#inquiry-btn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال استعلام...');
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            showSuccess('استعلام با موفقیت انجام شد');
+                            // نمایش نتایج استعلام
+                        } else {
+                            showError('خطا در استعلام: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        showError('خطا در ارتباط با سرور');
+                    },
+                    complete: function () {
+                        $('#inquiry-btn').prop('disabled', false).html('<i class="fas fa-search me-1"></i>استعلام هویت');
+                    }
+                });
+            }
+
+            function loadDoctors() {
+                $.ajax({
+                    url: '@Url.Action("GetDoctors", "Reception")',
+                    type: 'GET',
+                    success: function (response) {
+                        if (response.success) {
+                            var select = $('#DoctorId');
+                            select.empty().append('<option value="">انتخاب پزشک</option>');
+                            $.each(response.data, function (index, doctor) {
+                                select.append('<option value="' + doctor.id + '">' + doctor.fullName + '</option>');
+                            });
+                        }
+                    }
+                });
+            }
+
+            function validateForm() {
+                var isValid = true;
+                
+                // اعتبارسنجی بیمار
+                if (!$('#PatientId').val()) {
+                    showError('لطفاً بیمار را انتخاب کنید');
+                    isValid = false;
+                }
+                
+                // اعتبارسنجی پزشک
+                if (!$('#DoctorId').val()) {
+                    showError('لطفاً پزشک را انتخاب کنید');
+                    isValid = false;
+                }
+                
+                // اعتبارسنجی خدمات
+                if (!$('#services').val() || $('#services').val().length === 0) {
+                    showError('لطفاً حداقل یک خدمت انتخاب کنید');
+                    isValid = false;
+                }
+                
+                return isValid;
+            }
+
+            function submitForm() {
+                var formData = $('#create-reception-form').serialize();
+                
+                $.ajax({
+                    url: '@Url.Action("Create", "Reception")',
+                    type: 'POST',
+                    data: formData,
+                    beforeSend: function () {
+                        $('#submit-button').prop('disabled', true);
+                        $('#submit-button-text').hide();
+                        $('#submit-button-spinner').show();
+                    },
+                    success: function (response) {
+                        if (response.success) {
+                            showSuccess('پذیرش با موفقیت ثبت شد');
+                            setTimeout(function () {
+                                window.location.href = '@Url.Action("Index")';
+                            }, 2000);
+                        } else {
+                            showError('خطا در ثبت پذیرش: ' + response.message);
+                        }
+                    },
+                    error: function () {
+                        showError('خطا در ارتباط با سرور');
+                    },
+                    complete: function () {
+                        $('#submit-button').prop('disabled', false);
+                        $('#submit-button-text').show();
+                        $('#submit-button-spinner').hide();
+                    }
+                });
+            }
+
+            function updateProgress() {
+                var progress = 0;
+                var totalFields = 6; // تعداد فیلدهای اصلی
+                
+                if ($('#PatientId').val()) progress += 1;
+                if ($('#DoctorId').val()) progress += 1;
+                if ($('#services').val() && $('#services').val().length > 0) progress += 1;
+                if ($('#TotalAmount').val()) progress += 1;
+                if ($('#PaymentMethod').val()) progress += 1;
+                if ($('#ReceptionDate').val()) progress += 1;
+                
+                var percentage = Math.round((progress / totalFields) * 100);
+                $('#form-progress').css('width', percentage + '%');
+                $('#progress-text').text(percentage + '% تکمیل شده');
+            }
+
+            function showSuccess(message) {
+                toastr.success(message);
+            }
+
+            function showError(message) {
+                toastr.error(message);
+            }
+
+            // ✅ اعمال قوانین اعتبارسنجی
+            $('#create-reception-form').validate({
+                rules: {
+                    'PatientId': {
+                        required: true
+                    },
+                    'DoctorId': {
+                        required: true
+                    },
+                    'TotalAmount': {
+                        required: true,
+                        min: 0
+                    },
+                    'PaymentMethod': {
+                        required: true
+                    },
+                    'ReceptionDate': {
+                        required: true
+                    }
+                },
+                messages: {
+                    'PatientId': {
+                        required: "لطفاً بیمار را انتخاب کنید"
+                    },
+                    'DoctorId': {
+                        required: "لطفاً پزشک را انتخاب کنید"
+                    },
+                    'TotalAmount': {
+                        required: "لطفاً مجموع مبلغ را وارد کنید",
+                        min: "مبلغ نمی‌تواند منفی باشد"
+                    },
+                    'PaymentMethod': {
+                        required: "لطفاً روش پرداخت را انتخاب کنید"
+                    },
+                    'ReceptionDate': {
+                        required: "لطفاً تاریخ پذیرش را وارد کنید"
+                    }
+                }
+            });
+        });
+    </script>
+}

@@ -10,6 +10,10 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Core;
+using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Entities.Patient;
 
 namespace ClinicApp.Services
 {

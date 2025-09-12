@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.DoctorManagementVM;
 
 namespace ClinicApp.Interfaces.ClinicAdmin

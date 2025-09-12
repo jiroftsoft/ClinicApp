@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {

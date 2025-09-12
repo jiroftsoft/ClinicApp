@@ -5,6 +5,7 @@ using System.Linq;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Entities.Doctor;
 using FluentValidation;
 
 namespace ClinicApp.ViewModels.SpecializationManagementVM

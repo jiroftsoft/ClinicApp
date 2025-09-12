@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 
 namespace ClinicApp.Interfaces.Insurance

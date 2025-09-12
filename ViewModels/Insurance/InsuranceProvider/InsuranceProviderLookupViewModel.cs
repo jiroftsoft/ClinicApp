@@ -28,7 +28,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
-        public static InsuranceProviderLookupViewModel FromEntity(Models.Entities.InsuranceProvider entity)
+        public static InsuranceProviderLookupViewModel FromEntity(Models.Entities.Insurance.InsuranceProvider entity)
         {
             if (entity == null) return null;
 

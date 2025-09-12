@@ -40,7 +40,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
-        public static InsuranceProviderCreateEditViewModel FromEntity(Models.Entities.InsuranceProvider entity)
+        public static InsuranceProviderCreateEditViewModel FromEntity(Models.Entities.Insurance.InsuranceProvider entity)
         {
             if (entity == null) return null;
 
@@ -57,9 +57,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         /// <summary>
         /// ✅ یک Entity جدید از روی ViewModel می‌سازد.
         /// </summary>
-        public Models.Entities.InsuranceProvider ToEntity()
+        public Models.Entities.Insurance.InsuranceProvider ToEntity()
         {
-            return new Models.Entities.InsuranceProvider
+            return new Models.Entities.Insurance.InsuranceProvider
             {
                 InsuranceProviderId = this.InsuranceProviderId,
                 Name = this.Name?.Trim(),
@@ -72,7 +72,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         /// <summary>
         /// ✅ یک Entity موجود را بر اساس داده‌های این ViewModel به‌روزرسانی می‌کند.
         /// </summary>
-        public void MapToEntity(Models.Entities.InsuranceProvider entity)
+        public void MapToEntity(Models.Entities.Insurance.InsuranceProvider entity)
         {
             if (entity == null) return;
 

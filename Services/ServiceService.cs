@@ -11,6 +11,8 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Core;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.Services;
 

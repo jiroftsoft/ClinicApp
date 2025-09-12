@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.Repositories
 {

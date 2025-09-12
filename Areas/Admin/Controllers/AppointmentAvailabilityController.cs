@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
 

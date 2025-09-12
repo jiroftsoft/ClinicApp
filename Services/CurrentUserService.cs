@@ -12,6 +12,11 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Web;
+using ClinicApp.Models.Core;
+using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Entities.Reception;
 
 namespace ClinicApp.Services
 {

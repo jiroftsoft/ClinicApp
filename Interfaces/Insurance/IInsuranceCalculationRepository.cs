@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Insurance;
 
 namespace ClinicApp.Interfaces.Insurance
 {

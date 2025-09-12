@@ -12,6 +12,8 @@ using Serilog;
 using System.Collections.Generic;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 using DoctorDependencyInfo = ClinicApp.Models.DoctorDependencyInfo;
 
 namespace ClinicApp.Services.ClinicAdmin

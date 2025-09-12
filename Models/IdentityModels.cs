@@ -22,6 +22,18 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using ClinicApp.Models.Core;
+using ClinicApp.Models.Entities.Appointment;
+using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Entities.Notification;
+using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Entities.Payment;
+using ClinicApp.Models.Entities.Receipt;
+using ClinicApp.Models.Entities.Reception;
+using ClinicApp.Models.Entities.Report;
+using ClinicApp.Models.Enums;
 using ClinicApp.Services;
 
 namespace ClinicApp.Models
@@ -83,6 +95,10 @@ namespace ClinicApp.Models
         public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
         public DbSet<CashSession> CashSessions { get; set; }
         public DbSet<PosTerminal> PosTerminals { get; set; }
+        
+        // ========== موجودیت‌های جدید برای پرداخت‌های آنلاین ==========
+        public DbSet<PaymentGateway> PaymentGateways { get; set; }
+        public DbSet<OnlinePayment> OnlinePayments { get; set; }
         public DbSet<ReceiptPrint> ReceiptPrints { get; set; }
         public DbSet<NotificationHistory> NotificationHistories { get; set; }
         public DbSet<NotificationTemplate> NotificationTemplates { get; set; }
@@ -158,6 +174,11 @@ namespace ClinicApp.Models
             // ========== فیلترهای جدید برای تاریخچه پزشکی و گزارش‌گیری ==========
             modelBuilder.Filter("ActiveMedicalHistories", (MedicalHistory mh) => mh.IsActive, true);
             modelBuilder.Filter("DownloadableReports", (Report r) => r.IsDownloadable, true);
+
+            // ========== فیلترهای جدید برای پرداخت‌های آنلاین ==========
+            modelBuilder.Filter("ActivePaymentGateways", (PaymentGateway pg) => pg.IsActive, true);
+            modelBuilder.Filter("ActivePosTerminals", (PosTerminal pt) => pt.IsActive, true);
+            modelBuilder.Filter("SuccessfulOnlinePayments", (OnlinePayment op) => op.Status == OnlinePaymentStatus.Success, true);
 
 
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس

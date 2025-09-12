@@ -7,6 +7,7 @@ using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 using ClinicApp.Services.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;

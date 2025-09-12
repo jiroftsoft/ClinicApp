@@ -4,6 +4,7 @@ using System.Linq;
 using ClinicApp.Core;
 using ClinicApp.Extensions;
 using ClinicApp.Helpers;
+using ClinicApp.Models.Core;
 using Serilog;
 
 namespace ClinicApp.Interfaces
@@ -211,15 +212,4 @@ namespace ClinicApp.Interfaces
     }
 
   
-
-    /// <summary>
-    /// رابط برای سیستم حذف نرم در سیستم‌های پزشکی
-    /// </summary>
-    public interface ISoftDelete
-    {
-        /// <summary>
-        /// نشان‌دهنده وضعیت حذف شدن
-        /// </summary>
-        bool IsDeleted { get; }
-    }
 }

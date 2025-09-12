@@ -14,6 +14,7 @@ using ClinicApp.Models.Entities;
 using FluentValidation;
 using Serilog;
 using System.Web;
+using ClinicApp.Models.Entities.Doctor;
 
 namespace ClinicApp.Areas.Admin.Controllers
 {

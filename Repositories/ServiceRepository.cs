@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.Repositories
 {

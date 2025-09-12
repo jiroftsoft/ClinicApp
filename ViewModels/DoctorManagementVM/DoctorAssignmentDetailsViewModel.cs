@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using ClinicApp.Models.Entities.Doctor;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM
 {
@@ -252,7 +253,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// Factory method برای ایجاد ViewModel از Entity
         /// </summary>
         public static DoctorAssignmentDetailsViewModel FromEntity(
-            Models.Entities.Doctor doctor,
+            Doctor doctor,
             List<DoctorDepartmentViewModel> departments,
             List<DoctorServiceCategoryViewModel> serviceCategories,
             List<AssignmentHistoryViewModel> history)
@@ -316,7 +317,7 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// <summary>
         /// دریافت تخصص‌های پزشک از رابطه Many-to-Many
         /// </summary>
-        private static string GetDoctorSpecializations(Models.Entities.Doctor doctor)
+        private static string GetDoctorSpecializations(Doctor doctor)
         {
             if (doctor.DoctorSpecializations == null || !doctor.DoctorSpecializations.Any())
                 return "ثبت نشده";

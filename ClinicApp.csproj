@@ -459,6 +459,11 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\InsurancePlanController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceProviderController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
+    <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
+    <Compile Include="Controllers\Payment\PaymentController.cs" />
+    <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
+    <Compile Include="Controllers\ReceptionController.cs" />
     <Compile Include="Controllers\TokenTestController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
@@ -477,6 +482,7 @@
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
+    <Compile Include="Infrastructure\QueryExtensions.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
@@ -520,8 +526,25 @@
     <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
+    <Compile Include="Interfaces\IReceptionRepository.cs" />
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
+    <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayRepository.cs" />
+    <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayService.cs" />
+    <Compile Include="Interfaces\Payment\IOnlinePaymentRepository.cs" />
+    <Compile Include="Interfaces\Payment\IPaymentService.cs" />
+    <Compile Include="Interfaces\Payment\IPaymentTransactionRepository.cs" />
+    <Compile Include="Interfaces\Payment\POS\ICashSessionRepository.cs" />
+    <Compile Include="Interfaces\Payment\POS\IPosManagementService.cs" />
+    <Compile Include="Interfaces\Payment\POS\IPosTerminalRepository.cs" />
+    <Compile Include="Interfaces\Payment\Reporting\IPaymentReportingService.cs" />
+    <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
+    <Compile Include="Interfaces\Payment\Web\IWebPaymentService.cs" />
+    <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
+    <Compile Include="Interfaces\Repositories\IServiceRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.Designer.cs">
       <DependentUpon>202509090447343_CreateDatabaseClinic.cs</DependentUpon>
@@ -542,9 +565,90 @@
     <Compile Include="Migrations\202509101002438_CreateTwoTable.Designer.cs">
       <DependentUpon>202509101002438_CreateTwoTable.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509110549236_AddNewPaymentTable.cs" />
+    <Compile Include="Migrations\202509110549236_AddNewPaymentTable.Designer.cs">
+      <DependentUpon>202509110549236_AddNewPaymentTable.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
+    <Compile Include="Models\Core\ApplicationUser.cs" />
+    <Compile Include="Models\Core\AppRoles.cs" />
+    <Compile Include="Models\Core\AuditableEntity.cs" />
+    <Compile Include="Models\Core\ISoftDelete.cs" />
+    <Compile Include="Models\Core\ITrackable.cs" />
+    <Compile Include="Models\Core\OtpRequest.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
-    <Compile Include="Repositories\Class1.cs" />
+    <Compile Include="Models\Entities\Appointment\Appointment.cs" />
+    <Compile Include="Models\Entities\Appointment\AppointmentSlot.cs" />
+    <Compile Include="Models\Entities\Appointment\Class1.cs" />
+    <Compile Include="Models\Entities\Clinic\Clinic.cs" />
+    <Compile Include="Models\Entities\Clinic\Department.cs" />
+    <Compile Include="Models\Entities\Clinic\Service.cs" />
+    <Compile Include="Models\Entities\Clinic\ServiceCategory.cs" />
+    <Compile Include="Models\Entities\Doctor\Doctor.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorAssignmentHistory.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorDepartment.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorSchedule.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorServiceCategory.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorSpecialization.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorTimeRange.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorTimeSlot.cs" />
+    <Compile Include="Models\Entities\Doctor\DoctorWorkDay.cs" />
+    <Compile Include="Models\Entities\Doctor\ScheduleException.cs" />
+    <Compile Include="Models\Entities\Doctor\ScheduleTemplate.cs" />
+    <Compile Include="Models\Entities\Doctor\Specialization.cs" />
+    <Compile Include="Models\Entities\Insurance\Class1.cs" />
+    <Compile Include="Models\Entities\Insurance\InsuranceCalculation.cs" />
+    <Compile Include="Models\Entities\Insurance\InsurancePlan.cs" />
+    <Compile Include="Models\Entities\Insurance\InsuranceProvider.cs" />
+    <Compile Include="Models\Entities\Insurance\InsuranceTariff.cs" />
+    <Compile Include="Models\Enums\AssignmentHistoryImportance.cs" />
+    <Compile Include="Models\Enums\BreakType.cs" />
+    <Compile Include="Models\Enums\EmergencyBookingStatus.cs" />
+    <Compile Include="Models\Enums\EmergencyConflictSeverity.cs" />
+    <Compile Include="Models\Enums\EmergencyPriority.cs" />
+    <Compile Include="Models\Enums\EmergencyType.cs" />
+    <Compile Include="Models\Enums\NotificationChannelType.cs" />
+    <Compile Include="Models\Entities\Notification\NotificationHistory.cs" />
+    <Compile Include="Models\Enums\NotificationStatus.cs" />
+    <Compile Include="Models\Entities\Notification\NotificationTemplate.cs" />
+    <Compile Include="Models\Enums\WorkLifeBalanceStatus.cs" />
+    <Compile Include="Models\Enums\WorkloadBalanceStatus.cs" />
+    <Compile Include="Models\Entities\Patient\PatientInsurance.cs" />
+    <Compile Include="Models\Entities\Insurance\PlanService.cs" />
+    <Compile Include="Models\Entities\Patient\Class1.cs" />
+    <Compile Include="Models\Entities\Patient\MedicalHistory.cs" />
+    <Compile Include="Models\Entities\Patient\Patient.cs" />
+    <Compile Include="Models\Entities\Payment\CashSession.cs" />
+    <Compile Include="Models\Entities\Payment\OnlinePayment.cs" />
+    <Compile Include="Models\Entities\Payment\PaymentGateway.cs" />
+    <Compile Include="Models\Entities\Payment\PaymentTransaction.cs" />
+    <Compile Include="Models\Entities\Payment\PosTerminal.cs" />
+    <Compile Include="Models\Entities\Receipt\Class1.cs" />
+    <Compile Include="Models\Entities\Receipt\ReceiptPrint.cs" />
+    <Compile Include="Models\Entities\Reception\Reception.cs" />
+    <Compile Include="Models\Entities\Reception\ReceptionItem.cs" />
+    <Compile Include="Models\Entities\Report\Report.cs" />
+    <Compile Include="Models\Enums\AppointmentPriority.cs" />
+    <Compile Include="Models\Enums\AppointmentSlotStatus.cs" />
+    <Compile Include="Models\Enums\AppointmentStatus.cs" />
+    <Compile Include="Models\Enums\AppointmentType.cs" />
+    <Compile Include="Models\Enums\CashSessionStatus.cs" />
+    <Compile Include="Models\Enums\Degree.cs" />
+    <Compile Include="Models\Enums\ExceptionType.cs" />
+    <Compile Include="Models\Enums\Gender.cs" />
+    <Compile Include="Models\Enums\MedicalHistoryType.cs" />
+    <Compile Include="Models\Enums\OnlinePaymentStatus.cs" />
+    <Compile Include="Models\Enums\OnlinePaymentType.cs" />
+    <Compile Include="Models\Enums\PaymentGatewayType.cs" />
+    <Compile Include="Models\Enums\PaymentMethod.cs" />
+    <Compile Include="Models\Enums\PaymentStatus.cs" />
+    <Compile Include="Models\Enums\PosProtocol.cs" />
+    <Compile Include="Models\Enums\PosProviderType.cs" />
+    <Compile Include="Models\Enums\ReceptionStatus.cs" />
+    <Compile Include="Models\Enums\ReceptionType.cs" />
+    <Compile Include="Models\Enums\ReportType.cs" />
+    <Compile Include="Models\Enums\TemplateType.cs" />
+    <Compile Include="Models\Statistics\PaymentGatewayStatistics.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
@@ -562,6 +666,11 @@
     <Compile Include="Repositories\Insurance\InsuranceProviderRepository.cs" />
     <Compile Include="Repositories\Insurance\PatientInsuranceRepository.cs" />
     <Compile Include="Repositories\Insurance\PlanServiceRepository.cs" />
+    <Compile Include="Repositories\Payment\Gateway\PaymentGatewayRepository.cs" />
+    <Compile Include="Repositories\Payment\OnlinePaymentRepository.cs" />
+    <Compile Include="Repositories\Payment\POS\CashSessionRepository.cs" />
+    <Compile Include="Repositories\Payment\POS\PosTerminalRepository.cs" />
+    <Compile Include="Repositories\ReceptionRepository.cs" />
     <Compile Include="Repositories\ServiceCategoryRepository.cs" />
     <Compile Include="Repositories\ServiceRepository.cs" />
     <Compile Include="Services\AsanakSmsService.cs" />
@@ -594,6 +703,13 @@
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
+    <Compile Include="Services\Payment\Gateway\PaymentGatewayService.cs" />
+    <Compile Include="Services\Payment\PaymentService.cs" />
+    <Compile Include="Services\Payment\POS\PosManagementService.cs" />
+    <Compile Include="Services\Payment\Reporting\PaymentReportingService.cs" />
+    <Compile Include="Services\Payment\Validation\PaymentValidationService.cs" />
+    <Compile Include="Services\Payment\Web\WebPaymentService.cs" />
+    <Compile Include="Services\ReceptionService.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
     <Compile Include="Services\ServiceManagementService.cs" />
@@ -657,7 +773,12 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
+    <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
+    <Compile Include="ViewModels\Payment\PaymentViewModels.cs" />
+    <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
     <Compile Include="Areas\Receptionist\ReceptionistAreaRegistration.cs" />
@@ -693,8 +814,6 @@
     <Compile Include="Interfaces\PagedResult.cs" />
     <Compile Include="Migrations\Configuration.cs" />
     <Compile Include="Models\AccountViewModels.cs" />
-    <Compile Include="Models\Entities\AppointmentType.cs" />
-    <Compile Include="Models\Entities\Clinic.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\ManageViewModels.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -722,6 +841,13 @@
     <Compile Include="ViewModels\Validators\InsurancePlanCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\PatientCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\PatientInsuranceCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\Payment\Gateway\PaymentGatewayValidators.cs" />
+    <Compile Include="ViewModels\Validators\Payment\PaymentValidators.cs" />
+    <Compile Include="ViewModels\Validators\Payment\POS\PosManagementValidators.cs" />
+    <Compile Include="ViewModels\Validators\ReceptionCreateViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\ReceptionEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\ReceptionReportViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\ReceptionSearchViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ServiceCategoryCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\ServiceCreateEditViewModelValidator.cs" />
   </ItemGroup>
@@ -3396,6 +3522,38 @@
     <Content Include="Areas\Admin\Views\InsuranceCalculation\Calculate.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceCard.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceForm.cshtml" />
+    <Content Include="CONTRACTS\ATOMIC_EXECUTION_WORKFLOW_CONTRACT.md" />
+    <Content Include="CONTRACTS\BUNDLE_USAGE_GUIDE.md" />
+    <Content Include="CONTRACTS\CHANGELOG.md" />
+    <Content Include="CONTRACTS\CLINIC_DELETION_PROTECTION.md" />
+    <Content Include="CONTRACTS\CLINIC_DELETION_PROTECTION_DEBUG.md" />
+    <Content Include="CONTRACTS\CLINIC_DELETION_PROTECTION_FIX.md" />
+    <Content Include="CONTRACTS\CLINIC_DETAILS_OPTIMIZATION.md" />
+    <Content Include="CONTRACTS\CLINIC_MODULE_FIX.md" />
+    <Content Include="CONTRACTS\CLINIC_VIEW_FIX.md" />
+    <Content Include="CONTRACTS\DATATABLES_STANDARDS_CONTRACT.md" />
+    <Content Include="CONTRACTS\DoctorController_Analysis_Report.json" />
+    <Content Include="CONTRACTS\DOCTORSCHEDULE_REFACTORING_SUMMARY.md" />
+    <Content Include="CONTRACTS\EF_OPTIMIZATION_DIFFS.md" />
+    <Content Include="CONTRACTS\EF_PERFORMANCE_OPTIMIZATION_REPORT.md" />
+    <Content Include="CONTRACTS\FINAL_FIX_SUMMARY.md" />
+    <Content Include="CONTRACTS\INDEX_PAGE_USAGE_GUIDE.md" />
+    <Content Include="CONTRACTS\MANUAL_TESTING_CHECKLIST.md" />
+    <Content Include="CONTRACTS\MEDICAL_FORMS_CONTRACT.md" />
+    <Content Include="CONTRACTS\MEDICAL_TROUBLESHOOTING.md" />
+    <Content Include="CONTRACTS\PREFLIGHT_CHECKLIST_CONTRACT.md" />
+    <Content Include="CONTRACTS\PROJECT_ANALYSIS.md" />
+    <Content Include="CONTRACTS\PROJECT_COMPREHENSIVE_ANALYSIS.md" />
+    <Content Include="CONTRACTS\PR_REVIEW_COMMENTS.md" />
+    <Content Include="CONTRACTS\README.md" />
+    <Content Include="CONTRACTS\SENIOR_REVIEWER_REPORT.md" />
+    <Content Include="CONTRACTS\SERVICE_DELETION_DEBUG.md" />
+    <Content Include="CONTRACTS\SERVICE_DELETION_FIX.md" />
+    <Content Include="CONTRACTS\SERVICE_FILTERS_FIX.md" />
+    <Content Include="CONTRACTS\TOAST_UNDEFINED_FIX.md" />
+    <Content Include="CONTRACTS\VIEWS_UPDATE_REPORT.md" />
+    <Content Include="CONTRACTS\VIEW_OPTIMIZATION_CONTRACT.md" />
+    <Content Include="CONTRACTS\ADMIN_LAYOUT_USAGE_GUIDE.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3559,6 +3717,9 @@
     <Content Include="Scripts\jquery-3.7.0.min.map" />
     <Content Include="Scripts\jquery-3.7.0.slim.min.map" />
     <Content Include="Content\plugins\DataTables\js\fa.json" />
+    <Content Include="reports\contracts-knowledge-update.json" />
+    <Content Include="reports\contracts-scan.json" />
+    <Content Include="reports\preflight-check.json" />
     <None Include="Scripts\jquery-3.7.1.intellisense.js" />
     <None Include="Scripts\jquery-3.7.0.intellisense.js" />
     <Content Include="Scripts\jquery-3.7.0.js" />
@@ -3643,6 +3804,11 @@
     <Content Include="TEMPLATES\README.md" />
     <Content Include="Views\Patient\_PatientInsurancesPartial.cshtml" />
     <Content Include="Views\TokenTest\Index.cshtml" />
+    <Content Include="Views\Reception\Create.cshtml" />
+    <Content Include="Views\Reception\Delete.cshtml" />
+    <Content Include="Views\Reception\Details.cshtml" />
+    <Content Include="Views\Reception\Edit.cshtml" />
+    <Content Include="Views\Reception\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -3650,7 +3816,9 @@
     <Folder Include="Areas\Receptionist\Data\" />
     <Folder Include="Areas\Receptionist\Views\Reception\" />
     <Folder Include="Constants\" />
-    <Folder Include="Validators\" />
+    <Folder Include="Models\ValueObjects\" />
+    <Folder Include="Validators\Payment\" />
+    <Folder Include="Views\Payment\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -3691,6 +3859,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509101002438_CreateTwoTable.resx">
       <DependentUpon>202509101002438_CreateTwoTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509110549236_AddNewPaymentTable.resx">
+      <DependentUpon>202509110549236_AddNewPaymentTable.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

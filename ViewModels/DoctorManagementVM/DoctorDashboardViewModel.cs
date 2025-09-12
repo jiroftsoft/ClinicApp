@@ -5,6 +5,9 @@ using System.Linq;
 using ClinicApp.Extensions;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
+using ClinicApp.Models.Entities.Appointment;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Enums;
 using FluentValidation;
 
 namespace ClinicApp.ViewModels.DoctorManagementVM

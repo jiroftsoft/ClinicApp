@@ -8,6 +8,8 @@ using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Entities.Doctor;
 using Serilog;
 
 namespace ClinicApp.Repositories.ClinicAdmin

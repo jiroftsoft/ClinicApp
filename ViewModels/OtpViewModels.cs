@@ -6,6 +6,7 @@ using ClinicApp.Models.Entities;
 using System;
 using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels
 {
