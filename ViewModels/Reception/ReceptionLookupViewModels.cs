@@ -550,4 +550,40 @@ namespace ClinicApp.ViewModels.Reception
         public int DoctorsCount { get; set; }
     }
 
+    /// <summary>
+    /// ViewModel برای دپارتمان‌های پزشک در پذیرش
+    /// </summary>
+    public class ReceptionDoctorDepartmentLookupViewModel
+    {
+        [Display(Name = "شناسه دپارتمان")]
+        public int DepartmentId { get; set; }
+
+        [Display(Name = "نام دپارتمان")]
+        public string DepartmentName { get; set; }
+
+        [Display(Name = "توضیحات دپارتمان")]
+        public string DepartmentDescription { get; set; }
+
+        [Display(Name = "شناسه پزشک")]
+        public int DoctorId { get; set; }
+
+        [Display(Name = "نام پزشک")]
+        public string DoctorName { get; set; }
+
+        [Display(Name = "آیا فعال است")]
+        public bool IsActive { get; set; }
+
+        [Display(Name = "تاریخ عضویت")]
+        public DateTime? JoinDate { get; set; }
+
+        [Display(Name = "تاریخ عضویت (شمسی)")]
+        public string JoinDateShamsi { get; set; }
+
+        [Display(Name = "نقش در دپارتمان")]
+        public string Role { get; set; }
+
+        [Display(Name = "نام نمایشی")]
+        public string DisplayName { get; set; }
+    }
+
 }

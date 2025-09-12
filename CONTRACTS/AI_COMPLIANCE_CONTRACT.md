@@ -1928,6 +1928,16 @@ function convertPersianDateToGregorian($element) {
 - **همیشه error handling داشته باشید**: `try-catch` با logging
 - **همیشه لاگ‌گذاری کنید**: برای debugging
 
+### **قانون 69: Reception Create Form Error Prevention (HIGH)**
+- **همیشه `dataType: 'json'` اضافه کنید**: برای AJAX calls
+- **همیشه `JSON.parse()` استفاده کنید**: برای string responses
+- **همیشه HTTP methods صحیح استفاده کنید**: GET برای دریافت، POST برای ارسال
+- **همیشه ViewModel properties اضافه کنید**: قبل از استفاده در Views
+- **همیشه error handling جامع پیاده‌سازی کنید**: با logging کامل
+- **هرگز `[HttpPost]` برای GET requests استفاده نکنید**
+- **هرگز ViewModel properties را فراموش نکنید**
+- **هرگز error handling ناکافی در AJAX calls نداشته باشید**
+
 ```javascript
 // ✅ صحیح - بررسی library و fallback
 function safeDateConversion(persianDate) {
@@ -1952,4 +1962,4 @@ var gregorianDate = persianDatepicker.parseDate(persianDate); // ممکن است
 **تاریخ ایجاد**: جلسه فعلی  
 **وضعیت قرارداد**: فعال و الزام‌آور  
 **دامنه**: تمامی تعاملات هوش مصنوعی با پروژه ClinicApp  
-**آخرین به‌روزرسانی**: جلسه فعلی - اضافه شدن قرارداد مدیریت Persian DatePicker Library (قانون 68)
+**آخرین به‌روزرسانی**: جلسه فعلی - اضافه شدن قرارداد مدیریت Persian DatePicker Library (قانون 68) و پیشگیری از خطاهای فرم پذیرش (قانون 69)

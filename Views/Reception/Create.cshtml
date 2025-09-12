@@ -19,11 +19,15 @@
             
             <!-- ✅ بخش ۲: طراحی بصری -->
             <div class="card shadow-sm">
-                <div class="card-header bg-success text-white">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">
                         <i class="fas fa-user-plus me-2"></i>
                         فرم پذیرش جدید
                     </h4>
+                    <button type="button" id="reset-form-header-btn" class="btn btn-light btn-sm" title="پاک کردن تمام اطلاعات فرم">
+                        <i class="fas fa-undo me-1"></i>
+                        ریست فرم
+                    </button>
                 </div>
                 <div class="card-body">
                     @using (Html.BeginForm("Create", "Reception", FormMethod.Post, new { id = "create-reception-form", @class = "needs-validation", novalidate = "novalidate" }))
@@ -102,9 +106,10 @@
                                         @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-4">
-                                        <label for="BirthDate" class="form-label">تاریخ تولد</label>
-                                        @Html.TextBoxFor(model => model.BirthDate, new { @class = "form-control", type = "date" })
-                                        @Html.ValidationMessageFor(model => model.BirthDate, "", new { @class = "text-danger" })
+                                        <label for="BirthDateShamsi" class="form-label">تاریخ تولد</label>
+                                        @Html.TextBoxFor(model => model.BirthDateShamsi, new { @class = "form-control persian-datepicker", placeholder = "انتخاب تاریخ تولد", id = "birthDateShamsi", value = "" })
+                                        @Html.HiddenFor(model => model.BirthDate)
+                                        @Html.ValidationMessageFor(model => model.BirthDateShamsi, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-2">
                                         <label for="Age" class="form-label">سن</label>
@@ -115,6 +120,24 @@
                                         @Html.TextAreaFor(model => model.Address, new { @class = "form-control", rows = "2", placeholder = "آدرس کامل" })
                                         @Html.ValidationMessageFor(model => model.Address, "", new { @class = "text-danger" })
                                     </div>
+                                <div class="col-12">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <small class="text-muted">
+                                                <i class="fas fa-info-circle"></i>
+                                                اطلاعات بیمار از دیتابیس لود شده است
+                                            </small>
+                                        </div>
+                                        <div class="d-flex gap-2">
+                                            <button type="button" id="edit-patient-btn" class="btn btn-outline-warning btn-sm" style="display: none;">
+                                                <i class="fas fa-edit"></i> ویرایش اطلاعات بیمار
+                                            </button>
+                                            <button type="button" id="reset-form-btn" class="btn btn-outline-danger btn-sm" title="پاک کردن تمام اطلاعات فرم">
+                                                <i class="fas fa-undo"></i> ریست فرم
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
                                 </div>
 
                                 <!-- فیلدهای اطلاعات بیمه -->
@@ -311,6 +334,9 @@
                                     </span>
                                     <span id="submit-button-spinner" class="spinner-border spinner-border-sm" style="display: none;"></span>
                                 </button>
+                                <button type="button" id="reset-form-footer-btn" class="btn btn-outline-danger me-2" title="پاک کردن تمام اطلاعات فرم">
+                                    <i class="fas fa-undo me-1"></i> ریست فرم
+                                </button>
                                 <a href="@Url.Action("Index")" class="btn btn-secondary">
                                     <i class="fa fa-arrow-right me-1"></i> بازگشت
                                 </a>
@@ -412,8 +438,8 @@
             initializeSelect2();
             
             // ✅ بارگذاری اولیه داده‌ها
-            loadServiceCategories();
             loadDoctors();
+            // loadServiceCategories(); // حذف شد - حالا بر اساس پزشک لود می‌شود
 
             // ✅ جستجوی بیمار
             $('#search-patient-btn').on('click', function () {
@@ -427,9 +453,25 @@
 
             // ✅ انتخاب بیمار - حذف شده چون از populatePatientForm استفاده می‌کنیم
 
+            // ✅ انتخاب پزشک - Cascade Loading
+            $('#doctorSelect').on('change', function () {
+                var doctorId = $(this).val();
+                console.log('👨‍⚕️ Doctor selected:', doctorId);
+                
+                if (doctorId) {
+                    // لود کردن دپارتمان‌های پزشک
+                    loadDoctorDepartments(doctorId);
+                } else {
+                    // پاک کردن تمام فیلدهای وابسته
+                    clearServiceFields();
+                }
+            });
+
             // ✅ انتخاب دسته‌بندی خدمات
             $('#service-category').on('change', function () {
                 var categoryId = $(this).val();
+                console.log('📋 Service category selected:', categoryId);
+                
                 if (categoryId) {
                     loadServicesByCategory(categoryId);
                 } else {
@@ -581,7 +623,28 @@
                     results.html(html);
                     console.log('HTML Generated:', html); // Debug log
                 } else {
-                    results.html('<div class="alert alert-info">هیچ بیمار یافت نشد</div>');
+                    // ✅ سناریو دوم: نمایش فرم ایجاد بیمار جدید
+                    results.html(`
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            <strong>بیمار یافت نشد!</strong>
+                            <p class="mb-2">بیماری با این کد ملی در سیستم وجود ندارد.</p>
+                            <div class="d-flex gap-2">
+                                <button type="button" id="create-new-patient-btn" class="btn btn-primary btn-sm">
+                                    <i class="fas fa-user-plus me-1"></i>
+                                    ایجاد بیمار جدید
+                                </button>
+                                <button type="button" id="retry-search-btn" class="btn btn-outline-secondary btn-sm">
+                                    <i class="fas fa-redo me-1"></i>
+                                    جستجوی مجدد
+                                </button>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-info-circle me-1"></i>
+                                با کلیک روی "ایجاد بیمار جدید"، فرم ثبت بیمار در تب جدید باز می‌شود
+                            </small>
+                        </div>
+                    `);
                 }
             }
 
@@ -639,20 +702,33 @@
                         $('#Gender').val(patient.Gender);
                     }
                     
-                    // Set birth date
+                    // Set birth date (Persian DatePicker)
                     if (patient.BirthDate) {
                         console.log('🏥 Setting birth date:', patient.BirthDate);
+                        console.log('🏥 Birth date type:', typeof patient.BirthDate);
                         try {
-                            // استفاده از تابع جدید برای فرمت کردن تاریخ
-                            var formattedDate = formatBirthDateForDisplay(patient.BirthDate);
-                            if (formattedDate) {
-                                $('#BirthDate').val(formattedDate);
-                                console.log('✅ Birth date set successfully:', formattedDate);
+                            // تبدیل تاریخ میلادی به شمسی برای نمایش
+                            var birthDate = new Date(parseInt(patient.BirthDate.substr(6)));
+                            if (!isNaN(birthDate.getTime())) {
+                                // تبدیل به تاریخ شمسی
+                                var persianDate = convertGregorianToPersian(birthDate);
+                                console.log('🏥 Persian birth date:', persianDate);
+                                
+                                // تنظیم فیلد شمسی
+                                $('#birthDateShamsi').val(persianDate);
+                                
+                                // تنظیم فیلد میلادی مخفی
+                                var isoDate = birthDate.getFullYear() + '-' + 
+                                            String(birthDate.getMonth() + 1).padStart(2, '0') + '-' + 
+                                            String(birthDate.getDate()).padStart(2, '0');
+                                $('#BirthDate').val(isoDate);
+                                
+                                console.log('✅ Birth date set successfully:', { persian: persianDate, gregorian: isoDate });
                                 
                                 // محاسبه و نمایش سن
                                 displayAge(patient.BirthDate);
                             } else {
-                                console.warn('⚠️ Could not format birth date:', patient.BirthDate);
+                                console.warn('⚠️ Invalid birth date format:', patient.BirthDate);
                             }
                         } catch (error) {
                             console.error('❌ Error setting birth date:', error);
@@ -689,6 +765,9 @@
                     // Show success message
                     console.log('🏥 Showing success message...');
                     showSuccess('اطلاعات بیمار با موفقیت در فرم قرار گرفت');
+                    
+                    // نمایش دکمه ویرایش اطلاعات بیمار
+                    $('#edit-patient-btn').show();
                     
                     console.log('✅ Patient form populated successfully');
                 } catch (error) {
@@ -999,19 +1078,129 @@
             }
 
             function loadDoctors() {
+                console.log('👨‍⚕️ Loading doctors...');
+                
                 $.ajax({
                     url: '@Url.Action("GetDoctors", "Reception")',
                     type: 'GET',
+                    dataType: 'json',
                     success: function (response) {
+                        console.log('👨‍⚕️ Doctors response:', response);
+                        
                         if (response.success) {
-                            var select = $('#DoctorId');
+                            var select = $('#doctorSelect');
                             select.empty().append('<option value="">انتخاب پزشک</option>');
+                            
+                            if (response.data && response.data.length > 0) {
                             $.each(response.data, function (index, doctor) {
-                                select.append('<option value="' + doctor.id + '">' + doctor.fullName + '</option>');
-                            });
+                                    console.log('👨‍⚕️ Doctor:', doctor);
+                                    select.append('<option value="' + doctor.DoctorId + '">' + doctor.FullName + '</option>');
+                                });
+                                console.log('✅ Doctors loaded successfully');
+                            } else {
+                                console.warn('⚠️ No doctors found');
+                            }
+                        } else {
+                            console.error('❌ Failed to load doctors:', response.message);
                         }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ Error loading doctors:', { status: status, error: error });
                     }
                 });
+            }
+            
+            // ✅ تابع لود کردن دپارتمان‌های پزشک
+            function loadDoctorDepartments(doctorId) {
+                console.log('🏥 Loading departments for doctor:', doctorId);
+                
+                $.ajax({
+                    url: '@Url.Action("GetDoctorDepartments", "Reception")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { doctorId: doctorId },
+                    success: function (response) {
+                        console.log('🏥 Doctor departments response:', response);
+                        
+                        if (response.success) {
+                            // لود کردن سرفصل‌های دپارتمان‌ها
+                            loadServiceCategoriesByDepartments(response.data);
+                        } else {
+                            console.error('❌ Failed to load doctor departments:', response.message);
+                            showError('خطا در دریافت دپارتمان‌های پزشک: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ Error loading doctor departments:', { status: status, error: error });
+                        showError('خطا در ارتباط با سرور برای دریافت دپارتمان‌ها');
+                    }
+                });
+            }
+            
+            // ✅ تابع لود کردن سرفصل‌ها بر اساس دپارتمان‌ها
+            function loadServiceCategoriesByDepartments(departments) {
+                console.log('📋 Loading service categories for departments:', departments);
+                
+                if (!departments || departments.length === 0) {
+                    console.warn('⚠️ No departments provided');
+                    clearServiceFields();
+                    return;
+                }
+                
+                // جمع‌آوری شناسه‌های دپارتمان‌ها
+                var departmentIds = departments.map(function(dept) { return dept.DepartmentId; });
+                console.log('📋 Department IDs:', departmentIds);
+                
+                $.ajax({
+                    url: '@Url.Action("GetServiceCategoriesByDepartments", "Reception")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { departmentIds: departmentIds.join(',') },
+                    success: function (response) {
+                        console.log('📋 Service categories response:', response);
+                        
+                        if (response.success) {
+                            populateServiceCategories(response.data);
+                        } else {
+                            console.error('❌ Failed to load service categories:', response.message);
+                            showError('خطا در دریافت سرفصل‌های خدمات: ' + response.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ Error loading service categories:', { status: status, error: error });
+                        showError('خطا در ارتباط با سرور برای دریافت سرفصل‌ها');
+                    }
+                });
+            }
+            
+            // ✅ تابع پر کردن سرفصل‌های خدمات
+            function populateServiceCategories(categories) {
+                console.log('📋 Populating service categories:', categories);
+                
+                var select = $('#service-category');
+                select.empty().append('<option value="">انتخاب دسته‌بندی</option>');
+                
+                if (categories && categories.length > 0) {
+                    $.each(categories, function (index, category) {
+                        console.log('📋 Category:', category);
+                        select.append('<option value="' + category.ServiceCategoryId + '">' + category.Title + ' (' + category.DepartmentName + ')</option>');
+                    });
+                    console.log('✅ Service categories populated successfully');
+                } else {
+                    console.warn('⚠️ No service categories found');
+                    select.append('<option value="">سرفصل‌ای یافت نشد</option>');
+                }
+                
+                // پاک کردن فیلد خدمات
+                $('#services').empty().append('<option value="">ابتدا دسته‌بندی را انتخاب کنید</option>');
+            }
+            
+            // ✅ تابع پاک کردن فیلدهای خدمات
+            function clearServiceFields() {
+                console.log('🔄 Clearing service fields...');
+                
+                $('#service-category').empty().append('<option value="">ابتدا پزشک را انتخاب کنید</option>');
+                $('#services').empty().append('<option value="">ابتدا دسته‌بندی را انتخاب کنید</option>');
             }
 
             function validateForm() {
@@ -1195,12 +1384,151 @@
             $(document).on('change', '#BirthDate', function() {
                 console.log('📅 Birth date changed');
                 var birthDate = $(this).val();
+                console.log('📅 Birth date value:', birthDate);
+                console.log('📅 Birth date type:', typeof birthDate);
                 if (birthDate) {
                     displayAge(birthDate);
                 } else {
                     $('#Age').val('');
                 }
             });
+            
+            // ✅ Event delegation برای بررسی مقدار فیلد تاریخ تولد
+            $(document).on('focus blur', '#BirthDate', function() {
+                var currentValue = $(this).val();
+                console.log('📅 BirthDate field value on focus/blur:', currentValue);
+            });
+            
+            // ✅ Event delegation برای دکمه ویرایش اطلاعات بیمار
+            $(document).on('click', '#edit-patient-btn', function() {
+                var patientId = $('#PatientId').val();
+                if (patientId) {
+                    console.log('🏥 Opening patient edit page for ID:', patientId);
+                    // باز کردن صفحه ویرایش بیمار در تب جدید
+                    window.open('@Url.Action("Edit", "Patient")/' + patientId, '_blank');
+                } else {
+                    showError('شناسه بیمار یافت نشد');
+                }
+            });
+            
+            // ✅ Event delegation برای دکمه ایجاد بیمار جدید
+            $(document).on('click', '#create-new-patient-btn', function() {
+                var nationalCode = $('#NationalCodeForInquiry').val();
+                console.log('🏥 Creating new patient with national code:', nationalCode);
+                
+                if (nationalCode) {
+                    // باز کردن صفحه ایجاد بیمار جدید در تب جدید با کد ملی
+                    var createUrl = '@Url.Action("Create", "Patient")' + '?nationalCode=' + encodeURIComponent(nationalCode);
+                    window.open(createUrl, '_blank');
+                } else {
+                    // باز کردن صفحه ایجاد بیمار جدید بدون کد ملی
+                    window.open('@Url.Action("Create", "Patient")', '_blank');
+                }
+            });
+            
+            // ✅ Event delegation برای دکمه جستجوی مجدد
+            $(document).on('click', '#retry-search-btn', function() {
+                console.log('🔄 Retrying patient search...');
+                $('#patient-search-results').empty();
+                $('#NationalCodeForInquiry').focus();
+                showInfo('لطفاً کد ملی را مجدداً وارد کنید');
+            });
+            
+            // ✅ Event delegation برای دکمه‌های Reset Form
+            $(document).on('click', '#reset-form-header-btn, #reset-form-footer-btn, #reset-form-btn', function() {
+                console.log('🔄 Resetting form...');
+                resetReceptionForm();
+            });
+            
+            // ✅ Keyboard Shortcut برای Reset Form (Ctrl+R)
+            $(document).on('keydown', function(e) {
+                if (e.ctrlKey && e.key === 'r') {
+                    e.preventDefault(); // جلوگیری از reload صفحه
+                    console.log('🔄 Reset form triggered by keyboard shortcut (Ctrl+R)');
+                    resetReceptionForm();
+                }
+            });
+            
+            // ✅ تابع Reset Form
+            function resetReceptionForm() {
+                try {
+                    console.log('🔄 Starting form reset...');
+                    
+                    // تایید از کاربر
+                    if (!confirm('آیا مطمئن هستید که می‌خواهید تمام اطلاعات فرم را پاک کنید؟')) {
+                        console.log('🔄 Form reset cancelled by user');
+                        return;
+                    }
+                    
+                    // پاک کردن فیلدهای جستجوی بیمار
+                    console.log('🔄 Clearing patient search fields...');
+                    $('#NationalCodeForInquiry').val('');
+                    $('#patient-search-results').empty();
+                    $('#selected-patient-info').empty();
+                    
+                    // پاک کردن فیلدهای اطلاعات بیمار
+                    console.log('🔄 Clearing patient info fields...');
+                    $('#PatientId').val('');
+                    $('#FirstName').val('');
+                    $('#LastName').val('');
+                    $('#NationalCode').val('');
+                    $('#PhoneNumber').val('');
+                    $('#Gender').val('');
+                    $('#birthDateShamsi').val('');
+                    $('#BirthDate').val('');
+                    $('#Age').val('');
+                    $('#Address').val('');
+                    
+                    // پاک کردن فیلدهای اطلاعات بیمه
+                    console.log('🔄 Clearing insurance info fields...');
+                    $('#InsuranceType').val('');
+                    $('#InsuranceNumber').val('');
+                    $('#InsuranceExpiryDate').val('');
+                    
+                    // پاک کردن فیلدهای پذیرش
+                    console.log('🔄 Clearing reception fields...');
+                    $('#ReceptionDate').val('');
+                    $('#receptionDateShamsi').val('');
+                    $('#ReceptionTime').val('');
+                    $('#ReceptionType').val('');
+                    $('#IsEmergency').prop('checked', false);
+                    $('#IsOnlineReception').prop('checked', false);
+                    $('#Notes').val('');
+                    
+                    // پاک کردن فیلدهای پزشک و خدمت
+                    console.log('🔄 Clearing doctor and service fields...');
+                    $('#doctorSelect').val('');
+                    clearServiceFields();
+                    
+                    // مخفی کردن بخش‌های فرم
+                    console.log('🔄 Hiding form sections...');
+                    $('#patient-info-fields').hide();
+                    $('#insurance-info-fields').hide();
+                    $('#edit-patient-btn').hide();
+                    
+                    // پاک کردن پیام‌ها
+                    console.log('🔄 Clearing messages...');
+                    $('.alert').remove();
+                    
+                    // بازنشانی Progress Indicator
+                    console.log('🔄 Resetting progress...');
+                    updateProgress();
+                    
+                    // فوکوس روی فیلد کد ملی
+                    console.log('🔄 Focusing on national code field...');
+                    $('#NationalCodeForInquiry').focus();
+                    
+                    // نمایش پیام موفقیت
+                    console.log('🔄 Showing success message...');
+                    showSuccess('فرم با موفقیت ریست شد. آماده برای پذیرش جدید.');
+                    
+                    console.log('✅ Form reset completed successfully');
+                    
+                } catch (error) {
+                    console.error('❌ Error resetting form:', error);
+                    showError('خطا در ریست کردن فرم: ' + error.message);
+                }
+            }
                 
                 // ✅ Event delegation برای HTML5 date fields - فقط برای logging
                 $(document).on('change', 'input[type="date"]', function() {
@@ -1255,8 +1583,11 @@
                     
                     console.log('📅 Persian date value:', persianDate);
                     
-                        // بررسی فرمت تاریخ فارسی
-                        var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+                        // بررسی فرمت تاریخ فارسی (پشتیبانی از اعداد فارسی و انگلیسی)
+                        var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰0-9]+[/][۱۲۳۴۵۶۷۸۹۰0-9]+[/][۱۲۳۴۵۶۷۸۹۰0-9]+$/;
+                        
+                        console.log('🔍 Testing date pattern:', persianDate);
+                        console.log('🔍 Pattern test result:', persianDatePattern.test(persianDate));
                         
                         if (persianDatePattern.test(persianDate)) {
                             // تبدیل تاریخ شمسی به میلادی
@@ -1370,26 +1701,76 @@
                     var date;
                     if (typeof birthDate === 'string' && birthDate.includes('/Date(')) {
                         // فرمت .NET Date
+                        console.log('📅 Processing .NET Date format for display');
                         date = new Date(parseInt(birthDate.substr(6)));
                     } else if (typeof birthDate === 'string') {
                         // فرمت ISO string یا سایر فرمت‌ها
+                        console.log('📅 Processing string date format for display');
                         date = new Date(birthDate);
                     } else {
                         // Date object
+                        console.log('📅 Processing object date format for display');
                         date = new Date(birthDate);
                     }
+                    
+                    console.log('📅 Parsed date for display:', date);
                     
                     if (isNaN(date.getTime())) {
                         console.error('❌ Invalid birth date format:', birthDate);
                         return null;
                     }
                     
-                    // تبدیل به فرمت ISO برای HTML5 date input
-                    var isoDate = date.toISOString().split('T')[0];
+                    // تبدیل به فرمت ISO برای HTML5 date input (YYYY-MM-DD)
+                    var year = date.getFullYear();
+                    var month = String(date.getMonth() + 1).padStart(2, '0');
+                    var day = String(date.getDate()).padStart(2, '0');
+                    var isoDate = year + '-' + month + '-' + day;
+                    
                     console.log('✅ Formatted birth date:', isoDate);
+                    console.log('📅 Date components:', { year: year, month: month, day: day });
                     return isoDate;
                 } catch (error) {
                     console.error('❌ Error formatting birth date:', error);
+                    return null;
+                }
+            }
+            
+            // ✅ تابع تبدیل میلادی به شمسی
+            function convertGregorianToPersian(gregorianDate) {
+                try {
+                    console.log('🗓️ Converting Gregorian to Persian:', gregorianDate);
+                    
+                    if (!gregorianDate || isNaN(gregorianDate.getTime())) {
+                        console.error('❌ Invalid Gregorian date');
+                        return null;
+                    }
+                    
+                    var year = gregorianDate.getFullYear();
+                    var month = gregorianDate.getMonth() + 1;
+                    var day = gregorianDate.getDate();
+                    
+                    // تبدیل تقریبی میلادی به شمسی
+                    var persianYear = year - 621;
+                    var persianMonth = month;
+                    var persianDay = day;
+                    
+                    // تنظیم ماه و روز برای تقویم شمسی
+                    if (month > 2) {
+                        persianMonth = month - 2;
+                    } else {
+                        persianYear -= 1;
+                        persianMonth = month + 10;
+                    }
+                    
+                    // فرمت کردن به صورت شمسی
+                    var persianDate = persianYear + '/' + 
+                                    String(persianMonth).padStart(2, '0') + '/' + 
+                                    String(persianDay).padStart(2, '0');
+                    
+                    console.log('✅ Persian date created:', persianDate);
+                    return persianDate;
+                } catch (error) {
+                    console.error('❌ Error converting to Persian:', error);
                     return null;
                 }
             }
@@ -1447,6 +1828,8 @@
                         console.error('❌ Invalid day range:', day);
                         return null;
                     }
+                    
+                    console.log('✅ Date validation passed:', { year: year, month: month, day: day });
                     
                     // تبدیل شمسی به میلادی (تقریبی)
                     // این یک تبدیل ساده است - برای دقت بیشتر از library استفاده کنید

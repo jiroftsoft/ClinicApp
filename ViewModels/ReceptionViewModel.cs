@@ -1,10 +1,11 @@
 ﻿using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Web.Mvc;
-using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels
 {
@@ -47,6 +48,13 @@ namespace ClinicApp.ViewModels
         [Display(Name = "تاریخ تولد")]
         [DataType(DataType.Date)]
         public DateTime? BirthDate { get; set; }
+
+        //[Display(Name = "تاریخ تولد شمسی")]
+        //public string BirthDateShamsi { get; set; }
+
+        [Display(Name = "تاریخ تولد شمسی")]
+        [DisplayFormat(DataFormatString = "{0:yyyy/MM/dd}", ApplyFormatInEditMode = true)]
+        public string BirthDateShamsi { get; set; }
 
         [Display(Name = "آدرس")]
         [StringLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از ۵۰۰ کاراکتر باشد.")]

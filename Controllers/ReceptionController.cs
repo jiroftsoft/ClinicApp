@@ -403,6 +403,82 @@ namespace ClinicApp.Controllers
             }
         }
 
+        /// <summary>
+        /// دریافت دپارتمان‌های پزشک (AJAX)
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>لیست دپارتمان‌های پزشک</returns>
+        [HttpGet]
+        public async Task<JsonResult> GetDoctorDepartments(int doctorId)
+        {
+            _logger.Information(
+                "درخواست دریافت دپارتمان‌های پزشک. شناسه: {DoctorId}, کاربر: {UserName}",
+                doctorId, _currentUserService.UserName);
+
+            try
+            {
+                if (doctorId <= 0)
+                {
+                    return Json(new { success = false, message = "شناسه پزشک نامعتبر است." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _receptionService.GetDoctorDepartmentsAsync(doctorId);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در دریافت دپارتمان‌های پزشک. شناسه: {DoctorId}, کاربر: {UserName}",
+                    doctorId, _currentUserService.UserName);
+
+                return Json(new { success = false, message = "خطا در دریافت دپارتمان‌های پزشک." }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت سرفصل‌های خدمات بر اساس دپارتمان‌ها (AJAX)
+        /// </summary>
+        /// <param name="departmentIds">شناسه‌های دپارتمان‌ها (comma-separated)</param>
+        /// <returns>لیست سرفصل‌های خدمات</returns>
+        [HttpGet]
+        public async Task<JsonResult> GetServiceCategoriesByDepartments(string departmentIds)
+        {
+            _logger.Information(
+                "درخواست دریافت سرفصل‌های خدمات بر اساس دپارتمان‌ها. شناسه‌ها: {DepartmentIds}, کاربر: {UserName}",
+                departmentIds, _currentUserService.UserName);
+
+            try
+            {
+                if (string.IsNullOrEmpty(departmentIds))
+                {
+                    return Json(new { success = false, message = "شناسه‌های دپارتمان الزامی است." }, JsonRequestBehavior.AllowGet);
+                }
+
+                var departmentIdList = departmentIds.Split(',').Select(id => int.Parse(id.Trim())).ToList();
+                var result = await _receptionService.GetServiceCategoriesByDepartmentsAsync(departmentIdList);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در دریافت سرفصل‌های خدمات. دپارتمان‌ها: {DepartmentIds}, کاربر: {UserName}",
+                    departmentIds, _currentUserService.UserName);
+
+                return Json(new { success = false, message = "خطا در دریافت سرفصل‌های خدمات." }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
         #endregion
 
         #region AJAX Endpoints - Reception Operations

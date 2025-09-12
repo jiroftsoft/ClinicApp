@@ -186,6 +186,20 @@ namespace ClinicApp.Interfaces
         /// <returns>لیست پزشکان</returns>
         Task<ServiceResult<List<ReceptionDoctorLookupViewModel>>> GetDoctorsBySpecializationAsync(int specializationId);
 
+        /// <summary>
+        /// دریافت دپارتمان‌های پزشک
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>لیست دپارتمان‌های پزشک</returns>
+        Task<ServiceResult<List<ReceptionDoctorDepartmentLookupViewModel>>> GetDoctorDepartmentsAsync(int doctorId);
+
+        /// <summary>
+        /// دریافت سرفصل‌های خدمات بر اساس دپارتمان‌ها
+        /// </summary>
+        /// <param name="departmentIds">شناسه‌های دپارتمان‌ها</param>
+        /// <returns>لیست سرفصل‌های خدمات</returns>
+        Task<ServiceResult<List<ReceptionServiceCategoryLookupViewModel>>> GetServiceCategoriesByDepartmentsAsync(List<int> departmentIds);
+
         #endregion
 
         #region Insurance Operations

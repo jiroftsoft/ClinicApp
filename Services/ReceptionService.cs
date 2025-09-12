@@ -64,6 +64,7 @@ namespace ClinicApp.Services
         private readonly IServiceCategoryService _serviceCategoryService;
         private readonly IServiceService _serviceService;
         private readonly IDoctorCrudService _doctorCrudService;
+        private readonly IDoctorDepartmentRepository _doctorDepartmentRepository;
         private readonly ILogger _logger;
         
 
@@ -77,6 +78,7 @@ namespace ClinicApp.Services
             IServiceCategoryService serviceCategoryService,
             IServiceService serviceService,
             IDoctorCrudService doctorCrudService,
+            IDoctorDepartmentRepository doctorDepartmentRepository,
             ILogger logger)
         {
             _receptionRepository = receptionRepository ?? throw new ArgumentNullException(nameof(receptionRepository));
@@ -88,6 +90,7 @@ namespace ClinicApp.Services
             _serviceCategoryService = serviceCategoryService ?? throw new ArgumentNullException(nameof(serviceCategoryService));
             _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
+            _doctorDepartmentRepository = doctorDepartmentRepository ?? throw new ArgumentNullException(nameof(doctorDepartmentRepository));
             _logger = logger.ForContext<ReceptionService>();
             
         }
@@ -1015,6 +1018,131 @@ namespace ClinicApp.Services
                     "DOCTORS_BY_SPECIALIZATION_ERROR",
                     ErrorCategory.System,
                     SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت دپارتمان‌های پزشک
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>لیست دپارتمان‌های پزشک</returns>
+        public async Task<ServiceResult<List<ReceptionDoctorDepartmentLookupViewModel>>> GetDoctorDepartmentsAsync(int doctorId)
+        {
+            _logger.Information(
+                "درخواست دپارتمان‌های پزشک. پزشک: {DoctorId}, کاربر: {UserName}",
+                doctorId, _currentUserService.UserName);
+
+            try
+            {
+                if (doctorId <= 0)
+                {
+                    return ServiceResult<List<ReceptionDoctorDepartmentLookupViewModel>>.Failed(
+                        "شناسه پزشک نامعتبر است.",
+                        "INVALID_DOCTOR_ID",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                // دریافت دپارتمان‌های پزشک از دیتابیس
+                var doctorDepartments = await _doctorDepartmentRepository.GetDoctorDepartmentsAsync(doctorId, "", 1, 100);
+                
+                var departments = doctorDepartments.Select(dd => new ReceptionDoctorDepartmentLookupViewModel
+                {
+                    DepartmentId = dd.DepartmentId,
+                    DepartmentName = dd.Department?.Name ?? "نامشخص",
+                    DepartmentDescription = dd.Department?.Description ?? "",
+                    DoctorId = dd.DoctorId,
+                    DoctorName = dd.Doctor?.FirstName + " " + dd.Doctor?.LastName ?? "نامشخص",
+                    IsActive = dd.IsActive,
+                    JoinDate = dd.StartDate,
+                    JoinDateShamsi = dd.StartDate?.ToString("yyyy/MM/dd") ?? "",
+                    Role = dd.Role ?? "پزشک",
+                    DisplayName = dd.Department?.Name ?? "نامشخص"
+                }).ToList();
+
+                _logger.Information(
+                    "دپارتمان‌های پزشک با موفقیت دریافت شد. تعداد: {Count}, پزشک: {DoctorId}. کاربر: {UserName}",
+                    departments.Count, doctorId, _currentUserService.UserName);
+
+                return ServiceResult<List<ReceptionDoctorDepartmentLookupViewModel>>.Successful(
+                    departments,
+                    "دپارتمان‌های پزشک با موفقیت دریافت شد.",
+                    operationName: "GetDoctorDepartments");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در دریافت دپارتمان‌های پزشک. پزشک: {DoctorId}. کاربر: {UserName}",
+                    doctorId, _currentUserService.UserName);
+
+                return ServiceResult<List<ReceptionDoctorDepartmentLookupViewModel>>.Failed(
+                    "خطا در دریافت دپارتمان‌های پزشک. لطفاً مجدداً تلاش کنید.",
+                    "DOCTOR_DEPARTMENTS_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// دریافت سرفصل‌های خدمات بر اساس دپارتمان‌ها
+        /// </summary>
+        /// <param name="departmentIds">شناسه‌های دپارتمان‌ها</param>
+        /// <returns>لیست سرفصل‌های خدمات</returns>
+        public async Task<ServiceResult<List<ReceptionServiceCategoryLookupViewModel>>> GetServiceCategoriesByDepartmentsAsync(List<int> departmentIds)
+        {
+            _logger.Information(
+                "درخواست سرفصل‌های خدمات بر اساس دپارتمان‌ها. دپارتمان‌ها: {DepartmentIds}, کاربر: {UserName}",
+                string.Join(",", departmentIds), _currentUserService.UserName);
+
+            try
+            {
+                if (departmentIds == null || !departmentIds.Any())
+                {
+                    return ServiceResult<List<ReceptionServiceCategoryLookupViewModel>>.Failed(
+                        "شناسه‌های دپارتمان الزامی است.",
+                        "INVALID_DEPARTMENT_IDS",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                // دریافت سرفصل‌های فعال
+                var categories = await _serviceCategoryService.GetActiveServiceCategoriesAsync();
+                
+                // فیلتر کردن بر اساس دپارتمان‌ها
+                var filteredCategories = categories.Where(c => departmentIds.Contains(c.DepartmentId)).ToList();
+                
+                // تبدیل به ViewModel
+                var viewModels = filteredCategories.Select(c => new ReceptionServiceCategoryLookupViewModel
+                {
+                    ServiceCategoryId = c.ServiceCategoryId,
+                    Title = c.Title,
+                    Description = "", // ServiceCategorySelectItem doesn't have Description
+                    DepartmentId = c.DepartmentId,
+                    DepartmentName = c.DepartmentName,
+                    IsActive = true, // ServiceCategorySelectItem doesn't have IsActive
+                    DisplayName = c.Title
+                }).ToList();
+
+                _logger.Information(
+                    "سرفصل‌های خدمات بر اساس دپارتمان‌ها با موفقیت دریافت شد. تعداد: {Count}, دپارتمان‌ها: {DepartmentIds}. کاربر: {UserName}",
+                    viewModels.Count, string.Join(",", departmentIds), _currentUserService.UserName);
+
+                return ServiceResult<List<ReceptionServiceCategoryLookupViewModel>>.Successful(
+                    viewModels,
+                    "سرفصل‌های خدمات بر اساس دپارتمان‌ها با موفقیت دریافت شد.",
+                    operationName: "GetServiceCategoriesByDepartments");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در دریافت سرفصل‌های خدمات بر اساس دپارتمان‌ها. دپارتمان‌ها: {DepartmentIds}. کاربر: {UserName}",
+                    string.Join(",", departmentIds), _currentUserService.UserName);
+
+                return ServiceResult<List<ReceptionServiceCategoryLookupViewModel>>.Failed(
+                    "خطا در دریافت سرفصل‌های خدمات. لطفاً مجدداً تلاش کنید.",
+                    "SERVICE_CATEGORIES_BY_DEPARTMENTS_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.High);
             }
         }
 

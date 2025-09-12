@@ -242,11 +242,11 @@ namespace ClinicApp.Controllers
         /// نمایش فرم ایجاد بیمار جدید - طبق قرارداد FormStandards
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Create()
+        public async Task<ActionResult> Create(string nationalCode = null)
         {
             _log.Information(
-                "درخواست ایجاد بیمار جدید. User: {UserName} (Id: {UserId})",
-                _currentUserService.UserName, _currentUserService.UserId);
+                "درخواست ایجاد بیمار جدید. NationalCode: {NationalCode}, User: {UserName} (Id: {UserId})",
+                nationalCode, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
@@ -254,7 +254,11 @@ namespace ClinicApp.Controllers
                 {
                     PageTitle = "ثبت بیمار جدید",
                     PageSubtitle = "اطلاعات بیمار را با دقت وارد کنید",
-                    FormModel = new PatientCreateEditViewModel(),
+                    FormModel = new PatientCreateEditViewModel
+                    {
+                        // ✅ تنظیم کد ملی در صورت ارسال از فرم پذیرش
+                        NationalCode = nationalCode ?? ""
+                    },
                     IsEditMode = false,
                     LastUpdated = DateTime.Now
                 };
