@@ -1,0 +1,511 @@
+@model ClinicApp.Models.Entities.Payment.PaymentTransaction
+
+@{
+    ViewBag.Title = "جزئیات تراکنش پرداخت";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fa fa-credit-card me-2"></i>
+                            جزئیات تراکنش پرداخت #@Model.Id
+                        </h4>
+                        <div class="btn-group" role="group">
+                            @Html.ActionLink("بازگشت به لیست", "Index", null, new { 
+                                @class = "btn btn-secondary btn-sm",
+                                @title = "بازگشت به لیست تراکنش‌ها"
+                            })
+                            @Html.ActionLink("ویرایش", "Edit", new { id = Model.Id }, new { 
+                                @class = "btn btn-warning btn-sm",
+                                @title = "ویرایش تراکنش"
+                            })
+                            <button type="button" class="btn btn-danger btn-sm" id="delete-btn" 
+                                    data-id="@Model.Id" 
+                                    data-amount="@Model.Amount"
+                                    title="حذف تراکنش">
+                                <i class="fa fa-trash me-1"></i>
+                                حذف
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row">
+        <!-- Transaction Details -->
+        <div class="col-lg-8">
+            <div class="card border-success shadow-sm">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0">
+                        <i class="fa fa-info-circle me-2"></i>
+                        اطلاعات تراکنش
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-bold">شناسه تراکنش:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-secondary fs-6">#@Model.Id</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-bold">مبلغ:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="fs-4 text-success fw-bold">@Model.Amount.ToString("N0") تومان</span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-bold">روش پرداخت:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge @GetPaymentMethodBadgeClass(Model.Method) fs-6">
+                                        @Model.Method
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-bold">وضعیت:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge @GetPaymentStatusBadgeClass(Model.Status) fs-6">
+                                        @Model.Status
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-bold">تاریخ ایجاد:</label>
+                                <p class="form-control-plaintext">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm:ss")
+                                </p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="form-label fw-bold">تاریخ آخرین بروزرسانی:</label>
+                                <p class="form-control-plaintext">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    @(Model.UpdatedAt?.ToString("yyyy/MM/dd HH:mm:ss") ?? "-")
+                                </p>
+                            </div>
+                        </div>
+                        @if (!string.IsNullOrEmpty(Model.TransactionId))
+                        {
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">شناسه تراکنش خارجی:</label>
+                                    <p class="form-control-plaintext">
+                                        <code>@Model.TransactionId</code>
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ReferenceCode))
+                        {
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">کد مرجع:</label>
+                                    <p class="form-control-plaintext">
+                                        <code>@Model.ReferenceCode</code>
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.ReceiptNo))
+                        {
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">شماره رسید:</label>
+                                    <p class="form-control-plaintext">
+                                        <code>@Model.ReceiptNo</code>
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Description))
+                        {
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <label class="form-label fw-bold">توضیحات:</label>
+                                    <p class="form-control-plaintext">
+                                        @Model.Description
+                                    </p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Information -->
+        <div class="col-lg-4">
+            <!-- Reception Information -->
+            @if (Model.Reception != null)
+            {
+                <div class="card border-info shadow-sm mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fa fa-hospital-o me-2"></i>
+                            اطلاعات پذیرش
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">شناسه پذیرش:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-info">#@Model.Reception.Id</span>
+                                </p>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">تاریخ پذیرش:</label>
+                                <p class="form-control-plaintext">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    @Model.Reception.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                                </p>
+                            </div>
+                            @if (Model.Reception.Patient != null)
+                            {
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">بیمار:</label>
+                                    <p class="form-control-plaintext">
+                                        <i class="fa fa-user me-1"></i>
+                                        @Model.Reception.Patient.FirstName @Model.Reception.Patient.LastName
+                                    </p>
+                                </div>
+                            }
+                            <div class="col-12">
+                                <div class="d-grid">
+                                    @Html.ActionLink("مشاهده پذیرش", "Details", "Reception", new { id = Model.Reception.Id }, new { 
+                                        @class = "btn btn-outline-info btn-sm",
+                                        @title = "مشاهده جزئیات پذیرش"
+                                    })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Payment Method Specific Information -->
+            @if (Model.Method == ClinicApp.Models.Enums.PaymentMethod.POS && Model.PosTerminal != null)
+            {
+                <div class="card border-warning shadow-sm mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="fa fa-credit-card me-2"></i>
+                            اطلاعات ترمینال POS
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">نام ترمینال:</label>
+                                <p class="form-control-plaintext">@Model.PosTerminal.Name</p>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">شماره ترمینال:</label>
+                                <p class="form-control-plaintext">@Model.PosTerminal.TerminalNumber</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.Method == ClinicApp.Models.Enums.PaymentMethod.Online && Model.PaymentGateway != null)
+            {
+                <div class="card border-primary shadow-sm mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fa fa-globe me-2"></i>
+                            اطلاعات درگاه پرداخت
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">نام درگاه:</label>
+                                <p class="form-control-plaintext">@Model.PaymentGateway.Name</p>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">نوع درگاه:</label>
+                                <p class="form-control-plaintext">@Model.PaymentGateway.Type</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.Method == ClinicApp.Models.Enums.PaymentMethod.Cash && Model.CashSession != null)
+            {
+                <div class="card border-success shadow-sm mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fa fa-money me-2"></i>
+                            اطلاعات جلسه نقدی
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-2">
+                            <div class="col-12">
+                                <label class="form-label fw-bold">شناسه جلسه:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-success">#@Model.CashSession.Id</span>
+                                </p>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">تاریخ شروع:</label>
+                                <p class="form-control-plaintext">
+                                    <i class="fa fa-calendar me-1"></i>
+                                    @Model.CashSession.StartTime.ToString("yyyy/MM/dd HH:mm")
+                                </p>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold">وضعیت جلسه:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge @GetCashSessionStatusBadgeClass(Model.CashSession.Status)">
+                                        @Model.CashSession.Status
+                                    </span>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Audit Information -->
+            <div class="card border-secondary shadow-sm">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="fa fa-history me-2"></i>
+                        اطلاعات Audit
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label fw-bold">ایجاد شده توسط:</label>
+                            <p class="form-control-plaintext">
+                                <i class="fa fa-user me-1"></i>
+                                @(Model.CreatedByUser?.UserName ?? "سیستم")
+                            </p>
+                        </div>
+                        @if (Model.UpdatedByUser != null)
+                        {
+                            <div class="col-12">
+                                <label class="form-label fw-bold">آخرین بروزرسانی توسط:</label>
+                                <p class="form-control-plaintext">
+                                    <i class="fa fa-user me-1"></i>
+                                    @Model.UpdatedByUser.UserName
+                                </p>
+                            </div>
+                        }
+                        @if (Model.IsDeleted)
+                        {
+                            <div class="col-12">
+                                <label class="form-label fw-bold">حذف شده:</label>
+                                <p class="form-control-plaintext">
+                                    <span class="badge bg-danger">بله</span>
+                                    @if (Model.DeletedAt.HasValue)
+                                    {
+                                        <small class="text-muted d-block">
+                                            <i class="fa fa-calendar me-1"></i>
+                                            @Model.DeletedAt.Value.ToString("yyyy/MM/dd HH:mm")
+                                        </small>
+                                    }
+                                </p>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="delete-confirm-modal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    تایید حذف تراکنش
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fa fa-warning me-2"></i>
+                    <strong>هشدار:</strong> این عمل قابل بازگشت نیست!
+                </div>
+                <p>آیا از حذف تراکنش پرداخت <strong id="transaction-amount-to-delete" class="text-danger"></strong> اطمینان دارید؟</p>
+                <div class="bg-light p-3 rounded">
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        تمام اطلاعات مرتبط با این تراکنش نیز حذف خواهد شد.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" id="confirm-delete-button" class="btn btn-danger">
+                    <i class="fa fa-trash me-1"></i>
+                    حذف کن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="success-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="fa fa-check-circle me-2"></i>
+            <strong class="me-auto">موفقیت</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="success-message">
+            عملیات با موفقیت انجام شد.
+        </div>
+    </div>
+    
+    <div id="error-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            <strong class="me-auto">خطا</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="error-message">
+            خطایی رخ داده است.
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPaymentMethodBadgeClass(ClinicApp.Models.Enums.PaymentMethod method)
+    {
+        return method switch
+        {
+            ClinicApp.Models.Enums.PaymentMethod.Cash => "bg-success",
+            ClinicApp.Models.Enums.PaymentMethod.POS => "bg-info",
+            ClinicApp.Models.Enums.PaymentMethod.Online => "bg-primary",
+            ClinicApp.Models.Enums.PaymentMethod.Debt => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetPaymentStatusBadgeClass(ClinicApp.Models.Enums.PaymentStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Enums.PaymentStatus.Success => "bg-success",
+            ClinicApp.Models.Enums.PaymentStatus.Failed => "bg-danger",
+            ClinicApp.Models.Enums.PaymentStatus.Pending => "bg-warning",
+            ClinicApp.Models.Enums.PaymentStatus.Canceled => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetCashSessionStatusBadgeClass(ClinicApp.Models.Enums.CashSessionStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Enums.CashSessionStatus.Open => "bg-success",
+            ClinicApp.Models.Enums.CashSessionStatus.Closed => "bg-secondary",
+            ClinicApp.Models.Enums.CashSessionStatus.Suspended => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var transactionToDeleteId = null;
+
+            // Delete button
+            $('#delete-btn').on('click', function () {
+                transactionToDeleteId = $(this).data('id');
+                var amount = $(this).data('amount');
+                $('#transaction-amount-to-delete').text(amount.toLocaleString() + ' تومان');
+                $('#delete-confirm-modal').modal('show');
+            });
+
+            // Confirm delete
+            $('#confirm-delete-button').on('click', function() {
+                if (transactionToDeleteId) {
+                    deleteTransaction(transactionToDeleteId);
+                }
+            });
+        });
+
+        function deleteTransaction(id) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var deleteButton = $('#confirm-delete-button');
+
+            $.ajax({
+                url: '@Url.Action("Delete", "Payment")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    id: id
+                },
+                beforeSend: function() {
+                    deleteButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>در حال حذف...');
+                },
+                success: function (response) {
+                    $('#delete-confirm-modal').modal('hide');
+                    if (response.success) {
+                        showToast('success', 'تراکنش با موفقیت حذف شد.');
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Index", "Payment")';
+                        }, 1500);
+                    } else {
+                        showToast('error', response.message || 'خطایی در حذف تراکنش رخ داده است.');
+                    }
+                },
+                error: function () {
+                    $('#delete-confirm-modal').modal('hide');
+                    showToast('error', 'خطای ارتباطی. لطفاً دوباره تلاش کنید.');
+                },
+                complete: function() {
+                    deleteButton.prop('disabled', false).html('<i class="fa fa-trash me-1"></i>حذف کن');
+                }
+            });
+        }
+
+        function showToast(type, message) {
+            var toastId = type === 'success' ? '#success-toast' : '#error-toast';
+            var messageId = type === 'success' ? '#success-message' : '#error-message';
+            
+            $(messageId).text(message);
+            var toast = new bootstrap.Toast(document.querySelector(toastId));
+            toast.show();
+        }
+    </script>
+}

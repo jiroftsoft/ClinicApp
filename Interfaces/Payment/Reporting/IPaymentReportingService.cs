@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
+using ClinicApp.Models.Statistics;
 
 namespace ClinicApp.Interfaces.Payment.Reporting
 {
@@ -313,29 +314,7 @@ namespace ClinicApp.Interfaces.Payment.Reporting
         public List<PaymentTransaction> TopTransactions { get; set; }
     }
 
-    /// <summary>
-    /// آمار کلی پرداخت‌ها
-    /// </summary>
-    public class PaymentStatistics
-    {
-        public int TotalTransactions { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal AverageAmount { get; set; }
-        public decimal MinAmount { get; set; }
-        public decimal MaxAmount { get; set; }
-        public int SuccessfulTransactions { get; set; }
-        public int FailedTransactions { get; set; }
-        public int PendingTransactions { get; set; }
-        public int CanceledTransactions { get; set; }
-        public decimal SuccessRate { get; set; }
-        public decimal PosAmount { get; set; }
-        public decimal OnlineAmount { get; set; }
-        public decimal DebtAmount { get; set; }
-        public decimal CashAmount { get; set; }
-        public Dictionary<PaymentMethod, int> TransactionsByMethod { get; set; }
-        public Dictionary<PaymentStatus, int> TransactionsByStatus { get; set; }
-        public Dictionary<PaymentGatewayType, int> TransactionsByGateway { get; set; }
-    }
+    // PaymentStatistics به Models/Statistics منتقل شد
 
     /// <summary>
     /// آمار بر اساس روش پرداخت

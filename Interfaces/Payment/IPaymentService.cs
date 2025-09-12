@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
+using ClinicApp.Models.Statistics;
 
 namespace ClinicApp.Interfaces.Payment
 {
@@ -205,7 +206,7 @@ namespace ClinicApp.Interfaces.Payment
         /// </summary>
         /// <param name="date">تاریخ</param>
         /// <returns>آمار روزانه</returns>
-        Task<ServiceResult<DailyPaymentStatistics>> GetDailyPaymentStatisticsAsync(DateTime date);
+        Task<ServiceResult<Models.Statistics.DailyPaymentStatistics>> GetDailyPaymentStatisticsAsync(DateTime date);
 
         /// <summary>
         /// دریافت آمار پرداخت‌های ماهانه
@@ -213,7 +214,7 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="year">سال</param>
         /// <param name="month">ماه</param>
         /// <returns>آمار ماهانه</returns>
-        Task<ServiceResult<MonthlyPaymentStatistics>> GetMonthlyPaymentStatisticsAsync(int year, int month);
+        Task<ServiceResult<Models.Statistics.MonthlyPaymentStatistics>> GetMonthlyPaymentStatisticsAsync(int year, int month);
 
         #endregion
 
@@ -235,7 +236,7 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="pageNumber">شماره صفحه</param>
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>لیست تراکنش‌ها</returns>
-        Task<ServiceResult<IEnumerable<PaymentTransaction>>> AdvancedSearchPaymentsAsync(PaymentSearchFilters filters, int pageNumber = 1, int pageSize = 50);
+        Task<ServiceResult<IEnumerable<PaymentTransaction>>> AdvancedSearchPaymentsAsync(PaymentTransactionSearchFilters filters, int pageNumber = 1, int pageSize = 50);
 
         #endregion
 
@@ -356,33 +357,7 @@ namespace ClinicApp.Interfaces.Payment
         public string CreatedByUserId { get; set; }
     }
 
-    /// <summary>
-    /// محاسبه پرداخت
-    /// </summary>
-    public class PaymentCalculation
-    {
-        public decimal TotalAmount { get; set; }
-        public decimal DiscountAmount { get; set; }
-        public decimal FinalAmount { get; set; }
-        public decimal GatewayFee { get; set; }
-        public decimal NetAmount { get; set; }
-        public PaymentMethod PaymentMethod { get; set; }
-        public string Description { get; set; }
-    }
-
-    /// <summary>
-    /// محاسبه کارمزد درگاه
-    /// </summary>
-    public class GatewayFeeCalculation
-    {
-        public decimal Amount { get; set; }
-        public decimal FeePercentage { get; set; }
-        public decimal FixedFee { get; set; }
-        public decimal CalculatedFee { get; set; }
-        public decimal NetAmount { get; set; }
-        public int PaymentGatewayId { get; set; }
-        public string GatewayName { get; set; }
-    }
+    // PaymentCalculation و GatewayFeeCalculation به Models/Statistics منتقل شدند
 
     /// <summary>
     /// فیلترهای جستجوی پرداخت
@@ -403,28 +378,7 @@ namespace ClinicApp.Interfaces.Payment
         public string CreatedByUserId { get; set; }
     }
 
-    /// <summary>
-    /// آمار پرداخت‌ها
-    /// </summary>
-    public class PaymentStatistics
-    {
-        public int TotalTransactions { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal AverageAmount { get; set; }
-        public decimal MinAmount { get; set; }
-        public decimal MaxAmount { get; set; }
-        public int SuccessfulTransactions { get; set; }
-        public int FailedTransactions { get; set; }
-        public int PendingTransactions { get; set; }
-        public int CanceledTransactions { get; set; }
-        public decimal SuccessRate { get; set; }
-        public Dictionary<PaymentMethod, int> TransactionsByMethod { get; set; }
-        public Dictionary<PaymentStatus, int> TransactionsByStatus { get; set; }
-        public decimal CashAmount { get; set; }
-        public decimal PosAmount { get; set; }
-        public decimal OnlineAmount { get; set; }
-        public decimal DebtAmount { get; set; }
-    }
+    // PaymentStatistics به Models/Statistics منتقل شد
 
     #endregion
 }

@@ -1,0 +1,151 @@
+@model IEnumerable<ClinicApp.Models.Entities.Payment.PaymentTransaction>
+
+@if (Model != null && Model.Any())
+{
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>شناسه</th>
+                    <th>تاریخ</th>
+                    <th>مبلغ</th>
+                    <th>روش پرداخت</th>
+                    <th>وضعیت</th>
+                    <th>کد مرجع</th>
+                    <th>بیمار</th>
+                    <th>عملیات</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var transaction in Model)
+                {
+                    <tr class="payment-item" data-id="@transaction.Id">
+                        <td>
+                            <span class="badge bg-secondary">#@transaction.Id</span>
+                        </td>
+                        <td>
+                            <small class="text-muted">
+                                @transaction.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                            </small>
+                        </td>
+                        <td>
+                            <strong class="text-success">
+                                @transaction.Amount.ToString("N0") تومان
+                            </strong>
+                        </td>
+                        <td>
+                            <span class="badge @GetPaymentMethodBadgeClass(transaction.Method)">
+                                @GetPaymentMethodDisplayName(transaction.Method)
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge @GetPaymentStatusBadgeClass(transaction.Status)">
+                                @GetPaymentStatusDisplayName(transaction.Status)
+                            </span>
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(transaction.ReferenceCode))
+                            {
+                                <code>@transaction.ReferenceCode</code>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (transaction.Patient != null)
+                            {
+                                <small>@transaction.Patient.FirstName @transaction.Patient.LastName</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            <div class="btn-group btn-group-sm" role="group">
+                                @Html.ActionLink("جزئیات", "Details", new { id = transaction.Id }, new { 
+                                    @class = "btn btn-outline-info btn-sm",
+                                    @title = "مشاهده جزئیات تراکنش"
+                                })
+                                @Html.ActionLink("ویرایش", "Edit", new { id = transaction.Id }, new { 
+                                    @class = "btn btn-outline-warning btn-sm",
+                                    @title = "ویرایش تراکنش"
+                                })
+                                <button type="button" class="btn btn-outline-danger btn-sm delete-btn" 
+                                        data-id="@transaction.Id" 
+                                        data-amount="@transaction.Amount"
+                                        title="حذف تراکنش">
+                                    <i class="fa fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+else
+{
+    <div class="text-center p-5">
+        <i class="fa fa-credit-card fa-3x text-muted mb-3"></i>
+        <h5 class="text-muted">هیچ تراکنش پرداختی یافت نشد</h5>
+        <p class="text-muted">لطفاً معیارهای جستجو را تغییر دهید یا تراکنش جدیدی اضافه کنید.</p>
+        @Html.ActionLink("افزودن تراکنش جدید", "Create", null, new { 
+            @class = "btn btn-success",
+            @title = "افزودن تراکنش جدید"
+        })
+    </div>
+}
+
+@functions {
+    string GetPaymentMethodBadgeClass(ClinicApp.Models.Enums.PaymentMethod method)
+    {
+        return method switch
+        {
+            ClinicApp.Models.Enums.PaymentMethod.Cash => "bg-success",
+            ClinicApp.Models.Enums.PaymentMethod.POS => "bg-info",
+            ClinicApp.Models.Enums.PaymentMethod.Online => "bg-primary",
+            ClinicApp.Models.Enums.PaymentMethod.Debt => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetPaymentStatusBadgeClass(ClinicApp.Models.Enums.PaymentStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Enums.PaymentStatus.Success => "bg-success",
+            ClinicApp.Models.Enums.PaymentStatus.Failed => "bg-danger",
+            ClinicApp.Models.Enums.PaymentStatus.Pending => "bg-warning",
+            ClinicApp.Models.Enums.PaymentStatus.Canceled => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetPaymentMethodDisplayName(ClinicApp.Models.Enums.PaymentMethod method)
+    {
+        return method switch
+        {
+            ClinicApp.Models.Enums.PaymentMethod.Cash => "نقدی",
+            ClinicApp.Models.Enums.PaymentMethod.POS => "کارت",
+            ClinicApp.Models.Enums.PaymentMethod.Online => "آنلاین",
+            ClinicApp.Models.Enums.PaymentMethod.Debt => "بدهی",
+            _ => method.ToString()
+        };
+    }
+
+    string GetPaymentStatusDisplayName(ClinicApp.Models.Enums.PaymentStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Enums.PaymentStatus.Success => "موفق",
+            ClinicApp.Models.Enums.PaymentStatus.Failed => "ناموفق",
+            ClinicApp.Models.Enums.PaymentStatus.Pending => "در انتظار",
+            ClinicApp.Models.Enums.PaymentStatus.Canceled => "لغو شده",
+            _ => status.ToString()
+        };
+    }
+}

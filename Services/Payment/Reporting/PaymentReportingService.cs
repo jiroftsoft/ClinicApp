@@ -13,7 +13,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces.Payment.Gateway;
 using ClinicApp.Models.Enums;
-using PaymentStatistics = ClinicApp.Interfaces.Payment.Reporting.PaymentStatistics;
+using PaymentStatistics = ClinicApp.Models.Statistics.PaymentStatistics;
 
 namespace ClinicApp.Services.Payment.Reporting
 {

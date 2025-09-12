@@ -1,0 +1,644 @@
+@model ClinicApp.ViewModels.Payment.PaymentTransactionListViewModel
+
+@{
+    ViewBag.Title = "مدیریت تراکنش‌های پرداخت";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">
+                            <i class="fa fa-credit-card me-2"></i>
+                            مدیریت تراکنش‌های پرداخت
+                        </h4>
+                        <div class="btn-group" role="group">
+                            @Html.ActionLink("ثبت تراکنش جدید", "Create", null, new { 
+                                @class = "btn btn-success btn-sm",
+                                @title = "افزودن تراکنش پرداخت جدید"
+                            })
+                            <button type="button" class="btn btn-info btn-sm" id="refresh-btn" title="بروزرسانی لیست">
+                                <i class="fa fa-refresh"></i>
+                            </button>
+                            <button type="button" class="btn btn-warning btn-sm" id="export-btn" title="خروجی Excel">
+                                <i class="fa fa-file-excel-o"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search and Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-info">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fa fa-search me-2"></i>
+                        جستجو و فیلتر
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Index", "Payment", FormMethod.Get, new { @class = "row g-3", @id = "search-form" }))
+                    {
+                        <div class="col-md-3">
+                            <label for="SearchTerm" class="form-label">جستجو</label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="fa fa-search"></i>
+                                </span>
+                                @Html.TextBoxFor(m => m.Search.SearchTerm, new { 
+                                    @class = "form-control", 
+                                    @placeholder = "کد تراکنش، کد مرجع، شماره رسید...",
+                                    @autocomplete = "off"
+                                })
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <label for="PaymentMethod" class="form-label">روش پرداخت</label>
+                            @Html.DropDownListFor(m => m.Search.PaymentMethod, 
+                                new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Enums.PaymentMethod))
+                                    .Cast<ClinicApp.Models.Enums.PaymentMethod>()
+                                    .Select(x => new { Value = x, Text = x.ToString() }), 
+                                    "Value", "Text", Model.Search.PaymentMethod), 
+                                "همه روش‌ها", 
+                                new { @class = "form-select" })
+                        </div>
+                        <div class="col-md-2">
+                            <label for="Status" class="form-label">وضعیت</label>
+                            @Html.DropDownListFor(m => m.Search.Status, 
+                                new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Enums.PaymentStatus))
+                                    .Cast<ClinicApp.Models.Enums.PaymentStatus>()
+                                    .Select(x => new { Value = x, Text = x.ToString() }), 
+                                    "Value", "Text", Model.Search.Status), 
+                                "همه وضعیت‌ها", 
+                                new { @class = "form-select" })
+                        </div>
+                        <div class="col-md-2">
+                            <label for="StartDate" class="form-label">از تاریخ</label>
+                            @Html.TextBoxFor(m => m.Search.StartDate, "{0:yyyy-MM-dd}", new { 
+                                @class = "form-control", 
+                                @type = "date",
+                                @title = "تاریخ شروع"
+                            })
+                        </div>
+                        <div class="col-md-2">
+                            <label for="EndDate" class="form-label">تا تاریخ</label>
+                            @Html.TextBoxFor(m => m.Search.EndDate, "{0:yyyy-MM-dd}", new { 
+                                @class = "form-control", 
+                                @type = "date",
+                                @title = "تاریخ پایان"
+                            })
+                        </div>
+                        <div class="col-md-1">
+                            <label class="form-label">&nbsp;</label>
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-search me-1"></i>
+                                    جستجو
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <button type="button" id="clear-filters" class="btn btn-outline-secondary btn-sm">
+                                <i class="fa fa-times me-1"></i>
+                                پاک کردن فیلترها
+                            </button>
+                            <button type="button" id="advanced-search-toggle" class="btn btn-outline-info btn-sm ms-2">
+                                <i class="fa fa-cog me-1"></i>
+                                جستجوی پیشرفته
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Advanced Search Section (Hidden by default) -->
+    <div class="row mb-4" id="advanced-search-section" style="display: none;">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="mb-0">
+                        <i class="fa fa-cog me-2"></i>
+                        جستجوی پیشرفته
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label for="MinAmount" class="form-label">حداقل مبلغ</label>
+                            @Html.TextBoxFor(m => m.Search.MinAmount, new { 
+                                @class = "form-control", 
+                                @type = "number",
+                                @step = "0.01",
+                                @placeholder = "0.00"
+                            })
+                        </div>
+                        <div class="col-md-3">
+                            <label for="MaxAmount" class="form-label">حداکثر مبلغ</label>
+                            @Html.TextBoxFor(m => m.Search.MaxAmount, new { 
+                                @class = "form-control", 
+                                @type = "number",
+                                @step = "0.01",
+                                @placeholder = "0.00"
+                            })
+                        </div>
+                        <div class="col-md-3">
+                            <label for="ReceptionId" class="form-label">شناسه پذیرش</label>
+                            @Html.TextBoxFor(m => m.Search.ReceptionId, new { 
+                                @class = "form-control", 
+                                @type = "number",
+                                @placeholder = "شناسه پذیرش"
+                            })
+                        </div>
+                        <div class="col-md-3">
+                            <label for="PatientId" class="form-label">شناسه بیمار</label>
+                            @Html.TextBoxFor(m => m.Search.PatientId, new { 
+                                @class = "form-control", 
+                                @type = "number",
+                                @placeholder = "شناسه بیمار"
+                            })
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-light">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fa fa-list me-2"></i>
+                            لیست تراکنش‌های پرداخت
+                        </h6>
+                        <div class="d-flex align-items-center">
+                            <span class="badge bg-primary me-2">@Model.PagedResult.TotalCount تراکنش</span>
+                            <div class="btn-group btn-group-sm" role="group">
+                                <button type="button" class="btn btn-outline-secondary" id="view-mode-list" title="نمایش لیستی">
+                                    <i class="fa fa-list"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary" id="view-mode-grid" title="نمایش کارتی">
+                                    <i class="fa fa-th"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body p-0">
+                    <!-- Loading Spinner -->
+                    <div id="loading-spinner" class="text-center p-5" style="display: none;">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">در حال بارگذاری...</span>
+                        </div>
+                        <p class="mt-3 text-muted">در حال بارگذاری تراکنش‌ها...</p>
+                    </div>
+
+                    <!-- Results Container -->
+                    <div id="payment-list-container">
+                        @if (Model.PagedResult.Items.Any())
+                        {
+                            <!-- List View -->
+                            <div id="list-view" class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>شناسه</th>
+                                            <th>تاریخ</th>
+                                            <th>مبلغ</th>
+                                            <th>روش پرداخت</th>
+                                            <th>وضعیت</th>
+                                            <th>کد مرجع</th>
+                                            <th>بیمار</th>
+                                            <th>عملیات</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var transaction in Model.PagedResult.Items)
+                                        {
+                                            <tr class="payment-item" data-id="@transaction.Id">
+                                                <td>
+                                                    <span class="badge bg-secondary">#@transaction.Id</span>
+                                                </td>
+                                                <td>
+                                                    <small class="text-muted">
+                                                        @transaction.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                                                    </small>
+                                                </td>
+                                                <td>
+                                                    <strong class="text-success">
+                                                        @transaction.Amount.ToString("N0") تومان
+                                                    </strong>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @GetPaymentMethodBadgeClass(transaction.Method)">
+                                                        @transaction.Method
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @GetPaymentStatusBadgeClass(transaction.Status)">
+                                                        @transaction.Status
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(transaction.ReferenceCode))
+                                                    {
+                                                        <code>@transaction.ReferenceCode</code>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    @if (transaction.Patient != null)
+                                                    {
+                                                        <small>@transaction.Patient.FirstName @transaction.Patient.LastName</small>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group btn-group-sm" role="group">
+                                                        @Html.ActionLink("جزئیات", "Details", new { id = transaction.Id }, new { 
+                                                            @class = "btn btn-outline-info btn-sm",
+                                                            @title = "مشاهده جزئیات تراکنش"
+                                                        })
+                                                        @Html.ActionLink("ویرایش", "Edit", new { id = transaction.Id }, new { 
+                                                            @class = "btn btn-outline-warning btn-sm",
+                                                            @title = "ویرایش تراکنش"
+                                                        })
+                                                        <button type="button" class="btn btn-outline-danger btn-sm delete-btn" 
+                                                                data-id="@transaction.Id" 
+                                                                data-amount="@transaction.Amount"
+                                                                title="حذف تراکنش">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <!-- Grid View (Hidden by default) -->
+                            <div id="grid-view" style="display: none;">
+                                <div class="row p-3">
+                                    @foreach (var transaction in Model.PagedResult.Items)
+                                    {
+                                        <div class="col-md-6 col-lg-4 mb-3">
+                                            <div class="card h-100 border-0 shadow-sm">
+                                                <div class="card-header bg-light">
+                                                    <div class="d-flex justify-content-between align-items-center">
+                                                        <h6 class="mb-0">#@transaction.Id</h6>
+                                                        <span class="badge @GetPaymentStatusBadgeClass(transaction.Status)">
+                                                            @transaction.Status
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="card-body">
+                                                    <div class="row g-2">
+                                                        <div class="col-12">
+                                                            <strong class="text-success fs-5">
+                                                                @transaction.Amount.ToString("N0") تومان
+                                                            </strong>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <small class="text-muted">
+                                                                <i class="fa fa-calendar me-1"></i>
+                                                                @transaction.CreatedAt.ToString("yyyy/MM/dd HH:mm")
+                                                            </small>
+                                                        </div>
+                                                        <div class="col-12">
+                                                            <span class="badge @GetPaymentMethodBadgeClass(transaction.Method)">
+                                                                @transaction.Method
+                                                            </span>
+                                                        </div>
+                                                        @if (!string.IsNullOrEmpty(transaction.ReferenceCode))
+                                                        {
+                                                            <div class="col-12">
+                                                                <small class="text-muted">
+                                                                    <i class="fa fa-code me-1"></i>
+                                                                    @transaction.ReferenceCode
+                                                                </small>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="card-footer bg-transparent">
+                                                    <div class="btn-group w-100" role="group">
+                                                        @Html.ActionLink("جزئیات", "Details", new { id = transaction.Id }, new { 
+                                                            @class = "btn btn-outline-info btn-sm"
+                                                        })
+                                                        @Html.ActionLink("ویرایش", "Edit", new { id = transaction.Id }, new { 
+                                                            @class = "btn btn-outline-warning btn-sm"
+                                                        })
+                                                        <button type="button" class="btn btn-outline-danger btn-sm delete-btn" 
+                                                                data-id="@transaction.Id" 
+                                                                data-amount="@transaction.Amount">
+                                                            <i class="fa fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- Pagination -->
+                            @if (Model.PagedResult.TotalPages > 1)
+                            {
+                                <div class="card-footer bg-light">
+                                    <nav aria-label="صفحه‌بندی تراکنش‌ها">
+                                        <ul class="pagination justify-content-center mb-0">
+                                            @if (Model.PagedResult.HasPreviousPage)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("Index", new { pageNumber = Model.PagedResult.PageNumber - 1, pageSize = Model.PagedResult.PageSize })">
+                                                        <i class="fa fa-chevron-right"></i>
+                                                    </a>
+                                                </li>
+                                            }
+                                            
+                                            @for (int i = Math.Max(1, Model.PagedResult.PageNumber - 2); i <= Math.Min(Model.PagedResult.TotalPages, Model.PagedResult.PageNumber + 2); i++)
+                                            {
+                                                <li class="page-item @(i == Model.PagedResult.PageNumber ? "active" : "")">
+                                                    <a class="page-link" href="@Url.Action("Index", new { pageNumber = i, pageSize = Model.PagedResult.PageSize })">@i</a>
+                                                </li>
+                                            }
+                                            
+                                            @if (Model.PagedResult.HasNextPage)
+                                            {
+                                                <li class="page-item">
+                                                    <a class="page-link" href="@Url.Action("Index", new { pageNumber = Model.PagedResult.PageNumber + 1, pageSize = Model.PagedResult.PageSize })">
+                                                        <i class="fa fa-chevron-left"></i>
+                                                    </a>
+                                                </li>
+                                            }
+                                        </ul>
+                                    </nav>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <!-- Empty State -->
+                            <div class="text-center p-5">
+                                <i class="fa fa-credit-card fa-3x text-muted mb-3"></i>
+                                <h5 class="text-muted">هیچ تراکنش پرداختی یافت نشد</h5>
+                                <p class="text-muted">لطفاً معیارهای جستجو را تغییر دهید یا تراکنش جدیدی اضافه کنید.</p>
+                                @Html.ActionLink("افزودن تراکنش جدید", "Create", null, new { 
+                                    @class = "btn btn-success",
+                                    @title = "افزودن تراکنش جدید"
+                                })
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="delete-confirm-modal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteModalLabel">
+                    <i class="fa fa-exclamation-triangle me-2"></i>
+                    تایید حذف تراکنش
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="بستن"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fa fa-warning me-2"></i>
+                    <strong>هشدار:</strong> این عمل قابل بازگشت نیست!
+                </div>
+                <p>آیا از حذف تراکنش پرداخت <strong id="transaction-amount-to-delete" class="text-danger"></strong> اطمینان دارید؟</p>
+                <div class="bg-light p-3 rounded">
+                    <small class="text-muted">
+                        <i class="fa fa-info-circle me-1"></i>
+                        تمام اطلاعات مرتبط با این تراکنش نیز حذف خواهد شد.
+                    </small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fa fa-times me-1"></i>
+                    انصراف
+                </button>
+                <button type="button" id="confirm-delete-button" class="btn btn-danger">
+                    <i class="fa fa-trash me-1"></i>
+                    حذف کن
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Success/Error Toast Container -->
+<div class="toast-container position-fixed top-0 end-0 p-3">
+    <div id="success-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="fa fa-check-circle me-2"></i>
+            <strong class="me-auto">موفقیت</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="success-message">
+            عملیات با موفقیت انجام شد.
+        </div>
+    </div>
+    
+    <div id="error-toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="fa fa-exclamation-circle me-2"></i>
+            <strong class="me-auto">خطا</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="بستن"></button>
+        </div>
+        <div class="toast-body" id="error-message">
+            خطایی رخ داده است.
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetPaymentMethodBadgeClass(ClinicApp.Models.Enums.PaymentMethod method)
+    {
+        return method switch
+        {
+            ClinicApp.Models.Enums.PaymentMethod.Cash => "bg-success",
+            ClinicApp.Models.Enums.PaymentMethod.POS => "bg-info",
+            ClinicApp.Models.Enums.PaymentMethod.Online => "bg-primary",
+            ClinicApp.Models.Enums.PaymentMethod.Debt => "bg-warning",
+            _ => "bg-secondary"
+        };
+    }
+
+    string GetPaymentStatusBadgeClass(ClinicApp.Models.Enums.PaymentStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Enums.PaymentStatus.Success => "bg-success",
+            ClinicApp.Models.Enums.PaymentStatus.Failed => "bg-danger",
+            ClinicApp.Models.Enums.PaymentStatus.Pending => "bg-warning",
+            ClinicApp.Models.Enums.PaymentStatus.Canceled => "bg-secondary",
+            _ => "bg-secondary"
+        };
+    }
+}
+
+@section Scripts {
+    @Html.AntiForgeryToken()
+    
+    <script type="text/javascript">
+        $(document).ready(function () {
+            var transactionToDeleteId = null;
+            var currentViewMode = 'list';
+
+            // Advanced search toggle
+            $('#advanced-search-toggle').on('click', function() {
+                $('#advanced-search-section').slideToggle();
+                var icon = $(this).find('i');
+                if ($('#advanced-search-section').is(':visible')) {
+                    icon.removeClass('fa-cog').addClass('fa-cog fa-spin');
+                } else {
+                    icon.removeClass('fa-cog fa-spin').addClass('fa-cog');
+                }
+            });
+
+            // Clear filters
+            $('#clear-filters').on('click', function() {
+                $('#search-form')[0].reset();
+                $('#search-form').submit();
+            });
+
+            // View mode toggle
+            $('#view-mode-list').on('click', function() {
+                currentViewMode = 'list';
+                $('#list-view').show();
+                $('#grid-view').hide();
+                $(this).addClass('active');
+                $('#view-mode-grid').removeClass('active');
+            });
+
+            $('#view-mode-grid').on('click', function() {
+                currentViewMode = 'grid';
+                $('#list-view').hide();
+                $('#grid-view').show();
+                $(this).addClass('active');
+                $('#view-mode-list').removeClass('active');
+            });
+
+            // Set initial view mode
+            $('#view-mode-list').addClass('active');
+
+            // Delete modal
+            $('.delete-btn').on('click', function () {
+                transactionToDeleteId = $(this).data('id');
+                var amount = $(this).data('amount');
+                $('#transaction-amount-to-delete').text(amount.toLocaleString() + ' تومان');
+                $('#delete-confirm-modal').modal('show');
+            });
+
+            // Confirm delete
+            $('#confirm-delete-button').on('click', function() {
+                if (transactionToDeleteId) {
+                    deleteTransaction(transactionToDeleteId);
+                }
+            });
+
+            // Refresh button
+            $('#refresh-btn').on('click', function() {
+                location.reload();
+            });
+
+            // Export button
+            $('#export-btn').on('click', function() {
+                var form = $('#search-form');
+                var action = form.attr('action');
+                var method = form.attr('method');
+                var data = form.serialize();
+                
+                // Create a temporary form for export
+                var exportForm = $('<form>', {
+                    'method': method,
+                    'action': action.replace('Index', 'Export')
+                });
+                
+                // Add all form data
+                form.find('input, select').each(function() {
+                    if ($(this).val()) {
+                        exportForm.append($('<input>', {
+                            'type': 'hidden',
+                            'name': $(this).attr('name'),
+                            'value': $(this).val()
+                        }));
+                    }
+                });
+                
+                exportForm.appendTo('body').submit().remove();
+            });
+        });
+
+        function deleteTransaction(id) {
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            var deleteButton = $('#confirm-delete-button');
+
+            $.ajax({
+                url: '@Url.Action("Delete", "Payment")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token,
+                    id: id
+                },
+                beforeSend: function() {
+                    deleteButton.prop('disabled', true).html('<span class="spinner-border spinner-border-sm me-1"></span>در حال حذف...');
+                },
+                success: function (response) {
+                    $('#delete-confirm-modal').modal('hide');
+                    if (response.success) {
+                        showToast('success', 'تراکنش با موفقیت حذف شد.');
+                        location.reload();
+                    } else {
+                        showToast('error', response.message || 'خطایی در حذف تراکنش رخ داده است.');
+                    }
+                },
+                error: function () {
+                    $('#delete-confirm-modal').modal('hide');
+                    showToast('error', 'خطای ارتباطی. لطفاً دوباره تلاش کنید.');
+                },
+                complete: function() {
+                    deleteButton.prop('disabled', false).html('<i class="fa fa-trash me-1"></i>حذف کن');
+                }
+            });
+        }
+
+        function showToast(type, message) {
+            var toastId = type === 'success' ? '#success-toast' : '#error-toast';
+            var messageId = type === 'success' ? '#success-message' : '#error-message';
+            
+            $(messageId).text(message);
+            var toast = new bootstrap.Toast(document.querySelector(toastId));
+            toast.show();
+        }
+    </script>
+}

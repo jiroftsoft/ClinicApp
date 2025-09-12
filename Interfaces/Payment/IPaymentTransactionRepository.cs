@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
+using ClinicApp.Models.Statistics;
 
 namespace ClinicApp.Interfaces.Payment
 {
@@ -170,7 +171,7 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="startDate">تاریخ شروع</param>
         /// <param name="endDate">تاریخ پایان</param>
         /// <returns>آمار تراکنش‌ها</returns>
-        Task<PaymentTransactionStatistics> GetStatisticsAsync(DateTime startDate, DateTime endDate);
+        Task<Models.Statistics.PaymentTransactionStatistics> GetStatisticsAsync(DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// دریافت آمار تراکنش‌های پرداخت بر اساس روش پرداخت
@@ -179,14 +180,14 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="startDate">تاریخ شروع</param>
         /// <param name="endDate">تاریخ پایان</param>
         /// <returns>آمار تراکنش‌ها</returns>
-        Task<PaymentTransactionStatistics> GetStatisticsByPaymentMethodAsync(PaymentMethod paymentMethod, DateTime startDate, DateTime endDate);
+        Task<Models.Statistics.PaymentTransactionStatistics> GetStatisticsByPaymentMethodAsync(PaymentMethod paymentMethod, DateTime startDate, DateTime endDate);
 
         /// <summary>
         /// دریافت آمار تراکنش‌های پرداخت روزانه
         /// </summary>
         /// <param name="date">تاریخ</param>
         /// <returns>آمار روزانه</returns>
-        Task<DailyPaymentStatistics> GetDailyStatisticsAsync(DateTime date);
+        Task<Models.Statistics.DailyPaymentStatistics> GetDailyStatisticsAsync(DateTime date);
 
         /// <summary>
         /// دریافت آمار تراکنش‌های پرداخت ماهانه
@@ -194,7 +195,7 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="year">سال</param>
         /// <param name="month">ماه</param>
         /// <returns>آمار ماهانه</returns>
-        Task<MonthlyPaymentStatistics> GetMonthlyStatisticsAsync(int year, int month);
+        Task<Models.Statistics.MonthlyPaymentStatistics> GetMonthlyStatisticsAsync(int year, int month);
 
         #endregion
 
@@ -248,55 +249,5 @@ namespace ClinicApp.Interfaces.Payment
         public bool? IsDeleted { get; set; }
     }
 
-    /// <summary>
-    /// آمار تراکنش‌های پرداخت
-    /// </summary>
-    public class PaymentTransactionStatistics
-    {
-        public int TotalTransactions { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal AverageAmount { get; set; }
-        public decimal MinAmount { get; set; }
-        public decimal MaxAmount { get; set; }
-        public int SuccessfulTransactions { get; set; }
-        public int FailedTransactions { get; set; }
-        public int PendingTransactions { get; set; }
-        public int CanceledTransactions { get; set; }
-        public decimal SuccessRate { get; set; }
-        public Dictionary<PaymentMethod, int> TransactionsByMethod { get; set; }
-        public Dictionary<PaymentStatus, int> TransactionsByStatus { get; set; }
-    }
 
-    /// <summary>
-    /// آمار روزانه پرداخت‌ها
-    /// </summary>
-    public class DailyPaymentStatistics
-    {
-        public DateTime Date { get; set; }
-        public int TotalTransactions { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal CashAmount { get; set; }
-        public decimal PosAmount { get; set; }
-        public decimal OnlineAmount { get; set; }
-        public decimal DebtAmount { get; set; }
-        public int CashTransactions { get; set; }
-        public int PosTransactions { get; set; }
-        public int OnlineTransactions { get; set; }
-        public int DebtTransactions { get; set; }
-    }
-
-    /// <summary>
-    /// آمار ماهانه پرداخت‌ها
-    /// </summary>
-    public class MonthlyPaymentStatistics
-    {
-        public int Year { get; set; }
-        public int Month { get; set; }
-        public int TotalTransactions { get; set; }
-        public decimal TotalAmount { get; set; }
-        public decimal AverageDailyAmount { get; set; }
-        public int TotalDays { get; set; }
-        public int ActiveDays { get; set; }
-        public Dictionary<int, DailyPaymentStatistics> DailyStatistics { get; set; }
-    }
 }

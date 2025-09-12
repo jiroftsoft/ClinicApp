@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
+using ClinicApp.Models.Statistics;
 
 namespace ClinicApp.Interfaces.Repositories
 {
@@ -73,15 +74,5 @@ namespace ClinicApp.Interfaces.Repositories
         Task<PaymentStatistics> GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate);
     }
 
-    /// <summary>
-    /// Payment statistics model
-    /// </summary>
-    public class PaymentStatistics
-    {
-        public decimal TotalAmount { get; set; }
-        public decimal InsuranceAmount { get; set; }
-        public decimal PatientAmount { get; set; }
-        public int TransactionCount { get; set; }
-        public Dictionary<PaymentMethod, decimal> AmountByMethod { get; set; } = new();
-    }
+    // PaymentStatistics به Models/Statistics منتقل شد
 }

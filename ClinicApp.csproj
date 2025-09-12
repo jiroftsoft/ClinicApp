@@ -648,7 +648,14 @@
     <Compile Include="Models\Enums\ReceptionType.cs" />
     <Compile Include="Models\Enums\ReportType.cs" />
     <Compile Include="Models\Enums\TemplateType.cs" />
+    <Compile Include="Models\Statistics\DailyPaymentStatistics.cs" />
+    <Compile Include="Models\Statistics\GatewayFeeCalculation.cs" />
+    <Compile Include="Models\Statistics\MonthlyPaymentStatistics.cs" />
+    <Compile Include="Models\Statistics\PaymentCalculation.cs" />
     <Compile Include="Models\Statistics\PaymentGatewayStatistics.cs" />
+    <Compile Include="Models\Statistics\PaymentSearchFilters.cs" />
+    <Compile Include="Models\Statistics\PaymentStatistics.cs" />
+    <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
@@ -668,6 +675,7 @@
     <Compile Include="Repositories\Insurance\PlanServiceRepository.cs" />
     <Compile Include="Repositories\Payment\Gateway\PaymentGatewayRepository.cs" />
     <Compile Include="Repositories\Payment\OnlinePaymentRepository.cs" />
+    <Compile Include="Repositories\Payment\PaymentTransactionRepository.cs" />
     <Compile Include="Repositories\Payment\POS\CashSessionRepository.cs" />
     <Compile Include="Repositories\Payment\POS\PosTerminalRepository.cs" />
     <Compile Include="Repositories\ReceptionRepository.cs" />
@@ -3809,6 +3817,13 @@
     <Content Include="Views\Reception\Details.cshtml" />
     <Content Include="Views\Reception\Edit.cshtml" />
     <Content Include="Views\Reception\Index.cshtml" />
+    <Content Include="Views\Payment\Create.cshtml" />
+    <Content Include="Views\Payment\Delete.cshtml" />
+    <Content Include="Views\Payment\Details.cshtml" />
+    <Content Include="Views\Payment\Edit.cshtml" />
+    <Content Include="Views\Payment\Index.cshtml" />
+    <Content Include="Views\Payment\_PaymentTransactionCardPartial.cshtml" />
+    <Content Include="Views\Payment\_PaymentTransactionListPartial.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -3818,7 +3833,6 @@
     <Folder Include="Constants\" />
     <Folder Include="Models\ValueObjects\" />
     <Folder Include="Validators\Payment\" />
-    <Folder Include="Views\Payment\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
