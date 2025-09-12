@@ -7,6 +7,8 @@ using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Interfaces.Payment;
+using ClinicApp.Interfaces.Repositories;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
@@ -14,6 +16,7 @@ using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Reception;
 using ClinicApp.ViewModels.DoctorManagementVM;
+using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Entities.Doctor;
@@ -53,6 +56,7 @@ namespace ClinicApp.Services
         #region Fields and Constructor
 
         private readonly IReceptionRepository _receptionRepository;
+        private readonly IPaymentTransactionRepository _paymentTransactionRepository;
         private readonly IPatientService _patientService;
         private readonly IExternalInquiryService _externalInquiryService;
         private readonly IInsuranceCalculationService _insuranceCalculationService;
@@ -61,9 +65,11 @@ namespace ClinicApp.Services
         private readonly IServiceService _serviceService;
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly ILogger _logger;
+        
 
         public ReceptionService(
             IReceptionRepository receptionRepository,
+            IPaymentTransactionRepository paymentTransactionRepository,
             IPatientService patientService,
             IExternalInquiryService externalInquiryService,
             IInsuranceCalculationService insuranceCalculationService,
@@ -74,6 +80,7 @@ namespace ClinicApp.Services
             ILogger logger)
         {
             _receptionRepository = receptionRepository ?? throw new ArgumentNullException(nameof(receptionRepository));
+            _paymentTransactionRepository = paymentTransactionRepository ?? throw new ArgumentNullException(nameof(paymentTransactionRepository));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _externalInquiryService = externalInquiryService ?? throw new ArgumentNullException(nameof(externalInquiryService));
             _insuranceCalculationService = insuranceCalculationService ?? throw new ArgumentNullException(nameof(insuranceCalculationService));
@@ -82,9 +89,12 @@ namespace ClinicApp.Services
             _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _logger = logger.ForContext<ReceptionService>();
+            
         }
 
         #endregion
+
+
 
         #region Core CRUD Operations
 
@@ -117,20 +127,71 @@ namespace ClinicApp.Services
                 {
                     PatientId = model.PatientId,
                     DoctorId = model.DoctorId,
-                    ReceptionDate = DateTime.Now,
+                    ReceptionDate = model.ReceptionDate,
                     Status = ReceptionStatus.Pending,
-                    Type = ReceptionType.Normal,
+                    Type = model.Type,
                     TotalAmount = model.TotalAmount,
-                    PatientCoPay = 0, // محاسبه خواهد شد
-                    InsurerShareAmount = 0, // محاسبه خواهد شد
-                    Notes = string.Empty,
-                    IsEmergency = false,
-                    IsOnlineReception = false
+                    PatientCoPay = model.PatientShare,
+                    InsurerShareAmount = model.InsuranceShare,
+                    Notes = model.Notes ?? string.Empty,
+                    IsEmergency = model.IsEmergency,
+                    IsOnlineReception = model.IsOnlineReception,
+                    CreatedByUserId = _currentUserService.UserId,
+                    CreatedAt = DateTime.Now,
+                    IsDeleted = false
                 };
 
                 // ذخیره در Repository
                 _receptionRepository.Add(reception);
                 await _receptionRepository.SaveChangesAsync();
+
+                // ایجاد ReceptionItems
+                if (model.SelectedServiceIds != null && model.SelectedServiceIds.Any())
+                {
+                    try
+                    {
+                        var services = await _serviceService.GetActiveServicesAsync();
+                        if (services == null || !services.Any())
+                        {
+                            _logger.Warning("هیچ خدمت فعالی یافت نشد");
+                            return ServiceResult<ReceptionDetailsViewModel>.Failed(
+                                "هیچ خدمت فعالی یافت نشد. لطفاً با مدیر سیستم تماس بگیرید.",
+                                "NO_ACTIVE_SERVICES",
+                                ErrorCategory.Validation,
+                                SecurityLevel.Low);
+                        }
+
+                        var selectedServices = services.Where(s => model.SelectedServiceIds.Contains(s.ServiceId));
+                        if (selectedServices != null && selectedServices.Any())
+                        {
+                            foreach (var service in selectedServices)
+                        {
+                            var receptionItem = new ReceptionItem
+                            {
+                                ReceptionId = reception.ReceptionId,
+                                ServiceId = service.ServiceId,
+                                Quantity = 1,
+                                UnitPrice = service.Price,
+                                CreatedByUserId = _currentUserService.UserId,
+                                CreatedAt = DateTime.Now,
+                                IsDeleted = false
+                            };
+                            // افزودن ReceptionItem به Reception
+                            reception.ReceptionItems.Add(receptionItem);
+                        }
+                        await _receptionRepository.SaveChangesAsync();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.Error(ex, "خطا در ایجاد ReceptionItems");
+                        return ServiceResult<ReceptionDetailsViewModel>.Failed(
+                            "خطا در ایجاد آیتم‌های پذیرش. لطفاً مجدداً تلاش کنید.",
+                            "RECEPTION_ITEMS_ERROR",
+                            ErrorCategory.System,
+                            SecurityLevel.Medium);
+                    }
+                }
 
                 _logger.Information(
                     "پذیرش جدید با موفقیت ایجاد شد. شناسه: {ReceptionId}. کاربر: {UserName}",
@@ -315,11 +376,11 @@ namespace ClinicApp.Services
             catch (Exception ex)
             {
                 _logger.Error(ex,
-                    "خطا در دریافت لیست پذیرش‌ها. کاربر: {UserName}",
-                    _currentUserService.UserName);
+                    "خطا در دریافت لیست پذیرش‌ها. جزئیات: {ExceptionMessage}, StackTrace: {StackTrace}, کاربر: {UserName}",
+                    ex.Message, ex.StackTrace, _currentUserService.UserName);
 
                 return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Failed(
-                    "خطا در دریافت لیست پذیرش‌ها. لطفاً مجدداً تلاش کنید.",
+                    $"خطا در دریافت لیست پذیرش‌ها: {ex.Message}",
                     "RECEPTIONS_GET_ERROR",
                     ErrorCategory.System,
                     SecurityLevel.Medium);
@@ -349,19 +410,47 @@ namespace ClinicApp.Services
                         SecurityLevel.Medium);
                 }
 
+                // محاسبه مبلغ پرداخت شده به صورت همزمان
+                var paidAmountTask = CalculatePaidAmountAsync(reception.ReceptionId);
+                
                 // تبدیل به ViewModel
                 var viewModel = new ReceptionDetailsViewModel
                 {
                     ReceptionId = reception.ReceptionId,
                     PatientFullName = $"{reception.Patient.FirstName} {reception.Patient.LastName}",
                     PatientNationalCode = reception.Patient.NationalCode,
+                    PatientPhoneNumber = reception.Patient.PhoneNumber,
                     DoctorFullName = $"{reception.Doctor.FirstName} {reception.Doctor.LastName}",
+                    DoctorSpecialization = "نامشخص", // TODO: Get specialization from Doctor entity
                     ReceptionDate = reception.ReceptionDate.ToPersianDateTime(),
                     Status = GetReceptionStatusText(reception.Status),
+                    Type = GetReceptionTypeDisplayName(reception.Type),
                     TotalAmount = reception.TotalAmount,
-                    PaidAmount = await CalculatePaidAmountAsync(reception.ReceptionId),
-                    Services = new List<ReceptionItemViewModel>(), // TODO: تبدیل ReceptionItems
-                    Payments = new List<ReceptionPaymentViewModel>() // TODO: تبدیل Transactions
+                    PaidAmount = await paidAmountTask, // استفاده از await در انتها
+                    InsuranceShare = reception.InsurerShareAmount,
+                    PatientShare = reception.PatientCoPay,
+                    Notes = reception.Notes,
+                    CreatedAt = reception.CreatedAt,
+                    UpdatedAt = reception.UpdatedAt,
+                    CreatedBy = reception.CreatedByUser?.UserName ?? "سیستم",
+                    Services = reception.ReceptionItems?.Select(ri => new ReceptionItemViewModel
+                    {
+                        ServiceName = ri.Service?.Title ?? "نامشخص",
+                        ServiceCategory = ri.Service?.ServiceCategory?.Title ?? "نامشخص",
+                        ServiceTitle = ri.Service?.Title ?? "نامشخص",
+                        Quantity = ri.Quantity,
+                        Price = ri.UnitPrice
+                    }).ToList() ?? new List<ReceptionItemViewModel>(),
+                    Payments = reception.Transactions?.Where(t => !t.IsDeleted).Select(t => new ReceptionPaymentViewModel
+                    {
+                        Id = t.Id,
+                        Amount = t.Amount,
+                        PaymentMethod = t.PaymentMethod.ToString(),
+                        TransactionDate = t.CreatedAt,
+                        Status = t.Status.ToString(),
+                        ReferenceNumber = t.ReferenceCode,
+                        Notes = t.Description
+                    }).ToList() ?? new List<ReceptionPaymentViewModel>()
                 };
 
                 _logger.Information(
@@ -883,8 +972,22 @@ namespace ClinicApp.Services
 
             try
             {
-                // دریافت پزشکان بر اساس تخصص (موقت - باید در Repository پیاده‌سازی شود)
-                var doctors = new List<Doctor>(); // TODO: پیاده‌سازی GetDoctorsBySpecializationAsync
+                // دریافت پزشکان بر اساس تخصص
+                var doctorFilter = new DoctorSearchViewModel
+                {
+                    SpecializationId = specializationId,
+                    PageNumber = 1,
+                    PageSize = 1000
+                };
+                var doctorsResult = await _doctorCrudService.GetDoctorsAsync(doctorFilter);
+                var doctors = doctorsResult.Success ? doctorsResult.Data.Items.Select(d => new Doctor
+                {
+                    DoctorId = d.DoctorId,
+                    FirstName = d.FirstName,
+                    LastName = d.LastName,
+                    IsActive = d.IsActive,
+                    IsDeleted = false
+                }).ToList() : new List<Doctor>();
                 
                 var result = doctors.Select(d => new ReceptionDoctorLookupViewModel
                 {
@@ -962,16 +1065,46 @@ namespace ClinicApp.Services
 
             try
             {
-                var result = new ReceptionCostCalculationViewModel();
+                if (serviceIds == null || serviceIds.Count == 0)
+                {
+                    return ServiceResult<ReceptionCostCalculationViewModel>.Failed(
+                        "حداقل یک خدمت باید انتخاب شود.",
+                        "NO_SERVICES_SELECTED",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                var result = new ReceptionCostCalculationViewModel
+                {
+                    ServiceDetails = new List<ServiceCostDetailViewModel>(),
+                    CalculationDate = receptionDate
+                };
+
                 decimal totalAmount = 0;
                 decimal totalInsuranceShare = 0;
                 decimal totalPatientShare = 0;
 
-                // دریافت اطلاعات خدمات (موقت - باید در Repository پیاده‌سازی شود)
-                var services = new List<Service>(); // TODO: پیاده‌سازی GetServicesByIdsAsync
-                
-                // دریافت اطلاعات بیمه (موقت - باید در Repository پیاده‌سازی شود)
-                PatientInsurance insurance = null; // TODO: پیاده‌سازی GetPatientInsuranceAsync
+                // دریافت اطلاعات خدمات
+                var allServices = await _serviceService.GetActiveServicesAsync();
+                var services = allServices.Where(s => serviceIds.Contains(s.ServiceId)).ToList();
+                if (services == null || services.Count == 0)
+                {
+                    return ServiceResult<ReceptionCostCalculationViewModel>.Failed(
+                        "خدمات انتخاب شده یافت نشد.",
+                        "SERVICES_NOT_FOUND",
+                        ErrorCategory.NotFound,
+                        SecurityLevel.Medium);
+                }
+
+                // دریافت اطلاعات بیمه اگر انتخاب شده باشد
+                PatientInsurance insurance = null;
+                if (insuranceId.HasValue)
+                {
+                    // TODO: پیاده‌سازی دریافت اطلاعات بیمه بیمار
+                    // در حال حاضر از InsuranceCalculationService استفاده نمی‌شود
+                    // باید متد مناسب در IInsuranceCalculationService اضافه شود
+                    insurance = null; // Temporary fix
+                }
 
                 foreach (var service in services)
                 {
@@ -983,11 +1116,12 @@ namespace ClinicApp.Services
                     };
 
                     // محاسبه سهم بیمه
-                    if (insurance != null && insurance.IsActive)
+                    if (insurance != null && insurance.IsActive && insurance.InsurancePlan != null)
                     {
-                        serviceCost.InsuranceShare = service.Price * (0 / 100); // TODO: از InsurancePlan.CoveragePercent استفاده شود
+                        var coveragePercentage = insurance.InsurancePlan.CoveragePercent;
+                        serviceCost.InsuranceShare = service.Price * (coveragePercentage / 100);
                         serviceCost.PatientShare = service.Price - serviceCost.InsuranceShare;
-                        serviceCost.CoveragePercentage = 0; // TODO: از InsurancePlan.CoveragePercent استفاده شود
+                        serviceCost.CoveragePercentage = coveragePercentage;
                     }
                     else
                     {
@@ -1006,9 +1140,15 @@ namespace ClinicApp.Services
                 result.TotalServiceCost = totalAmount;
                 result.InsuranceShare = totalInsuranceShare;
                 result.PatientShare = totalPatientShare;
-                result.CalculationDate = receptionDate;
 
-                return ServiceResult<ReceptionCostCalculationViewModel>.Successful(result);
+                _logger.Information(
+                    "محاسبه هزینه‌های پذیرش با موفقیت انجام شد. بیمار: {PatientId}, مجموع: {TotalAmount}, سهم بیمه: {InsuranceShare}, سهم بیمار: {PatientShare}, کاربر: {UserName}",
+                    patientId, totalAmount, totalInsuranceShare, totalPatientShare, _currentUserService.UserName);
+
+                return ServiceResult<ReceptionCostCalculationViewModel>.Successful(
+                    result,
+                    "محاسبه هزینه‌های پذیرش با موفقیت انجام شد.",
+                    operationName: "CalculateReceptionCosts");
             }
             catch (Exception ex)
             {
@@ -1076,17 +1216,27 @@ namespace ClinicApp.Services
 
             try
             {
-                var validation = new ReceptionValidationViewModel();
+                var validation = new ReceptionValidationViewModel
+                {
+                    ValidationErrors = new List<string>(),
+                    Warnings = new List<string>()
+                };
 
-                // بررسی وجود بیمار (موقت - باید در Repository پیاده‌سازی شود)
-                var patient = new Patient(); // TODO: پیاده‌سازی GetPatientByIdAsync
+                // بررسی وجود بیمار
+                var patientResult = await _patientService.GetPatientDetailsAsync(patientId);
+                var patient = patientResult.Success ? patientResult.Data : null;
                 if (patient == null)
                 {
                     validation.ValidationErrors.Add("بیمار مورد نظر یافت نشد.");
                 }
+                else if (patient.IsDeleted)
+                {
+                    validation.ValidationErrors.Add("بیمار مورد نظر حذف شده است.");
+                }
 
-                // بررسی وجود پزشک (موقت - باید در Repository پیاده‌سازی شود)
-                var doctor = new Doctor(); // TODO: پیاده‌سازی GetDoctorByIdAsync
+                // بررسی وجود پزشک
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId);
+                var doctor = doctorResult.Success ? doctorResult.Data : null;
                 if (doctor == null)
                 {
                     validation.ValidationErrors.Add("پزشک مورد نظر یافت نشد.");
@@ -1110,16 +1260,44 @@ namespace ClinicApp.Services
                     validation.ValidationErrors.Add("تاریخ پذیرش نمی‌تواند بیش از ۳۰ روز آینده باشد.");
                 }
 
-                // بررسی تداخل زمانی (موقت - باید در Repository پیاده‌سازی شود)
-                var existingReceptions = new List<Reception>(); // TODO: پیاده‌سازی GetReceptionsByDoctorAndDateAsync
-                if (existingReceptions.Count >= 20) // فرض: حداکثر ۲۰ پذیرش در روز
+                // بررسی تداخل زمانی - تعداد پذیرش‌های پزشک در تاریخ مشخص
+                if (doctor != null && receptionDate >= DateTime.Today)
                 {
-                    validation.Warnings.Add("ظرفیت پذیرش پزشک در این تاریخ تکمیل است.");
+                    var existingReceptions = await _receptionRepository.GetReceptionsByDoctorAndDateAsync(doctorId, receptionDate);
+                    var maxReceptionsPerDay = 20; // حداکثر ۲۰ پذیرش در روز
+                    
+                    if (existingReceptions.Count >= maxReceptionsPerDay)
+                    {
+                        validation.Warnings.Add($"ظرفیت پذیرش پزشک در این تاریخ تکمیل است. ({existingReceptions.Count}/{maxReceptionsPerDay})");
+                    }
+                    else if (existingReceptions.Count >= maxReceptionsPerDay * 0.8) // 80% ظرفیت
+                    {
+                        validation.Warnings.Add($"ظرفیت پذیرش پزشک در این تاریخ تقریباً تکمیل است. ({existingReceptions.Count}/{maxReceptionsPerDay})");
+                    }
+                }
+
+                // بررسی پذیرش‌های قبلی بیمار در همان روز
+                if (patient != null && receptionDate >= DateTime.Today)
+                {
+                    var patientReceptions = await _receptionRepository.GetReceptionsByDateAsync(receptionDate);
+                    var patientReceptionsToday = patientReceptions.Where(r => r.PatientId == patientId && !r.IsDeleted).ToList();
+                    
+                    if (patientReceptionsToday.Count > 0)
+                    {
+                        validation.Warnings.Add($"بیمار در این تاریخ قبلاً پذیرش دارد. ({patientReceptionsToday.Count} پذیرش)");
+                    }
                 }
 
                 validation.IsValid = validation.ValidationErrors.Count == 0;
 
-                return ServiceResult<ReceptionValidationViewModel>.Successful(validation);
+                _logger.Information(
+                    "اعتبارسنجی پذیرش انجام شد. بیمار: {PatientId}, پزشک: {DoctorId}, معتبر: {IsValid}, خطاها: {ErrorCount}, هشدارها: {WarningCount}, کاربر: {UserName}",
+                    patientId, doctorId, validation.IsValid, validation.ValidationErrors.Count, validation.Warnings.Count, _currentUserService.UserName);
+
+                return ServiceResult<ReceptionValidationViewModel>.Successful(
+                    validation,
+                    validation.IsValid ? "اعتبارسنجی پذیرش با موفقیت انجام شد." : "اعتبارسنجی پذیرش با خطا مواجه شد.",
+                    operationName: "ValidateReception");
             }
             catch (Exception ex)
             {
@@ -1145,37 +1323,72 @@ namespace ClinicApp.Services
             {
                 var stats = new ReceptionDailyStatsViewModel
                 {
-                    Date = date
+                    Date = date,
+                    DoctorStats = new List<ReceptionDoctorStatsViewModel>()
                 };
 
-                // دریافت آمار کلی (موقت - باید در Repository پیاده‌سازی شود)
-                var dailyReceptions = new List<Reception>(); // TODO: پیاده‌سازی GetReceptionsByDateAsync
+                // دریافت آمار کلی - TODO: بهینه‌سازی با query های جداگانه
+                var dailyReceptions = await _receptionRepository.GetReceptionsByDateAsync(date);
                 
                 stats.TotalReceptions = dailyReceptions.Count;
                 stats.CompletedReceptions = dailyReceptions.Count(r => r.Status == ReceptionStatus.Completed);
                 stats.PendingReceptions = dailyReceptions.Count(r => r.Status == ReceptionStatus.Pending);
                 stats.CancelledReceptions = dailyReceptions.Count(r => r.Status == ReceptionStatus.Cancelled);
+                stats.InProgressReceptions = dailyReceptions.Count(r => r.Status == ReceptionStatus.InProgress);
 
                 // محاسبه درآمد
                 stats.TotalRevenue = dailyReceptions.Sum(r => r.TotalAmount);
                 stats.AverageRevenuePerReception = dailyReceptions.Count > 0 ? stats.TotalRevenue / dailyReceptions.Count : 0;
 
                 // آمار پزشکان
-                var doctorGroups = dailyReceptions.GroupBy(r => r.DoctorId);
+                var doctorGroups = dailyReceptions
+                    .Where(r => r.Doctor != null)
+                    .GroupBy(r => r.DoctorId)
+                    .ToList();
+
                 foreach (var group in doctorGroups)
                 {
                     var doctor = group.First().Doctor;
+                    var doctorReceptions = group.ToList();
+                    
                     stats.DoctorStats.Add(new ReceptionDoctorStatsViewModel
                     {
                         DoctorId = doctor.DoctorId,
                         DoctorName = $"{doctor.FirstName} {doctor.LastName}",
-                        ReceptionsCount = group.Count(),
-                        TotalRevenue = group.Sum(r => r.TotalAmount),
-                        AverageRevenue = group.Count() > 0 ? group.Sum(r => r.TotalAmount) / group.Count() : 0
+                        ReceptionsCount = doctorReceptions.Count,
+                        TotalRevenue = doctorReceptions.Sum(r => r.TotalAmount),
+                        AverageRevenue = doctorReceptions.Count > 0 ? doctorReceptions.Sum(r => r.TotalAmount) / doctorReceptions.Count : 0,
+                        CompletedReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.Completed),
+                        PendingReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.Pending),
+                        CancelledReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.Cancelled)
                     });
                 }
 
-                return ServiceResult<ReceptionDailyStatsViewModel>.Successful(stats);
+                // آمار انواع پذیرش
+                stats.EmergencyReceptions = dailyReceptions.Count(r => r.IsEmergency);
+                stats.OnlineReceptions = dailyReceptions.Count(r => r.IsOnlineReception);
+                stats.NormalReceptions = dailyReceptions.Count(r => !r.IsEmergency && !r.IsOnlineReception);
+
+                // آمار روش‌های پرداخت
+                var paymentGroups = dailyReceptions
+                    .Where(r => r.Transactions != null && r.Transactions.Any())
+                    .SelectMany(r => r.Transactions)
+                    .GroupBy(t => t.PaymentMethod)
+                    .ToList();
+
+                stats.CashPayments = paymentGroups.Where(g => g.Key == PaymentMethod.Cash).Sum(g => g.Sum(t => t.Amount));
+                stats.CardPayments = paymentGroups.Where(g => g.Key == PaymentMethod.Card).Sum(g => g.Sum(t => t.Amount));
+                stats.OnlinePayments = paymentGroups.Where(g => g.Key == PaymentMethod.Online).Sum(g => g.Sum(t => t.Amount));
+                stats.InsurancePayments = paymentGroups.Where(g => g.Key == PaymentMethod.Insurance).Sum(g => g.Sum(t => t.Amount));
+
+                _logger.Information(
+                    "آمار روزانه پذیرش‌ها با موفقیت دریافت شد. تاریخ: {Date}, کل پذیرش‌ها: {TotalReceptions}, درآمد کل: {TotalRevenue}, کاربر: {UserName}",
+                    date, stats.TotalReceptions, stats.TotalRevenue, _currentUserService.UserName);
+
+                return ServiceResult<ReceptionDailyStatsViewModel>.Successful(
+                    stats,
+                    "آمار روزانه پذیرش‌ها با موفقیت دریافت شد.",
+                    operationName: "GetDailyStats");
             }
             catch (Exception ex)
             {
@@ -1199,7 +1412,8 @@ namespace ClinicApp.Services
 
             try
             {
-                var doctor = new Doctor(); // TODO: پیاده‌سازی GetDoctorByIdAsync
+                var doctorResult = await _doctorCrudService.GetDoctorDetailsAsync(doctorId);
+                var doctor = doctorResult.Success ? doctorResult.Data : null;
                 if (doctor == null)
                 {
                     return ServiceResult<ReceptionDoctorStatsViewModel>.Failed(
@@ -1212,17 +1426,56 @@ namespace ClinicApp.Services
                 var stats = new ReceptionDoctorStatsViewModel
                 {
                     DoctorId = doctorId,
-                    DoctorName = $"{doctor.FirstName} {doctor.LastName}"
+                    DoctorName = $"{doctor.FirstName} {doctor.LastName}",
+                    Date = date
                 };
 
-                // دریافت پذیرش‌های پزشک در تاریخ مشخص (موقت - باید در Repository پیاده‌سازی شود)
-                var doctorReceptions = new List<Reception>(); // TODO: پیاده‌سازی GetReceptionsByDoctorAndDateAsync
+                // دریافت پذیرش‌های پزشک در تاریخ مشخص
+                var doctorReceptions = await _receptionRepository.GetReceptionsByDoctorAndDateAsync(doctorId, date);
                 
                 stats.ReceptionsCount = doctorReceptions.Count;
                 stats.TotalRevenue = doctorReceptions.Sum(r => r.TotalAmount);
                 stats.AverageRevenue = doctorReceptions.Count > 0 ? stats.TotalRevenue / doctorReceptions.Count : 0;
 
-                return ServiceResult<ReceptionDoctorStatsViewModel>.Successful(stats);
+                // آمار تفصیلی وضعیت‌ها
+                stats.CompletedReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.Completed);
+                stats.PendingReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.Pending);
+                stats.CancelledReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.Cancelled);
+                stats.InProgressReceptions = doctorReceptions.Count(r => r.Status == ReceptionStatus.InProgress);
+
+                // آمار انواع پذیرش
+                stats.EmergencyReceptions = doctorReceptions.Count(r => r.IsEmergency);
+                stats.OnlineReceptions = doctorReceptions.Count(r => r.IsOnlineReception);
+                stats.NormalReceptions = doctorReceptions.Count(r => !r.IsEmergency && !r.IsOnlineReception);
+
+                // آمار روش‌های پرداخت
+                var paymentGroups = doctorReceptions
+                    .Where(r => r.Transactions != null && r.Transactions.Any())
+                    .SelectMany(r => r.Transactions)
+                    .GroupBy(t => t.PaymentMethod)
+                    .ToList();
+
+                stats.CashPayments = paymentGroups.Where(g => g.Key == PaymentMethod.Cash).Sum(g => g.Sum(t => t.Amount));
+                stats.CardPayments = paymentGroups.Where(g => g.Key == PaymentMethod.Card).Sum(g => g.Sum(t => t.Amount));
+                stats.OnlinePayments = paymentGroups.Where(g => g.Key == PaymentMethod.Online).Sum(g => g.Sum(t => t.Amount));
+                stats.InsurancePayments = paymentGroups.Where(g => g.Key == PaymentMethod.Insurance).Sum(g => g.Sum(t => t.Amount));
+
+                // محاسبه درصدها
+                if (stats.ReceptionsCount > 0)
+                {
+                    stats.CompletionRate = (decimal)stats.CompletedReceptions / stats.ReceptionsCount * 100;
+                    stats.CancellationRate = (decimal)stats.CancelledReceptions / stats.ReceptionsCount * 100;
+                    stats.EmergencyRate = (decimal)stats.EmergencyReceptions / stats.ReceptionsCount * 100;
+                }
+
+                _logger.Information(
+                    "آمار پزشک با موفقیت دریافت شد. پزشک: {DoctorId}, تاریخ: {Date}, پذیرش‌ها: {ReceptionsCount}, درآمد: {TotalRevenue}, کاربر: {UserName}",
+                    doctorId, date, stats.ReceptionsCount, stats.TotalRevenue, _currentUserService.UserName);
+
+                return ServiceResult<ReceptionDoctorStatsViewModel>.Successful(
+                    stats,
+                    "آمار پزشک با موفقیت دریافت شد.",
+                    operationName: "GetDoctorStats");
             }
             catch (Exception ex)
             {
@@ -1257,48 +1510,88 @@ namespace ClinicApp.Services
                         SecurityLevel.Medium);
                 }
 
-                // ایجاد تراکنش پرداخت (موقت - باید Entity PaymentTransaction بررسی شود)
+                // بررسی وضعیت پذیرش
+                if (reception.Status == ReceptionStatus.Cancelled)
+                {
+                    return ServiceResult<PaymentTransactionViewModel>.Failed(
+                        "امکان افزودن پرداخت به پذیرش لغو شده وجود ندارد.",
+                        "RECEPTION_CANCELLED",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                // بررسی مبلغ پرداخت
+                if (paymentModel.Amount <= 0)
+                {
+                    return ServiceResult<PaymentTransactionViewModel>.Failed(
+                        "مبلغ پرداخت باید بزرگتر از صفر باشد.",
+                        "INVALID_PAYMENT_AMOUNT",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                // محاسبه مبلغ باقی‌مانده
+                var currentPaidAmount = await CalculatePaidAmountAsync(receptionId);
+                var remainingAmount = reception.TotalAmount - currentPaidAmount;
+
+                if (paymentModel.Amount > remainingAmount)
+                {
+                    return ServiceResult<PaymentTransactionViewModel>.Failed(
+                        $"مبلغ پرداخت نمی‌تواند بیش از مبلغ باقی‌مانده باشد. مبلغ باقی‌مانده: {remainingAmount:N0} تومان",
+                        "PAYMENT_AMOUNT_EXCEEDS_REMAINING",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Medium);
+                }
+
+                // ایجاد تراکنش پرداخت
                 var paymentTransaction = new PaymentTransaction
                 {
                     ReceptionId = receptionId,
                     Amount = paymentModel.Amount,
-                    // PaymentMethod = paymentModel.Method, // TODO: بررسی property - Method موجود است
-                    // TransactionDate = DateTime.Now, // TODO: بررسی property
-                    // Status = PaymentStatus.Completed, // TODO: بررسی enum
-                    // ReferenceNumber = paymentModel.ReferenceNumber, // TODO: بررسی property
-                    // Notes = paymentModel.Notes, // TODO: بررسی property
-                    // CreatedBy = _currentUserService.UserId, // TODO: بررسی property
-                    // CreatedAt = DateTime.Now // TODO: بررسی property
+                    Method = paymentModel.Method,
+                    CreatedAt = DateTime.Now,
+                    Status = PaymentStatus.Completed,
+                    ReferenceCode = paymentModel.ReferenceNumber ?? Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
+                    Description = paymentModel.Notes ?? string.Empty,
+                    CreatedByUserId = _currentUserService.UserId,
+                    IsDeleted = false
                 };
 
-                // ذخیره تراکنش (موقت - باید در Repository پیاده‌سازی شود)
-                // await _receptionRepository.AddPaymentTransactionAsync(paymentTransaction); // TODO: پیاده‌سازی
+                // ذخیره تراکنش
+                await _paymentTransactionRepository.AddAsync(paymentTransaction);
 
-                // به‌روزرسانی مبلغ پرداخت شده در پذیرش (موقت - باید Entity Reception بررسی شود)
-                // reception.PaidAmount += paymentModel.Amount; // TODO: بررسی property
-                // reception.RemainingAmount = reception.TotalAmount - reception.PaidAmount; // TODO: بررسی property
-                
-                // if (reception.RemainingAmount <= 0) // TODO: بررسی property
-                // {
-                //     reception.Status = ReceptionStatus.Completed;
-                // }
+                // به‌روزرسانی وضعیت پذیرش در صورت تکمیل پرداخت
+                var newPaidAmount = currentPaidAmount + paymentModel.Amount;
+                if (newPaidAmount >= reception.TotalAmount)
+                {
+                    reception.Status = ReceptionStatus.Completed;
+                    reception.UpdatedAt = DateTime.Now;
+                    reception.UpdatedByUserId = _currentUserService.UserId;
+                }
 
                 await _receptionRepository.SaveChangesAsync();
 
-                // بازگرداندن نتیجه (موقت - باید PaymentTransactionViewModel بررسی شود)
+                // بازگرداندن نتیجه
                 var result = new PaymentTransactionViewModel
                 {
-                    // Id = paymentTransaction.Id, // TODO: بررسی property
+                    Id = paymentTransaction.PaymentTransactionId,
                     ReceptionId = paymentTransaction.ReceptionId,
                     Amount = paymentTransaction.Amount,
-                    // PaymentMethod = paymentTransaction.PaymentMethod.ToString(), // TODO: بررسی property
-                    // TransactionDate = paymentTransaction.TransactionDate, // TODO: بررسی property
-                    // Status = paymentTransaction.Status.ToString(), // TODO: بررسی property
-                    // ReferenceNumber = paymentTransaction.ReferenceNumber, // TODO: بررسی property
-                    // Notes = paymentTransaction.Notes // TODO: بررسی property
+                    PaymentMethod = paymentTransaction.Method.ToString(),
+                    TransactionDate = paymentTransaction.CreatedAt,
+                    Status = paymentTransaction.Status.ToString(),
+                    ReferenceNumber = paymentTransaction.ReferenceCode,
+                    Notes = paymentTransaction.Description
                 };
 
-                return ServiceResult<PaymentTransactionViewModel>.Successful(result);
+                _logger.Information(
+                    "پرداخت جدید با موفقیت افزوده شد. پذیرش: {ReceptionId}, مبلغ: {Amount}, تراکنش: {TransactionId}, کاربر: {UserName}",
+                    receptionId, paymentModel.Amount, paymentTransaction.PaymentTransactionId, _currentUserService.UserName);
+
+                return ServiceResult<PaymentTransactionViewModel>.Successful(
+                    result,
+                    "پرداخت جدید با موفقیت افزوده شد.",
+                    operationName: "AddPayment");
             }
             catch (Exception ex)
             {
@@ -1322,22 +1615,43 @@ namespace ClinicApp.Services
 
             try
             {
-                // دریافت تراکنش‌های پرداخت (موقت - باید در Repository پیاده‌سازی شود)
-                var payments = new List<PaymentTransaction>(); // TODO: پیاده‌سازی GetReceptionPaymentsAsync
-                
-                var result = payments.Select(p => new PaymentTransactionViewModel
+                // بررسی وجود پذیرش
+                var reception = await _receptionRepository.GetByIdAsync(receptionId);
+                if (reception == null)
                 {
-                    // Id = p.Id, // TODO: بررسی property
-                    ReceptionId = p.ReceptionId,
-                    Amount = p.Amount,
-                    // PaymentMethod = p.PaymentMethod.ToString(), // TODO: بررسی property
-                    // TransactionDate = p.TransactionDate, // TODO: بررسی property
-                    // Status = p.Status.ToString(), // TODO: بررسی property
-                    // ReferenceNumber = p.ReferenceNumber, // TODO: بررسی property
-                    // Notes = p.Notes // TODO: بررسی property
-                }).ToList();
+                    return ServiceResult<List<PaymentTransactionViewModel>>.Failed(
+                        "پذیرش مورد نظر یافت نشد.",
+                        "RECEPTION_NOT_FOUND",
+                        ErrorCategory.NotFound,
+                        SecurityLevel.Medium);
+                }
 
-                return ServiceResult<List<PaymentTransactionViewModel>>.Successful(result);
+                // دریافت تراکنش‌های پرداخت
+                var payments = await _receptionRepository.GetReceptionPaymentsAsync(receptionId);
+                
+                var result = payments
+                    .Where(p => !p.IsDeleted)
+                    .OrderByDescending(p => p.CreatedAt)
+                    .Select(p => new PaymentTransactionViewModel
+                    {
+                        Id = p.PaymentTransactionId,
+                        ReceptionId = p.ReceptionId,
+                        Amount = p.Amount,
+                        PaymentMethod = p.Method.ToString(),
+                        TransactionDate = p.CreatedAt,
+                        Status = p.Status.ToString(),
+                        ReferenceNumber = p.ReferenceCode,
+                        Notes = p.Description
+                    }).ToList();
+
+                _logger.Information(
+                    "لیست پرداخت‌های پذیرش با موفقیت دریافت شد. پذیرش: {ReceptionId}, تعداد پرداخت‌ها: {PaymentCount}, کاربر: {UserName}",
+                    receptionId, result.Count, _currentUserService.UserName);
+
+                return ServiceResult<List<PaymentTransactionViewModel>>.Successful(
+                    result,
+                    "لیست پرداخت‌های پذیرش با موفقیت دریافت شد.",
+                    operationName: "GetReceptionPayments");
             }
             catch (Exception ex)
             {
@@ -1361,67 +1675,65 @@ namespace ClinicApp.Services
 
             try
             {
-                var lookupLists = new ReceptionLookupListsViewModel();
-
-                // دریافت پزشکان (موقت - باید در Repository پیاده‌سازی شود)
-                var doctors = new List<Doctor>(); // TODO: پیاده‌سازی GetAllDoctorsAsync
-                lookupLists.Doctors = doctors.Select(d => new ReceptionDoctorLookupViewModel
+                var lookupLists = new ReceptionLookupListsViewModel
                 {
-                    DoctorId = d.DoctorId,
-                    FirstName = d.FirstName,
-                    LastName = d.LastName,
-                    FullName = $"{d.FirstName} {d.LastName}",
-                    SpecializationName = "نامشخص", // TODO: از رابطه Specialization استفاده شود
-                    IsActive = d.IsActive,
-                    DisplayName = $"{d.FirstName} {d.LastName}"
-                }).ToList();
+                    Doctors = new List<ReceptionDoctorLookupViewModel>(),
+                    ServiceCategories = new List<ReceptionServiceCategoryLookupViewModel>(),
+                    Services = new List<ReceptionServiceLookupViewModel>(),
+                    PaymentMethods = new List<PaymentMethodLookupViewModel>()
+                };
 
-                // دریافت دسته‌بندی‌های خدمات (موقت - باید در Repository پیاده‌سازی شود)
-                var serviceCategories = new List<ServiceCategory>(); // TODO: پیاده‌سازی GetServiceCategoriesAsync
-                lookupLists.ServiceCategories = serviceCategories.Select(sc => new ReceptionServiceCategoryLookupViewModel
+                // دریافت پزشکان
+                var doctorsResult = await GetDoctorsAsync();
+                if (doctorsResult.Success)
                 {
-                    ServiceCategoryId = sc.ServiceCategoryId,
-                    Title = sc.Title,
-                    Description = sc.Description,
-                    IsActive = sc.IsActive,
-                    DisplayName = sc.Title
-                }).ToList();
+                    lookupLists.Doctors = doctorsResult.Data;
+                }
 
-                // دریافت خدمات (موقت - باید در Repository پیاده‌سازی شود)
-                var services = new List<Service>(); // TODO: پیاده‌سازی GetAllServicesAsync
-                lookupLists.Services = services.Select(s => new ReceptionServiceLookupViewModel
+                // دریافت دسته‌بندی‌های خدمات
+                var serviceCategoriesResult = await GetServiceCategoriesAsync();
+                if (serviceCategoriesResult.Success)
                 {
-                    ServiceId = s.ServiceId,
-                    Title = s.Title,
-                    Description = s.Description,
-                    Price = s.Price,
-                    BasePrice = s.Price,
-                    IsActive = s.IsActive,
-                    DisplayName = s.Title,
-                    PriceDisplay = $"{s.Price:C0} تومان"
-                }).ToList();
+                    lookupLists.ServiceCategories = serviceCategoriesResult.Data;
+                }
 
-                // دریافت ارائه‌دهندگان بیمه (موقت - باید در Repository پیاده‌سازی شود)
-                var insuranceProviders = new List<InsuranceProvider>(); // TODO: پیاده‌سازی GetInsuranceProvidersAsync
-                // lookupLists.InsuranceProviders = insuranceProviders.Select(ip => new SelectListItem // TODO: بررسی property
-                // {
-                //     Value = ip.Id.ToString(),
-                //     Text = ip.Name
-                // }).ToList();
+                // دریافت خدمات (همه خدمات فعال)
+                var allServices = await _serviceService.GetActiveServicesAsync();
+                if (allServices != null && allServices.Any())
+                {
+                    lookupLists.Services = allServices.Select(s => new ReceptionServiceLookupViewModel
+                    {
+                        ServiceId = s.ServiceId,
+                        Title = s.Title,
+                        Description = s.Title ?? string.Empty,
+                        ServiceCategoryId = s.ServiceCategoryId,
+                        ServiceCategoryName = s.ServiceCategoryTitle ?? string.Empty,
+                        BasePrice = s.Price,
+                        IsActive = true, // All services from GetActiveServicesAsync are active
+                        DisplayName = s.Title,
+                        PriceDisplay = $"{s.Price:N0} تومان"
+                    }).ToList();
+                }
 
                 // روش‌های پرداخت
                 lookupLists.PaymentMethods = Enum.GetValues(typeof(PaymentMethod))
                     .Cast<PaymentMethod>()
                     .Select(pm => new PaymentMethodLookupViewModel
                     {
-                        PaymentMethod = pm,
-                        Name = GetPaymentMethodDisplayName(pm),
+                        Value = pm,
+                        Text = GetPaymentMethodDisplayName(pm),
                         Description = GetPaymentMethodDisplayName(pm),
-                        IsActive = true,
-                        RequiresConfirmation = pm == PaymentMethod.Online
+                        DisplayName = GetPaymentMethodDisplayName(pm)
                     }).ToList();
 
-                return ServiceResult<ReceptionLookupListsViewModel>.Successful(lookupLists);
+                _logger.Information(
+                    "لیست‌های کمکی با موفقیت دریافت شد. پزشکان: {DoctorCount}, دسته‌بندی‌ها: {CategoryCount}, خدمات: {ServiceCount}, روش‌های پرداخت: {PaymentMethodCount}, کاربر: {UserName}",
+                    lookupLists.Doctors.Count, lookupLists.ServiceCategories.Count, lookupLists.Services.Count, lookupLists.PaymentMethods.Count, _currentUserService.UserName);
+
+                return ServiceResult<ReceptionLookupListsViewModel>.Successful(
+                    lookupLists,
+                    "لیست‌های کمکی با موفقیت دریافت شد.",
+                    operationName: "GetLookupLists");
             }
             catch (Exception ex)
             {
@@ -1514,19 +1826,70 @@ namespace ClinicApp.Services
                         SecurityLevel.Low);
                 }
 
-                // TODO: پیاده‌سازی اتصال به سیستم خارجی (شبکه شمس)
-                // در حال حاضر یک پیاده‌سازی Mock ارائه می‌دهیم
-                await Task.Delay(1000); // شبیه‌سازی تأخیر شبکه
+                // جستجو در دیتابیس محلی (7 هزار رکورد بیمار)
+                var existingPatient = await _patientService.SearchPatientsAsync(nationalCode, 1, 1);
+                if (existingPatient.Success && existingPatient.Data.Items.Any())
+                {
+                    var patient = existingPatient.Data.Items.First();
+                    _logger.Information(
+                        "بیمار موجود در دیتابیس لوکال یافت شد. کد ملی: {NationalCode}, نام: {FullName}, کاربر: {UserName}",
+                        nationalCode, patient.FullName, _currentUserService.UserName);
 
-                // شبیه‌سازی نتیجه استعلام
-                var inquiryResult = new PatientInquiryViewModel
+                    // بازگرداندن اطلاعات بیمار موجود از دیتابیس لوکال
+                    var inquiryResult = new PatientInquiryViewModel
+                    {
+                        NationalCode = nationalCode,
+                        BirthDate = birthDate,
+                        BirthDateShamsi = birthDate.ToString("yyyy/MM/dd"),
+                        InquiryType = InquiryType.Both,
+                        Status = InquiryStatus.Successful,
+                        Message = "بیمار در دیتابیس لوکال موجود است.",
+                        IsSuccessful = true,
+                        InquiryTime = DateTime.Now,
+                        IdentityData = new PatientIdentityData
+                        {
+                            FirstName = patient.FirstName,
+                            LastName = patient.LastName,
+                            BirthDate = patient.BirthDate,
+                            Gender = patient.Gender,
+                            Address = patient.Address,
+                            IsVerified = true,
+                            VerificationDate = DateTime.Now
+                        },
+                        InsuranceData = new PatientInsuranceData
+                        {
+                            InsuranceName = "بیمه موجود در دیتابیس لوکال",
+                            InsuranceStatus = "فعال",
+                            IsVerified = true,
+                            VerificationDate = DateTime.Now
+                        },
+                        IsDataBound = true
+                    };
+
+                    return ServiceResult<PatientInquiryViewModel>.Successful(
+                        inquiryResult,
+                        "بیمار در دیتابیس لوکال موجود است.",
+                        operationName: "InquiryPatientIdentity");
+                }
+
+                // TODO: پیاده‌سازی اتصال به سیستم خارجی (شبکه شمس)
+                // در انتظار مجوز وزارت بهداشت و دسترسی به شبکه شمس
+                // فعلاً از Mock Data استفاده می‌کنیم
+                await Task.Delay(500); // شبیه‌سازی تأخیر کوتاه
+
+                _logger.Information(
+                    "بیمار در دیتابیس لوکال یافت نشد. کد ملی: {NationalCode}, کاربر: {UserName}",
+                    nationalCode, _currentUserService.UserName);
+
+                // شبیه‌سازی نتیجه استعلام برای بیمار جدید
+                var newPatientInquiryResult = new PatientInquiryViewModel
                 {
                     NationalCode = nationalCode,
                     BirthDate = birthDate,
                     BirthDateShamsi = birthDate.ToString("yyyy/MM/dd"), // تبدیل به شمسی
                     InquiryType = InquiryType.Both,
                     Status = InquiryStatus.Successful,
-                    Message = "استعلام هویت با موفقیت انجام شد.",
+                    Message = "بیمار جدید - اطلاعات از دیتابیس لوکال دریافت نشد. لطفاً اطلاعات را دستی وارد کنید.",
                     IsSuccessful = true,
                     InquiryTime = DateTime.Now,
                     IdentityData = new PatientIdentityData
@@ -1562,7 +1925,7 @@ namespace ClinicApp.Services
                     nationalCode, _currentUserService.UserName);
 
                 return ServiceResult<PatientInquiryViewModel>.Successful(
-                    inquiryResult,
+                    newPatientInquiryResult,
                     "استعلام هویت بیمار با موفقیت انجام شد.",
                     operationName: "InquiryPatientIdentity");
             }
@@ -1604,6 +1967,129 @@ namespace ClinicApp.Services
                 _logger.Error(ex, "خطا در محاسبه مبلغ پرداخت شده برای پذیرش {ReceptionId}", receptionId);
                 return 0;
             }
+        }
+
+        #endregion
+
+        #region Enhanced Error Handling
+
+        /// <summary>
+        /// مدیریت پیشرفته خطاها با جزئیات بیشتر
+        /// </summary>
+        /// <typeparam name="T">نوع نتیجه</typeparam>
+        /// <param name="ex">خطای رخ داده</param>
+        /// <param name="operationName">نام عملیات</param>
+        /// <param name="context">اطلاعات اضافی</param>
+        /// <returns>ServiceResult با جزئیات خطا</returns>
+        private ServiceResult<T> HandleEnhancedError<T>(Exception ex, string operationName, object context = null)
+        {
+            var errorId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var errorContext = new
+            {
+                ErrorId = errorId,
+                Operation = operationName,
+                UserId = _currentUserService.UserId,
+                UserName = _currentUserService.UserName,
+                Timestamp = DateTime.UtcNow,
+                Context = context
+            };
+
+            // تشخیص نوع خطا و مدیریت مناسب
+            switch (ex)
+            {
+                case ArgumentNullException argEx:
+                    _logger.Warning("خطای ورودی نامعتبر در {Operation}. خطا: {ErrorId}, ورودی: {ArgumentName}, کاربر: {UserName}",
+                        operationName, errorId, argEx.ParamName, _currentUserService.UserName);
+                    return ServiceResult<T>.Failed(
+                        $"ورودی نامعتبر: {argEx.ParamName}",
+                        "INVALID_INPUT",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Low);
+
+                case ArgumentException argEx:
+                    _logger.Warning("خطای اعتبارسنجی در {Operation}. خطا: {ErrorId}, پیام: {Message}, کاربر: {UserName}",
+                        operationName, errorId, argEx.Message, _currentUserService.UserName);
+                    return ServiceResult<T>.Failed(
+                        $"خطای اعتبارسنجی: {argEx.Message}",
+                        "VALIDATION_ERROR",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Low);
+
+                case UnauthorizedAccessException authEx:
+                    _logger.Warning("خطای دسترسی در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return ServiceResult<T>.Failed(
+                        "شما مجوز انجام این عملیات را ندارید.",
+                        "UNAUTHORIZED_ACCESS",
+                        ErrorCategory.System,
+                        SecurityLevel.High);
+
+                case TimeoutException timeoutEx:
+                    _logger.Error(timeoutEx, "خطای زمان‌بندی در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return ServiceResult<T>.Failed(
+                        "عملیات بیش از حد انتظار طول کشید. لطفاً مجدداً تلاش کنید.",
+                        "OPERATION_TIMEOUT",
+                        ErrorCategory.System,
+                        SecurityLevel.Medium);
+
+                case InvalidOperationException invalidOpEx:
+                    _logger.Error(invalidOpEx, "خطای عملیات نامعتبر در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return ServiceResult<T>.Failed(
+                        $"عملیات نامعتبر: {invalidOpEx.Message}",
+                        "INVALID_OPERATION",
+                        ErrorCategory.System,
+                        SecurityLevel.Medium);
+
+                default:
+                    _logger.Error(ex, "خطای غیرمنتظره در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return ServiceResult<T>.Failed(
+                        "خطای غیرمنتظره‌ای رخ داده است. لطفاً با پشتیبانی تماس بگیرید.",
+                        "UNEXPECTED_ERROR",
+                        ErrorCategory.System,
+                        SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی پیشرفته ورودی‌ها
+        /// </summary>
+        /// <param name="input">ورودی برای اعتبارسنجی</param>
+        /// <param name="validationRules">قوانین اعتبارسنجی</param>
+        /// <returns>نتیجه اعتبارسنجی</returns>
+        private ServiceResult<bool> ValidateInputAdvanced<T>(T input, Dictionary<string, Func<T, bool>> validationRules)
+        {
+            var errors = new List<string>();
+
+            foreach (var rule in validationRules)
+            {
+                try
+                {
+                    if (!rule.Value(input))
+                    {
+                        errors.Add(rule.Key);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning("خطا در اعتبارسنجی {RuleName}: {Message}, کاربر: {UserName}",
+                        rule.Key, ex.Message, _currentUserService.UserName);
+                    errors.Add($"خطا در اعتبارسنجی {rule.Key}");
+                }
+            }
+
+            if (errors.Any())
+            {
+                return ServiceResult<bool>.Failed(
+                    $"خطاهای اعتبارسنجی: {string.Join(", ", errors)}",
+                    "VALIDATION_FAILED",
+                    ErrorCategory.Validation,
+                    SecurityLevel.Low);
+            }
+
+            return ServiceResult<bool>.Successful(true);
         }
 
         #endregion

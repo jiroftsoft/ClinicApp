@@ -118,7 +118,7 @@ namespace ClinicApp.ViewModels.Validators.Payment
     /// <summary>
     /// Validator برای جستجوی تراکنش‌های پرداخت
     /// </summary>
-    public class PaymentTransactionSearchViewModelValidator : AbstractValidator<ClinicApp.ViewModels.Payment.PaymentTransactionListViewModel.PaymentTransactionSearchViewModel>
+    public class PaymentTransactionSearchViewModelValidator : AbstractValidator<ClinicApp.ViewModels.Payment.PaymentTransactionSearchViewModel>
     {
         public PaymentTransactionSearchViewModelValidator()
         {
@@ -341,7 +341,7 @@ namespace ClinicApp.ViewModels.Validators.Payment
     /// <summary>
     /// Validator برای Lookup روش‌های پرداخت
     /// </summary>
-    public class PaymentMethodLookupViewModelValidator : AbstractValidator<PaymentMethodLookupViewModel>
+    public class PaymentMethodLookupViewModelValidator : AbstractValidator<ClinicApp.ViewModels.Payment.PaymentMethodLookupViewModel>
     {
         public PaymentMethodLookupViewModelValidator()
         {

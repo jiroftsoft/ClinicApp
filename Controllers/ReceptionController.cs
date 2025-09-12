@@ -38,6 +38,7 @@ namespace ClinicApp.Controllers
     /// طبق AI_COMPLIANCE_CONTRACT: قانون 26 - جلوگیری از تکرار در کنترلرها
     /// </summary>
     //[Authorize(Roles = "Receptionist,Admin")]
+    //[RequireHttps] // Force HTTPS in production
     public class ReceptionController : BaseController
     {
         #region Fields and Constructor
@@ -75,10 +76,12 @@ namespace ClinicApp.Controllers
             {
                 StartDate = DateTime.Today,
                 EndDate = DateTime.Today.AddDays(7),
+                StartDateShamsi = "", // مقدار اولیه خالی
+                EndDateShamsi = "", // مقدار اولیه خالی
                 StatusList = GetReceptionStatusList(),
                 TypeList = GetReceptionTypeList(),
                 PaymentMethodList = GetPaymentMethodList(),
-                InsuranceList = new List<SelectListItem>() // TODO: اضافه کردن لیست بیمه‌ها
+                InsuranceList = GetInsuranceList()
             };
 
             return View(model);
@@ -99,7 +102,7 @@ namespace ClinicApp.Controllers
         /// </summary>
         /// <returns>فرم ایجاد پذیرش</returns>
         [HttpGet]
-        public ActionResult Create()
+        public async Task<ActionResult> Create()
         {
             _logger.Information(
                 "ورود به صفحه ایجاد پذیرش جدید. کاربر: {UserName}",
@@ -110,10 +113,14 @@ namespace ClinicApp.Controllers
                 var model = new ReceptionCreateViewModel
                 {
                     ReceptionDate = DateTime.Now,
-                    ReceptionDateShamsi = DateTime.Now.ToPersianDateTime(),
+                    ReceptionDateShamsi = "", // مقدار اولیه خالی طبق قرارداد
+                    BirthDateShamsiForInquiry = "", // مقدار اولیه خالی طبق قرارداد
                     IsEmergency = false,
                     IsOnlineReception = false
                 };
+
+                // ✅ پر کردن Lookup Lists
+                await PopulateCreateViewModel(model);
 
                 return View(model);
             }
@@ -179,6 +186,8 @@ namespace ClinicApp.Controllers
         /// <returns>اطلاعات بیمار</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [OutputCache(Duration = 300, VaryByParam = "nationalCode")] // Cache for 5 minutes
+        // Rate limiting will be implemented with custom middleware
         public async Task<JsonResult> LookupPatientByNationalCode(string nationalCode)
         {
             _logger.Information(
@@ -187,9 +196,22 @@ namespace ClinicApp.Controllers
 
             try
             {
+                // Security Headers
+                Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                Response.Headers.Add("X-Frame-Options", "DENY");
+                Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+                Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+
+                // Security validation
                 if (!ValidateRequiredField(nationalCode, "کد ملی"))
                 {
                     return HandleModelStateErrors();
+                }
+
+                // Additional security checks
+                if (!IsValidNationalCode(nationalCode))
+                {
+                    return Json(new { success = false, message = "کد ملی نامعتبر است." }, JsonRequestBehavior.AllowGet);
                 }
 
                 var result = await _receptionService.LookupPatientByNationalCodeAsync(nationalCode);
@@ -209,32 +231,38 @@ namespace ClinicApp.Controllers
         /// <summary>
         /// جستجوی بیماران بر اساس نام (AJAX)
         /// </summary>
-        /// <param name="name">نام بیمار</param>
+        /// <param name="searchTerm">نام بیمار</param>
         /// <param name="pageNumber">شماره صفحه</param>
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>لیست بیماران</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> SearchPatientsByName(string name, int pageNumber = 1, int pageSize = 10)
+        [HttpGet]
+        public async Task<JsonResult> SearchPatientsByName(string searchTerm, int pageNumber = 1, int pageSize = 10)
         {
             _logger.Information(
-                "جستجوی بیماران بر اساس نام. نام: {Name}, صفحه: {PageNumber}, اندازه: {PageSize}, کاربر: {UserName}",
-                name, pageNumber, pageSize, _currentUserService.UserName);
+                "جستجوی بیماران بر اساس نام. نام: {SearchTerm}, صفحه: {PageNumber}, اندازه: {PageSize}, کاربر: {UserName}",
+                searchTerm, pageNumber, pageSize, _currentUserService.UserName);
 
             try
             {
-                if (!ValidateRequiredField(name, "نام بیمار"))
+                if (!ValidateRequiredField(searchTerm, "نام بیمار"))
                 {
                     return HandleModelStateErrors();
                 }
 
-                var result = await _receptionService.SearchPatientsByNameAsync(name, pageNumber, pageSize);
+                var result = await _receptionService.SearchPatientsByNameAsync(searchTerm, pageNumber, pageSize);
                 if (!result.Success)
                 {
                     return HandleServiceError(result);
                 }
 
-                return SuccessResponse(result.Data, "جستجوی بیماران با موفقیت انجام شد.");
+                return Json(new
+                {
+                    success = true,
+                    data = result.Data,
+                    message = "جستجوی بیماران با موفقیت انجام شد.",
+                    timestamp = DateTime.Now,
+                    requestId = Guid.NewGuid().ToString("N").Substring(0, 8)
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -284,8 +312,7 @@ namespace ClinicApp.Controllers
         /// دریافت لیست دسته‌بندی‌های خدمات (AJAX)
         /// </summary>
         /// <returns>لیست دسته‌بندی‌های خدمات</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpGet]
         public async Task<JsonResult> GetServiceCategories()
         {
             _logger.Information(
@@ -325,16 +352,16 @@ namespace ClinicApp.Controllers
             {
                 if (categoryId <= 0)
                 {
-                    return Json(new { success = false, message = "شناسه دسته‌بندی نامعتبر است." });
+                    return Json(new { success = false, message = "شناسه دسته‌بندی نامعتبر است." }, JsonRequestBehavior.AllowGet);
                 }
 
                 var result = await _receptionService.GetServicesByCategoryAsync(categoryId);
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = true, data = result.Data });
+                return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -342,7 +369,7 @@ namespace ClinicApp.Controllers
                     "خطا در دریافت لیست خدمات. دسته‌بندی: {CategoryId}, کاربر: {UserName}",
                     categoryId, _currentUserService.UserName);
 
-                return Json(new { success = false, message = "خطا در دریافت لیست خدمات." });
+                return Json(new { success = false, message = "خطا در دریافت لیست خدمات." }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -350,8 +377,7 @@ namespace ClinicApp.Controllers
         /// دریافت لیست پزشکان (AJAX)
         /// </summary>
         /// <returns>لیست پزشکان</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpGet]
         public async Task<JsonResult> GetDoctors()
         {
             _logger.Information(
@@ -363,10 +389,10 @@ namespace ClinicApp.Controllers
                 var result = await _receptionService.GetDoctorsAsync();
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = true, data = result.Data });
+                return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -374,7 +400,7 @@ namespace ClinicApp.Controllers
                     "خطا در دریافت لیست پزشکان. کاربر: {UserName}",
                     _currentUserService.UserName);
 
-                return Json(new { success = false, message = "خطا در دریافت لیست پزشکان." });
+                return Json(new { success = false, message = "خطا در دریافت لیست پزشکان." }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -404,7 +430,7 @@ namespace ClinicApp.Controllers
                 if (!validationResult.IsValid)
                 {
                     var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors });
+                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors }, JsonRequestBehavior.AllowGet);
                 }
 
                 if (!ModelState.IsValid)
@@ -414,16 +440,16 @@ namespace ClinicApp.Controllers
                         .Select(e => e.ErrorMessage)
                         .ToList();
 
-                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors });
+                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors }, JsonRequestBehavior.AllowGet);
                 }
 
                 var result = await _receptionService.CreateReceptionAsync(model);
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = true, data = result.Data, redirectUrl = Url.Action("Details", new { id = result.Data.ReceptionId }) });
+                return Json(new { success = true, data = result.Data, redirectUrl = Url.Action("Details", new { id = result.Data.ReceptionId }) }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -431,7 +457,7 @@ namespace ClinicApp.Controllers
                     "خطا در ایجاد پذیرش. بیمار: {PatientId}, کاربر: {UserName}",
                     model?.PatientId, _currentUserService.UserName);
 
-                return Json(new { success = false, message = "خطا در ایجاد پذیرش. لطفاً مجدداً تلاش کنید." });
+                return Json(new { success = false, message = "خطا در ایجاد پذیرش. لطفاً مجدداً تلاش کنید." }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -457,7 +483,7 @@ namespace ClinicApp.Controllers
                 if (!validationResult.IsValid)
                 {
                     var errors = validationResult.Errors.Select(e => e.ErrorMessage).ToList();
-                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors });
+                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors }, JsonRequestBehavior.AllowGet);
                 }
 
                 if (!ModelState.IsValid)
@@ -467,16 +493,16 @@ namespace ClinicApp.Controllers
                         .Select(e => e.ErrorMessage)
                         .ToList();
 
-                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors });
+                    return Json(new { success = false, message = "اطلاعات وارد شده نامعتبر است.", errors = errors }, JsonRequestBehavior.AllowGet);
                 }
 
                 var result = await _receptionService.UpdateReceptionAsync(model);
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = true, data = result.Data, message = "پذیرش با موفقیت ویرایش شد." });
+                return Json(new { success = true, data = result.Data, message = "پذیرش با موفقیت ویرایش شد." }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -484,7 +510,7 @@ namespace ClinicApp.Controllers
                     "خطا در ویرایش پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
                     model?.ReceptionId, _currentUserService.UserName);
 
-                return Json(new { success = false, message = "خطا در ویرایش پذیرش. لطفاً مجدداً تلاش کنید." });
+                return Json(new { success = false, message = "خطا در ویرایش پذیرش. لطفاً مجدداً تلاش کنید." }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -517,10 +543,10 @@ namespace ClinicApp.Controllers
                 var result = await _receptionService.GetReceptionsAsync(patientId, doctorId, receptionStatus, searchTerm, pageNumber, pageSize);
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = true, data = result.Data });
+                return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -528,7 +554,7 @@ namespace ClinicApp.Controllers
                     "خطا در دریافت لیست پذیرش‌ها. کاربر: {UserName}",
                     _currentUserService.UserName);
 
-                return Json(new { success = false, message = "خطا در دریافت لیست پذیرش‌ها." });
+                return Json(new { success = false, message = "خطا در دریافت لیست پذیرش‌ها." }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -577,9 +603,544 @@ namespace ClinicApp.Controllers
             }
         }
 
+        /// <summary>
+        /// ایجاد پذیرش جدید
+        /// </summary>
+        /// <param name="model">مدل ایجاد پذیرش</param>
+        /// <returns>نتیجه ایجاد</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Create(ReceptionCreateViewModel model)
+        {
+            _logger.Information(
+                "درخواست ایجاد پذیرش جدید. بیمار: {PatientId}, پزشک: {DoctorId}, کاربر: {UserName}",
+                model.PatientId, model.DoctorId, _currentUserService.UserName);
+
+            try
+            {
+                // ✅ پردازش فیلدهای شمسی طبق قرارداد
+                if (!string.IsNullOrEmpty(model.ReceptionDateShamsi))
+                {
+                    model.ReceptionDate = model.ReceptionDateShamsi.ToDateTimeFromPersian();
+                }
+                
+                if (!string.IsNullOrEmpty(model.BirthDateShamsiForInquiry))
+                {
+                    model.BirthDateForInquiry = model.BirthDateShamsiForInquiry.ToDateTimeFromPersianNullable();
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    await PopulateCreateViewModel(model);
+                    return View(model);
+                }
+
+                var result = await _receptionService.CreateReceptionAsync(model);
+
+                if (!result.Success)
+                {
+                    await PopulateCreateViewModel(model);
+                    TempData["ErrorMessage"] = result.Message;
+                    return View(model);
+                }
+
+                _logger.Information(
+                    "پذیرش با موفقیت ایجاد شد. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    result.Data?.ReceptionId, _currentUserService.UserName);
+
+                TempData["SuccessMessage"] = "پذیرش با موفقیت ایجاد شد.";
+                return RedirectToAction("Details", new { id = result.Data?.ReceptionId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در ایجاد پذیرش. بیمار: {PatientId}, پزشک: {DoctorId}, کاربر: {UserName}",
+                    model.PatientId, model.DoctorId, _currentUserService.UserName);
+
+                await PopulateCreateViewModel(model);
+                TempData["ErrorMessage"] = "خطا در ایجاد پذیرش. لطفاً مجدداً تلاش کنید.";
+                return View(model);
+            }
+        }
+
+        /// <summary>
+        /// صفحه ویرایش پذیرش
+        /// </summary>
+        /// <param name="id">شناسه پذیرش</param>
+        /// <returns>فرم ویرایش پذیرش</returns>
+        [HttpGet]
+        public async Task<ActionResult> Edit(int id)
+        {
+            _logger.Information(
+                "درخواست ویرایش پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                id, _currentUserService.UserName);
+
+            try
+            {
+                var result = await _receptionService.GetReceptionDetailsAsync(id);
+
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Index");
+                }
+
+                var editModel = new ReceptionEditViewModel
+                {
+                    ReceptionId = result.Data.ReceptionId,
+                    PatientId = result.Data.PatientId,
+                    PatientFullName = result.Data.PatientFullName,
+                    DoctorId = result.Data.DoctorId,
+                    DoctorFullName = result.Data.DoctorFullName,
+                    ReceptionDate = DateTime.Parse(result.Data.ReceptionDate),
+                    ReceptionDateShamsi = DateTime.Parse(result.Data.ReceptionDate).ToPersianDateString(),
+                    IsEmergency = result.Data.Type == "اورژانس",
+                    Notes = result.Data.Notes,
+                    Status = ParseReceptionStatus(result.Data.Status)
+                };
+
+                await PopulateEditViewModel(editModel);
+                return View(editModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در نمایش فرم ویرایش پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    id, _currentUserService.UserName);
+
+                TempData["ErrorMessage"] = "خطا در نمایش فرم ویرایش. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// ویرایش پذیرش
+        /// </summary>
+        /// <param name="model">مدل ویرایش پذیرش</param>
+        /// <returns>نتیجه ویرایش</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> Edit(ReceptionEditViewModel model)
+        {
+            _logger.Information(
+                "درخواست ویرایش پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                model.ReceptionId, _currentUserService.UserName);
+
+            try
+            {
+                // ✅ پردازش فیلدهای شمسی طبق قرارداد
+                if (!string.IsNullOrEmpty(model.ReceptionDateShamsi))
+                {
+                    model.ReceptionDate = model.ReceptionDateShamsi.ToDateTimeFromPersian();
+                }
+
+                if (!ModelState.IsValid)
+                {
+                    await PopulateEditViewModel(model);
+                    return View(model);
+                }
+
+                var result = await _receptionService.UpdateReceptionAsync(model);
+
+                if (!result.Success)
+                {
+                    await PopulateEditViewModel(model);
+                    TempData["ErrorMessage"] = result.Message;
+                    return View(model);
+                }
+
+                _logger.Information(
+                    "پذیرش با موفقیت ویرایش شد. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    model.ReceptionId, _currentUserService.UserName);
+
+                TempData["SuccessMessage"] = "پذیرش با موفقیت ویرایش شد.";
+                return RedirectToAction("Details", new { id = model.ReceptionId });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در ویرایش پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    model.ReceptionId, _currentUserService.UserName);
+
+                await PopulateEditViewModel(model);
+                TempData["ErrorMessage"] = "خطا در ویرایش پذیرش. لطفاً مجدداً تلاش کنید.";
+                return View(model);
+            }
+        }
+
+        /// <summary>
+        /// صفحه حذف پذیرش
+        /// </summary>
+        /// <param name="id">شناسه پذیرش</param>
+        /// <returns>فرم حذف پذیرش</returns>
+        [HttpGet]
+        public async Task<ActionResult> Delete(int id)
+        {
+            _logger.Information(
+                "درخواست حذف پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                id, _currentUserService.UserName);
+
+            try
+            {
+                var result = await _receptionService.GetReceptionDetailsAsync(id);
+
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Index");
+                }
+
+                return View(result.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در نمایش فرم حذف پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    id, _currentUserService.UserName);
+
+                TempData["ErrorMessage"] = "خطا در نمایش فرم حذف. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// حذف پذیرش
+        /// </summary>
+        /// <param name="id">شناسه پذیرش</param>
+        /// <returns>نتیجه حذف</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [ActionName("Delete")]
+        public async Task<ActionResult> DeleteConfirmed(int id)
+        {
+            _logger.Information(
+                "درخواست حذف پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                id, _currentUserService.UserName);
+
+            try
+            {
+                var result = await _receptionService.DeleteReceptionAsync(id);
+
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Index");
+                }
+
+                _logger.Information(
+                    "پذیرش با موفقیت حذف شد. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    id, _currentUserService.UserName);
+
+                TempData["SuccessMessage"] = "پذیرش با موفقیت حذف شد.";
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در حذف پذیرش. شناسه: {ReceptionId}, کاربر: {UserName}",
+                    id, _currentUserService.UserName);
+
+                TempData["ErrorMessage"] = "خطا در حذف پذیرش. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// جستجوی پذیرش‌ها
+        /// </summary>
+        /// <param name="model">مدل جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتایج جستجو</returns>
+        [HttpPost]
+        public async Task<ActionResult> Search(ReceptionSearchViewModel model, int pageNumber = 1, int pageSize = 20)
+        {
+            _logger.Information(
+                "درخواست جستجوی پذیرش‌ها. صفحه: {PageNumber}, اندازه: {PageSize}, کاربر: {UserName}",
+                pageNumber, pageSize, _currentUserService.UserName);
+
+            try
+            {
+                var result = await _receptionService.GetReceptionsAsync(null, null, null, null, pageNumber, pageSize);
+
+                if (!result.Success)
+                {
+                    TempData["ErrorMessage"] = result.Message;
+                    return RedirectToAction("Index");
+                }
+
+                var viewModel = new ReceptionIndexViewModel
+                {
+                    ReceptionId = 0, // Multiple receptions handled in search results
+                    PatientFullName = "نتایج جستجو",
+                    DoctorFullName = "",
+                    ReceptionDate = DateTime.Now.ToString("yyyy/MM/dd"),
+                    TotalAmount = result.Data?.Items?.Sum(r => r.TotalAmount) ?? 0,
+                    Status = "نتایج جستجو"
+                };
+
+                return View("Index", viewModel);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در جستجوی پذیرش‌ها. صفحه: {PageNumber}, اندازه: {PageSize}, کاربر: {UserName}",
+                    pageNumber, pageSize, _currentUserService.UserName);
+
+                TempData["ErrorMessage"] = "خطا در جستجوی پذیرش‌ها. لطفاً مجدداً تلاش کنید.";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست پذیرش‌ها برای AJAX (JSON)
+        /// </summary>
+        /// <param name="patientNationalCode">کد ملی بیمار</param>
+        /// <param name="patientName">نام بیمار</param>
+        /// <param name="doctorName">نام پزشک</param>
+        /// <param name="status">وضعیت پذیرش</param>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <param name="type">نوع پذیرش</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>JSON response</returns>
+        [HttpGet]
+        public async Task<JsonResult> GetReceptions(
+            string patientNationalCode = null,
+            string patientName = null,
+            string doctorName = null,
+            string status = null,
+            string startDate = null,
+            string endDate = null,
+            string startDateShamsi = null,
+            string endDateShamsi = null,
+            string type = null,
+            int pageNumber = 1,
+            int pageSize = 20)
+        {
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            _logger.Information(
+                "درخواست AJAX دریافت پذیرش‌ها. RequestId: {RequestId}, صفحه: {PageNumber}, اندازه: {PageSize}, کاربر: {UserName}, پارامترها: {@Parameters}",
+                requestId, pageNumber, pageSize, _currentUserService.UserName, 
+                new { patientNationalCode, patientName, doctorName, status, startDate, endDate, type });
+
+            // حذف تست response - فعال کردن منطق اصلی
+
+            try
+            {
+                // تبدیل پارامترهای جستجو
+                DateTime? start = null;
+                DateTime? end = null;
+                ReceptionStatus? receptionStatus = null;
+                ReceptionType? receptionType = null;
+
+                // اولویت با فیلدهای شمسی
+                if (!string.IsNullOrEmpty(startDateShamsi))
+                {
+                    start = startDateShamsi.ToDateTimeFromPersian();
+                }
+                else if (!string.IsNullOrEmpty(startDate))
+                {
+                    if (DateTime.TryParse(startDate, out var parsedStart))
+                        start = parsedStart;
+                }
+
+                if (!string.IsNullOrEmpty(endDateShamsi))
+                {
+                    end = endDateShamsi.ToDateTimeFromPersian();
+                }
+                else if (!string.IsNullOrEmpty(endDate))
+                {
+                    if (DateTime.TryParse(endDate, out var parsedEnd))
+                        end = parsedEnd;
+                }
+
+                if (!string.IsNullOrEmpty(endDate))
+                {
+                    if (DateTime.TryParse(endDate, out var parsedEnd))
+                        end = parsedEnd;
+                }
+
+                if (!string.IsNullOrEmpty(status))
+                {
+                    if (Enum.TryParse<ReceptionStatus>(status, out var parsedStatus))
+                        receptionStatus = parsedStatus;
+                }
+
+                if (!string.IsNullOrEmpty(type))
+                {
+                    if (Enum.TryParse<ReceptionType>(type, out var parsedType))
+                        receptionType = parsedType;
+                }
+
+                // دریافت داده‌ها از سرویس
+                // TODO: نیاز به پیاده‌سازی GetReceptionsAsync با پارامترهای بیشتر
+                var result = await _receptionService.GetReceptionsAsync(
+                    null, // patientId
+                    null, // doctorId  
+                    receptionStatus,
+                    $"{patientNationalCode} {patientName} {doctorName}", // searchTerm
+                    pageNumber,
+                    pageSize);
+
+                if (!result.Success)
+                {
+                    _logger.Error("خطا در دریافت پذیرش‌ها از Service. پیام: {Message}, کد خطا: {ErrorCode}, کاربر: {UserName}",
+                        result.Message, result.Code, _currentUserService.UserName);
+                    
+                    return Json(new {
+                        success = false,
+                        message = result.Message ?? "خطا در دریافت لیست پذیرش‌ها",
+                        errorCode = result.Code ?? "SERVICE_ERROR",
+                        errorId = Guid.NewGuid().ToString("N").Substring(0, 8)
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                // تبدیل به فرمت مناسب برای UI
+                var responseData = new
+                {
+                    items = result.Data?.Items?.Select(r => new
+                    {
+                        receptionId = r.ReceptionId,
+                        patientFullName = r.PatientFullName ?? "نامشخص",
+                        patientNationalCode = r.PatientNationalCode ?? "نامشخص",
+                        doctorFullName = r.DoctorFullName ?? "نامشخص",
+                        receptionDate = r.ReceptionDate ?? "نامشخص",
+                        status = r.Status ?? "نامشخص",
+                        type = r.Type ?? "نامشخص",
+                        totalAmount = r.TotalAmount,
+                        paidAmount = r.PaidAmount,
+                        remainingAmount = r.RemainingAmount,
+                        paymentMethod = r.PaymentMethod ?? "نامشخص"
+                    }) ?? Enumerable.Empty<object>(),
+                    totalCount = result.Data?.TotalItems ?? 0,
+                    pageNumber = pageNumber,
+                    pageSize = pageSize,
+                    totalPages = result.Data?.TotalPages ?? 0
+                };
+
+                _logger.Information(
+                    "دریافت موفق پذیرش‌ها. RequestId: {RequestId}, تعداد: {Count}, صفحه: {PageNumber}, کاربر: {UserName}",
+                    requestId, result.Data?.Items?.Count ?? 0, pageNumber, _currentUserService.UserName);
+
+                // ساختار JSON استاندارد برای JavaScript
+                var standardResponse = new
+                {
+                    success = true,
+                    data = responseData,
+                    message = "لیست پذیرش‌ها با موفقیت دریافت شد.",
+                    timestamp = DateTime.UtcNow,
+                    requestId = Guid.NewGuid().ToString("N").Substring(0, 8)
+                };
+
+                return Json(standardResponse, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex,
+                    "خطا در دریافت پذیرش‌ها. RequestId: {RequestId}, صفحه: {PageNumber}, اندازه: {PageSize}, کاربر: {UserName}",
+                    requestId, pageNumber, pageSize, _currentUserService.UserName);
+
+                return Json(new {
+                    success = false,
+                    message = "خطا در دریافت پذیرش‌ها. لطفاً مجدداً تلاش کنید.",
+                    errorCode = "UNEXPECTED_ERROR",
+                    errorId = Guid.NewGuid().ToString("N").Substring(0, 8)
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+
         #endregion
 
         #region Helper Methods
+
+        /// <summary>
+        /// پر کردن ViewModel ایجاد با داده‌های مورد نیاز
+        /// </summary>
+        /// <param name="model">مدل ایجاد</param>
+        private async Task PopulateCreateViewModel(ReceptionCreateViewModel model)
+        {
+            try
+            {
+                // پیاده‌سازی Lookup Lists
+                var lookupLists = await GetReceptionLookupListsAsync();
+                
+                if (lookupLists.Success)
+                {
+                    // ✅ بهبود DoctorList
+                    model.DoctorList = lookupLists.Data.Doctors?.Select(d => new SelectListItem
+                    {
+                        Value = d.DoctorId.ToString(),
+                        Text = d.FullName,
+                        Selected = d.DoctorId == model.DoctorId
+                    }).ToList() ?? new List<SelectListItem>();
+
+                    // ✅ بهبود ServiceList
+                    model.ServiceList = lookupLists.Data.Services?.Select(s => new SelectListItem
+                    {
+                        Value = s.ServiceId.ToString(),
+                        Text = s.Title,
+                        Selected = model.SelectedServiceIds?.Contains(s.ServiceId) ?? false
+                    }).ToList() ?? new List<SelectListItem>();
+
+                    // ✅ بهبود PaymentMethodList
+                    model.PaymentMethodList = lookupLists.Data.PaymentMethods?.Select(p => new SelectListItem
+                    {
+                        Value = p.Value.ToString(),
+                        Text = p.Text,
+                        Selected = p.Value == model.PaymentMethod
+                    }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پر کردن ViewModel ایجاد پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// پر کردن ViewModel ویرایش با داده‌های مورد نیاز
+        /// </summary>
+        /// <param name="model">مدل ویرایش</param>
+        private async Task PopulateEditViewModel(ReceptionEditViewModel model)
+        {
+            try
+            {
+                // پیاده‌سازی Lookup Lists
+                var lookupLists = await GetReceptionLookupListsAsync();
+                
+                if (lookupLists.Success)
+                {
+                    model.DoctorList = lookupLists.Data.Doctors.Select(d => new SelectListItem
+                    {
+                        Value = d.DoctorId.ToString(),
+                        Text = d.FullName,
+                        Selected = d.DoctorId == model.DoctorId
+                    }).ToList();
+
+                    model.ServiceList = lookupLists.Data.Services.Select(s => new SelectListItem
+                    {
+                        Value = s.ServiceId.ToString(),
+                        Text = s.Title,
+                        Selected = model.SelectedServiceIds?.Contains(s.ServiceId) ?? false
+                    }).ToList();
+
+                    // اضافه کردن PaymentMethodList
+                    model.PaymentMethodList = lookupLists.Data.PaymentMethods.Select(p => new SelectListItem
+                    {
+                        Value = p.Value.ToString(),
+                        Text = p.Text,
+                        Selected = p.Value == model.PaymentMethod
+                    }).ToList();
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در پر کردن ViewModel ویرایش پذیرش");
+            }
+        }
 
         /// <summary>
         /// بررسی وجود خطا در ModelState
@@ -651,6 +1212,120 @@ namespace ClinicApp.Controllers
         }
 
         /// <summary>
+        /// دریافت لیست بیمه‌ها
+        /// </summary>
+        /// <returns>لیست بیمه‌ها</returns>
+        private List<SelectListItem> GetInsuranceList()
+        {
+            // TODO: پیاده‌سازی دریافت لیست بیمه‌ها از Repository
+            return new List<SelectListItem>
+            {
+                new SelectListItem { Value = "0", Text = "انتخاب بیمه", Selected = true },
+                new SelectListItem { Value = "1", Text = "تأمین اجتماعی", Selected = false },
+                new SelectListItem { Value = "2", Text = "خدمات درمانی", Selected = false },
+                new SelectListItem { Value = "3", Text = "نیروهای مسلح", Selected = false },
+                new SelectListItem { Value = "4", Text = "بیمه تکمیلی", Selected = false }
+            };
+        }
+
+        /// <summary>
+        /// دریافت لیست‌های Lookup برای فرم‌های پذیرش با Caching و Parallel Processing
+        /// </summary>
+        /// <returns>لیست‌های Lookup</returns>
+        private async Task<ServiceResult<ReceptionLookupListsViewModel>> GetReceptionLookupListsAsync()
+        {
+            try
+            {
+                // Cache key برای lookup lists
+                var cacheKey = "reception_lookup_lists";
+                var cachedData = HttpContext.Cache[cacheKey] as ReceptionLookupListsViewModel;
+                
+                if (cachedData != null)
+                {
+                    _logger.Debug("استفاده از cached lookup lists");
+                    return ServiceResult<ReceptionLookupListsViewModel>.Successful(cachedData);
+                }
+
+                var lookupLists = new ReceptionLookupListsViewModel
+                {
+                    Doctors = new List<ReceptionDoctorLookupViewModel>(),
+                    Patients = new List<ReceptionPatientLookupViewModel>(),
+                    Services = new List<ReceptionServiceLookupViewModel>(),
+                    PaymentMethods = GetPaymentMethodList().Select(p => new ClinicApp.ViewModels.Payment.PaymentMethodLookupViewModel
+                    {
+                        Value = (ClinicApp.Models.Enums.PaymentMethod)int.Parse(p.Value),
+                        Text = p.Text
+                    }).ToList()
+                };
+
+                // دریافت داده‌ها به صورت موازی برای بهبود Performance
+                var doctorsTask = _receptionService.GetDoctorsAsync();
+                var serviceCategoriesTask = _receptionService.GetServiceCategoriesAsync();
+                var allServicesTask = _receptionService.GetServicesByCategoryAsync(0); // 0 = همه خدمات
+
+                // انتظار برای تکمیل تمام Task ها
+                await Task.WhenAll(doctorsTask, serviceCategoriesTask, allServicesTask);
+
+                // پردازش نتایج
+                if (doctorsTask.Result.Success)
+                {
+                    lookupLists.Doctors = doctorsTask.Result.Data;
+                }
+
+                if (serviceCategoriesTask.Result.Success)
+                {
+                    lookupLists.ServiceCategories = serviceCategoriesTask.Result.Data;
+                }
+
+                if (allServicesTask.Result.Success)
+                {
+                    lookupLists.Services = allServicesTask.Result.Data;
+                }
+
+                // Cache کردن داده‌ها برای 15 دقیقه
+                HttpContext.Cache.Insert(cacheKey, lookupLists, null, 
+                    DateTime.Now.AddMinutes(15), TimeSpan.Zero);
+
+                _logger.Debug("Lookup lists cached for 15 minutes");
+                return ServiceResult<ReceptionLookupListsViewModel>.Successful(lookupLists);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت لیست‌های Lookup");
+                return ServiceResult<ReceptionLookupListsViewModel>.Failed("خطا در دریافت لیست‌های Lookup");
+            }
+        }
+
+        /// <summary>
+        /// تبدیل رشته وضعیت به enum
+        /// </summary>
+        /// <param name="statusString">رشته وضعیت</param>
+        /// <returns>enum وضعیت</returns>
+        private ReceptionStatus ParseReceptionStatus(string statusString)
+        {
+            if (string.IsNullOrWhiteSpace(statusString))
+                return ReceptionStatus.Pending;
+
+            switch (statusString.ToLower())
+            {
+                case "تکمیل شده":
+                case "completed":
+                    return ReceptionStatus.Completed;
+                case "در انتظار":
+                case "pending":
+                    return ReceptionStatus.Pending;
+                case "لغو شده":
+                case "cancelled":
+                    return ReceptionStatus.Cancelled;
+                case "عدم حضور":
+                case "no show":
+                    return ReceptionStatus.NoShow;
+                default:
+                    return ReceptionStatus.Pending;
+            }
+        }
+
+        /// <summary>
         /// دریافت نام نمایشی وضعیت پذیرش
         /// </summary>
         /// <param name="status">وضعیت پذیرش</param>
@@ -703,6 +1378,260 @@ namespace ClinicApp.Controllers
                 PaymentMethod.Insurance => "بیمه",
                 _ => method.ToString()
             };
+        }
+
+        /// <summary>
+        /// اعتبارسنجی کد ملی ایرانی
+        /// </summary>
+        /// <param name="nationalCode">کد ملی</param>
+        /// <returns>آیا کد ملی معتبر است؟</returns>
+        private bool IsValidNationalCode(string nationalCode)
+        {
+            if (string.IsNullOrWhiteSpace(nationalCode) || nationalCode.Length != 10)
+                return false;
+
+            // Check if all characters are digits
+            if (!nationalCode.All(char.IsDigit))
+                return false;
+
+            // Iranian National Code validation algorithm
+            var digits = nationalCode.Select(c => int.Parse(c.ToString())).ToArray();
+            
+            // Check for invalid patterns (all same digits)
+            if (digits.All(d => d == digits[0]))
+                return false;
+
+            // Calculate check digit
+            var sum = 0;
+            for (int i = 0; i < 9; i++)
+            {
+                sum += digits[i] * (10 - i);
+            }
+            
+            var remainder = sum % 11;
+            var checkDigit = remainder < 2 ? remainder : 11 - remainder;
+            
+            return checkDigit == digits[9];
+        }
+
+        /// <summary>
+        /// اعتبارسنجی ورودی‌های امنیتی
+        /// </summary>
+        /// <param name="input">ورودی</param>
+        /// <param name="maxLength">حداکثر طول</param>
+        /// <returns>آیا ورودی امن است؟</returns>
+        private bool IsSecureInput(string input, int maxLength = 100)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return true;
+
+            if (input.Length > maxLength)
+                return false;
+
+            // Check for SQL injection patterns
+            var dangerousPatterns = new[] { "'", "\"", ";", "--", "/*", "*/", "xp_", "sp_" };
+            return !dangerousPatterns.Any(pattern => input.IndexOf(pattern, StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+
+        /// <summary>
+        /// اعتبارسنجی تاریخ
+        /// </summary>
+        /// <param name="date">تاریخ</param>
+        /// <returns>آیا تاریخ معتبر است؟</returns>
+        private bool IsValidDate(DateTime date)
+        {
+            var minDate = DateTime.Now.AddYears(-120);
+            var maxDate = DateTime.Now.AddYears(1);
+            
+            return date >= minDate && date <= maxDate;
+        }
+
+        #endregion
+
+        #region Enhanced Error Handling
+
+        /// <summary>
+        /// مدیریت پیشرفته خطاها در Controller
+        /// </summary>
+        /// <param name="ex">خطای رخ داده</param>
+        /// <param name="operationName">نام عملیات</param>
+        /// <param name="context">اطلاعات اضافی</param>
+        /// <returns>JsonResult با جزئیات خطا</returns>
+        private JsonResult HandleEnhancedControllerError(Exception ex, string operationName, object context = null)
+        {
+            var errorId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            var errorContext = new
+            {
+                ErrorId = errorId,
+                Operation = operationName,
+                UserId = _currentUserService.UserId,
+                UserName = _currentUserService.UserName,
+                Timestamp = DateTime.UtcNow,
+                Context = context
+            };
+
+            // تشخیص نوع خطا و مدیریت مناسب
+            switch (ex)
+            {
+                case ArgumentNullException argEx:
+                    _logger.Warning("خطای ورودی نامعتبر در {Operation}. خطا: {ErrorId}, ورودی: {ArgumentName}, کاربر: {UserName}",
+                        operationName, errorId, argEx.ParamName, _currentUserService.UserName);
+                    return Json(new { 
+                        success = false, 
+                        message = $"ورودی نامعتبر: {argEx.ParamName}",
+                        errorCode = "INVALID_INPUT",
+                        errorId = errorId
+                    });
+
+                case ArgumentException argEx:
+                    _logger.Warning("خطای اعتبارسنجی در {Operation}. خطا: {ErrorId}, پیام: {Message}, کاربر: {UserName}",
+                        operationName, errorId, argEx.Message, _currentUserService.UserName);
+                    return Json(new { 
+                        success = false, 
+                        message = $"خطای اعتبارسنجی: {argEx.Message}",
+                        errorCode = "VALIDATION_ERROR",
+                        errorId = errorId
+                    });
+
+                case UnauthorizedAccessException authEx:
+                    _logger.Warning("خطای دسترسی در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return Json(new { 
+                        success = false, 
+                        message = "شما مجوز انجام این عملیات را ندارید.",
+                        errorCode = "UNAUTHORIZED_ACCESS",
+                        errorId = errorId
+                    });
+
+                case TimeoutException timeoutEx:
+                    _logger.Error(timeoutEx, "خطای زمان‌بندی در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return Json(new { 
+                        success = false, 
+                        message = "عملیات بیش از حد انتظار طول کشید. لطفاً مجدداً تلاش کنید.",
+                        errorCode = "OPERATION_TIMEOUT",
+                        errorId = errorId
+                    });
+
+                default:
+                    _logger.Error(ex, "خطای غیرمنتظره در {Operation}. خطا: {ErrorId}, کاربر: {UserName}",
+                        operationName, errorId, _currentUserService.UserName);
+                    return Json(new { 
+                        success = false, 
+                        message = "خطای غیرمنتظره‌ای رخ داده است. لطفاً با پشتیبانی تماس بگیرید.",
+                        errorCode = "UNEXPECTED_ERROR",
+                        errorId = errorId
+                    });
+            }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی پیشرفته ModelState
+        /// </summary>
+        /// <param name="model">مدل برای اعتبارسنجی</param>
+        /// <returns>نتیجه اعتبارسنجی</returns>
+        private ServiceResult<bool> ValidateModelStateAdvanced(object model)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage)
+                    .ToList();
+
+                _logger.Warning("خطای اعتبارسنجی ModelState. خطاها: {Errors}, کاربر: {UserName}",
+                    string.Join(", ", errors), _currentUserService.UserName);
+
+                return ServiceResult<bool>.Failed(
+                    $"خطاهای اعتبارسنجی: {string.Join(", ", errors)}",
+                    "MODEL_VALIDATION_FAILED",
+                    ErrorCategory.Validation,
+                    SecurityLevel.Low);
+            }
+
+            return ServiceResult<bool>.Successful(true);
+        }
+
+        /// <summary>
+        /// مدیریت خطاهای ServiceResult
+        /// </summary>
+        /// <param name="result">نتیجه Service</param>
+        /// <returns>JsonResult مناسب</returns>
+        private JsonResult HandleServiceError(ServiceResult result)
+        {
+            var errorId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            _logger.Warning("خطای Service در {Operation}. خطا: {ErrorId}, پیام: {Message}, کاربر: {UserName}",
+                result.OperationName ?? "Unknown", errorId, result.Message, _currentUserService.UserName);
+
+            return Json(new { 
+                success = false, 
+                message = result.Message,
+                errorCode = "SERVICE_ERROR",
+                errorId = errorId
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
+        /// مدیریت خطاهای Exception
+        /// </summary>
+        /// <param name="ex">خطای رخ داده</param>
+        /// <param name="operationName">نام عملیات</param>
+        /// <param name="context">اطلاعات اضافی</param>
+        /// <returns>JsonResult مناسب</returns>
+        private JsonResult HandleException(Exception ex, string operationName, string context = null)
+        {
+            var errorId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            _logger.Error(ex, "خطا در {Operation}. خطا: {ErrorId}, کاربر: {UserName}, Context: {Context}",
+                operationName, errorId, _currentUserService.UserName, context);
+
+            return Json(new { 
+                success = false, 
+                message = "خطای غیرمنتظره‌ای رخ داده است. لطفاً مجدداً تلاش کنید.",
+                errorCode = "UNEXPECTED_ERROR",
+                errorId = errorId
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
+        /// مدیریت خطاهای ModelState
+        /// </summary>
+        /// <returns>JsonResult مناسب</returns>
+        private JsonResult HandleModelStateErrors()
+        {
+            var errors = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .Select(e => e.ErrorMessage)
+                .ToList();
+
+            var errorId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            _logger.Warning("خطای اعتبارسنجی ModelState. خطاها: {Errors}, کاربر: {UserName}",
+                string.Join(", ", errors), _currentUserService.UserName);
+
+            return Json(new { 
+                success = false, 
+                message = "اطلاعات وارد شده نامعتبر است.",
+                errors = errors,
+                errorCode = "VALIDATION_ERROR",
+                errorId = errorId
+            }, JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
+        /// پاسخ موفقیت‌آمیز استاندارد
+        /// </summary>
+        /// <param name="data">داده‌های پاسخ</param>
+        /// <param name="message">پیام موفقیت</param>
+        /// <returns>JsonResult موفق</returns>
+        private JsonResult SuccessResponse(object data, string message = "عملیات با موفقیت انجام شد.")
+        {
+            return Json(new { 
+                success = true, 
+                data = data,
+                message = message
+            }, JsonRequestBehavior.AllowGet);
         }
 
         #endregion

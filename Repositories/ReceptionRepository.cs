@@ -370,9 +370,9 @@ namespace ClinicApp.Repositories
                 var viewModels = items.Select(r => new ReceptionIndexViewModel
                 {
                     ReceptionId = r.ReceptionId,
-                    PatientFullName = $"{r.Patient.FirstName} {r.Patient.LastName}",
-                    DoctorFullName = $"{r.Doctor.FirstName} {r.Doctor.LastName}",
-                    ReceptionDate = r.ReceptionDate.ToPersianDateTime(),
+                    PatientFullName = $"{r.Patient?.FirstName ?? ""} {r.Patient?.LastName ?? ""}".Trim(),
+                    DoctorFullName = $"{r.Doctor?.FirstName ?? ""} {r.Doctor?.LastName ?? ""}".Trim(),
+                    ReceptionDate = r.ReceptionDate != DateTime.MinValue ? r.ReceptionDate.ToPersianDateTime() : "نامشخص",
                     TotalAmount = r.TotalAmount,
                     Status = GetReceptionStatusText(r.Status)
                 }).ToList();
@@ -389,9 +389,10 @@ namespace ClinicApp.Repositories
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت پذیرش‌ها با صفحه‌بندی");
+                _logger.Error(ex, "خطا در دریافت پذیرش‌ها با صفحه‌بندی. جزئیات: {ExceptionMessage}, StackTrace: {StackTrace}",
+                    ex.Message, ex.StackTrace);
                 return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Failed(
-                    "خطا در دریافت لیست پذیرش‌ها.",
+                    $"خطا در دریافت لیست پذیرش‌ها: {ex.Message}",
                     "PAGED_RECEPTIONS_ERROR",
                     Core.ErrorCategory.General,
                     Core.SecurityLevel.High);
@@ -412,10 +413,13 @@ namespace ClinicApp.Repositories
                 if (reception == null)
                     throw new ArgumentNullException(nameof(reception));
 
-                // تنظیمات ردیابی
+                // ✅ تنظیمات ردیابی
                 reception.IsDeleted = false;
                 reception.CreatedAt = DateTime.UtcNow;
                 reception.CreatedByUserId = _currentUserService.UserId;
+                
+                // ✅ ReceptionNumber در Entity خودش تنظیم می‌شود
+                // (read-only property)
                 reception.UpdatedAt = null;
                 reception.UpdatedByUserId = null;
 
@@ -626,18 +630,60 @@ namespace ClinicApp.Repositories
         /// </summary>
         private string GetReceptionStatusText(ReceptionStatus status)
         {
-            switch (status)
+            try
             {
-                case ReceptionStatus.Pending:
-                    return "در انتظار";
-                case ReceptionStatus.InProgress:
-                    return "در حال انجام";
-                case ReceptionStatus.Completed:
-                    return "تکمیل شده";
-                case ReceptionStatus.Cancelled:
-                    return "لغو شده";
-                default:
-                    return "نامشخص";
+                switch (status)
+                {
+                    case ReceptionStatus.Pending:
+                        return "در انتظار";
+                    case ReceptionStatus.InProgress:
+                        return "در حال انجام";
+                    case ReceptionStatus.Completed:
+                        return "تکمیل شده";
+                    case ReceptionStatus.Cancelled:
+                        return "لغو شده";
+                    case ReceptionStatus.NoShow:
+                        return "عدم حضور";
+                    default:
+                        return "نامشخص";
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning("خطا در تبدیل وضعیت پذیرش. وضعیت: {Status}, خطا: {Error}", status, ex.Message);
+                return "نامشخص";
+            }
+        }
+
+        /// <summary>
+        /// تولید شماره پذیرش منحصر به فرد
+        /// </summary>
+        /// <returns>شماره پذیرش</returns>
+        private string GenerateReceptionNumber()
+        {
+            try
+            {
+                var today = DateTime.Now;
+                var year = today.Year.ToString().Substring(2); // 2 رقم آخر سال
+                var month = today.Month.ToString("00");
+                var day = today.Day.ToString("00");
+                
+                // شماره‌گذاری روزانه
+                var todayStart = new DateTime(today.Year, today.Month, today.Day);
+                var todayEnd = todayStart.AddDays(1);
+                
+                var todayCount = _context.Receptions
+                    .Where(r => r.CreatedAt >= todayStart && r.CreatedAt < todayEnd && !r.IsDeleted)
+                    .Count();
+                
+                var sequence = (todayCount + 1).ToString("000");
+                
+                return $"{year}{month}{day}{sequence}";
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تولید شماره پذیرش");
+                return DateTime.Now.ToString("yyyyMMddHHmmss");
             }
         }
 

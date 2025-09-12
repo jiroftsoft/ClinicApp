@@ -569,6 +569,10 @@
     <Compile Include="Migrations\202509110549236_AddNewPaymentTable.Designer.cs">
       <DependentUpon>202509110549236_AddNewPaymentTable.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509121048093_Change14040621.cs" />
+    <Compile Include="Migrations\202509121048093_Change14040621.Designer.cs">
+      <DependentUpon>202509121048093_Change14040621.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Core\ApplicationUser.cs" />
     <Compile Include="Models\Core\AppRoles.cs" />
@@ -783,13 +787,10 @@
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
-    <Compile Include="ViewModels\Payment\PaymentViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
-    <Compile Include="Areas\Receptionist\Controllers\ReceptionController.cs" />
-    <Compile Include="Areas\Receptionist\ReceptionistAreaRegistration.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\ManageController.cs" />
@@ -882,7 +883,34 @@
     <Content Include="Content\css\doctor-assignment-index.css" />
     <Content Include="Content\css\form-standards.css" />
     <Content Include="Content\css\notifications.css" />
+    <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\Images\default-avatar.png" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_011423_b7cd6656f50d47d8a0072ed2246bf4bc.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_083717_24500d7fa71c4234b0d65cbb6d0c73bb.png" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_085426_17116032257c4d8595b789e794168641.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_085827_595d31f228df4d3ea4a4c5350329028c.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_090022_f3a5747ab2c44785a99f387fd311aee2.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_091000_b03ccfe6873a47e1adf5e07aa3503037.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_091308_7cd599e712a642ce953ee232796891ac.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_092004_5c1e11a3eac247079ba364c360143be7.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_092316_a540283ee08347fc869b86421432d010.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_093355_917b3811a0df4cf08806d8f5f2548b75.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_094254_f35507cd5ecd4e309b298a39fa0243da.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_095958_0a6136e7a5af459a82a7ff1f0d242b17.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_123608_65762ba88185446c877c56b3015dec8a.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_131746_b11f0eaf4152452e8e7390f6abf796eb.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_132645_f98acbe54d2441ff8364dea121941e2e.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_134407_1de7d250cd434b9cb4c58cc27c5eddf0.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_184112_8fca9684643b4e7f9766eb7eee1100ea.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040606_190213_a05cbab5cfd74bd38cbde319a80b7be1.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040607_001522_5f4a65af71a147559dda1545f399c348.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040607_082831_ae06968403e640e78ab7cfb3de7514f5.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040612_202336_08cd2cabceb14a9387cd53a94b346638.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040615_192210_593da62d1538449cb6e8dd81d9b42085.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040615_192224_75883e0bd9154552aee276db886442b9.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040615_192625_f31c210231224e779093d6c5f7c22f11.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040615_192827_12b53e9f55fe43b781066393ff4f5587.jpg" />
+    <Content Include="Content\Images\Doctors\doctor_profile_14040621_145835_c3380db90c714f938c2207192480d881.jpg" />
     <Content Include="Content\Images\shafa-logo.png" />
     <Content Include="Content\js\admin-layout.js" />
     <Content Include="Content\js\jquery-protection.js" />
@@ -3191,8 +3219,6 @@
     <Content Include="Scripts\bootstrap.min.js" />
     <Content Include="Content\toastr.scss" />
     <Content Include="Content\toastr.less" />
-    <Content Include="Areas\Receptionist\Views\web.config" />
-    <Content Include="Areas\Receptionist\Views\Shared\_ReceiptPrintPartial.cshtml" />
     <Content Include="Areas\Admin\Views\web.config" />
     <Content Include="Areas\Admin\Views\Shared\_DoctorsListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\_ViewStart.cshtml" />
@@ -3824,15 +3850,14 @@
     <Content Include="Views\Payment\Index.cshtml" />
     <Content Include="Views\Payment\_PaymentTransactionCardPartial.cshtml" />
     <Content Include="Views\Payment\_PaymentTransactionListPartial.cshtml" />
+    <Content Include="site.webmanifest" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Receptionist\Data\" />
-    <Folder Include="Areas\Receptionist\Views\Reception\" />
     <Folder Include="Constants\" />
     <Folder Include="Models\ValueObjects\" />
-    <Folder Include="Validators\Payment\" />
+    <Folder Include="Validators\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -3876,6 +3901,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509110549236_AddNewPaymentTable.resx">
       <DependentUpon>202509110549236_AddNewPaymentTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509121048093_Change14040621.resx">
+      <DependentUpon>202509121048093_Change14040621.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

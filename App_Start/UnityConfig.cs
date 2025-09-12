@@ -4,9 +4,11 @@ using ClinicApp.Infrastructure;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.OTP;
+using ClinicApp.Interfaces.Payment;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Repositories;
+using ClinicApp.Repositories.Payment;
 using ClinicApp.Services;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
@@ -27,8 +29,10 @@ using ClinicApp.Services.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.ViewModels.SpecializationManagementVM;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Interfaces.Payment;
 using ClinicApp.Models.Core;
 using ClinicApp.Repositories.Insurance;
+using ClinicApp.Repositories.Payment;
 using ClinicApp.Services.Insurance;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
@@ -405,6 +409,9 @@ namespace ClinicApp
                 // ثبت سرویس‌های پذیرش
                 container.RegisterType<IReceptionRepository, ReceptionRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IReceptionService, ReceptionService>(new PerRequestLifetimeManager());
+
+                // ثبت سرویس‌های پرداخت
+                container.RegisterType<IPaymentTransactionRepository, PaymentTransactionRepository>(new PerRequestLifetimeManager());
 
                 // Register Insurance Validators
                 container.RegisterType<IValidator<InsurancePlanCreateEditViewModel>, InsurancePlanCreateEditViewModelValidator>(new PerRequestLifetimeManager());

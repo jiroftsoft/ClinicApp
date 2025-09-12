@@ -375,8 +375,17 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "تعداد پذیرش‌های لغو شده")]
         public int CancelledReceptions { get; set; }
 
+        [Display(Name = "تعداد پذیرش‌های در حال انجام")]
+        public int InProgressReceptions { get; set; }
+
         [Display(Name = "تعداد پذیرش‌های اورژانس")]
         public int EmergencyReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های آنلاین")]
+        public int OnlineReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های عادی")]
+        public int NormalReceptions { get; set; }
 
         [Display(Name = "مجموع درآمد")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
@@ -385,6 +394,22 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "میانگین درآمد هر پذیرش")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
         public decimal AverageRevenuePerReception { get; set; }
+
+        [Display(Name = "درآمد نقدی")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal CashPayments { get; set; }
+
+        [Display(Name = "درآمد کارتی")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal CardPayments { get; set; }
+
+        [Display(Name = "درآمد آنلاین")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal OnlinePayments { get; set; }
+
+        [Display(Name = "درآمد بیمه")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal InsurancePayments { get; set; }
 
         [Display(Name = "آمار پزشکان")]
         public List<ReceptionDoctorStatsViewModel> DoctorStats { get; set; }
@@ -406,8 +431,32 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "نام پزشک")]
         public string DoctorName { get; set; }
 
+        [Display(Name = "تاریخ")]
+        public DateTime Date { get; set; }
+
         [Display(Name = "تعداد پذیرش‌ها")]
         public int ReceptionsCount { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های تکمیل شده")]
+        public int CompletedReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های در انتظار")]
+        public int PendingReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های لغو شده")]
+        public int CancelledReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های در حال انجام")]
+        public int InProgressReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های اورژانس")]
+        public int EmergencyReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های آنلاین")]
+        public int OnlineReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های عادی")]
+        public int NormalReceptions { get; set; }
 
         [Display(Name = "مجموع درآمد")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
@@ -416,6 +465,34 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "میانگین درآمد")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
         public decimal AverageRevenue { get; set; }
+
+        [Display(Name = "درآمد نقدی")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal CashPayments { get; set; }
+
+        [Display(Name = "درآمد کارتی")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal CardPayments { get; set; }
+
+        [Display(Name = "درآمد آنلاین")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal OnlinePayments { get; set; }
+
+        [Display(Name = "درآمد بیمه")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal InsurancePayments { get; set; }
+
+        [Display(Name = "درصد تکمیل")]
+        [DisplayFormat(DataFormatString = "{0:P1}")]
+        public decimal CompletionRate { get; set; }
+
+        [Display(Name = "درصد لغو")]
+        [DisplayFormat(DataFormatString = "{0:P1}")]
+        public decimal CancellationRate { get; set; }
+
+        [Display(Name = "درصد اورژانس")]
+        [DisplayFormat(DataFormatString = "{0:P1}")]
+        public decimal EmergencyRate { get; set; }
     }
 
 
@@ -424,6 +501,9 @@ namespace ClinicApp.ViewModels.Reception
     /// </summary>
     public class ReceptionLookupListsViewModel
     {
+        [Display(Name = "لیست بیماران")]
+        public List<ReceptionPatientLookupViewModel> Patients { get; set; }
+        
         [Display(Name = "لیست پزشکان")]
         public List<ReceptionDoctorLookupViewModel> Doctors { get; set; }
 

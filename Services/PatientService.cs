@@ -70,9 +70,15 @@ namespace ClinicApp.Services
             return new PatientIndexViewModel
             {
                 PatientId = patient.PatientId,
+                FirstName = patient.FirstName,
+                LastName = patient.LastName,
                 NationalCode = patient.NationalCode,
                 FullName = $"{patient.FirstName} {patient.LastName}",
                 PhoneNumber = patient.PhoneNumber,
+                Email = patient.Email,
+                Address = patient.Address,
+                BirthDate = patient.BirthDate,
+                Gender = patient.Gender,
                 // InsuranceName حذف شد
                 CreatedAt = patient.CreatedAt,
                 CreatedAtShamsi = patient.CreatedAt.ToPersianDateTime(),

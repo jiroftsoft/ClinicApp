@@ -6,288 +6,310 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <!-- ✅ بخش ۱: ساختار کلی -->
-            <h2 class="text-center mb-4">جزئیات پذیرش</h2>
-            <p class="text-center text-muted mb-4">مشاهده اطلاعات کامل پذیرش بیمار</p>
-            
-            <!-- ✅ بخش ۲: طراحی بصری -->
-            <div class="card shadow-sm">
+<div class="details-container">
+    <!-- Header صفحه -->
+    <div class="details-header">
+        <h1 class="details-title">جزئیات پذیرش #@Model.ReceptionId</h1>
+        <p class="details-subtitle">مشاهده اطلاعات کامل پذیرش بیمار</p>
+    </div>
+    
+    <!-- بخش‌های اطلاعات -->
+    <div class="info-section">
+        <!-- Card اطلاعات اصلی -->
+        <div class="details-card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-info-circle section-icon"></i>
+                    اطلاعات کلی پذیرش
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">شناسه پذیرش:</label>
+                        <span class="info-value">
+                            <span class="badge badge-primary">#@Model.ReceptionId</span>
+                        </span>
+                    </div>
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">تاریخ پذیرش:</label>
+                        <span class="info-value">@Model.ReceptionDate</span>
+                    </div>
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">نوع پذیرش:</label>
+                        <span class="info-value">
+                            <span class="badge badge-@(Model.Type == "عادی" ? "primary" : Model.Type == "اورژانس" ? "danger" : "warning")">
+                                @Model.Type
+                            </span>
+                        </span>
+                    </div>
+                    <div class="info-row border-primary">
+                        <label class="info-label border-primary">وضعیت:</label>
+                        <span class="info-value">
+                            <span class="badge badge-@(Model.Status == "تکمیل شده" ? "success" : Model.Status == "در انتظار" ? "warning" : Model.Status == "لغو شده" ? "danger" : "info")">
+                                @Model.Status
+                            </span>
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card اطلاعات بیمار -->
+        <div class="details-card border-success">
+            <div class="card-header bg-success text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-user section-icon"></i>
+                    اطلاعات بیمار
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-success">
+                        <label class="info-label border-success">نام بیمار:</label>
+                        <span class="info-value">@Model.PatientFullName</span>
+                    </div>
+                    <div class="info-row border-success">
+                        <label class="info-label border-success">کد ملی:</label>
+                        <span class="info-value">@Model.PatientNationalCode</span>
+                    </div>
+                    <div class="info-row border-success">
+                        <label class="info-label border-success">شماره تماس:</label>
+                        <span class="info-value">@Model.PatientPhoneNumber</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card اطلاعات پزشک -->
+        <div class="details-card border-info">
+            <div class="card-header bg-info text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-user-md section-icon"></i>
+                    اطلاعات پزشک
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-info">
+                        <label class="info-label border-info">نام پزشک:</label>
+                        <span class="info-value">@Model.DoctorFullName</span>
+                    </div>
+                    <div class="info-row border-info">
+                        <label class="info-label border-info">تخصص:</label>
+                        <span class="info-value">@Model.DoctorSpecialization</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card اطلاعات خدمات -->
+        <div class="details-card border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-stethoscope section-icon"></i>
+                    خدمات ارائه شده
+                </h4>
+            </div>
+            <div class="card-body">
+                @if (Model.Services != null && Model.Services.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>نام خدمت</th>
+                                    <th>دسته‌بندی</th>
+                                    <th>قیمت</th>
+                                    <th>تعداد</th>
+                                    <th>مجموع</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var service in Model.Services)
+                                {
+                                    <tr>
+                                        <td>@service.ServiceName</td>
+                                        <td>@service.ServiceCategory</td>
+                                        <td>@service.Price.ToString("N0") تومان</td>
+                                        <td>@service.Quantity</td>
+                                        <td>@service.TotalPrice.ToString("N0") تومان</td>
+                                    </tr>
+                                }
+                            </tbody>
+                            <tfoot class="table-light">
+                                <tr>
+                                    <th colspan="4">مجموع کل:</th>
+                                    <th>@Model.TotalAmount.ToString("N0") تومان</th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-info">
+                        <i class="fa fa-info-circle me-2"></i>
+                        هیچ خدمتی ثبت نشده است
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Card اطلاعات پرداخت -->
+        <div class="details-card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-money-bill-wave section-icon"></i>
+                    اطلاعات پرداخت
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-secondary">
+                        <label class="info-label border-secondary">روش پرداخت:</label>
+                        <span class="info-value">@Model.PaymentMethod</span>
+                    </div>
+                    <div class="info-row border-secondary">
+                        <label class="info-label border-secondary">مبلغ کل:</label>
+                        <span class="info-value">
+                            <span class="badge badge-primary">@Model.TotalAmount.ToString("N0") تومان</span>
+                        </span>
+                    </div>
+                    <div class="info-row border-secondary">
+                        <label class="info-label border-secondary">مبلغ پرداخت شده:</label>
+                        <span class="info-value">
+                            <span class="badge badge-success">@Model.PaidAmount.ToString("N0") تومان</span>
+                        </span>
+                    </div>
+                    <div class="info-row border-secondary">
+                        <label class="info-label border-secondary">مبلغ باقی‌مانده:</label>
+                        <span class="info-value">
+                            <span class="badge badge-@(Model.RemainingAmount > 0 ? "warning" : "success")">
+                                @Model.RemainingAmount.ToString("N0") تومان
+                            </span>
+                        </span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.PosTransactionId))
+                    {
+                        <div class="info-row border-secondary">
+                            <label class="info-label border-secondary">شناسه تراکنش POS:</label>
+                            <span class="info-value">@Model.PosTransactionId</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Card اطلاعات بیمه -->
+        @if (Model.PrimaryInsurance != null || Model.SecondaryInsurance != null)
+        {
+            <div class="details-card border-info">
                 <div class="card-header bg-info text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-clipboard-check me-2"></i>
-                        اطلاعات پذیرش شماره @Model.ReceptionId
+                    <h4 class="card-title mb-0">
+                        <i class="fa fa-shield-alt section-icon"></i>
+                        اطلاعات بیمه
                     </h4>
                 </div>
                 <div class="card-body">
-                    <!-- ✅ بخش ۱: اطلاعات کلی -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-info-circle text-primary me-2"></i>
-                            <h5 class="mb-0">اطلاعات کلی</h5>
-                        </div>
-                        <div class="form-section-body">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">شناسه پذیرش:</label>
-                                    <p class="form-control-plaintext">@Model.ReceptionId</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">تاریخ پذیرش:</label>
-                                    <p class="form-control-plaintext">@Model.ReceptionDate</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">نوع پذیرش:</label>
-                                    <p class="form-control-plaintext">
-                                        <span class="badge bg-@(Model.Type == "عادی" ? "primary" : Model.Type == "اورژانس" ? "danger" : "warning")">
-                                            @Model.Type
-                                        </span>
-                                    </p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">وضعیت:</label>
-                                    <p class="form-control-plaintext">
-                                        <span class="badge bg-@(Model.Status == "تکمیل شده" ? "success" : Model.Status == "در انتظار" ? "warning" : Model.Status == "لغو شده" ? "danger" : "info")">
-                                            @Model.Status
-                                        </span>
-                                    </p>
-                                </div>
+                    <div class="info-table">
+                        @if (Model.PrimaryInsurance != null)
+                        {
+                            <div class="info-row border-info">
+                                <label class="info-label border-info">بیمه اولیه:</label>
+                                <span class="info-value">@Model.PrimaryInsurance</span>
                             </div>
+                        }
+                        @if (Model.SecondaryInsurance != null)
+                        {
+                            <div class="info-row border-info">
+                                <label class="info-label border-info">بیمه تکمیلی:</label>
+                                <span class="info-value">@Model.SecondaryInsurance</span>
+                            </div>
+                        }
+                        <div class="info-row border-info">
+                            <label class="info-label border-info">سهم بیمه:</label>
+                            <span class="info-value">
+                                <span class="badge badge-info">@Model.InsuranceShare.ToString("N0") تومان</span>
+                            </span>
+                        </div>
+                        <div class="info-row border-info">
+                            <label class="info-label border-info">سهم بیمار:</label>
+                            <span class="info-value">
+                                <span class="badge badge-warning">@Model.PatientShare.ToString("N0") تومان</span>
+                            </span>
                         </div>
                     </div>
+                </div>
+            </div>
+        }
 
-                    <!-- ✅ بخش ۲: اطلاعات بیمار -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-user text-primary me-2"></i>
-                            <h5 class="mb-0">اطلاعات بیمار</h5>
-                        </div>
-                        <div class="form-section-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">نام بیمار:</label>
-                                    <p class="form-control-plaintext">@Model.PatientFullName</p>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">کد ملی:</label>
-                                    <p class="form-control-plaintext">@Model.PatientNationalCode</p>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">شماره تماس:</label>
-                                    <p class="form-control-plaintext">@Model.PatientPhoneNumber</p>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Card یادداشت‌ها -->
+        @if (!string.IsNullOrEmpty(Model.Notes))
+        {
+            <div class="details-card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h4 class="card-title mb-0">
+                        <i class="fa fa-sticky-note section-icon"></i>
+                        یادداشت‌ها
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-light">
+                        <p class="mb-0">@Model.Notes</p>
                     </div>
+                </div>
+            </div>
+        }
 
-                    <!-- ✅ بخش ۳: اطلاعات پزشک -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-user-md text-primary me-2"></i>
-                            <h5 class="mb-0">اطلاعات پزشک</h5>
-                        </div>
-                        <div class="form-section-body">
-                            <div class="row g-3">
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">نام پزشک:</label>
-                                    <p class="form-control-plaintext">@Model.DoctorFullName</p>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold">تخصص:</label>
-                                    <p class="form-control-plaintext">@Model.DoctorSpecialization</p>
-                                </div>
-                            </div>
-                        </div>
+        <!-- Card اطلاعات سیستم -->
+        <div class="details-card border-dark">
+            <div class="card-header bg-dark text-white">
+                <h4 class="card-title mb-0">
+                    <i class="fa fa-cog section-icon"></i>
+                    اطلاعات سیستم
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="info-table">
+                    <div class="info-row border-dark">
+                        <label class="info-label border-dark">تاریخ ایجاد:</label>
+                        <span class="info-value">@Model.CreatedAt</span>
                     </div>
-
-                    <!-- ✅ بخش ۴: اطلاعات خدمات -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-stethoscope text-primary me-2"></i>
-                            <h5 class="mb-0">خدمات ارائه شده</h5>
-                        </div>
-                        <div class="form-section-body">
-                            <div class="table-responsive">
-                                <table class="table table-hover">
-                                    <thead class="table-light">
-                                        <tr>
-                                            <th>نام خدمت</th>
-                                            <th>دسته‌بندی</th>
-                                            <th>قیمت</th>
-                                            <th>تعداد</th>
-                                            <th>مجموع</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        @if (Model.Services != null && Model.Services.Any())
-                                        {
-                                            foreach (var service in Model.Services)
-                                            {
-                                                <tr>
-                                                    <td>@service.ServiceName</td>
-                                                    <td>@service.ServiceCategory</td>
-                                                    <td>@service.Price.ToString("N0") تومان</td>
-                                                    <td>@service.Quantity</td>
-                                                    <td>@service.TotalPrice.ToString("N0") تومان</td>
-                                                </tr>
-                                            }
-                                        }
-                                        else
-                                        {
-                                            <tr>
-                                                <td colspan="5" class="text-center text-muted">هیچ خدمتی ثبت نشده است</td>
-                                            </tr>
-                                        }
-                                    </tbody>
-                                    <tfoot class="table-light">
-                                        <tr>
-                                            <th colspan="4">مجموع کل:</th>
-                                            <th>@Model.TotalAmount.ToString("N0") تومان</th>
-                                        </tr>
-                                    </tfoot>
-                                </table>
-                            </div>
-                        </div>
+                    <div class="info-row border-dark">
+                        <label class="info-label border-dark">آخرین ویرایش:</label>
+                        <span class="info-value">@(Model.UpdatedAt?.ToString() ?? "هیچ‌گاه")</span>
                     </div>
-
-                    <!-- ✅ بخش ۵: اطلاعات پرداخت -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-money-bill-wave text-primary me-2"></i>
-                            <h5 class="mb-0">اطلاعات پرداخت</h5>
-                        </div>
-                        <div class="form-section-body">
-                            <div class="row g-3">
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">روش پرداخت:</label>
-                                    <p class="form-control-plaintext">@Model.PaymentMethod</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">مبلغ کل:</label>
-                                    <p class="form-control-plaintext">@Model.TotalAmount.ToString("N0") تومان</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">مبلغ پرداخت شده:</label>
-                                    <p class="form-control-plaintext">@Model.PaidAmount.ToString("N0") تومان</p>
-                                </div>
-                                <div class="col-md-3">
-                                    <label class="form-label fw-bold">مبلغ باقی‌مانده:</label>
-                                    <p class="form-control-plaintext">@Model.RemainingAmount.ToString("N0") تومان</p>
-                                </div>
-                            </div>
-                            
-                            @if (!string.IsNullOrEmpty(Model.PosTransactionId))
-                            {
-                                <div class="row g-3 mt-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-bold">شناسه تراکنش POS:</label>
-                                        <p class="form-control-plaintext">@Model.PosTransactionId</p>
-                                    </div>
-                                </div>
-                            }
-                        </div>
-                    </div>
-
-                    <!-- ✅ بخش ۶: اطلاعات بیمه -->
-                    @if (Model.PrimaryInsurance != null || Model.SecondaryInsurance != null)
-                    {
-                        <div class="form-section mb-4">
-                            <div class="form-section-header">
-                                <i class="fas fa-shield-alt text-primary me-2"></i>
-                                <h5 class="mb-0">اطلاعات بیمه</h5>
-                            </div>
-                            <div class="form-section-body">
-                                <div class="row g-3">
-                                    @if (Model.PrimaryInsurance != null)
-                                    {
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">بیمه اولیه:</label>
-                                            <p class="form-control-plaintext">@Model.PrimaryInsurance</p>
-                                        </div>
-                                    }
-                                    @if (Model.SecondaryInsurance != null)
-                                    {
-                                        <div class="col-md-6">
-                                            <label class="form-label fw-bold">بیمه تکمیلی:</label>
-                                            <p class="form-control-plaintext">@Model.SecondaryInsurance</p>
-                                        </div>
-                                    }
-                                </div>
-                                <div class="row g-3 mt-2">
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-bold">سهم بیمه:</label>
-                                        <p class="form-control-plaintext">@Model.InsuranceShare.ToString("N0") تومان</p>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label class="form-label fw-bold">سهم بیمار:</label>
-                                        <p class="form-control-plaintext">@Model.PatientShare.ToString("N0") تومان</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-
-                    <!-- ✅ بخش ۷: یادداشت‌ها -->
-                    @if (!string.IsNullOrEmpty(Model.Notes))
-                    {
-                        <div class="form-section mb-4">
-                            <div class="form-section-header">
-                                <i class="fas fa-sticky-note text-primary me-2"></i>
-                                <h5 class="mb-0">یادداشت‌ها</h5>
-                            </div>
-                            <div class="form-section-body">
-                                <div class="alert alert-light">
-                                    <p class="mb-0">@Model.Notes</p>
-                                </div>
-                            </div>
-                        </div>
-                    }
-
-                    <!-- ✅ بخش ۸: اطلاعات سیستم -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-cog text-primary me-2"></i>
-                            <h5 class="mb-0">اطلاعات سیستم</h5>
-                        </div>
-                        <div class="form-section-body">
-                            <div class="row g-3">
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">تاریخ ایجاد:</label>
-                                    <p class="form-control-plaintext">@Model.CreatedAt</p>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">آخرین ویرایش:</label>
-                                    <p class="form-control-plaintext">@(Model.UpdatedAt?.ToString() ?? "هیچ‌گاه")</p>
-                                </div>
-                                <div class="col-md-4">
-                                    <label class="form-label fw-bold">ایجاد کننده:</label>
-                                    <p class="form-control-plaintext">@Model.CreatedBy</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- ✅ بخش ۹: عملیات -->
-                    <div class="row mt-4">
-                        <div class="col-12 text-center">
-                            <a href="@Url.Action("Edit", new { id = Model.ReceptionId })" class="btn btn-warning me-2">
-                                <i class="fas fa-edit me-1"></i> ویرایش
-                            </a>
-                            <a href="@Url.Action("Index")" class="btn btn-secondary me-2">
-                                <i class="fas fa-arrow-right me-1"></i> بازگشت
-                            </a>
-                            <button type="button" class="btn btn-outline-info" onclick="printReception()">
-                                <i class="fas fa-print me-1"></i> چاپ
-                            </button>
-                        </div>
+                    <div class="info-row border-dark">
+                        <label class="info-label border-dark">ایجاد کننده:</label>
+                        <span class="info-value">@Model.CreatedBy</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- عملیات سریع -->
+    <div class="quick-actions">
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a href="@Url.Action("Edit", new { id = Model.ReceptionId })" class="btn btn-warning me-2">
+                    <i class="fa fa-edit me-1"></i> ویرایش
+                </a>
+                <a href="@Url.Action("Index")" class="btn btn-secondary me-2">
+                    <i class="fa fa-arrow-right me-1"></i> بازگشت
+                </a>
+                <button type="button" class="btn btn-outline-info" onclick="printReception()">
+                    <i class="fa fa-print me-1"></i> چاپ
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Styles {
+    <link href="~/Content/css/reception-standards.css" rel="stylesheet" />
+}
 
 @section Scripts {
     <script type="text/javascript">

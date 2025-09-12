@@ -1,0 +1,16 @@
+{
+    "name": "سیستم کلینیک شفا",
+    "short_name": "کلینیک شفا",
+    "description": "سیستم مدیریت کلینیک درمانی شفا",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#007bff",
+    "icons": [
+        {
+            "src": "/favicon.ico",
+            "sizes": "16x16 32x32",
+            "type": "image/x-icon"
+        }
+    ]
+}

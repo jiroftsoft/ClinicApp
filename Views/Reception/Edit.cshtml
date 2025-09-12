@@ -3,6 +3,10 @@
 
 @{
     ViewBag.Title = "ویرایش پذیرش";
+    ViewBag.RequireDataTables = true;
+    ViewBag.RequireSelect2 = true;
+    ViewBag.RequireDatePicker = true;
+    ViewBag.RequireFormValidation = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -50,7 +54,7 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="PatientId" class="form-label">بیمار <span class="text-danger">*</span></label>
-                                        @Html.DropDownListFor(model => model.PatientId, Model.DoctorList, "انتخاب بیمار", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.PatientId, Model.PatientList, "انتخاب بیمار", new { @class = "form-select", id = "patientSelect" })
                                         @Html.ValidationMessageFor(model => model.PatientId, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-6">
@@ -71,7 +75,7 @@
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <label for="DoctorId" class="form-label">پزشک معالج <span class="text-danger">*</span></label>
-                                        @Html.DropDownListFor(model => model.DoctorId, Model.DoctorList, "انتخاب پزشک", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.DoctorId, Model.DoctorList, "انتخاب پزشک", new { @class = "form-select", id = "doctorSelect" })
                                         @Html.ValidationMessageFor(model => model.DoctorId, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-6">
@@ -91,9 +95,10 @@
                             <div class="form-section-body">
                                 <div class="row g-3">
                                     <div class="col-md-4">
-                                        <label for="ReceptionDate" class="form-label">تاریخ پذیرش <span class="text-danger">*</span></label>
-                                        @Html.TextBoxFor(model => model.ReceptionDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                                        @Html.ValidationMessageFor(model => model.ReceptionDate, "", new { @class = "text-danger" })
+                                        <label for="ReceptionDateShamsi" class="form-label">تاریخ پذیرش <span class="text-danger">*</span></label>
+                                        @Html.TextBoxFor(model => model.ReceptionDateShamsi, new { @class = "form-control persian-datepicker", placeholder = "انتخاب تاریخ پذیرش", id = "receptionDateShamsi", value = "" })
+                                        @Html.HiddenFor(model => model.ReceptionDate)
+                                        @Html.ValidationMessageFor(model => model.ReceptionDateShamsi, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-4">
                                         <label for="Type" class="form-label">نوع پذیرش</label>
@@ -173,7 +178,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label for="PaymentMethod" class="form-label">روش پرداخت <span class="text-danger">*</span></label>
-                                        @Html.DropDownListFor(model => model.PaymentMethod, new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.PaymentMethod)).Cast<ClinicApp.Models.Entities.PaymentMethod>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب روش پرداخت", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.PaymentMethod, Model.PaymentMethodList, "انتخاب روش پرداخت", new { @class = "form-select", id = "paymentMethodSelect" })
                                         @Html.ValidationMessageFor(model => model.PaymentMethod, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-4">
@@ -290,11 +295,94 @@
     </div>
 </div>
 
+@section Styles {
+    <link href="~/Content/css/reception-standards.css" rel="stylesheet" />
+    
+    <style>
+        /* ✅ Persian DatePicker Styles */
+        .persian-datepicker {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        /* ✅ Select2 Persian Support */
+        .select2-container--default .select2-selection--single {
+            height: 38px;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 34px;
+            padding-right: 12px;
+            padding-left: 20px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            right: 8px;
+        }
+        
+        .select2-dropdown {
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+        }
+        
+        /* ✅ Form Section Styles */
+        .form-section {
+            border: 1px solid #e9ecef;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            background: #f8f9fa;
+        }
+        
+        .form-section-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #dee2e6;
+        }
+        
+        .form-section-header h5 {
+            color: #495057;
+            font-weight: 600;
+        }
+        
+        .form-section-body {
+            padding: 10px 0;
+        }
+        
+        /* ✅ Progress Bar Styles */
+        .progress {
+            border-radius: 10px;
+            background-color: #e9ecef;
+        }
+        
+        .progress-bar {
+            border-radius: 10px;
+            transition: width 0.6s ease;
+        }
+        
+        /* ✅ Min Height for Selected Services */
+        .min-height-50 {
+            min-height: 50px;
+        }
+    </style>
+}
+
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     
     <script type="text/javascript">
         $(document).ready(function () {
+            // ✅ مقداردهی اولیه Persian DatePicker
+            initializePersianDatePickers();
+            
+            // ✅ مقداردهی اولیه Select2
+            initializeSelect2();
+            
             // ✅ بارگذاری اولیه داده‌ها
             loadServiceCategories();
             loadServices();
@@ -401,13 +489,48 @@
                     isValid = false;
                 }
                 
+                // اعتبارسنجی تاریخ پذیرش
+                if (!$('#ReceptionDateShamsi').val()) {
+                    showError('لطفاً تاریخ پذیرش را وارد کنید');
+                    isValid = false;
+                }
+                
                 // اعتبارسنجی خدمات
                 if (!$('#services').val() || $('#services').val().length === 0) {
                     showError('لطفاً حداقل یک خدمت انتخاب کنید');
                     isValid = false;
                 }
                 
+                // اعتبارسنجی Persian DatePicker
+                if (!validatePersianDates()) {
+                    isValid = false;
+                }
+                
                 return isValid;
+            }
+            
+            // ✅ اعتبارسنجی تاریخ‌های فارسی
+            function validatePersianDates() {
+                var isValid = true;
+                
+                // اعتبارسنجی تاریخ پذیرش
+                var receptionDate = $('#ReceptionDateShamsi').val();
+                if (receptionDate && !isValidPersianDate(receptionDate)) {
+                    showError('فرمت تاریخ پذیرش صحیح نیست');
+                    isValid = false;
+                }
+                
+                return isValid;
+            }
+            
+            // ✅ بررسی صحت فرمت تاریخ فارسی
+            function isValidPersianDate(persianDate) {
+                if (!persianDate || persianDate.trim() === '') {
+                    return true; // فیلد خالی مجاز است
+                }
+                
+                var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+                return persianDatePattern.test(persianDate);
             }
 
             function submitForm() {
@@ -450,6 +573,133 @@
             function showError(message) {
                 toastr.error(message);
             }
+            
+            // ✅ مقداردهی اولیه Persian DatePicker
+            function initializePersianDatePickers() {
+                $('.persian-datepicker').each(function() {
+                    var $this = $(this);
+                    var currentValue = $this.val();
+                    
+                    // اگر مقدار اولیه مشکل‌ساز وجود دارد، آن را پاک کن
+                    if (currentValue && currentValue.includes('۷۸۳')) {
+                        $this.val('');
+                    }
+                    
+                    $this.persianDatepicker({
+                        format: 'YYYY/MM/DD',
+                        initialValue: false,
+                        autoClose: true,
+                        calendar: {
+                            persian: {
+                                locale: 'fa',
+                                showHint: true,
+                                leapYearMode: 'algorithmic'
+                            }
+                        }
+                    });
+                    
+                    // تنظیم مقدار اولیه صحیح
+                    setTimeout(function() {
+                        if (!$this.val() || $this.val().includes('۷۸۳')) {
+                            $this.val('');
+                        }
+                    }, 100);
+                });
+                
+                // ✅ Event delegation برای تغییر تاریخ
+                $(document).on('change', '.persian-datepicker', function() {
+                    convertPersianDateToGregorian($(this));
+                });
+                
+                // ✅ Event delegation برای input events
+                $(document).on('input blur', '.persian-datepicker', function() {
+                    setTimeout(function() {
+                        convertPersianDateToGregorian($(this));
+                    }, 100);
+                });
+            }
+            
+            // ✅ تابع جداگانه برای تبدیل تاریخ
+            function convertPersianDateToGregorian($element) {
+                try {
+                    var fieldId = $element.attr('id');
+                    var persianDate = $element.val();
+                    
+                    if (persianDate && persianDate.trim() !== '') {
+                        // بررسی فرمت تاریخ فارسی
+                        var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+                        
+                        if (persianDatePattern.test(persianDate)) {
+                            // تبدیل تاریخ شمسی به میلادی
+                            var gregorianDate = persianDatepicker.parseDate(persianDate);
+                            if (gregorianDate) {
+                                var isoDate = gregorianDate.toISOString().split('T')[0];
+                                
+                                if (fieldId === 'receptionDateShamsi') {
+                                    $('#ReceptionDate').val(isoDate);
+                                }
+                                
+                                console.log('تاریخ تبدیل شد:', {
+                                    fieldId: fieldId,
+                                    persianDate: persianDate,
+                                    gregorianDate: isoDate
+                                });
+                            } else {
+                                console.warn('تاریخ شمسی قابل تبدیل نیست:', persianDate);
+                            }
+                        } else {
+                            console.warn('فرمت تاریخ شمسی صحیح نیست:', persianDate);
+                        }
+                    }
+                } catch (error) {
+                    console.error('خطا در تبدیل تاریخ:', error);
+                }
+            }
+            
+            // ✅ مقداردهی اولیه Select2
+            function initializeSelect2() {
+                $('#patientSelect').select2({
+                    placeholder: 'انتخاب بیمار',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function() {
+                            return "نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
+                
+                $('#doctorSelect').select2({
+                    placeholder: 'انتخاب پزشک',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function() {
+                            return "نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
+                
+                $('#paymentMethodSelect').select2({
+                    placeholder: 'انتخاب روش پرداخت',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function() {
+                            return "نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
+            }
 
             // ✅ اعمال قوانین اعتبارسنجی
             $('#edit-reception-form').validate({
@@ -467,7 +717,7 @@
                     'PaymentMethod': {
                         required: true
                     },
-                    'ReceptionDate': {
+                    'ReceptionDateShamsi': {
                         required: true
                     }
                 },
@@ -485,7 +735,7 @@
                     'PaymentMethod': {
                         required: "لطفاً روش پرداخت را انتخاب کنید"
                     },
-                    'ReceptionDate': {
+                    'ReceptionDateShamsi': {
                         required: "لطفاً تاریخ پذیرش را وارد کنید"
                     }
                 }

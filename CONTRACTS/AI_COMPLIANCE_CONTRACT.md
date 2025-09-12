@@ -1852,9 +1852,104 @@ public class DoctorController : Controller
 - **Buttons**: مخفی در چاپ
 - **Actions**: مخفی در چاپ
 
+### **قانون 66: AJAX Response Parsing (CRITICAL)**
+- **همیشه نوع Response را بررسی کنید**: `typeof response`
+- **JSON.parse را در try-catch قرار دهید**: برای جلوگیری از crash
+- **از parsedResponse استفاده کنید**: به جای response اصلی
+- **لاگ‌گذاری کامل داشته باشید**: برای debugging
+- **Error handling مناسب**: برای تمام مراحل
+
+```javascript
+// ✅ صحیح - تجزیه صحیح Response
+success: function (response) {
+    console.log('Raw Response:', response);
+    console.log('Response Type:', typeof response);
+    
+    var parsedResponse = response;
+    if (typeof response === 'string') {
+        try {
+            parsedResponse = JSON.parse(response);
+        } catch (e) {
+            console.error('JSON Parse Error:', e);
+            showError('خطا در تجزیه پاسخ سرور');
+            return;
+        }
+    }
+    
+    if (parsedResponse.success) {
+        // استفاده از parsedResponse
+    }
+}
+
+// ❌ نادرست - استفاده مستقیم از response
+success: function (response) {
+    if (response.success) {  // ممکن است undefined باشد
+        // ...
+    }
+}
+```
+
+**مرجع کامل**: `CONTRACTS/JQUERY_RESPONSE_PARSING_FIX.md`
+
+### **قانون 67: Date Field Management (HIGH)**
+- **همیشه نوع فیلد را بررسی کنید**: `fieldType === 'date'`
+- **همیشه کلاس فیلد را بررسی کنید**: `fieldClass.includes('persian-datepicker')`
+- **همیشه وجود element را بررسی کنید**: `$element.length > 0`
+- **همیشه فرمت تاریخ را بررسی کنید**: `.NET Date`, `ISO string`, `Date object`
+- **Error handling مناسب**: برای تمام مراحل
+
+```javascript
+// ✅ صحیح - بررسی کامل فیلد تاریخ
+function convertPersianDateToGregorian($element) {
+    if (!$element || $element.length === 0) return;
+    
+    var fieldType = $element.attr('type');
+    if (fieldType === 'date') return; // HTML5 date field
+    
+    var fieldClass = $element.attr('class');
+    if (!fieldClass || !fieldClass.includes('persian-datepicker')) return;
+    
+    // ادامه منطق تبدیل...
+}
+
+// ❌ نادرست - عدم بررسی نوع فیلد
+function convertPersianDateToGregorian($element) {
+    var persianDate = $element.val(); // ممکن است undefined باشد
+    // ...
+}
+```
+
+**مرجع کامل**: `CONTRACTS/DATE_CONVERSION_ERROR_FIX.md`
+
+### **قانون 68: Persian DatePicker Library Management (HIGH)**
+- **همیشه تابع library را بررسی کنید**: `typeof persianDatepicker !== 'undefined'`
+- **همیشه fallback function داشته باشید**: `convertPersianToGregorian()`
+- **همیشه اعتبارسنجی کنید**: سال، ماه، روز
+- **همیشه error handling داشته باشید**: `try-catch` با logging
+- **همیشه لاگ‌گذاری کنید**: برای debugging
+
+```javascript
+// ✅ صحیح - بررسی library و fallback
+function safeDateConversion(persianDate) {
+    if (typeof persianDatepicker !== 'undefined' && persianDatepicker.parseDate) {
+        try {
+            return persianDatepicker.parseDate(persianDate);
+        } catch (e) {
+            console.warn('Library conversion failed, using fallback');
+        }
+    }
+    return convertPersianToGregorian(persianDate);
+}
+
+// ❌ نادرست - استفاده مستقیم از library
+var gregorianDate = persianDatepicker.parseDate(persianDate); // ممکن است undefined باشد
+```
+
+**مرجع کامل**: `CONTRACTS/PERSIAN_DATEPICKER_LIBRARY_ERROR_FIX.md`
+
 ---
 
 **تاریخ ایجاد**: جلسه فعلی  
 **وضعیت قرارداد**: فعال و الزام‌آور  
 **دامنه**: تمامی تعاملات هوش مصنوعی با پروژه ClinicApp  
-**آخرین به‌روزرسانی**: جلسه فعلی - اضافه شدن قرارداد استاندارد فرم‌های ایجاد و ویرایش (17 قانون)
+**آخرین به‌روزرسانی**: جلسه فعلی - اضافه شدن قرارداد مدیریت Persian DatePicker Library (قانون 68)

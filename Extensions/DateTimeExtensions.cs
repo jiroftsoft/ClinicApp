@@ -46,5 +46,29 @@ namespace ClinicApp.Extensions
                 return null;
             }
         }
+
+        /// <summary>
+        /// تبدیل تاریخ شمسی به میلادی (alias برای ToDateTime)
+        /// </summary>
+        public static DateTime ToDateTimeFromPersian(this string persianDate)
+        {
+            return ToDateTime(persianDate);
+        }
+
+        /// <summary>
+        /// تبدیل تاریخ شمسی به میلادی (nullable) (alias برای ToDateTimeNullable)
+        /// </summary>
+        public static DateTime? ToDateTimeFromPersianNullable(this string persianDate)
+        {
+            return ToDateTimeNullable(persianDate);
+        }
+
+        /// <summary>
+        /// تبدیل تاریخ میلادی به رشته شمسی
+        /// </summary>
+        public static string ToPersianDateString(this DateTime date)
+        {
+            return PersianDateHelper.ToPersianDate(date);
+        }
     }
 }

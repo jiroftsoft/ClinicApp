@@ -178,7 +178,7 @@ namespace ClinicApp.Models
             // ========== فیلترهای جدید برای پرداخت‌های آنلاین ==========
             modelBuilder.Filter("ActivePaymentGateways", (PaymentGateway pg) => pg.IsActive, true);
             modelBuilder.Filter("ActivePosTerminals", (PosTerminal pt) => pt.IsActive, true);
-            modelBuilder.Filter("SuccessfulOnlinePayments", (OnlinePayment op) => op.Status == OnlinePaymentStatus.Success, true);
+            // فیلتر SuccessfulOnlinePayments حذف شد - مشکل‌ساز بود
 
 
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس

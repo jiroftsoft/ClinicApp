@@ -24,6 +24,34 @@ namespace ClinicApp.ViewModels
         [Display(Name = "نام بیمار")]
         public string PatientFullName { get; set; } // برای نمایش نام بعد از جستجو
 
+        // فیلدهای اطلاعات بیمار برای نمایش و ویرایش
+        [Display(Name = "نام")]
+        [StringLength(50, ErrorMessage = "نام نمی‌تواند بیش از ۵۰ کاراکتر باشد.")]
+        public string FirstName { get; set; }
+
+        [Display(Name = "نام خانوادگی")]
+        [StringLength(50, ErrorMessage = "نام خانوادگی نمی‌تواند بیش از ۵۰ کاراکتر باشد.")]
+        public string LastName { get; set; }
+
+        [Display(Name = "کد ملی")]
+        [StringLength(10, ErrorMessage = "کد ملی باید ۱۰ رقم باشد.")]
+        public string NationalCode { get; set; }
+
+        [Display(Name = "شماره تلفن")]
+        [StringLength(15, ErrorMessage = "شماره تلفن نمی‌تواند بیش از ۱۵ کاراکتر باشد.")]
+        public string PhoneNumber { get; set; }
+
+        [Display(Name = "جنسیت")]
+        public int? Gender { get; set; }
+
+        [Display(Name = "تاریخ تولد")]
+        [DataType(DataType.Date)]
+        public DateTime? BirthDate { get; set; }
+
+        [Display(Name = "آدرس")]
+        [StringLength(500, ErrorMessage = "آدرس نمی‌تواند بیش از ۵۰۰ کاراکتر باشد.")]
+        public string Address { get; set; }
+
         // اطلاعات استعلام کمکی
         [Display(Name = "کد ملی برای استعلام")]
         public string NationalCodeForInquiry { get; set; }
@@ -82,6 +110,9 @@ namespace ClinicApp.ViewModels
         [Required(ErrorMessage = "لطفاً یک روش پرداخت انتخاب کنید.")]
         [Display(Name = "روش پرداخت")]
         public PaymentMethod PaymentMethod { get; set; }
+        
+        // برای منوی انتخاب روش پرداخت
+        public IEnumerable<SelectListItem> PaymentMethodList { get; set; }
 
         [Display(Name = "شناسه تراکنش POS")]
         public string PosTransactionId { get; set; }
@@ -102,6 +133,16 @@ namespace ClinicApp.ViewModels
         [Display(Name = "بیمه تکمیلی")]
         public int? SecondaryInsuranceId { get; set; }
 
+        [Display(Name = "نام بیمه اولیه")]
+        public string PrimaryInsuranceName { get; set; }
+
+        [Display(Name = "نام بیمه تکمیلی")]
+        public string SecondaryInsuranceName { get; set; }
+
+        [Display(Name = "شماره بیمه")]
+        [StringLength(20, ErrorMessage = "شماره بیمه نمی‌تواند بیش از ۲۰ کاراکتر باشد.")]
+        public string InsuranceNumber { get; set; }
+
         [Display(Name = "سهم بیمه")]
         [DataType(DataType.Currency)]
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
@@ -121,6 +162,7 @@ namespace ClinicApp.ViewModels
             SelectedServiceIds = new List<int>();
             DoctorList = new List<SelectListItem>();
             ServiceList = new List<SelectListItem>();
+            PaymentMethodList = new List<SelectListItem>();
             ReceptionDate = DateTime.Now;
             IsInquiryCompleted = false;
             TotalAmount = 0;
@@ -240,6 +282,7 @@ namespace ClinicApp.ViewModels
         public DateTime? UpdatedAt { get; set; }
 
         // لیست‌های کمکی
+        public IEnumerable<SelectListItem> PatientList { get; set; }
         public IEnumerable<SelectListItem> DoctorList { get; set; }
         public IEnumerable<SelectListItem> ServiceList { get; set; }
         public IEnumerable<SelectListItem> InsuranceList { get; set; }
@@ -248,6 +291,7 @@ namespace ClinicApp.ViewModels
         public ReceptionEditViewModel()
         {
             SelectedServiceIds = new List<int>();
+            PatientList = new List<SelectListItem>();
             DoctorList = new List<SelectListItem>();
             ServiceList = new List<SelectListItem>();
             InsuranceList = new List<SelectListItem>();
@@ -283,9 +327,15 @@ namespace ClinicApp.ViewModels
         [DataType(DataType.Date)]
         public DateTime? StartDate { get; set; }
 
+        [Display(Name = "تاریخ شروع (شمسی)")]
+        public string StartDateShamsi { get; set; }
+
         [Display(Name = "تاریخ پایان")]
         [DataType(DataType.Date)]
         public DateTime? EndDate { get; set; }
+
+        [Display(Name = "تاریخ پایان (شمسی)")]
+        public string EndDateShamsi { get; set; }
 
         [Display(Name = "وضعیت پذیرش")]
         public ReceptionStatus? Status { get; set; }
@@ -558,6 +608,23 @@ namespace ClinicApp.ViewModels
         [Display(Name = "وضعیت")]
         public string Status { get; set; }
 
+        [Display(Name = "کد ملی بیمار")]
+        public string PatientNationalCode { get; set; }
+
+        [Display(Name = "نوع پذیرش")]
+        public string Type { get; set; }
+
+        [Display(Name = "مبلغ پرداخت شده")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal PaidAmount { get; set; }
+
+        [Display(Name = "مبلغ باقی‌مانده")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal RemainingAmount { get; set; }
+
+        [Display(Name = "روش پرداخت")]
+        public string PaymentMethod { get; set; }
+
         // Properties for Controller
         [Display(Name = "عنوان صفحه")]
         public string PageTitle { get; set; }
@@ -582,6 +649,9 @@ namespace ClinicApp.ViewModels
     public class ReceptionDetailsViewModel
     {
         public int ReceptionId { get; set; }
+        
+        public int PatientId { get; set; }
+        public int DoctorId { get; set; }
 
         [Display(Name = "نام بیمار")]
         public string PatientFullName { get; set; }

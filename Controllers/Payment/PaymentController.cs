@@ -26,7 +26,7 @@ namespace ClinicApp.Controllers.Payment
         private readonly ICurrentUserService _currentUserService;
         private readonly IValidator<PaymentTransactionCreateViewModel> _createValidator;
         private readonly IValidator<PaymentTransactionEditViewModel> _editValidator;
-        private readonly IValidator<PaymentTransactionListViewModel.PaymentTransactionSearchViewModel> _searchValidator;
+        private readonly IValidator<PaymentTransactionSearchViewModel> _searchValidator;
 
         public PaymentController(
             IPaymentService paymentService,
@@ -34,7 +34,7 @@ namespace ClinicApp.Controllers.Payment
             ICurrentUserService currentUserService,
             IValidator<PaymentTransactionCreateViewModel> createValidator,
             IValidator<PaymentTransactionEditViewModel> editValidator,
-            IValidator<PaymentTransactionListViewModel.PaymentTransactionSearchViewModel> searchValidator,
+            IValidator<PaymentTransactionSearchViewModel> searchValidator,
             ILogger logger) : base(logger)
         {
             _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
@@ -51,7 +51,7 @@ namespace ClinicApp.Controllers.Payment
         /// صفحه اصلی مدیریت پرداخت‌ها
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Index(PaymentTransactionListViewModel.PaymentTransactionSearchViewModel searchModel, int pageNumber = 1, int pageSize = 20)
+        public async Task<ActionResult> Index(PaymentTransactionSearchViewModel searchModel, int pageNumber = 1, int pageSize = 20)
         {
             try
             {
@@ -120,26 +120,23 @@ namespace ClinicApp.Controllers.Payment
                         DoctorName = t.DoctorName
                     }).ToList() ?? new List<PaymentTransactionListViewModel>(),
                     SearchModel = searchModel,
-                    Statistics = new PaymentStatisticsViewModel
-                    {
-                        TotalTransactions = statisticsResult.Data?.TotalTransactions ?? 0,
-                        TotalAmount = statisticsResult.Data?.TotalAmount ?? 0,
-                        AverageAmount = statisticsResult.Data?.AverageAmount ?? 0,
-                        SuccessfulTransactions = statisticsResult.Data?.SuccessfulTransactions ?? 0,
-                        FailedTransactions = statisticsResult.Data?.FailedTransactions ?? 0,
-                        PendingTransactions = statisticsResult.Data?.PendingTransactions ?? 0,
-                        SuccessRate = statisticsResult.Data?.SuccessRate ?? 0,
-                        CashAmount = statisticsResult.Data?.CashAmount ?? 0,
-                        PosAmount = statisticsResult.Data?.PosAmount ?? 0,
-                        OnlineAmount = statisticsResult.Data?.OnlineAmount ?? 0,
-                        DebtAmount = statisticsResult.Data?.DebtAmount ?? 0,
-                        TransactionsByMethod = statisticsResult.Data?.TransactionsByMethod ?? new Dictionary<PaymentMethod, int>(),
-                        TransactionsByStatus = statisticsResult.Data?.TransactionsByStatus ?? new Dictionary<PaymentStatus, int>()
-                    },
-                    TotalCount = transactionsResult.Data?.TotalItems ?? 0,
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    TotalPages = (int)Math.Ceiling((double)(transactionsResult.Data?.TotalItems ?? 0) / pageSize)
+                    Statistics = statisticsResult.Data,
+                    PagedResult = new PagedResult<PaymentTransactionListViewModel>(
+                        transactionsResult.Data?.Items?.Select(t => new PaymentTransactionListViewModel
+                        {
+                            TransactionId = t.TransactionId,
+                            PatientName = t.PatientName,
+                            Amount = t.Amount,
+                            PaymentMethod = t.PaymentMethod,
+                            Status = t.Status,
+                            TransactionDate = t.CreatedAt,
+                            Description = t.Description,
+                            DoctorName = t.DoctorName
+                        }).ToList() ?? new List<PaymentTransactionListViewModel>(),
+                        transactionsResult.Data?.TotalItems ?? 0,
+                        transactionsResult.Data?.PageNumber ?? 1,
+                        transactionsResult.Data?.PageSize ?? 20
+                    )
                 };
 
                 return View(viewModel);
@@ -386,7 +383,7 @@ namespace ClinicApp.Controllers.Payment
         /// دریافت لیست تراکنش‌های پرداخت (AJAX)
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetTransactions(PaymentTransactionListViewModel.PaymentTransactionSearchViewModel searchModel, int pageNumber = 1, int pageSize = 20)
+        public async Task<JsonResult> GetTransactions(PaymentTransactionSearchViewModel searchModel, int pageNumber = 1, int pageSize = 20)
         {
             try
             {

@@ -72,21 +72,197 @@ loadDoctors().then(function() {
 
 ## ✅ **استانداردهای اجباری:**
 
-### **1. Persian DatePicker:**
+### **1. Persian DatePicker (استاندارد اجباری):**
 ```html
 <!-- ✅ همیشه این ساختار را استفاده کنید -->
 <input type="text" 
        class="form-control persian-datepicker" 
-       placeholder="انتخاب تاریخ" />
+       placeholder="انتخاب تاریخ" 
+       value="" />
 ```
 
 ```javascript
 // ✅ همیشه این تنظیمات را استفاده کنید
-$('.persian-datepicker').persianDatepicker({
-    format: 'YYYY/MM/DD',
-    initialValue: false,
-    autoClose: true
+$('.persian-datepicker').each(function() {
+    var $this = $(this);
+    var currentValue = $this.val();
+    
+    // اگر مقدار اولیه مشکل‌ساز وجود دارد، آن را پاک کن
+    if (currentValue && currentValue.includes('۷۸۳')) {
+        $this.val('');
+    }
+    
+    $this.persianDatepicker({
+        format: 'YYYY/MM/DD',
+        initialValue: false,
+        autoClose: true,
+        calendar: {
+            persian: {
+                locale: 'fa',
+                showHint: true,
+                leapYearMode: 'algorithmic'
+            }
+        }
+    });
+    
+    // تنظیم مقدار اولیه صحیح
+    setTimeout(function() {
+        if (!$this.val() || $this.val().includes('۷۸۳')) {
+            $this.val('');
+        }
+    }, 100);
 });
+
+// ✅ Event delegation برای تبدیل تاریخ شمسی به میلادی
+$(document).on('change', '.persian-datepicker', function() {
+    convertPersianDateToGregorian($(this));
+});
+
+$(document).on('input blur', '.persian-datepicker', function() {
+    setTimeout(function() {
+        convertPersianDateToGregorian($(this));
+    }, 100);
+});
+
+// ✅ تابع جداگانه برای تبدیل تاریخ
+function convertPersianDateToGregorian($element) {
+    try {
+        var fieldId = $element.attr('id');
+        var persianDate = $element.val();
+        
+        if (persianDate && persianDate.trim() !== '') {
+            // بررسی فرمت تاریخ فارسی
+            var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+            
+            if (persianDatePattern.test(persianDate)) {
+                // تبدیل تاریخ شمسی به میلادی
+                var gregorianDate = persianDatepicker.parseDate(persianDate);
+                if (gregorianDate) {
+                    var isoDate = gregorianDate.toISOString().split('T')[0];
+                    
+                    // ذخیره در hidden field مربوطه
+                    if (fieldId === 'startDateShamsi') {
+                        $('#StartDate').val(isoDate);
+                    } else if (fieldId === 'endDateShamsi') {
+                        $('#EndDate').val(isoDate);
+                    }
+                    // برای سایر فیلدها نیز قابل تعمیم است
+                }
+            }
+        }
+    } catch (error) {
+        console.error('خطا در تبدیل تاریخ:', error);
+    }
+}
+```
+
+**⚠️ نکات مهم Persian DatePicker:**
+- **همیشه مقدار اولیه خالی** تنظیم کنید (`value=""`)
+- **از onSelect callback استفاده نکنید** - باعث خطای JavaScript می‌شود
+- **از Event Delegation استفاده کنید** برای مدیریت تغییرات
+- **مقادیر مشکل‌ساز (۷۸۳) را پاک کنید** قبل از مقداردهی
+- **تبدیل خودکار** تاریخ شمسی به میلادی انجام دهید
+- **Validation فرمت** تاریخ فارسی را بررسی کنید
+
+### **1.1. ViewModel برای Persian DatePicker:**
+```csharp
+// ✅ همیشه فیلدهای شمسی و میلادی را جداگانه تعریف کنید
+public class SearchViewModel
+{
+    [Display(Name = "تاریخ شروع")]
+    [DataType(DataType.Date)]
+    public DateTime? StartDate { get; set; }
+
+    [Display(Name = "تاریخ شروع (شمسی)")]
+    public string StartDateShamsi { get; set; }
+
+    [Display(Name = "تاریخ پایان")]
+    [DataType(DataType.Date)]
+    public DateTime? EndDate { get; set; }
+
+    [Display(Name = "تاریخ پایان (شمسی)")]
+    public string EndDateShamsi { get; set; }
+}
+```
+
+### **1.2. Controller برای Persian DatePicker:**
+```csharp
+// ✅ همیشه مقدار اولیه خالی برای فیلدهای شمسی تنظیم کنید
+public ActionResult Index()
+{
+    var model = new SearchViewModel
+    {
+        StartDate = DateTime.Today,
+        EndDate = DateTime.Today.AddDays(7),
+        StartDateShamsi = "", // مقدار اولیه خالی
+        EndDateShamsi = "", // مقدار اولیه خالی
+        // سایر فیلدها...
+    };
+    return View(model);
+}
+
+// ✅ در Action های POST، اولویت با فیلدهای شمسی باشد
+[HttpPost]
+public async Task<JsonResult> Search(string startDateShamsi = null, string endDateShamsi = null, 
+                                    string startDate = null, string endDate = null)
+{
+    DateTime? start = null;
+    DateTime? end = null;
+
+    // اولویت با فیلدهای شمسی
+    if (!string.IsNullOrEmpty(startDateShamsi))
+    {
+        start = startDateShamsi.ToDateTimeFromPersian();
+    }
+    else if (!string.IsNullOrEmpty(startDate))
+    {
+        if (DateTime.TryParse(startDate, out var parsedStart))
+            start = parsedStart;
+    }
+
+    if (!string.IsNullOrEmpty(endDateShamsi))
+    {
+        end = endDateShamsi.ToDateTimeFromPersian();
+    }
+    else if (!string.IsNullOrEmpty(endDate))
+    {
+        if (DateTime.TryParse(endDate, out var parsedEnd))
+            end = parsedEnd;
+    }
+
+    // ادامه منطق...
+}
+```
+
+### **1.3. Extension Methods برای تبدیل تاریخ:**
+```csharp
+// ✅ همیشه این Extension Methods را در DateTimeExtensions.cs اضافه کنید
+public static class DateTimeExtensions
+{
+    /// <summary>
+    /// تبدیل تاریخ شمسی به میلادی (alias برای ToDateTime)
+    /// </summary>
+    public static DateTime ToDateTimeFromPersian(this string persianDate)
+    {
+        return ToDateTime(persianDate);
+    }
+
+    /// <summary>
+    /// تبدیل تاریخ شمسی به میلادی (nullable) (alias برای ToDateTimeNullable)
+    /// </summary>
+    public static DateTime? ToDateTimeFromPersianNullable(this string persianDate)
+    {
+        return ToDateTimeNullable(persianDate);
+    }
+
+    /// <summary>
+    /// تبدیل تاریخ میلادی به رشته شمسی
+    /// </summary>
+    public static string ToPersianDateString(this DateTime date)
+    {
+        return PersianDateHelper.ToPersianDate(date);
+    }
+}
 ```
 
 ### **2. Anti-Forgery Token در View:**
@@ -581,9 +757,15 @@ $.ajax({
 ## 📝 **تاریخ و نسخه:**
 
 - **تاریخ ایجاد:** 2025-01-01
-- **نسخه:** 1.0
+- **نسخه:** 1.1
 - **وضعیت:** فعال
-- **آخرین به‌روزرسانی:** جلسه فعلی - یکپارچه‌سازی با قرارداد استاندارد نمایش اطلاعات
+- **آخرین به‌روزرسانی:** جلسه فعلی - اضافه شدن استاندارد اجباری Persian DatePicker
+- **تغییرات نسخه 1.1:**
+  - اضافه شدن استاندارد اجباری Persian DatePicker
+  - راه‌حل کامل برای مشکل سال ۷۸۳
+  - Event Delegation برای مدیریت تغییرات
+  - Extension Methods برای تبدیل تاریخ
+  - چک‌لیست کامل Persian DatePicker
 
 ---
 
@@ -807,6 +989,19 @@ RuleFor(x => x.AppointmentDate)
 - [ ] از ورودی‌های مناسب استفاده شده (TextBox، DropDown، DatePicker)
 - [ ] تاریخ‌ها فقط با Persian DatePicker پیاده‌سازی شده‌اند
 - [ ] هیچ placeholder غیررسمی یا فانتزی استفاده نشده
+
+### ✅ بخش ۳.۱: Persian DatePicker (چک‌لیست اجباری)
+- [ ] فیلدهای تاریخ دارای `class="persian-datepicker"` هستند
+- [ ] مقدار اولیه خالی تنظیم شده (`value=""`)
+- [ ] فیلدهای شمسی و میلادی جداگانه در ViewModel تعریف شده‌اند
+- [ ] مقدار اولیه خالی برای فیلدهای شمسی در Controller تنظیم شده
+- [ ] از onSelect callback استفاده نشده (باعث خطای JavaScript می‌شود)
+- [ ] Event Delegation برای تغییرات پیاده‌سازی شده
+- [ ] تابع convertPersianDateToGregorian پیاده‌سازی شده
+- [ ] Extension Methods ToDateTimeFromPersian موجود است
+- [ ] Validation فرمت تاریخ فارسی پیاده‌سازی شده
+- [ ] مقادیر مشکل‌ساز (۷۸۳) پاک می‌شوند
+- [ ] تبدیل خودکار تاریخ شمسی به میلادی کار می‌کند
 
 ### ✅ بخش ۴: اعتبارسنجی (Validation)
 - [ ] همه فیلدهای مهم دارای Validation سمت سرور و کلاینت هستند

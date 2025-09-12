@@ -1,8 +1,11 @@
-@using ClinicApp.ViewModels
 @model ClinicApp.ViewModels.ReceptionSearchViewModel
 
 @{
     ViewBag.Title = "مدیریت پذیرش‌ها";
+    ViewBag.RequireDataTables = true;
+    ViewBag.RequireSelect2 = true;
+    ViewBag.RequireDatePicker = true;
+    ViewBag.RequireFormValidation = true;
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
@@ -56,28 +59,30 @@
                                     <!-- وضعیت پذیرش -->
                                     <div class="col-md-3">
                                         <label for="Status" class="form-label">وضعیت پذیرش</label>
-                                        @Html.DropDownListFor(model => model.Status, Model.StatusList, "همه وضعیت‌ها", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.Status, Model.StatusList, "همه وضعیت‌ها", new { @class = "form-select", id = "statusFilter" })
                                         @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
                                     </div>
 
                                     <!-- تاریخ شروع -->
                                     <div class="col-md-3">
-                                        <label for="StartDate" class="form-label">تاریخ شروع</label>
-                                        @Html.TextBoxFor(model => model.StartDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                                        @Html.ValidationMessageFor(model => model.StartDate, "", new { @class = "text-danger" })
+                                        <label for="StartDateShamsi" class="form-label">تاریخ شروع</label>
+                                        @Html.TextBoxFor(model => model.StartDateShamsi, new { @class = "form-control persian-datepicker", placeholder = "انتخاب تاریخ شروع", id = "startDateShamsi", value = "" })
+                                        @Html.HiddenFor(model => model.StartDate)
+                                        @Html.ValidationMessageFor(model => model.StartDateShamsi, "", new { @class = "text-danger" })
                                     </div>
 
                                     <!-- تاریخ پایان -->
                                     <div class="col-md-3">
-                                        <label for="EndDate" class="form-label">تاریخ پایان</label>
-                                        @Html.TextBoxFor(model => model.EndDate, "{0:yyyy-MM-dd}", new { @class = "form-control", type = "date" })
-                                        @Html.ValidationMessageFor(model => model.EndDate, "", new { @class = "text-danger" })
+                                        <label for="EndDateShamsi" class="form-label">تاریخ پایان</label>
+                                        @Html.TextBoxFor(model => model.EndDateShamsi, new { @class = "form-control persian-datepicker", placeholder = "انتخاب تاریخ پایان", id = "endDateShamsi", value = "" })
+                                        @Html.HiddenFor(model => model.EndDate)
+                                        @Html.ValidationMessageFor(model => model.EndDateShamsi, "", new { @class = "text-danger" })
                                     </div>
 
                                     <!-- نوع پذیرش -->
                                     <div class="col-md-3">
                                         <label for="Type" class="form-label">نوع پذیرش</label>
-                                        @Html.DropDownListFor(model => model.Type, Model.TypeList, "همه انواع", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.Type, Model.TypeList, "همه انواع", new { @class = "form-select", id = "typeFilter" })
                                         @Html.ValidationMessageFor(model => model.Type, "", new { @class = "text-danger" })
                                     </div>
 
@@ -148,17 +153,57 @@
     </div>
 </div>
 
+@section Styles {
+    <link href="~/Content/css/reception-standards.css" rel="stylesheet" />
+    <style>
+        /* ✅ استایل‌های اضافی برای Persian DatePicker */
+        .persian-datepicker {
+            direction: rtl;
+            text-align: right;
+        }
+        
+        .persian-datepicker:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        /* ✅ استایل‌های Select2 */
+        .select2-container--default .select2-selection--single {
+            height: 38px;
+            border: 2px solid #e9ecef;
+            border-radius: 0.375rem;
+        }
+        
+        .select2-container--default .select2-selection--single:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+    </style>
+}
+
 @section Scripts {
     @Scripts.Render("~/bundles/jqueryval")
     
     <script type="text/javascript">
         $(document).ready(function () {
+            // ✅ مقداردهی اولیه Persian DatePicker
+            initializePersianDatePickers();
+            
+            // ✅ مقداردهی اولیه Select2
+            initializeSelect2();
+            
             // ✅ بارگذاری اولیه نتایج
             loadReceptions();
 
             // ✅ جستجو با فرم
             $('#search-form').on('submit', function (e) {
                 e.preventDefault();
+                
+                // ✅ اعتبارسنجی تاریخ‌های فارسی
+                if (!validatePersianDates()) {
+                    return false;
+                }
+                
                 loadReceptions();
             });
 
@@ -169,29 +214,86 @@
                 $.ajax({
                     url: '@Url.Action("GetReceptions", "Reception")',
                     type: 'GET',
+                    dataType: 'json',
                     data: formData,
                     beforeSend: function () {
                         $('#receptions-tbody').html('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</td></tr>');
                     },
                     success: function (response) {
-                        if (response.success) {
-                            displayReceptions(response.data);
+                        // Parse response if it's a string
+                        var parsedResponse = response;
+                        if (typeof response === 'string') {
+                            try {
+                                parsedResponse = JSON.parse(response);
+                            } catch (e) {
+                                console.error('خطا در Parse کردن Response:', e);
+                                showError('خطا در پردازش پاسخ سرور');
+                                return;
+                            }
+                        }
+                        
+                        // لاگ‌گیری حرفه‌ای برای Debugging
+                        console.log('Reception API Response:', {
+                            success: parsedResponse.success,
+                            requestId: parsedResponse.requestId,
+                            timestamp: parsedResponse.timestamp,
+                            dataCount: parsedResponse.data ? parsedResponse.data.items ? parsedResponse.data.items.length : 0 : 0,
+                            totalCount: parsedResponse.data ? parsedResponse.data.totalCount : 0
+                        });
+
+                        if (parsedResponse.success) {
+                            displayReceptions(parsedResponse.data);
                         } else {
-                            showError('خطا در بارگذاری نتایج: ' + response.message);
+                            var errorMessage = parsedResponse.message || 'خطای نامشخص';
+                            var errorCode = parsedResponse.errorCode || 'UNKNOWN_ERROR';
+                            var errorId = parsedResponse.errorId || 'N/A';
+                            
+                            console.error('خطا در API Response:', {
+                                message: errorMessage,
+                                errorCode: errorCode,
+                                errorId: errorId,
+                                fullResponse: parsedResponse
+                            });
+                            
+                            showError(`خطا در بارگذاری نتایج: ${errorMessage} (کد خطا: ${errorCode})`);
                         }
                     },
-                    error: function () {
-                        showError('خطا در ارتباط با سرور');
+                    error: function (xhr, status, error) {
+                        // لاگ‌گیری حرفه‌ای برای خطاها
+                        console.error('Reception API Error:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+                        
+                        var errorMessage = 'خطا در ارتباط با سرور';
+                        if (xhr.status === 404) {
+                            errorMessage = 'سرویس یافت نشد';
+                        } else if (xhr.status === 500) {
+                            errorMessage = 'خطای داخلی سرور';
+                        }
+                        
+                        showError(errorMessage);
                     }
                 });
             }
 
             // ✅ نمایش نتایج
             function displayReceptions(data) {
+                // لاگ‌گیری حرفه‌ای برای Debugging
+                console.log('Display Receptions Data:', {
+                    hasData: !!data,
+                    hasItems: !!(data && data.items),
+                    itemsCount: data && data.items ? data.items.length : 0,
+                    totalCount: data ? data.totalCount : 0,
+                    data: data
+                });
+
                 var tbody = $('#receptions-tbody');
                 tbody.empty();
 
-                if (data.items && data.items.length > 0) {
+                if (data && data.items && data.items.length > 0) {
                     $.each(data.items, function (index, reception) {
                         var row = '<tr>' +
                             '<td>' + reception.receptionId + '</td>' +
@@ -206,7 +308,7 @@
                                     '<a href="@Url.Action("Details")/' + reception.receptionId + '" class="btn btn-outline-info" title="مشاهده جزئیات">' +
                                         '<i class="fas fa-eye"></i>' +
                                     '</a>' +
-                                    '<a href="@Url.Action("EditReception")/' + reception.receptionId + '" class="btn btn-outline-warning" title="ویرایش">' +
+                                    '<a href="@Url.Action("Edit")/' + reception.receptionId + '" class="btn btn-outline-warning" title="ویرایش">' +
                                         '<i class="fas fa-edit"></i>' +
                                     '</a>' +
                                     '<button type="button" class="btn btn-outline-danger" onclick="deleteReception(' + reception.receptionId + ')" title="حذف">' +
@@ -251,7 +353,13 @@
 
             // ✅ تغییر صفحه
             window.changePage = function (pageNumber) {
-                $('#PageNumber').val(pageNumber);
+                // اضافه کردن فیلد مخفی برای شماره صفحه
+                var pageInput = $('#search-form').find('input[name="pageNumber"]');
+                if (pageInput.length === 0) {
+                    $('#search-form').append('<input type="hidden" name="pageNumber" value="' + pageNumber + '">');
+                } else {
+                    pageInput.val(pageNumber);
+                }
                 loadReceptions();
             };
 
@@ -259,7 +367,7 @@
             window.deleteReception = function (receptionId) {
                 if (confirm('آیا از حذف این پذیرش اطمینان دارید؟')) {
                     $.ajax({
-                        url: '@Url.Action("Delete", "Reception")/' + receptionId,
+                        url: '@Url.Action("DeleteConfirmed", "Reception")/' + receptionId,
                         type: 'POST',
                         data: {
                             __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
@@ -302,6 +410,177 @@
             function showError(message) {
                 // نمایش پیام خطا
                 toastr.error(message);
+            }
+            
+            // ✅ اعتبارسنجی تاریخ‌های فارسی
+            function validatePersianDates() {
+                var isValid = true;
+                var startDateShamsi = $('#startDateShamsi').val();
+                var endDateShamsi = $('#endDateShamsi').val();
+                
+                // پاک کردن پیام‌های خطای قبلی
+                $('.text-danger').text('');
+                
+                // اعتبارسنجی تاریخ شروع
+                if (startDateShamsi && !isValidPersianDate(startDateShamsi)) {
+                    $('#startDateShamsi').next('.text-danger').text('فرمت تاریخ شروع صحیح نیست');
+                    isValid = false;
+                }
+                
+                // اعتبارسنجی تاریخ پایان
+                if (endDateShamsi && !isValidPersianDate(endDateShamsi)) {
+                    $('#endDateShamsi').next('.text-danger').text('فرمت تاریخ پایان صحیح نیست');
+                    isValid = false;
+                }
+                
+                // اعتبارسنجی منطقی بودن بازه تاریخ
+                if (startDateShamsi && endDateShamsi && isValidPersianDate(startDateShamsi) && isValidPersianDate(endDateShamsi)) {
+                    var startDate = persianDatepicker.parseDate(startDateShamsi);
+                    var endDate = persianDatepicker.parseDate(endDateShamsi);
+                    
+                    if (startDate > endDate) {
+                        $('#endDateShamsi').next('.text-danger').text('تاریخ پایان باید بعد از تاریخ شروع باشد');
+                        isValid = false;
+                    }
+                }
+                
+                return isValid;
+            }
+            
+            // ✅ بررسی صحت فرمت تاریخ فارسی
+            function isValidPersianDate(dateString) {
+                if (!dateString) return true; // فیلد اختیاری
+                
+                // الگوی تاریخ فارسی: YYYY/MM/DD
+                var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+                
+                if (!persianDatePattern.test(dateString)) {
+                    return false;
+                }
+                
+                try {
+                    // تلاش برای parse کردن تاریخ
+                    var parsedDate = persianDatepicker.parseDate(dateString);
+                    return parsedDate !== null;
+                } catch (e) {
+                    return false;
+                }
+            }
+            
+            // ✅ مقداردهی اولیه Persian DatePicker
+            function initializePersianDatePickers() {
+                // مقداردهی Persian DatePicker با تنظیمات ساده و صحیح
+                $('.persian-datepicker').each(function() {
+                    var $this = $(this);
+                    var currentValue = $this.val();
+                    
+                    // اگر مقدار اولیه وجود دارد، آن را پاک کن
+                    if (currentValue && currentValue.includes('۷۸۳')) {
+                        $this.val('');
+                    }
+                    
+                    $this.persianDatepicker({
+                        format: 'YYYY/MM/DD',
+                        initialValue: false,
+                        autoClose: true,
+                        calendar: {
+                            persian: {
+                                locale: 'fa',
+                                showHint: true,
+                                leapYearMode: 'algorithmic'
+                            }
+                        }
+                    });
+                    
+                    // تنظیم مقدار اولیه صحیح
+                    setTimeout(function() {
+                        if (!$this.val() || $this.val().includes('۷۸۳')) {
+                            $this.val('');
+                        }
+                    }, 100);
+                });
+                
+                // ✅ Event delegation برای تغییر تاریخ
+                $(document).on('change', '.persian-datepicker', function() {
+                    convertPersianDateToGregorian($(this));
+                });
+                
+                // ✅ Event delegation برای input events
+                $(document).on('input blur', '.persian-datepicker', function() {
+                    setTimeout(function() {
+                        convertPersianDateToGregorian($(this));
+                    }, 100);
+                });
+            }
+            
+            // ✅ تابع جداگانه برای تبدیل تاریخ
+            function convertPersianDateToGregorian($element) {
+                try {
+                    var fieldId = $element.attr('id');
+                    var persianDate = $element.val();
+                    
+                    if (persianDate && persianDate.trim() !== '') {
+                        // بررسی فرمت تاریخ فارسی
+                        var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+                        
+                        if (persianDatePattern.test(persianDate)) {
+                            // تبدیل تاریخ شمسی به میلادی
+                            var gregorianDate = persianDatepicker.parseDate(persianDate);
+                            if (gregorianDate) {
+                                var isoDate = gregorianDate.toISOString().split('T')[0];
+                                
+                                if (fieldId === 'startDateShamsi') {
+                                    $('#StartDate').val(isoDate);
+                                } else if (fieldId === 'endDateShamsi') {
+                                    $('#EndDate').val(isoDate);
+                                }
+                                
+                                console.log('تاریخ تبدیل شد:', {
+                                    fieldId: fieldId,
+                                    persianDate: persianDate,
+                                    gregorianDate: isoDate
+                                });
+                            } else {
+                                console.warn('تاریخ شمسی قابل تبدیل نیست:', persianDate);
+                            }
+                        } else {
+                            console.warn('فرمت تاریخ شمسی صحیح نیست:', persianDate);
+                        }
+                    }
+                } catch (error) {
+                    console.error('خطا در تبدیل تاریخ:', error);
+                }
+            }
+            
+            // ✅ مقداردهی اولیه Select2
+            function initializeSelect2() {
+                $('#statusFilter').select2({
+                    placeholder: 'انتخاب وضعیت',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function() {
+                            return "نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
+                
+                $('#typeFilter').select2({
+                    placeholder: 'انتخاب نوع',
+                    allowClear: true,
+                    width: '100%',
+                    language: {
+                        noResults: function() {
+                            return "نتیجه‌ای یافت نشد";
+                        },
+                        searching: function() {
+                            return "در حال جستجو...";
+                        }
+                    }
+                });
             }
         });
     </script>
