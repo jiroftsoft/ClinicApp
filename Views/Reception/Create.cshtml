@@ -101,10 +101,14 @@
                                         @Html.DropDownListFor(model => model.Gender, new SelectList(new List<object> { new { Value = "", Text = "انتخاب کنید" }, new { Value = "1", Text = "مرد" }, new { Value = "2", Text = "زن" } }, "Value", "Text"), new { @class = "form-select" })
                                         @Html.ValidationMessageFor(model => model.Gender, "", new { @class = "text-danger" })
                                     </div>
-                                    <div class="col-md-6">
+                                    <div class="col-md-4">
                                         <label for="BirthDate" class="form-label">تاریخ تولد</label>
                                         @Html.TextBoxFor(model => model.BirthDate, new { @class = "form-control", type = "date" })
                                         @Html.ValidationMessageFor(model => model.BirthDate, "", new { @class = "text-danger" })
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="Age" class="form-label">سن</label>
+                                        <input type="text" id="Age" class="form-control" readonly placeholder="سن" />
                                     </div>
                                     <div class="col-md-6">
                                         <label for="Address" class="form-label">آدرس</label>
@@ -503,7 +507,7 @@
                                     console.log('✅ Valid response structure - calling displayPatientSearchResults');
                                     displayPatientSearchResults(parsedResponse.data);
                                     showSuccess('جستجو با موفقیت انجام شد');
-                                } else {
+                        } else {
                                     console.error('❌ Invalid response data structure:', parsedResponse.data);
                                     showError('ساختار پاسخ نامعتبر است');
                                 }
@@ -639,26 +643,16 @@
                     if (patient.BirthDate) {
                         console.log('🏥 Setting birth date:', patient.BirthDate);
                         try {
-                            // بررسی فرمت تاریخ
-                            var birthDate;
-                            if (typeof patient.BirthDate === 'string' && patient.BirthDate.includes('/Date(')) {
-                                // فرمت .NET Date
-                                birthDate = new Date(parseInt(patient.BirthDate.substr(6)));
-                            } else if (typeof patient.BirthDate === 'string') {
-                                // فرمت ISO string
-                                birthDate = new Date(patient.BirthDate);
+                            // استفاده از تابع جدید برای فرمت کردن تاریخ
+                            var formattedDate = formatBirthDateForDisplay(patient.BirthDate);
+                            if (formattedDate) {
+                                $('#BirthDate').val(formattedDate);
+                                console.log('✅ Birth date set successfully:', formattedDate);
+                                
+                                // محاسبه و نمایش سن
+                                displayAge(patient.BirthDate);
                             } else {
-                                // Date object
-                                birthDate = new Date(patient.BirthDate);
-                            }
-                            
-                            // بررسی معتبر بودن تاریخ
-                            if (birthDate && !isNaN(birthDate.getTime())) {
-                                var isoDate = birthDate.toISOString().split('T')[0];
-                                $('#BirthDate').val(isoDate);
-                                console.log('✅ Birth date set successfully:', isoDate);
-                            } else {
-                                console.warn('⚠️ Invalid birth date format:', patient.BirthDate);
+                                console.warn('⚠️ Could not format birth date:', patient.BirthDate);
                             }
                         } catch (error) {
                             console.error('❌ Error setting birth date:', error);
@@ -666,6 +660,7 @@
                         }
                     } else {
                         console.log('🏥 No birth date provided');
+                        $('#Age').val(''); // پاک کردن سن
                     }
                     
                     // Set patient ID for form submission
@@ -709,34 +704,128 @@
             }
 
             function loadServiceCategories() {
+                console.log('🔄 Loading service categories...');
+                
                 $.ajax({
                     url: '@Url.Action("GetServiceCategories", "Reception")',
                     type: 'GET',
+                    dataType: 'json',
                     success: function (response) {
-                        if (response.success) {
-                            var select = $('#service-category');
-                            select.empty().append('<option value="">انتخاب دسته‌بندی</option>');
-                            $.each(response.data, function (index, category) {
-                                select.append('<option value="' + category.serviceCategoryId + '">' + category.title + '</option>');
-                            });
+                        console.log('📋 Raw Service Categories Response:', response);
+                        console.log('📋 Response Type:', typeof response);
+                        
+                        // Parse response if it's a string
+                        var parsedResponse = response;
+                        if (typeof response === 'string') {
+                            try {
+                                parsedResponse = JSON.parse(response);
+                                console.log('📋 Parsed Service Categories Response:', parsedResponse);
+                            } catch (e) {
+                                console.error('❌ JSON Parse Error:', e);
+                                console.error('❌ Raw Response:', response);
+                                return;
+                            }
                         }
+                        
+                        console.log('📋 Response Success:', parsedResponse.success);
+                        console.log('📋 Response Data:', parsedResponse.data);
+                        console.log('📋 Data Type:', typeof parsedResponse.data);
+                        console.log('📋 Data Length:', parsedResponse.data ? parsedResponse.data.length : 'undefined');
+                        
+                        if (parsedResponse.success) {
+                            var select = $('#service-category');
+                            console.log('📋 Select Element Found:', select.length > 0);
+                            
+                            select.empty().append('<option value="">انتخاب دسته‌بندی</option>');
+                            
+                            if (parsedResponse.data && parsedResponse.data.length > 0) {
+                                console.log('📋 Processing categories...');
+                                $.each(parsedResponse.data, function (index, category) {
+                                    console.log('📋 Category:', index, category);
+                                    console.log('📋 Category ID:', category.ServiceCategoryId);
+                                    console.log('📋 Category Title:', category.Title);
+                                    
+                                    select.append('<option value="' + category.ServiceCategoryId + '">' + category.Title + '</option>');
+                                });
+                                console.log('✅ Service categories loaded successfully');
+                            } else {
+                                console.warn('⚠️ No service categories found in response');
+                            }
+                        } else {
+                            console.error('❌ Service categories request failed:', parsedResponse.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ Service categories AJAX error:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
                     }
                 });
             }
 
             function loadServicesByCategory(categoryId) {
+                console.log('🔄 Loading services for category:', categoryId);
+                
                 $.ajax({
                     url: '@Url.Action("GetServicesByCategory", "Reception")',
                     type: 'GET',
+                    dataType: 'json',
                     data: { categoryId: categoryId },
                     success: function (response) {
-                        if (response.success) {
-                            var select = $('#services');
-                            select.empty();
-                            $.each(response.data, function (index, service) {
-                                select.append('<option value="' + service.id + '">' + service.name + ' - ' + service.price + ' تومان</option>');
-                            });
+                        console.log('📋 Raw Services Response:', response);
+                        console.log('📋 Response Type:', typeof response);
+                        
+                        // Parse response if it's a string
+                        var parsedResponse = response;
+                        if (typeof response === 'string') {
+                            try {
+                                parsedResponse = JSON.parse(response);
+                                console.log('📋 Parsed Services Response:', parsedResponse);
+                            } catch (e) {
+                                console.error('❌ JSON Parse Error:', e);
+                                console.error('❌ Raw Response:', response);
+                                return;
+                            }
                         }
+                        
+                        console.log('📋 Response Success:', parsedResponse.success);
+                        console.log('📋 Response Data:', parsedResponse.data);
+                        console.log('📋 Data Type:', typeof parsedResponse.data);
+                        console.log('📋 Data Length:', parsedResponse.data ? parsedResponse.data.length : 'undefined');
+                        
+                        if (parsedResponse.success) {
+                            var select = $('#services');
+                            console.log('📋 Services Select Element Found:', select.length > 0);
+                            
+                            select.empty().append('<option value="">انتخاب خدمت</option>');
+                            
+                            if (parsedResponse.data && parsedResponse.data.length > 0) {
+                                console.log('📋 Processing services...');
+                                $.each(parsedResponse.data, function (index, service) {
+                                    console.log('📋 Service:', index, service);
+                                    console.log('📋 Service ID:', service.ServiceId);
+                                    console.log('📋 Service Title:', service.Title);
+                                    console.log('📋 Service Price:', service.BasePrice);
+                                    
+                                    select.append('<option value="' + service.ServiceId + '">' + service.Title + ' - ' + service.BasePrice + ' تومان</option>');
+                                });
+                                console.log('✅ Services loaded successfully');
+                            } else {
+                                console.warn('⚠️ No services found for category:', categoryId);
+                                select.append('<option value="">خدمتی یافت نشد</option>');
+                            }
+                        } else {
+                            console.error('❌ Services request failed:', parsedResponse.message);
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        console.error('❌ Services AJAX error:', {
+                            status: status,
+                            error: error,
+                            responseText: xhr.responseText
+                        });
                     }
                 });
             }
@@ -1093,14 +1182,25 @@
                     convertPersianDateToGregorian($(this));
                 });
                 
-                // ✅ Event delegation برای input events - فقط Persian DatePicker
+            // ✅ Event delegation برای input events - فقط Persian DatePicker
                 $(document).on('input blur', '.persian-datepicker', function() {
-                    console.log('🗓️ Persian datepicker input/blur event triggered');
-                    var $element = $(this);
+                console.log('🗓️ Persian datepicker input/blur event triggered');
+                var $element = $(this);
                     setTimeout(function() {
-                        convertPersianDateToGregorian($element);
+                    convertPersianDateToGregorian($element);
                     }, 100);
                 });
+            
+            // ✅ Event delegation برای تغییر تاریخ تولد (محاسبه سن)
+            $(document).on('change', '#BirthDate', function() {
+                console.log('📅 Birth date changed');
+                var birthDate = $(this).val();
+                if (birthDate) {
+                    displayAge(birthDate);
+                } else {
+                    $('#Age').val('');
+                }
+            });
                 
                 // ✅ Event delegation برای HTML5 date fields - فقط برای logging
                 $(document).on('change', 'input[type="date"]', function() {
@@ -1155,11 +1255,11 @@
                     
                     console.log('📅 Persian date value:', persianDate);
                     
-                    // بررسی فرمت تاریخ فارسی
-                    var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
-                    
-                    if (persianDatePattern.test(persianDate)) {
-                        // تبدیل تاریخ شمسی به میلادی
+                        // بررسی فرمت تاریخ فارسی
+                        var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
+                        
+                        if (persianDatePattern.test(persianDate)) {
+                            // تبدیل تاریخ شمسی به میلادی
                         try {
                             var gregorianDate = convertPersianToGregorian(persianDate);
                             if (gregorianDate) {
@@ -1184,8 +1284,8 @@
                         } catch (conversionError) {
                             console.error('❌ Error in date conversion:', conversionError);
                             console.warn('⚠️ تاریخ شمسی قابل تبدیل نیست:', persianDate);
-                        }
-                    } else {
+                            }
+                        } else {
                         console.warn('⚠️ فرمت تاریخ شمسی صحیح نیست:', persianDate);
                     }
                 } catch (error) {
@@ -1195,6 +1295,102 @@
                         stack: error.stack,
                         element: $element
                     });
+                }
+            }
+            
+            // ✅ تابع محاسبه سن
+            function calculateAge(birthDate) {
+                try {
+                    console.log('📅 Calculating age for birth date:', birthDate);
+                    
+                    if (!birthDate) {
+                        console.log('📅 No birth date provided');
+                        return null;
+                    }
+                    
+                    var birth;
+                    
+                    // بررسی فرمت .NET Date
+                    if (typeof birthDate === 'string' && birthDate.includes('/Date(')) {
+                        console.log('📅 Processing .NET Date format');
+                        birth = new Date(parseInt(birthDate.substr(6)));
+                    } else if (typeof birthDate === 'string') {
+                        console.log('📅 Processing string date format');
+                        birth = new Date(birthDate);
+                    } else {
+                        console.log('📅 Processing other date format');
+                        birth = new Date(birthDate);
+                    }
+                    
+                    console.log('📅 Parsed birth date:', birth);
+                    
+                    if (isNaN(birth.getTime())) {
+                        console.error('❌ Invalid birth date after parsing:', birthDate);
+                        return null;
+                    }
+                    
+                    var today = new Date();
+                    var age = today.getFullYear() - birth.getFullYear();
+                    var monthDiff = today.getMonth() - birth.getMonth();
+                    
+                    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+                        age--;
+                    }
+                    
+                    console.log('📅 Calculated age:', age);
+                    return age;
+                } catch (error) {
+                    console.error('❌ Error calculating age:', error);
+                    return null;
+                }
+            }
+            
+            // ✅ تابع نمایش سن
+            function displayAge(birthDate) {
+                var age = calculateAge(birthDate);
+                if (age !== null) {
+                    $('#Age').val(age + ' سال');
+                    console.log('✅ Age displayed:', age + ' سال');
+                } else {
+                    $('#Age').val('');
+                    console.log('⚠️ Age could not be calculated');
+                }
+            }
+            
+            // ✅ تابع تبدیل تاریخ تولد به فرمت مناسب
+            function formatBirthDateForDisplay(birthDate) {
+                try {
+                    console.log('📅 Formatting birth date for display:', birthDate);
+                    
+                    if (!birthDate) {
+                        console.log('📅 No birth date provided');
+                        return null;
+                    }
+                    
+                    var date;
+                    if (typeof birthDate === 'string' && birthDate.includes('/Date(')) {
+                        // فرمت .NET Date
+                        date = new Date(parseInt(birthDate.substr(6)));
+                    } else if (typeof birthDate === 'string') {
+                        // فرمت ISO string یا سایر فرمت‌ها
+                        date = new Date(birthDate);
+                    } else {
+                        // Date object
+                        date = new Date(birthDate);
+                    }
+                    
+                    if (isNaN(date.getTime())) {
+                        console.error('❌ Invalid birth date format:', birthDate);
+                        return null;
+                    }
+                    
+                    // تبدیل به فرمت ISO برای HTML5 date input
+                    var isoDate = date.toISOString().split('T')[0];
+                    console.log('✅ Formatted birth date:', isoDate);
+                    return isoDate;
+                } catch (error) {
+                    console.error('❌ Error formatting birth date:', error);
+                    return null;
                 }
             }
             

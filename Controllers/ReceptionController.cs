@@ -340,8 +340,7 @@ namespace ClinicApp.Controllers
         /// </summary>
         /// <param name="categoryId">شناسه دسته‌بندی</param>
         /// <returns>لیست خدمات</returns>
-        [HttpPost]
-        [ValidateAntiForgeryToken]
+        [HttpGet]
         public async Task<JsonResult> GetServicesByCategory(int categoryId)
         {
             _logger.Information(
