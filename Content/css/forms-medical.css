@@ -1,0 +1,266 @@
+/**
+ * Medical Forms CSS - ClinicApp
+ * Version: 1.0.0
+ * Author: Senior .NET Architect
+ * 
+ * استایل‌های استاندارد برای فرم‌های پزشکی
+ * طراحی شده برای محیط‌های درمانی با رعایت اصول UX/UI
+ */
+
+/* ===== فرم کانتینر ===== */
+.form-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== هدر فرم ===== */
+.form-card-header {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+    color: white;
+    padding: 20px;
+    border-radius: 8px 8px 0 0;
+    margin-bottom: 0;
+}
+
+.form-card-title {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.form-card-title i {
+    font-size: 1.3rem;
+    color: #87ceeb;
+}
+
+/* ===== کارت فرم ===== */
+.form-card {
+    background: white;
+    padding: 30px;
+    border-radius: 0 0 8px 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ===== گروه‌های فرم ===== */
+.form-group {
+    margin-bottom: 25px;
+}
+
+.form-label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: #2c5aa0;
+    font-size: 0.95rem;
+}
+
+/* ===== کنترل‌های فرم ===== */
+.form-control {
+    width: 100%;
+    padding: 12px 15px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background-color: #fff;
+}
+
+.form-control:focus {
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+    outline: none;
+}
+
+.form-control:invalid {
+    border-color: #dc3545;
+}
+
+.form-control:valid {
+    border-color: #28a745;
+}
+
+/* ===== کنترل‌های تاریخ شمسی ===== */
+.persian-datepicker {
+    direction: rtl;
+    text-align: right;
+    font-family: 'Vazirmatn', 'Tahoma', sans-serif;
+}
+
+.persian-datepicker::placeholder {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* ===== کنترل Select2 ===== */
+.select2-control {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single {
+    height: 48px;
+    border: 2px solid #e1e5e9;
+    border-radius: 6px;
+    padding: 8px 12px;
+}
+
+.select2-container--default .select2-selection--single:focus {
+    border-color: #2c5aa0;
+    box-shadow: 0 0 0 3px rgba(44, 90, 160, 0.1);
+}
+
+/* ===== پیام‌های خطا ===== */
+.text-danger {
+    color: #dc3545;
+    font-size: 0.85rem;
+    margin-top: 5px;
+    display: block;
+}
+
+.validation-summary-errors {
+    background: #f8d7da;
+    border: 1px solid #f5c6cb;
+    color: #721c24;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+.validation-summary-errors ul {
+    margin: 0;
+    padding-right: 20px;
+}
+
+/* ===== فوتر فرم ===== */
+.form-footer {
+    background: #f8f9fa;
+    padding: 20px 30px;
+    border-radius: 0 0 8px 8px;
+    border-top: 1px solid #e1e5e9;
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+/* ===== دکمه‌ها ===== */
+.btn {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, #1e3a5f 0%, #2c5aa0 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #5a6268;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+}
+
+/* ===== انیمیشن‌ها ===== */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.form-container {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* ===== ریسپانسیو ===== */
+@media (max-width: 768px) {
+    .form-container {
+        margin: 10px;
+        padding: 15px;
+    }
+    
+    .form-card {
+        padding: 20px;
+    }
+    
+    .form-footer {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* ===== حالت‌های خاص ===== */
+.form-control:disabled {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    cursor: not-allowed;
+}
+
+.form-control:read-only {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+
+/* ===== آیکون‌ها ===== */
+.form-group i {
+    color: #2c5aa0;
+    margin-left: 8px;
+}
+
+/* ===== پیام‌های موفقیت ===== */
+.alert-success {
+    background: #d4edda;
+    border: 1px solid #c3e6cb;
+    color: #155724;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+/* ===== پیام‌های هشدار ===== */
+.alert-warning {
+    background: #fff3cd;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+/* ===== پیام‌های اطلاع‌رسانی ===== */
+.alert-info {
+    background: #d1ecf1;
+    border: 1px solid #bee5eb;
+    color: #0c5460;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}

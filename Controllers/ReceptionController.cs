@@ -696,12 +696,12 @@ namespace ClinicApp.Controllers
                 // ✅ پردازش فیلدهای شمسی طبق قرارداد
                 if (!string.IsNullOrEmpty(model.ReceptionDateShamsi))
                 {
-                    model.ReceptionDate = model.ReceptionDateShamsi.ToDateTimeFromPersian();
+                    model.ReceptionDate = model.ReceptionDateShamsi.ToDateTime();
                 }
                 
                 if (!string.IsNullOrEmpty(model.BirthDateShamsiForInquiry))
                 {
-                    model.BirthDateForInquiry = model.BirthDateShamsiForInquiry.ToDateTimeFromPersianNullable();
+                    model.BirthDateForInquiry = model.BirthDateShamsiForInquiry.ToDateTimeNullable();
                 }
 
                 if (!ModelState.IsValid)
@@ -768,7 +768,7 @@ namespace ClinicApp.Controllers
                     DoctorId = result.Data.DoctorId,
                     DoctorFullName = result.Data.DoctorFullName,
                     ReceptionDate = DateTime.Parse(result.Data.ReceptionDate),
-                    ReceptionDateShamsi = DateTime.Parse(result.Data.ReceptionDate).ToPersianDateString(),
+                    ReceptionDateShamsi = DateTime.Parse(result.Data.ReceptionDate).ToPersianDate(),
                     IsEmergency = result.Data.Type == "اورژانس",
                     Notes = result.Data.Notes,
                     Status = ParseReceptionStatus(result.Data.Status)
@@ -806,7 +806,7 @@ namespace ClinicApp.Controllers
                 // ✅ پردازش فیلدهای شمسی طبق قرارداد
                 if (!string.IsNullOrEmpty(model.ReceptionDateShamsi))
                 {
-                    model.ReceptionDate = model.ReceptionDateShamsi.ToDateTimeFromPersian();
+                    model.ReceptionDate = model.ReceptionDateShamsi.ToDateTime();
                 }
 
                 if (!ModelState.IsValid)
@@ -1013,7 +1013,7 @@ namespace ClinicApp.Controllers
                 // اولویت با فیلدهای شمسی
                 if (!string.IsNullOrEmpty(startDateShamsi))
                 {
-                    start = startDateShamsi.ToDateTimeFromPersian();
+                    start = startDateShamsi.ToDateTime();
                 }
                 else if (!string.IsNullOrEmpty(startDate))
                 {
@@ -1023,7 +1023,7 @@ namespace ClinicApp.Controllers
 
                 if (!string.IsNullOrEmpty(endDateShamsi))
                 {
-                    end = endDateShamsi.ToDateTimeFromPersian();
+                    end = endDateShamsi.ToDateTime();
                 }
                 else if (!string.IsNullOrEmpty(endDate))
                 {

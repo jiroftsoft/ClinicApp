@@ -1,348 +1,238 @@
-# 📋 راهنمای استفاده از قالب‌های استاندارد
-## Standard Templates Usage Guide
+# **📋 Templates برای فرم‌های پیچیده**
+
+## **🎯 هدف**
+این Templates برای ایجاد فرم‌های پیچیده با منطق پیشرفته، اعتبارسنجی کامل، و تجربه کاربری حرفه‌ای طراحی شده‌اند.
 
 ---
 
-## 🎯 هدف
+## **📁 فایل‌های موجود**
 
-این پوشه شامل قالب‌های استاندارد برای پیاده‌سازی سریع و یکپارچه فرم‌های مختلف در پروژه ClinicApp است.
+### **1. 🎨 Frontend Templates**
+- **`ComplexFormTemplate.cshtml`** - Template کامل HTML برای فرم‌های پیچیده
+- **`ComplexFormJavaScript.js`** - JavaScript استاندارد با لاگ‌گذاری حرفه‌ای
+- **`ComplexFormCSS.css`** - CSS کامل با تم پزشکی و طراحی واکنش‌گرا
 
----
+### **2. 🔧 Backend Templates**
+- **`ComplexFormViewModel.cs`** - ViewModel کامل با اعتبارسنجی پیشرفته
+- **`ComplexFormController.cs`** - Controller استاندارد با مدیریت خطا
+- **`ComplexFormService.cs`** - Service layer با منطق کسب‌وکار
+- **`ComplexFormRepository.cs`** - Repository pattern با کوئری‌های بهینه
+- **`ComplexFormEntity.cs`** - Entity model با ویژگی‌های کامل
 
-## 📁 فایل‌های موجود
-
-### 1. `DetailsPageTemplate.cshtml`
-**قالب استاندارد برای فرم‌های جزئیات**
-
-#### نحوه استفاده:
-1. **کپی کردن فایل**:
-   ```bash
-   cp TEMPLATES/DetailsPageTemplate.cshtml Areas/Admin/Views/YourModule/Details.cshtml
-   ```
-
-2. **تغییر Model**:
-   ```csharp
-   @model YourViewModel  // جایگزین YourViewModel
-   ```
-
-3. **تغییر Controller**:
-   ```csharp
-   @Url.Action("Edit", "YourController")  // جایگزین YourController
-   ```
-
-4. **تغییر اطلاعات**:
-   ```csharp
-   @Model.Id, @Model.Name, @Model.Description  // تطبیق با Model واقعی
-   ```
-
-5. **اضافه کردن CSS**:
-   ```html
-   <link href="~/Content/css/details-standards.css" rel="stylesheet" />
-   ```
-
-#### ویژگی‌های قالب:
-- ✅ ساختار کارتی یکپارچه
-- ✅ رنگ‌بندی رسمی محیط درمانی
-- ✅ دسترس‌پذیری کامل (فونت 14px، کنتراست مناسب)
-- ✅ Responsive Design (سازگاری با موبایل)
-- ✅ عملیات سریع (فعال/غیرفعال، ویرایش، بازگشت)
-- ✅ JavaScript برای AJAX
-- ✅ پشتیبانی از jQuery
+### **3. 📚 Documentation**
+- **`COMPLEX_FORM_STANDARDS_CONTRACT.md`** - استانداردهای جامع
+- **`FORM_DEVELOPMENT_CHECKLIST.md`** - چک لیست عملی توسعه
 
 ---
 
-## 🎨 ساختار قالب Details
+## **🚀 نحوه استفاده**
 
-### بخش‌های اصلی:
-
-1. **Header صفحه**:
-   ```html
-   <div class="details-header">
-       <h1 class="details-title">عنوان صفحه</h1>
-       <p class="details-subtitle">توضیح کوتاه</p>
-   </div>
-   ```
-
-2. **اطلاعات اصلی** (آبی):
-   ```html
-   <div class="details-card border-primary">
-       <div class="card-header bg-primary text-white">
-           <h4 class="card-title mb-0">
-               <i class="fa fa-user section-icon"></i>
-               اطلاعات اصلی
-           </h4>
-       </div>
-   </div>
-   ```
-
-3. **وضعیت** (سبز/قرمز):
-   ```html
-   <div class="details-card border-success">
-       <div class="card-header bg-success text-white">
-           <h4 class="card-title mb-0">
-               <i class="fa fa-check-circle section-icon"></i>
-               وضعیت
-           </h4>
-       </div>
-   </div>
-   ```
-
-4. **اطلاعات زمان‌بندی** (آبی اطلاعات):
-   ```html
-   <div class="details-card border-info">
-       <div class="card-header bg-info text-white">
-           <h4 class="card-title mb-0">
-               <i class="fa fa-calendar section-icon"></i>
-               اطلاعات زمان‌بندی
-           </h4>
-       </div>
-   </div>
-   ```
-
-5. **تاریخچه و حسابرسی** (زرد):
-   ```html
-   <div class="details-card border-warning">
-       <div class="card-header bg-warning text-white">
-           <h4 class="card-title mb-0">
-               <i class="fa fa-history section-icon"></i>
-               تاریخچه و حسابرسی
-           </h4>
-       </div>
-   </div>
-   ```
-
-6. **عملیات سریع** (تیره):
-   ```html
-   <div class="details-card border-dark">
-       <div class="card-header bg-dark text-white">
-           <h5 class="card-title mb-0">
-               <i class="fa fa-cogs section-icon"></i>
-               عملیات سریع
-           </h5>
-       </div>
-   </div>
-   ```
-
----
-
-## 🏷️ Badge ها و مقادیر
-
-### انواع Badge:
-
-```html
-<!-- وضعیت فعال -->
-<span class="badge badge-success">فعال</span>
-
-<!-- وضعیت غیرفعال -->
-<span class="badge badge-danger">غیرفعال</span>
-
-<!-- وضعیت در انتظار -->
-<span class="badge badge-warning">در انتظار</span>
-
-<!-- اطلاعات -->
-<span class="badge badge-info">اطلاعات</span>
-
-<!-- ثانویه -->
-<span class="badge badge-secondary">ثانویه</span>
+### **مرحله 1: کپی کردن Templates**
+```bash
+# کپی کردن فایل‌های Template
+cp TEMPLATES/ComplexFormTemplate.cshtml Areas/Admin/Views/[Module]/
+cp TEMPLATES/ComplexFormJavaScript.js Scripts/[module]-form.js
+cp TEMPLATES/ComplexFormCSS.css Content/css/[module]-form.css
+cp TEMPLATES/ComplexFormViewModel.cs ViewModels/[Module]/
+cp TEMPLATES/ComplexFormController.cs Areas/Admin/Controllers/
+cp TEMPLATES/ComplexFormService.cs Services/
+cp TEMPLATES/ComplexFormRepository.cs Repositories/
+cp TEMPLATES/ComplexFormEntity.cs Models/Entities/[Module]/
 ```
 
-### مقادیر متنی:
+### **مرحله 2: جایگزینی Placeholders**
+در تمام فایل‌ها، `[Module]` را با نام ماژول خود جایگزین کنید:
 
-```html
-<!-- مقدار عادی -->
-<span class="info-value">مقدار عادی</span>
-
-<!-- مقدار کم‌رنگ -->
-<span class="info-value">
-    <span class="text-muted">توضیح کم‌رنگ</span>
-</span>
-
-<!-- مقدار با Badge -->
-<span class="info-value">
-    <span class="badge badge-primary">مقدار مهم</span>
-</span>
+```bash
+# مثال: برای ماژول InsurancePlan
+sed -i 's/\[Module\]/InsurancePlan/g' Areas/Admin/Views/InsurancePlan/ComplexFormTemplate.cshtml
+sed -i 's/\[Module\]/InsurancePlan/g' ViewModels/InsurancePlan/ComplexFormViewModel.cs
+# ... و سایر فایل‌ها
 ```
 
----
-
-## 📱 Responsive Design
-
-### Breakpoints:
-
-| اندازه | توضیح |
-|--------|--------|
-| < 576px | موبایل کوچک |
-| 576px+ | موبایل |
-| 768px+ | تبلت |
-| 992px+ | دسکتاپ |
-| 1200px+ | دسکتاپ بزرگ |
-
-### تغییرات موبایل:
-- ردیف‌های اطلاعات به صورت عمودی
-- برچسب‌ها در بالا، مقادیر در پایین
-- دکمه‌های عملیات به صورت عمودی
+### **مرحله 3: تنظیمات خاص**
+- **Entity Model**: فیلدهای خاص ماژول خود را اضافه/حذف کنید
+- **ViewModel**: ویژگی‌های مورد نیاز را تنظیم کنید
+- **Service**: منطق کسب‌وکار خاص را پیاده‌سازی کنید
+- **Repository**: کوئری‌های خاص را اضافه کنید
 
 ---
 
-## 🚀 JavaScript Functions
+## **🔧 ویژگی‌های کلیدی**
 
-### توابع موجود در قالب:
+### **1. 📅 مدیریت تاریخ شمسی**
+- ✅ **Persian DatePicker** با تنظیمات کامل
+- ✅ **اعتبارسنجی فرمت** تاریخ شمسی
+- ✅ **تبدیل خودکار** شمسی به میلادی
+- ✅ **اعتبارسنجی بازه زمانی**
 
-1. **activateItem(id)**:
-   ```javascript
-   function activateItem(id) {
-       // فعال کردن مورد
-   }
-   ```
+### **2. 📝 لاگ‌گذاری حرفه‌ای**
+- ✅ **Console Logging** با emoji و timestamp
+- ✅ **Server-side Logging** با Serilog
+- ✅ **AJAX Request Logging** کامل
+- ✅ **Error Tracking** پیشرفته
 
-2. **deactivateItem(id)**:
-   ```javascript
-   function deactivateItem(id) {
-       // غیرفعال کردن مورد
-   }
-   ```
+### **3. 🛡️ مقاوم‌سازی در برابر خطا**
+- ✅ **Global Error Handler** برای JavaScript
+- ✅ **Try-Catch** کامل در C#
+- ✅ **Validation** چندلایه
+- ✅ **Graceful Degradation**
 
-3. **showAlert(type, message)**:
-   ```javascript
-   function showAlert(type, message) {
-       // نمایش پیام موفقیت/خطا
-   }
-   ```
+### **4. ⚡ بهینه‌سازی عملکرد**
+- ✅ **Debouncing** برای AJAX calls
+- ✅ **Caching** برای داده‌های lookup
+- ✅ **Lazy Loading** برای کامپوننت‌های سنگین
+- ✅ **Query Optimization** در Repository
 
-4. **ensureJQueryLoaded(callback)**:
-   ```javascript
-   function ensureJQueryLoaded(callback) {
-       // اطمینان از بارگذاری jQuery
-   }
-   ```
+### **5. 🎨 طراحی UI تمیز**
+- ✅ **Medical Theme** مناسب محیط درمانی
+- ✅ **Responsive Design** برای تمام دستگاه‌ها
+- ✅ **Accessibility** رعایت استانداردهای دسترسی
+- ✅ **Dark Mode Support** پشتیبانی حالت تاریک
 
 ---
 
-## 🎨 سفارشی‌سازی
+## **📋 چک لیست استفاده**
 
-### اضافه کردن رنگ جدید:
+### **قبل از شروع**
+- [ ] **تحلیل نیازمندی‌ها** انجام شده
+- [ ] **طراحی معماری** تعریف شده
+- [ ] **Templates** کپی شده‌اند
+- [ ] **Placeholders** جایگزین شده‌اند
 
-```css
-/* در فایل CSS یا <style> */
-.bg-custom { background-color: #your-color !important; }
-.border-custom { border-color: #your-color; }
-.badge-custom { 
-    background-color: #your-color !important; 
-    color: #ffffff !important; 
+### **توسعه Backend**
+- [ ] **Entity Model** تنظیم شده
+- [ ] **Repository** پیاده‌سازی شده
+- [ ] **Service** منطق کسب‌وکار اضافه شده
+- [ ] **Controller** Actions پیاده‌سازی شده
+- [ ] **ViewModel** ویژگی‌ها تنظیم شده
+
+### **توسعه Frontend**
+- [ ] **HTML Structure** تنظیم شده
+- [ ] **CSS Styling** شخصی‌سازی شده
+- [ ] **JavaScript** منطق خاص اضافه شده
+- [ ] **Validation** client-side پیاده‌سازی شده
+- [ ] **AJAX Calls** تنظیم شده
+
+### **تست و اعتبارسنجی**
+- [ ] **Unit Tests** نوشته شده
+- [ ] **Integration Tests** انجام شده
+- [ ] **UI Tests** انجام شده
+- [ ] **Performance Tests** انجام شده
+- [ ] **Security Tests** انجام شده
+
+---
+
+## **🎯 مثال عملی**
+
+### **ایجاد ماژول InsurancePlan**
+
+#### **1. کپی Templates**
+```bash
+# کپی فایل‌ها
+cp TEMPLATES/ComplexFormTemplate.cshtml Areas/Admin/Views/InsurancePlan/Create.cshtml
+cp TEMPLATES/ComplexFormTemplate.cshtml Areas/Admin/Views/InsurancePlan/Edit.cshtml
+cp TEMPLATES/ComplexFormViewModel.cs ViewModels/Insurance/InsurancePlan/InsurancePlanCreateEditViewModel.cs
+cp TEMPLATES/ComplexFormController.cs Areas/Admin/Controllers/Insurance/InsurancePlanController.cs
+cp TEMPLATES/ComplexFormService.cs Services/Insurance/InsurancePlanService.cs
+cp TEMPLATES/ComplexFormRepository.cs Repositories/InsurancePlanRepository.cs
+cp TEMPLATES/ComplexFormEntity.cs Models/Entities/Insurance/InsurancePlan.cs
+```
+
+#### **2. جایگزینی Placeholders**
+```bash
+# جایگزینی [Module] با InsurancePlan
+find . -name "*.cs" -o -name "*.cshtml" | xargs sed -i 's/\[Module\]/InsurancePlan/g'
+find . -name "*.cs" -o -name "*.cshtml" | xargs sed -i 's/\[module\]/insuranceplan/g'
+```
+
+#### **3. تنظیمات خاص**
+```csharp
+// در InsurancePlanCreateEditViewModel.cs
+public class InsurancePlanCreateEditViewModel
+{
+    // فیلدهای خاص InsurancePlan
+    public int InsuranceProviderId { get; set; }
+    public decimal CoveragePercent { get; set; }
+    public decimal Deductible { get; set; }
+    
+    // ... سایر فیلدها
 }
 ```
 
-### اضافه کردن بخش جدید:
-
-```html
-<div class="info-section">
-    <div class="details-card border-custom">
-        <div class="card-header bg-custom text-white">
-            <h4 class="card-title mb-0">
-                <i class="fa fa-your-icon section-icon"></i>
-                عنوان بخش جدید
-            </h4>
-        </div>
-        <div class="card-body">
-            <div class="info-table">
-                <div class="info-row border-custom">
-                    <label class="info-label border-custom">برچسب:</label>
-                    <span class="info-value">
-                        <span class="badge badge-custom">مقدار</span>
-                    </span>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+#### **4. تنظیمات JavaScript**
+```javascript
+// در insuranceplan-form.js
+const FormConfig = {
+    moduleName: 'InsurancePlan',
+    ajaxTimeout: 30000,
+    // ... سایر تنظیمات
+};
 ```
 
 ---
 
-## 📋 چک‌لیست پیاده‌سازی
+## **🔍 عیب‌یابی**
 
-### ✅ قبل از استفاده:
+### **مشکلات رایج**
 
-- [ ] **CSS اضافه شده**: `details-standards.css` در Layout
-- [ ] **Model تغییر کرده**: YourViewModel جایگزین شده
-- [ ] **Controller تغییر کرده**: YourController جایگزین شده
-- [ ] **Actions تغییر کرده**: Edit, Activate, Deactivate
-- [ ] **Properties تطبیق داده**: Model.Id, Model.Name, etc.
-- [ ] **رنگ‌ها بررسی شده**: مطابق با پالت استاندارد
-- [ ] **آیکون‌ها بررسی شده**: FontAwesome موجود
-- [ ] **JavaScript تست شده**: jQuery و AJAX
+#### **1. خطای Compilation**
+```bash
+# بررسی using statements
+# بررسی namespace ها
+# بررسی dependency injection
+```
 
-### ✅ بعد از پیاده‌سازی:
+#### **2. خطای JavaScript**
+```javascript
+// بررسی console logs
+// بررسی AJAX calls
+// بررسی validation
+```
 
-- [ ] **صفحه بارگذاری می‌شود**: بدون خطا
-- [ ] **رنگ‌ها صحیح**: مطابق با استاندارد
-- [ ] **موبایل سازگار**: Responsive کار می‌کند
-- [ ] **دکمه‌ها کار می‌کنند**: عملیات AJAX
-- [ ] **پیام‌ها نمایش داده می‌شوند**: موفقیت/خطا
-- [ ] **دسترس‌پذیری**: Tab Navigation
-- [ ] **چاپ**: Print Styles
-
----
-
-## 🔧 عیب‌یابی
-
-### مشکلات رایج:
-
-1. **CSS بارگذاری نمی‌شود**:
-   ```html
-   <!-- بررسی مسیر CSS -->
-   <link href="~/Content/css/details-standards.css" rel="stylesheet" />
-   ```
-
-2. **jQuery کار نمی‌کند**:
-   ```javascript
-   // بررسی بارگذاری jQuery
-   ensureJQueryLoaded(function() {
-       // کدهای jQuery
-   });
-   ```
-
-3. **رنگ‌ها نمایش داده نمی‌شوند**:
-   ```css
-   /* استفاده از !important */
-   .bg-primary { background-color: #007bff !important; }
-   ```
-
-4. **موبایل Responsive نیست**:
-   ```css
-   /* بررسی Media Queries */
-   @media (max-width: 768px) {
-       .info-row { flex-direction: column; }
-   }
-   ```
+#### **3. خطای CSS**
+```css
+/* بررسی CSS variables */
+/* بررسی responsive design */
+/* بررسی browser compatibility */
+```
 
 ---
 
-## 📚 مراجع
+## **📚 منابع بیشتر**
 
-### فایل‌های مرتبط:
-- `CONTRACTS/DETAILS_DISPLAY_STANDARDS.md` - قرارداد کامل
-- `CONTRACTS/AI_COMPLIANCE_CONTRACT.md` - قوانین 40-48
-- `Content/css/details-standards.css` - CSS مشترک
-- `Areas/Admin/Views/DoctorServiceCategory/Details.cshtml` - نمونه کامل
+### **مستندات**
+- **`COMPLEX_FORM_STANDARDS_CONTRACT.md`** - استانداردهای جامع
+- **`FORM_DEVELOPMENT_CHECKLIST.md`** - چک لیست عملی
 
-### قراردادهای مرتبط:
-- `CONTRACTS/DESIGN_PRINCIPLES_CONTRACT.md`
-- `CONTRACTS/FormStandards.md`
+### **مثال‌های موجود**
+- **`InsurancePlan`** - مثال کامل پیاده‌سازی شده
+- **`Reception`** - مثال فرم پیچیده با cascade loading
 
----
-
-## 📞 پشتیبانی
-
-### در صورت مشکل:
-1. بررسی چک‌لیست پیاده‌سازی
-2. مراجعه به فایل‌های نمونه
-3. بررسی قراردادهای مرتبط
-4. تماس با تیم توسعه
+### **ابزارهای مفید**
+- **Persian DatePicker** - انتخابگر تاریخ شمسی
+- **Serilog** - لاگ‌گذاری server-side
+- **Bootstrap** - فریمورک CSS
+- **jQuery** - کتابخانه JavaScript
 
 ---
 
-**تاریخ ایجاد**: جلسه فعلی  
-**وضعیت**: فعال و آماده استفاده  
-**دامنه**: تمامی فرم‌های جزئیات در پروژه ClinicApp  
-**آخرین به‌روزرسانی**: جلسه فعلی - نسخه 1.0
+## **🎯 نتیجه‌گیری**
+
+این Templates یک راه‌حل کامل و استاندارد برای ایجاد فرم‌های پیچیده ارائه می‌دهند که شامل:
+
+1. **📅 مدیریت کامل تاریخ شمسی**
+2. **📝 لاگ‌گذاری حرفه‌ای**
+3. **🛡️ مقاوم‌سازی در برابر خطا**
+4. **⚡ بهینه‌سازی عملکرد**
+5. **🎨 طراحی UI تمیز**
+6. **✅ چک لیست کامل**
+
+با استفاده از این Templates، فرم‌های پیچیده به صورت حرفه‌ای، امن، و قابل نگهداری پیاده‌سازی خواهند شد.
+
+---
+
+**📅 تاریخ ایجاد**: 1404/06/23  
+**👤 ایجادکننده**: AI Assistant  
+**🔄 نسخه**: 1.0  
+**📋 وضعیت**: فعال

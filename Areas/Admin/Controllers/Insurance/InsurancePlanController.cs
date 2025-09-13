@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -26,7 +27,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// 
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
-    //[Authorize(Roles = AppRoles.Admin)]
+    //[Authorize(Roles = "Admin")]
     [RouteArea("Admin")]
     [RoutePrefix("Insurance/Plan")]
     public class InsurancePlanController : Controller
@@ -235,6 +236,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     model.CreateInsuranceProviderSelectList();
                 }
 
+                // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
+                model.ConvertGregorianDatesToPersian();
+
                 return View(model);
             }
             catch (Exception ex)
@@ -261,6 +265,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
             try
             {
+                // تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                if (model != null)
+                {
+                    model.ConvertPersianDatesToGregorian();
+                }
+
                 if (!ModelState.IsValid)
                 {
                     _log.Warning(
@@ -346,6 +356,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     result.Data.CreateInsuranceProviderSelectList();
                 }
 
+                // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
+                result.Data.ConvertGregorianDatesToPersian();
+
                 _log.Information(
                     "فرم ویرایش طرح بیمه با موفقیت دریافت شد. PlanId: {PlanId}, Name: {Name}. User: {UserName} (Id: {UserId})",
                     id, result.Data.Name, _currentUserService.UserName, _currentUserService.UserId);
@@ -377,6 +390,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
             try
             {
+                // تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                if (model != null)
+                {
+                    model.ConvertPersianDatesToGregorian();
+                }
+
                 if (!ModelState.IsValid)
                 {
                     _log.Warning(
@@ -674,12 +693,22 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             try
             {
-                await LoadInsuranceProvidersAsync();
+                var providersResult = await _insuranceProviderService.GetActiveProvidersForLookupAsync();
+                if (providersResult.Success)
+                {
+                    ViewBag.InsuranceProviderSelectList = new SelectList(providersResult.Data, "Id", "Name");
+                }
+                else
+                {
+                    ViewBag.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+                    _log.Warning("خطا در بارگیری لیست ارائه‌دهندگان بیمه: {Message}", providersResult.Message);
+                }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در بارگیری لیست ارائه‌دهندگان بیمه. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
+                ViewBag.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
             }
         }
 

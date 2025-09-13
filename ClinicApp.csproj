@@ -882,6 +882,9 @@
     <Content Include="Content\css\details-standards.css" />
     <Content Include="Content\css\doctor-assignment-index.css" />
     <Content Include="Content\css\form-standards.css" />
+    <Content Include="Content\css\forms-medical.css" />
+    <Content Include="Content\css\insurance-plan.css" />
+    <Content Include="Content\css\local-fonts.css" />
     <Content Include="Content\css\notifications.css" />
     <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\Images\default-avatar.png" />
@@ -928,6 +931,8 @@
     <Content Include="Content\plugins\dropzone\dropzone.min.css" />
     <Content Include="Content\plugins\dropzone\dropzone.min.js" />
     <Content Include="Content\plugins\FullCalendar\index.global.min.js" />
+    <Content Include="Content\plugins\persian-datepicker\jalaali.js" />
+    <Content Include="Content\plugins\persian-datepicker\jalaali.min.js" />
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.css" />
     <Content Include="Content\plugins\persian-datepicker\jquery-ui.min.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-date.min.js" />
@@ -3588,6 +3593,12 @@
     <Content Include="CONTRACTS\VIEWS_UPDATE_REPORT.md" />
     <Content Include="CONTRACTS\VIEW_OPTIMIZATION_CONTRACT.md" />
     <Content Include="CONTRACTS\ADMIN_LAYOUT_USAGE_GUIDE.md" />
+    <Content Include="CONTRACTS\COMPLEX_FORM_STANDARDS_CONTRACT.md" />
+    <Content Include="CONTRACTS\DATE_CONVERSION_ERROR_FIX.md" />
+    <Content Include="CONTRACTS\FORM_DEVELOPMENT_CHECKLIST.md" />
+    <Content Include="CONTRACTS\PERSIAN_DATEPICKER_LIBRARY_ERROR_FIX.md" />
+    <Content Include="CONTRACTS\RECEPTION_CREATE_FORM_FIXES.md" />
+    <Content Include="CONTRACTS\JQUERY_RESPONSE_PARSING_FIX.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3689,6 +3700,7 @@
     <Content Include="Scripts\FinalDatePicker\persian-datepicker-helper.js" />
     <Content Include="Scripts\FinalDatePicker\persian-datepicker.min.css" />
     <Content Include="Scripts\FinalDatePicker\persian-datepicker.min.js" />
+    <Content Include="Scripts\helpers\ajax-response-parser.js" />
     <Content Include="Scripts\i18n\af.js" />
     <Content Include="Scripts\i18n\ar.js" />
     <Content Include="Scripts\i18n\az.js" />
@@ -3775,8 +3787,6 @@
     <Content Include="Scripts\persian-datepicker.min.js" />
     <Content Include="Scripts\PersianDateTimePicker\jalaali.js" />
     <Content Include="Scripts\PersianDateTimePicker\jalaali.min.js" />
-    <Content Include="Scripts\PersianDateTimePicker\jalalidatepicker.min.css" />
-    <Content Include="Scripts\PersianDateTimePicker\jalalidatepicker.min.js" />
     <Content Include="Scripts\PersianDateTimePicker\jquery-ui-datetimepicker.min.css" />
     <Content Include="Scripts\PersianDateTimePicker\jquery-ui-datetimepicker.min.js" />
     <Content Include="Scripts\PersianDateTimePicker\persian-date.min.js" />
@@ -3787,6 +3797,8 @@
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
     <Content Include="Scripts\toastr.min.js" />
+    <Content Include="TEMPLATES\ComplexFormCSS.css" />
+    <Content Include="TEMPLATES\ComplexFormJavaScript.js" />
     <Content Include="Views\Shared\jqueryui.html" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
@@ -3851,6 +3863,7 @@
     <Content Include="Views\Payment\_PaymentTransactionCardPartial.cshtml" />
     <Content Include="Views\Payment\_PaymentTransactionListPartial.cshtml" />
     <Content Include="site.webmanifest" />
+    <Content Include="TEMPLATES\ComplexFormTemplate.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

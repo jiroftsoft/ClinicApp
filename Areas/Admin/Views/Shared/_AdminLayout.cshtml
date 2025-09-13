@@ -1,4 +1,5 @@
-﻿@{
+﻿@using Org.BouncyCastle.Asn1.Ocsp
+@{
     var appName = "کلینیک درمانی شفا";
     var title = ViewBag.Title ?? "داشبورد مدیریت";
     var metaDescription = ViewBag.MetaDescription ?? "کلینیک درمانی شفا - ارائه خدمات پزشکی تخصصی";
@@ -17,7 +18,7 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
 
     <!-- Security Headers -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data: https:;">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;">
     <meta http-equiv="X-Content-Type-Options" content="nosniff">
     <!-- X-Frame-Options should be set in HTTP headers, not in meta tags -->
     <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
@@ -29,6 +30,8 @@
     <link rel="preload" href="~/Content/js/admin-layout.js" as="script">
     <link rel="preload" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css" as="style" onload="this.onload=null;this.rel='stylesheet'">
     <noscript><link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css"></noscript>
+    <!-- Local Fonts -->
+    <link rel="stylesheet" href="~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css">
 
     <!-- Stylesheets -->
     @Styles.Render("~/Content/admin")
@@ -289,50 +292,9 @@
 
             function initializePersianDatePicker() {
                 ensureJQuery(function () {
-                    if (typeof $.fn.persianDatepicker !== 'undefined') {
-                        $('.persian-date').each(function () {
-                            var $this = $(this);
-                            if (!$this.data('persian-datepicker-initialized')) {
-                                $this.persianDatepicker({
-                                    format: 'YYYY/MM/DD',
-                                    initialValue: false,
-                                    autoClose: true,
-                                    observer: false,
-                                    persianDigit: true,
-                                    calendar: {
-                                        persian: {
-                                            locale: 'fa',
-                                            leapYearMode: 'astronomical'
-                                        }
-                                    },
-                                    toolbox: {
-                                        todayBtn: { enabled: true, text: { fa: 'امروز' } },
-                                        clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
-                                    },
-                                    onSelect: function (unix) {
-                                        // Convert to Persian date using jalaali-js
-                                        if (typeof window.jalaali !== 'undefined') {
-                                            var date = new Date(unix);
-                                            var persianDate = window.jalaali.toJalaali(date.getFullYear(), date.getMonth() + 1, date.getDate());
-                                            var formattedDate = persianDate.jy + '/' +
-                                                String(persianDate.jm).padStart(2, '0') + '/' +
-                                                String(persianDate.jd).padStart(2, '0');
-                                            $this.val(formattedDate);
-                                        } else {
-                                            // Fallback to simple display
-                                            $this.val($this.val());
-                                        }
-
-                                        // Trigger change event
-                                        $this.trigger('change');
-                                    }
-                                });
-                                $this.data('persian-datepicker-initialized', true);
-                            }
-                        });
-                    } else {
-                        console.warn('Persian DatePicker plugin not loaded');
-                    }
+                    // Persian DatePicker is now handled by the standard initializer
+                    // No manual initialization needed in layout
+                    console.log('✅ Persian DatePicker will be initialized by standard initializer');
                 });
             }
 
