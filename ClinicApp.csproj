@@ -460,6 +460,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceProviderController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
@@ -470,6 +471,7 @@
     <Compile Include="Core\SecurityLevel.cs" />
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
@@ -478,6 +480,7 @@
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\EnumExtensions.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
+    <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
@@ -726,6 +729,7 @@
     <Compile Include="Services\ServiceCategoryService.cs" />
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
+    <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
@@ -838,6 +842,7 @@
     <Compile Include="ViewModels\PatientViewModel.cs" />
     <Compile Include="ViewModels\ReceptionViewModel.cs" />
     <Compile Include="ViewModels\ServiceViewModels.cs" />
+    <Compile Include="ViewModels\Shared\PaginationViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationCreateEditViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationDetailsViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationIndexPageViewModel.cs" />
@@ -879,12 +884,15 @@
     <Content Include="Content\bootstrap.rtl.css" />
     <Content Include="Content\bootstrap.rtl.min.css" />
     <Content Include="Content\css\admin-layout.css" />
+    <Content Include="Content\css\details-page-medical.css" />
     <Content Include="Content\css\details-standards.css" />
     <Content Include="Content\css\doctor-assignment-index.css" />
     <Content Include="Content\css\form-standards.css" />
     <Content Include="Content\css\forms-medical.css" />
+    <Content Include="Content\css\insurance-plan-index.css" />
     <Content Include="Content\css\insurance-plan.css" />
     <Content Include="Content\css\local-fonts.css" />
+    <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
     <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\Images\default-avatar.png" />
@@ -3215,6 +3223,7 @@
     <Content Include="Scripts\aos.js" />
     <Content Include="Scripts\app\assignment-form.js" />
     <Content Include="Scripts\app\doctor-assignment-index.js" />
+    <Content Include="Scripts\app\insurance-plan-index.js" />
     <Content Include="Scripts\app\utility.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
@@ -3599,6 +3608,7 @@
     <Content Include="CONTRACTS\PERSIAN_DATEPICKER_LIBRARY_ERROR_FIX.md" />
     <Content Include="CONTRACTS\RECEPTION_CREATE_FORM_FIXES.md" />
     <Content Include="CONTRACTS\JQUERY_RESPONSE_PARSING_FIX.md" />
+    <Content Include="Areas\Admin\Views\InsurancePlan\_InsurancePlanListPartial.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3864,6 +3874,9 @@
     <Content Include="Views\Payment\_PaymentTransactionListPartial.cshtml" />
     <Content Include="site.webmanifest" />
     <Content Include="TEMPLATES\ComplexFormTemplate.cshtml" />
+    <Content Include="Views\Shared\_PaginationPartial.cshtml" />
+    <Content Include="Views\Shared\EditorTemplates\PersianDatePicker.cshtml" />
+    <Content Include="Views\Shared\EditorTemplates\PersianDateRange.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

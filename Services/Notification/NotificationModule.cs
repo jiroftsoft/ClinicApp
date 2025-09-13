@@ -276,6 +276,11 @@ namespace ClinicApp.Services.Notification
     public class NotificationMessage
     {
         /// <summary>
+        /// شناسه یکتای پیام (برای tracking و debugging)
+        /// </summary>
+        public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8);
+
+        /// <summary>
         /// گیرنده پیام (شماره/ایمیل)
         /// </summary>
         [Required, MaxLength(50)]

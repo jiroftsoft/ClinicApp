@@ -9,6 +9,7 @@ using ClinicApp.Services.Insurance;
 using ClinicApp.Models.Entities;
 using ClinicApp.Services;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
+using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 using Serilog;
 
 namespace ClinicApp.Areas.Admin.Controllers.Insurance
@@ -229,15 +230,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 };
 
                 // بارگیری لیست ارائه‌دهندگان بیمه
-                var providersResult = await _insuranceProviderService.GetActiveProvidersForLookupAsync();
-                if (providersResult.Success)
-                {
-                    model.InsuranceProviders = providersResult.Data;
-                    model.CreateInsuranceProviderSelectList();
-                }
-
-                // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
-                model.ConvertGregorianDatesToPersian();
+                await LoadInsuranceProvidersForViewModelAsync(model);
 
                 return View(model);
             }
@@ -293,7 +286,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _messageNotificationService.AddErrorMessage(result.Message);
                     
                     // بارگیری مجدد لیست ارائه‌دهندگان بیمه
-                    await LoadInsuranceProvidersAsync();
+                    await LoadInsuranceProvidersForViewModelAsync(model);
 
                     return View(model);
                 }
@@ -314,7 +307,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _messageNotificationService.AddErrorMessage("خطا در ایجاد طرح بیمه");
                 
                 // بارگیری مجدد لیست ارائه‌دهندگان بیمه
-                await LoadInsuranceProvidersAsync();
+                await LoadInsuranceProvidersForViewModelAsync(model);
 
                 return View(model);
             }
@@ -349,12 +342,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
 
                 // بارگیری لیست ارائه‌دهندگان بیمه
-                var providersResult = await _insuranceProviderService.GetActiveProvidersForLookupAsync();
-                if (providersResult.Success)
-                {
-                    result.Data.InsuranceProviders = providersResult.Data;
-                    result.Data.CreateInsuranceProviderSelectList();
-                }
+                await LoadInsuranceProvidersForViewModelAsync(result.Data);
 
                 // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
                 result.Data.ConvertGregorianDatesToPersian();
@@ -418,7 +406,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _messageNotificationService.AddErrorMessage(result.Message);
                     
                     // بارگیری مجدد لیست ارائه‌دهندگان بیمه
-                    await LoadInsuranceProvidersAsync();
+                    await LoadInsuranceProvidersForViewModelAsync(model);
 
                     return View(model);
                 }
@@ -439,7 +427,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _messageNotificationService.AddErrorMessage("خطا در به‌روزرسانی طرح بیمه");
                 
                 // بارگیری مجدد لیست ارائه‌دهندگان بیمه
-                await LoadInsuranceProvidersAsync();
+                await LoadInsuranceProvidersForViewModelAsync(model);
 
                 return View(model);
             }
@@ -688,6 +676,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
         /// <summary>
         /// بارگیری لیست ارائه‌دهندگان بیمه برای ViewBag
+        /// طبق اصل DRY - یکبار تعریف، چندبار استفاده
         /// </summary>
         private async Task LoadInsuranceProvidersAsync()
         {
@@ -697,6 +686,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (providersResult.Success)
                 {
                     ViewBag.InsuranceProviderSelectList = new SelectList(providersResult.Data, "Id", "Name");
+                    _log.Debug("لیست ارائه‌دهندگان بیمه با موفقیت بارگیری شد. تعداد: {Count}", providersResult.Data.Count);
                 }
                 else
                 {
@@ -709,6 +699,37 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Error(ex, "خطا در بارگیری لیست ارائه‌دهندگان بیمه. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
                 ViewBag.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+            }
+        }
+
+        /// <summary>
+        /// بارگیری لیست ارائه‌دهندگان بیمه برای ViewModel
+        /// طبق اصل DRY - یکبار تعریف، چندبار استفاده
+        /// </summary>
+        private async Task LoadInsuranceProvidersForViewModelAsync(InsurancePlanCreateEditViewModel model)
+        {
+            try
+            {
+                var providersResult = await _insuranceProviderService.GetActiveProvidersForLookupAsync();
+                if (providersResult.Success)
+                {
+                    model.InsuranceProviders = providersResult.Data;
+                    model.CreateInsuranceProviderSelectList();
+                    _log.Debug("لیست ارائه‌دهندگان بیمه برای ViewModel با موفقیت بارگیری شد. تعداد: {Count}", providersResult.Data.Count);
+                }
+                else
+                {
+                    model.InsuranceProviders = new List<InsuranceProviderLookupViewModel>();
+                    model.CreateInsuranceProviderSelectList();
+                    _log.Warning("خطا در بارگیری لیست ارائه‌دهندگان بیمه برای ViewModel: {Message}", providersResult.Message);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بارگیری لیست ارائه‌دهندگان بیمه برای ViewModel. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+                model.InsuranceProviders = new List<InsuranceProviderLookupViewModel>();
+                model.CreateInsuranceProviderSelectList();
             }
         }
 

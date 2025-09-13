@@ -32,7 +32,7 @@ namespace ClinicApp.Filters
         /// <summary>
         /// محدوده سال‌های معتبر برای سیستم‌های پزشکی
         /// </summary>
-        public int MinYear { get; set; } = 1200;
+        public int MinYear { get; set; } = 700;
         public int MaxYear { get; set; } = 1500;
 
         /// <summary>
@@ -57,6 +57,7 @@ namespace ClinicApp.Filters
         public string InvalidDateMessage { get; set; } = "تاریخ وارد شده معتبر نیست.";
         public string PastDateRequiredMessage { get; set; } = "تاریخ باید در گذشته باشد.";
         public string FutureDateRequiredMessage { get; set; } = "تاریخ باید در آینده باشد.";
+        public string YearRangeMessage { get; set; } = "سال باید بین {0} تا {1} باشد.";
 
         public PersianDateAttribute()
         {

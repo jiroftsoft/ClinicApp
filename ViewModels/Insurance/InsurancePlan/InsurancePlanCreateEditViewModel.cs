@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
+using ClinicApp.Filters;
+using ClinicApp.Extensions;
 
 namespace ClinicApp.ViewModels.Insurance.InsurancePlan
 {
@@ -48,10 +50,24 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         public decimal Deductible { get; set; }
 
         [Required(ErrorMessage = "تاریخ شروع الزامی است")]
+        [PersianDate(IsRequired = true, MustBeFutureDate = false, MinYear = 1200, MaxYear = 1500,
+            InvalidFormatMessage = "فرمت تاریخ شروع نامعتبر است. (مثال: 1404/06/23)",
+            YearRangeMessage = "سال تاریخ شروع باید بین 1200 تا 1500 باشد.")]
         [Display(Name = "تاریخ شروع")]
+        public string ValidFromShamsi { get; set; }
+
+        [PersianDate(IsRequired = false, MustBeFutureDate = false, MinYear = 1200, MaxYear = 1500,
+            InvalidFormatMessage = "فرمت تاریخ پایان نامعتبر است. (مثال: 1404/06/23)",
+            YearRangeMessage = "سال تاریخ پایان باید بین 1200 تا 1500 باشد.")]
+        [Display(Name = "تاریخ پایان")]
+        public string ValidToShamsi { get; set; }
+
+        [HiddenInput(DisplayValue = false)]
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public DateTime ValidFrom { get; set; }
 
-        [Display(Name = "تاریخ پایان")]
+        [HiddenInput(DisplayValue = false)]
+        [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public DateTime? ValidTo { get; set; }
 
         [StringLength(500, ErrorMessage = "توضیحات نمی‌تواند بیشتر از 500 کاراکتر باشد")]
@@ -146,6 +162,40 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
             entity.ValidTo = this.ValidTo ?? DateTime.Now.AddYears(1);
             entity.Description = this.Description?.Trim();
             entity.IsActive = this.IsActive;
+        }
+
+        /// <summary>
+        /// تبدیل تاریخ‌های شمسی به میلادی برای ذخیره در دیتابیس
+        /// استفاده از DateTimeExtensions موجود
+        /// </summary>
+        public void ConvertPersianDatesToGregorian()
+        {
+            if (!string.IsNullOrEmpty(ValidFromShamsi))
+            {
+                ValidFrom = ValidFromShamsi.ToDateTime();
+            }
+
+            if (!string.IsNullOrEmpty(ValidToShamsi))
+            {
+                ValidTo = ValidToShamsi.ToDateTime();
+            }
+        }
+
+        /// <summary>
+        /// تبدیل تاریخ‌های میلادی به شمسی برای نمایش به کاربر
+        /// استفاده از DateTimeExtensions موجود
+        /// </summary>
+        public void ConvertGregorianDatesToPersian()
+        {
+            if (ValidFrom != DateTime.MinValue)
+            {
+                ValidFromShamsi = ValidFrom.ToPersianDate();
+            }
+
+            if (ValidTo.HasValue)
+            {
+                ValidToShamsi = ValidTo.Value.ToPersianDate();
+            }
         }
     }
 }

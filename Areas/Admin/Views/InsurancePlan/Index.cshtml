@@ -7,116 +7,7 @@
 @Html.Partial("_NotificationMessages")
 
 @section Styles {
-    <style>
-        /* Medical Environment Color Scheme - طبق قرارداد */
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-secondary: #6c757d;
-            --medical-success: #28a745;
-            --medical-danger: #dc3545;
-            --medical-warning: #ffc107;
-            --medical-info: #17a2b8;
-            --medical-light: #f8f9fa;
-            --medical-dark: #343a40;
-            --medical-border: #dee2e6;
-            --medical-text: #495057;
-            --medical-text-muted: #6c757d;
-        }
-
-        .insurance-plan-card {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--medical-border);
-        }
-        .plan-header {
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-        .plan-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        .plan-code {
-            font-family: 'Courier New', monospace;
-            background-color: #f8f9fa;
-            padding: 0.3rem 0.8rem;
-            border-radius: 0.3rem;
-            font-size: 0.9rem;
-            border: 1px solid #dee2e6;
-        }
-        .provider-badge {
-            background-color: #e3f2fd;
-            color: #1976d2;
-            padding: 0.3rem 0.8rem;
-            border-radius: 0.3rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .coverage-info {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #dee2e6;
-        }
-        .coverage-percent {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: #28a745;
-        }
-        .deductible-amount {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #dc3545;
-        }
-        .validity-period {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 0.8rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-        .validity-label {
-            font-size: 0.9rem;
-            color: #856404;
-            font-weight: 500;
-        }
-        .validity-date {
-            font-weight: 600;
-            color: #856404;
-        }
-        .status-badge {
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-        }
-        .btn-action {
-            margin: 0.25rem;
-            font-weight: 600;
-        }
-        .search-filters {
-            background-color: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-        }
-        .filter-group {
-            margin-bottom: 1rem;
-        }
-        .filter-group:last-child {
-            margin-bottom: 0;
-        }
-        .filter-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-    </style>
+    <link href="~/Content/css/insurance-plan-index.css" rel="stylesheet" />
 }
 
 <div class="container-fluid">
@@ -124,7 +15,9 @@
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>مدیریت طرح‌های بیمه</h2>
-                <a href="@Url.Action("Create", "InsurancePlan")" class="btn btn-primary">
+                <a href="@Url.Action("Create", "InsurancePlan")" 
+                   class="btn btn-primary" 
+                   data-tooltip="ایجاد طرح بیمه جدید در سیستم">
                     <i class="fas fa-plus"></i> افزودن طرح بیمه جدید
                 </a>
             </div>
@@ -155,7 +48,9 @@
                             <div class="filter-group">
                                 <label class="filter-label">&nbsp;</label>
                                 <div>
-                                    <button type="submit" class="btn btn-primary btn-block">
+                                    <button type="submit" 
+                                            class="btn btn-primary btn-block btn-search" 
+                                            data-tooltip="جستجو در طرح‌های بیمه بر اساس فیلترهای انتخاب شده">
                                         <i class="fas fa-search"></i> جستجو
                                     </button>
                                 </div>
@@ -191,127 +86,31 @@
             <!-- Insurance Plans List -->
             @if (Model.HasData)
             {
-                <div class="row">
-                    @foreach (var plan in Model.InsurancePlans)
-                    {
-                        <div class="col-md-6 col-lg-4">
-                            <div class="insurance-plan-card">
-                                <div class="plan-header">
-                                    <div class="plan-name">@plan.Name</div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="plan-code">@plan.PlanCode</span>
-                                        <span class="provider-badge">@plan.InsuranceProviderName</span>
-                                    </div>
-                                </div>
-
-                                <div class="coverage-info">
-                                    <div class="row text-center">
-                                        <div class="col-6">
-                                            <div class="coverage-percent">@plan.CoveragePercent%</div>
-                                            <small class="text-muted">پوشش بیمه</small>
-                                        </div>
-                                        <div class="col-6">
-                                            <div class="deductible-amount">@plan.Deductible.ToString("N0")</div>
-                                            <small class="text-muted">فرانشیز (تومان)</small>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div class="validity-period">
-                                    <div class="validity-label">دوره اعتبار:</div>
-                                    <div class="validity-date">
-                                        از @plan.ValidFromShamsi تا @plan.ValidToShamsi
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div>
-                                        @if (plan.IsActive)
-                                        {
-                                            <span class="badge badge-success status-badge">
-                                                <i class="fas fa-check-circle"></i> فعال
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge badge-danger status-badge">
-                                                <i class="fas fa-times-circle"></i> غیرفعال
-                                            </span>
-                                        }
-                                    </div>
-                                    <div>
-                                        <span class="badge badge-info">@plan.PlanServiceCount خدمت</span>
-                                    </div>
-                                </div>
-
-                                <div class="text-center">
-                                    <a href="@Url.Action("Details", "InsurancePlan", new { id = plan.InsurancePlanId })" class="btn btn-info btn-sm btn-action">
-                                        <i class="fas fa-eye"></i> جزئیات
-                                    </a>
-                                    <a href="@Url.Action("Edit", "InsurancePlan", new { id = plan.InsurancePlanId })" class="btn btn-warning btn-sm btn-action">
-                                        <i class="fas fa-edit"></i> ویرایش
-                                    </a>
-                                    <a href="@Url.Action("Delete", "InsurancePlan", new { id = plan.InsurancePlanId })" class="btn btn-danger btn-sm btn-action">
-                                        <i class="fas fa-trash-alt"></i> حذف
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
+                @Html.Partial("_InsurancePlanListPartial", Model.InsurancePlans)
 
                 <!-- Pagination -->
-                if (Model.TotalPages > 1)
+                var paginationModel = new ClinicApp.ViewModels.Shared.PaginationViewModel
                 {
-                    <div class="row">
-                        <div class="col-12">
-                            <nav aria-label="صفحه‌بندی طرح‌های بیمه">
-                                <ul class="pagination justify-content-center">
-                                    @if (Model.CurrentPage > 1)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("Index", "InsurancePlan", new { page = Model.CurrentPage - 1, searchTerm = Model.SearchTerm, providerId = Model.ProviderId, isActive = Model.IsActive })">
-                                                <i class="fas fa-chevron-right"></i> قبلی
-                                            </a>
-                                        </li>
-                                    }
-
-                                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
-                                    {
-                                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                            <a class="page-link" href="@Url.Action("Index", "InsurancePlan", new { page = i, searchTerm = Model.SearchTerm, providerId = Model.ProviderId, isActive = Model.IsActive })">@i</a>
-                                        </li>
-                                    }
-
-                                    @if (Model.CurrentPage < Model.TotalPages)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("Index", "InsurancePlan", new { page = Model.CurrentPage + 1, searchTerm = Model.SearchTerm, providerId = Model.ProviderId, isActive = Model.IsActive })">
-                                                بعدی <i class="fas fa-chevron-left"></i>
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
-                }
+                    CurrentPage = Model.CurrentPage,
+                    TotalPages = Model.TotalPages,
+                    TotalCount = Model.TotalCount,
+                    ActionName = "Index",
+                    ControllerName = "InsurancePlan"
+                };
+                paginationModel.AddRouteValue("searchTerm", Model.SearchTerm);
+                paginationModel.AddRouteValue("providerId", Model.ProviderId);
+                paginationModel.AddRouteValue("isActive", Model.IsActive);
+                
+                @Html.Partial("_PaginationPartial", paginationModel)
             }
             else
             {
-                <div class="row">
-                    <div class="col-12">
-                        <div class="alert alert-warning text-center">
-                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                            <h4>هیچ طرح بیمه‌ای یافت نشد</h4>
-                            <p>در حال حاضر هیچ طرح بیمه‌ای در سیستم ثبت نشده است.</p>
-                            <a href="@Url.Action("Create", "InsurancePlan")" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> افزودن اولین طرح بیمه
-                            </a>
-                        </div>
-                    </div>
-                </div>
+                @Html.Partial("_InsurancePlanListPartial", new List<ClinicApp.ViewModels.Insurance.InsurancePlan.InsurancePlanIndexViewModel>())
             }
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="~/Scripts/app/insurance-plan-index.js"></script>
+}

@@ -1,0 +1,17 @@
+@model string
+@using ClinicApp.Helpers
+
+@{
+    var htmlAttributes = ViewData["htmlAttributes"] ?? new { @class = "form-control" };
+    var options = ViewData["datePickerOptions"] as ClinicApp.Helpers.PersianDatePickerOptions ?? new ClinicApp.Helpers.PersianDatePickerOptions();
+    var compareWith = ViewData["compareWith"] as string;
+}
+
+@if (!string.IsNullOrEmpty(compareWith))
+{
+    @Html.PersianDatePickerFor(m => m, m => m, htmlAttributes, options)
+}
+else
+{
+    @Html.PersianDatePickerFor(m => m, htmlAttributes, options)
+}

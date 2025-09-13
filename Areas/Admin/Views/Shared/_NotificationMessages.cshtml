@@ -10,10 +10,13 @@
     <div class="notification-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
         @foreach (var message in messages)
         {
-            <div class="alert @message.CssClass alert-dismissible fade show notification-message" role="alert" style="margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <div class="alert @message.CssClass alert-dismissible fade show notification-message" 
+                 role="alert" 
+                 style="margin-bottom: 10px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); transition: all 0.3s ease-in-out;"
+                 data-notification-id="@message.Id">
                 <i class="@message.Icon"></i>
                 <strong>@message.Message</strong>
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" style="opacity: 0.8;">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
@@ -21,16 +24,91 @@
     </div>
 
     <script>
-        $(document).ready(function() {
-            // Auto-hide notifications after 5 seconds
-            setTimeout(function() {
-                $('.notification-message').fadeOut('slow', function() {
-                    $(this).remove();
-                });
-            }, 5000);
+        // Use the same pattern as AdminLayout for jQuery safety
+        (function() {
+            'use strict';
+            
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+            
+            function initializeNotifications() {
+                ensureJQuery(function() {
+                    $(document).ready(function() {
+                        // Add slide-in animation to notifications
+                        $('.notification-message').addClass('slide-in');
+                        
+                        // Auto-hide notifications after 5 seconds
+                        var autoHideTimer = setTimeout(function() {
+                            hideAllNotifications();
+                        }, 5000);
 
-            // Clear notifications from session after display
-            $.post('@Url.Action("ClearNotifications", "Base", new { area = "Admin" })');
-        });
+                        // Clear notifications from session after display
+                        clearNotificationsFromSession();
+                        
+                        // Handle manual close button clicks
+                        $('.notification-message .close').on('click', function() {
+                            var $notification = $(this).closest('.notification-message');
+                            hideNotification($notification);
+                        });
+                        
+                        // Pause auto-hide on hover
+                        $('.notification-message').hover(
+                            function() {
+                                clearTimeout(autoHideTimer);
+                            },
+                            function() {
+                                autoHideTimer = setTimeout(function() {
+                                    hideAllNotifications();
+                                }, 2000); // Resume with shorter delay
+                            }
+                        );
+                    });
+                });
+            }
+            
+            function hideNotification($notification) {
+                $notification.addClass('fade-out');
+                setTimeout(function() {
+                    $notification.remove();
+                    checkIfAllNotificationsRemoved();
+                }, 500);
+            }
+            
+            function hideAllNotifications() {
+                $('.notification-message').each(function() {
+                    hideNotification($(this));
+                });
+            }
+            
+            function checkIfAllNotificationsRemoved() {
+                if ($('.notification-message').length === 0) {
+                    $('.notification-container').fadeOut();
+                }
+            }
+            
+            function clearNotificationsFromSession() {
+                $.post('@Url.Action("ClearNotifications", "Base", new { area = "Admin" })')
+                    .done(function(response) {
+                        console.log('✅ Notifications cleared from session');
+                    })
+                    .fail(function(xhr, status, error) {
+                        console.error('❌ Failed to clear notifications:', error);
+                    });
+            }
+            
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeNotifications);
+            } else {
+                initializeNotifications();
+            }
+        })();
     </script>
 }

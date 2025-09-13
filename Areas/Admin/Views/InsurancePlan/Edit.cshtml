@@ -284,16 +284,16 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            @Html.LabelFor(m => m.ValidFrom, new { @class = "form-label" })
-                                            @Html.TextBoxFor(m => m.ValidFrom, new { @class = "form-control persian-datepicker", placeholder = "تاریخ شروع اعتبار", required = "required" })
-                                            @Html.ValidationMessageFor(m => m.ValidFrom, "", new { @class = "text-danger" })
+                                            @Html.LabelFor(m => m.ValidFromShamsi, new { @class = "form-label" })
+                                            @Html.TextBoxFor(m => m.ValidFromShamsi, new { @class = "form-control persian-datepicker", placeholder = "تاریخ شروع اعتبار", required = "required" })
+                                            @Html.ValidationMessageFor(m => m.ValidFromShamsi, "", new { @class = "text-danger" })
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            @Html.LabelFor(m => m.ValidTo, new { @class = "form-label" })
-                                            @Html.TextBoxFor(m => m.ValidTo, new { @class = "form-control persian-datepicker", placeholder = "تاریخ پایان اعتبار", required = "required" })
-                                            @Html.ValidationMessageFor(m => m.ValidTo, "", new { @class = "text-danger" })
+                                            @Html.LabelFor(m => m.ValidToShamsi, new { @class = "form-label" })
+                                            @Html.TextBoxFor(m => m.ValidToShamsi, new { @class = "form-control persian-datepicker", placeholder = "تاریخ پایان اعتبار", required = "required" })
+                                            @Html.ValidationMessageFor(m => m.ValidToShamsi, "", new { @class = "text-danger" })
                                         </div>
                                     </div>
                                 </div>
@@ -345,7 +345,23 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
+        // Use the same pattern as AdminLayout for jQuery safety
+        (function() {
+            'use strict';
+            
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function() {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+            
+            function initializeEditForm() {
+                ensureJQuery(function() {
+                    $(document).ready(function() {
             // Initialize Persian DatePicker
             $('.persian-datepicker').persianDatepicker({
                 format: 'YYYY/MM/DD',
@@ -396,20 +412,25 @@
 
             // Date validation
             $('.persian-datepicker').on('change', function() {
-                var validFrom = $('#ValidFrom').val();
-                var validTo = $('#ValidTo').val();
+                var validFrom = $('#ValidFromShamsi').val();
+                var validTo = $('#ValidToShamsi').val();
                 
                 if (validFrom && validTo) {
-                    var fromDate = new Date(validFrom);
-                    var toDate = new Date(validTo);
-                    
-                    if (fromDate >= toDate) {
-                        $('#ValidTo').addClass('is-invalid');
-                        $('#ValidTo').next('.invalid-feedback').remove();
-                        $('#ValidTo').after('<div class="invalid-feedback">تاریخ پایان اعتبار نمی‌تواند قبل از تاریخ شروع اعتبار باشد.</div>');
-                    } else {
-                        $('#ValidTo').removeClass('is-invalid');
-                        $('#ValidTo').next('.invalid-feedback').remove();
+                    // Convert Persian dates to Gregorian for comparison
+                    try {
+                        var fromDate = new persianDate(validFrom.split('/')).toDate();
+                        var toDate = new persianDate(validTo.split('/')).toDate();
+                        
+                        if (fromDate >= toDate) {
+                            $('#ValidToShamsi').addClass('is-invalid');
+                            $('#ValidToShamsi').next('.invalid-feedback').remove();
+                            $('#ValidToShamsi').after('<div class="invalid-feedback">تاریخ پایان اعتبار نمی‌تواند قبل از تاریخ شروع اعتبار باشد.</div>');
+                        } else {
+                            $('#ValidToShamsi').removeClass('is-invalid');
+                            $('#ValidToShamsi').next('.invalid-feedback').remove();
+                        }
+                    } catch (e) {
+                        console.log('Date conversion error:', e);
                     }
                 }
             });
@@ -431,7 +452,17 @@
                     // Auto-save logic can be implemented here
                     console.log('Auto-save triggered');
                 }, 3000);
-            });
-        });
+                    });
+                    });
+                });
+            }
+            
+            // Initialize when DOM is ready
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initializeEditForm);
+            } else {
+                initializeEditForm();
+            }
+        })();
     </script>
 }

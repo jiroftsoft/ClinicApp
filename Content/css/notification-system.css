@@ -1,0 +1,144 @@
+/* Notification System Styles - طبق قرارداد */
+.notification-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.notification-message {
+    margin-bottom: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease-in-out;
+    pointer-events: auto;
+    border-radius: 8px;
+    border: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.notification-message::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 4px;
+    height: 100%;
+    background-color: currentColor;
+    opacity: 0.3;
+}
+
+.notification-message .close {
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.notification-message .close:hover {
+    opacity: 1;
+}
+
+/* Success Notifications */
+.notification-message.alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-left: 4px solid #28a745;
+}
+
+.notification-message.alert-success .close {
+    color: #155724;
+}
+
+/* Error Notifications */
+.notification-message.alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-left: 4px solid #dc3545;
+}
+
+.notification-message.alert-danger .close {
+    color: #721c24;
+}
+
+/* Warning Notifications */
+.notification-message.alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-left: 4px solid #ffc107;
+}
+
+.notification-message.alert-warning .close {
+    color: #856404;
+}
+
+/* Info Notifications */
+.notification-message.alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-left: 4px solid #17a2b8;
+}
+
+.notification-message.alert-info .close {
+    color: #0c5460;
+}
+
+/* Animation Classes */
+.notification-message.fade-out {
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.5s ease-in-out;
+}
+
+.notification-message.slide-in {
+    animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .notification-container {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+    
+    .notification-message {
+        margin-bottom: 8px;
+        font-size: 0.9rem;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    .notification-message.alert-success {
+        background-color: #1e3a1e;
+        color: #90ee90;
+    }
+    
+    .notification-message.alert-danger {
+        background-color: #3a1e1e;
+        color: #ff6b6b;
+    }
+    
+    .notification-message.alert-warning {
+        background-color: #3a3a1e;
+        color: #ffd93d;
+    }
+    
+    .notification-message.alert-info {
+        background-color: #1e3a3a;
+        color: #6bcfcf;
+    }
+}

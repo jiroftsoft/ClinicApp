@@ -7,163 +7,7 @@
 @Html.Partial("_NotificationMessages")
 
 @section Styles {
-    <style>
-        /* Medical Environment Color Scheme - طبق قرارداد */
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-secondary: #6c757d;
-            --medical-success: #28a745;
-            --medical-danger: #dc3545;
-            --medical-warning: #ffc107;
-            --medical-info: #17a2b8;
-            --medical-light: #f8f9fa;
-            --medical-dark: #343a40;
-            --medical-border: #dee2e6;
-            --medical-text: #495057;
-            --medical-text-muted: #6c757d;
-        }
-
-        .details-container {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        .detail-row {
-            border-bottom: 1px solid #e9ecef;
-            padding: 1rem 0;
-        }
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-        .detail-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        .detail-value {
-            color: #6c757d;
-            font-size: 1.1rem;
-        }
-        .plan-header {
-            background: linear-gradient(135deg, var(--medical-primary) 0%, #1e3a5f 100%);
-            color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            margin-bottom: 2rem;
-            text-align: center;
-        }
-        .plan-name {
-            font-size: 2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-        }
-        .plan-code {
-            font-family: 'Courier New', monospace;
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 1.1rem;
-            display: inline-block;
-        }
-        .provider-badge {
-            background-color: rgba(255, 255, 255, 0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-            margin-top: 1rem;
-            display: inline-block;
-        }
-        .coverage-section {
-            background-color: rgba(40, 167, 69, 0.1);
-            border: 1px solid rgba(40, 167, 69, 0.3);
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-        .coverage-percent {
-            font-size: 2.5rem;
-            font-weight: 700;
-            color: var(--medical-success);
-            text-align: center;
-        }
-        .deductible-amount {
-            font-size: 1.8rem;
-            font-weight: 600;
-            color: var(--medical-danger);
-            text-align: center;
-        }
-        .validity-section {
-            background-color: rgba(255, 193, 7, 0.1);
-            border: 1px solid rgba(255, 193, 7, 0.3);
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-        .validity-date {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: var(--medical-warning);
-            text-align: center;
-        }
-        .status-badge {
-            font-size: 1rem;
-            padding: 0.8rem 1.5rem;
-            border-radius: 25px;
-        }
-        .btn-action {
-            margin: 0.25rem;
-            font-weight: 600;
-        }
-        .info-icon {
-            color: var(--medical-info);
-            margin-left: 0.5rem;
-        }
-        
-        /* Responsive Design */
-        @@media (max-width: 768px) {zto
-            .details-container {
-                padding: 1rem;
-            }
-            .plan-header {
-                padding: 1rem;
-            }
-            .plan-name {
-                font-size: 1.5rem;
-            }
-            .coverage-percent {
-                font-size: 2rem;
-            }
-            .deductible-amount {
-                font-size: 1.5rem;
-            }
-        }
-        .services-section {
-            background-color: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-        .service-item {
-            background-color: white;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            margin-bottom: 0.5rem;
-            border: 1px solid #dee2e6;
-        }
-        .service-name {
-            font-weight: 600;
-            color: #495057;
-        }
-        .service-coverage {
-            color: #28a745;
-            font-weight: 500;
-        }
-        .service-copay {
-            color: #dc3545;
-            font-weight: 500;
-        }
-    </style>
+    <link href="~/Content/css/details-page-medical.css" rel="stylesheet" />
 }
 
 <div class="container-fluid">
@@ -172,10 +16,19 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>جزئیات طرح بیمه</h2>
                 <div>
-                    <a href="@Url.Action("Edit", "InsurancePlan", new { id = Model.InsurancePlanId })" class="btn btn-warning btn-action">
+                    <a href="@Url.Action("ManageTariffs", "InsurancePlan", new { id = Model.InsurancePlanId })" 
+                       class="btn btn-success btn-action" 
+                       data-tooltip="مدیریت خدمات تحت پوشش این طرح بیمه">
+                        <i class="fas fa-tasks"></i> مدیریت تعرفه‌ها
+                    </a>
+                    <a href="@Url.Action("Edit", "InsurancePlan", new { id = Model.InsurancePlanId })" 
+                       class="btn btn-warning btn-action" 
+                       data-tooltip="ویرایش اطلاعات طرح بیمه">
                         <i class="fas fa-edit"></i> ویرایش
                     </a>
-                    <a href="@Url.Action("Index", "InsurancePlan")" class="btn btn-secondary btn-action">
+                    <a href="@Url.Action("Index", "InsurancePlan")" 
+                       class="btn btn-secondary btn-action" 
+                       data-tooltip="بازگشت به لیست تمام طرح‌های بیمه">
                         <i class="fas fa-arrow-right"></i> بازگشت به لیست
                     </a>
                 </div>

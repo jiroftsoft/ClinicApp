@@ -1,0 +1,37 @@
+@model ClinicApp.ViewModels.Shared.PaginationViewModel
+
+@if (Model.ShowPagination)
+{
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="صفحه‌بندی">
+                <ul class="pagination justify-content-center">
+                    @if (Model.HasPreviousPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action(Model.ActionName, Model.ControllerName, Model.GetRouteValuesForPage(Model.PreviousPage))">
+                                <i class="fas fa-chevron-right"></i> قبلی
+                            </a>
+                        </li>
+                    }
+
+                    @for (int i = Model.StartPage; i <= Model.EndPage; i++)
+                    {
+                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action(Model.ActionName, Model.ControllerName, Model.GetRouteValuesForPage(i))">@i</a>
+                        </li>
+                    }
+
+                    @if (Model.HasNextPage)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" href="@Url.Action(Model.ActionName, Model.ControllerName, Model.GetRouteValuesForPage(Model.NextPage))">
+                                بعدی <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        </div>
+    </div>
+}

@@ -1,0 +1,35 @@
+@model dynamic
+@using ClinicApp.Helpers
+
+@{
+    var startDateProperty = ViewData["startDateProperty"] as string ?? "ValidFromShamsi";
+    var endDateProperty = ViewData["endDateProperty"] as string ?? "ValidToShamsi";
+    var startDateLabel = ViewData["startDateLabel"] as string ?? "تاریخ شروع";
+    var endDateLabel = ViewData["endDateLabel"] as string ?? "تاریخ پایان";
+    var startDatePlaceholder = ViewData["startDatePlaceholder"] as string ?? "تاریخ شروع اعتبار";
+    var endDatePlaceholder = ViewData["endDatePlaceholder"] as string ?? "تاریخ پایان اعتبار";
+    var options = ViewData["datePickerOptions"] as PersianDatePickerOptions ?? new PersianDatePickerOptions();
+    var cssClass = ViewData["cssClass"] as string ?? "col-md-6";
+}
+
+<div class="row">
+    <div class="@cssClass">
+        <div class="form-group">
+            @Html.Label(startDateProperty, startDateLabel, new { @class = "form-label" })
+            @Html.PersianDatePickerFor(m => m.GetType().GetProperty(startDateProperty).GetValue(m), 
+                new { @class = "form-control", placeholder = startDatePlaceholder, required = "required" }, 
+                options)
+            @Html.ValidationMessage(startDateProperty, "", new { @class = "text-danger" })
+        </div>
+    </div>
+    <div class="@cssClass">
+        <div class="form-group">
+            @Html.Label(endDateProperty, endDateLabel, new { @class = "form-label" })
+            @Html.PersianDatePickerFor(m => m.GetType().GetProperty(endDateProperty).GetValue(m), 
+                m => m.GetType().GetProperty(startDateProperty).GetValue(m),
+                new { @class = "form-control", placeholder = endDatePlaceholder, required = "required" }, 
+                options)
+            @Html.ValidationMessage(endDateProperty, "", new { @class = "text-danger" })
+        </div>
+    </div>
+</div>
