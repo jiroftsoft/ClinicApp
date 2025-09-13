@@ -271,7 +271,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         model?.Name, model?.PlanCode, model?.InsuranceProviderId, _currentUserService.UserName, _currentUserService.UserId);
 
                     // بارگیری مجدد لیست ارائه‌دهندگان بیمه
-                    await LoadInsuranceProvidersAsync();
+                    await LoadInsuranceProvidersForViewModelAsync(model);
 
                     return View(model);
                 }
@@ -391,7 +391,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         model?.InsurancePlanId, model?.Name, model?.PlanCode, _currentUserService.UserName, _currentUserService.UserId);
 
                     // بارگیری مجدد لیست ارائه‌دهندگان بیمه
-                    await LoadInsuranceProvidersAsync();
+                    await LoadInsuranceProvidersForViewModelAsync(model);
 
                     return View(model);
                 }

@@ -3223,6 +3223,7 @@
     <Content Include="Scripts\aos.js" />
     <Content Include="Scripts\app\assignment-form.js" />
     <Content Include="Scripts\app\doctor-assignment-index.js" />
+    <Content Include="Scripts\app\insurance-plan-form.js" />
     <Content Include="Scripts\app\insurance-plan-index.js" />
     <Content Include="Scripts\app\utility.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
