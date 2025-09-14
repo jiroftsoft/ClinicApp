@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
+using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 
 namespace ClinicApp.Interfaces.Insurance
 {
@@ -83,6 +84,12 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="providerId">شناسه ارائه‌دهنده بیمه (اختیاری)</param>
         /// <returns>لیست طرح‌های بیمه فعال</returns>
         Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetActivePlansForLookupAsync(int? providerId = null);
+
+        /// <summary>
+        /// دریافت لیست شرکت‌های بیمه برای SelectList
+        /// </summary>
+        /// <returns>لیست شرکت‌های بیمه فعال</returns>
+        Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetActiveProvidersForLookupAsync();
 
         #endregion
 

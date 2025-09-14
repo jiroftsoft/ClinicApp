@@ -187,6 +187,32 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>نتیجه صفحه‌بندی شده بیمه‌های بیماران</returns>
         Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPagedAsync(int? patientId, string searchTerm, int pageNumber, int pageSize);
 
+        /// <summary>
+        /// دریافت بهینه‌سازی شده لیست بیمه‌های بیماران با فیلترهای پیشرفته
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار (اختیاری)</param>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="isPrimary">نوع بیمه (اصلی/تکمیلی)</param>
+        /// <param name="isActive">وضعیت فعال</param>
+        /// <param name="fromDate">تاریخ شروع</param>
+        /// <param name="toDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه صفحه‌بندی شده بیمه‌های بیماران</returns>
+        Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPagedOptimizedAsync(
+            int? patientId = null, 
+            string searchTerm = null, 
+            int? providerId = null,
+            int? planId = null,
+            bool? isPrimary = null,
+            bool? isActive = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            int pageNumber = 1, 
+            int pageSize = 20);
+
         #endregion
 
         #region CRUD Operations
@@ -208,6 +234,13 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <param name="patientInsurance">بیمه بیمار برای حذف</param>
         void Delete(PatientInsurance patientInsurance);
+
+        /// <summary>
+        /// متد debug برای بررسی تعداد رکوردها
+        /// </summary>
+        /// <returns>تعداد کل رکوردهای بیمه‌های بیماران</returns>
+        Task<ServiceResult<int>> GetTotalRecordsCountAsync();
+        Task<ServiceResult<List<object>>> GetSimpleListAsync();
 
         #endregion
 

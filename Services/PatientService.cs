@@ -14,6 +14,7 @@ using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Web.Mvc;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.Models.Enums;
@@ -1047,6 +1048,146 @@ namespace ClinicApp.Services
                 return ServiceResult.Failed(
                     "خطا در بررسی وابستگی‌های بیمار. لطفاً دوباره تلاش کنید.",
                     "DEPENDENCY_CHECK_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست بیماران برای SelectList
+        /// </summary>
+        public async Task<ServiceResult<List<SelectListItem>>> GetPatientsForLookupAsync()
+        {
+            _log.Information(
+                "درخواست دریافت لیست بیماران برای SelectList. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت تمام بیماران فعال
+                var patients = await _context.Patients
+                    .AsNoTracking()
+                    .Where(p => !p.IsDeleted)
+                    .OrderBy(p => p.FirstName)
+                    .ThenBy(p => p.LastName)
+                    .Select(p => new SelectListItem
+                    {
+                        Value = p.PatientId.ToString(),
+                        Text = p.FirstName + " " + p.LastName + " (" + p.NationalCode + ")"
+                    })
+                    .ToListAsync();
+
+                _log.Information(
+                    "لیست بیماران برای SelectList با موفقیت دریافت شد. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    patients.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<SelectListItem>>.Successful(
+                    patients,
+                    "لیست بیماران با موفقیت دریافت شد.",
+                    "GetPatientsForLookup",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در دریافت لیست بیماران برای SelectList. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<SelectListItem>>.Failed(
+                    "خطا در دریافت لیست بیماران. لطفاً دوباره تلاش کنید.",
+                    "GET_PATIENTS_LOOKUP_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// جستجوی بیماران برای Select2 (Server-Side Processing)
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<PatientIndexViewModel>>> SearchPatientsForSelect2Async(string query, int page = 1, int pageSize = 20)
+        {
+            _log.Information(
+                "درخواست جستجوی بیماران برای Select2. Query: {Query}, Page: {Page}, PageSize: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                query, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی ورودی‌ها
+                if (page < 1) page = 1;
+                if (pageSize < 1) pageSize = 20;
+                if (pageSize > 100) pageSize = 100;
+
+                // پاک‌سازی و نرمال‌سازی عبارت جستجو
+                query = string.IsNullOrWhiteSpace(query) ? "" : query.Trim();
+                string normalizedQuery = PersianNumberHelper.ToEnglishNumbers(query);
+
+                // ساخت پرس‌وجو - بهینه‌سازی برای Read-Only Operations
+                var queryBuilder = _context.Patients
+                    .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
+                    .Where(p => !p.IsDeleted);
+
+                // اعمال فیلتر جستجو
+                if (!string.IsNullOrWhiteSpace(query))
+                {
+                    queryBuilder = queryBuilder.Where(p =>
+                        p.FirstName.Contains(query) ||
+                        p.LastName.Contains(query) ||
+                        p.NationalCode.Contains(normalizedQuery) ||
+                        p.PhoneNumber.Contains(normalizedQuery) ||
+                        (p.FirstName + " " + p.LastName).Contains(query));
+                }
+
+                // محاسبه تعداد کل
+                int totalItems = await queryBuilder.CountAsync();
+
+                // اعمال صفحه‌بندی و مرتب‌سازی
+                var patients = await queryBuilder
+                    .OrderBy(p => p.FirstName)
+                    .ThenBy(p => p.LastName)
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                // تبدیل دستی به ViewModel
+                var items = new List<PatientIndexViewModel>();
+                foreach (var patient in patients)
+                {
+                    items.Add(ConvertToPatientIndexViewModel(patient));
+                }
+
+                var pagedResult = new PagedResult<PatientIndexViewModel>
+                {
+                    Items = items,
+                    PageNumber = page,
+                    PageSize = pageSize,
+                    TotalItems = totalItems
+                };
+
+                _log.Information(
+                    "جستجوی بیماران برای Select2 با موفقیت انجام شد. تعداد نتایج: {Count}, صفحه: {Page}, کل: {Total}. کاربر: {UserName} (شناسه: {UserId})",
+                    pagedResult.Items.Count, page, totalItems, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<PagedResult<PatientIndexViewModel>>.Successful(
+                    pagedResult,
+                    "جستجوی بیماران با موفقیت انجام شد.",
+                    "SearchPatientsForSelect2",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در جستجوی بیماران برای Select2. Query: {Query}, Page: {Page}, PageSize: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                    query, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<PagedResult<PatientIndexViewModel>>.Failed(
+                    "خطا در جستجوی بیماران. لطفاً دوباره تلاش کنید.",
+                    "SEARCH_PATIENTS_SELECT2_ERROR",
                     ErrorCategory.General,
                     SecurityLevel.High);
             }

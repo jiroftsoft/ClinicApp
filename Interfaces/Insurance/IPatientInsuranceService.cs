@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
@@ -40,6 +41,30 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPatientInsurancesAsync(int? patientId, string searchTerm, int pageNumber, int pageSize);
 
         /// <summary>
+        /// دریافت لیست بیمه‌های بیماران با صفحه‌بندی و جستجو (بهینه‌سازی شده)
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="isPrimary">نوع بیمه (اصلی/تکمیلی)</param>
+        /// <param name="isActive">وضعیت فعال</param>
+        /// <param name="fromDate">تاریخ شروع</param>
+        /// <param name="toDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه صفحه‌بندی شده بیمه‌های بیماران</returns>
+        Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPagedAsync(
+            string searchTerm = null,
+            int? providerId = null,
+            int? planId = null,
+            bool? isPrimary = null,
+            bool? isActive = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
+            int pageNumber = 1,
+            int pageSize = 20);
+
+        /// <summary>
         /// دریافت جزئیات بیمه بیمار
         /// </summary>
         /// <param name="patientInsuranceId">شناسه بیمه بیمار</param>
@@ -73,6 +98,13 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="patientInsuranceId">شناسه بیمه بیمار</param>
         /// <returns>نتیجه حذف</returns>
         Task<ServiceResult> SoftDeletePatientInsuranceAsync(int patientInsuranceId);
+
+        /// <summary>
+        /// متد debug برای بررسی تعداد رکوردها
+        /// </summary>
+        /// <returns>تعداد کل رکوردهای بیمه‌های بیماران</returns>
+        Task<ServiceResult<int>> GetTotalRecordsCountAsync();
+        Task<ServiceResult<List<object>>> GetSimpleListAsync();
 
         #endregion
 
@@ -114,6 +146,13 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="excludeId">شناسه بیمه بیمار برای حذف از بررسی</param>
         /// <returns>نتیجه بررسی</returns>
         Task<ServiceResult<bool>> DoesDateOverlapExistAsync(int patientId, System.DateTime startDate, System.DateTime endDate, int? excludeId = null);
+
+        /// <summary>
+        /// اعتبارسنجی کامل بیمه بیمار (منطق کسب‌وکار)
+        /// </summary>
+        /// <param name="model">مدل بیمه بیمار</param>
+        /// <returns>نتیجه اعتبارسنجی با لیست خطاها</returns>
+        Task<ServiceResult<Dictionary<string, string>>> ValidatePatientInsuranceAsync(PatientInsuranceCreateEditViewModel model);
 
         #endregion
 

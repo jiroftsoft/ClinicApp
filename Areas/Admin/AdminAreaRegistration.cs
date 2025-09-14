@@ -83,6 +83,14 @@ namespace ClinicApp.Areas.Admin
 
             context.MapRoute(
                 name: "Admin_PatientInsurance_Index",
+                url: "Admin/Insurance/PatientInsurance/{action}/{id}",
+                defaults: new { controller = "PatientInsurance", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            // اضافه کردن routing برای URL کوتاه‌تر - اصلاح شده
+            context.MapRoute(
+                name: "Admin_PatientInsurance_Short",
                 url: "Admin/PatientInsurance/{action}/{id}",
                 defaults: new { controller = "PatientInsurance", action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }

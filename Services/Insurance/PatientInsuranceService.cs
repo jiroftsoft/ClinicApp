@@ -51,23 +51,16 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting patient insurances with PatientId: {PatientId}, SearchTerm: {SearchTerm}, Page: {PageNumber}, Size: {PageSize}", 
-                    patientId, searchTerm, pageNumber, pageSize);
+                _log.Information("Getting patient insurances with PatientId: {PatientId}, SearchTerm: {SearchTerm}, Page: {PageNumber}, Size: {PageSize}. User: {UserName} (Id: {UserId})", 
+                    patientId, searchTerm, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for getting paged patient insurances
-                var result = new PagedResult<PatientInsuranceIndexViewModel>
-                {
-                    Items = new List<PatientInsuranceIndexViewModel>(),
-                    PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    TotalItems = 0,
-                };
-
-                return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Successful(result);
+                // استفاده از متد GetPagedAsync که واقعاً کار می‌کند
+                return await GetPagedAsync(searchTerm, null, null, null, null, null, null, pageNumber, pageSize);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting patient insurances with PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error getting patient insurances with PatientId: {PatientId}, SearchTerm: {SearchTerm}, Page: {PageNumber}, Size: {PageSize}. User: {UserName} (Id: {UserId})", 
+                    patientId, searchTerm, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت لیست بیمه‌های بیماران");
             }
         }
@@ -76,56 +69,35 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}", patientInsuranceId);
+                _log.Information("Getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for getting patient insurance details
-                var result = new PatientInsuranceDetailsViewModel
-                {
-                    PatientInsuranceId = patientInsuranceId
-                };
-
-                return ServiceResult<PatientInsuranceDetailsViewModel>.Successful(result);
+                // استفاده از متد GetByIdAsync که واقعاً کار می‌کند
+                return await GetByIdAsync(patientInsuranceId);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}", patientInsuranceId);
+                _log.Error(ex, "Error getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<PatientInsuranceDetailsViewModel>.Failed("خطا در دریافت جزئیات بیمه بیمار");
             }
         }
 
-        public async Task<ServiceResult<PatientInsuranceCreateEditViewModel>> GetPatientInsuranceForEditAsync(int patientInsuranceId)
-        {
-            try
-            {
-                _log.Information("Getting patient insurance for edit for PatientInsuranceId: {PatientInsuranceId}", patientInsuranceId);
-
-                // Implementation for getting patient insurance for edit
-                var result = new PatientInsuranceCreateEditViewModel
-                {
-                    PatientInsuranceId = patientInsuranceId
-                };
-
-                return ServiceResult<PatientInsuranceCreateEditViewModel>.Successful(result);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error getting patient insurance for edit for PatientInsuranceId: {PatientInsuranceId}", patientInsuranceId);
-                return ServiceResult<PatientInsuranceCreateEditViewModel>.Failed("خطا در دریافت بیمه بیمار برای ویرایش");
-            }
-        }
 
         public async Task<ServiceResult<int>> CreatePatientInsuranceAsync(PatientInsuranceCreateEditViewModel model)
         {
             try
             {
-                _log.Information("Creating patient insurance for PatientId: {PatientId}", model.PatientId);
+                _log.Information("Creating patient insurance for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, model.PolicyNumber, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for creating patient insurance
-                return ServiceResult<int>.Successful(1);
+                // استفاده از متد CreateAsync که واقعاً کار می‌کند
+                return await CreateAsync(model);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error creating patient insurance for PatientId: {PatientId}", model.PatientId);
+                _log.Error(ex, "Error creating patient insurance for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, model.PolicyNumber, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<int>.Failed("خطا در ایجاد بیمه بیمار");
             }
         }
@@ -134,14 +106,24 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Updating patient insurance for PatientInsuranceId: {PatientInsuranceId}", model.PatientInsuranceId);
+                _log.Information("Updating patient insurance for PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    model.PatientInsuranceId, model.PatientId, model.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for updating patient insurance
-                return ServiceResult.Successful();
+                // استفاده از متد UpdateAsync که واقعاً کار می‌کند
+                var result = await UpdateAsync(model);
+                if (result.Success)
+                {
+                    return ServiceResult.Successful("بیمه بیمار با موفقیت به‌روزرسانی شد");
+                }
+                else
+                {
+                    return ServiceResult.Failed(result.Message);
+                }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error updating patient insurance for PatientInsuranceId: {PatientInsuranceId}", model.PatientInsuranceId);
+                _log.Error(ex, "Error updating patient insurance for PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    model.PatientInsuranceId, model.PatientId, model.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult.Failed("خطا در به‌روزرسانی بیمه بیمار");
             }
         }
@@ -150,14 +132,24 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Soft deleting patient insurance for PatientInsuranceId: {PatientInsuranceId}", patientInsuranceId);
+                _log.Information("Soft deleting patient insurance for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for soft deleting patient insurance
-                return ServiceResult.Successful();
+                // استفاده از متد DeleteAsync که واقعاً کار می‌کند
+                var result = await DeleteAsync(patientInsuranceId);
+                if (result.Success)
+                {
+                    return ServiceResult.Successful("بیمه بیمار با موفقیت حذف شد");
+                }
+                else
+                {
+                    return ServiceResult.Failed(result.Message);
+                }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error soft deleting patient insurance for PatientInsuranceId: {PatientInsuranceId}", patientInsuranceId);
+                _log.Error(ex, "Error soft deleting patient insurance for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult.Failed("خطا در حذف بیمه بیمار");
             }
         }
@@ -166,15 +158,16 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting active patient insurances for lookup for PatientId: {PatientId}", patientId);
+                _log.Information("Getting active patient insurances for lookup for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for getting active patient insurances for lookup
-                var result = new List<PatientInsuranceLookupViewModel>();
-                return ServiceResult<List<PatientInsuranceLookupViewModel>>.Successful(result);
+                // استفاده از متد GetActiveByPatientIdAsync که واقعاً کار می‌کند
+                return await GetActiveByPatientIdAsync(patientId);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting active patient insurances for lookup for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error getting active patient insurances for lookup for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<List<PatientInsuranceLookupViewModel>>.Failed("خطا در دریافت بیمه‌های فعال بیمار");
             }
         }
@@ -183,14 +176,17 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Checking if policy number exists: {PolicyNumber}, ExcludeId: {ExcludeId}", policyNumber, excludePatientInsuranceId);
+                _log.Information("Checking if policy number exists: {PolicyNumber}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    policyNumber, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for checking policy number existence
-                return ServiceResult<bool>.Successful(false);
+                // استفاده از متد ریپازیتوری که واقعاً کار می‌کند
+                var exists = await _patientInsuranceRepository.DoesPolicyNumberExistAsync(policyNumber, excludePatientInsuranceId);
+                return ServiceResult<bool>.Successful(exists);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error checking policy number existence: {PolicyNumber}", policyNumber);
+                _log.Error(ex, "Error checking policy number existence: {PolicyNumber}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    policyNumber, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<bool>.Failed("خطا در بررسی وجود شماره بیمه");
             }
         }
@@ -199,14 +195,17 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Checking if primary insurance exists for PatientId: {PatientId}, ExcludeId: {ExcludeId}", patientId, excludePatientInsuranceId);
+                _log.Information("Checking if primary insurance exists for PatientId: {PatientId}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    patientId, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for checking primary insurance existence
-                return ServiceResult<bool>.Successful(false);
+                // استفاده از متد ریپازیتوری که واقعاً کار می‌کند
+                var exists = await _patientInsuranceRepository.DoesPrimaryInsuranceExistAsync(patientId, excludePatientInsuranceId);
+                return ServiceResult<bool>.Successful(exists);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error checking primary insurance existence for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error checking primary insurance existence for PatientId: {PatientId}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    patientId, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<bool>.Failed("خطا در بررسی وجود بیمه اصلی");
             }
         }
@@ -215,16 +214,61 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Checking if date overlap exists for PatientId: {PatientId}, StartDate: {StartDate}, EndDate: {EndDate}, ExcludeId: {ExcludeId}", 
-                    patientId, startDate, endDate, excludePatientInsuranceId);
+                _log.Information("Checking if date overlap exists for PatientId: {PatientId}, StartDate: {StartDate}, EndDate: {EndDate}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    patientId, startDate, endDate, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for checking date overlap existence
-                return ServiceResult<bool>.Successful(false);
+                // استفاده از متد ریپازیتوری که واقعاً کار می‌کند
+                var exists = await _patientInsuranceRepository.DoesDateOverlapExistAsync(patientId, startDate, endDate, excludePatientInsuranceId);
+                return ServiceResult<bool>.Successful(exists);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error checking date overlap existence for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error checking date overlap existence for PatientId: {PatientId}, StartDate: {StartDate}, EndDate: {EndDate}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    patientId, startDate, endDate, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<bool>.Failed("خطا در بررسی تداخل تاریخ");
+            }
+        }
+
+        public async Task<ServiceResult<Dictionary<string, string>>> ValidatePatientInsuranceAsync(PatientInsuranceCreateEditViewModel model)
+        {
+            try
+            {
+                _log.Information("Validating patient insurance for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}", 
+                    model.PatientId, model.PolicyNumber);
+
+                var errors = new Dictionary<string, string>();
+
+                // بررسی وجود شماره بیمه تکراری
+                var policyExistsResult = await DoesPolicyNumberExistAsync(model.PolicyNumber, model.PatientInsuranceId);
+                if (policyExistsResult.Success && policyExistsResult.Data)
+                {
+                    errors.Add("PolicyNumber", "شماره بیمه قبلاً ثبت شده است.");
+                }
+
+                // بررسی وجود بیمه اصلی برای بیمار (اگر این بیمه اصلی است)
+                if (model.IsPrimary)
+                {
+                    var primaryExistsResult = await DoesPrimaryInsuranceExistAsync(model.PatientId, model.PatientInsuranceId);
+                    if (primaryExistsResult.Success && primaryExistsResult.Data)
+                    {
+                        errors.Add("IsPrimary", "این بیمار قبلاً بیمه اصلی دارد.");
+                    }
+                }
+
+                // بررسی تداخل تاریخ‌ها
+                var dateOverlapResult = await DoesDateOverlapExistAsync(
+                    model.PatientId, model.StartDate, model.EndDate ?? DateTime.MaxValue, model.PatientInsuranceId);
+                if (dateOverlapResult.Success && dateOverlapResult.Data)
+                {
+                    errors.Add("StartDate", "تاریخ‌های انتخاب شده با بیمه‌های موجود این بیمار تداخل دارد.");
+                }
+
+                return ServiceResult<Dictionary<string, string>>.Successful(errors);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error validating patient insurance for PatientId: {PatientId}", model.PatientId);
+                return ServiceResult<Dictionary<string, string>>.Failed("خطا در اعتبارسنجی اطلاعات");
             }
         }
 
@@ -232,15 +276,19 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting patient insurances by patient for PatientId: {PatientId}", patientId);
+                _log.Information("Getting patient insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for getting patient insurances by patient
-                var result = new List<PatientInsuranceIndexViewModel>();
-                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Successful(result);
+                // دریافت بیمه‌های بیمار از ریپازیتوری
+                var patientInsurances = await _patientInsuranceRepository.GetByPatientIdAsync(patientId);
+                var viewModels = patientInsurances.Select(ConvertToIndexViewModel).ToList();
+                
+                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Successful(viewModels);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting patient insurances by patient for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error getting patient insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<List<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت بیمه‌های بیمار");
             }
         }
@@ -249,19 +297,23 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting primary insurance by patient for PatientId: {PatientId}", patientId);
+                _log.Information("Getting primary insurance by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for getting primary insurance by patient
-                var result = new PatientInsuranceDetailsViewModel
+                // دریافت بیمه اصلی بیمار از ریپازیتوری
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryByPatientIdAsync(patientId);
+                if (primaryInsurance == null)
                 {
-                    PatientId = patientId
-                };
+                    return ServiceResult<PatientInsuranceDetailsViewModel>.Failed("بیمه اصلی بیمار یافت نشد");
+                }
 
-                return ServiceResult<PatientInsuranceDetailsViewModel>.Successful(result);
+                var viewModel = ConvertToDetailsViewModel(primaryInsurance);
+                return ServiceResult<PatientInsuranceDetailsViewModel>.Successful(viewModel);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting primary insurance by patient for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error getting primary insurance by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<PatientInsuranceDetailsViewModel>.Failed("خطا در دریافت بیمه اصلی بیمار");
             }
         }
@@ -270,15 +322,19 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting supplementary insurances by patient for PatientId: {PatientId}", patientId);
+                _log.Information("Getting supplementary insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for getting supplementary insurances by patient
-                var result = new List<PatientInsuranceIndexViewModel>();
-                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Successful(result);
+                // دریافت بیمه‌های تکمیلی بیمار از ریپازیتوری
+                var supplementaryInsurances = await _patientInsuranceRepository.GetSupplementaryByPatientIdAsync(patientId);
+                var viewModels = supplementaryInsurances.Select(ConvertToIndexViewModel).ToList();
+                
+                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Successful(viewModels);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting supplementary insurances by patient for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error getting supplementary insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<List<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت بیمه‌های تکمیلی بیمار");
             }
         }
@@ -361,15 +417,124 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Checking if patient insurance is valid for PatientId: {PatientId}, CheckDate: {CheckDate}", patientId, checkDate);
+                _log.Information("Checking if patient insurance is valid for PatientId: {PatientId}, CheckDate: {CheckDate}. User: {UserName} (Id: {UserId})", 
+                    patientId, checkDate, _currentUserService.UserName, _currentUserService.UserId);
 
-                // Implementation for checking patient insurance validity
-                return ServiceResult<bool>.Successful(true);
+                // بررسی وجود بیمه فعال برای تاریخ مشخص شده
+                var activeInsurances = await _patientInsuranceRepository.GetActiveByPatientIdAsync(patientId);
+                var isValid = activeInsurances.Any(insurance => 
+                    insurance.IsActive && 
+                    insurance.StartDate <= checkDate && 
+                    (insurance.EndDate == null || insurance.EndDate >= checkDate));
+
+                return ServiceResult<bool>.Successful(isValid);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error checking patient insurance validity for PatientId: {PatientId}", patientId);
+                _log.Error(ex, "Error checking patient insurance validity for PatientId: {PatientId}, CheckDate: {CheckDate}. User: {UserName} (Id: {UserId})", 
+                    patientId, checkDate, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<bool>.Failed("خطا در بررسی اعتبار بیمه بیمار");
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه بیمار برای ویرایش
+        /// </summary>
+        public async Task<ServiceResult<PatientInsuranceCreateEditViewModel>> GetPatientInsuranceForEditAsync(int patientInsuranceId)
+        {
+            _log.Information(
+                "درخواست دریافت بیمه بیمار برای ویرایش. PatientInsuranceId: {PatientInsuranceId}. کاربر: {UserName} (شناسه: {UserId})",
+                patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت بیمه بیمار با اطلاعات مرتبط
+                var entity = await _patientInsuranceRepository.GetByIdWithDetailsAsync(patientInsuranceId);
+                
+                if (entity == null)
+                {
+                    _log.Warning(
+                        "بیمه بیمار با شناسه {PatientInsuranceId} یافت نشد. کاربر: {UserName} (شناسه: {UserId})",
+                        patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return ServiceResult<PatientInsuranceCreateEditViewModel>.Failed(
+                        "بیمه بیمار یافت نشد.",
+                        "PATIENT_INSURANCE_NOT_FOUND",
+                        ErrorCategory.NotFound,
+                        SecurityLevel.Medium);
+                }
+
+                if (entity.IsDeleted)
+                {
+                    _log.Warning(
+                        "تلاش برای دسترسی به بیمه بیمار حذف شده. PatientInsuranceId: {PatientInsuranceId}. کاربر: {UserName} (شناسه: {UserId})",
+                        patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return ServiceResult<PatientInsuranceCreateEditViewModel>.Failed(
+                        "بیمه بیمار یافت نشد.",
+                        "PATIENT_INSURANCE_DELETED",
+                        ErrorCategory.NotFound,
+                        SecurityLevel.High);
+                }
+
+                // تبدیل Entity به ViewModel
+                var viewModel = PatientInsuranceCreateEditViewModel.FromEntity(entity);
+                
+                _log.Information(
+                    "بیمه بیمار برای ویرایش با موفقیت دریافت شد. PatientInsuranceId: {PatientInsuranceId}, PolicyNumber: {PolicyNumber}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientInsuranceId, entity.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<PatientInsuranceCreateEditViewModel>.Successful(
+                    viewModel,
+                    "بیمه بیمار با موفقیت دریافت شد.",
+                    "GetPatientInsuranceForEdit",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در دریافت بیمه بیمار برای ویرایش. PatientInsuranceId: {PatientInsuranceId}. کاربر: {UserName} (شناسه: {UserId})",
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<PatientInsuranceCreateEditViewModel>.Failed(
+                    "خطا در دریافت بیمه بیمار. لطفاً دوباره تلاش کنید.",
+                    "GET_PATIENT_INSURANCE_FOR_EDIT_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// متد debug برای بررسی تعداد رکوردها
+        /// </summary>
+        public async Task<ServiceResult<int>> GetTotalRecordsCountAsync()
+        {
+            try
+            {
+                var result = await _patientInsuranceRepository.GetTotalRecordsCountAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting total records count");
+                return ServiceResult<int>.Failed("خطا در دریافت تعداد رکوردها");
+            }
+        }
+
+        public async Task<ServiceResult<List<object>>> GetSimpleListAsync()
+        {
+            try
+            {
+                var result = await _patientInsuranceRepository.GetSimpleListAsync();
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting simple list");
+                return ServiceResult<List<object>>.Failed("خطا در دریافت لیست ساده");
             }
         }
 
@@ -383,42 +548,46 @@ namespace ClinicApp.Services.Insurance
         public async Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPagedAsync(
             string searchTerm = null,
             int? providerId = null,
+            int? planId = null,
             bool? isPrimary = null,
             bool? isActive = null,
+            DateTime? fromDate = null,
+            DateTime? toDate = null,
             int pageNumber = 1,
-            int pageSize = 10)
+            int pageSize = 20)
         {
             try
             {
                 _log.Information(
-                    "درخواست دریافت لیست بیمه‌های بیماران. SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, PageNumber: {PageNumber}, PageSize: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
-                    searchTerm, providerId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+                    "درخواست دریافت لیست بیمه‌های بیماران. SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, PlanId: {PlanId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, PageNumber: {PageNumber}, PageSize: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                    searchTerm, providerId, planId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
 
-                var result = await _patientInsuranceRepository.GetPagedAsync(null, searchTerm, pageNumber, pageSize);
+                // استفاده از متد بهینه‌سازی شده
+                var result = await _patientInsuranceRepository.GetPagedOptimizedAsync(
+                    null, searchTerm, providerId, planId, isPrimary, isActive, fromDate, toDate, pageNumber, pageSize);
 
-                var viewModels = result.Data.Items;
-
-                var pagedResult = new PagedResult<PatientInsuranceIndexViewModel>
+                if (!result.Success || result.Data == null)
                 {
-                    Items = viewModels,
-                    TotalItems = result.Data.TotalItems,
-                    PageNumber = result.Data.PageNumber,
-                    PageSize = result.Data.PageSize
-                };
+                    _log.Warning("خطا در دریافت لیست بیمه‌های بیماران از ریپازیتوری. Success: {Success}, Data: {Data}. کاربر: {UserName} (شناسه: {UserId})", 
+                        result.Success, result.Data != null, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Failed(
+                        "خطا در دریافت لیست بیمه‌های بیماران از پایگاه داده");
+                }
 
                 _log.Information(
-                    "لیست بیمه‌های بیماران با موفقیت دریافت شد. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
-                    viewModels.Count, _currentUserService.UserName, _currentUserService.UserId);
+                    "لیست بیمه‌های بیماران با موفقیت دریافت شد. تعداد: {Count} از {Total}. کاربر: {UserName} (شناسه: {UserId})",
+                    result.Data.Items.Count, result.Data.TotalItems, _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Successful(
-                    pagedResult,
+                    result.Data,
                     "لیست بیمه‌های بیماران با موفقیت دریافت شد.");
             }
             catch (Exception ex)
             {
                 _log.Error(ex,
-                    "خطا در دریافت لیست بیمه‌های بیماران. SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, PageNumber: {PageNumber}, PageSize: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
-                    searchTerm, providerId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+                    "خطا در دریافت لیست بیمه‌های بیماران. SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, PlanId: {PlanId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, PageNumber: {PageNumber}, PageSize: {PageSize}. کاربر: {UserName} (شناسه: {UserId})",
+                    searchTerm, providerId, planId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Failed(
                     "خطا در دریافت لیست بیمه‌های بیماران.");

@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
-using System.Threading.Tasks;
 
 namespace ClinicApp.Interfaces
 {
@@ -310,6 +311,98 @@ namespace ClinicApp.Interfaces
         /// <param name="patientId">شناسه بیمار مورد نظر</param>
         /// <returns>نتیجه بررسی وابستگی‌ها</returns>
         Task<ServiceResult> CheckPatientDependenciesAsync(int patientId);
+
+        /// <summary>
+        /// دریافت لیست بیماران برای SelectList
+        /// 
+        /// ویژگی‌های کلیدی:
+        /// 1. دریافت تمام بیماران فعال (غیرحذف شده)
+        /// 2. مرتب‌سازی بر اساس نام و نام خانوادگی
+        /// 3. شامل شناسه و نام کامل بیمار
+        /// 4. بهینه‌سازی برای استفاده در Dropdown
+        /// 5. لاگ‌گیری حرفه‌ای برای امنیت
+        /// 
+        /// استانداردهای پزشکی رعایت شده:
+        /// - رعایت استانداردهای قانونی ایران در نگهداری اطلاعات پزشکی
+        /// - نمایش اطلاعات بیماران به صورت امن
+        /// - ردیابی کامل عملیات‌ها برای حسابرسی
+        /// 
+        /// امنیت:
+        /// - بررسی دسترسی کاربر به اطلاعات بیماران
+        /// - لاگ‌گیری دقیق برای هر درخواست
+        /// - جلوگیری از نشت اطلاعات حساس پزشکی
+        /// 
+        /// عملکرد:
+        /// - استفاده از AsNoTracking برای عملیات خواندن
+        /// - بهینه‌سازی کوئری‌ها برای کاهش بار دیتابیس
+        /// - مدیریت حافظه برای لیست‌های بزرگ
+        /// 
+        /// خروجی:
+        /// - ServiceResult با لیست بیماران برای SelectList
+        /// - شامل شناسه و نام کامل بیمار
+        /// - مرتب‌سازی شده بر اساس نام
+        /// 
+        /// مثال استفاده:
+        /// var result = await _patientService.GetPatientsForLookupAsync();
+        /// if (result.Success)
+        /// {
+        ///     var selectList = new SelectList(result.Data, "Value", "Text");
+        /// }
+        /// </summary>
+        /// <returns>لیست بیماران برای SelectList</returns>
+        Task<ServiceResult<List<SelectListItem>>> GetPatientsForLookupAsync();
+
+        /// <summary>
+        /// جستجوی بیماران برای Select2 (Server-Side Processing)
+        /// 
+        /// ویژگی‌های کلیدی:
+        /// 1. جستجوی پیشرفته بر اساس نام، نام خانوادگی، کد ملی و شماره تلفن
+        /// 2. صفحه‌بندی برای عملکرد بهینه با 10 هزار رکورد
+        /// 3. مرتب‌سازی بر اساس نام و نام خانوادگی
+        /// 4. بهینه‌سازی برای Select2 با Server-Side Processing
+        /// 5. لاگ‌گیری حرفه‌ای برای امنیت
+        /// 
+        /// استانداردهای پزشکی رعایت شده:
+        /// - رعایت استانداردهای قانونی ایران در نگهداری اطلاعات پزشکی
+        /// - نمایش اطلاعات بیماران به صورت امن
+        /// - ردیابی کامل عملیات‌ها برای حسابرسی
+        /// 
+        /// امنیت:
+        /// - بررسی دسترسی کاربر به اطلاعات بیماران
+        /// - لاگ‌گیری دقیق برای هر درخواست
+        /// - جلوگیری از نشت اطلاعات حساس پزشکی
+        /// 
+        /// عملکرد:
+        /// - استفاده از AsNoTracking برای عملیات خواندن
+        /// - بهینه‌سازی کوئری‌ها برای کاهش بار دیتابیس
+        /// - مدیریت حافظه برای لیست‌های بزرگ
+        /// - پشتیبانی از جستجوی فارسی و انگلیسی
+        /// 
+        /// پارامترها:
+        /// - query: عبارت جستجو (نام، نام خانوادگی، کد ملی، شماره تلفن)
+        /// - page: شماره صفحه (پیش‌فرض: 1)
+        /// - pageSize: اندازه صفحه (پیش‌فرض: 20)
+        /// 
+        /// خروجی:
+        /// - ServiceResult با PagedResult<PatientIndexViewModel>
+        /// - شامل اطلاعات کامل بیماران
+        /// - مرتب‌سازی شده بر اساس نام
+        /// 
+        /// مثال استفاده:
+        /// var result = await _patientService.SearchPatientsForSelect2Async("احمد", 1, 20);
+        /// if (result.Success)
+        /// {
+        ///     foreach (var patient in result.Data.Items)
+        ///     {
+        ///         Console.WriteLine($"بیمار: {patient.FirstName} {patient.LastName}");
+        ///     }
+        /// }
+        /// </summary>
+        /// <param name="query">عبارت جستجو</param>
+        /// <param name="page">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست بیماران صفحه‌بندی شده</returns>
+        Task<ServiceResult<PagedResult<PatientIndexViewModel>>> SearchPatientsForSelect2Async(string query, int page = 1, int pageSize = 20);
 
     }
 }

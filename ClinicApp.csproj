@@ -786,6 +786,7 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexItemViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexPageViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceListPartialViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
@@ -894,6 +895,7 @@
     <Content Include="Content\css\local-fonts.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
+    <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\Images\default-avatar.png" />
     <Content Include="Content\Images\Doctors\doctor_profile_14040606_011423_b7cd6656f50d47d8a0072ed2246bf4bc.jpg" />
@@ -947,6 +949,7 @@
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker-helper.js" />
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.css" />
     <Content Include="Content\plugins\persian-datepicker\persian-datepicker.min.js" />
+    <Content Include="Content\plugins\select2\css\select2-bootstrap4.min.css" />
     <Content Include="Content\plugins\select2\css\select2.css" />
     <Content Include="Content\plugins\select2\css\select2.min.css" />
     <Content Include="Content\plugins\DataTables\css\autoFill.bootstrap.css" />
@@ -3225,6 +3228,8 @@
     <Content Include="Scripts\app\doctor-assignment-index.js" />
     <Content Include="Scripts\app\insurance-plan-form.js" />
     <Content Include="Scripts\app\insurance-plan-index.js" />
+    <Content Include="Scripts\app\patient-insurance-form.js" />
+    <Content Include="Scripts\app\patient-select2.js" />
     <Content Include="Scripts\app\utility.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
@@ -3610,6 +3615,7 @@
     <Content Include="CONTRACTS\RECEPTION_CREATE_FORM_FIXES.md" />
     <Content Include="CONTRACTS\JQUERY_RESPONSE_PARSING_FIX.md" />
     <Content Include="Areas\Admin\Views\InsurancePlan\_InsurancePlanListPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceListPartial.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3882,6 +3888,7 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
+    <Folder Include="Areas\Admin\Views\Insurance\" />
     <Folder Include="Constants\" />
     <Folder Include="Models\ValueObjects\" />
     <Folder Include="Validators\" />

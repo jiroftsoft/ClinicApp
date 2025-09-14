@@ -11,6 +11,7 @@ using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
+using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 using Serilog;
 
 namespace ClinicApp.Services.Insurance
@@ -545,6 +546,60 @@ namespace ClinicApp.Services.Insurance
                 return ServiceResult<List<InsurancePlanLookupViewModel>>.Failed(
                     "خطا در دریافت طرح‌های بیمه فعال. لطفاً دوباره تلاش کنید.",
                     "GET_ACTIVE_PLANS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست شرکت‌های بیمه برای SelectList
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetActiveProvidersForLookupAsync()
+        {
+            _log.Information(
+                "درخواست دریافت شرکت‌های بیمه فعال برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت تمام طرح‌های بیمه فعال
+                var plans = await _insurancePlanRepository.GetActiveAsync();
+                
+                // استخراج unique providers از plans
+                var providers = plans
+                    .Where(p => p.InsuranceProvider != null)
+                    .GroupBy(p => new { p.InsuranceProvider.InsuranceProviderId, p.InsuranceProvider.Name, p.InsuranceProvider.Code })
+                    .Select(g => new InsuranceProviderLookupViewModel
+                    {
+                        InsuranceProviderId = g.Key.InsuranceProviderId,
+                        Name = g.Key.Name,
+                        Code = g.Key.Code
+                    })
+                    .OrderBy(p => p.Name)
+                    .ToList();
+
+                _log.Information(
+                    "شرکت‌های بیمه فعال برای Lookup با موفقیت دریافت شدند. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    providers.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(
+                    providers,
+                    "شرکت‌های بیمه فعال با موفقیت دریافت شدند.",
+                    "GetActiveProvidersForLookup",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در دریافت شرکت‌های بیمه فعال برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Failed(
+                    "خطا در دریافت شرکت‌های بیمه فعال. لطفاً دوباره تلاش کنید.",
+                    "GET_ACTIVE_PROVIDERS_ERROR",
                     ErrorCategory.General,
                     SecurityLevel.High);
             }

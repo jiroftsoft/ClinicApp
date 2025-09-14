@@ -7,138 +7,7 @@
 @Html.AntiForgeryToken()
 
 @section Styles {
-    <style>
-        /* Medical Environment Color Scheme */
-        :root {
-            --medical-primary: #2c5aa0;
-            --medical-secondary: #6c757d;
-            --medical-success: #28a745;
-            --medical-danger: #dc3545;
-            --medical-warning: #ffc107;
-            --medical-info: #17a2b8;
-            --medical-light: #f8f9fa;
-            --medical-dark: #343a40;
-            --medical-border: #dee2e6;
-            --medical-text: #495057;
-            --medical-text-muted: #6c757d;
-        }
-
-        .patient-insurance-card {
-            background: #ffffff;
-            border-radius: 10px;
-            padding: 1.5rem;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-            margin-bottom: 1.5rem;
-            border: 1px solid var(--medical-border);
-            transition: all 0.3s ease;
-        }
-        .patient-header {
-            border-bottom: 2px solid #e9ecef;
-            padding-bottom: 1rem;
-            margin-bottom: 1rem;
-        }
-        .patient-name {
-            font-size: 1.3rem;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        .patient-code {
-            font-family: 'Courier New', monospace;
-            background-color: #f8f9fa;
-            padding: 0.3rem 0.8rem;
-            border-radius: 0.3rem;
-            font-size: 0.9rem;
-            border: 1px solid #dee2e6;
-        }
-        .insurance-info {
-            background-color: #f8f9fa;
-            padding: 1rem;
-            border-radius: 0.5rem;
-            border: 1px solid #dee2e6;
-        }
-        .plan-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #495057;
-        }
-        .provider-badge {
-            background-color: #e3f2fd;
-            color: #1976d2;
-            padding: 0.3rem 0.8rem;
-            border-radius: 0.3rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-        }
-        .policy-info {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 0.8rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-        .policy-number {
-            font-family: 'Courier New', monospace;
-            font-weight: 600;
-            color: #856404;
-        }
-        .validity-period {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            padding: 0.8rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
-        }
-        .validity-label {
-            font-size: 0.9rem;
-            color: #0c5460;
-            font-weight: 500;
-        }
-        .validity-date {
-            font-weight: 600;
-            color: #0c5460;
-        }
-        .status-badge {
-            font-size: 0.9rem;
-            padding: 0.5rem 1rem;
-            border-radius: 20px;
-        }
-        .primary-badge {
-            background-color: #28a745;
-            color: white;
-            font-size: 0.8rem;
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.3rem;
-        }
-        .supplementary-badge {
-            background-color: #17a2b8;
-            color: white;
-            font-size: 0.8rem;
-            padding: 0.3rem 0.6rem;
-            border-radius: 0.3rem;
-        }
-        .btn-action {
-            margin: 0.25rem;
-            font-weight: 600;
-        }
-        .search-filters {
-            background-color: #f8f9fa;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin-bottom: 2rem;
-        }
-        .filter-group {
-            margin-bottom: 1rem;
-        }
-        .filter-group:last-child {
-            margin-bottom: 0;
-        }
-        .filter-label {
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-    </style>
+    <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
 }
 
 <div class="container-fluid">
@@ -164,15 +33,7 @@
                         <div class="col-md-3">
                             <div class="filter-group">
                                 <label class="filter-label">ارائه‌دهنده بیمه:</label>
-                                <select name="providerId" class="form-control">
-                                    <option value="">همه ارائه‌دهندگان</option>
-                                    @foreach (var provider in Model.InsuranceProviders)
-                                    {
-                                        <option value="@provider.InsuranceProviderId" @(Model.ProviderId == provider.InsuranceProviderId ? "selected" : "")>
-                                            @provider.Name
-                                        </option>
-                                    }
-                                </select>
+                                @Html.DropDownList("providerId", Model.InsuranceProviderSelectList ?? new SelectList(new List<object>(), "Value", "Text"), "همه ارائه‌دهندگان", new { @class = "form-control" })
                             </div>
                         </div>
                         <div class="col-md-2">
@@ -218,7 +79,7 @@
                         @if (Model.TotalCount > 0)
                         {
                             <span>@Model.TotalCount بیمه بیمار یافت شد</span>
-                             if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.ProviderId.HasValue || Model.IsPrimary.HasValue || Model.IsActive.HasValue)
+                            if (!string.IsNullOrEmpty(Model.SearchTerm) || Model.ProviderId.HasValue || Model.IsPrimary.HasValue || Model.IsActive.HasValue)
                             {
                                 <span> - </span>
                                 <a href="@Url.Action("Index", "PatientInsurance")" class="alert-link">نمایش همه بیمه‌ها</a>
@@ -232,134 +93,114 @@
                 </div>
             </div>
 
-            <!-- Patient Insurances List -->
-            @if (Model.PatientInsurances.Any())
-            {
-                <div class="row">
-                    @foreach (var patientInsurance in Model.PatientInsurances)
+            <!-- Patient Insurances List Container -->
+            <div id="patientInsuranceListContainer">
+                @{
+                    var partialViewModel = new ClinicApp.ViewModels.Insurance.PatientInsurance.PatientInsuranceListPartialViewModel
                     {
-                        <div class="col-md-6 col-lg-4">
-                            <div class="patient-insurance-card">
-                                <div class="patient-header">
-                                    <div class="patient-name">@patientInsurance.PatientFullName</div>
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <span class="patient-code">@patientInsurance.PatientCode</span>
-                                        @if (patientInsurance.IsPrimary)
-                                        {
-                                            <span class="primary-badge">اصلی</span>
-                                        }
-                                        else
-                                        {
-                                            <span class="supplementary-badge">تکمیلی</span>
-                                        }
-                                    </div>
-                                </div>
-
-                                <div class="insurance-info">
-                                    <div class="plan-name">@patientInsurance.InsurancePlanName</div>
-                                    <div class="provider-badge">@patientInsurance.InsuranceProviderName</div>
-                                </div>
-
-                                <div class="policy-info">
-                                    <div class="validity-label">شماره بیمه:</div>
-                                    <div class="policy-number">@patientInsurance.PolicyNumber</div>
-                                </div>
-
-                                <div class="validity-period">
-                                    <div class="validity-label">دوره اعتبار:</div>
-                                    <div class="validity-date">
-                                        از @patientInsurance.StartDateShamsi تا @patientInsurance.EndDateShamsi
-                                    </div>
-                                </div>
-
-                                <div class="d-flex justify-content-between align-items-center mb-3">
-                                    <div>
-                                        @if (patientInsurance.IsActive)
-                                        {
-                                            <span class="badge badge-success status-badge">
-                                                <i class="fas fa-check-circle"></i> فعال
-                                            </span>
-                                        }
-                                        else
-                                        {
-                                            <span class="badge badge-danger status-badge">
-                                                <i class="fas fa-times-circle"></i> غیرفعال
-                                            </span>
-                                        }
-                                    </div>
-                                    <div>
-                                        <span class="badge badge-info">@patientInsurance.CoveragePercent% پوشش</span>
-                                    </div>
-                                </div>
-
-                                <div class="text-center">
-                                    <a href="@Url.Action("Details", "PatientInsurance", new { id = patientInsurance.PatientInsuranceId })" class="btn btn-info btn-sm btn-action">
-                                        <i class="fas fa-eye"></i> جزئیات
-                                    </a>
-                                    <a href="@Url.Action("Edit", "PatientInsurance", new { id = patientInsurance.PatientInsuranceId })" class="btn btn-warning btn-sm btn-action">
-                                        <i class="fas fa-edit"></i> ویرایش
-                                    </a>
-                                    <a href="@Url.Action("Delete", "PatientInsurance", new { id = patientInsurance.PatientInsuranceId })" class="btn btn-danger btn-sm btn-action">
-                                        <i class="fas fa-trash-alt"></i> حذف
-                                    </a>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Pagination -->
-                 if (Model.TotalPages > 1)
-                {
-                    <div class="row">
-                        <div class="col-12">
-                            <nav aria-label="صفحه‌بندی بیمه‌های بیماران">
-                                <ul class="pagination justify-content-center">
-                                    @if (Model.CurrentPage > 1)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("Index", "PatientInsurance", new { page = Model.CurrentPage - 1, searchTerm = Model.SearchTerm, providerId = Model.ProviderId, isPrimary = Model.IsPrimary, isActive = Model.IsActive })">
-                                                <i class="fas fa-chevron-right"></i> قبلی
-                                            </a>
-                                        </li>
-                                    }
-
-                                    @for (int i = Math.Max(1, Model.CurrentPage - 2); i <= Math.Min(Model.TotalPages, Model.CurrentPage + 2); i++)
-                                    {
-                                        <li class="page-item @(i == Model.CurrentPage ? "active" : "")">
-                                            <a class="page-link" href="@Url.Action("Index", "PatientInsurance", new { page = i, searchTerm = Model.SearchTerm, providerId = Model.ProviderId, isPrimary = Model.IsPrimary, isActive = Model.IsActive })">@i</a>
-                                        </li>
-                                    }
-
-                                    @if (Model.CurrentPage < Model.TotalPages)
-                                    {
-                                        <li class="page-item">
-                                            <a class="page-link" href="@Url.Action("Index", "PatientInsurance", new { page = Model.CurrentPage + 1, searchTerm = Model.SearchTerm, providerId = Model.ProviderId, isPrimary = Model.IsPrimary, isActive = Model.IsActive })">
-                                                بعدی <i class="fas fa-chevron-left"></i>
-                                            </a>
-                                        </li>
-                                    }
-                                </ul>
-                            </nav>
-                        </div>
-                    </div>
+                        Items = Model.PatientInsurances,
+                        CurrentPage = Model.CurrentPage,
+                        PageSize = Model.PageSize,
+                        TotalItems = Model.TotalCount
+                    };
                 }
-            }
-            else
-            {
-                <div class="row">
-                    <div class="col-12">
-                        <div class="alert alert-warning text-center">
-                            <i class="fas fa-exclamation-triangle fa-3x mb-3"></i>
-                            <h4>هیچ بیمه بیمار یافت نشد</h4>
-                            <p>در حال حاضر هیچ بیمه بیمار در سیستم ثبت نشده است.</p>
-                            <a href="@Url.Action("Create", "PatientInsurance")" class="btn btn-primary">
-                                <i class="fas fa-plus"></i> افزودن اولین بیمه بیمار
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            }
+                @Html.Partial("_PatientInsuranceListPartial", partialViewModel)
+            </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // محافظت jQuery + ساختار ماژولار
+        (function () {
+            'use strict';
+
+            // اطمینان از بارگذاری jQuery
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function () {
+                        ensureJQuery(callback);
+                    }, 50);
+                }
+            }
+
+            // Initialization اصلی
+            function initializePatientInsurancePage() {
+                ensureJQuery(function () {
+                    $(function () { // document.ready کوتاه‌تر
+
+                        // --- رویداد جستجو ---
+                        $('#searchForm').on('submit', function (e) {
+                            e.preventDefault();
+                            reloadInsurances(1);
+                        });
+
+                        // --- رویداد تغییر فیلترها ---
+                        $('select[name="providerId"], select[name="isPrimary"], select[name="isActive"]').on('change', function () {
+                            reloadInsurances(1);
+                        });
+
+                        // --- صفحه‌بندی (delegation) ---
+                        $(document).on('click', '.pagination .page-link', function (e) {
+                            e.preventDefault();
+                            var page = $(this).data('page');
+                            if (page && page > 0) {
+                                reloadInsurances(page);
+                            }
+                        });
+
+                        // --- متد اصلی بارگذاری ---
+                        function reloadInsurances(page) {
+                            var searchTerm = $('input[name="searchTerm"]').val();
+                            var providerId = $('select[name="providerId"]').val();
+                            var isPrimary = $('select[name="isPrimary"]').val();
+                            var isActive = $('select[name="isActive"]').val();
+
+                            $.ajax({
+                                url: '@Url.Action("LoadPatientInsurances", "PatientInsurance")',
+                                type: 'POST',
+                                data: {
+                                    searchTerm: searchTerm || '',
+                                    providerId: providerId || null,
+                                    isPrimary: isPrimary || null,
+                                    isActive: isActive || null,
+                                    page: page,
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                success: function (response) {
+                                    $('#patientInsuranceListContainer').html(response);
+                                },
+                                error: function (xhr, status, error) {
+                                    console.error('خطا در بارگیری بیمه‌های بیماران:', error);
+                                    showErrorMessage('خطا در بارگیری بیمه‌های بیماران');
+                                }
+                            });
+                        }
+
+                        // --- نمایش پیام خطا ---
+                        function showErrorMessage(message) {
+                            var alertHtml = `
+                                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-exclamation-circle"></i> ${message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>`;
+                            $('.container-fluid').prepend(alertHtml);
+
+                            // حذف خودکار بعد از ۵ ثانیه
+                            setTimeout(function () {
+                                $('.alert-danger').fadeOut();
+                            }, 5000);
+                        }
+
+                    });
+                });
+            }
+
+            // اجرای init
+            initializePatientInsurancePage();
+        })();
+    </script>
+}

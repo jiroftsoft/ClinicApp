@@ -41,38 +41,34 @@
                 </div>
             </div>
         </div>
-        
-        <div class="row mt-3">
-            <div class="col-md-6">
-                <small class="text-muted">تاریخ شروع:</small>
-                <div>@Model.StartDate.ToString("yyyy/MM/dd")</div>
-            </div>
-            <div class="col-md-6">
-                <small class="text-muted">تاریخ پایان:</small>
-                <div>@(Model.EndDate?.ToString("yyyy/MM/dd") ?? "نامحدود")</div>
+
+        <div class="validity-period">
+            <div class="validity-label">دوره اعتبار:</div>
+            <div class="validity-date">
+                از @Model.StartDateShamsi تا @Model.EndDateShamsi
             </div>
         </div>
     </div>
 
     <div class="card-actions mt-3">
         <div class="btn-group" role="group">
-            <a href="@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })" 
+            <a href="@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })"
                class="btn btn-outline-info btn-sm">
                 <i class="fas fa-eye"></i> جزئیات
             </a>
-            <a href="@Url.Action("Edit", "PatientInsurance", new { id = Model.PatientInsuranceId })" 
+            <a href="@Url.Action("Edit", "PatientInsurance", new { id = Model.PatientInsuranceId })"
                class="btn btn-outline-primary btn-sm">
                 <i class="fas fa-edit"></i> ویرایش
             </a>
             @if (!Model.IsPrimary)
             {
-                <button type="button" class="btn btn-outline-success btn-sm set-primary-btn" 
+                <button type="button" class="btn btn-outline-success btn-sm set-primary-btn"
                         data-patient-insurance-id="@Model.PatientInsuranceId"
                         data-patient-name="@Model.PatientFullName">
                     <i class="fas fa-star"></i> بیمه اصلی
                 </button>
             }
-            <a href="@Url.Action("Delete", "PatientInsurance", new { id = Model.PatientInsuranceId })" 
+            <a href="@Url.Action("Delete", "PatientInsurance", new { id = Model.PatientInsuranceId })"
                class="btn btn-outline-danger btn-sm"
                onclick="return confirm('آیا مطمئن هستید که می‌خواهید این بیمه بیمار را حذف کنید؟')">
                 <i class="fas fa-trash"></i> حذف
@@ -82,31 +78,124 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    $('.set-primary-btn').click(function() {
-        var patientInsuranceId = $(this).data('patient-insurance-id');
-        var patientName = $(this).data('patient-name');
-        
-        if (confirm('آیا مطمئن هستید که می‌خواهید این بیمه را به عنوان بیمه اصلی تنظیم کنید؟')) {
-            $.ajax({
-                url: '@Url.Action("SetPrimaryInsurance", "PatientInsurance")',
-                type: 'POST',
-                data: {
-                    id: patientInsuranceId,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                success: function(response) {
-                    if (response.success) {
-                        location.reload();
-                    } else {
-                        alert('خطا در تنظیم بیمه اصلی: ' + response.message);
+// محافظت jQuery - همان pattern موجود در layout
+(function () {
+    'use strict';
+
+    function ensureJQuery(callback) {
+        if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function () {
+                ensureJQuery(callback);
+            }, 50);
+        }
+    }
+
+    function initializePatientInsuranceCard() {
+        ensureJQuery(function () {
+            $(document).ready(function () {
+
+                // وقتی دکمه "تنظیم به بیمه اصلی" کلیک می‌شود
+                $(document).on('click', '.set-primary-btn', function () {
+                    var button = $(this);
+                    var card = button.closest('.patient-insurance-card');
+                    var patientInsuranceId = button.data('patient-insurance-id');
+                    var patientName = button.data('patient-name');
+
+                    if (confirm('آیا مطمئن هستید که می‌خواهید این بیمه را به عنوان بیمه اصلی تنظیم کنید؟')) {
+                        $.ajax({
+                            url: '@Url.Action("SetPrimaryInsurance", "PatientInsurance")',
+                            type: 'POST',
+                            data: {
+                                id: patientInsuranceId,
+                                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                            },
+                            success: function (response) {
+                                if (response.success) {
+                                    // آپدیت کارت انتخاب‌شده
+                                    updateCardToPrimary(card);
+
+                                    // بقیه کارت‌های همان بیمار به عنوان تکمیلی
+                                    updateOtherCardsForPatient(patientInsuranceId);
+
+                                    showSuccessMessage('بیمه اصلی با موفقیت تنظیم شد');
+                                } else {
+                                    showErrorMessage('خطا در تنظیم بیمه اصلی: ' + response.message);
+                                }
+                            },
+                            error: function () {
+                                showErrorMessage('خطا در ارتباط با سرور');
+                            }
+                        });
                     }
-                },
-                error: function() {
-                    alert('خطا در ارتباط با سرور');
+                });
+
+            });
+        });
+    }
+
+    /**
+     * Update card to show as primary insurance
+     */
+    function updateCardToPrimary(card) {
+        var statusDiv = card.find('.insurance-status');
+        statusDiv.html('<span class="badge bg-primary">بیمه اصلی</span>' +
+            statusDiv.find('.badge:not(.bg-primary)').prop('outerHTML'));
+
+        card.find('.set-primary-btn').hide();
+    }
+
+    /**
+     * Update other cards for the same patient to show as supplementary
+     */
+    function updateOtherCardsForPatient(currentPatientInsuranceId) {
+        $('.patient-insurance-card')
+            .not('[data-patient-insurance-id="' + currentPatientInsuranceId + '"]')
+            .each(function () {
+                var card = $(this);
+                var statusDiv = card.find('.insurance-status');
+
+                if (card.find('.set-primary-btn').length > 0) {
+                    statusDiv.html('<span class="badge bg-secondary">بیمه تکمیلی</span>' +
+                        statusDiv.find('.badge:not(.bg-secondary)').prop('outerHTML'));
                 }
             });
-        }
-    });
-});
+    }
+
+    /**
+     * Show success message
+     */
+    function showSuccessMessage(message) {
+        var alertHtml = '<div class="alert alert-success alert-dismissible fade show" role="alert">' +
+            '<i class="fas fa-check-circle"></i> ' + message +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+            '</div>';
+        $('.container-fluid').prepend(alertHtml);
+
+        setTimeout(function () {
+            $('.alert-success').fadeOut();
+        }, 5000);
+    }
+
+    /**
+     * Show error message
+     */
+    function showErrorMessage(message) {
+        var alertHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+            '<i class="fas fa-exclamation-circle"></i> ' + message +
+            '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>' +
+            '</div>';
+        $('.container-fluid').prepend(alertHtml);
+
+        setTimeout(function () {
+            $('.alert-danger').fadeOut();
+        }, 7000);
+    }
+
+    // شروع initialization
+    initializePatientInsuranceCard();
+
+})();
 </script>
+
