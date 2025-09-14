@@ -5,6 +5,29 @@
 }
 
 <div class="container-fluid">
+    <!-- 🛡️ نمایش پیام‌های خطا و موفقیت -->
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>خطا:</strong> @TempData["ErrorMessage"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="fas fa-check-circle"></i>
+            <strong>موفقیت:</strong> @TempData["SuccessMessage"]
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true">&times;</span>
+            </button>
+        </div>
+    }
+
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -13,11 +36,20 @@
                         <i class="fas fa-calculator"></i>
                         محاسبه بیمه
                     </h3>
+                    <div class="card-tools">
+                        <span class="badge badge-info">
+                            <i class="fas fa-shield-alt"></i>
+                            سیستم ضد گلوله
+                        </span>
+                    </div>
                 </div>
                 <div class="card-body">
-                    @using (Html.BeginForm("CalculatePatientShare", "InsuranceCalculation", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    @using (Html.BeginForm("CalculatePatientShare", "InsuranceCalculation", FormMethod.Post, new { @class = "form-horizontal", role = "form", id = "calculationForm" }))
                     {
                         @Html.AntiForgeryToken()
+                        
+                        <!-- 🛡️ نمایش خطاهای اعتبارسنجی -->
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
                         
                         <div class="row">
                             <div class="col-md-6">
@@ -102,46 +134,203 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Initialize Persian DatePicker
-            $('.persian-datepicker').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                autoClose: true,
-                initialValue: false,
-                calendar: {
-                    persian: {
-                        locale: 'fa',
-                        showHint: true,
-                        leapYearMode: 'algorithmic'
+            // 🛡️ Initialize Persian DatePicker with error handling
+            try {
+                $('.persian-datepicker').persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    autoClose: true,
+                    initialValue: false,
+                    calendar: {
+                        persian: {
+                            locale: 'fa',
+                            showHint: true,
+                            leapYearMode: 'algorithmic'
+                        }
+                    },
+                    onSelect: function(persianDate) {
+                        // 🛡️ Validate selected date
+                        validateCalculationDate(persianDate);
                     }
-                }
-            });
+                });
+            } catch (error) {
+                console.error('خطا در راه‌اندازی تقویم فارسی:', error);
+                showAlert('خطا در راه‌اندازی تقویم فارسی', 'error');
+            }
 
-            // Load patient insurances when patient changes
+            // 🛡️ Load patient insurances when patient changes with error handling
             $('#PatientId').change(function() {
                 var patientId = $(this).val();
-                if (patientId) {
+                if (patientId && patientId > 0) {
                     loadPatientInsurances(patientId);
                 } else {
                     $('#PatientInsuranceId').empty().append('<option value="">انتخاب بیمه بیمار</option>');
                 }
             });
 
+            // 🛡️ Form validation before submit
+            $('#calculationForm').submit(function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // 🛡️ Show loading state
+                showLoadingState();
+            });
+
+            // 🛡️ Real-time validation
+            $('#ServiceAmount').on('input', function() {
+                validateServiceAmount($(this).val());
+            });
+
             function loadPatientInsurances(patientId) {
+                // 🛡️ Validate patient ID
+                if (!patientId || patientId <= 0) {
+                    console.error('شناسه بیمار نامعتبر');
+                    return;
+                }
+
+                // 🛡️ Show loading indicator
+                var select = $('#PatientInsuranceId');
+                select.prop('disabled', true);
+                select.html('<option value="">در حال بارگذاری...</option>');
+
                 $.ajax({
                     url: '@Url.Action("GetPatientInsurances", "InsuranceCalculation")',
                     type: 'POST',
-                    data: { patientId: patientId },
-                    success: function(data) {
-                        var select = $('#PatientInsuranceId');
-                        select.empty().append('<option value="">انتخاب بیمه بیمار</option>');
-                        $.each(data, function(index, item) {
-                            select.append('<option value="' + item.value + '">' + item.text + '</option>');
-                        });
+                    data: { 
+                        patientId: patientId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
                     },
-                    error: function() {
-                        console.error('خطا در بارگذاری بیمه‌های بیمار');
+                    timeout: 10000, // 10 seconds timeout
+                    success: function(data) {
+                        try {
+                            select.empty().append('<option value="">انتخاب بیمه بیمار</option>');
+                            
+                            if (data && data.success && data.data) {
+                                $.each(data.data, function(index, item) {
+                                    select.append('<option value="' + item.value + '">' + item.text + '</option>');
+                                });
+                            } else {
+                                select.append('<option value="">بیمه‌ای یافت نشد</option>');
+                            }
+                        } catch (error) {
+                            console.error('خطا در پردازش داده‌های بیمه:', error);
+                            select.html('<option value="">خطا در بارگذاری</option>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در بارگذاری بیمه‌های بیمار:', error);
+                        select.html('<option value="">خطا در بارگذاری</option>');
+                        showAlert('خطا در بارگذاری بیمه‌های بیمار', 'error');
+                    },
+                    complete: function() {
+                        select.prop('disabled', false);
                     }
                 });
+            }
+
+            function validateForm() {
+                var isValid = true;
+                var errors = [];
+
+                // 🛡️ Validate patient selection
+                var patientId = $('#PatientId').val();
+                if (!patientId || patientId <= 0) {
+                    errors.push('بیمار باید انتخاب شود');
+                    isValid = false;
+                }
+
+                // 🛡️ Validate service selection
+                var serviceId = $('#ServiceId').val();
+                if (!serviceId || serviceId <= 0) {
+                    errors.push('خدمت باید انتخاب شود');
+                    isValid = false;
+                }
+
+                // 🛡️ Validate service amount
+                var serviceAmount = parseFloat($('#ServiceAmount').val());
+                if (!serviceAmount || serviceAmount <= 0) {
+                    errors.push('مبلغ خدمت باید بیشتر از صفر باشد');
+                    isValid = false;
+                }
+
+                if (serviceAmount > 1000000000) { // 1 billion
+                    errors.push('مبلغ خدمت بیش از حد مجاز است');
+                    isValid = false;
+                }
+
+                // 🛡️ Validate calculation date
+                var calculationDate = $('#CalculationDate').val();
+                if (!calculationDate) {
+                    errors.push('تاریخ محاسبه باید انتخاب شود');
+                    isValid = false;
+                }
+
+                if (errors.length > 0) {
+                    showAlert('خطاهای اعتبارسنجی: ' + errors.join(', '), 'error');
+                }
+
+                return isValid;
+            }
+
+            function validateServiceAmount(amount) {
+                var amountValue = parseFloat(amount);
+                var amountField = $('#ServiceAmount');
+                
+                if (amountValue < 0) {
+                    amountField.addClass('is-invalid');
+                    showFieldError(amountField, 'مبلغ نمی‌تواند منفی باشد');
+                } else if (amountValue > 1000000000) {
+                    amountField.addClass('is-invalid');
+                    showFieldError(amountField, 'مبلغ بیش از حد مجاز است');
+                } else if (amountValue > 0) {
+                    amountField.removeClass('is-invalid').addClass('is-valid');
+                    clearFieldError(amountField);
+                }
+            }
+
+            function validateCalculationDate(persianDate) {
+                // 🛡️ Validate date is not too far in future or past
+                var now = new Date();
+                var selectedDate = new Date(persianDate);
+                var diffDays = Math.abs((selectedDate - now) / (1000 * 60 * 60 * 24));
+                
+                if (diffDays > 365 * 2) { // More than 2 years
+                    showAlert('تاریخ محاسبه خارج از محدوده مجاز است', 'warning');
+                }
+            }
+
+            function showFieldError(field, message) {
+                field.siblings('.invalid-feedback').remove();
+                field.after('<div class="invalid-feedback">' + message + '</div>');
+            }
+
+            function clearFieldError(field) {
+                field.siblings('.invalid-feedback').remove();
+            }
+
+            function showAlert(message, type) {
+                var alertClass = type === 'error' ? 'alert-danger' : 
+                                type === 'warning' ? 'alert-warning' : 'alert-info';
+                
+                var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                    '<i class="fas fa-exclamation-triangle"></i> ' + message +
+                    '<button type="button" class="close" data-dismiss="alert" aria-label="Close">' +
+                    '<span aria-hidden="true">&times;</span></button></div>';
+                
+                $('.container-fluid').prepend(alertHtml);
+                
+                // Auto dismiss after 5 seconds
+                setTimeout(function() {
+                    $('.alert').fadeOut();
+                }, 5000);
+            }
+
+            function showLoadingState() {
+                var submitBtn = $('button[type="submit"]');
+                submitBtn.prop('disabled', true);
+                submitBtn.html('<i class="fas fa-spinner fa-spin"></i> در حال محاسبه...');
             }
         });
     </script>

@@ -102,6 +102,7 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 PatientInsuranceId = entity.PatientInsuranceId,
                 PatientId = entity.PatientId,
                 PatientName = $"{entity.Patient?.FirstName} {entity.Patient?.LastName}",
+                PatientCode = entity.Patient?.PatientCode, // اضافه کردن کد بیمار
                 PatientNationalCode = entity.Patient?.NationalCode,
                 PolicyNumber = entity.PolicyNumber,
                 InsurancePlanId = entity.InsurancePlanId,
@@ -114,6 +115,9 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 StartDateShamsi = entity.StartDate.ToPersianDate(),
                 EndDateShamsi = entity.EndDate?.ToPersianDate(),
                 IsActive = entity.IsActive,
+                // 🏥 اضافه کردن اطلاعات پوشش و فرانشیز از InsurancePlan
+                CoveragePercent = entity.InsurancePlan?.CoveragePercent ?? 0,
+                Deductible = entity.InsurancePlan?.Deductible ?? 0,
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt,
                 CreatedAtShamsi = entity.CreatedAt.ToPersianDateTime(),

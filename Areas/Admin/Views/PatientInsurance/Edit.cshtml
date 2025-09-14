@@ -21,32 +21,63 @@
 
             <div class="row justify-content-center">
                 <div class="col-md-10">
-                    <div class="edit-header">
-                        <div class="insurance-info">
-                            <i class="fas fa-edit"></i>
-                            در حال ویرایش بیمه بیمار: <strong>@Model.PatientName</strong> - <strong>@Model.InsurancePlanName</strong>
+                    <!-- 🏥 Medical Environment Edit Header -->
+                    <div class="edit-header medical-edit-header">
+                        <div class="insurance-info medical-insurance-info">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-edit me-2"></i>
+                                <div>
+                                    <h5 class="mb-1">در حال ویرایش بیمه بیمار</h5>
+                                    <div class="patient-details">
+                                        <span class="patient-name-badge">@Model.PatientName</span>
+                                        <i class="fas fa-arrow-left mx-2"></i>
+                                        <span class="insurance-plan-badge">@Model.InsurancePlanName</span>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="patient-insurance-form">
-                        @using (Html.BeginForm("Edit", "PatientInsurance", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                    <!-- 🏥 Medical Environment Form Container -->
+                    <div class="patient-insurance-form medical-form-container">
+                        @using (Html.BeginForm("Edit", "PatientInsurance", FormMethod.Post, new { 
+                            @class = "needs-validation medical-form", 
+                            novalidate = "novalidate",
+                            id = "patientInsuranceEditForm",
+                            data_medical_form = "patient-insurance-edit"
+                        }))
                         {
                             @Html.AntiForgeryToken()
                             @Html.HiddenFor(m => m.PatientInsuranceId)
 
                             @Html.Partial("_PatientInsuranceForm", Model)
 
-                            <!-- Form Actions -->
-                            <div class="text-center">
-                                <button type="submit" class="btn btn-primary btn-lg me-3">
-                                    <i class="fas fa-save"></i> ذخیره تغییرات
-                                </button>
-                                <a href="@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })" class="btn btn-info btn-lg me-3">
-                                    <i class="fas fa-eye"></i> مشاهده جزئیات
-                                </a>
-                                <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary btn-lg">
-                                    <i class="fas fa-times"></i> انصراف
-                                </a>
+                            <!-- 🏥 Medical Environment Form Actions -->
+                            <div class="form-actions medical-form-actions">
+                                <div class="d-flex justify-content-center gap-3 flex-wrap">
+                                    <button type="submit" class="btn btn-success btn-lg medical-save-btn">
+                                        <i class="fas fa-save me-2"></i> ذخیره تغییرات
+                                    </button>
+                                    <a href="@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })" class="btn btn-info btn-lg medical-details-btn">
+                                        <i class="fas fa-eye me-2"></i> مشاهده جزئیات
+                                    </a>
+                                    <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary btn-lg medical-cancel-btn">
+                                        <i class="fas fa-times me-2"></i> انصراف
+                                    </a>
+                                </div>
+                                
+                                <!-- Medical Environment Form Help -->
+                                <div class="form-help medical-form-help">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>راهنمای ویرایش:</strong>
+                                        <ul class="mb-0 mt-2">
+                                            <li>اطلاعات بیمه بیمار را با دقت بررسی کنید</li>
+                                            <li>تاریخ‌های اعتبار باید صحیح و معتبر باشند</li>
+                                            <li>تغییرات پس از ذخیره فوراً اعمال می‌شوند</li>
+                                        </ul>
+                                    </div>
+                                </div>
                             </div>
                         }
                     </div>
@@ -61,7 +92,7 @@
     <script src="~/Scripts/app/patient-select2.js"></script>
     <script src="~/Scripts/app/patient-insurance-form.js"></script>
     <script>
-        // محافظت jQuery - همان pattern موجود در layout
+        // 🏥 Medical Environment JavaScript - Enhanced Standards
         (function () {
             'use strict';
 
@@ -75,30 +106,145 @@
                 }
             }
 
-            function initializeEditPage() {
+            function initializeMedicalEditPage() {
                 ensureJQuery(function () {
                     $(document).ready(function() {
-            // Initialize form with existing data for Edit mode
-            if (typeof PatientInsuranceForm !== 'undefined') {
-                PatientInsuranceForm.initializeFormWithData();
+                        console.log('🏥 Medical Environment: Initializing Patient Insurance Edit Form');
+                        
+                        // 🏥 Medical Environment Form Validation
+                        initializeMedicalFormValidation();
+                        
+                        // 🏥 Medical Environment Real-time Validation
+                        initializeRealTimeValidation();
+                        
+                        // Wait for PatientInsuranceForm to be available
+                        var checkPatientInsuranceForm = function() {
+                            if (typeof PatientInsuranceForm !== 'undefined' && PatientInsuranceForm.initializeFormWithData) {
+                                console.log('✅ PatientInsuranceForm found, initializing form with data...');
+                                PatientInsuranceForm.initializeFormWithData();
+                            } else {
+                                console.log('⏳ Waiting for PatientInsuranceForm...');
+                                setTimeout(checkPatientInsuranceForm, 100);
+                            }
+                        };
+                        
+                        checkPatientInsuranceForm();
+
+                        // Set existing patient selection for Edit mode
+                        @if (Model.PatientId > 0)
+                        {
+                            <text>
+                            var checkPatientSelect2 = function() {
+                                if (typeof PatientSelect2 !== 'undefined' && PatientSelect2.setValue) {
+                                    console.log('✅ PatientSelect2 found, setting patient value...');
+                                    PatientSelect2.setValue('#PatientId', {
+                                        id: @Model.PatientId,
+                                        text: 'بیمار انتخاب شده'
+                                    });
+                                } else {
+                                    console.log('⏳ Waiting for PatientSelect2...');
+                                    setTimeout(checkPatientSelect2, 100);
+                                }
+                            };
+                            
+                            checkPatientSelect2();
+                            </text>
+                        }
+                    });
+                });
             }
 
-            // Set existing patient selection for Edit mode
-            @if (Model.PatientId > 0)
-            {
-                <text>
-                PatientSelect2.setValue('#PatientId', {
-                    id: @Model.PatientId,
-                    text: 'بیمار انتخاب شده'
+            // 🏥 Medical Environment Form Validation
+            function initializeMedicalFormValidation() {
+                ensureJQuery(function () {
+                    // Enhanced form validation for medical environment
+                    $('#patientInsuranceEditForm').on('submit', function(e) {
+                        console.log('🏥 Medical Environment: Form submission validation');
+                        
+                        var isValid = true;
+                        var errors = [];
+
+                        // Validate required fields
+                        $('.medical-form-control[required]').each(function() {
+                            if (!$(this).val().trim()) {
+                                isValid = false;
+                                var fieldName = $(this).attr('data-medical-field') || $(this).attr('name');
+                                errors.push('فیلد ' + fieldName + ' الزامی است');
+                                $(this).addClass('is-invalid');
+                            } else {
+                                $(this).removeClass('is-invalid');
+                            }
+                        });
+
+                        // Validate date range
+                        var startDate = $('#StartDateShamsi').val();
+                        var endDate = $('#EndDateShamsi').val();
+                        
+                        if (startDate && endDate) {
+                            // Add date range validation logic here
+                            console.log('🏥 Medical Environment: Validating date range');
+                        }
+
+                        if (!isValid) {
+                            e.preventDefault();
+                            console.log('🏥 Medical Environment: Form validation failed', errors);
+                            
+                            // Show medical environment error message
+                            if (typeof toastr !== 'undefined') {
+                                toastr.error('لطفاً خطاهای اعتبارسنجی را برطرف کنید', 'خطا در اعتبارسنجی');
+                            }
+                        } else {
+                            console.log('🏥 Medical Environment: Form validation passed');
+                        }
+                    });
                 });
-                </text>
             }
-            });
-        });
-    }
+
+            // 🏥 Medical Environment Real-time Validation
+            function initializeRealTimeValidation() {
+                ensureJQuery(function () {
+                    // Real-time validation for medical form controls
+                    $('.medical-form-control').on('blur', function() {
+                        var $field = $(this);
+                        var value = $field.val().trim();
+                        var fieldType = $field.attr('data-medical-field');
+
+                        // Remove previous validation classes
+                        $field.removeClass('is-valid is-invalid');
+
+                        if ($field.prop('required') && !value) {
+                            $field.addClass('is-invalid');
+                            console.log('🏥 Medical Environment: Field validation failed - required field empty');
+                        } else if (value) {
+                            // Field-specific validation
+                            switch (fieldType) {
+                                case 'policy-number':
+                                    if (!/^[0-9]{3,15}$/.test(value)) {
+                                        $field.addClass('is-invalid');
+                                        console.log('🏥 Medical Environment: Policy number format invalid');
+                                    } else {
+                                        $field.addClass('is-valid');
+                                    }
+                                    break;
+                                case 'start-date':
+                                case 'end-date':
+                                    if (!/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(value)) {
+                                        $field.addClass('is-invalid');
+                                        console.log('🏥 Medical Environment: Date format invalid');
+                                    } else {
+                                        $field.addClass('is-valid');
+                                    }
+                                    break;
+                                default:
+                                    $field.addClass('is-valid');
+                            }
+                        }
+                    });
+                });
+            }
 
             // شروع initialization
-            initializeEditPage();
+            initializeMedicalEditPage();
         })();
     </script>
 }

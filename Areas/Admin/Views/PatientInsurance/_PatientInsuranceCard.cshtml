@@ -31,21 +31,59 @@
     <div class="insurance-info">
         <div class="row">
             <div class="col-md-6">
-                <div class="plan-name">@Model.InsurancePlanName</div>
-                <div class="provider-badge">@Model.InsuranceProviderName</div>
+                <div class="info-item">
+                    <label class="info-label">نام طرح بیمه:</label>
+                    <div class="plan-name">@(Model.InsurancePlanName ?? "نامشخص")</div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label">ارائه‌دهنده بیمه:</label>
+                    <div class="provider-badge">@(Model.InsuranceProviderName ?? "نامشخص")</div>
+                </div>
             </div>
             <div class="col-md-6">
-                <div class="policy-info">
-                    <small class="text-muted">شماره بیمه:</small>
+                <div class="info-item">
+                    <label class="info-label">شماره بیمه:</label>
                     <div class="policy-number">@Model.PolicyNumber</div>
+                </div>
+                <div class="info-item">
+                    <label class="info-label">درصد پوشش:</label>
+                    <div class="coverage-percent">@Model.CoveragePercent%</div>
                 </div>
             </div>
         </div>
 
         <div class="validity-period">
-            <div class="validity-label">دوره اعتبار:</div>
-            <div class="validity-date">
-                از @Model.StartDateShamsi تا @Model.EndDateShamsi
+            <div class="info-item">
+                <label class="info-label">دوره اعتبار:</label>
+                <div class="validity-date">
+                    از @Model.StartDateShamsi 
+                    @if (!string.IsNullOrEmpty(Model.EndDateShamsi))
+                    {
+                        <span>تا @Model.EndDateShamsi</span>
+                    }
+                    else
+                    {
+                        <span class="text-muted">(بدون تاریخ انقضا)</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- اطلاعات اضافی برای استانداردهای محیط درمانی -->
+        <div class="medical-info mt-2">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <label class="info-label">کد ملی بیمار:</label>
+                        <div class="national-code">@(Model.PatientNationalCode ?? "نامشخص")</div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="info-item">
+                        <label class="info-label">تاریخ ثبت:</label>
+                        <div class="created-date">@Model.CreatedAtShamsi</div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

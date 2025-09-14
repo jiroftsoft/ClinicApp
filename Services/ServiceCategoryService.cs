@@ -779,7 +779,7 @@ public class ServiceCategoryService : IServiceCategoryService
     /// </summary>
     /// <param name="departmentId">شناسه دپارتمان</param>
     /// <returns>لیست دسته‌بندی‌های خدمات فعال برای دپارتمان مورد نظر</returns>
-    public async Task<IEnumerable<ServiceCategorySelectItem>> GetActiveServiceCategoriesByDepartmentAsync(int departmentId)
+    public async Task<List<Models.Entities.Clinic.ServiceCategory>> GetActiveServiceCategoriesByDepartmentAsync(int departmentId)
     {
         _log.Information(
             "درخواست دریافت لیست دسته‌بندی‌های خدمات فعال برای دپارتمان {DepartmentId}. User: {UserName} (Id: {UserId})",
@@ -798,21 +798,14 @@ public class ServiceCategoryService : IServiceCategoryService
                     _currentUserService.UserName,
                     _currentUserService.UserId);
 
-                return new List<ServiceCategorySelectItem>();
+                return new List<Models.Entities.Clinic.ServiceCategory>();
             }
 
             var serviceCategories = await _context.ServiceCategories
                 .Include(sc => sc.Department)
                 .Where(sc => sc.DepartmentId == departmentId && !sc.IsDeleted)
                 .OrderBy(sc => sc.Title)
-                .Select(sc => new ServiceCategorySelectItem
-                {
-                    ServiceCategoryId = sc.ServiceCategoryId,
-                    Title = sc.Title,
-                    DepartmentId = sc.DepartmentId,
-                    DepartmentName = sc.Department.Name,
-                    ServiceCount = sc.Services.Count(s => !s.IsDeleted)
-                })
+                .AsNoTracking()
                 .ToListAsync();
 
             _log.Information(
@@ -833,7 +826,7 @@ public class ServiceCategoryService : IServiceCategoryService
                 _currentUserService.UserName,
                 _currentUserService.UserId);
 
-            return new List<ServiceCategorySelectItem>();
+            return new List<Models.Entities.Clinic.ServiceCategory>();
         }
     }
 
@@ -1062,4 +1055,5 @@ public class ServiceCategoryService : IServiceCategoryService
             return false;
         }
     }
+
 }

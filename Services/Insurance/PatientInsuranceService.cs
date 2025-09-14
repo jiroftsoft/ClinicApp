@@ -72,8 +72,18 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("Getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
                     patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // استفاده از متد GetByIdAsync که واقعاً کار می‌کند
-                return await GetByIdAsync(patientInsuranceId);
+                // 🏥 استفاده از GetByIdWithDetailsAsync برای دریافت اطلاعات کامل
+                var entity = await _patientInsuranceRepository.GetByIdWithDetailsAsync(patientInsuranceId);
+                if (entity == null)
+                {
+                    _log.Warning("Patient insurance not found. PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                        patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<PatientInsuranceDetailsViewModel>.Failed("بیمه بیمار یافت نشد");
+                }
+
+                // تبدیل Entity به Details ViewModel
+                var viewModel = ConvertToDetailsViewModel(entity);
+                return ServiceResult<PatientInsuranceDetailsViewModel>.Successful(viewModel);
             }
             catch (Exception ex)
             {
@@ -563,8 +573,14 @@ namespace ClinicApp.Services.Insurance
                     searchTerm, providerId, planId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
 
                 // استفاده از متد بهینه‌سازی شده
+                _log.Information("Calling GetPagedOptimizedAsync with params: SearchTerm={SearchTerm}, ProviderId={ProviderId}, PlanId={PlanId}, IsPrimary={IsPrimary}, IsActive={IsActive}, PageNumber={PageNumber}, PageSize={PageSize}", 
+                    searchTerm, providerId, planId, isPrimary, isActive, pageNumber, pageSize);
+                
                 var result = await _patientInsuranceRepository.GetPagedOptimizedAsync(
                     null, searchTerm, providerId, planId, isPrimary, isActive, fromDate, toDate, pageNumber, pageSize);
+                
+                _log.Information("GetPagedOptimizedAsync result: Success={Success}, DataNull={DataNull}, ItemsCount={ItemsCount}", 
+                    result.Success, result.Data == null, result.Data?.Items?.Count ?? 0);
 
                 if (!result.Success || result.Data == null)
                 {
@@ -779,8 +795,11 @@ namespace ClinicApp.Services.Insurance
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
 
                 var patientInsurances = await _patientInsuranceRepository.GetActiveByPatientIdAsync(patientId);
+                
+                _log.Information("🔍 DEBUG: Repository returned {Count} patient insurances for PatientId: {PatientId}", 
+                    patientInsurances?.Count ?? 0, patientId);
 
-                var viewModels = patientInsurances.Select(ConvertToLookupViewModel).ToList();
+                var viewModels = patientInsurances?.Select(ConvertToLookupViewModel).ToList() ?? new List<PatientInsuranceLookupViewModel>();
 
                 _log.Information(
                     "بیمه‌های فعال بیمار با موفقیت دریافت شد. PatientId: {PatientId}, Count: {Count}. کاربر: {UserName} (شناسه: {UserId})",

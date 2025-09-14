@@ -3577,17 +3577,12 @@
     <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceCard.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceForm.cshtml" />
     <Content Include="CONTRACTS\ATOMIC_EXECUTION_WORKFLOW_CONTRACT.md" />
-    <Content Include="CONTRACTS\BUNDLE_USAGE_GUIDE.md" />
     <Content Include="CONTRACTS\CHANGELOG.md" />
     <Content Include="CONTRACTS\CLINIC_DELETION_PROTECTION.md" />
     <Content Include="CONTRACTS\CLINIC_DELETION_PROTECTION_DEBUG.md" />
     <Content Include="CONTRACTS\CLINIC_DELETION_PROTECTION_FIX.md" />
     <Content Include="CONTRACTS\CLINIC_DETAILS_OPTIMIZATION.md" />
-    <Content Include="CONTRACTS\CLINIC_MODULE_FIX.md" />
-    <Content Include="CONTRACTS\CLINIC_VIEW_FIX.md" />
     <Content Include="CONTRACTS\DATATABLES_STANDARDS_CONTRACT.md" />
-    <Content Include="CONTRACTS\DoctorController_Analysis_Report.json" />
-    <Content Include="CONTRACTS\DOCTORSCHEDULE_REFACTORING_SUMMARY.md" />
     <Content Include="CONTRACTS\EF_OPTIMIZATION_DIFFS.md" />
     <Content Include="CONTRACTS\EF_PERFORMANCE_OPTIMIZATION_REPORT.md" />
     <Content Include="CONTRACTS\FINAL_FIX_SUMMARY.md" />
@@ -3616,6 +3611,13 @@
     <Content Include="CONTRACTS\JQUERY_RESPONSE_PARSING_FIX.md" />
     <Content Include="Areas\Admin\Views\InsurancePlan\_InsurancePlanListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\_PatientInsuranceListPartial.cshtml" />
+    <Content Include="CONTRACTS\MEDICAL_UX_UI_STANDARDS.md" />
+    <Content Include="CONTRACTS\NOTIFICATION_SYSTEM_CONTRACT.md" />
+    <Content Include="CONTRACTS\PERSIAN_DATEPICKER_CONTRACT.md" />
+    <Content Include="CONTRACTS\PERSIAN_DATEPICKER_MODULE_USAGE.md" />
+    <Content Include="CONTRACTS\PERSIAN_DATEPICKER_STANDARD_CONTRACT.md" />
+    <Content Include="CONTRACTS\INDEX_UX_UI_OPTIMIZATION_REPORT.md" />
+    <Content Include="CONTRACTS\CREATE_FORM_UX_UI_OPTIMIZATION_REPORT.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

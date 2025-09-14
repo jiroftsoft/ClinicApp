@@ -90,7 +90,7 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="departmentId">شناسه دپارتمان</param>
         /// <returns>لیست دسته‌بندی‌های خدمات فعال برای دپارتمان مورد نظر</returns>
-        Task<IEnumerable<ServiceCategorySelectItem>> GetActiveServiceCategoriesByDepartmentAsync(int departmentId);
+        Task<List<Models.Entities.Clinic.ServiceCategory>> GetActiveServiceCategoriesByDepartmentAsync(int departmentId);
 
         /// <summary>
         /// بررسی اینکه آیا دسته‌بندی خدمات قابل حذف است یا خیر
@@ -130,6 +130,7 @@ namespace ClinicApp.Interfaces
         /// <param name="serviceCategoryId">شناسه دسته‌بندی خدمات</param>
         /// <returns>آیا دسته‌بندی خدمات فعال وجود دارد؟</returns>
         Task<bool> IsActiveServiceCategoryExistsAsync(int serviceCategoryId);
+
     }
 
     /// <summary>

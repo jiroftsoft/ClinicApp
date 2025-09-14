@@ -138,16 +138,27 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
             {
                 if (StartDate != default(DateTime))
                 {
+                    // Debug logging
+                    System.Diagnostics.Debug.WriteLine($"🔍 Converting StartDate: {StartDate}");
+                    
+                    // همیشه تبدیل را انجام دهیم (مطابق با استاندارد InsurancePlan)
                     StartDateShamsi = StartDate.ToPersianDate();
+                    System.Diagnostics.Debug.WriteLine($"🔍 Converted to: {StartDateShamsi}");
                 }
 
                 if (EndDate.HasValue)
                 {
+                    // Debug logging
+                    System.Diagnostics.Debug.WriteLine($"🔍 Converting EndDate: {EndDate.Value}");
+                    
+                    // همیشه تبدیل را انجام دهیم (مطابق با استاندارد InsurancePlan)
                     EndDateShamsi = EndDate.Value.ToPersianDate();
+                    System.Diagnostics.Debug.WriteLine($"🔍 Converted to: {EndDateShamsi}");
                 }
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"❌ Error in ConvertGregorianDatesToPersian: {ex.Message}");
                 throw new InvalidOperationException($"خطا در تبدیل تاریخ‌های میلادی: {ex.Message}", ex);
             }
         }

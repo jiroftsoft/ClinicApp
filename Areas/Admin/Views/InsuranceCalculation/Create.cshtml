@@ -7,6 +7,10 @@
 @Html.Partial("_NotificationMessages")
 
 @section Styles {
+    <!-- Select2 CSS - Local Files -->
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2-bootstrap4.min.css" rel="stylesheet" />
+    
     <style>
         /* Medical Environment Color Scheme - طبق قرارداد */
         :root {
@@ -127,6 +131,20 @@
             margin: 0;
         }
 
+        .info-box {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .info-box .info-text {
+            color: #0c5460;
+            font-size: 0.9rem;
+            margin: 0;
+        }
+
         .calculation-preview {
             background: linear-gradient(135deg, #e3f2fd, #f3e5f5);
             padding: 2rem;
@@ -223,6 +241,78 @@
             pointer-events: none;
         }
 
+        /* 🏥 Select2 Custom Styling for Medical Environment */
+        .select2-container--bootstrap-5 .select2-selection {
+            border: 1px solid var(--medical-border);
+            border-radius: 0.375rem;
+            min-height: 2.5rem;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection:focus {
+            border-color: var(--medical-primary);
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+
+        .select2-container--bootstrap-5 .select2-dropdown {
+            border: 1px solid var(--medical-border);
+            border-radius: 0.375rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option {
+            padding: 0.75rem;
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option--highlighted {
+            background-color: var(--medical-primary);
+            color: white;
+        }
+
+        .select2-container--bootstrap-5 .select2-results__option--selected {
+            background-color: var(--medical-light);
+            color: var(--medical-text);
+        }
+
+        /* Patient Option Styling */
+        .patient-option {
+            padding: 0.5rem 0;
+        }
+
+        .patient-name {
+            font-weight: 600;
+            color: var(--medical-text);
+            margin-bottom: 0.25rem;
+        }
+
+        .patient-details {
+            font-size: 0.875rem;
+            color: var(--medical-text-muted);
+        }
+
+        /* Loading States */
+        .select2-container--bootstrap-5 .select2-selection__placeholder {
+            color: var(--medical-text-muted);
+        }
+
+        .select2-container--bootstrap-5 .select2-selection__clear {
+            color: var(--medical-text-muted);
+        }
+
+        .select2-container--bootstrap-5 .select2-selection__clear:hover {
+            color: var(--medical-danger);
+        }
+
+        /* RTL Support */
+        .select2-container--bootstrap-5 .select2-selection__arrow {
+            right: 0.75rem;
+            left: auto;
+        }
+
+        .select2-container--bootstrap-5 .select2-selection__rendered {
+            padding-right: 2.5rem;
+            padding-left: 0.75rem;
+        }
+
         @@media (max-width: 768px) {
             .form-container {
                 padding: 1rem;
@@ -234,6 +324,22 @@
             
             .calculation-value {
                 font-size: 1.3rem;
+            }
+
+            .select2-container--bootstrap-5 .select2-selection {
+                min-height: 2.25rem;
+            }
+
+            .patient-option {
+                padding: 0.25rem 0;
+            }
+
+            .patient-name {
+                font-size: 0.9rem;
+            }
+
+            .patient-details {
+                font-size: 0.8rem;
             }
         }
     </style>
@@ -269,12 +375,14 @@
 
                         <div class="form-group">
                             @Html.LabelFor(m => m.PatientId, new { @class = "form-label" })
-                            @Html.DropDownListFor(m => m.PatientId, Model.PatientSelectList, "انتخاب بیمار", new { @class = "form-control", required = "required" })
+                            <select id="PatientId" name="PatientId" class="form-control select2-patient" required>
+                                <option value="">جستجو و انتخاب بیمار...</option>
+                            </select>
                             @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "invalid-feedback" })
                             <div class="info-box">
                                 <p class="info-text">
                                     <i class="fas fa-info-circle"></i>
-                                    ابتدا بیمار مورد نظر را انتخاب کنید تا بیمه‌های فعال او نمایش داده شود.
+                                    نام، نام خانوادگی، کد ملی یا شماره تلفن بیمار را تایپ کنید تا جستجو شود.
                                 </p>
                             </div>
                         </div>
@@ -301,16 +409,44 @@
                             </h4>
                         </div>
 
+                        <!-- 🏥 سلسله مراتب حرفه‌ای: دپارتمان → سرفصل → خدمت -->
                         <div class="form-group">
-                            @Html.LabelFor(m => m.ServiceId, new { @class = "form-label" })
-                            @Html.DropDownListFor(m => m.ServiceId, Model.ServiceSelectList, "انتخاب خدمت", new { @class = "form-control", required = "required" })
-                            @Html.ValidationMessageFor(m => m.ServiceId, "", new { @class = "invalid-feedback" })
+                            <label class="form-label">دپارتمان</label>
+                            <select id="DepartmentId" name="DepartmentId" class="form-control" required>
+                                <option value="">انتخاب دپارتمان</option>
+                            </select>
+                            <div class="info-box">
+                                <p class="info-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    ابتدا دپارتمان مورد نظر را انتخاب کنید
+                                </p>
+                            </div>
                         </div>
 
                         <div class="form-group">
-                            @Html.LabelFor(m => m.ServiceCategoryId, new { @class = "form-label" })
-                            @Html.DropDownListFor(m => m.ServiceCategoryId, Model.ServiceCategorySelectList, "انتخاب دسته‌بندی خدمت", new { @class = "form-control", required = "required" })
-                            @Html.ValidationMessageFor(m => m.ServiceCategoryId, "", new { @class = "invalid-feedback" })
+                            <label class="form-label">سرفصل دسته‌بندی</label>
+                            <select id="ServiceCategoryId" name="ServiceCategoryId" class="form-control" required>
+                                <option value="">ابتدا دپارتمان را انتخاب کنید</option>
+                            </select>
+                            <div class="info-box">
+                                <p class="info-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    پس از انتخاب دپارتمان، سرفصل‌های دسته‌بندی نمایش داده می‌شود
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">خدمت</label>
+                            <select id="ServiceId" name="ServiceId" class="form-control" required>
+                                <option value="">ابتدا سرفصل را انتخاب کنید</option>
+                            </select>
+                            <div class="info-box">
+                                <p class="info-text">
+                                    <i class="fas fa-info-circle"></i>
+                                    پس از انتخاب سرفصل، خدمات مربوطه نمایش داده می‌شود
+                                </p>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -401,7 +537,7 @@
                                 <div class="form-group">
                                     @Html.LabelFor(m => m.CalculationDate, new { @class = "form-label" })
                                     <div class="date-picker">
-                                        @Html.TextBoxFor(m => m.CalculationDate, new { @class = "form-control", type = "date", required = "required" })
+                                        @Html.TextBoxFor(m => m.CalculationDate, new { @class = "form-control", type = "date", required = "required", @Value = DateTime.Now.ToString("yyyy-MM-dd") })
                                         <i class="fas fa-calendar-alt date-icon"></i>
                                     </div>
                                     @Html.ValidationMessageFor(m => m.CalculationDate, "", new { @class = "invalid-feedback" })
@@ -472,8 +608,142 @@
 </div>
 
 @section Scripts {
+    <!-- Select2 JS - Local File -->
+    <script src="~/Content/plugins/select2/js/select2.min.js"></script>
+    
     <script>
+        // 🏥 Client-side Logging for Medical Environment
+        function logClient(message, type = 'info', data = null) {
+            const timestamp = new Date().toLocaleString('fa-IR');
+            const logMessage = `[${timestamp}] 🏥 ${message}`;
+            
+            if (data) {
+                console.log(logMessage, data);
+            } else {
+                console.log(logMessage);
+            }
+            
+            // Send to server for medical audit trail (optional)
+            if (type === 'error' || type === 'warning') {
+                $.ajax({
+                    url: '@Url.Action("LogClientError", "InsuranceCalculation")',
+                    type: 'POST',
+                    data: {
+                        message: message,
+                        type: type,
+                        data: JSON.stringify(data),
+                        url: window.location.href,
+                        userAgent: navigator.userAgent
+                    },
+                    success: function(response) {
+                        console.log('Client log sent to server successfully');
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Failed to send client log to server:', error);
+                    }
+                });
+            }
+        }
+
         $(document).ready(function() {
+            logClient('Insurance Calculation Create page loaded', 'info');
+            // 🏥 Initialize Select2 for Patient Search (Server-Side Processing)
+            logClient('Initializing Select2 for patient search', 'info');
+            $('#PatientId').select2({
+                theme: 'bootstrap4', // Changed to bootstrap4 to match local CSS
+                placeholder: 'جستجو و انتخاب بیمار...',
+                allowClear: true,
+                minimumInputLength: 2, // حداقل 2 کاراکتر برای جستجو
+                ajax: {
+                    url: '@Url.Action("SearchPatientsForSelect2", "InsuranceCalculation")',
+                    type: 'POST',
+                    dataType: 'json',
+                    delay: 300, // تاخیر 300 میلی‌ثانیه برای کاهش درخواست‌ها
+                    data: function (params) {
+                        logClient(`Patient search request: ${params.term}`, 'info', { term: params.term, page: params.page });
+                        return {
+                            q: params.term, // عبارت جستجو
+                            page: params.page || 1,
+                            pageSize: 20
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        logClient(`Patient search results: ${data.results.length} patients found`, 'info', { count: data.results.length });
+                        
+                        return {
+                            results: data.results,
+                            pagination: {
+                                more: data.pagination.more
+                            }
+                        };
+                    },
+                    cache: true, // کش کردن نتایج
+                    error: function(xhr, status, error) {
+                        logClient('Error in patient search', 'error', { xhr: xhr, status: status, error: error });
+                        console.error('خطا در جستجوی بیماران:', error);
+                        showNotification('خطا در جستجوی بیماران', 'error');
+                    }
+                },
+                language: {
+                    inputTooShort: function () {
+                        return 'حداقل 2 کاراکتر وارد کنید';
+                    },
+                    noResults: function () {
+                        return 'بیماری یافت نشد';
+                    },
+                    searching: function () {
+                        return 'در حال جستجو...';
+                    },
+                    loadingMore: function () {
+                        return 'در حال بارگذاری...';
+                    }
+                },
+                templateResult: function(patient) {
+                    if (patient.loading) {
+                        return patient.text;
+                    }
+                    
+                    var $result = $(
+                        '<div class="patient-option">' +
+                            '<div class="patient-name">' + patient.text + '</div>' +
+                            '<div class="patient-details">' +
+                                '<small class="text-muted">کد ملی: ' + patient.nationalCode + '</small>' +
+                                (patient.phoneNumber ? '<br><small class="text-muted">تلفن: ' + patient.phoneNumber + '</small>' : '') +
+                            '</div>' +
+                        '</div>'
+                    );
+                    
+                    return $result;
+                },
+                templateSelection: function(patient) {
+                    return patient.text || patient.firstName + ' ' + patient.lastName;
+                }
+            });
+
+            // 🏥 Load patient insurances when patient is selected
+            $('#PatientId').on('select2:select', function (e) {
+                var patientId = e.params.data.id;
+                if (patientId) {
+                    loadPatientInsurances(patientId);
+                }
+            });
+
+            // 🏥 Clear patient insurances when patient is cleared
+            $('#PatientId').on('select2:clear', function (e) {
+                $('#PatientInsuranceId').empty().append('<option value="">ابتدا بیمار را انتخاب کنید</option>');
+            });
+
+            // 🏥 Load services when service category is selected
+            $('#ServiceCategoryId').on('change', function() {
+                var categoryId = $(this).val();
+                if (categoryId) {
+                    loadServicesByCategory(categoryId);
+                } else {
+                    $('#ServiceId').empty().append('<option value="">ابتدا دسته‌بندی را انتخاب کنید</option>');
+                }
+            });
+
             // Form validation
             (function() {
                 'use strict';
@@ -505,6 +775,208 @@
                 autoCalculate();
             });
         });
+
+        // 🏥 Load patient insurances via AJAX
+        function loadPatientInsurances(patientId) {
+            logClient(`Loading patient insurances for patient ID: ${patientId}`, 'info');
+            $.ajax({
+                url: '@Url.Action("GetPatientInsurancesForCreate", "InsuranceCalculation")',
+                type: 'POST',
+                dataType: 'json',
+                data: { patientId: patientId },
+                success: function(response) {
+                    logClient('Patient insurances response received', 'info', { response: response });
+                    
+                    // Parse response if it's a string
+                    if (typeof response === 'string') {
+                        try {
+                            response = JSON.parse(response);
+                            logClient('Patient insurances response parsed successfully', 'info', { parsedResponse: response });
+                        } catch (e) {
+                            logClient('Error parsing patient insurances response', 'error', { error: e.message, response: response });
+                            showNotification('خطا در پردازش پاسخ سرور', 'error');
+                            return;
+                        }
+                    }
+                    
+                    if (response.success) {
+                        var $select = $('#PatientInsuranceId');
+                        $select.empty();
+                        $select.append('<option value="">انتخاب بیمه بیمار</option>');
+                        
+                        $.each(response.data, function(index, item) {
+                            logClient(`Adding patient insurance option: ${item.Value} - ${item.Text}`, 'info');
+                            $select.append('<option value="' + item.Value + '">' + item.Text + '</option>');
+                        });
+                        
+                        logClient(`Patient insurances loaded successfully: ${response.data.length} insurances`, 'info', { count: response.data.length });
+                        showNotification('بیمه‌های بیمار بارگذاری شد', 'success');
+                    } else {
+                        logClient('Failed to load patient insurances', 'error', { error: response.error || 'Unknown error' });
+                        showNotification('خطا در بارگذاری بیمه‌های بیمار: ' + (response.error || 'خطای نامشخص'), 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    logClient('Error loading patient insurances', 'error', { xhr: xhr, status: status, error: error });
+                    console.error('خطا در بارگذاری بیمه‌های بیمار:', error);
+                    showNotification('خطا در بارگذاری بیمه‌های بیمار', 'error');
+                }
+            });
+        }
+
+            // 🏥 Load departments for hierarchy
+            function loadDepartments() {
+                logClient('Loading departments for hierarchy', 'info');
+                $.ajax({
+                    url: '@Url.Action("GetDepartmentsForHierarchy", "InsuranceCalculation")',
+                    type: 'POST',
+                    dataType: 'json',
+                    success: function(response) {
+                        logClient('Departments response received', 'info', { response: response });
+                        
+                        // Parse response if it's a string
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                                logClient('Response parsed successfully', 'info', { parsedResponse: response });
+                            } catch (e) {
+                                logClient('Error parsing response', 'error', { error: e.message, response: response });
+                                showNotification('خطا در پردازش پاسخ سرور', 'error');
+                                return;
+                            }
+                        }
+                        
+                        if (response.success) {
+                            var $select = $('#DepartmentId');
+                            $select.empty();
+                            $select.append('<option value="">انتخاب دپارتمان</option>');
+                            
+                            $.each(response.data, function(index, item) {
+                                logClient(`Adding department option: ${item.Value} - ${item.Text}`, 'info');
+                                $select.append('<option value="' + item.Value + '">' + item.Text + '</option>');
+                            });
+                            
+                            logClient(`Departments loaded successfully: ${response.data.length} departments`, 'info', { count: response.data.length });
+                        } else {
+                            logClient('Failed to load departments', 'error', { error: response.error || 'Unknown error' });
+                            showNotification('خطا در بارگذاری دپارتمان‌ها: ' + (response.error || 'خطای نامشخص'), 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        logClient('Error loading departments', 'error', { xhr: xhr, status: status, error: error });
+                        console.error('خطا در بارگذاری دپارتمان‌ها:', error);
+                        showNotification('خطا در بارگذاری دپارتمان‌ها', 'error');
+                    }
+                });
+            }
+
+            // 🏥 Load service categories by department
+            function loadServiceCategoriesByDepartment(departmentId) {
+                logClient(`Loading service categories for department ID: ${departmentId}`, 'info');
+                $.ajax({
+                    url: '@Url.Action("GetServiceCategoriesByDepartment", "InsuranceCalculation")',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { departmentId: departmentId },
+                    success: function(response) {
+                        // Parse response if it's a string
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                            } catch (e) {
+                                logClient('Error parsing service categories response', 'error', { error: e.message, response: response });
+                                showNotification('خطا در پردازش پاسخ سرور', 'error');
+                                return;
+                            }
+                        }
+                        
+                        if (response.success) {
+                            var $select = $('#ServiceCategoryId');
+                            $select.empty();
+                            $select.append('<option value="">انتخاب سرفصل دسته‌بندی</option>');
+                            
+                            $.each(response.data, function(index, item) {
+                                $select.append('<option value="' + item.Value + '">' + item.Text + '</option>');
+                            });
+                            
+                            // پاک کردن خدمات قبلی
+                            $('#ServiceId').empty().append('<option value="">ابتدا سرفصل را انتخاب کنید</option>');
+                            
+                            logClient(`Service categories loaded successfully: ${response.data.length} categories`, 'info', { count: response.data.length });
+                            showNotification('سرفصل‌های دسته‌بندی بارگذاری شد', 'success');
+                        } else {
+                            logClient('Failed to load service categories', 'error', { error: response.error });
+                            showNotification('خطا در بارگذاری سرفصل‌ها: ' + response.error, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        logClient('Error loading service categories', 'error', { xhr: xhr, status: status, error: error });
+                        console.error('خطا در بارگذاری سرفصل‌ها:', error);
+                        showNotification('خطا در بارگذاری سرفصل‌ها', 'error');
+                    }
+                });
+            }
+
+            // 🏥 Load services by category via AJAX
+            function loadServicesByCategory(categoryId) {
+                logClient(`Loading services for category ID: ${categoryId}`, 'info');
+                $.ajax({
+                    url: '@Url.Action("GetServicesByCategory", "InsuranceCalculation")',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { categoryId: categoryId },
+                    success: function(response) {
+                        // Parse response if it's a string
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                            } catch (e) {
+                                logClient('Error parsing services response', 'error', { error: e.message, response: response });
+                                showNotification('خطا در پردازش پاسخ سرور', 'error');
+                                return;
+                            }
+                        }
+                        
+                        if (response.success) {
+                            var $select = $('#ServiceId');
+                            $select.empty();
+                            $select.append('<option value="">انتخاب خدمت</option>');
+                            
+                            $.each(response.data, function(index, item) {
+                                $select.append('<option value="' + item.Value + '">' + item.Text + '</option>');
+                            });
+                            
+                            logClient(`Services loaded successfully: ${response.data.length} services`, 'info', { count: response.data.length });
+                            showNotification('خدمات دسته‌بندی بارگذاری شد', 'success');
+                        } else {
+                            logClient('Failed to load services', 'error', { error: response.error });
+                            showNotification('خطا در بارگذاری خدمات: ' + response.error, 'error');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        logClient('Error loading services', 'error', { xhr: xhr, status: status, error: error });
+                        console.error('خطا در بارگذاری خدمات:', error);
+                        showNotification('خطا در بارگذاری خدمات', 'error');
+                    }
+                });
+            }
+
+        // 🏥 Show notification
+        function showNotification(message, type) {
+            // Simple notification - can be enhanced with toast library
+            var alertClass = type === 'error' ? 'alert-danger' : 'alert-success';
+            var $notification = $('<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>');
+            
+            $('.form-container').prepend($notification);
+            
+            // Auto-hide after 5 seconds
+            setTimeout(function() {
+                $notification.alert('close');
+            }, 5000);
+        }
 
         function validateField(field) {
             var value = field.val();
@@ -571,5 +1043,38 @@
                 $('.form-control').removeClass('was-validated');
             }
         }
+
+        // 🏥 Event handlers for dynamic loading
+        $('#PatientId').on('change', function() {
+            var patientId = $(this).val();
+            if (patientId) {
+                loadPatientInsurances(patientId);
+            } else {
+                $('#PatientInsuranceId').empty().append('<option value="">انتخاب بیمه بیمار</option>');
+            }
+        });
+
+        // 🏥 سلسله مراتب: دپارتمان → سرفصل → خدمت
+        $('#DepartmentId').on('change', function() {
+            var departmentId = $(this).val();
+            if (departmentId) {
+                loadServiceCategoriesByDepartment(departmentId);
+            } else {
+                $('#ServiceCategoryId').empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
+                $('#ServiceId').empty().append('<option value="">ابتدا سرفصل را انتخاب کنید</option>');
+            }
+        });
+
+        $('#ServiceCategoryId').on('change', function() {
+            var categoryId = $(this).val();
+            if (categoryId) {
+                loadServicesByCategory(categoryId);
+            } else {
+                $('#ServiceId').empty().append('<option value="">ابتدا سرفصل را انتخاب کنید</option>');
+            }
+        });
+
+        // 🏥 Load departments on page load
+        loadDepartments();
     </script>
 }

@@ -5,146 +5,291 @@
 }
 
 @section Styles {
+    <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
     <style>
+        /* 🏥 Medical Environment Details Page - Enhanced Standards */
         .patient-insurance-details-card {
-            background: #ffffff;
-            border-radius: 10px;
+            background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+            border: 2px solid #e3f2fd;
+            border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 2rem;
         }
+        
         .detail-row {
             border-bottom: 1px solid #e9ecef;
-            padding: 1rem 0;
+            padding: 1.25rem 0;
+            transition: all 0.3s ease;
         }
+        
+        .detail-row:hover {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.25rem 1rem;
+        }
+        
         .detail-row:last-child {
             border-bottom: none;
         }
+        
         .detail-label {
             font-weight: 600;
-            color: #495057;
+            color: #1976d2;
             margin-bottom: 0.5rem;
+            font-size: 1rem;
         }
+        
         .detail-value {
-            color: #6c757d;
+            color: #424242;
             font-size: 1.1rem;
+            font-weight: 500;
         }
+        
         .patient-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #1976d2 0%, #1565c0 100%);
             color: white;
-            padding: 2rem;
-            border-radius: 10px;
+            padding: 2.5rem;
+            border-radius: 12px;
             margin-bottom: 2rem;
             text-align: center;
+            box-shadow: 0 4px 12px rgba(25, 118, 210, 0.3);
         }
+        
         .patient-name {
-            font-size: 2rem;
+            font-size: 2.2rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
         }
+        
         .patient-code {
             font-family: 'Courier New', monospace;
             background-color: rgba(255, 255, 255, 0.2);
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.2rem;
             display: inline-block;
+            border: 1px solid rgba(255, 255, 255, 0.3);
         }
+        
         .insurance-section {
-            background-color: #e8f5e8;
-            border: 1px solid #c3e6c3;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
+            background: linear-gradient(135deg, #e8f5e8 0%, #f1f8e9 100%);
+            border: 2px solid #c3e6c3;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+        
         .plan-name {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: #495057;
-            margin-bottom: 0.5rem;
+            font-size: 1.6rem;
+            font-weight: 700;
+            color: #2e7d32;
+            margin-bottom: 0.75rem;
         }
+        
         .provider-badge {
-            background-color: #e3f2fd;
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
             color: #1976d2;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
-            font-size: 1rem;
-            font-weight: 500;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
             display: inline-block;
+            border: 1px solid #90caf9;
         }
+        
         .policy-section {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
+            background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%);
+            border: 2px solid #ffeaa7;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+        
         .policy-number {
             font-family: 'Courier New', monospace;
-            font-size: 1.3rem;
+            font-size: 1.5rem;
             font-weight: 700;
             color: #856404;
             text-align: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #ffc107;
         }
+        
         .validity-section {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
+            background: linear-gradient(135deg, #d1ecf1 0%, #e0f2f1 100%);
+            border: 2px solid #bee5eb;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+        
         .validity-date {
-            font-size: 1.2rem;
-            font-weight: 600;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: #0c5460;
             text-align: center;
+            background-color: rgba(255, 255, 255, 0.7);
+            padding: 1rem;
+            border-radius: 8px;
+            border: 1px solid #17a2b8;
         }
+        
         .coverage-section {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            padding: 1.5rem;
-            border-radius: 0.5rem;
-            margin: 1rem 0;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px solid #dee2e6;
+            padding: 2rem;
+            border-radius: 12px;
+            margin: 1.5rem 0;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
         }
+        
         .coverage-percent {
-            font-size: 2rem;
+            font-size: 2.5rem;
             font-weight: 700;
             color: #28a745;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(40, 167, 69, 0.3);
         }
+        
         .deductible-amount {
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.8rem;
+            font-weight: 700;
             color: #dc3545;
             text-align: center;
+            text-shadow: 0 2px 4px rgba(220, 53, 69, 0.3);
         }
+        
         .status-badge {
-            font-size: 1rem;
-            padding: 0.8rem 1.5rem;
+            font-size: 1.1rem;
+            padding: 1rem 2rem;
             border-radius: 25px;
+            font-weight: 600;
         }
+        
         .primary-badge {
-            background-color: #28a745;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
             color: white;
-            font-size: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-weight: 600;
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
         }
+        
         .supplementary-badge {
-            background-color: #17a2b8;
+            background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
             color: white;
-            font-size: 1rem;
-            padding: 0.5rem 1rem;
-            border-radius: 0.5rem;
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
             font-weight: 600;
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
         }
+        
         .btn-action {
             margin: 0.25rem;
             font-weight: 600;
+            border-radius: 8px;
+            padding: 0.75rem 1.5rem;
+            transition: all 0.3s ease;
         }
+        
+        .btn-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        
         .info-icon {
-            color: #17a2b8;
+            color: #1976d2;
             margin-left: 0.5rem;
+        }
+        
+        .section-title {
+            color: #1976d2;
+            font-weight: 700;
+            font-size: 1.3rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 3px solid #1976d2;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        /* 🏥 Medical Environment Animations */
+        .pulse {
+            animation: pulse 0.6s ease-in-out;
+        }
+        
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .shadow-sm {
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+        }
+        
+        .policy-number {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .policy-number:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .badge {
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .badge:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 🏥 Medical Environment Responsive Design */
+        @@media (max-width: 768px) {
+            .patient-insurance-details-card {
+                padding: 1.5rem;
+            }
+            
+            .patient-header {
+                padding: 2rem;
+            }
+            
+            .patient-name {
+                font-size: 1.8rem;
+            }
+            
+            .insurance-section,
+            .policy-section,
+            .validity-section,
+            .coverage-section {
+                padding: 1.5rem;
+            }
+            
+            .coverage-percent {
+                font-size: 2rem;
+            }
+            
+            .deductible-amount {
+                font-size: 1.5rem;
+            }
+            
+            .section-title {
+                font-size: 1.1rem;
+            }
         }
     </style>
 }
@@ -187,32 +332,66 @@
                     </div>
 
                     <div class="patient-insurance-details-card">
-                        <!-- Basic Information -->
-                        <h4 class="mb-3">
-                            <i class="fas fa-info-circle info-icon"></i> اطلاعات پایه
-                        </h4>
+                        <!-- 🏥 Information Status Alert -->
+                        @if (string.IsNullOrEmpty(Model.InsurancePlanName) || string.IsNullOrEmpty(Model.InsuranceProviderName) || 
+                             string.IsNullOrEmpty(Model.PolicyNumber) || Model.CoveragePercent == 0)
+                        {
+                            <div class="alert alert-warning" role="alert">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>توجه:</strong> برخی از اطلاعات بیمه ناقص است. لطفاً برای تکمیل اطلاعات با بخش بیمه تماس بگیرید.
+                            </div>
+                        }
+
+                        <!-- 🏥 Basic Information Section -->
+                        <div class="section-title">
+                            <i class="fas fa-user-md"></i>
+                            اطلاعات پایه بیمار
+                        </div>
 
                         <div class="row">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="detail-row">
-                                    <div class="detail-label">نام بیمار</div>
+                                    <div class="detail-label">
+                                        <i class="fas fa-user"></i> نام کامل بیمار
+                                    </div>
                                     <div class="detail-value">
                                         <strong>@Model.PatientName</strong>
                                     </div>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="detail-row">
-                                    <div class="detail-label">کد بیمار</div>
+                                    <div class="detail-label">
+                                        <i class="fas fa-id-card"></i> کد بیمار
+                                    </div>
                                     <div class="detail-value">
                                         <span class="patient-code">@Model.PatientCode</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-id-badge"></i> کد ملی
+                                    </div>
+                                    <div class="detail-value">
+                                        @if (!string.IsNullOrEmpty(Model.PatientNationalCode))
+                                        {
+                                            <span class="text-muted">@Model.PatientNationalCode</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">ثبت نشده</span>
+                                        }
                                     </div>
                                 </div>
                             </div>
                         </div>
 
                         <div class="detail-row">
-                            <div class="detail-label">نوع بیمه</div>
+                            <div class="detail-label">
+                                <i class="fas fa-shield-alt"></i> نوع بیمه
+                            </div>
                             <div class="detail-value">
                                 @if (Model.IsPrimary)
                                 {
@@ -229,106 +408,270 @@
                             </div>
                         </div>
 
-                        <!-- Insurance Information -->
-                        <h4 class="mb-3 mt-4">
-                            <i class="fas fa-shield-alt info-icon"></i> اطلاعات بیمه
-                        </h4>
+                        <!-- 🏥 Insurance Information Section -->
+                        <div class="section-title">
+                            <i class="fas fa-shield-alt"></i>
+                            اطلاعات بیمه و طرح
+                        </div>
 
                         <div class="insurance-section">
-                            <div class="plan-name">@Model.InsurancePlanName</div>
-                            <div class="provider-badge">
-                                <i class="fas fa-hospital"></i> @Model.InsuranceProviderName
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="plan-name">
+                                        <i class="fas fa-file-medical"></i> 
+                                        @if (!string.IsNullOrEmpty(Model.InsurancePlanName))
+                                        {
+                                            @Model.InsurancePlanName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">نام طرح بیمه ثبت نشده</span>
+                                        }
+                                    </div>
+                                    <div class="provider-badge">
+                                        <i class="fas fa-hospital"></i> 
+                                        @if (!string.IsNullOrEmpty(Model.InsuranceProviderName))
+                                        {
+                                            @Model.InsuranceProviderName
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">ارائه‌دهنده بیمه ثبت نشده</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="col-md-4 text-right">
+                                    <div class="detail-label">شناسه طرح بیمه</div>
+                                    <div class="detail-value">
+                                        <strong>#@Model.InsurancePlanId</strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Policy Information -->
-                        <h4 class="mb-3 mt-4">
-                            <i class="fas fa-file-contract info-icon"></i> اطلاعات بیمه‌نامه
-                        </h4>
-
-                        <div class="policy-section">
-                            <div class="policy-number">@Model.PolicyNumber</div>
+                        <!-- 🏥 Policy Information Section -->
+                        <div class="section-title">
+                            <i class="fas fa-file-contract"></i>
+                            اطلاعات بیمه‌نامه
                         </div>
 
-                        <!-- Coverage Information -->
-                        <h4 class="mb-3 mt-4">
-                            <i class="fas fa-chart-pie info-icon"></i> اطلاعات پوشش
-                        </h4>
+                        <div class="policy-section">
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="policy-number">
+                                        @if (!string.IsNullOrEmpty(Model.PolicyNumber))
+                                        {
+                                            @Model.PolicyNumber
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">شماره بیمه‌نامه ثبت نشده</span>
+                                        }
+                                    </div>
+                                    <div class="text-center text-muted mt-2">
+                                        <strong>شماره بیمه‌نامه</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detail-label">شناسه بیمه بیمار</div>
+                                    <div class="detail-value">
+                                        <strong>#@Model.PatientInsuranceId</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 🏥 Coverage Information Section -->
+                        <div class="section-title">
+                            <i class="fas fa-chart-pie"></i>
+                            اطلاعات پوشش و فرانشیز
+                        </div>
 
                         <div class="coverage-section">
                             <div class="row">
-                                <div class="col-md-6">
-                                    <div class="coverage-percent">@Model.CoveragePercent%</div>
-                                    <div class="text-center text-muted">درصد پوشش بیمه</div>
+                                <div class="col-md-4">
+                                    <div class="coverage-percent">
+                                        @if (Model.CoveragePercent > 0)
+                                        {
+                                            @Model.CoveragePercent.ToString("N1")
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">تعریف نشده</span>
+                                        }
+                                    </div>
+                                    <div class="text-center text-muted">
+                                        <strong>درصد پوشش بیمه</strong>
+                                    </div>
                                 </div>
-                                <div class="col-md-6">
-                                    <div class="deductible-amount">@Model.Deductible.ToString("N0") تومان</div>
-                                    <div class="text-center text-muted">مبلغ فرانشیز</div>
+                                <div class="col-md-4">
+                                    <div class="deductible-amount">
+                                        @if (Model.Deductible > 0)
+                                        {
+                                            Model.Deductible.ToString("N0");
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">تعریف نشده</span>
+                                        }
+                                    </div>
+                                    <div class="text-center text-muted">
+                                        <strong>مبلغ فرانشیز</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="detail-label">نوع پوشش</div>
+                                    <div class="detail-value">
+                                        @if (Model.CoveragePercent > 0)
+                                        {
+                                            if (Model.CoveragePercent >= 80)
+                                            {
+                                                <span class="badge badge-success">پوشش بالا</span>
+                                            }
+                                            else if (Model.CoveragePercent >= 50)
+                                            {
+                                                <span class="badge badge-warning">پوشش متوسط</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-danger">پوشش پایین</span>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-secondary">تعریف نشده</span>
+                                        }
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Validity Period -->
-                        <h4 class="mb-3 mt-4">
-                            <i class="fas fa-calendar-alt info-icon"></i> دوره اعتبار
-                        </h4>
+                        <!-- 🏥 Validity Period Section -->
+                        <div class="section-title">
+                            <i class="fas fa-calendar-alt"></i>
+                            دوره اعتبار بیمه
+                        </div>
 
                         <div class="validity-section">
-                            <div class="validity-date">
-                                از @Model.StartDateShamsi تا @Model.EndDateShamsi
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="validity-date">
+                                        <i class="fas fa-calendar-check"></i> 
+                                        @if (!string.IsNullOrEmpty(Model.StartDateShamsi))
+                                        {
+                                            @Model.StartDateShamsi
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">تعریف نشده</span>
+                                        }
+                                    </div>
+                                    <div class="text-center text-muted mt-2">
+                                        <strong>تاریخ شروع اعتبار</strong>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="validity-date">
+                                        <i class="fas fa-calendar-times"></i> 
+                                        @if (!string.IsNullOrEmpty(Model.EndDateShamsi))
+                                        {
+                                            @Model.EndDateShamsi
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">تعریف نشده</span>
+                                        }
+                                    </div>
+                                    <div class="text-center text-muted mt-2">
+                                        <strong>تاریخ پایان اعتبار</strong>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <!-- Status -->
-                        <h4 class="mb-3 mt-4">
-                            <i class="fas fa-toggle-on info-icon"></i> وضعیت
-                        </h4>
-
-                        <div class="detail-row">
-                            <div class="detail-label">وضعیت بیمه</div>
-                            <div class="detail-value">
-                                @if (Model.IsActive)
-                                {
-                                    <span class="badge badge-success status-badge">
-                                        <i class="fas fa-check-circle"></i> فعال
-                                    </span>
-                                }
-                                else
-                                {
-                                    <span class="badge badge-danger status-badge">
-                                        <i class="fas fa-times-circle"></i> غیرفعال
-                                    </span>
-                                }
-                            </div>
+                        <!-- 🏥 Status Section -->
+                        <div class="section-title">
+                            <i class="fas fa-toggle-on"></i>
+                            وضعیت و فعال بودن
                         </div>
-
-                        <hr class="my-4">
-
-                        <!-- Tracking Information -->
-                        <h5 class="mb-3">
-                            <i class="fas fa-history"></i> اطلاعات ردیابی
-                        </h5>
 
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="detail-row">
                                     <div class="detail-label">
-                                        <i class="fas fa-calendar-plus info-icon"></i>تاریخ ایجاد
+                                        <i class="fas fa-power-off"></i> وضعیت بیمه
                                     </div>
                                     <div class="detail-value">
-                                        @Model.CreatedAtShamsi
+                                        @if (Model.IsActive)
+                                        {
+                                            <span class="badge badge-success status-badge">
+                                                <i class="fas fa-check-circle"></i> فعال
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-danger status-badge">
+                                                <i class="fas fa-times-circle"></i> غیرفعال
+                                            </span>
+                                        }
                                     </div>
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="detail-row">
                                     <div class="detail-label">
-                                        <i class="fas fa-user-plus info-icon"></i>ایجادکننده
+                                        <i class="fas fa-clock"></i> وضعیت اعتبار
+                                    </div>
+                                    <div class="detail-value">
+                                        @{
+                                            var now = DateTime.Now;
+                                            var isValid = Model.StartDate <= now && (!Model.EndDate.HasValue || Model.EndDate.Value >= now);
+                                        }
+                                        @if (isValid)
+                                        {
+                                            <span class="badge badge-success">
+                                                <i class="fas fa-check"></i> معتبر
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge badge-warning">
+                                                <i class="fas fa-exclamation-triangle"></i> منقضی
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- 🏥 Tracking Information Section -->
+                        <div class="section-title">
+                            <i class="fas fa-history"></i>
+                            اطلاعات ردیابی و Audit Trail
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-calendar-plus"></i> تاریخ ایجاد
+                                    </div>
+                                    <div class="detail-value">
+                                        <strong>@Model.CreatedAtShamsi</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="detail-row">
+                                    <div class="detail-label">
+                                        <i class="fas fa-user-plus"></i> ایجادکننده
                                     </div>
                                     <div class="detail-value">
                                         @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
                                         {
-                                            @Model.CreatedByUserName
+                                            <span class="badge badge-info">@Model.CreatedByUserName</span>
                                         }
                                         else
                                         {
@@ -345,27 +688,42 @@
                                 <div class="col-md-6">
                                     <div class="detail-row">
                                         <div class="detail-label">
-                                            <i class="fas fa-calendar-edit info-icon"></i>تاریخ آخرین به‌روزرسانی
+                                            <i class="fas fa-calendar-edit"></i> آخرین به‌روزرسانی
                                         </div>
                                         <div class="detail-value">
-                                            @Model.UpdatedAtShamsi
+                                            <strong>@Model.UpdatedAtShamsi</strong>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="col-md-6">
                                     <div class="detail-row">
                                         <div class="detail-label">
-                                            <i class="fas fa-user-edit info-icon"></i>آخرین به‌روزرساننده
+                                            <i class="fas fa-user-edit"></i> آخرین به‌روزرساننده
                                         </div>
                                         <div class="detail-value">
                                             @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
                                             {
-                                                @Model.UpdatedByUserName
+                                                <span class="badge badge-warning">@Model.UpdatedByUserName</span>
                                             }
                                             else
                                             {
                                                 <span class="text-muted">نامشخص</span>
                                             }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="detail-row">
+                                        <div class="detail-label">
+                                            <i class="fas fa-info-circle"></i> وضعیت رکورد
+                                        </div>
+                                        <div class="detail-value">
+                                            <span class="badge badge-success">بدون تغییر از زمان ایجاد</span>
                                         </div>
                                     </div>
                                 </div>
@@ -377,3 +735,67 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        // 🏥 Medical Environment Details Page - Enhanced User Experience
+        (function () {
+            'use strict';
+
+            function ensureJQuery(callback) {
+                if (typeof $ !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function () {
+                        ensureJQuery(callback);
+                    }, 100);
+                }
+            }
+
+            function initializeMedicalDetailsPage() {
+                ensureJQuery(function () {
+                    $(document).ready(function() {
+                        console.log('🏥 Medical Environment: Initializing Patient Insurance Details Page');
+                        
+                        // Add hover effects to detail rows
+                        $('.detail-row').hover(
+                            function() {
+                                $(this).addClass('shadow-sm');
+                            },
+                            function() {
+                                $(this).removeClass('shadow-sm');
+                            }
+                        );
+
+                        // Add click effects to badges
+                        $('.badge').on('click', function() {
+                            $(this).addClass('pulse');
+                            setTimeout(() => {
+                                $(this).removeClass('pulse');
+                            }, 600);
+                        });
+
+                        // Add copy functionality to policy number
+                        $('.policy-number').on('click', function() {
+                            var policyNumber = $(this).text().trim();
+                            if (navigator.clipboard) {
+                                navigator.clipboard.writeText(policyNumber).then(function() {
+                                    if (typeof toastr !== 'undefined') {
+                                        toastr.success('شماره بیمه‌نامه کپی شد', 'موفق');
+                                    }
+                                });
+                            }
+                        });
+
+                        // Add tooltip for policy number
+                        $('.policy-number').attr('title', 'کلیک کنید تا کپی شود');
+
+                        console.log('🏥 Medical Environment: Details page initialized successfully');
+                    });
+                });
+            }
+
+            initializeMedicalDetailsPage();
+        })();
+    </script>
+}

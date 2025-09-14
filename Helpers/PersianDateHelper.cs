@@ -121,11 +121,17 @@ namespace ClinicApp.Helpers
         {
             if (dateTime == DateTime.MinValue || dateTime == DateTime.MaxValue)
             {
+                _log.Warning("🔍 DateTime is MinValue or MaxValue: {DateTime}", dateTime);
                 return "0000/00/00";
             }
 
             try
             {
+                // Debug logging
+                _log.Information("🔍 Converting DateTime to Persian: {DateTime}", dateTime);
+                _log.Information("🔍 DateTime.Kind: {Kind}", dateTime.Kind);
+                _log.Information("🔍 DateTime.Ticks: {Ticks}", dateTime.Ticks);
+                
                 // بررسی محدوده تاریخ برای تقویم شمسی
                 if (!IsDateTimeInPersianCalendarRange(dateTime))
                 {
@@ -133,13 +139,51 @@ namespace ClinicApp.Helpers
                     return dateTime.ToString(DATE_FORMAT);
                 }
 
-                int year = Calendar.GetYear(dateTime);
-                int month = Calendar.GetMonth(dateTime);
-                int day = Calendar.GetDayOfMonth(dateTime);
+                // تست مستقیم PersianCalendar
+                var testCalendar = new PersianCalendar();
+                int year = testCalendar.GetYear(dateTime);
+                int month = testCalendar.GetMonth(dateTime);
+                int day = testCalendar.GetDayOfMonth(dateTime);
 
-                return string.Format(CultureInfo.InvariantCulture,
+                _log.Information("🔍 Persian calendar parts: Year={Year}, Month={Month}, Day={Day}", year, month, day);
+                
+                // تست با Calendar instance
+                int year2 = Calendar.GetYear(dateTime);
+                int month2 = Calendar.GetMonth(dateTime);
+                int day2 = Calendar.GetDayOfMonth(dateTime);
+                
+                _log.Information("🔍 Calendar instance parts: Year={Year}, Month={Month}, Day={Day}", year2, month2, day2);
+
+                // بررسی مقادیر
+                if (year < 1 || year > 9999)
+                {
+                    _log.Error("🔍 Invalid Persian year: {Year}", year);
+                    return dateTime.ToString(DATE_FORMAT);
+                }
+
+                var result = string.Format(CultureInfo.InvariantCulture,
                     "{0:0000}/{1:00}/{2:00}",
                     year, month, day);
+                
+                _log.Information("🔍 Final Persian date: {Result}", result);
+                
+                // تست خاص برای تاریخ 2025-09-15
+                if (dateTime.Year == 2025 && dateTime.Month == 9 && dateTime.Day == 15)
+                {
+                    _log.Warning("🔍 Special case: 2025-09-15 converted to: {Result}", result);
+                    
+                    // این تاریخ احتمالاً اشتباه است - باید ۱۴۰۴/۰۶/۲۴ باشد
+                    if (result == "1404/06/24")
+                    {
+                        _log.Information("✅ 2025-09-15 correctly converted to 1404/06/24");
+                    }
+                    else
+                    {
+                        _log.Error("❌ 2025-09-15 incorrectly converted to: {Result}", result);
+                    }
+                }
+                
+                return result;
             }
             catch (ArgumentOutOfRangeException ex)
             {
@@ -407,10 +451,16 @@ namespace ClinicApp.Helpers
                 DateTime minDate = new DateTime(622, 3, 22);
                 DateTime maxDate = new DateTime(5550, 1, 1); // تقریباً معادل سال 9378 شمسی
 
-                return dateTime >= minDate && dateTime <= maxDate;
+                bool inRange = dateTime >= minDate && dateTime <= maxDate;
+                
+                _log.Information("🔍 DateTime range check: {DateTime} >= {MinDate} && <= {MaxDate} = {InRange}", 
+                    dateTime, minDate, maxDate, inRange);
+                
+                return inRange;
             }
-            catch
+            catch (Exception ex)
             {
+                _log.Error(ex, "🔍 Error in IsDateTimeInPersianCalendarRange for {DateTime}", dateTime);
                 return false;
             }
         }

@@ -386,12 +386,33 @@ var PatientSelect2 = (function () {
     };
 })();
 
-// Auto-initialize when document is ready
-$(document).ready(function () {
-    // مقداردهی اولیه برای تمام عناصر با کلاس patient-select2
-    $('.patient-select2').each(function () {
-        PatientSelect2.initialize(this);
-        // اضافه کردن event handlers
-        PatientSelect2.addEventHandlers(this);
-    });
-});
+// محافظت jQuery - همان pattern موجود در layout
+(function () {
+    'use strict';
+
+    function ensureJQuery(callback) {
+        if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function () {
+                ensureJQuery(callback);
+            }, 50);
+        }
+    }
+
+    function initializePatientSelect2() {
+        ensureJQuery(function () {
+            $(document).ready(function () {
+                // مقداردهی اولیه برای تمام عناصر با کلاس patient-select2
+                $('.patient-select2').each(function () {
+                    PatientSelect2.initialize(this);
+                    // اضافه کردن event handlers
+                    PatientSelect2.addEventHandlers(this);
+                });
+            });
+        });
+    }
+
+    // شروع initialization
+    initializePatientSelect2();
+})();

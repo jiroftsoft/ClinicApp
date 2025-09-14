@@ -10,76 +10,102 @@
 @if (!ViewData.ModelState.IsValid && ViewData.ModelState.Values.Any(v => v.Errors.Any()))
 {
     <script type="text/javascript">
-        $(function () {
+        // محافظت jQuery - همان pattern موجود در layout
+        (function () {
+            'use strict';
 
-            // دریافت نام دوستانه فیلد از label یا DisplayName
-            function getFriendlyFieldName(inputName) {
-                var label = $("label[for='" + inputName + "']");
-                if (label.length) return label.text();
-                return inputName; // fallback به نام انگلیسی
-            }
-
-            // جایگزینی placeholderهای FluentValidation و پیام‌ها
-            function translateMessage(message) {
-                if (!message) return message;
-
-                // جایگزینی placeholderها
-                message = message.replace(/\{PropertyName\}/g, function () {
-                    var match = message.match(/([A-Za-z0-9_]+)/);
-                    if (match && match[1]) {
-                        return getFriendlyFieldName(match[1]);
-                    }
-                    return "";
-                });
-
-                message = message.replace(/\{MinLength\}/g, "حداقل")
-                    .replace(/\{MaxLength\}/g, "حداکثر")
-                    .replace(/\{ComparisonValue\}/g, "مقدار مورد نظر");
-
-                // جایگزینی عبارات رایج DataAnnotation
-                var translations = [
-                    { pattern: /\bThe\b/g, replacement: "" },
-                    { pattern: /\bfield is required\./g, replacement: "الزامی است." },
-                    { pattern: /\bfield is not a valid e-mail address\./g, replacement: "معتبر نیست." },
-                    { pattern: /\bfield must be a number\./g, replacement: "باید عدد باشد." },
-                    { pattern: /\bmust be at least\b/g, replacement: "باید حداقل" },
-                    { pattern: /\bcharacters long\./g, replacement: "کاراکتر داشته باشد." },
-                    { pattern: /\band at most\b/g, replacement: "و حداکثر" },
-                    { pattern: /\bcharacters\./g, replacement: "کاراکتر باشد." },
-                    { pattern: /\bmust not be empty\./g, replacement: "نمی‌تواند خالی باشد." },
-                    { pattern: /\bmust match\b/g, replacement: "باید مطابق با" }
-                ];
-
-                translations.forEach(function (t) {
-                    message = message.replace(t.pattern, t.replacement);
-                });
-
-                return message.trim();
-            }
-
-            // جمع‌آوری پیام‌ها و حذف تکراری‌ها
-            var errorMessages = [];
-            $('.validation-summary-errors li').each(function () {
-                var msg = $(this).text();
-                var translated = translateMessage(msg);
-                if (translated && errorMessages.indexOf(translated) === -1) {
-                    errorMessages.push(translated);
+            function ensureJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+                    callback();
+                } else {
+                    setTimeout(function () {
+                        ensureJQuery(callback);
+                    }, 50);
                 }
-            });
+            }
 
-            // نمایش پیام‌ها با Toastr حرفه‌ای
-            errorMessages.forEach(function (msg) {
-                toastr.error(msg, "خطای اعتبارسنجی", {
-                    timeOut: 8000,
-                    extendedTimeOut: 3000,
-                    closeButton: true,
-                    progressBar: true,
-                    newestOnTop: true,
-                    positionClass: "toast-top-right",
-                    preventDuplicates: true
+            function initializeValidationToasts() {
+                ensureJQuery(function () {
+                    $(function () {
+
+                        // دریافت نام دوستانه فیلد از label یا DisplayName
+                        function getFriendlyFieldName(inputName) {
+                            var label = $("label[for='" + inputName + "']");
+                            if (label.length) {
+                                var labelText = label.text().trim();
+                                // حذف علامت * از انتهای label
+                                return labelText.replace(/\*$/, '');
+                            }
+                            return inputName; // fallback به نام انگلیسی
+                        }
+
+                        // جایگزینی placeholderهای FluentValidation و پیام‌ها
+                        function translateMessage(message) {
+                            if (!message) return message;
+
+                            // جایگزینی placeholderها
+                            message = message.replace(/\{PropertyName\}/g, function () {
+                                var match = message.match(/([A-Za-z0-9_]+)/);
+                                if (match && match[1]) {
+                                    return getFriendlyFieldName(match[1]);
+                                }
+                                return "";
+                            });
+
+                            message = message.replace(/\{MinLength\}/g, "حداقل")
+                                .replace(/\{MaxLength\}/g, "حداکثر")
+                                .replace(/\{ComparisonValue\}/g, "مقدار مورد نظر");
+
+                            // جایگزینی عبارات رایج DataAnnotation
+                            var translations = [
+                                { pattern: /\bThe\b/g, replacement: "" },
+                                { pattern: /\bfield is required\./g, replacement: "الزامی است." },
+                                { pattern: /\bfield is not a valid e-mail address\./g, replacement: "معتبر نیست." },
+                                { pattern: /\bfield must be a number\./g, replacement: "باید عدد باشد." },
+                                { pattern: /\bmust be at least\b/g, replacement: "باید حداقل" },
+                                { pattern: /\bcharacters long\./g, replacement: "کاراکتر داشته باشد." },
+                                { pattern: /\band at most\b/g, replacement: "و حداکثر" },
+                                { pattern: /\bcharacters\./g, replacement: "کاراکتر باشد." },
+                                { pattern: /\bmust not be empty\./g, replacement: "نمی‌تواند خالی باشد." },
+                                { pattern: /\bmust match\b/g, replacement: "باید مطابق با" }
+                            ];
+
+                            translations.forEach(function (t) {
+                                message = message.replace(t.pattern, t.replacement);
+                            });
+
+                            return message.trim();
+                        }
+
+                        // جمع‌آوری پیام‌ها و حذف تکراری‌ها
+                        var errorMessages = [];
+                        $('.validation-summary-errors li').each(function () {
+                            var msg = $(this).text();
+                            var translated = translateMessage(msg);
+                            if (translated && errorMessages.indexOf(translated) === -1) {
+                                errorMessages.push(translated);
+                            }
+                        });
+
+                        // نمایش پیام‌ها با Toastr حرفه‌ای
+                        errorMessages.forEach(function (msg) {
+                            toastr.error(msg, "خطای اعتبارسنجی", {
+                                timeOut: 8000,
+                                extendedTimeOut: 3000,
+                                closeButton: true,
+                                progressBar: true,
+                                newestOnTop: true,
+                                positionClass: "toast-top-right",
+                                preventDuplicates: true
+                            });
+                        });
+
+                    });
                 });
-            });
+            }
 
-        });
+            // شروع initialization
+            initializeValidationToasts();
+        })();
     </script>
 }

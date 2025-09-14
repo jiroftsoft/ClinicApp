@@ -30,9 +30,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// 
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
-    //[Authorize(Roles = AppRoles.Admin + "," + AppRoles.Receptionist)]
-    [RouteArea("Admin")]
-    [RoutePrefix("Insurance/Calculation")]
+    //[Authorize(Roles = "Admin,Receptionist,Doctor")]
+
     public class InsuranceCalculationController : Controller
     {
         private readonly IInsuranceCalculationService _insuranceCalculationService;
@@ -42,6 +41,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly IValidator<InsuranceCalculationViewModel> _validator;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IPatientService _patientService;
+        private readonly IServiceService _serviceService;
+        private readonly IServiceCategoryService _serviceCategoryService;
+        private readonly IPatientInsuranceService _patientInsuranceService;
 
         public InsuranceCalculationController(
             IInsuranceCalculationService insuranceCalculationService,
@@ -50,7 +53,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             IMessageNotificationService messageNotificationService,
             IValidator<InsuranceCalculationViewModel> validator,
             ILogger logger,
-            ICurrentUserService currentUserService)
+            ICurrentUserService currentUserService,
+            IPatientService patientService,
+            IServiceService serviceService,
+            IServiceCategoryService serviceCategoryService,
+            IPatientInsuranceService patientInsuranceService)
         {
             _insuranceCalculationService = insuranceCalculationService ?? throw new ArgumentNullException(nameof(insuranceCalculationService));
             _insuranceValidationService = insuranceValidationService ?? throw new ArgumentNullException(nameof(insuranceValidationService));
@@ -59,6 +66,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _validator = validator ?? throw new ArgumentNullException(nameof(validator));
             _log = logger.ForContext<InsuranceCalculationController>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
+            _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
+            _serviceCategoryService = serviceCategoryService ?? throw new ArgumentNullException(nameof(serviceCategoryService));
+            _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
         }
 
         #region Calculate
@@ -67,7 +78,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش صفحه محاسبه بیمه
         /// </summary>
         [HttpGet]
-        [Route("Calculate")]
         public ActionResult Calculate()
         {
             _log.Information("بازدید از صفحه محاسبه بیمه. User: {UserName} (Id: {UserId})",
@@ -86,7 +96,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("CalculatePatientShare")]
+
         public async Task<ActionResult> CalculatePatientShare(InsuranceCalculationViewModel model)
         {
             _log.Information(
@@ -95,13 +105,39 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
             try
             {
-                if (!ModelState.IsValid)
+                // 🛡️ اعتبارسنجی جامع ورودی‌ها
+                var validationResult = ValidateCalculationRequest(model);
+                if (!validationResult.IsValid)
                 {
-                    _log.Warning(
-                        "مدل محاسبه بیمه معتبر نیست. PatientId: {PatientId}, ServiceId: {ServiceId}, CalculationDate: {CalculationDate}. User: {UserName} (Id: {UserId})",
-                        model?.PatientId, model?.ServiceId, model?.CalculationDate, _currentUserService.UserName, _currentUserService.UserId);
+                    _log.Warning("درخواست محاسبه بیمه نامعتبر است. Errors: {Errors}. User: {UserName} (Id: {UserId})", 
+                        string.Join(", ", validationResult.Errors), _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    foreach (var error in validationResult.Errors)
+                    {
+                        TempData["ErrorMessage"] = error;
+                        break; // فقط اولین خطا را نمایش می‌دهیم
+                    }
+                    return RedirectToAction("Calculate");
+                }
 
-                     return View("Calculate", model);
+                // 🛡️ بررسی دسترسی کاربر به اطلاعات بیمار
+                var accessCheck = await CheckUserAccessToPatientAsync(model.PatientId);
+                if (!accessCheck.IsValid)
+                {
+                    _log.Warning("کاربر دسترسی به اطلاعات بیمار ندارد. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                        model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                    TempData["ErrorMessage"] = "شما دسترسی به اطلاعات این بیمار ندارید";
+                    return RedirectToAction("Calculate");
+                }
+
+                // 🛡️ بررسی محدودیت‌های زمانی
+                var timeValidation = ValidateCalculationTime(model.CalculationDate);
+                if (!timeValidation.IsValid)
+                {
+                    _log.Warning("تاریخ محاسبه نامعتبر است. CalculationDate: {CalculationDate}, User: {UserName} (Id: {UserId})", 
+                        model.CalculationDate, _currentUserService.UserName, _currentUserService.UserId);
+                    TempData["ErrorMessage"] = timeValidation.ErrorMessage;
+                    return RedirectToAction("Calculate");
                 }
 
                 var result = await _insuranceCalculationService.CalculatePatientShareAsync(model.PatientId, model.ServiceId, model.CalculationDate);
@@ -112,7 +148,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         model.PatientId, model.ServiceId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
-                     return View("Calculate", model);
+                    return View("Calculate", model);
                 }
 
                 _log.Information(
@@ -128,7 +164,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     model?.PatientId, model?.ServiceId, model?.CalculationDate, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["ErrorMessage"] = "خطا در محاسبه سهم بیمار";
-                     return View("Calculate", model);
+                return View("Calculate", model);
             }
         }
 
@@ -137,7 +173,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("CalculateReceptionCosts")]
+
         public async Task<ActionResult> CalculateReceptionCosts(int patientId, string serviceIds, DateTime receptionDate)
         {
             _log.Information(
@@ -163,7 +199,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (serviceIdList.Count == 0)
                 {
                     TempData["ErrorMessage"] = "حداقل یک خدمت باید انتخاب شود";
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 var result = await _insuranceCalculationService.CalculateReceptionCostsAsync(patientId, serviceIdList, receptionDate);
@@ -174,7 +210,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         patientId, serviceIds, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 _log.Information(
@@ -190,7 +226,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     patientId, serviceIds, receptionDate, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["ErrorMessage"] = "خطا در محاسبه هزینه‌های پذیرش";
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -199,7 +235,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("CalculateAppointmentCost")]
+
         public async Task<ActionResult> CalculateAppointmentCost(int patientId, int serviceId, DateTime appointmentDate)
         {
             _log.Information(
@@ -216,7 +252,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         patientId, serviceId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 _log.Information(
@@ -232,7 +268,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     patientId, serviceId, appointmentDate, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["ErrorMessage"] = "خطا در محاسبه هزینه قرار ملاقات";
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -245,7 +281,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("ValidateInsurance")]
+
         public async Task<ActionResult> ValidateInsurance(int patientId, int serviceId, DateTime appointmentDate)
         {
             _log.Information(
@@ -262,7 +298,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         patientId, serviceId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 _log.Information(
@@ -278,7 +314,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     patientId, serviceId, appointmentDate, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["ErrorMessage"] = "خطا در اعتبارسنجی بیمه بیمار";
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -291,7 +327,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("CheckServiceCoverage")]
+
         public async Task<JsonResult> CheckServiceCoverage(int patientId, int serviceId, DateTime appointmentDate)
         {
             try
@@ -311,7 +347,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("CheckInsuranceValidity")]
+
         public async Task<JsonResult> CheckInsuranceValidity(int patientId, DateTime checkDate)
         {
             try
@@ -344,8 +380,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var result = await _insuranceCalculationService.CalculatePatientShareAsync(patientId, serviceId, calculationDate);
                 if (result.Success)
                 {
-                    return Json(new { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         patientShare = result.Data.PatientShare,
                         insuranceShare = result.Data.InsuranceShare,
                         totalCost = result.Data.TotalAmount
@@ -365,7 +402,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("GetPatientInsurances")]
+
         public async Task<JsonResult> GetPatientInsurances(int patientId)
         {
             try
@@ -383,7 +420,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // فعلاً لیست خالی برمی‌گردانیم
                 var selectList = new List<object>();
 
-                _log.Information("بیمه‌های بیمار با موفقیت دریافت شد. PatientId: {PatientId}, Count: {Count}", 
+                _log.Information("بیمه‌های بیمار با موفقیت دریافت شد. PatientId: {PatientId}, Count: {Count}",
                     patientId, selectList.Count);
 
                 return Json(new { success = true, data = selectList });
@@ -401,7 +438,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("GetServices")]
+
         public async Task<JsonResult> GetServices(int? categoryId = null)
         {
             try
@@ -413,7 +450,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // فعلاً لیست خالی برمی‌گردانیم
                 var selectList = new List<object>();
 
-                _log.Information("خدمات با موفقیت دریافت شد. CategoryId: {CategoryId}, Count: {Count}", 
+                _log.Information("خدمات با موفقیت دریافت شد. CategoryId: {CategoryId}, Count: {Count}",
                     categoryId, selectList.Count);
 
                 return Json(new { success = true, data = selectList });
@@ -434,7 +471,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش لیست محاسبات بیمه
         /// </summary>
         [HttpGet]
-        [Route("Index")]
+
         public async Task<ActionResult> Index(InsuranceCalculationIndexPageViewModel model)
         {
             try
@@ -486,7 +523,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش جزئیات محاسبه بیمه
         /// </summary>
         [HttpGet]
-        [Route("Details/{id}")]
+
         public async Task<ActionResult> Details(int id)
         {
             try
@@ -515,7 +552,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ایجاد محاسبه بیمه
         /// </summary>
         [HttpGet]
-        [Route("Create")]
+
         public async Task<ActionResult> Create()
         {
             try
@@ -536,7 +573,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "Error displaying create insurance calculation form");
                 _messageNotificationService.AddErrorMessage("خطا در نمایش فرم ایجاد محاسبه بیمه");
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -544,7 +581,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// ایجاد محاسبه بیمه جدید
         /// </summary>
         [HttpPost]
-        [Route("Create")]
+
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(InsuranceCalculationViewModel model)
         {
@@ -610,7 +647,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ویرایش محاسبه بیمه
         /// </summary>
         [HttpGet]
-        [Route("Edit/{id}")]
+
         public async Task<ActionResult> Edit(int id)
         {
             try
@@ -621,7 +658,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (calculation == null)
                 {
                     _messageNotificationService.AddErrorMessage("محاسبه بیمه یافت نشد");
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 var model = new InsuranceCalculationViewModel
@@ -653,7 +690,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "Error displaying edit insurance calculation form for ID: {CalculationId}", id);
                 _messageNotificationService.AddErrorMessage("خطا در نمایش فرم ویرایش محاسبه بیمه");
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -661,7 +698,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// ویرایش محاسبه بیمه
         /// </summary>
         [HttpPost]
-        [Route("Edit/{id}")]
+
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(int id, InsuranceCalculationViewModel model)
         {
@@ -687,7 +724,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (existingCalculation == null)
                 {
                     _messageNotificationService.AddErrorMessage("محاسبه بیمه یافت نشد");
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 // به‌روزرسانی
@@ -728,7 +765,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم حذف محاسبه بیمه
         /// </summary>
         [HttpGet]
-        [Route("Delete/{id}")]
+
         public async Task<ActionResult> Delete(int id)
         {
             try
@@ -739,7 +776,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (calculation == null)
                 {
                     _messageNotificationService.AddErrorMessage("محاسبه بیمه یافت نشد");
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 var viewModel = InsuranceCalculationDetailsViewModel.FromEntity(calculation);
@@ -749,7 +786,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "Error displaying delete insurance calculation form for ID: {CalculationId}", id);
                 _messageNotificationService.AddErrorMessage("خطا در نمایش فرم حذف محاسبه بیمه");
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -757,7 +794,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// حذف محاسبه بیمه
         /// </summary>
         [HttpPost]
-        [Route("Delete/{id}")]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
@@ -769,17 +805,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (!deleteResult.Success)
                 {
                     _messageNotificationService.AddErrorMessage("خطا در حذف محاسبه بیمه");
-                     return RedirectToAction("Calculate");
+                    return RedirectToAction("Calculate");
                 }
 
                 _messageNotificationService.AddSuccessMessage("محاسبه بیمه با موفقیت حذف شد");
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error deleting insurance calculation with ID: {CalculationId}", id);
                 _messageNotificationService.AddErrorMessage("خطا در حذف محاسبه بیمه");
-                     return RedirectToAction("Calculate");
+                return RedirectToAction("Calculate");
             }
         }
 
@@ -787,7 +823,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// به‌روزرسانی وضعیت اعتبار محاسبه
         /// </summary>
         [HttpPost]
-        [Route("UpdateValidity/{id}")]
+
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> UpdateValidity(int id, bool isValid)
         {
@@ -818,7 +854,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت آمار محاسبات بیمه
         /// </summary>
         [HttpGet]
-        [Route("Statistics")]
+
         public async Task<ActionResult> Statistics()
         {
             try
@@ -853,6 +889,161 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         #region Helper Methods
 
         /// <summary>
+        /// اعتبارسنجی جامع درخواست محاسبه
+        /// </summary>
+        private (bool IsValid, List<string> Errors) ValidateCalculationRequest(InsuranceCalculationViewModel model)
+        {
+            var errors = new List<string>();
+
+            try
+            {
+                // بررسی null بودن مدل
+                if (model == null)
+                {
+                    errors.Add("اطلاعات محاسبه بیمه ارسال نشده است");
+                    return (false, errors);
+                }
+
+                // بررسی شناسه بیمار
+                if (model.PatientId <= 0)
+                    errors.Add("بیمار باید انتخاب شود");
+
+                // بررسی شناسه خدمت
+                if (model.ServiceId <= 0)
+                    errors.Add("خدمت باید انتخاب شود");
+
+                // بررسی تاریخ محاسبه
+                if (model.CalculationDate == default(DateTime))
+                    errors.Add("تاریخ محاسبه باید انتخاب شود");
+
+                // بررسی محدوده زمانی
+                var now = DateTime.Now;
+                if (model.CalculationDate > now.AddDays(1))
+                    errors.Add("تاریخ محاسبه نمی‌تواند بیش از یک روز در آینده باشد");
+
+                if (model.CalculationDate < now.AddYears(-2))
+                    errors.Add("تاریخ محاسبه نمی‌تواند بیش از دو سال گذشته باشد");
+
+                // بررسی محدوده زمانی کاری (8 صبح تا 8 شب)
+                var calculationTime = model.CalculationDate.TimeOfDay;
+                if (calculationTime < TimeSpan.FromHours(8) || calculationTime > TimeSpan.FromHours(20))
+                {
+                    _log.Warning("محاسبه در خارج از ساعات کاری انجام شد. Time: {Time}, User: {UserName}", 
+                        calculationTime, _currentUserService.UserName);
+                }
+
+                return (errors.Count == 0, errors);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در اعتبارسنجی درخواست محاسبه");
+                errors.Add("خطا در اعتبارسنجی درخواست");
+                return (false, errors);
+            }
+        }
+
+        /// <summary>
+        /// بررسی دسترسی کاربر به اطلاعات بیمار
+        /// </summary>
+        private async Task<(bool IsValid, string ErrorMessage)> CheckUserAccessToPatientAsync(int patientId)
+        {
+            try
+            {
+                // بررسی نقش کاربر
+                var userRoles = _currentUserService.GetUserRoles();
+                if (userRoles.Contains("Admin"))
+                {
+                    return (true, string.Empty); // Admin دسترسی کامل دارد
+                }
+
+                // بررسی دسترسی Receptionist و Doctor
+                if (userRoles.Contains("Receptionist") || userRoles.Contains("Doctor"))
+                {
+                    // TODO: پیاده‌سازی بررسی دسترسی بر اساس کلینیک یا بخش
+                    // فعلاً دسترسی کامل در نظر گرفته می‌شود
+                    return (true, string.Empty);
+                }
+
+                return (false, "شما دسترسی لازم برای محاسبه بیمه ندارید");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی دسترسی کاربر به بیمار. PatientId: {PatientId}, User: {UserName}", 
+                    patientId, _currentUserService.UserName);
+                return (false, "خطا در بررسی دسترسی");
+            }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی زمان محاسبه
+        /// </summary>
+        private (bool IsValid, string ErrorMessage) ValidateCalculationTime(DateTime calculationDate)
+        {
+            try
+            {
+                var now = DateTime.Now;
+                var timeDifference = Math.Abs((calculationDate - now).TotalHours);
+
+                // بررسی محدوده زمانی منطقی
+                if (timeDifference > 24 * 365 * 2) // بیش از دو سال
+                {
+                    return (false, "تاریخ محاسبه خارج از محدوده مجاز است");
+                }
+
+                // بررسی تعطیلات رسمی (اختیاری)
+                if (IsHoliday(calculationDate))
+                {
+                    _log.Information("محاسبه در روز تعطیل انجام شد. Date: {Date}, User: {UserName}", 
+                        calculationDate, _currentUserService.UserName);
+                }
+
+                return (true, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در اعتبارسنجی زمان محاسبه");
+                return (false, "خطا در بررسی زمان محاسبه");
+            }
+        }
+
+        /// <summary>
+        /// بررسی تعطیل بودن روز
+        /// </summary>
+        private bool IsHoliday(DateTime date)
+        {
+            try
+            {
+                // TODO: پیاده‌سازی بررسی تعطیلات رسمی ایران
+                // فعلاً فقط تعطیلات ثابت بررسی می‌شود
+                var persianDate = date.ToString("yyyy/MM/dd"); // TODO: استفاده از PersianDateHelper
+                var month = persianDate.Split('/')[1];
+                var day = persianDate.Split('/')[2];
+
+                // تعطیلات ثابت
+                var fixedHolidays = new[]
+                {
+                    "01/01", // نوروز
+                    "01/02", // نوروز
+                    "01/03", // نوروز
+                    "01/04", // نوروز
+                    "01/12", // روز جمهوری اسلامی
+                    "01/13", // روز طبیعت
+                    "03/14", // رحلت امام خمینی
+                    "03/15", // قیام 15 خرداد
+                    "11/22", // پیروزی انقلاب اسلامی
+                    "12/29"  // ملی شدن صنعت نفت
+                };
+
+                return fixedHolidays.Contains($"{month}/{day}");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی تعطیل بودن روز");
+                return false;
+            }
+        }
+
+        /// <summary>
         /// بارگذاری SelectLists برای فیلترها
         /// </summary>
         private async Task LoadSelectListsAsync(InsuranceCalculationIndexPageViewModel model)
@@ -861,7 +1052,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 // TODO: پیاده‌سازی بارگذاری داده‌ها از Services
                 // فعلاً با داده‌های خالی SelectList ها را ایجاد می‌کنیم
-                
+
                 // ایجاد SelectList برای بیماران
                 model.Patients = new List<PatientLookupViewModel>();
                 model.CreatePatientSelectList();
@@ -897,43 +1088,332 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             try
             {
-                // TODO: پیاده‌سازی بارگذاری داده‌ها از Services
-                // فعلاً با داده‌های خالی SelectList ها را ایجاد می‌کنیم
-                
-                // ایجاد SelectList برای بیماران
+                _log.Information("Loading SelectLists for create insurance calculation form. User: {UserName} (Id: {UserId})", 
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                // 🏥 Select2 برای بیماران - بدون بارگذاری اولیه (Server-Side Processing)
+                // فقط یک placeholder برای Select2
                 model.PatientSelectList = new SelectList(new List<SelectListItem>
                 {
-                    new SelectListItem { Value = "", Text = "انتخاب بیمار" }
+                    new SelectListItem { Value = "", Text = "جستجو و انتخاب بیمار..." }
                 }, "Value", "Text");
+                
+                _log.Information("Patient Select2 initialized for server-side processing");
 
-                // ایجاد SelectList برای بیمه‌های بیمار
+                // 🏥 بارگذاری بیمه‌های بیمار (خالی - بعد از انتخاب بیمار پر می‌شود)
                 model.PatientInsuranceSelectList = new SelectList(new List<SelectListItem>
                 {
-                    new SelectListItem { Value = "", Text = "انتخاب بیمه بیمار" }
+                    new SelectListItem { Value = "", Text = "ابتدا بیمار را انتخاب کنید" }
                 }, "Value", "Text");
 
-                // ایجاد SelectList برای خدمات
+                // 🏥 بارگذاری دسته‌بندی خدمات
+                var serviceCategories = await _serviceCategoryService.GetActiveServiceCategoriesAsync();
+                if (serviceCategories != null && serviceCategories.Any())
+                {
+                    var categoryItems = new List<SelectListItem>
+                    {
+                        new SelectListItem { Value = "", Text = "انتخاب دسته‌بندی خدمت" }
+                    };
+                    
+                    categoryItems.AddRange(serviceCategories.Select(sc => new SelectListItem
+                    {
+                        Value = sc.ServiceCategoryId.ToString(),
+                        Text = sc.Title
+                    }));
+                    
+                    model.ServiceCategorySelectList = new SelectList(categoryItems, "Value", "Text");
+                    _log.Information("Loaded {Count} service categories for SelectList", serviceCategories.Count());
+                }
+                else
+                {
+                    _log.Warning("No active service categories found");
+                    model.ServiceCategorySelectList = new SelectList(new List<SelectListItem>
+                    {
+                        new SelectListItem { Value = "", Text = "دسته‌بندی خدمتی یافت نشد" }
+                    }, "Value", "Text");
+                }
+
+                // 🏥 بارگذاری خدمات (خالی - بعد از انتخاب دسته‌بندی پر می‌شود)
                 model.ServiceSelectList = new SelectList(new List<SelectListItem>
                 {
-                    new SelectListItem { Value = "", Text = "انتخاب خدمت" }
+                    new SelectListItem { Value = "", Text = "ابتدا دسته‌بندی را انتخاب کنید" }
                 }, "Value", "Text");
 
-                // ایجاد SelectList برای دسته‌بندی خدمات
-                model.ServiceCategorySelectList = new SelectList(new List<SelectListItem>
-                {
-                    new SelectListItem { Value = "", Text = "انتخاب دسته‌بندی" }
-                }, "Value", "Text");
-
-                _log.Information("SelectLists loaded successfully for create insurance calculation form");
+                _log.Information("SelectLists loaded successfully for create insurance calculation form. User: {UserName} (Id: {UserId})", 
+                    _currentUserService.UserName, _currentUserService.UserId);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error loading SelectLists for create insurance calculation form");
-                // در صورت خطا، SelectList های خالی ایجاد می‌کنیم
-                model.PatientSelectList = new SelectList(new List<SelectListItem>(), "Value", "Text");
-                model.PatientInsuranceSelectList = new SelectList(new List<SelectListItem>(), "Value", "Text");
-                model.ServiceSelectList = new SelectList(new List<SelectListItem>(), "Value", "Text");
-                model.ServiceCategorySelectList = new SelectList(new List<SelectListItem>(), "Value", "Text");
+                _log.Error(ex, "Error loading SelectLists for create insurance calculation form. User: {UserName} (Id: {UserId})", 
+                    _currentUserService.UserName, _currentUserService.UserId);
+                
+                // در صورت خطا، SelectList های خالی با پیام خطا ایجاد می‌کنیم
+                model.PatientSelectList = new SelectList(new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "", Text = "خطا در بارگذاری بیماران" }
+                }, "Value", "Text");
+                
+                model.PatientInsuranceSelectList = new SelectList(new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "", Text = "خطا در بارگذاری بیمه‌ها" }
+                }, "Value", "Text");
+                
+                model.ServiceSelectList = new SelectList(new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "", Text = "خطا در بارگذاری خدمات" }
+                }, "Value", "Text");
+                
+                model.ServiceCategorySelectList = new SelectList(new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "", Text = "خطا در بارگذاری دسته‌بندی‌ها" }
+                }, "Value", "Text");
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های فعال بیمار برای AJAX (Create Form)
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetPatientInsurancesForCreate(int patientId)
+        {
+            try
+            {
+                _log.Information("Getting patient insurances for Create form. PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت بیمه‌های فعال بیمار از سرویس
+                _log.Information("🔍 DEBUG: Starting to load patient insurances for PatientId: {PatientId}", patientId);
+                
+                var result = await _patientInsuranceService.GetActivePatientInsurancesForLookupAsync(patientId);
+                
+                _log.Information("🔍 DEBUG: Service result - Success: {Success}, DataCount: {DataCount}, Message: {Message}", 
+                    result.Success, result.Data?.Count ?? 0, result.Message);
+                
+                if (result.Success && result.Data != null && result.Data.Any())
+                {
+                    var selectItems = result.Data.Select(pi => new SelectListItem
+                    {
+                        Value = pi.PatientInsuranceId.ToString(),
+                        Text = $"{pi.InsuranceProviderName} - {pi.InsurancePlanName} ({pi.PolicyNumber})"
+                    }).ToList();
+
+                    _log.Information("✅ SUCCESS: Loaded {Count} patient insurances for PatientId: {PatientId}. Details: {Details}", 
+                        selectItems.Count, patientId, string.Join(", ", selectItems.Select(si => si.Text)));
+
+                    return Json(new { success = true, data = selectItems });
+                }
+                else
+                {
+                    _log.Warning("⚠️ WARNING: No active patient insurances found for PatientId: {PatientId}. Success: {Success}, Message: {Message}, DataNull: {DataNull}", 
+                        patientId, result.Success, result.Message, result.Data == null);
+                    
+                    var emptyItems = new List<SelectListItem>
+                    {
+                        new SelectListItem { Value = "", Text = "بیمه فعالی برای این بیمار یافت نشد" }
+                    };
+                    
+                    return Json(new { success = true, data = emptyItems });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting patient insurances for Create form. PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, error = "خطا در دریافت بیمه‌های بیمار" });
+            }
+        }
+
+        /// <summary>
+        /// جستجوی بیماران برای Select2 (Server-Side Processing)
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> SearchPatientsForSelect2(string q, int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                _log.Information("Searching patients for Select2. Query: {Query}, Page: {Page}, PageSize: {PageSize}. User: {UserName} (Id: {UserId})", 
+                    q, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _patientService.SearchPatientsForSelect2Async(q, page, pageSize);
+                if (result.Success && result.Data != null)
+                {
+                    var select2Result = new
+                    {
+                        results = result.Data.Items.Select(p => new
+                        {
+                            id = p.PatientId,
+                            text = $"{p.FirstName} {p.LastName} ({p.NationalCode})",
+                            firstName = p.FirstName,
+                            lastName = p.LastName,
+                            nationalCode = p.NationalCode,
+                            phoneNumber = p.PhoneNumber
+                        }).ToList(),
+                        pagination = new
+                        {
+                            more = (page * pageSize) < result.Data.TotalItems
+                        }
+                    };
+
+                    return Json(select2Result);
+                }
+                else
+                {
+                    _log.Warning("Failed to search patients for Select2. Query: {Query}. Error: {Error}", 
+                        q, result.Message);
+                    return Json(new { results = new List<object>(), pagination = new { more = false } });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error searching patients for Select2. Query: {Query}. User: {UserName} (Id: {UserId})", 
+                    q, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { results = new List<object>(), pagination = new { more = false } });
+            }
+        }
+
+        /// <summary>
+        /// دریافت خدمات بر اساس دسته‌بندی برای AJAX
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetServicesByCategory(int categoryId)
+        {
+            try
+            {
+                _log.Information("Getting services for CategoryId: {CategoryId}. User: {UserName} (Id: {UserId})", 
+                    categoryId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت خدمات فعال بر اساس دسته‌بندی از سرویس
+                var services = await _serviceService.GetActiveServicesByCategoryAsync(categoryId);
+                if (services != null && services.Any())
+                {
+                    var selectItems = services.Select(s => new SelectListItem
+                    {
+                        Value = s.ServiceId.ToString(),
+                        Text = $"{s.Title} - {s.Price:C0} ریال"
+                    }).ToList();
+
+                    _log.Information("Successfully loaded {Count} services for CategoryId: {CategoryId}", 
+                        selectItems.Count, categoryId);
+
+                    return Json(new { success = true, data = selectItems });
+                }
+                else
+                {
+                    _log.Warning("No active services found for CategoryId: {CategoryId}", categoryId);
+                    
+                    var emptyItems = new List<SelectListItem>
+                    {
+                        new SelectListItem { Value = "", Text = "خدمت فعالی در این دسته‌بندی یافت نشد" }
+                    };
+                    
+                    return Json(new { success = true, data = emptyItems });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting services for CategoryId: {CategoryId}. User: {UserName} (Id: {UserId})", 
+                    categoryId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, error = "خطا در دریافت خدمات" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت دپارتمان‌ها برای سلسله مراتب دسته‌بندی
+        /// </summary>
+        [HttpPost]
+        public ActionResult GetDepartmentsForHierarchy()
+        {
+            try
+            {
+                _log.Information("Getting departments for service hierarchy. User: {UserName} (Id: {UserId})", 
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                // TODO: پیاده‌سازی دریافت دپارتمان‌ها از سرویس
+                // فعلاً با داده‌های نمونه
+                var departments = new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "1", Text = "دپارتمان قلب و عروق" },
+                    new SelectListItem { Value = "2", Text = "دپارتمان داخلی" },
+                    new SelectListItem { Value = "3", Text = "دپارتمان جراحی" },
+                    new SelectListItem { Value = "4", Text = "دپارتمان زنان و زایمان" },
+                    new SelectListItem { Value = "5", Text = "دپارتمان اطفال" }
+                };
+
+                _log.Information("Successfully loaded {Count} departments for hierarchy", departments.Count);
+                return Json(new { success = true, data = departments });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting departments for hierarchy. User: {UserName} (Id: {UserId})", 
+                    _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, error = "خطا در دریافت دپارتمان‌ها" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت سرفصل‌های دسته‌بندی بر اساس دپارتمان
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetServiceCategoriesByDepartment(int departmentId)
+        {
+            try
+            {
+                _log.Information("Getting service categories for DepartmentId: {DepartmentId}. User: {UserName} (Id: {UserId})", 
+                    departmentId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت دسته‌بندی‌های فعال بر اساس دپارتمان
+                var serviceCategories = await _serviceCategoryService.GetActiveServiceCategoriesByDepartmentAsync(departmentId);
+                if (serviceCategories != null && serviceCategories.Any())
+                {
+                    var selectItems = serviceCategories.Select(sc => new SelectListItem
+                    {
+                        Value = sc.ServiceCategoryId.ToString(),
+                        Text = sc.Title
+                    }).ToList();
+
+                    _log.Information("Successfully loaded {Count} service categories for DepartmentId: {DepartmentId}", 
+                        selectItems.Count, departmentId);
+
+                    return Json(new { success = true, data = selectItems });
+                }
+                else
+                {
+                    _log.Warning("No service categories found for DepartmentId: {DepartmentId}", departmentId);
+                    
+                    var emptyItems = new List<SelectListItem>
+                    {
+                        new SelectListItem { Value = "", Text = "سرفصل دسته‌بندی برای این دپارتمان یافت نشد" }
+                    };
+                    
+                    return Json(new { success = true, data = emptyItems });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting service categories for DepartmentId: {DepartmentId}. User: {UserName} (Id: {UserId})", 
+                    departmentId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, error = "خطا در دریافت سرفصل‌های دسته‌بندی" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت لاگ‌های خطای کلاینت برای audit trail
+        /// </summary>
+        [HttpPost]
+        public ActionResult LogClientError(string message, string type, string data, string url, string userAgent)
+        {
+            try
+            {
+                _log.Warning("Client Error Log - Message: {Message}, Type: {Type}, Data: {Data}, URL: {Url}, UserAgent: {UserAgent}. User: {UserName} (Id: {UserId})", 
+                    message, type, data, url, userAgent, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = true });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error logging client error. User: {UserName} (Id: {UserId})", 
+                    _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false });
             }
         }
 

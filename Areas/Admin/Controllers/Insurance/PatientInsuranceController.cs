@@ -124,8 +124,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             try
             {
-                // بررسی اتصال به دیتابیس
-                var healthCheck = await _patientInsuranceService.GetPatientInsurancesAsync(null, null, 1, 1);
+                // بررسی ساده اتصال به دیتابیس
+                var healthCheck = await _patientInsuranceService.GetTotalRecordsCountAsync();
                 return healthCheck.Success;
             }
             catch (Exception ex)
@@ -702,6 +702,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
             try
             {
+                // تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                if (model != null)
+                {
+                    model.ConvertPersianDatesToGregorian();
+                }
+
                 if (!ModelState.IsValid)
                 {
                     var validationErrors = ModelState.Where(x => x.Value.Errors.Count > 0)
@@ -791,6 +797,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // بارگیری لیست طرح‌های بیمه
                 await LoadDropdownsForModelAsync(result.Data);
 
+                // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
+                _log.Information("🔍 Debug: StartDate before conversion: {StartDate}", result.Data.StartDate);
+                _log.Information("🔍 Debug: EndDate before conversion: {EndDate}", result.Data.EndDate);
+                _log.Information("🔍 Debug: StartDateShamsi before conversion: {StartDateShamsi}", result.Data.StartDateShamsi);
+                _log.Information("🔍 Debug: EndDateShamsi before conversion: {EndDateShamsi}", result.Data.EndDateShamsi);
+                
+                result.Data.ConvertGregorianDatesToPersian();
+                
+                _log.Information("🔍 Debug: StartDateShamsi after conversion: {StartDateShamsi}", result.Data.StartDateShamsi);
+                _log.Information("🔍 Debug: EndDateShamsi after conversion: {EndDateShamsi}", result.Data.EndDateShamsi);
+
                 _log.Information(
                     "فرم ویرایش بیمه بیمار با موفقیت دریافت شد. PatientInsuranceId: {PatientInsuranceId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
                     id, result.Data.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
@@ -821,6 +838,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
             try
             {
+                // تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                if (model != null)
+                {
+                    model.ConvertPersianDatesToGregorian();
+                }
+
                 if (!ModelState.IsValid)
                 {
                     var validationErrors = ModelState.Where(x => x.Value.Errors.Count > 0)
@@ -837,6 +860,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                     // بارگیری مجدد لیست طرح‌های بیمه
                     await LoadDropdownsForModelAsync(model);
+                    
+                    // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم (حفظ مقادیر موجود)
+                    model.ConvertGregorianDatesToPersian();
 
                     return View(model);
                 }
@@ -854,6 +880,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     TempData["ErrorMessage"] = "اطلاعات وارد شده معتبر نیست.";
                     
                     await LoadDropdownsForModelAsync(model);
+                    
+                    // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم (حفظ مقادیر موجود)
+                    model.ConvertGregorianDatesToPersian();
+                    
                     return View(model);
                 }
 
@@ -868,6 +898,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     
                     // بارگیری مجدد لیست طرح‌های بیمه
                     await LoadDropdownsForModelAsync(model);
+                    
+                    // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم (حفظ مقادیر موجود)
+                    model.ConvertGregorianDatesToPersian();
 
                     return View(model);
                 }

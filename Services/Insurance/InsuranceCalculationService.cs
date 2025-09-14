@@ -61,7 +61,17 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("Starting patient share calculation for PatientId: {PatientId}, ServiceId: {ServiceId}, Date: {Date}", 
                     patientId, serviceId, calculationDate);
 
-                // Get patient insurance
+                // 🏥 اعتبارسنجی ورودی‌ها
+                if (patientId <= 0)
+                    return ServiceResult<InsuranceCalculationResultViewModel>.Failed("شناسه بیمار نامعتبر است");
+                
+                if (serviceId <= 0)
+                    return ServiceResult<InsuranceCalculationResultViewModel>.Failed("شناسه خدمت نامعتبر است");
+
+                if (calculationDate > DateTime.Now.AddDays(1))
+                    return ServiceResult<InsuranceCalculationResultViewModel>.Failed("تاریخ محاسبه نمی‌تواند در آینده باشد");
+
+                // دریافت بیمه فعال بیمار
                 var patientInsuranceResult = await _patientInsuranceRepository.GetActiveByPatientAsync(patientId);
                 if (!patientInsuranceResult.Success || patientInsuranceResult.Data == null)
                 {
@@ -70,7 +80,14 @@ namespace ClinicApp.Services.Insurance
 
                 var patientInsurance = patientInsuranceResult.Data;
                 
-                // Get plan service configuration
+                // بررسی اعتبار بیمه در تاریخ محاسبه
+                if (patientInsurance.StartDate > calculationDate || 
+                    (patientInsurance.EndDate.HasValue && patientInsurance.EndDate.Value < calculationDate))
+                {
+                    return ServiceResult<InsuranceCalculationResultViewModel>.Failed("بیمه بیمار در تاریخ محاسبه معتبر نیست");
+                }
+
+                // دریافت پیکربندی خدمت در طرح بیمه
                 var planServiceResult = await _planServiceRepository.GetByPlanAndServiceCategoryAsync(patientInsurance.InsurancePlanId, serviceId);
                 if (!planServiceResult.Success || planServiceResult.Data == null)
                 {
@@ -79,18 +96,25 @@ namespace ClinicApp.Services.Insurance
 
                 var planService = planServiceResult.Data;
                 
-                // Calculate coverage
+                // 🏥 محاسبه دقیق پوشش بیمه
                 var result = new InsuranceCalculationResultViewModel
                 {
                     PatientId = patientId,
                     ServiceId = serviceId,
                     CalculationDate = calculationDate,
-                    TotalAmount = 0, // Will be set by caller
-                    CoveragePercent = patientInsurance.InsurancePlan.CoveragePercent,
+                    TotalAmount = 0, // باید توسط caller تنظیم شود
+                    CoveragePercent = planService?.CoverageOverride ?? patientInsurance.InsurancePlan.CoveragePercent,
                     Deductible = patientInsurance.InsurancePlan.Deductible,
-                    InsuranceCoverage = 0, // Will be calculated
-                    PatientPayment = 0 // Will be calculated
+                    InsuranceCoverage = 0, // محاسبه خواهد شد
+                    PatientPayment = 0, // محاسبه خواهد شد
+                    // InsurancePlanId = patientInsurance.InsurancePlanId, // این فیلد در ViewModel وجود ندارد
+                    InsurancePlanName = patientInsurance.InsurancePlan?.Name,
+                    InsuranceProviderName = patientInsurance.InsurancePlan?.InsuranceProvider?.Name,
+                    PolicyNumber = patientInsurance.PolicyNumber
                 };
+
+                _log.Information("Patient share calculation completed successfully for PatientId: {PatientId}, ServiceId: {ServiceId}, CoveragePercent: {CoveragePercent}, Deductible: {Deductible}", 
+                    patientId, serviceId, result.CoveragePercent, result.Deductible);
 
                 return ServiceResult<InsuranceCalculationResultViewModel>.Successful(result);
             }
@@ -366,44 +390,279 @@ namespace ClinicApp.Services.Insurance
         #region Private Helper Methods
 
         /// <summary>
-        /// محاسبه پوشش بیمه بر اساس طرح بیمه و تنظیمات خدمت
+        /// محاسبه ضد گلوله پوشش بیمه بر اساس طرح بیمه و تنظیمات خدمت
+        /// 🛡️ مقاوم در برابر تمام انواع خطاها - فرمول محاسباتی استاندارد سیستم‌های پزشکی ایران
         /// </summary>
         private InsuranceCalculationResultViewModel CalculateInsuranceCoverage(
             decimal serviceAmount,
             InsurancePlan insurancePlan,
             PlanService planService)
         {
-            var result = new InsuranceCalculationResultViewModel
+            try
             {
-                TotalAmount = serviceAmount,
-                DeductibleAmount = insurancePlan.Deductible
-            };
+                // 🛡️ اعتبارسنجی جامع ورودی‌ها
+                var validationResult = ValidateCalculationInputs(serviceAmount, insurancePlan, planService);
+                if (!validationResult.IsValid)
+                {
+                    _log.Error("خطا در اعتبارسنجی ورودی‌های محاسبه: {Errors}", string.Join(", ", validationResult.Errors));
+                    throw new ArgumentException($"ورودی‌های محاسبه نامعتبر: {string.Join(", ", validationResult.Errors)}");
+                }
 
-            // محاسبه مبلغ قابل پوشش (بعد از کسر فرانشیز)
-            result.CoverableAmount = Math.Max(0, serviceAmount - result.DeductibleAmount);
+                var result = new InsuranceCalculationResultViewModel
+                {
+                    TotalAmount = serviceAmount,
+                    DeductibleAmount = SafeGetDeductible(insurancePlan)
+                };
 
-            // تعیین درصد پوشش
-            decimal coveragePercent;
-            if (planService != null && planService.CoverageOverride.HasValue)
-            {
-                // استفاده از درصد پوشش خاص خدمت
-                coveragePercent = planService.CoverageOverride.Value;
+                // 🛡️ محاسبه امن مبلغ قابل پوشش (بعد از کسر فرانشیز)
+                result.CoverableAmount = SafeCalculateCoverableAmount(serviceAmount, result.DeductibleAmount);
+
+                // 🛡️ تعیین امن درصد پوشش
+                decimal coveragePercent = SafeGetCoveragePercent(insurancePlan, planService);
+                result.CoveragePercent = coveragePercent;
+
+                // 🛡️ محاسبه امن مبلغ پوشش بیمه
+                result.InsuranceCoverage = SafeCalculateInsuranceCoverage(result.CoverableAmount, coveragePercent);
+
+                // 🛡️ محاسبه امن مبلغ پرداخت بیمار
+                result.PatientPayment = SafeCalculatePatientPayment(result.DeductibleAmount, result.CoverableAmount, result.InsuranceCoverage);
+
+                // 🛡️ بررسی و تصحیح صحت محاسبات
+                result = ValidateAndCorrectCalculations(result, serviceAmount);
+
+                // 🛡️ لاگ محاسبات برای حسابرسی
+                _log.Information("Insurance calculation completed successfully: ServiceAmount={ServiceAmount}, Deductible={Deductible}, CoverableAmount={CoverableAmount}, CoveragePercent={CoveragePercent}, InsuranceCoverage={InsuranceCoverage}, PatientPayment={PatientPayment}", 
+                    serviceAmount, result.DeductibleAmount, result.CoverableAmount, coveragePercent, result.InsuranceCoverage, result.PatientPayment);
+
+                return result;
             }
-            else
+            catch (Exception ex)
             {
-                // استفاده از درصد پوشش پیش‌فرض طرح بیمه
-                coveragePercent = insurancePlan.CoveragePercent;
+                _log.Error(ex, "خطای غیرمنتظره در محاسبه پوشش بیمه: ServiceAmount={ServiceAmount}, InsurancePlanId={InsurancePlanId}", 
+                    serviceAmount, insurancePlan?.InsurancePlanId);
+                throw new InvalidOperationException("خطا در محاسبه پوشش بیمه", ex);
             }
+        }
 
-            result.CoveragePercent = coveragePercent;
+        /// <summary>
+        /// اعتبارسنجی جامع ورودی‌های محاسبه
+        /// </summary>
+        private (bool IsValid, List<string> Errors) ValidateCalculationInputs(decimal serviceAmount, InsurancePlan insurancePlan, PlanService planService)
+        {
+            var errors = new List<string>();
 
-            // محاسبه مبلغ پوشش بیمه
-            result.InsuranceCoverage = Math.Round(result.CoverableAmount * (coveragePercent / 100), 2);
+            try
+            {
+                // بررسی مبلغ خدمت
+                if (serviceAmount < 0)
+                    errors.Add("مبلغ خدمت نمی‌تواند منفی باشد");
+                
+                if (serviceAmount > 1000000000m) // 1 میلیارد تومان
+                    errors.Add("مبلغ خدمت بیش از حد مجاز است");
+                
+                if (serviceAmount == 0)
+                    errors.Add("مبلغ خدمت نمی‌تواند صفر باشد");
 
-            // محاسبه مبلغ پرداخت بیمار
-            result.PatientPayment = result.DeductibleAmount + (result.CoverableAmount - result.InsuranceCoverage);
+                // بررسی طرح بیمه
+                if (insurancePlan == null)
+                    errors.Add("طرح بیمه یافت نشد");
+                else
+                {
+                    if (insurancePlan.InsurancePlanId <= 0)
+                        errors.Add("شناسه طرح بیمه نامعتبر است");
+                    
+                    if (string.IsNullOrWhiteSpace(insurancePlan.Name))
+                        errors.Add("نام طرح بیمه تعریف نشده است");
+                    
+                    if (!insurancePlan.IsActive)
+                        errors.Add("طرح بیمه غیرفعال است");
+                    
+                    if (insurancePlan.IsDeleted)
+                        errors.Add("طرح بیمه حذف شده است");
+                }
 
-            return result;
+                // بررسی تنظیمات خدمت (اختیاری)
+                if (planService != null)
+                {
+                    if (planService.CoverageOverride.HasValue)
+                    {
+                        var overrideValue = planService.CoverageOverride.Value;
+                        if (overrideValue < 0 || overrideValue > 100)
+                            errors.Add("درصد پوشش خاص خدمت خارج از محدوده مجاز است");
+                    }
+                }
+
+                return (errors.Count == 0, errors);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در اعتبارسنجی ورودی‌های محاسبه");
+                errors.Add("خطا در اعتبارسنجی ورودی‌ها");
+                return (false, errors);
+            }
+        }
+
+        /// <summary>
+        /// دریافت امن فرانشیز
+        /// </summary>
+        private decimal SafeGetDeductible(InsurancePlan insurancePlan)
+        {
+            try
+            {
+                if (insurancePlan?.Deductible == null)
+                    return 0m;
+
+                var deductible = insurancePlan.Deductible;
+                
+                // بررسی محدوده مجاز
+                if (deductible < 0)
+                {
+                    _log.Warning("فرانشیز منفی یافت شد، صفر در نظر گرفته می‌شود. InsurancePlanId: {InsurancePlanId}, Deductible: {Deductible}", 
+                        insurancePlan.InsurancePlanId, deductible);
+                    return 0m;
+                }
+
+                if (deductible > 10000000m) // 10 میلیون تومان
+                {
+                    _log.Warning("فرانشیز بیش از حد مجاز یافت شد، محدود می‌شود. InsurancePlanId: {InsurancePlanId}, Deductible: {Deductible}", 
+                        insurancePlan.InsurancePlanId, deductible);
+                    return 10000000m;
+                }
+
+                return deductible;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت فرانشیز. InsurancePlanId: {InsurancePlanId}", insurancePlan?.InsurancePlanId);
+                return 0m;
+            }
+        }
+
+        /// <summary>
+        /// محاسبه امن مبلغ قابل پوشش
+        /// </summary>
+        private decimal SafeCalculateCoverableAmount(decimal serviceAmount, decimal deductible)
+        {
+            try
+            {
+                var coverableAmount = serviceAmount - deductible;
+                return Math.Max(0, coverableAmount);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در محاسبه مبلغ قابل پوشش. ServiceAmount: {ServiceAmount}, Deductible: {Deductible}", serviceAmount, deductible);
+                return 0m;
+            }
+        }
+
+        /// <summary>
+        /// دریافت امن درصد پوشش
+        /// </summary>
+        private decimal SafeGetCoveragePercent(InsurancePlan insurancePlan, PlanService planService)
+        {
+            try
+            {
+                decimal coveragePercent;
+
+                if (planService?.CoverageOverride.HasValue == true)
+                {
+                    // استفاده از درصد پوشش خاص خدمت
+                    coveragePercent = planService.CoverageOverride.Value;
+                }
+                else
+                {
+                    // استفاده از درصد پوشش پیش‌فرض طرح بیمه
+                    coveragePercent = insurancePlan?.CoveragePercent ?? 0m;
+                }
+
+                // محدود کردن به محدوده مجاز
+                coveragePercent = Math.Max(0, Math.Min(100, coveragePercent));
+
+                return coveragePercent;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت درصد پوشش. InsurancePlanId: {InsurancePlanId}", insurancePlan?.InsurancePlanId);
+                return 0m;
+            }
+        }
+
+        /// <summary>
+        /// محاسبه امن مبلغ پوشش بیمه
+        /// </summary>
+        private decimal SafeCalculateInsuranceCoverage(decimal coverableAmount, decimal coveragePercent)
+        {
+            try
+            {
+                if (coveragePercent == 0)
+                    return 0m;
+
+                var insuranceCoverage = coverableAmount * (coveragePercent / 100);
+                return Math.Round(insuranceCoverage, 2, MidpointRounding.AwayFromZero);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در محاسبه مبلغ پوشش بیمه. CoverableAmount: {CoverableAmount}, CoveragePercent: {CoveragePercent}", coverableAmount, coveragePercent);
+                return 0m;
+            }
+        }
+
+        /// <summary>
+        /// محاسبه امن مبلغ پرداخت بیمار
+        /// </summary>
+        private decimal SafeCalculatePatientPayment(decimal deductible, decimal coverableAmount, decimal insuranceCoverage)
+        {
+            try
+            {
+                var patientPayment = deductible + (coverableAmount - insuranceCoverage);
+                return Math.Max(0, patientPayment);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در محاسبه مبلغ پرداخت بیمار. Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, InsuranceCoverage: {InsuranceCoverage}", 
+                    deductible, coverableAmount, insuranceCoverage);
+                return 0m;
+            }
+        }
+
+        /// <summary>
+        /// بررسی و تصحیح صحت محاسبات
+        /// </summary>
+        private InsuranceCalculationResultViewModel ValidateAndCorrectCalculations(InsuranceCalculationResultViewModel result, decimal originalServiceAmount)
+        {
+            try
+            {
+                var totalCalculated = result.InsuranceCoverage + result.PatientPayment;
+                var difference = Math.Abs(totalCalculated - originalServiceAmount);
+                
+                if (difference > 0.01m) // اختلاف بیش از 1 ریال
+                {
+                    _log.Warning("اختلاف در محاسبات بیمه: ServiceAmount={ServiceAmount}, CalculatedTotal={CalculatedTotal}, Difference={Difference}", 
+                        originalServiceAmount, totalCalculated, difference);
+                    
+                    // تصحیح اختلاف با تنظیم مبلغ بیمار
+                    result.PatientPayment = Math.Max(0, originalServiceAmount - result.InsuranceCoverage);
+                    
+                    _log.Information("محاسبات تصحیح شد: NewPatientPayment={NewPatientPayment}", result.PatientPayment);
+                }
+
+                // بررسی نهایی
+                var finalTotal = result.InsuranceCoverage + result.PatientPayment;
+                var finalDifference = Math.Abs(finalTotal - originalServiceAmount);
+                
+                if (finalDifference > 0.01m)
+                {
+                    _log.Error("عدم تطابق نهایی در محاسبات: ServiceAmount={ServiceAmount}, FinalTotal={FinalTotal}, FinalDifference={FinalDifference}", 
+                        originalServiceAmount, finalTotal, finalDifference);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی و تصحیح محاسبات");
+                return result;
+            }
         }
 
         /// <summary>

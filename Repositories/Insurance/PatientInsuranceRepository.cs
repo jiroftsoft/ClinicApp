@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Interfaces;
@@ -159,8 +160,10 @@ namespace ClinicApp.Repositories.Insurance
             try
             {
                 return await _context.PatientInsurances
-                    .Where(pi => pi.PatientId == patientId && pi.IsActive)
+                    .Where(pi => pi.PatientId == patientId && pi.IsActive && !pi.IsDeleted)
+                    .Include(pi => pi.InsurancePlan)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Include(pi => pi.Patient)
                     .OrderBy(pi => pi.IsPrimary ? 0 : 1)
                     .ThenBy(pi => pi.StartDate)
                     .AsNoTracking()
@@ -690,7 +693,6 @@ namespace ClinicApp.Repositories.Insurance
                     recordsWithoutPatient, recordsWithoutPlan);
 
                 // بهینه‌سازی: استفاده از AsNoTracking برای بهبود عملکرد
-                // موقتاً Include ها را حذف می‌کنیم تا مشکل را شناسایی کنیم
                 var query = _context.PatientInsurances
                     .AsNoTracking()
                     .Where(pi => !pi.IsDeleted);
@@ -698,10 +700,6 @@ namespace ClinicApp.Repositories.Insurance
                 // اعمال فیلترها
                 if (patientId.HasValue)
                     query = query.Where(pi => pi.PatientId == patientId.Value);
-
-                // موقتاً حذف شده - نیاز به Include دارد
-                // if (providerId.HasValue)
-                //     query = query.Where(pi => pi.InsurancePlan.InsuranceProviderId == providerId.Value);
 
                 if (planId.HasValue)
                     query = query.Where(pi => pi.InsurancePlanId == planId.Value);
@@ -718,42 +716,69 @@ namespace ClinicApp.Repositories.Insurance
                 if (toDate.HasValue)
                     query = query.Where(pi => pi.EndDate <= toDate.Value);
 
-                // جستجوی ساده شده - فقط PolicyNumber
+                // اضافه کردن Include statements به query اصلی
+                query = query
+                    .Include(pi => pi.Patient)
+                    .Include(pi => pi.InsurancePlan)
+                    .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Include(pi => pi.CreatedByUser);
+
+                // اعمال فیلتر providerId بعد از Include
+                if (providerId.HasValue)
+                    query = query.Where(pi => pi.InsurancePlan.InsuranceProviderId == providerId.Value);
+
+                // جستجوی کامل در نام بیمار، کد ملی و شماره بیمه
                 if (!string.IsNullOrWhiteSpace(searchTerm))
                 {
                     var searchTermLower = searchTerm.ToLower();
                     query = query.Where(pi => 
-                        pi.PolicyNumber.ToLower().Contains(searchTermLower));
+                        pi.PolicyNumber.ToLower().Contains(searchTermLower) ||
+                        (pi.Patient != null && (
+                            pi.Patient.FirstName.ToLower().Contains(searchTermLower) ||
+                            pi.Patient.LastName.ToLower().Contains(searchTermLower) ||
+                            pi.Patient.NationalCode.ToLower().Contains(searchTermLower) ||
+                            pi.Patient.PatientCode.ToLower().Contains(searchTermLower)
+                        )));
                 }
 
                 // شمارش کل رکوردها
                 var totalCount = await query.CountAsync();
+                _logger.Information("Total count after filters: {TotalCount}", totalCount);
                 
-                // دریافت داده‌ها با pagination - ساده شده
-                var items = await query
+                // Debug: بررسی query قبل از Select
+                _logger.Information("Query before Select - PatientInsurances count: {Count}", 
+                    await _context.PatientInsurances.Where(pi => !pi.IsDeleted).CountAsync());
+                
+                // دریافت داده‌ها با pagination - ابتدا Entity ها را دریافت می‌کنیم
+                var entities = await query
                     .OrderByDescending(pi => pi.CreatedAt)
-                    .Select(pi => new PatientInsuranceIndexViewModel
-                    {
-                        PatientInsuranceId = pi.PatientInsuranceId,
-                        PatientId = pi.PatientId,
-                        PatientName = "نام بیمار", // موقتاً
-                        PatientCode = "کد بیمار", // موقتاً
-                        PatientNationalCode = "کد ملی", // موقتاً
-                        InsurancePlanId = pi.InsurancePlanId,
-                        PolicyNumber = pi.PolicyNumber,
-                        InsurancePlanName = "نام طرح", // موقتاً
-                        InsuranceProviderName = "نام ارائه‌دهنده", // موقتاً
-                        CoveragePercent = 0, // موقتاً
-                        IsPrimary = pi.IsPrimary,
-                        StartDate = pi.StartDate,
-                        EndDate = pi.EndDate,
-                        IsActive = pi.IsActive,
-                        CreatedAt = pi.CreatedAt,
-                        CreatedByUserName = "کاربر" // موقتاً
-                    })
                     .Skip((pageNumber - 1) * pageSize)
                     .Take(pageSize)
                     .ToListAsync();
+
+                // تبدیل Entity ها به ViewModel با فرمت تاریخ صحیح
+                var items = entities.Select(pi => new PatientInsuranceIndexViewModel
+                {
+                    PatientInsuranceId = pi.PatientInsuranceId,
+                    PatientId = pi.PatientId,
+                    PatientName = pi.Patient != null ? $"{pi.Patient.FirstName} {pi.Patient.LastName}".Trim() : "نام نامشخص",
+                    PatientCode = pi.Patient != null ? pi.Patient.PatientCode : "کد نامشخص",
+                    PatientNationalCode = pi.Patient != null ? pi.Patient.NationalCode : "کد ملی نامشخص",
+                    InsurancePlanId = pi.InsurancePlanId,
+                    PolicyNumber = pi.PolicyNumber,
+                    InsurancePlanName = pi.InsurancePlan != null ? pi.InsurancePlan.Name : "طرح نامشخص",
+                    InsuranceProviderName = pi.InsurancePlan != null && pi.InsurancePlan.InsuranceProvider != null ? pi.InsurancePlan.InsuranceProvider.Name : "ارائه‌دهنده نامشخص",
+                    CoveragePercent = pi.InsurancePlan != null ? pi.InsurancePlan.CoveragePercent : 0,
+                    IsPrimary = pi.IsPrimary,
+                    IsActive = pi.IsActive,
+                    StartDateShamsi = pi.StartDate.ToPersianDate(), // تبدیل صحیح به شمسی
+                    EndDateShamsi = pi.EndDate.HasValue ? pi.EndDate.Value.ToPersianDate() : null,
+                    CreatedAt = pi.CreatedAt,
+                    CreatedAtShamsi = pi.CreatedAt.ToPersianDate(), // تبدیل صحیح به شمسی
+                    CreatedByUserName = "سیستم" // موقتاً ساده می‌کنیم
+                }).ToList();
+
+                _logger.Information("Retrieved {ItemCount} items from database", items.Count);
 
                 var result = new PagedResult<PatientInsuranceIndexViewModel>
                 {
