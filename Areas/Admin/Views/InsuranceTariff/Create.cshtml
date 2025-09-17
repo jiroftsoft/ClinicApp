@@ -50,10 +50,10 @@
                             <!-- Department Selection -->
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="form-label required">دپارتمان</label>
-                                    <select id="DepartmentId" class="form-control" required>
-                                        <option value="">انتخاب دپارتمان</option>
-                                    </select>
+                                    @Html.LabelFor(model => model.DepartmentId, new { @class = "form-label required" })
+                                    @Html.DropDownListFor(model => model.DepartmentId, new SelectList(new List<object>(), "Value", "Text"), 
+                                        "انتخاب دپارتمان", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(model => model.DepartmentId, "", new { @class = "text-danger small mt-1" })
                                     <div class="form-note">دپارتمان مورد نظر را انتخاب کنید</div>
                                 </div>
                             </div>
@@ -61,10 +61,11 @@
                             <!-- Service Category Selection -->
                             <div class="col-md-4">
                                 <div class="form-group">
-                                    <label class="form-label">سرفصل خدمت</label>
-                                    <select id="ServiceCategoryId" class="form-control">
+                                    @Html.LabelFor(model => model.ServiceCategoryId, new { @class = "form-label" })
+                                    <select id="ServiceCategoryId" name="ServiceCategoryId" class="form-control">
                                         <option value="">انتخاب سرفصل خدمت</option>
                                     </select>
+                                    @Html.ValidationMessageFor(model => model.ServiceCategoryId, "", new { @class = "text-danger small mt-1" })
                                     <div class="form-note">
                                         <i class="fas fa-info-circle text-info"></i>
                                         سرفصل خدمت مورد نظر را انتخاب کنید یا "همه سرفصل‌ها" را برای تعریف تعرفه عمومی انتخاب کنید
@@ -76,8 +77,9 @@
                             <div class="col-md-4">
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.ServiceId, new { @class = "form-label required" })
-                                    @Html.DropDownListFor(model => model.ServiceId, Model.ServiceSelectList, 
-                                        "انتخاب خدمت", new { @class = "form-control", required = "required" })
+                                    <select id="ServiceId" name="ServiceId" class="form-control">
+                                        <option value="">انتخاب خدمت</option>
+                                    </select>
                                     @Html.ValidationMessageFor(model => model.ServiceId, "", new { @class = "text-danger small mt-1" })
                                     <div class="form-note">
                                         <i class="fas fa-info-circle text-info"></i>
@@ -239,10 +241,55 @@
         $(document).ready(function() {
             // Form validation
             $('.needs-validation').on('submit', function(e) {
-                // تبدیل مقدار "all" به null قبل از ارسال و تنظیم فیلدهای مخفی
-                var serviceId = $('#ServiceId').val();
-                var serviceCategoryId = $('#ServiceCategoryId').val();
+                // بررسی اینکه آیا dropdown ها بارگیری شده‌اند
+                if (!dropdownsLoaded) {
+                    e.preventDefault();
+                    showWarning('لطفاً صبر کنید تا فهرست‌ها بارگیری شوند');
+                    return false;
+                }
                 
+                var departmentId = $('#DepartmentId').val();
+                var serviceCategoryId = $('#ServiceCategoryId').val();
+                var serviceId = $('#ServiceId').val();
+                var insuranceProviderId = $('#InsuranceProviderId').val();
+                var insurancePlanId = $('#InsurancePlanId').val();
+                
+                // Debug: نمایش مقادیر اولیه
+                console.log('🔍 مقادیر اولیه قبل از پردازش:');
+                console.log('DepartmentId:', departmentId);
+                console.log('ServiceCategoryId:', serviceCategoryId);
+                console.log('ServiceId:', serviceId);
+                console.log('InsuranceProviderId:', insuranceProviderId);
+                console.log('InsurancePlanId:', insurancePlanId);
+                
+                // بررسی اینکه آیا فیلدهای ضروری پر شده‌اند
+                if (!departmentId || departmentId === '' || departmentId === 'در حال بارگیری دپارتمان‌ها...') {
+                    e.preventDefault();
+                    showWarning('لطفاً دپارتمان را انتخاب کنید');
+                    return false;
+                }
+                
+                if (!insuranceProviderId || insuranceProviderId === '' || insuranceProviderId === 'در حال بارگیری ارائه‌دهندگان...') {
+                    e.preventDefault();
+                    showWarning('لطفاً ارائه‌دهنده بیمه را انتخاب کنید');
+                    return false;
+                }
+                
+                if (!insurancePlanId || insurancePlanId === '' || insurancePlanId === 'در حال بارگیری طرح‌ها...') {
+                    e.preventDefault();
+                    showWarning('لطفاً طرح بیمه را انتخاب کنید');
+                    return false;
+                }
+                
+                // اگر سرفصل خدمت انتخاب نشده و خدمت هم انتخاب نشده
+                if ((!serviceCategoryId || serviceCategoryId === '' || serviceCategoryId === 'در حال بارگیری سرفصل‌ها...') && 
+                    (!serviceId || serviceId === '' || serviceId === 'در حال بارگیری خدمات...')) {
+                    e.preventDefault();
+                    showWarning('لطفاً سرفصل خدمت یا خدمت را انتخاب کنید');
+                    return false;
+                }
+                
+                // پردازش "همه خدمات"
                 if (serviceId === 'all') {
                     $('#ServiceId').val('');
                     $('#IsAllServices').val('true');
@@ -251,13 +298,7 @@
                     $('#IsAllServices').val('false');
                 }
                 
-                // Debug: نمایش مقادیر نهایی
-                console.log('🔍 مقادیر نهایی قبل از ارسال:');
-                console.log('ServiceId:', $('#ServiceId').val());
-                console.log('IsAllServices:', $('#IsAllServices').val());
-                console.log('ServiceCategoryId:', $('#ServiceCategoryId').val());
-                console.log('IsAllServiceCategories:', $('#IsAllServiceCategories').val());
-                
+                // پردازش "همه سرفصل‌ها"
                 if (serviceCategoryId === 'all') {
                     $('#ServiceCategoryId').val('');
                     $('#IsAllServiceCategories').val('true');
@@ -266,18 +307,36 @@
                     $('#IsAllServiceCategories').val('false');
                 }
                 
-                // اعتبارسنجی سفارشی حذف شد - server-side validation استفاده می‌شود
+                // Debug: نمایش مقادیر نهایی
+                console.log('🔍 مقادیر نهایی قبل از ارسال:');
+                console.log('DepartmentId:', $('#DepartmentId').val());
+                console.log('ServiceCategoryId:', $('#ServiceCategoryId').val());
+                console.log('ServiceId:', $('#ServiceId').val());
+                console.log('IsAllServices:', $('#IsAllServices').val());
+                console.log('IsAllServiceCategories:', $('#IsAllServiceCategories').val());
+                console.log('InsuranceProviderId:', $('#InsuranceProviderId').val());
+                console.log('InsurancePlanId:', $('#InsurancePlanId').val());
+                console.log('TariffPrice:', $('#TariffPrice').val());
+                console.log('PatientShare:', $('#PatientShare').val());
+                console.log('InsurerShare:', $('#InsurerShare').val());
                 
-                if (!this.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+                console.log('✅ فرم آماده ارسال است');
                 $(this).addClass('was-validated');
             });
 
+            // نمایش loading indicator
+            showLoadingIndicator();
+            
             // Cascade Dropdowns
             loadDepartments();
             loadInsuranceProviders();
+            
+            // اطمینان از بارگیری dropdown ها قبل از ارسال فرم
+            var dropdownsLoaded = false;
+            setTimeout(function() {
+                dropdownsLoaded = true;
+                console.log('✅ Dropdown ها آماده هستند');
+            }, 2000); // 2 ثانیه timeout
             
             $('#DepartmentId').on('change', function() {
                 var departmentId = $(this).val();
@@ -379,6 +438,23 @@
                 }, 7000);
             }
             
+            function showLoadingIndicator() {
+                // اضافه کردن loading indicator به dropdown ها
+                $('#DepartmentId').html('<option value="">در حال بارگیری دپارتمان‌ها...</option>');
+                $('#ServiceCategoryId').html('<option value="">در حال بارگیری سرفصل‌ها...</option>');
+                $('#ServiceId').html('<option value="">در حال بارگیری خدمات...</option>');
+                $('#InsuranceProviderId').html('<option value="">در حال بارگیری ارائه‌دهندگان...</option>');
+                $('#InsurancePlanId').html('<option value="">در حال بارگیری طرح‌ها...</option>');
+                
+                // غیرفعال کردن dropdown ها
+                $('#DepartmentId, #ServiceCategoryId, #ServiceId, #InsuranceProviderId, #InsurancePlanId').prop('disabled', true);
+            }
+            
+            function hideLoadingIndicator() {
+                // فعال کردن dropdown ها
+                $('#DepartmentId, #ServiceCategoryId, #ServiceId, #InsuranceProviderId, #InsurancePlanId').prop('disabled', false);
+            }
+            
             // Cascade Dropdown Functions
             function loadDepartments() {
                 console.log('🔄 شروع بارگیری دپارتمان‌ها...');
@@ -425,14 +501,17 @@
                             });
                             
                             console.log('✅ دپارتمان‌ها بارگیری شدند:', data.data.length, 'مورد');
+                            hideLoadingIndicator();
                         } else {
                             console.error('❌ خطا در بارگیری دپارتمان‌ها - data:', data);
                             showWarning('خطا در بارگیری دپارتمان‌ها');
+                            hideLoadingIndicator();
                         }
                     },
                     error: function(xhr, status, error) {
                         console.error('❌ خطای AJAX در بارگیری دپارتمان‌ها:', error);
                         showWarning('خطا در بارگیری دپارتمان‌ها');
+                        hideLoadingIndicator();
                     }
                 });
             }

@@ -2,6 +2,8 @@
 using ClinicApp.Helpers;
 using ClinicApp.Infrastructure;
 using ClinicApp.Models;
+using ClinicApp.Models.Binders;
+using ClinicApp.ViewModels.Insurance.InsuranceTariff;
 using Serilog;
 using Serilog.Events;
 using Serilog.Filters;
@@ -29,6 +31,10 @@ namespace ClinicApp
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
+            
+            // ثبت Model Binder سفارشی برای InsuranceTariffCreateEditViewModel
+            ModelBinders.Binders.Add(typeof(InsuranceTariffCreateEditViewModel), new InsuranceTariffModelBinder());
+            
             // اگر UnityConfig دارید اینجا هم اضافه کنید:
             DependencyResolver.SetResolver(new UnityDependencyResolver(UnityConfig.Container));
 

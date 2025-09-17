@@ -28,6 +28,13 @@ namespace ClinicApp.Interfaces.Insurance
         Task<InsuranceTariff> GetByIdWithDetailsAsync(int id);
 
         /// <summary>
+        /// ایجاد تعرفه بیمه جدید
+        /// </summary>
+        /// <param name="tariff">تعرفه بیمه</param>
+        /// <returns>تعرفه بیمه ایجاد شده</returns>
+        Task<InsuranceTariff> CreateAsync(InsuranceTariff tariff);
+
+        /// <summary>
         /// دریافت تمام تعرفه‌های بیمه فعال
         /// </summary>
         /// <returns>لیست تعرفه‌های بیمه فعال</returns>

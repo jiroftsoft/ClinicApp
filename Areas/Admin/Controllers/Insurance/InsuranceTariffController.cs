@@ -292,19 +292,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ایجاد تعرفه بیمه جدید
         /// </summary>
         [HttpGet]
-        public async Task<ActionResult> Create(int? planId = null, int? serviceId = null)
+        public async Task<ActionResult> Create(int? planId = null, int? serviceId = null, int? providerId = null)
         {
             var correlationId = Guid.NewGuid().ToString();
 
-            _logger.Information("🏥 MEDICAL: درخواست فرم ایجاد تعرفه بیمه - CorrelationId: {CorrelationId}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
-                correlationId, planId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+            _logger.Information("🏥 MEDICAL: درخواست فرم ایجاد تعرفه بیمه - CorrelationId: {CorrelationId}, PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
+                correlationId, planId, serviceId, providerId, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
                 var model = new InsuranceTariffCreateEditViewModel
                 {
                     InsurancePlanId = planId ?? 0,
-                    ServiceId = serviceId ?? 0,
+                    InsuranceProviderId = providerId ?? 0,
+                    ServiceId = serviceId,
                     IsActive = true
                 };
 
@@ -327,16 +328,65 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// پردازش فرم ایجاد تعرفه بیمه جدید
+        /// پردازش فرم ایجاد تعرفه بیمه جدید - بهینه‌سازی شده برای محیط درمانی
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Create(InsuranceTariffCreateEditViewModel model)
         {
             var correlationId = Guid.NewGuid().ToString();
+            var startTime = DateTime.UtcNow;
 
-            _logger.Information("🏥 MEDICAL: درخواست ایجاد تعرفه بیمه جدید - CorrelationId: {CorrelationId}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
-                correlationId, model?.InsurancePlanId, model?.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+            // Logging کامل درخواست
+            _logger.Information("🏥 MEDICAL: شروع درخواست ایجاد تعرفه بیمه - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
+                correlationId, _currentUserService.UserName, _currentUserService.UserId);
+
+            // 🔍 CONSOLE LOGGING - تمام مقادیر Form
+            System.Console.WriteLine("🔍 ===== CREATE ACTION DEBUG START =====");
+            System.Console.WriteLine($"🔍 CorrelationId: {correlationId}");
+            System.Console.WriteLine($"🔍 User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
+            System.Console.WriteLine($"🔍 Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}");
+            
+            // Logging Request.Form برای debug
+            System.Console.WriteLine("🔍 Request.Form Keys and Values:");
+            foreach (string key in Request.Form.AllKeys)
+            {
+                System.Console.WriteLine($"🔍   {key}: '{Request.Form[key]}'");
+            }
+            
+            // Logging مدل دریافتی
+            if (model != null)
+            {
+                System.Console.WriteLine("🔍 Model Properties:");
+                System.Console.WriteLine($"🔍   InsuranceTariffId: {model.InsuranceTariffId}");
+                System.Console.WriteLine($"🔍   DepartmentId: {model.DepartmentId}");
+                System.Console.WriteLine($"🔍   ServiceCategoryId: {model.ServiceCategoryId}");
+                System.Console.WriteLine($"🔍   ServiceId: {model.ServiceId}");
+                System.Console.WriteLine($"🔍   InsuranceProviderId: {model.InsuranceProviderId}");
+                System.Console.WriteLine($"🔍   InsurancePlanId: {model.InsurancePlanId}");
+                System.Console.WriteLine($"🔍   TariffPrice: {model.TariffPrice}");
+                System.Console.WriteLine($"🔍   PatientShare: {model.PatientShare}");
+                System.Console.WriteLine($"🔍   InsurerShare: {model.InsurerShare}");
+                System.Console.WriteLine($"🔍   IsActive: {model.IsActive}");
+                System.Console.WriteLine($"🔍   IsAllServices: {model.IsAllServices}");
+                System.Console.WriteLine($"🔍   IsAllServiceCategories: {model.IsAllServiceCategories}");
+                
+                _logger.Information("🏥 MEDICAL: مدل دریافتی - CorrelationId: {CorrelationId}, " +
+                    "InsurancePlanId: {InsurancePlanId}, InsuranceProviderId: {InsuranceProviderId}, " +
+                    "ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}, " +
+                    "IsAllServices: {IsAllServices}, IsAllServiceCategories: {IsAllServiceCategories}, " +
+                    "TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}",
+                    correlationId, model.InsurancePlanId, model.InsuranceProviderId, model.ServiceId, 
+                    model.ServiceCategoryId, model.IsAllServices, model.IsAllServiceCategories,
+                    model.TariffPrice, model.PatientShare, model.InsurerShare);
+            }
+            else
+            {
+                System.Console.WriteLine("🔍 ❌ Model is NULL!");
+                _logger.Warning("🏥 MEDICAL: مدل null است - CorrelationId: {CorrelationId}", correlationId);
+            }
+            
+            System.Console.WriteLine("🔍 ===== CREATE ACTION DEBUG END =====");
 
             try
             {
@@ -348,11 +398,28 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return RedirectToAction("Create");
                 }
 
-                // اصلاح ModelState برای "همه خدمات"
-                if (model.IsAllServices && ModelState.ContainsKey("ServiceId"))
+                // اصلاح ModelState برای "همه خدمات" - قبل از بررسی ModelState.IsValid
+                if (model.IsAllServices)
                 {
-                    ModelState["ServiceId"].Errors.Clear();
-                    _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
+                    if (ModelState.ContainsKey("ServiceId"))
+                    {
+                        ModelState["ServiceId"].Errors.Clear();
+                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
+                    }
+                    // حذف validation error برای ServiceId
+                    ModelState.Remove("ServiceId");
+                }
+
+                // اصلاح ModelState برای "همه سرفصل‌ها"
+                if (model.IsAllServiceCategories)
+                {
+                    if (ModelState.ContainsKey("ServiceCategoryId"))
+                    {
+                        ModelState["ServiceCategoryId"].Errors.Clear();
+                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceCategoryId پاک شد (همه سرفصل‌ها) - CorrelationId: {CorrelationId}", correlationId);
+                    }
+                    // حذف validation error برای ServiceCategoryId
+                    ModelState.Remove("ServiceCategoryId");
                 }
 
                 if (!ModelState.IsValid)
@@ -384,8 +451,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return View(model);
                 }
 
-                // ایجاد تعرفه
-                var result = await _insuranceTariffService.CreateTariffAsync(model);
+                // ایجاد تعرفه - بررسی Bulk Operation
+                ServiceResult<int> result;
+                if (model.IsAllServices)
+                {
+                    _logger.Information("🏥 MEDICAL: شروع Bulk Operation برای همه خدمات - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
+                        correlationId, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    result = await _insuranceTariffService.CreateBulkTariffForAllServicesAsync(model);
+                }
+                else
+                {
+                    result = await _insuranceTariffService.CreateTariffAsync(model);
+                }
+
                 if (!result.Success)
                 {
                     _logger.Warning("🏥 MEDICAL: خطا در ایجاد تعرفه بیمه - CorrelationId: {CorrelationId}, PlanId: {PlanId}, ServiceId: {ServiceId}, Error: {Error}, User: {UserName} (Id: {UserId})",
@@ -399,10 +478,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return View(model);
                 }
 
-                _logger.Information("🏥 MEDICAL: تعرفه بیمه با موفقیت ایجاد شد - CorrelationId: {CorrelationId}, Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
-                    correlationId, result.Data, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                if (model.IsAllServices)
+                {
+                    _logger.Information("🏥 MEDICAL: Bulk Operation با موفقیت تکمیل شد - CorrelationId: {CorrelationId}, CreatedCount: {CreatedCount}, PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                        correlationId, result.Data, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
-                _messageNotificationService.AddSuccessMessage("تعرفه بیمه با موفقیت ایجاد شد");
+                    _messageNotificationService.AddSuccessMessage($"تعرفه برای {result.Data} خدمت با موفقیت ایجاد شد");
+                }
+                else
+                {
+                    _logger.Information("🏥 MEDICAL: تعرفه بیمه با موفقیت ایجاد شد - CorrelationId: {CorrelationId}, Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
+                        correlationId, result.Data, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                    _messageNotificationService.AddSuccessMessage("تعرفه بیمه با موفقیت ایجاد شد");
+                }
                 return RedirectToAction("Details", new { id = result.Data });
             }
             catch (Exception ex)
@@ -497,11 +586,28 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return RedirectToAction("Index");
                 }
 
-                // اصلاح ModelState برای "همه خدمات"
-                if (model.IsAllServices && ModelState.ContainsKey("ServiceId"))
+                // اصلاح ModelState برای "همه خدمات" - قبل از بررسی ModelState.IsValid
+                if (model.IsAllServices)
                 {
-                    ModelState["ServiceId"].Errors.Clear();
-                    _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
+                    if (ModelState.ContainsKey("ServiceId"))
+                    {
+                        ModelState["ServiceId"].Errors.Clear();
+                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
+                    }
+                    // حذف validation error برای ServiceId
+                    ModelState.Remove("ServiceId");
+                }
+
+                // اصلاح ModelState برای "همه سرفصل‌ها"
+                if (model.IsAllServiceCategories)
+                {
+                    if (ModelState.ContainsKey("ServiceCategoryId"))
+                    {
+                        ModelState["ServiceCategoryId"].Errors.Clear();
+                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceCategoryId پاک شد (همه سرفصل‌ها) - CorrelationId: {CorrelationId}", correlationId);
+                    }
+                    // حذف validation error برای ServiceCategoryId
+                    ModelState.Remove("ServiceCategoryId");
                 }
 
                 if (!ModelState.IsValid)

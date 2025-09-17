@@ -75,7 +75,7 @@
                                 <div class="form-group">
                                     @Html.LabelFor(model => model.ServiceId, new { @class = "form-label required" })
                                     @Html.DropDownListFor(model => model.ServiceId, Model.ServiceSelectList, 
-                                        "انتخاب خدمت", new { @class = "form-control", required = "required" })
+                                        "انتخاب خدمت", new { @class = "form-control" })
                                     @Html.ValidationMessageFor(model => model.ServiceId, "", new { @class = "text-danger small mt-1" })
                                     <div class="form-note">خدمت مورد نظر را انتخاب کنید</div>
                                 </div>
@@ -250,12 +250,9 @@
 @section Scripts {
     <script>
         $(document).ready(function() {
-            // Form validation
+            // Form validation - اجازه ارسال فرم به سرور برای validation
             $('.needs-validation').on('submit', function(e) {
-                if (!this.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
+                console.log('✅ فرم Edit آماده ارسال است');
                 $(this).addClass('was-validated');
             });
 

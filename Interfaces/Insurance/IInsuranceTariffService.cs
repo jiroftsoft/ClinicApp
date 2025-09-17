@@ -150,6 +150,17 @@ namespace ClinicApp.Interfaces.Insurance
 
         #endregion
 
+        #region Bulk Operations
+
+        /// <summary>
+        /// ایجاد تعرفه برای همه خدمات (Bulk Operation)
+        /// </summary>
+        /// <param name="model">مدل تعرفه بیمه</param>
+        /// <returns>تعداد تعرفه‌های ایجاد شده</returns>
+        Task<ServiceResult<int>> CreateBulkTariffForAllServicesAsync(InsuranceTariffCreateEditViewModel model);
+
+        #endregion
+
         #region Statistics Operations
 
         /// <summary>

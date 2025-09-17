@@ -29,12 +29,19 @@ namespace ClinicApp.ViewModels.Validators
             _serviceManagementService = serviceManagementService ?? throw new ArgumentNullException(nameof(serviceManagementService));
             _insuranceTariffService = insuranceTariffService ?? throw new ArgumentNullException(nameof(insuranceTariffService));
 
+            // اعتبارسنجی شناسه دپارتمان
+            RuleFor(x => x.DepartmentId)
+                .GreaterThan(0)
+                .WithMessage("لطفاً یک دپارتمان معتبر انتخاب کنید")
+                .WithErrorCode("REQUIRED_DEPARTMENT");
+
             // اعتبارسنجی شناسه طرح بیمه
             RuleFor(x => x.InsurancePlanId)
                 .GreaterThan(0)
                 .WithMessage("لطفاً یک طرح بیمه معتبر انتخاب کنید")
                 .MustAsync(BeValidInsurancePlanAsync)
-                .WithMessage("طرح بیمه انتخاب شده معتبر نیست یا حذف شده است");
+                .WithMessage("طرح بیمه انتخاب شده معتبر نیست یا حذف شده است")
+                .WithErrorCode("INVALID_INSURANCE_PLAN");
 
             // اعتبارسنجی شناسه خدمت - فقط وقتی "همه خدمات" انتخاب نشده
             RuleFor(x => x)
@@ -48,6 +55,7 @@ namespace ClinicApp.ViewModels.Validators
                     return model.ServiceId.HasValue && model.ServiceId.Value > 0;
                 })
                 .WithMessage("لطفاً یک خدمت معتبر انتخاب کنید یا گزینه 'همه خدمات' را انتخاب کنید")
+                .WithErrorCode("REQUIRED_SERVICE")
                 .When(x => !x.IsAllServices);
 
             // اعتبارسنجی معتبر بودن خدمت - فقط وقتی خدمت خاص انتخاب شده
@@ -60,37 +68,44 @@ namespace ClinicApp.ViewModels.Validators
             RuleFor(x => x.TariffPrice)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("قیمت تعرفه نمی‌تواند منفی باشد")
+                .WithErrorCode("INVALID_TARIFF_PRICE")
                 .LessThan(999999999.99m)
                 .WithMessage("قیمت تعرفه بیش از حد مجاز است")
+                .WithErrorCode("TARIFF_PRICE_TOO_HIGH")
                 .When(x => x.TariffPrice.HasValue);
 
             // اعتبارسنجی درصد سهم بیمه‌گر
             RuleFor(x => x.InsurerShare)
                 .InclusiveBetween(0, 100)
                 .WithMessage("درصد سهم بیمه‌گر باید بین 0 تا 100 باشد")
+                .WithErrorCode("INVALID_INSURER_SHARE")
                 .When(x => x.InsurerShare.HasValue);
 
             // اعتبارسنجی درصد سهم بیمار
             RuleFor(x => x.PatientShare)
                 .InclusiveBetween(0, 100)
                 .WithMessage("درصد سهم بیمار باید بین 0 تا 100 باشد")
+                .WithErrorCode("INVALID_PATIENT_SHARE")
                 .When(x => x.PatientShare.HasValue);
 
             // اعتبارسنجی فعال بودن
             RuleFor(x => x.IsActive)
                 .NotNull()
-                .WithMessage("وضعیت فعال بودن الزامی است");
+                .WithMessage("وضعیت فعال بودن الزامی است")
+                .WithErrorCode("REQUIRED_IS_ACTIVE");
 
-            // اعتبارسنجی عدم تکرار تعرفه برای همان طرح و خدمت
+            // اعتبارسنجی عدم تکرار تعرفه برای همان طرح و خدمت - فقط برای خدمت خاص
             RuleFor(x => x)
                 .MustAsync(NotBeDuplicateTariffAsync)
                 .WithMessage("تعرفه‌ای برای این طرح بیمه و خدمت قبلاً تعریف شده است")
-                .When(x => x.InsurancePlanId > 0 && x.ServiceId > 0);
+                .WithErrorCode("DUPLICATE_TARIFF")
+                .When(x => x.InsurancePlanId > 0 && x.ServiceId.HasValue && x.ServiceId > 0 && !x.IsAllServices);
 
             // اعتبارسنجی منطقی بودن درصدها
             RuleFor(x => x)
                 .Must(HaveValidPercentageSum)
                 .WithMessage("مجموع درصد سهم بیمه‌گر و بیمار نباید بیش از 100 باشد")
+                .WithErrorCode("INVALID_PERCENTAGE_SUM")
                 .When(x => x.InsurerShare.HasValue && x.PatientShare.HasValue);
 
             // اعتبارسنجی منطقی بودن مبالغ - فعلاً غیرفعال

@@ -50,6 +50,29 @@ namespace ClinicApp.Repositories.Insurance
         }
 
         /// <summary>
+        /// ایجاد تعرفه بیمه جدید
+        /// </summary>
+        public async Task<InsuranceTariff> CreateAsync(InsuranceTariff tariff)
+        {
+            try
+            {
+                _context.InsuranceTariffs.Add(tariff);
+                await _context.SaveChangesAsync();
+                
+                _logger.Information("تعرفه بیمه با موفقیت ایجاد شد. Id: {Id}, ServiceId: {ServiceId}, PlanId: {PlanId}",
+                    tariff.InsuranceTariffId, tariff.ServiceId, tariff.InsurancePlanId);
+                
+                return tariff;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ایجاد تعرفه بیمه. ServiceId: {ServiceId}, PlanId: {PlanId}",
+                    tariff.ServiceId, tariff.InsurancePlanId);
+                throw new InvalidOperationException("خطا در ایجاد تعرفه بیمه", ex);
+            }
+        }
+
+        /// <summary>
         /// دریافت تعرفه بیمه با جزئیات کامل
         /// </summary>
         public async Task<InsuranceTariff> GetByIdWithDetailsAsync(int id)

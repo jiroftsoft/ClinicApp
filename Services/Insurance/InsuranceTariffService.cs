@@ -21,6 +21,7 @@ namespace ClinicApp.Services.Insurance
         private readonly IInsuranceTariffRepository _tariffRepository;
         private readonly IInsurancePlanRepository _planRepository;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IServiceCalculationService _serviceCalculationService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
 
@@ -28,12 +29,14 @@ namespace ClinicApp.Services.Insurance
             IInsuranceTariffRepository tariffRepository,
             IInsurancePlanRepository planRepository,
             IServiceRepository serviceRepository,
+            IServiceCalculationService serviceCalculationService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
             _tariffRepository = tariffRepository ?? throw new ArgumentNullException(nameof(tariffRepository));
             _planRepository = planRepository ?? throw new ArgumentNullException(nameof(planRepository));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -178,14 +181,17 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
+                // محاسبات داینامیک
+                var calculatedValues = await CalculateTariffValuesAsync(model);
+                
                 // ایجاد entity
                 var tariff = new InsuranceTariff
                 {
                     ServiceId = model.ServiceId ?? 0, // 0 برای "همه خدمات"
                     InsurancePlanId = model.InsurancePlanId,
-                    TariffPrice = model.TariffPrice,
-                    PatientShare = model.PatientShare,
-                    InsurerShare = model.InsurerShare,
+                    TariffPrice = calculatedValues.TariffPrice,
+                    PatientShare = calculatedValues.PatientShare,
+                    InsurerShare = calculatedValues.InsurerShare,
                     CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = _currentUserService.UserId,
                     IsDeleted = false
@@ -246,12 +252,15 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
+                // محاسبات داینامیک
+                var calculatedValues = await CalculateTariffValuesAsync(model);
+                
                 // به‌روزرسانی
                 existingTariff.ServiceId = model.ServiceId ?? 0; // 0 برای "همه خدمات"
                 existingTariff.InsurancePlanId = model.InsurancePlanId;
-                existingTariff.TariffPrice = model.TariffPrice;
-                existingTariff.PatientShare = model.PatientShare;
-                existingTariff.InsurerShare = model.InsurerShare;
+                existingTariff.TariffPrice = calculatedValues.TariffPrice;
+                existingTariff.PatientShare = calculatedValues.PatientShare;
+                existingTariff.InsurerShare = calculatedValues.InsurerShare;
                 existingTariff.UpdatedAt = DateTime.UtcNow;
                 existingTariff.UpdatedByUserId = _currentUserService.UserId;
 
@@ -528,6 +537,377 @@ namespace ClinicApp.Services.Insurance
                 _logger.Error(ex, "خطا در تغییر وضعیت گروهی تعرفه‌ها. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult.Failed("خطا در تغییر وضعیت تعرفه‌ها");
+            }
+        }
+
+        #endregion
+
+        #region Bulk Operations
+
+        /// <summary>
+        /// ایجاد تعرفه برای همه خدمات (Bulk Operation)
+        /// </summary>
+        public async Task<ServiceResult<int>> CreateBulkTariffForAllServicesAsync(InsuranceTariffCreateEditViewModel model)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: شروع Bulk Operation برای همه خدمات - PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                    model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت همه خدمات فعال
+                var allServices = await _serviceRepository.GetAllActiveServicesAsync();
+                if (!allServices.Any())
+                {
+                    _logger.Warning("🏥 MEDICAL: هیچ خدمت فعالی یافت نشد - User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<int>.Failed("هیچ خدمت فعالی یافت نشد");
+                }
+
+                var createdCount = 0;
+                var errors = new List<string>();
+
+                // ایجاد تعرفه برای هر خدمت
+                foreach (var service in allServices)
+                {
+                    try
+                    {
+                        // بررسی وجود تعرفه مشابه
+                        var exists = await _tariffRepository.DoesTariffExistAsync(model.InsurancePlanId, service.ServiceId, 0);
+                        if (exists)
+                        {
+                            _logger.Information("🏥 MEDICAL: تعرفه برای خدمت {ServiceId} ({ServiceName}) قبلاً وجود دارد - User: {UserName} (Id: {UserId})",
+                                service.ServiceId, service.Title, _currentUserService.UserName, _currentUserService.UserId);
+                            continue;
+                        }
+
+                        // محاسبه مقادیر تعرفه
+                        var calculatedValues = await CalculateTariffValuesForServiceAsync(model, service);
+
+                        // ایجاد تعرفه
+                        var tariff = new InsuranceTariff
+                        {
+                            ServiceId = service.ServiceId,
+                            InsurancePlanId = model.InsurancePlanId,
+                            TariffPrice = calculatedValues.TariffPrice,
+                            PatientShare = calculatedValues.PatientShare,
+                            InsurerShare = calculatedValues.InsurerShare,
+                            CreatedAt = DateTime.UtcNow,
+                            CreatedByUserId = _currentUserService.UserId,
+                            IsDeleted = false
+                        };
+
+                        await _tariffRepository.CreateAsync(tariff);
+                        createdCount++;
+
+                        _logger.Information("🏥 MEDICAL: تعرفه برای خدمت {ServiceId} ({ServiceName}) ایجاد شد - User: {UserName} (Id: {UserId})",
+                            service.ServiceId, service.Title, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+                    catch (Exception ex)
+                    {
+                        var errorMsg = $"خطا در ایجاد تعرفه برای خدمت {service.ServiceId} ({service.Title}): {ex.Message}";
+                        errors.Add(errorMsg);
+                        _logger.Error(ex, "🏥 MEDICAL: {ErrorMsg} - User: {UserName} (Id: {UserId})",
+                            errorMsg, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+                }
+
+                _logger.Information("🏥 MEDICAL: Bulk Operation تکمیل شد - Created: {CreatedCount}, Errors: {ErrorCount}, User: {UserName} (Id: {UserId})",
+                    createdCount, errors.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                if (errors.Any())
+                {
+                    return ServiceResult<int>.Failed($"تعداد {createdCount} تعرفه ایجاد شد، اما {errors.Count} خطا رخ داد: {string.Join("; ", errors)}");
+                }
+
+                return ServiceResult<int>.Successful(createdCount);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در Bulk Operation - PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                    model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<int>.Failed("خطا در ایجاد تعرفه برای همه خدمات");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه مقادیر تعرفه برای یک خدمت خاص
+        /// </summary>
+        private async Task<(decimal? TariffPrice, decimal? PatientShare, decimal? InsurerShare)> CalculateTariffValuesForServiceAsync(
+            InsuranceTariffCreateEditViewModel model, Models.Entities.Clinic.Service service)
+        {
+            try
+            {
+                // دریافت طرح بیمه
+                var plan = await _planRepository.GetByIdAsync(model.InsurancePlanId);
+                if (plan == null)
+                {
+                    _logger.Warning("🏥 MEDICAL: طرح بیمه یافت نشد - PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                        model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    return (null, null, null);
+                }
+
+                decimal? tariffPrice = model.TariffPrice;
+                decimal? patientShare = model.PatientShare;
+                decimal? insurerShare = model.InsurerShare;
+
+                // محاسبه قیمت تعرفه با استفاده از موتور اصلی محاسبات
+                if (!tariffPrice.HasValue)
+                {
+                    _logger.Information("🏥 MEDICAL: شروع محاسبه قیمت خدمت در Bulk Operation - ServiceId: {ServiceId}, ServiceTitle: {ServiceTitle}, BasePrice: {BasePrice}, IsHashtagged: {IsHashtagged}. User: {UserName} (Id: {UserId})",
+                        service.ServiceId, service.Title, service.Price, service.IsHashtagged, _currentUserService.UserName, _currentUserService.UserId);
+
+                    // بررسی ServiceComponents
+                    var serviceWithComponents = await _serviceRepository.GetByIdWithComponentsAsync(service.ServiceId);
+                    if (serviceWithComponents?.ServiceComponents != null && serviceWithComponents.ServiceComponents.Any())
+                    {
+                        _logger.Information("🏥 MEDICAL: ServiceComponents موجود است در Bulk - Count: {Count}. User: {UserName} (Id: {UserId})",
+                            serviceWithComponents.ServiceComponents.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                        foreach (var component in serviceWithComponents.ServiceComponents)
+                        {
+                            _logger.Information("🏥 MEDICAL: ServiceComponent در Bulk - Type: {Type}, Coefficient: {Coefficient}, IsActive: {IsActive}, IsDeleted: {IsDeleted}. User: {UserName} (Id: {UserId})",
+                                component.ComponentType, component.Coefficient, component.IsActive, component.IsDeleted, _currentUserService.UserName, _currentUserService.UserId);
+                        }
+                    }
+                    else
+                    {
+                        _logger.Warning("🏥 MEDICAL: ServiceComponents موجود نیست یا خالی است در Bulk - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                            service.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+
+                    tariffPrice = _serviceCalculationService.CalculateServicePrice(service);
+                    _logger.Information("🏥 MEDICAL: قیمت تعرفه محاسبه شد در Bulk - ServiceId: {ServiceId}, CalculatedPrice: {Price}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
+                        service.ServiceId, tariffPrice, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+
+                    // اگر قیمت محاسبه شده 0 است، بررسی بیشتر
+                    if (tariffPrice == 0)
+                    {
+                        _logger.Warning("🏥 MEDICAL: قیمت محاسبه شده 0 است در Bulk - ServiceId: {ServiceId}, ServiceTitle: {ServiceTitle}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
+                            service.ServiceId, service.Title, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+
+                        // بررسی ServiceComponents به صورت مستقیم
+                        var directComponents = await _serviceRepository.GetServiceComponentsAsync(service.ServiceId);
+
+                        _logger.Information("🏥 MEDICAL: بررسی مستقیم ServiceComponents در Bulk - ServiceId: {ServiceId}, Count: {Count}. User: {UserName} (Id: {UserId})",
+                            service.ServiceId, directComponents.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                        foreach (var comp in directComponents)
+                        {
+                            _logger.Information("🏥 MEDICAL: Direct ServiceComponent در Bulk - Type: {Type}, Coefficient: {Coefficient}, IsActive: {IsActive}. User: {UserName} (Id: {UserId})",
+                                comp.ComponentType, comp.Coefficient, comp.IsActive, _currentUserService.UserName, _currentUserService.UserId);
+                        }
+
+                        // اگر ServiceComponents موجود نیست، از قیمت پایه استفاده کن
+                        if (!directComponents.Any())
+                        {
+                            _logger.Warning("🏥 MEDICAL: هیچ ServiceComponent یافت نشد در Bulk - استفاده از قیمت پایه. ServiceId: {ServiceId}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
+                                service.ServiceId, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+                            
+                            if (service.Price > 0)
+                            {
+                                tariffPrice = service.Price;
+                                _logger.Information("🏥 MEDICAL: قیمت پایه استفاده شد در Bulk - ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
+                                    service.ServiceId, tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+                            }
+                            else
+                            {
+                                _logger.Error("🏥 MEDICAL: قیمت پایه هم 0 است در Bulk - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                                    service.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                            }
+                        }
+                    }
+                }
+
+                // محاسبه سهم بیمه و بیمار بر اساس درصد (مطابق با Entity Model)
+                if (tariffPrice.HasValue)
+                {
+                    // تنظیم مقادیر نهایی بر اساس درصد
+                    if (!insurerShare.HasValue)
+                    {
+                        insurerShare = plan.CoveragePercent; // درصد پوشش بیمه
+                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+
+                    if (!patientShare.HasValue)
+                    {
+                        patientShare = 100 - plan.CoveragePercent; // درصد سهم بیمار
+                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد - PlanId: {PlanId}, PatientShare: {PatientShare}%, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, patientShare, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+
+                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}%, PatientShare: {PatientShare}%, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                        tariffPrice.Value, insurerShare.Value, patientShare.Value, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _logger.Warning("🏥 MEDICAL: قیمت تعرفه محاسبه نشده - محاسبه سهم‌ها امکان‌پذیر نیست. PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                        model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                return (tariffPrice, patientShare, insurerShare);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه مقادیر تعرفه - ServiceId: {ServiceId}, PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                    service.ServiceId, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                return (null, null, null);
+            }
+        }
+
+        #endregion
+
+        #region Calculation Operations
+
+        /// <summary>
+        /// محاسبه مقادیر تعرفه به صورت داینامیک
+        /// </summary>
+        private async Task<(decimal? TariffPrice, decimal? PatientShare, decimal? InsurerShare)> CalculateTariffValuesAsync(InsuranceTariffCreateEditViewModel model)
+        {
+            try
+            {
+                _logger.Information("شروع محاسبات داینامیک تعرفه. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت طرح بیمه
+                var plan = await _planRepository.GetByIdAsync(model.InsurancePlanId);
+                if (plan == null)
+                {
+                    _logger.Warning("طرح بیمه یافت نشد. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                        model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    return (null, null, null);
+                }
+
+                decimal? tariffPrice = model.TariffPrice;
+                decimal? patientShare = model.PatientShare;
+                decimal? insurerShare = model.InsurerShare;
+
+                // محاسبه قیمت تعرفه با استفاده از موتور اصلی محاسبات
+                if (!tariffPrice.HasValue)
+                {
+                    if (model.ServiceId.HasValue)
+                    {
+                        // محاسبه برای خدمت خاص
+                        var service = await _serviceRepository.GetServiceByIdAsync(model.ServiceId.Value);
+                        if (service != null)
+                        {
+                            _logger.Information("🏥 MEDICAL: شروع محاسبه قیمت خدمت - ServiceId: {ServiceId}, ServiceTitle: {ServiceTitle}, BasePrice: {BasePrice}, IsHashtagged: {IsHashtagged}. User: {UserName} (Id: {UserId})",
+                                model.ServiceId, service.Title, service.Price, service.IsHashtagged, _currentUserService.UserName, _currentUserService.UserId);
+
+                            // بررسی ServiceComponents
+                            var serviceWithComponents = await _serviceRepository.GetByIdWithComponentsAsync(model.ServiceId.Value);
+                            if (serviceWithComponents?.ServiceComponents != null && serviceWithComponents.ServiceComponents.Any())
+                            {
+                                _logger.Information("🏥 MEDICAL: ServiceComponents موجود است - Count: {Count}. User: {UserName} (Id: {UserId})",
+                                    serviceWithComponents.ServiceComponents.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                                foreach (var component in serviceWithComponents.ServiceComponents)
+                                {
+                                    _logger.Information("🏥 MEDICAL: ServiceComponent - Type: {Type}, Coefficient: {Coefficient}, IsActive: {IsActive}, IsDeleted: {IsDeleted}. User: {UserName} (Id: {UserId})",
+                                        component.ComponentType, component.Coefficient, component.IsActive, component.IsDeleted, _currentUserService.UserName, _currentUserService.UserId);
+                                }
+                            }
+                            else
+                            {
+                                _logger.Warning("🏥 MEDICAL: ServiceComponents موجود نیست یا خالی است - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                                    model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                            }
+
+                            // استفاده از ServiceCalculationService برای محاسبه دقیق
+                            tariffPrice = _serviceCalculationService.CalculateServicePrice(service);
+                            _logger.Information("🏥 MEDICAL: قیمت تعرفه محاسبه شد - ServiceId: {ServiceId}, CalculatedPrice: {Price}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
+                                model.ServiceId, tariffPrice, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+
+                            // اگر قیمت محاسبه شده 0 است، بررسی بیشتر
+                            if (tariffPrice == 0)
+                            {
+                                _logger.Warning("🏥 MEDICAL: قیمت محاسبه شده 0 است - ServiceId: {ServiceId}, ServiceTitle: {ServiceTitle}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
+                                    model.ServiceId, service.Title, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+
+                                // بررسی ServiceComponents به صورت مستقیم
+                                var directComponents = await _serviceRepository.GetServiceComponentsAsync(model.ServiceId.Value);
+
+                                _logger.Information("🏥 MEDICAL: بررسی مستقیم ServiceComponents - ServiceId: {ServiceId}, Count: {Count}. User: {UserName} (Id: {UserId})",
+                                    model.ServiceId, directComponents.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                                foreach (var comp in directComponents)
+                                {
+                                    _logger.Information("🏥 MEDICAL: Direct ServiceComponent - Type: {Type}, Coefficient: {Coefficient}, IsActive: {IsActive}. User: {UserName} (Id: {UserId})",
+                                        comp.ComponentType, comp.Coefficient, comp.IsActive, _currentUserService.UserName, _currentUserService.UserId);
+                                }
+
+                                // اگر ServiceComponents موجود نیست، از قیمت پایه استفاده کن
+                                if (!directComponents.Any())
+                                {
+                                    _logger.Warning("🏥 MEDICAL: هیچ ServiceComponent یافت نشد - استفاده از قیمت پایه. ServiceId: {ServiceId}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
+                                        model.ServiceId, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+                                    
+                                    if (service.Price > 0)
+                                    {
+                                        tariffPrice = service.Price;
+                                        _logger.Information("🏥 MEDICAL: قیمت پایه استفاده شد - ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
+                                            model.ServiceId, tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+                                    }
+                                    else
+                                    {
+                                        _logger.Error("🏥 MEDICAL: قیمت پایه هم 0 است - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                                            model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                                    }
+                                }
+                            }
+                        }
+                        else
+                        {
+                            _logger.Warning("🏥 MEDICAL: خدمت یافت نشد - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                                model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                        }
+                    }
+                    else if (model.IsAllServices)
+                    {
+                        // برای "همه خدمات" - استفاده از قیمت پیش‌فرض یا 0
+                        tariffPrice = 0; // یا می‌توانید قیمت پیش‌فرض تعریف کنید
+                        _logger.Information("🏥 MEDICAL: قیمت تعرفه برای 'همه خدمات' تنظیم شد - TariffPrice: {Price}. User: {UserName} (Id: {UserId})",
+                            tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+                }
+
+                // محاسبه سهم بیمه و بیمار بر اساس درصد (مطابق با Entity Model)
+                if (tariffPrice.HasValue)
+                {
+                    // تنظیم مقادیر نهایی بر اساس درصد
+                    if (!insurerShare.HasValue)
+                    {
+                        insurerShare = plan.CoveragePercent; // درصد پوشش بیمه
+                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد در Bulk - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+
+                    if (!patientShare.HasValue)
+                    {
+                        patientShare = 100 - plan.CoveragePercent; // درصد سهم بیمار
+                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد در Bulk - PlanId: {PlanId}, PatientShare: {PatientShare}%, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, patientShare, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+
+                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه در Bulk - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}%, PatientShare: {PatientShare}%, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                        tariffPrice.Value, insurerShare.Value, patientShare.Value, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _logger.Warning("🏥 MEDICAL: قیمت تعرفه محاسبه نشده در Bulk - محاسبه سهم‌ها امکان‌پذیر نیست. PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                        model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                _logger.Information("محاسبات داینامیک تکمیل شد. TariffPrice: {TariffPrice}, PatientShare: {PatientShare}%, InsurerShare: {InsurerShare}%. User: {UserName} (Id: {UserId})",
+                    tariffPrice, patientShare, insurerShare, _currentUserService.UserName, _currentUserService.UserId);
+
+                return (tariffPrice, patientShare, insurerShare);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در محاسبات داینامیک تعرفه. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                return (null, null, null);
             }
         }
 

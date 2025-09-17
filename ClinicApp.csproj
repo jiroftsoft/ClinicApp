@@ -610,6 +610,7 @@
     <Compile Include="Migrations\202509170542042_MakeNewChnage140402426.Designer.cs">
       <DependentUpon>202509170542042_MakeNewChnage140402426.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
     <Compile Include="Models\Core\ApplicationUser.cs" />
