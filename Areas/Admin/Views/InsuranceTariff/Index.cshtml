@@ -178,22 +178,206 @@
 
             // Load tariffs function
             function loadTariffs() {
+                console.log('🔄 شروع بارگیری تعرفه‌ها...');
                 var formData = $('#filterForm').serialize();
+                console.log('📋 داده‌های فرم:', formData);
                 
                 $.ajax({
                     url: '@Url.Action("LoadTariffs")',
                     type: 'POST',
                     data: formData,
                     success: function(response) {
+                        console.log('📊 پاسخ بارگیری تعرفه‌ها:', response);
                         $('#tariffsList').html(response);
+                        console.log('✅ تعرفه‌ها بارگیری شدند');
+                        // به‌روزرسانی فیلترها
+                        updateFilterDropdowns();
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری تعرفه‌ها:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
                         alert('خطا در بارگیری لیست تعرفه‌های بیمه');
                     }
                 });
             }
 
-            // Auto-load on page load
+            // Update filter dropdowns
+            function updateFilterDropdowns() {
+                console.log('🔄 شروع بارگیری فیلترها...');
+                
+                // بارگیری ارائه‌دهندگان بیمه
+                $.ajax({
+                    url: '@Url.Action("GetInsuranceProviders")',
+                    type: 'GET',
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ ارائه‌دهندگان بیمه:', response);
+                        console.log('🔍 response.success:', response.success, 'type:', typeof response.success);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        // بررسی دقیق response
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">همه ارائه‌دهندگان</option>';
+                            $.each(data.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#InsuranceProviderId').hasClass('select2-hidden-accessible')) {
+                                $('#InsuranceProviderId').select2('destroy');
+                            }
+                            
+                            $('#InsuranceProviderId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#InsuranceProviderId').select2({
+                                placeholder: 'انتخاب ارائه‌دهنده بیمه',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ ارائه‌دهندگان بیمه بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری ارائه‌دهندگان بیمه - data:', data);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری ارائه‌دهندگان بیمه:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                    }
+                });
+
+                // بارگیری طرح‌های بیمه
+                $.ajax({
+                    url: '@Url.Action("GetInsurancePlans")',
+                    type: 'GET',
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ طرح‌های بیمه:', response);
+                        console.log('🔍 response.success:', response.success, 'type:', typeof response.success);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        // بررسی دقیق response
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">همه طرح‌ها</option>';
+                            $.each(data.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#InsurancePlanId').hasClass('select2-hidden-accessible')) {
+                                $('#InsurancePlanId').select2('destroy');
+                            }
+                            
+                            $('#InsurancePlanId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#InsurancePlanId').select2({
+                                placeholder: 'انتخاب طرح بیمه',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ طرح‌های بیمه بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری طرح‌های بیمه - data:', data);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری طرح‌های بیمه:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                    }
+                });
+
+                // بارگیری خدمات
+                $.ajax({
+                    url: '@Url.Action("GetServices")',
+                    type: 'GET',
+                    data: { serviceCategoryId: 0 },
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ خدمات:', response);
+                        console.log('🔍 response.success:', response.success, 'type:', typeof response.success);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        // بررسی دقیق response
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">همه خدمات</option>';
+                            $.each(data.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#ServiceId').hasClass('select2-hidden-accessible')) {
+                                $('#ServiceId').select2('destroy');
+                            }
+                            
+                            $('#ServiceId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#ServiceId').select2({
+                                placeholder: 'انتخاب خدمت',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ خدمات بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری خدمات - data:', data);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری خدمات:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                    }
+                });
+            }
+
+            // Initialize filters and load data on page load
+            updateFilterDropdowns();
             loadTariffs();
         });
     </script>

@@ -202,6 +202,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 filter.PageNumber = filter.PageNumber <= 0 ? 1 : filter.PageNumber;
                 filter.PageSize = filter.PageSize <= 0 ? PageSize : filter.PageSize;
 
+                // بارگیری SelectLists برای فیلتر
+                await LoadSelectListsForFilterAsync(filter);
+
                 var result = await _insuranceTariffService.GetTariffsAsync(
                     filter.InsurancePlanId, filter.ServiceId, filter.InsuranceProviderId,
                     filter.SearchTerm, filter.PageNumber, filter.PageSize);
@@ -1036,12 +1039,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (result.Success)
                 {
                     var services = result.Data.Select(s => new { id = s.Id, name = s.Name }).ToList();
+                    _logger.Information("🏥 MEDICAL: خدمات با موفقیت دریافت شدند - Count: {Count}, ServiceCategoryId: {ServiceCategoryId}, User: {UserName} (Id: {UserId})",
+                        services.Count, serviceCategoryId, _currentUserService.UserName, _currentUserService.UserId);
                     return Json(new { success = true, data = services }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
-                    _logger.Warning("🏥 MEDICAL: خطا در دریافت خدمات - ServiceCategoryId: {ServiceCategoryId}, Error: {Error}",
-                        serviceCategoryId, result.Message);
+                    _logger.Warning("🏥 MEDICAL: خطا در دریافت خدمات - ServiceCategoryId: {ServiceCategoryId}, Error: {Error}, User: {UserName} (Id: {UserId})",
+                        serviceCategoryId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -1058,7 +1063,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت طرح‌های بیمه برای ارائه‌دهنده
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetInsurancePlans(int providerId)
+        public async Task<JsonResult> GetInsurancePlans(int? providerId = null)
         {
             try
             {
@@ -1070,12 +1075,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (result.Success)
                 {
                     var plans = result.Data.Select(p => new { id = p.InsurancePlanId, name = p.Name }).ToList();
+                    _logger.Information("🏥 MEDICAL: طرح‌های بیمه با موفقیت دریافت شدند - Count: {Count}, ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
+                        plans.Count, providerId, _currentUserService.UserName, _currentUserService.UserId);
                     return Json(new { success = true, data = plans }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
-                    _logger.Warning("🏥 MEDICAL: خطا در دریافت طرح‌های بیمه - ProviderId: {ProviderId}, Error: {Error}",
-                        providerId, result.Message);
+                    _logger.Warning("🏥 MEDICAL: خطا در دریافت طرح‌های بیمه - ProviderId: {ProviderId}, Error: {Error}, User: {UserName} (Id: {UserId})",
+                        providerId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -1085,6 +1092,42 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     providerId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت ارائه‌دهندگان بیمه
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetInsuranceProviders()
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: درخواست دریافت ارائه‌دهندگان بیمه - User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _insurancePlanService.GetActiveProvidersForLookupAsync();
+                
+                if (result.Success)
+                {
+                    var providers = result.Data.Select(p => new { id = p.InsuranceProviderId, name = p.Name }).ToList();
+                    _logger.Information("🏥 MEDICAL: ارائه‌دهندگان بیمه با موفقیت دریافت شدند - Count: {Count}, User: {UserName} (Id: {UserId})",
+                        providers.Count, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = true, data = providers }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("🏥 MEDICAL: خطا در دریافت ارائه‌دهندگان بیمه - Error: {Error}, User: {UserName} (Id: {UserId})",
+                        result.Message, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت ارائه‌دهندگان بیمه - User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = false, message = "خطا در دریافت ارائه‌دهندگان بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
 

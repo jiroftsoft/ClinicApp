@@ -26,6 +26,16 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         public string Code { get; set; }
 
         /// <summary>
+        /// Value برای SelectList (شناسه ارائه‌دهنده)
+        /// </summary>
+        public int Value => InsuranceProviderId;
+
+        /// <summary>
+        /// Text برای SelectList (نام ارائه‌دهنده)
+        /// </summary>
+        public string Text => Name;
+
+        /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
         public static InsuranceProviderLookupViewModel FromEntity(Models.Entities.Insurance.InsuranceProvider entity)
