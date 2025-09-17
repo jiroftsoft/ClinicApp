@@ -47,6 +47,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly IInsuranceTariffService _insuranceTariffService;
         private readonly IInsurancePlanService _insurancePlanService;
         private readonly IServiceManagementService _serviceManagementService;
+        private readonly IServiceService _serviceService;
         private readonly IDepartmentManagementService _departmentManagementService;
         private readonly ILogger _logger;
         private readonly ICurrentUserService _currentUserService;
@@ -59,6 +60,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             IInsuranceTariffService insuranceTariffService,
             IInsurancePlanService insurancePlanService,
             IServiceManagementService serviceManagementService,
+            IServiceService serviceService,
             IDepartmentManagementService departmentManagementService,
             ILogger logger,
             ICurrentUserService currentUserService,
@@ -71,6 +73,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _insuranceTariffService = insuranceTariffService ?? throw new ArgumentNullException(nameof(insuranceTariffService));
             _insurancePlanService = insurancePlanService ?? throw new ArgumentNullException(nameof(insurancePlanService));
             _serviceManagementService = serviceManagementService ?? throw new ArgumentNullException(nameof(serviceManagementService));
+            _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
             _departmentManagementService = departmentManagementService ?? throw new ArgumentNullException(nameof(departmentManagementService));
             _logger = logger.ForContext<InsuranceTariffController>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -1245,6 +1248,47 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     serviceCategoryId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(new { success = false, message = "خطا در دریافت خدمات" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// جستجوی خدمات برای Select2 AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> SearchServices(string searchTerm = "", int page = 1, int pageSize = 20)
+        {
+            try
+            {
+                _logger.Information("🔍 MEDICAL: درخواست جستجوی خدمات - SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}, User: {UserName} (Id: {UserId})",
+                    searchTerm, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _serviceService.SearchServicesForSelect2Async(searchTerm, page, pageSize);
+                
+                if (result.Success)
+                {
+                    var services = result.Data.Items.Select(s => new { id = s.ServiceId, name = s.Title }).ToList();
+                    _logger.Information("🔍 MEDICAL: جستجوی خدمات موفق - Count: {Count}, TotalCount: {TotalCount}, SearchTerm: {SearchTerm}, User: {UserName} (Id: {UserId})",
+                        services.Count, result.Data.TotalItems, searchTerm, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = services,
+                        totalCount = result.Data.TotalItems
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("🔍 MEDICAL: خطا در جستجوی خدمات - SearchTerm: {SearchTerm}, Error: {Error}, User: {UserName} (Id: {UserId})",
+                        searchTerm, result.Message, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🔍 MEDICAL: خطا در جستجوی خدمات - SearchTerm: {SearchTerm}, User: {UserName} (Id: {UserId})",
+                    searchTerm, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = false, message = "خطا در جستجوی خدمات" }, JsonRequestBehavior.AllowGet);
             }
         }
 

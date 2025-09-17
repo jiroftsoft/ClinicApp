@@ -105,6 +105,15 @@ namespace ClinicApp.Interfaces
         Task<IEnumerable<ServiceSelectItem>> GetActiveServicesByCategoryAsync(int serviceCategoryId);
 
         /// <summary>
+        /// جستجوی خدمات برای Select2 با پشتیبانی از AJAX
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="page">شماره صفحه</param>
+        /// <param name="pageSize">تعداد آیتم در هر صفحه</param>
+        /// <returns>نتیجه جستجو با صفحه‌بندی</returns>
+        Task<ServiceResult<PagedResult<ServiceSelectItem>>> SearchServicesForSelect2Async(string searchTerm = "", int page = 1, int pageSize = 20);
+
+        /// <summary>
         /// بررسی اینکه آیا خدمات قابل حذف است یا خیر
         /// </summary>
         /// <param name="serviceId">شناسه خدمات</param>

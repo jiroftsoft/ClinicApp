@@ -119,21 +119,21 @@
                                 <div class="form-group">
                                     <label for="ProviderId">ارائه‌دهنده بیمه</label>
                                     @Html.DropDownList("InsuranceProviderId", Model.Filter.InsuranceProviderSelectList, 
-                                        "همه ارائه‌دهندگان", new { @class = "form-control" })
+                                        "همه ارائه‌دهندگان", new { @class = "form-control select2-provider-filter", @id = "InsuranceProviderId" })
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="PlanId">طرح بیمه</label>
                                     @Html.DropDownList("InsurancePlanId", Model.Filter.InsurancePlanSelectList, 
-                                        "همه طرح‌ها", new { @class = "form-control" })
+                                        "همه طرح‌ها", new { @class = "form-control select2-plan-filter", @id = "InsurancePlanId" })
                                 </div>
                             </div>
                             <div class="col-md-3">
                                 <div class="form-group">
                                     <label for="ServiceId">خدمت</label>
                                     @Html.DropDownList("ServiceId", Model.Filter.ServiceSelectList, 
-                                        "همه خدمات", new { @class = "form-control" })
+                                        "همه خدمات", new { @class = "form-control select2-service-filter", @id = "ServiceId" })
                                 </div>
                             </div>
                         </div>
@@ -244,6 +244,97 @@
             border-radius: 12px;
             font-size: 0.8em;
             font-weight: 500;
+        }
+        
+        /* Select2 Professional Styling for Medical Environment */
+        .select2-container {
+            width: 100% !important;
+        }
+        
+        .select2-container--default .select2-selection--single {
+            height: 38px;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            background-color: #fff;
+            transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        
+        .select2-container--default .select2-selection--single:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 36px;
+            padding-left: 12px;
+            padding-right: 20px;
+            color: #495057;
+            font-size: 14px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+            right: 8px;
+        }
+        
+        .select2-dropdown {
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+            z-index: 9999;
+        }
+        
+        .select2-container--default .select2-search--dropdown .select2-search__field {
+            border: 1px solid #ced4da;
+            border-radius: 0.25rem;
+            padding: 8px 12px;
+            font-size: 14px;
+            margin: 8px;
+            width: calc(100% - 16px);
+        }
+        
+        .select2-container--default .select2-results__option {
+            padding: 8px 12px;
+            font-size: 14px;
+            color: #495057;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .select2-container--default .select2-results__option--highlighted[aria-selected] {
+            background-color: #007bff;
+            color: white;
+        }
+        
+        .select2-container--default .select2-results__option[aria-selected=true] {
+            background-color: #e9ecef;
+            color: #495057;
+        }
+        
+        /* RTL Support for Select2 */
+        .select2-container--default.select2-container--rtl .select2-selection--single .select2-selection__rendered {
+            padding-right: 12px;
+            padding-left: 20px;
+            text-align: right;
+        }
+        
+        .select2-container--default.select2-container--rtl .select2-selection--single .select2-selection__arrow {
+            left: 8px;
+            right: auto;
+        }
+        
+        /* Loading indicator for Select2 */
+        .select2-container--default .select2-selection--single .select2-selection__rendered::after {
+            content: "⏳";
+            position: absolute;
+            right: 25px;
+            top: 50%;
+            transform: translateY(-50%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .select2-container--default.select2-container--loading .select2-selection--single .select2-selection__rendered::after {
+            opacity: 1;
         }
         
         .medical-price {
@@ -617,9 +708,102 @@
                 $('#ServiceId').html(options);
             }
 
+            // Initialize Select2 for filters
+            initializeSelect2Filters();
+            
             // Initialize filters and load data on page load
             updateFilterDropdowns();
             loadTariffs();
         });
+        
+        // Initialize Select2 for all filter dropdowns
+        function initializeSelect2Filters() {
+            console.log('🎯 شروع راه‌اندازی Select2 برای فیلترها...');
+            
+            // Initialize Insurance Provider Select2
+            $('#InsuranceProviderId').select2({
+                placeholder: 'همه ارائه‌دهندگان',
+                allowClear: true,
+                dir: 'rtl',
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return 'هیچ ارائه‌دهنده‌ای یافت نشد';
+                    },
+                    searching: function() {
+                        return 'در حال جستجو...';
+                    }
+                }
+            });
+            
+            // Initialize Insurance Plan Select2
+            $('#InsurancePlanId').select2({
+                placeholder: 'همه طرح‌ها',
+                allowClear: true,
+                dir: 'rtl',
+                width: '100%',
+                language: {
+                    noResults: function() {
+                        return 'هیچ طرح بیمه‌ای یافت نشد';
+                    },
+                    searching: function() {
+                        return 'در حال جستجو...';
+                    }
+                }
+            });
+            
+            // Initialize Service Select2 with AJAX Data Source
+            $('#ServiceId').select2({
+                placeholder: 'همه خدمات',
+                allowClear: true,
+                dir: 'rtl',
+                width: '100%',
+                minimumInputLength: 2,
+                ajax: {
+                    url: '@Url.Action("SearchServices")',
+                    dataType: 'json',
+                    delay: 300,
+                    data: function (params) {
+                        return {
+                            searchTerm: params.term,
+                            page: params.page || 1,
+                            pageSize: 20
+                        };
+                    },
+                    processResults: function (data, params) {
+                        params.page = params.page || 1;
+                        
+                        return {
+                            results: data.data.map(function(item) {
+                                return {
+                                    id: item.id,
+                                    text: item.name
+                                };
+                            }),
+                            pagination: {
+                                more: (params.page * 20) < data.totalCount
+                            }
+                        };
+                    },
+                    cache: true
+                },
+                language: {
+                    noResults: function() {
+                        return 'هیچ خدمتی یافت نشد';
+                    },
+                    searching: function() {
+                        return 'در حال جستجو...';
+                    },
+                    inputTooShort: function() {
+                        return 'حداقل 2 کاراکتر وارد کنید';
+                    },
+                    loadingMore: function() {
+                        return 'بارگیری بیشتر...';
+                    }
+                }
+            });
+            
+            console.log('✅ Select2 برای تمام فیلترها راه‌اندازی شد');
+        }
     </script>
 }

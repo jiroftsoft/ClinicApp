@@ -1042,6 +1042,80 @@ public class ServiceService : IServiceService
     }
 
     /// <summary>
+    /// جستجوی خدمات برای Select2 با پشتیبانی از AJAX
+    /// </summary>
+    /// <param name="searchTerm">عبارت جستجو</param>
+    /// <param name="page">شماره صفحه</param>
+    /// <param name="pageSize">تعداد آیتم در هر صفحه</param>
+    /// <returns>نتیجه جستجو با صفحه‌بندی</returns>
+    public async Task<ServiceResult<PagedResult<ServiceSelectItem>>> SearchServicesForSelect2Async(string searchTerm = "", int page = 1, int pageSize = 20)
+    {
+        _log.Information(
+            "درخواست جستجوی خدمات برای Select2. SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}. User: {UserName} (Id: {UserId})",
+            searchTerm, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+        try
+        {
+            // اعتبارسنجی ورودی
+            if (page <= 0) page = 1;
+            if (pageSize <= 0) pageSize = 20;
+            if (pageSize > 100) pageSize = 100; // محدودیت برای جلوگیری از بارگذاری بیش از حد
+
+            var query = _context.Services
+                .AsNoTracking()
+                .Where(s => !s.IsDeleted && s.IsActive);
+
+            // اعمال فیلتر جستجو
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                var trimmedSearchTerm = searchTerm.Trim();
+                query = query.Where(s => 
+                    s.Title.Contains(trimmedSearchTerm) ||
+                    s.ServiceCode.Contains(trimmedSearchTerm));
+            }
+
+            // محاسبه تعداد کل
+            var totalCount = await query.CountAsync();
+
+            // دریافت آیتم‌های صفحه جاری
+            var items = await query
+                .OrderBy(s => s.Title)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .Select(s => new ServiceSelectItem
+                {
+                    ServiceId = s.ServiceId,
+                    Title = s.Title,
+                    ServiceCode = s.ServiceCode
+                })
+                .ToListAsync();
+
+            var result = new PagedResult<ServiceSelectItem>
+            {
+                Items = items,
+                TotalItems = totalCount,
+                PageNumber = page,
+                PageSize = pageSize
+            };
+
+            _log.Information(
+                "جستجوی خدمات برای Select2 موفق. Found: {Count}, Total: {TotalCount}, SearchTerm: {SearchTerm}. User: {UserName} (Id: {UserId})",
+                items.Count, totalCount, searchTerm, _currentUserService.UserName, _currentUserService.UserId);
+
+            return ServiceResult<PagedResult<ServiceSelectItem>>.Successful(result);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(
+                ex,
+                "خطا در جستجوی خدمات برای Select2. SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}. User: {UserName} (Id: {UserId})",
+                searchTerm, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+            return ServiceResult<PagedResult<ServiceSelectItem>>.Failed("خطا در جستجوی خدمات");
+        }
+    }
+
+    /// <summary>
     /// دریافت لیست خدمات فعال برای یک دسته‌بندی خاص
     /// </summary>
     /// <param name="serviceCategoryId">شناسه دسته‌بندی خدمات</param>
