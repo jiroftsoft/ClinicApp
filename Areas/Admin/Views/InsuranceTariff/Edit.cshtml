@@ -271,6 +271,10 @@
             // Cascade Dropdowns
             loadDepartments();
             
+            // بارگیری ارائه‌دهندگان بیمه و طرح‌های بیمه
+            loadInsuranceProviders();
+            loadInsurancePlans();
+            
             // اطمینان از بارگیری dropdown ها قبل از ارسال فرم
             var dropdownsLoaded = false;
             setTimeout(function() {
@@ -429,6 +433,128 @@
                         console.error('❌ خطای AJAX در بارگیری دپارتمان‌ها:', error);
                         showWarning('خطا در بارگیری دپارتمان‌ها');
                         hideLoadingIndicator();
+                    }
+                });
+            }
+            
+            function loadInsuranceProviders() {
+                console.log('🔄 شروع بارگیری ارائه‌دهندگان بیمه...');
+                $.ajax({
+                    url: '@Url.Action("GetInsuranceProviders")',
+                    type: 'GET',
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ ارائه‌دهندگان بیمه:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات ارائه‌دهندگان بیمه');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">انتخاب ارائه‌دهنده بیمه</option>';
+                            $.each(data.data, function(index, item) {
+                                var selected = item.id == @Model.InsuranceProviderId ? 'selected' : '';
+                                options += '<option value="' + item.id + '" ' + selected + '>' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#InsuranceProviderId').hasClass('select2-hidden-accessible')) {
+                                $('#InsuranceProviderId').select2('destroy');
+                            }
+                            
+                            $('#InsuranceProviderId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#InsuranceProviderId').select2({
+                                placeholder: 'انتخاب ارائه‌دهنده بیمه',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ ارائه‌دهندگان بیمه بارگیری شدند:', data.data.length, 'مورد');
+                            
+                            // بارگیری طرح‌های بیمه برای ارائه‌دهنده انتخاب شده
+                            if (@Model.InsuranceProviderId > 0) {
+                                loadInsurancePlans(@Model.InsuranceProviderId);
+                            }
+                        } else {
+                            console.error('❌ خطا در بارگیری ارائه‌دهندگان بیمه - data:', data);
+                            showWarning('خطا در بارگیری ارائه‌دهندگان بیمه');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری ارائه‌دهندگان بیمه:', error);
+                        showWarning('خطا در بارگیری ارائه‌دهندگان بیمه');
+                    }
+                });
+            }
+            
+            function loadInsurancePlans(providerId) {
+                console.log('🔄 شروع بارگیری طرح‌های بیمه - ProviderId:', providerId);
+                $.ajax({
+                    url: '@Url.Action("GetInsurancePlans")',
+                    type: 'GET',
+                    data: { providerId: providerId },
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ طرح‌های بیمه:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات طرح‌های بیمه');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">انتخاب طرح بیمه</option>';
+                            $.each(data.data, function(index, item) {
+                                var selected = item.id == @Model.InsurancePlanId ? 'selected' : '';
+                                options += '<option value="' + item.id + '" ' + selected + '>' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#InsurancePlanId').hasClass('select2-hidden-accessible')) {
+                                $('#InsurancePlanId').select2('destroy');
+                            }
+                            
+                            $('#InsurancePlanId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#InsurancePlanId').select2({
+                                placeholder: 'انتخاب طرح بیمه',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ طرح‌های بیمه بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری طرح‌های بیمه - data:', data);
+                            showWarning('خطا در بارگیری طرح‌های بیمه');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری طرح‌های بیمه:', error);
+                        showWarning('خطا در بارگیری طرح‌های بیمه');
                     }
                 });
             }

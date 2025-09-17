@@ -135,6 +135,9 @@ namespace ClinicApp.Repositories.Insurance
         {
             try
             {
+                _logger.Information("🔍 REPOSITORY: شروع GetPagedAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}", 
+                    planId, serviceId, providerId, searchTerm);
+
                 // بهینه‌سازی: استفاده از AsNoTracking برای read-only operations
                 var query = _context.InsuranceTariffs
                     .AsNoTracking()
@@ -143,22 +146,27 @@ namespace ClinicApp.Repositories.Insurance
                     .Include(t => t.InsurancePlan.InsuranceProvider)
                     .Where(t => !t.IsDeleted);
 
+                _logger.Information("🔍 REPOSITORY: Query اولیه ساخته شد");
+
                 // فیلتر بر اساس طرح بیمه
                 if (planId.HasValue)
                 {
                     query = query.Where(t => t.InsurancePlanId == planId.Value);
+                    _logger.Information("🔍 REPOSITORY: فیلتر PlanId اضافه شد: {PlanId}", planId.Value);
                 }
 
                 // فیلتر بر اساس خدمت
                 if (serviceId.HasValue)
                 {
                     query = query.Where(t => t.ServiceId == serviceId.Value);
+                    _logger.Information("🔍 REPOSITORY: فیلتر ServiceId اضافه شد: {ServiceId}", serviceId.Value);
                 }
 
                 // فیلتر بر اساس ارائه‌دهنده بیمه
                 if (providerId.HasValue)
                 {
                     query = query.Where(t => t.InsurancePlan.InsuranceProviderId == providerId.Value);
+                    _logger.Information("🔍 REPOSITORY: فیلتر ProviderId اضافه شد: {ProviderId}", providerId.Value);
                 }
 
                 // جستجو
@@ -184,6 +192,56 @@ namespace ClinicApp.Repositories.Insurance
 
                 var totalCount = await totalCountTask;
                 var items = await itemsTask;
+
+                _logger.Information("🔍 REPOSITORY: نتایج - TotalCount: {TotalCount}, ItemsCount: {ItemsCount}", totalCount, items.Count);
+
+                // 🔍 DEBUG: بررسی داده‌های موجود در دیتابیس
+                var allTariffs = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Include(t => t.Service)
+                    .Include(t => t.InsurancePlan)
+                    .Include(t => t.InsurancePlan.InsuranceProvider)
+                    .Where(t => !t.IsDeleted)
+                    .Take(5)
+                    .Select(t => new {
+                        Id = t.InsuranceTariffId,
+                        t.ServiceId,
+                        ServiceTitle = t.Service.Title,
+                        t.InsurancePlanId,
+                        PlanName = t.InsurancePlan.Name,
+                        ProviderId = t.InsurancePlan.InsuranceProviderId,
+                        ProviderName = t.InsurancePlan.InsuranceProvider.Name
+                    })
+                    .ToListAsync();
+
+                _logger.Information("🔍 REPOSITORY: نمونه داده‌های موجود: {@AllTariffs}", allTariffs);
+
+                // 🔍 DEBUG: بررسی فیلترهای اعمال شده
+                if (planId.HasValue || serviceId.HasValue || providerId.HasValue)
+                {
+                    _logger.Information("🔍 REPOSITORY: فیلترهای اعمال شده - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}", 
+                        planId, serviceId, providerId);
+                    
+                    // بررسی داده‌های موجود با فیلترها
+                    var matchingTariffs = await _context.InsuranceTariffs
+                        .AsNoTracking()
+                        .Include(t => t.Service)
+                        .Include(t => t.InsurancePlan)
+                        .Include(t => t.InsurancePlan.InsuranceProvider)
+                        .Where(t => !t.IsDeleted)
+                        .Select(t => new {
+                            Id = t.InsuranceTariffId,
+                            t.ServiceId,
+                            ServiceTitle = t.Service.Title,
+                            t.InsurancePlanId,
+                            PlanName = t.InsurancePlan.Name,
+                            ProviderId = t.InsurancePlan.InsuranceProviderId,
+                            ProviderName = t.InsurancePlan.InsuranceProvider.Name
+                        })
+                        .ToListAsync();
+
+                    _logger.Information("🔍 REPOSITORY: تمام داده‌های موجود: {@MatchingTariffs}", matchingTariffs);
+                }
 
                 return new PagedResult<InsuranceTariff>
                 {
