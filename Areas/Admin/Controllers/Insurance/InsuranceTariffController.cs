@@ -348,6 +348,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return RedirectToAction("Create");
                 }
 
+                // اصلاح ModelState برای "همه خدمات"
+                if (model.IsAllServices && ModelState.ContainsKey("ServiceId"))
+                {
+                    ModelState["ServiceId"].Errors.Clear();
+                    _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
+                }
+
                 if (!ModelState.IsValid)
                 {
                     _logger.Warning("🏥 MEDICAL: مدل تعرفه بیمه معتبر نیست - CorrelationId: {CorrelationId}, Errors: {@Errors}, User: {UserName} (Id: {UserId})",
@@ -488,6 +495,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _logger.Warning("🏥 MEDICAL: مدل تعرفه بیمه null است - CorrelationId: {CorrelationId}", correlationId);
                     _messageNotificationService.AddErrorMessage("اطلاعات تعرفه بیمه ارسال نشده است");
                     return RedirectToAction("Index");
+                }
+
+                // اصلاح ModelState برای "همه خدمات"
+                if (model.IsAllServices && ModelState.ContainsKey("ServiceId"))
+                {
+                    ModelState["ServiceId"].Errors.Clear();
+                    _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
                 }
 
                 if (!ModelState.IsValid)

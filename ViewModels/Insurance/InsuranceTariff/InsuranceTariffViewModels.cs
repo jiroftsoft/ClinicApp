@@ -118,9 +118,8 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Display(Name = "سرفصل خدمت")]
         public int? ServiceCategoryId { get; set; }
 
-        [Required(ErrorMessage = "انتخاب خدمت الزامی است.")]
         [Display(Name = "خدمت")]
-        public int ServiceId { get; set; }
+        public int? ServiceId { get; set; }
 
         [Required(ErrorMessage = "انتخاب ارائه‌دهنده بیمه الزامی است.")]
         [Display(Name = "ارائه‌دهنده بیمه")]
@@ -144,6 +143,13 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
 
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
+
+        // Fields for "All" selections
+        [Display(Name = "همه سرفصل‌ها")]
+        public bool IsAllServiceCategories { get; set; }
+
+        [Display(Name = "همه خدمات")]
+        public bool IsAllServices { get; set; }
 
         // Navigation Properties
         public string ServiceTitle { get; set; }

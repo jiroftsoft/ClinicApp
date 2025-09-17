@@ -36,12 +36,25 @@ namespace ClinicApp.ViewModels.Validators
                 .MustAsync(BeValidInsurancePlanAsync)
                 .WithMessage("طرح بیمه انتخاب شده معتبر نیست یا حذف شده است");
 
-            // اعتبارسنجی شناسه خدمت
-            RuleFor(x => x.ServiceId)
-                .GreaterThan(0)
-                .WithMessage("لطفاً یک خدمت معتبر انتخاب کنید")
-                .MustAsync(BeValidServiceAsync)
-                .WithMessage("خدمت انتخاب شده معتبر نیست یا حذف شده است");
+            // اعتبارسنجی شناسه خدمت - فقط وقتی "همه خدمات" انتخاب نشده
+            RuleFor(x => x)
+                .Must((model) => 
+                {
+                    // اگر "همه خدمات" انتخاب شده، ServiceId می‌تواند null باشد
+                    if (model.IsAllServices)
+                        return true;
+                    
+                    // در غیر این صورت، ServiceId باید معتبر باشد
+                    return model.ServiceId.HasValue && model.ServiceId.Value > 0;
+                })
+                .WithMessage("لطفاً یک خدمت معتبر انتخاب کنید یا گزینه 'همه خدمات' را انتخاب کنید")
+                .When(x => !x.IsAllServices);
+
+            // اعتبارسنجی معتبر بودن خدمت - فقط وقتی خدمت خاص انتخاب شده
+            RuleFor(x => x)
+                .MustAsync((model, cancellationToken) => BeValidServiceAsync(model.ServiceId, cancellationToken))
+                .WithMessage("خدمت انتخاب شده معتبر نیست یا حذف شده است")
+                .When(x => !x.IsAllServices && x.ServiceId.HasValue);
 
             // اعتبارسنجی قیمت تعرفه
             RuleFor(x => x.TariffPrice)
@@ -106,11 +119,15 @@ namespace ClinicApp.ViewModels.Validators
         /// <summary>
         /// بررسی معتبر بودن خدمت
         /// </summary>
-        private async Task<bool> BeValidServiceAsync(int serviceId, CancellationToken cancellationToken)
+        private async Task<bool> BeValidServiceAsync(int? serviceId, CancellationToken cancellationToken)
         {
             try
             {
-                var result = await _serviceManagementService.GetServiceDetailsAsync(serviceId);
+                // اگر serviceId null است، معتبر نیست (مگر اینکه IsAllServices = true باشد که در When condition بررسی می‌شود)
+                if (!serviceId.HasValue)
+                    return false;
+                    
+                var result = await _serviceManagementService.GetServiceDetailsAsync(serviceId.Value);
                 return result.Success && result.Data != null;
             }
             catch
@@ -128,7 +145,7 @@ namespace ClinicApp.ViewModels.Validators
             {
                 var result = await _insuranceTariffService.CheckTariffExistsAsync(
                     model.InsurancePlanId, 
-                    model.ServiceId, 
+                    model.ServiceId ?? 0, 
                     model.InsuranceTariffId > 0 ? model.InsuranceTariffId : null);
                 
                 return result.Success && !result.Data;

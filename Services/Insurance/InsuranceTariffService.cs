@@ -166,19 +166,22 @@ namespace ClinicApp.Services.Insurance
                     return ServiceResult<int>.Failed("اطلاعات وارد شده معتبر نیست");
                 }
 
-                // بررسی وجود تعرفه مشابه
-                var exists = await _tariffRepository.DoesTariffExistAsync(model.InsurancePlanId, model.ServiceId);
-                if (exists)
+                // بررسی وجود تعرفه مشابه (فقط اگر ServiceId مشخص باشد)
+                if (model.ServiceId.HasValue)
                 {
-                    _logger.Warning("تعرفه بیمه مشابه وجود دارد. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
-                    return ServiceResult<int>.Failed("تعرفه بیمه برای این طرح و خدمت قبلاً تعریف شده است");
+                    var exists = await _tariffRepository.DoesTariffExistAsync(model.InsurancePlanId, model.ServiceId.Value);
+                    if (exists)
+                    {
+                        _logger.Warning("تعرفه بیمه مشابه وجود دارد. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                        return ServiceResult<int>.Failed("تعرفه بیمه برای این طرح و خدمت قبلاً تعریف شده است");
+                    }
                 }
 
                 // ایجاد entity
                 var tariff = new InsuranceTariff
                 {
-                    ServiceId = model.ServiceId,
+                    ServiceId = model.ServiceId ?? 0, // 0 برای "همه خدمات"
                     InsurancePlanId = model.InsurancePlanId,
                     TariffPrice = model.TariffPrice,
                     PatientShare = model.PatientShare,
@@ -231,17 +234,20 @@ namespace ClinicApp.Services.Insurance
                     return ServiceResult.Failed("تعرفه بیمه یافت نشد");
                 }
 
-                // بررسی وجود تعرفه مشابه (به جز خودش)
-                var exists = await _tariffRepository.DoesTariffExistAsync(model.InsurancePlanId, model.ServiceId, model.InsuranceTariffId);
-                if (exists)
+                // بررسی وجود تعرفه مشابه (به جز خودش) - فقط اگر ServiceId مشخص باشد
+                if (model.ServiceId.HasValue)
                 {
-                    _logger.Warning("تعرفه بیمه مشابه وجود دارد. Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                        model.InsuranceTariffId, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
-                    return ServiceResult.Failed("تعرفه بیمه برای این طرح و خدمت قبلاً تعریف شده است");
+                    var exists = await _tariffRepository.DoesTariffExistAsync(model.InsurancePlanId, model.ServiceId.Value, model.InsuranceTariffId);
+                    if (exists)
+                    {
+                        _logger.Warning("تعرفه بیمه مشابه وجود دارد. Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                            model.InsuranceTariffId, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                        return ServiceResult.Failed("تعرفه بیمه برای این طرح و خدمت قبلاً تعریف شده است");
+                    }
                 }
 
                 // به‌روزرسانی
-                existingTariff.ServiceId = model.ServiceId;
+                existingTariff.ServiceId = model.ServiceId ?? 0; // 0 برای "همه خدمات"
                 existingTariff.InsurancePlanId = model.InsurancePlanId;
                 existingTariff.TariffPrice = model.TariffPrice;
                 existingTariff.PatientShare = model.PatientShare;
@@ -400,11 +406,14 @@ namespace ClinicApp.Services.Insurance
                     errors.Add("InsurancePlanId", "طرح بیمه یافت نشد");
                 }
 
-                // بررسی وجود خدمت
-                var service = await _serviceRepository.GetServiceByIdAsync(model.ServiceId);
-                if (service == null)
+                // بررسی وجود خدمت (فقط اگر ServiceId مشخص باشد)
+                if (model.ServiceId.HasValue)
                 {
-                    errors.Add("ServiceId", "خدمت یافت نشد");
+                    var service = await _serviceRepository.GetServiceByIdAsync(model.ServiceId.Value);
+                    if (service == null)
+                    {
+                        errors.Add("ServiceId", "خدمت یافت نشد");
+                    }
                 }
 
                 // اعتبارسنجی سهم بیمار

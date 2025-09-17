@@ -30,4 +30,14 @@ public class LookupItemViewModel
     /// توضیحات اضافی آیتم
     /// </summary>
     public string Description { get; set; }
+
+    /// <summary>
+    /// Value برای SelectList (شناسه آیتم)
+    /// </summary>
+    public int Value => Id;
+
+    /// <summary>
+    /// Text برای SelectList (نام آیتم)
+    /// </summary>
+    public string Text => Name;
 }

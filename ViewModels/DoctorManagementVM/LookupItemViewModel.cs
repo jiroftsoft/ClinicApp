@@ -56,6 +56,11 @@ namespace ClinicApp.ViewModels.DoctorManagementVM
         /// نام گروه (در صورت وجود)
         /// </summary>
         public string GroupName { get; set; }
+
+        /// <summary>
+        /// Value برای SelectList (شناسه آیتم)
+        /// </summary>
+        public int Value => Id;
         
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک موجودیت می‌سازد.

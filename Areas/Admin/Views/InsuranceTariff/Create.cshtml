@@ -41,6 +41,10 @@
                     {
                         @Html.AntiForgeryToken()
                         @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+                        
+                        <!-- Hidden fields for "All" selections -->
+                        <input type="hidden" id="IsAllServiceCategories" name="IsAllServiceCategories" value="false" />
+                        <input type="hidden" id="IsAllServices" name="IsAllServices" value="false" />
 
                         <div class="row">
                             <!-- Department Selection -->
@@ -61,7 +65,10 @@
                                     <select id="ServiceCategoryId" class="form-control">
                                         <option value="">انتخاب سرفصل خدمت</option>
                                     </select>
-                                    <div class="form-note">سرفصل خدمت مورد نظر را انتخاب کنید</div>
+                                    <div class="form-note">
+                                        <i class="fas fa-info-circle text-info"></i>
+                                        سرفصل خدمت مورد نظر را انتخاب کنید یا "همه سرفصل‌ها" را برای تعریف تعرفه عمومی انتخاب کنید
+                                    </div>
                                 </div>
                             </div>
 
@@ -72,7 +79,10 @@
                                     @Html.DropDownListFor(model => model.ServiceId, Model.ServiceSelectList, 
                                         "انتخاب خدمت", new { @class = "form-control", required = "required" })
                                     @Html.ValidationMessageFor(model => model.ServiceId, "", new { @class = "text-danger small mt-1" })
-                                    <div class="form-note">خدمت مورد نظر را انتخاب کنید</div>
+                                    <div class="form-note">
+                                        <i class="fas fa-info-circle text-info"></i>
+                                        خدمت مورد نظر را انتخاب کنید یا "همه خدمات" را برای تعریف تعرفه عمومی انتخاب کنید
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -229,6 +239,35 @@
         $(document).ready(function() {
             // Form validation
             $('.needs-validation').on('submit', function(e) {
+                // تبدیل مقدار "all" به null قبل از ارسال و تنظیم فیلدهای مخفی
+                var serviceId = $('#ServiceId').val();
+                var serviceCategoryId = $('#ServiceCategoryId').val();
+                
+                if (serviceId === 'all') {
+                    $('#ServiceId').val('');
+                    $('#IsAllServices').val('true');
+                    console.log('🔄 مقدار "همه خدمات" به خالی تبدیل شد و IsAllServices = true');
+                } else {
+                    $('#IsAllServices').val('false');
+                }
+                
+                // Debug: نمایش مقادیر نهایی
+                console.log('🔍 مقادیر نهایی قبل از ارسال:');
+                console.log('ServiceId:', $('#ServiceId').val());
+                console.log('IsAllServices:', $('#IsAllServices').val());
+                console.log('ServiceCategoryId:', $('#ServiceCategoryId').val());
+                console.log('IsAllServiceCategories:', $('#IsAllServiceCategories').val());
+                
+                if (serviceCategoryId === 'all') {
+                    $('#ServiceCategoryId').val('');
+                    $('#IsAllServiceCategories').val('true');
+                    console.log('🔄 مقدار "همه سرفصل‌ها" به خالی تبدیل شد و IsAllServiceCategories = true');
+                } else {
+                    $('#IsAllServiceCategories').val('false');
+                }
+                
+                // اعتبارسنجی سفارشی حذف شد - server-side validation استفاده می‌شود
+                
                 if (!this.checkValidity()) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -238,6 +277,7 @@
 
             // Cascade Dropdowns
             loadDepartments();
+            loadInsuranceProviders();
             
             $('#DepartmentId').on('change', function() {
                 var departmentId = $(this).val();
@@ -251,7 +291,12 @@
             
             $('#ServiceCategoryId').on('change', function() {
                 var serviceCategoryId = $(this).val();
-                if (serviceCategoryId) {
+                if (serviceCategoryId === 'all') {
+                    // نمایش پیام راهنما
+                    showInfo('شما "همه سرفصل‌ها" را انتخاب کرده‌اید. این تعرفه برای تمام سرفصل‌های خدماتی اعمال خواهد شد.');
+                    // بارگیری همه خدمات
+                    loadAllServices();
+                } else if (serviceCategoryId) {
                     loadServices(serviceCategoryId);
                 } else {
                     $('#ServiceId').empty().append('<option value="">انتخاب خدمت</option>');
@@ -276,8 +321,22 @@
                     checkExistingTariff(serviceId, planId);
                 }
             });
+            
+            // Handle "All Services" selection
+            $('#ServiceId').on('change', function() {
+                var serviceId = $(this).val();
+                if (serviceId === 'all') {
+                    showInfo('شما "همه خدمات" را انتخاب کرده‌اید. این تعرفه برای تمام خدمات اعمال خواهد شد.');
+                }
+            });
 
             function checkExistingTariff(serviceId, planId) {
+                // اگر "همه" انتخاب شده، بررسی نکن
+                if (serviceId === 'all') {
+                    console.log('ℹ️ گزینه "همه خدمات" انتخاب شده - بررسی تعرفه موجود انجام نمی‌شود');
+                    return;
+                }
+                
                 $.ajax({
                     url: '@Url.Action("CheckTariffExists")',
                     type: 'POST',
@@ -307,82 +366,369 @@
                 }, 5000);
             }
             
+            function showInfo(message) {
+                var alert = $('<div class="alert alert-info alert-dismissible fade show" role="alert">' +
+                    '<i class="fas fa-info-circle"></i> ' + message +
+                    '<button type="button" class="close" data-dismiss="alert">' +
+                    '<span>&times;</span></button></div>');
+                
+                $('.card-body').prepend(alert);
+                
+                setTimeout(function() {
+                    alert.fadeOut();
+                }, 7000);
+            }
+            
             // Cascade Dropdown Functions
             function loadDepartments() {
+                console.log('🔄 شروع بارگیری دپارتمان‌ها...');
                 $.ajax({
                     url: '@Url.Action("GetDepartments")',
                     type: 'GET',
+                    cache: false,
                     success: function(response) {
-                        if (response.success) {
+                        console.log('📊 پاسخ دپارتمان‌ها:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات دپارتمان‌ها');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
                             var options = '<option value="">انتخاب دپارتمان</option>';
-                            $.each(response.data, function(index, item) {
+                            $.each(data.data, function(index, item) {
                                 options += '<option value="' + item.id + '">' + item.name + '</option>';
                             });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#DepartmentId').hasClass('select2-hidden-accessible')) {
+                                $('#DepartmentId').select2('destroy');
+                            }
+                            
                             $('#DepartmentId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#DepartmentId').select2({
+                                placeholder: 'انتخاب دپارتمان',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ دپارتمان‌ها بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری دپارتمان‌ها - data:', data);
+                            showWarning('خطا در بارگیری دپارتمان‌ها');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری دپارتمان‌ها:', error);
                         showWarning('خطا در بارگیری دپارتمان‌ها');
                     }
                 });
             }
             
             function loadServiceCategories(departmentId) {
+                console.log('🔄 شروع بارگیری سرفصل‌های خدماتی - DepartmentId:', departmentId);
                 $.ajax({
                     url: '@Url.Action("GetServiceCategories")',
                     type: 'GET',
                     data: { departmentId: departmentId },
+                    cache: false,
                     success: function(response) {
-                        if (response.success) {
+                        console.log('📊 پاسخ سرفصل‌های خدماتی:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات سرفصل‌های خدماتی');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
                             var options = '<option value="">انتخاب سرفصل خدمت</option>';
-                            $.each(response.data, function(index, item) {
+                            options += '<option value="all" class="text-primary font-weight-bold">📋 همه سرفصل‌ها</option>';
+                            options += '<option value="" disabled>─────────────────</option>';
+                            $.each(data.data, function(index, item) {
                                 options += '<option value="' + item.id + '">' + item.name + '</option>';
                             });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#ServiceCategoryId').hasClass('select2-hidden-accessible')) {
+                                $('#ServiceCategoryId').select2('destroy');
+                            }
+                            
                             $('#ServiceCategoryId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#ServiceCategoryId').select2({
+                                placeholder: 'انتخاب سرفصل خدمت',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
                             $('#ServiceId').empty().append('<option value="">انتخاب خدمت</option>');
+                            
+                            console.log('✅ سرفصل‌های خدماتی بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری سرفصل‌های خدماتی - data:', data);
+                            showWarning('خطا در بارگیری سرفصل‌های خدماتی');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری سرفصل‌های خدماتی:', error);
                         showWarning('خطا در بارگیری سرفصل‌های خدماتی');
                     }
                 });
             }
             
             function loadServices(serviceCategoryId) {
+                console.log('🔄 شروع بارگیری خدمات - ServiceCategoryId:', serviceCategoryId);
                 $.ajax({
                     url: '@Url.Action("GetServices")',
                     type: 'GET',
                     data: { serviceCategoryId: serviceCategoryId },
+                    cache: false,
                     success: function(response) {
-                        if (response.success) {
+                        console.log('📊 پاسخ خدمات:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات خدمات');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
                             var options = '<option value="">انتخاب خدمت</option>';
-                            $.each(response.data, function(index, item) {
+                            options += '<option value="all" class="text-success font-weight-bold">🔧 همه خدمات</option>';
+                            options += '<option value="" disabled>─────────────────</option>';
+                            $.each(data.data, function(index, item) {
                                 options += '<option value="' + item.id + '">' + item.name + '</option>';
                             });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#ServiceId').hasClass('select2-hidden-accessible')) {
+                                $('#ServiceId').select2('destroy');
+                            }
+                            
                             $('#ServiceId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#ServiceId').select2({
+                                placeholder: 'انتخاب خدمت',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ خدمات بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری خدمات - data:', data);
+                            showWarning('خطا در بارگیری خدمات');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری خدمات:', error);
                         showWarning('خطا در بارگیری خدمات');
                     }
                 });
             }
             
+            function loadAllServices() {
+                console.log('🔄 شروع بارگیری همه خدمات...');
+                $.ajax({
+                    url: '@Url.Action("GetServices")',
+                    type: 'GET',
+                    data: { serviceCategoryId: 0 }, // 0 برای همه خدمات
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ همه خدمات:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات همه خدمات');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">انتخاب خدمت</option>';
+                            options += '<option value="all" class="text-success font-weight-bold">🔧 همه خدمات</option>';
+                            options += '<option value="" disabled>─────────────────</option>';
+                            $.each(data.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#ServiceId').hasClass('select2-hidden-accessible')) {
+                                $('#ServiceId').select2('destroy');
+                            }
+                            
+                            $('#ServiceId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#ServiceId').select2({
+                                placeholder: 'انتخاب خدمت',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ همه خدمات بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری همه خدمات - data:', data);
+                            showWarning('خطا در بارگیری همه خدمات');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری همه خدمات:', error);
+                        showWarning('خطا در بارگیری همه خدمات');
+                    }
+                });
+            }
+            
+            function loadInsuranceProviders() {
+                console.log('🔄 شروع بارگیری ارائه‌دهندگان بیمه...');
+                $.ajax({
+                    url: '@Url.Action("GetInsuranceProviders")',
+                    type: 'GET',
+                    cache: false,
+                    success: function(response) {
+                        console.log('📊 پاسخ ارائه‌دهندگان بیمه:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات ارائه‌دهندگان بیمه');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
+                            var options = '<option value="">انتخاب ارائه‌دهنده بیمه</option>';
+                            $.each(data.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#InsuranceProviderId').hasClass('select2-hidden-accessible')) {
+                                $('#InsuranceProviderId').select2('destroy');
+                            }
+                            
+                            $('#InsuranceProviderId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#InsuranceProviderId').select2({
+                                placeholder: 'انتخاب ارائه‌دهنده بیمه',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ ارائه‌دهندگان بیمه بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری ارائه‌دهندگان بیمه - data:', data);
+                            showWarning('خطا در بارگیری ارائه‌دهندگان بیمه');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری ارائه‌دهندگان بیمه:', error);
+                        showWarning('خطا در بارگیری ارائه‌دهندگان بیمه');
+                    }
+                });
+            }
+            
             function loadInsurancePlans(providerId) {
+                console.log('🔄 شروع بارگیری طرح‌های بیمه - ProviderId:', providerId);
                 $.ajax({
                     url: '@Url.Action("GetInsurancePlans")',
                     type: 'GET',
                     data: { providerId: providerId },
+                    cache: false,
                     success: function(response) {
-                        if (response.success) {
+                        console.log('📊 پاسخ طرح‌های بیمه:', response);
+                        
+                        // بررسی دقیق response - ممکن است response string باشد
+                        var data = response;
+                        if (typeof response === 'string') {
+                            try {
+                                data = JSON.parse(response);
+                            } catch (e) {
+                                console.error('❌ خطا در parse کردن JSON:', e);
+                                showWarning('خطا در پردازش اطلاعات طرح‌های بیمه');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🔍 parsed data:', data);
+                        
+                        if (data && data.success === true && data.data) {
                             var options = '<option value="">انتخاب طرح بیمه</option>';
-                            $.each(response.data, function(index, item) {
+                            $.each(data.data, function(index, item) {
                                 options += '<option value="' + item.id + '">' + item.name + '</option>';
                             });
+                            
+                            // حذف Select2 قبلی اگر وجود دارد
+                            if ($('#InsurancePlanId').hasClass('select2-hidden-accessible')) {
+                                $('#InsurancePlanId').select2('destroy');
+                            }
+                            
                             $('#InsurancePlanId').html(options);
+                            
+                            // فعال‌سازی Select2
+                            $('#InsurancePlanId').select2({
+                                placeholder: 'انتخاب طرح بیمه',
+                                allowClear: true,
+                                dir: 'rtl',
+                                width: '100%'
+                            });
+                            
+                            console.log('✅ طرح‌های بیمه بارگیری شدند:', data.data.length, 'مورد');
+                        } else {
+                            console.error('❌ خطا در بارگیری طرح‌های بیمه - data:', data);
+                            showWarning('خطا در بارگیری طرح‌های بیمه');
                         }
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('❌ خطای AJAX در بارگیری طرح‌های بیمه:', error);
                         showWarning('خطا در بارگیری طرح‌های بیمه');
                     }
                 });
