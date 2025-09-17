@@ -610,6 +610,10 @@
     <Compile Include="Migrations\202509170542042_MakeNewChnage140402426.Designer.cs">
       <DependentUpon>202509170542042_MakeNewChnage140402426.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509171504493_InitialNewchange.cs" />
+    <Compile Include="Migrations\202509171504493_InitialNewchange.Designer.cs">
+      <DependentUpon>202509171504493_InitialNewchange.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
@@ -4045,6 +4049,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509170542042_MakeNewChnage140402426.resx">
       <DependentUpon>202509170542042_MakeNewChnage140402426.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509171504493_InitialNewchange.resx">
+      <DependentUpon>202509171504493_InitialNewchange.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

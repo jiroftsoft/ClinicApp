@@ -718,25 +718,29 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
-                // محاسبه سهم بیمه و بیمار بر اساس درصد (مطابق با Entity Model)
+                // محاسبه سهم بیمه و بیمار بر اساس مبلغ (منطق صحیح)
                 if (tariffPrice.HasValue)
                 {
-                    // تنظیم مقادیر نهایی بر اساس درصد
+                    // محاسبه مبلغ سهم بیمه
+                    decimal insurerAmount = (tariffPrice.Value * plan.CoveragePercent) / 100;
+                    decimal patientAmount = tariffPrice.Value - insurerAmount;
+
+                    // تنظیم مقادیر نهایی بر اساس مبلغ
                     if (!insurerShare.HasValue)
                     {
-                        insurerShare = plan.CoveragePercent; // درصد پوشش بیمه
-                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
-                            model.InsurancePlanId, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                        insurerShare = insurerAmount;
+                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, InsurerAmount: {InsurerAmount}, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, plan.CoveragePercent, insurerAmount, _currentUserService.UserName, _currentUserService.UserId);
                     }
 
                     if (!patientShare.HasValue)
                     {
-                        patientShare = 100 - plan.CoveragePercent; // درصد سهم بیمار
-                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد - PlanId: {PlanId}, PatientShare: {PatientShare}%, User: {UserName} (Id: {UserId})",
-                            model.InsurancePlanId, patientShare, _currentUserService.UserName, _currentUserService.UserId);
+                        patientShare = patientAmount;
+                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد - PlanId: {PlanId}, PatientAmount: {PatientAmount}, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, patientAmount, _currentUserService.UserName, _currentUserService.UserId);
                     }
 
-                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}%, PatientShare: {PatientShare}%, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}, PatientShare: {PatientShare}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
                         tariffPrice.Value, insurerShare.Value, patientShare.Value, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
                 }
                 else
@@ -871,25 +875,29 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
-                // محاسبه سهم بیمه و بیمار بر اساس درصد (مطابق با Entity Model)
+                // محاسبه سهم بیمه و بیمار بر اساس مبلغ (منطق صحیح)
                 if (tariffPrice.HasValue)
                 {
-                    // تنظیم مقادیر نهایی بر اساس درصد
+                    // محاسبه مبلغ سهم بیمه
+                    decimal insurerAmount = (tariffPrice.Value * plan.CoveragePercent) / 100;
+                    decimal patientAmount = tariffPrice.Value - insurerAmount;
+
+                    // تنظیم مقادیر نهایی بر اساس مبلغ
                     if (!insurerShare.HasValue)
                     {
-                        insurerShare = plan.CoveragePercent; // درصد پوشش بیمه
-                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد در Bulk - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
-                            model.InsurancePlanId, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                        insurerShare = insurerAmount;
+                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد در Bulk - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, InsurerAmount: {InsurerAmount}, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, plan.CoveragePercent, insurerAmount, _currentUserService.UserName, _currentUserService.UserId);
                     }
 
                     if (!patientShare.HasValue)
                     {
-                        patientShare = 100 - plan.CoveragePercent; // درصد سهم بیمار
-                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد در Bulk - PlanId: {PlanId}, PatientShare: {PatientShare}%, User: {UserName} (Id: {UserId})",
-                            model.InsurancePlanId, patientShare, _currentUserService.UserName, _currentUserService.UserId);
+                        patientShare = patientAmount;
+                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد در Bulk - PlanId: {PlanId}, PatientAmount: {PatientAmount}, User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, patientAmount, _currentUserService.UserName, _currentUserService.UserId);
                     }
 
-                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه در Bulk - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}%, PatientShare: {PatientShare}%, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه در Bulk - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}, PatientShare: {PatientShare}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
                         tariffPrice.Value, insurerShare.Value, patientShare.Value, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
                 }
                 else

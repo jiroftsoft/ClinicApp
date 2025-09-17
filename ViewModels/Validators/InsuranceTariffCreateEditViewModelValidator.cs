@@ -74,17 +74,17 @@ namespace ClinicApp.ViewModels.Validators
                 .WithErrorCode("TARIFF_PRICE_TOO_HIGH")
                 .When(x => x.TariffPrice.HasValue);
 
-            // اعتبارسنجی درصد سهم بیمه‌گر
+            // اعتبارسنجی مبلغ سهم بیمه‌گر
             RuleFor(x => x.InsurerShare)
-                .InclusiveBetween(0, 100)
-                .WithMessage("درصد سهم بیمه‌گر باید بین 0 تا 100 باشد")
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("مبلغ سهم بیمه‌گر نمی‌تواند منفی باشد")
                 .WithErrorCode("INVALID_INSURER_SHARE")
                 .When(x => x.InsurerShare.HasValue);
 
-            // اعتبارسنجی درصد سهم بیمار
+            // اعتبارسنجی مبلغ سهم بیمار
             RuleFor(x => x.PatientShare)
-                .InclusiveBetween(0, 100)
-                .WithMessage("درصد سهم بیمار باید بین 0 تا 100 باشد")
+                .GreaterThanOrEqualTo(0)
+                .WithMessage("مبلغ سهم بیمار نمی‌تواند منفی باشد")
                 .WithErrorCode("INVALID_PATIENT_SHARE")
                 .When(x => x.PatientShare.HasValue);
 
@@ -101,12 +101,12 @@ namespace ClinicApp.ViewModels.Validators
                 .WithErrorCode("DUPLICATE_TARIFF")
                 .When(x => x.InsurancePlanId > 0 && x.ServiceId.HasValue && x.ServiceId > 0 && !x.IsAllServices);
 
-            // اعتبارسنجی منطقی بودن درصدها
+            // اعتبارسنجی منطقی بودن مبالغ
             RuleFor(x => x)
-                .Must(HaveValidPercentageSum)
-                .WithMessage("مجموع درصد سهم بیمه‌گر و بیمار نباید بیش از 100 باشد")
-                .WithErrorCode("INVALID_PERCENTAGE_SUM")
-                .When(x => x.InsurerShare.HasValue && x.PatientShare.HasValue);
+                .Must(HaveValidAmountSum)
+                .WithMessage("مجموع مبلغ سهم بیمه‌گر و بیمار نباید بیش از قیمت تعرفه باشد")
+                .WithErrorCode("INVALID_AMOUNT_SUM")
+                .When(x => x.InsurerShare.HasValue && x.PatientShare.HasValue && x.TariffPrice.HasValue);
 
             // اعتبارسنجی منطقی بودن مبالغ - فعلاً غیرفعال
             // RuleFor(x => x)
@@ -172,14 +172,14 @@ namespace ClinicApp.ViewModels.Validators
         }
 
         /// <summary>
-        /// بررسی منطقی بودن مجموع درصدها
+        /// بررسی منطقی بودن مجموع مبالغ
         /// </summary>
-        private bool HaveValidPercentageSum(InsuranceTariffCreateEditViewModel model)
+        private bool HaveValidAmountSum(InsuranceTariffCreateEditViewModel model)
         {
-            if (!model.InsurerShare.HasValue || !model.PatientShare.HasValue)
+            if (!model.InsurerShare.HasValue || !model.PatientShare.HasValue || !model.TariffPrice.HasValue)
                 return true;
 
-            return (model.InsurerShare.Value + model.PatientShare.Value) <= 100;
+            return (model.InsurerShare.Value + model.PatientShare.Value) <= model.TariffPrice.Value;
         }
 
         /// <summary>

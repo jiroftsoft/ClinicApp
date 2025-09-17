@@ -189,6 +189,37 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Information("🏥 MEDICAL: درخواست AJAX بارگیری تعرفه‌ها - CorrelationId: {CorrelationId}, Filter: {@Filter}, User: {UserName} (Id: {UserId})",
                 correlationId, filter, _currentUserService.UserName, _currentUserService.UserId);
 
+            // 🔍 CONSOLE LOGGING - تمام مقادیر Form
+            System.Console.WriteLine("🔍 ===== LOAD TARIFFS DEBUG START =====");
+            System.Console.WriteLine($"🔍 CorrelationId: {correlationId}");
+            System.Console.WriteLine($"🔍 User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
+            System.Console.WriteLine($"🔍 Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}");
+            
+            // Logging Request.Form برای debug
+            System.Console.WriteLine("🔍 Request.Form Keys and Values:");
+            foreach (string key in Request.Form.AllKeys)
+            {
+                System.Console.WriteLine($"🔍   {key}: '{Request.Form[key]}'");
+            }
+            
+            // Logging مدل دریافتی
+            if (filter != null)
+            {
+                System.Console.WriteLine("🔍 Filter Properties:");
+                System.Console.WriteLine($"🔍   SearchTerm: '{filter.SearchTerm}'");
+                System.Console.WriteLine($"🔍   InsuranceProviderId: {filter.InsuranceProviderId}");
+                System.Console.WriteLine($"🔍   InsurancePlanId: {filter.InsurancePlanId}");
+                System.Console.WriteLine($"🔍   ServiceId: {filter.ServiceId}");
+                System.Console.WriteLine($"🔍   PageNumber: {filter.PageNumber}");
+                System.Console.WriteLine($"🔍   PageSize: {filter.PageSize}");
+            }
+            else
+            {
+                System.Console.WriteLine("🔍 ❌ Filter is NULL!");
+            }
+            
+            System.Console.WriteLine("🔍 ===== LOAD TARIFFS DEBUG END =====");
+
             try
             {
                 // اعتبارسنجی فیلتر
@@ -576,6 +607,43 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Information("🏥 MEDICAL: درخواست ویرایش تعرفه بیمه - CorrelationId: {CorrelationId}, Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
                 correlationId, model?.InsuranceTariffId, model?.InsurancePlanId, model?.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
+            // 🔍 CONSOLE LOGGING - تمام مقادیر Form
+            System.Console.WriteLine("🔍 ===== EDIT ACTION DEBUG START =====");
+            System.Console.WriteLine($"🔍 CorrelationId: {correlationId}");
+            System.Console.WriteLine($"🔍 User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
+            System.Console.WriteLine($"🔍 Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}");
+            
+            // Logging Request.Form برای debug
+            System.Console.WriteLine("🔍 Request.Form Keys and Values:");
+            foreach (string key in Request.Form.AllKeys)
+            {
+                System.Console.WriteLine($"🔍   {key}: '{Request.Form[key]}'");
+            }
+            
+            // Logging مدل دریافتی
+            if (model != null)
+            {
+                System.Console.WriteLine("🔍 Model Properties:");
+                System.Console.WriteLine($"🔍   InsuranceTariffId: {model.InsuranceTariffId}");
+                System.Console.WriteLine($"🔍   DepartmentId: {model.DepartmentId}");
+                System.Console.WriteLine($"🔍   ServiceCategoryId: {model.ServiceCategoryId}");
+                System.Console.WriteLine($"🔍   ServiceId: {model.ServiceId}");
+                System.Console.WriteLine($"🔍   InsuranceProviderId: {model.InsuranceProviderId}");
+                System.Console.WriteLine($"🔍   InsurancePlanId: {model.InsurancePlanId}");
+                System.Console.WriteLine($"🔍   TariffPrice: {model.TariffPrice}");
+                System.Console.WriteLine($"🔍   PatientShare: {model.PatientShare}");
+                System.Console.WriteLine($"🔍   InsurerShare: {model.InsurerShare}");
+                System.Console.WriteLine($"🔍   IsActive: {model.IsActive}");
+                System.Console.WriteLine($"🔍   IsAllServices: {model.IsAllServices}");
+                System.Console.WriteLine($"🔍   IsAllServiceCategories: {model.IsAllServiceCategories}");
+            }
+            else
+            {
+                System.Console.WriteLine("🔍 ❌ Model is NULL!");
+            }
+            
+            System.Console.WriteLine("🔍 ===== EDIT ACTION DEBUG END =====");
+
             try
             {
                 // اعتبارسنجی مدل
@@ -780,10 +848,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         #region AJAX Operations
 
         /// <summary>
-        /// دریافت آمار تعرفه‌های بیمه به صورت AJAX
+        /// دریافت آمار تعرفه‌های بیمه به صورت AJAX - بهینه‌سازی شده برای محیط درمانی
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 300)]
+        [OutputCache(Duration = 600, VaryByParam = "none", Location = OutputCacheLocation.Server)]
         public async Task<JsonResult> GetStatistics()
         {
             var correlationId = Guid.NewGuid().ToString();
@@ -1074,9 +1142,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// دریافت دپارتمان‌ها برای cascade dropdown
+        /// دریافت دپارتمان‌ها برای cascade dropdown - بهینه‌سازی شده با Caching
         /// </summary>
         [HttpGet]
+        [OutputCache(Duration = 1800, VaryByParam = "none", Location = OutputCacheLocation.Server)]
         public async Task<JsonResult> GetDepartments()
         {
             try
@@ -1216,9 +1285,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// دریافت ارائه‌دهندگان بیمه
+        /// دریافت ارائه‌دهندگان بیمه - بهینه‌سازی شده با Caching
         /// </summary>
         [HttpGet]
+        [OutputCache(Duration = 1800, VaryByParam = "none", Location = OutputCacheLocation.Server)]
         public async Task<JsonResult> GetInsuranceProviders()
         {
             try

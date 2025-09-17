@@ -25,19 +25,22 @@ namespace ClinicApp.Areas.Admin.Controllers
         private readonly ILogger _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IServiceCalculationService _serviceCalculationService;
+        private readonly IServiceService _serviceService;
 
         public ServiceComponentController(
             ApplicationDbContext context,
             ILogger logger,
             ICurrentUserService currentUserService,
             IMessageNotificationService messageNotificationService,
-            IServiceCalculationService serviceCalculationService)
+            IServiceCalculationService serviceCalculationService,
+            IServiceService serviceService)
             : base(messageNotificationService)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
+            _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
         }
 
         #region Index and List Operations
@@ -413,6 +416,26 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Information("جزء خدمت جدید ایجاد شد - شناسه: {ServiceComponentId}, خدمت: {ServiceId}, نوع: {ComponentType}", 
                     serviceComponent.ServiceComponentId, model.ServiceId, model.ComponentType);
 
+                // به‌روزرسانی قیمت خدمت بر اساس ServiceComponents جدید
+                try
+                {
+                    var updateResult = await _serviceService.UpdateServicePriceAsync(model.ServiceId);
+                    if (updateResult.Success)
+                    {
+                        _logger.Information("قیمت خدمت بعد از ایجاد ServiceComponent به‌روزرسانی شد - ServiceId: {ServiceId}, NewPrice: {NewPrice}", 
+                            model.ServiceId, updateResult.Data);
+                    }
+                    else
+                    {
+                        _logger.Warning("خطا در به‌روزرسانی قیمت خدمت بعد از ایجاد ServiceComponent - ServiceId: {ServiceId}, Error: {Error}", 
+                            model.ServiceId, updateResult.Message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "خطا در به‌روزرسانی قیمت خدمت بعد از ایجاد ServiceComponent - ServiceId: {ServiceId}", model.ServiceId);
+                }
+
                 TempData["SuccessMessage"] = "جزء خدمت با موفقیت ایجاد شد";
                 return RedirectToAction("Details", new { id = serviceComponent.ServiceComponentId });
             }
@@ -549,6 +572,26 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Information("جزء خدمت ویرایش شد - شناسه: {ServiceComponentId}, خدمت: {ServiceId}, نوع: {ComponentType}", 
                     model.ServiceComponentId, model.ServiceId, model.ComponentType);
 
+                // به‌روزرسانی قیمت خدمت بر اساس ServiceComponents ویرایش شده
+                try
+                {
+                    var updateResult = await _serviceService.UpdateServicePriceAsync(model.ServiceId);
+                    if (updateResult.Success)
+                    {
+                        _logger.Information("قیمت خدمت بعد از ویرایش ServiceComponent به‌روزرسانی شد - ServiceId: {ServiceId}, NewPrice: {NewPrice}", 
+                            model.ServiceId, updateResult.Data);
+                    }
+                    else
+                    {
+                        _logger.Warning("خطا در به‌روزرسانی قیمت خدمت بعد از ویرایش ServiceComponent - ServiceId: {ServiceId}, Error: {Error}", 
+                            model.ServiceId, updateResult.Message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "خطا در به‌روزرسانی قیمت خدمت بعد از ویرایش ServiceComponent - ServiceId: {ServiceId}", model.ServiceId);
+                }
+
                 TempData["SuccessMessage"] = "جزء خدمت با موفقیت ویرایش شد";
                 return RedirectToAction("Details", new { id = serviceComponent.ServiceComponentId });
             }
@@ -589,6 +632,26 @@ namespace ClinicApp.Areas.Admin.Controllers
                 await _context.SaveChangesAsync();
 
                 _logger.Information("جزء خدمت حذف شد - شناسه: {ServiceComponentId}", id);
+
+                // به‌روزرسانی قیمت خدمت بر اساس ServiceComponents باقی‌مانده
+                try
+                {
+                    var updateResult = await _serviceService.UpdateServicePriceAsync(serviceComponent.ServiceId);
+                    if (updateResult.Success)
+                    {
+                        _logger.Information("قیمت خدمت بعد از حذف ServiceComponent به‌روزرسانی شد - ServiceId: {ServiceId}, NewPrice: {NewPrice}", 
+                            serviceComponent.ServiceId, updateResult.Data);
+                    }
+                    else
+                    {
+                        _logger.Warning("خطا در به‌روزرسانی قیمت خدمت بعد از حذف ServiceComponent - ServiceId: {ServiceId}, Error: {Error}", 
+                            serviceComponent.ServiceId, updateResult.Message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Error(ex, "خطا در به‌روزرسانی قیمت خدمت بعد از حذف ServiceComponent - ServiceId: {ServiceId}", serviceComponent.ServiceId);
+                }
 
                 TempData["SuccessMessage"] = "جزء خدمت با موفقیت حذف شد";
                 return RedirectToAction("Index");

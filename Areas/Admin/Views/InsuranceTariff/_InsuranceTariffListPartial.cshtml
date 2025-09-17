@@ -35,42 +35,48 @@
                             </div>
                         </td>
                         <td>
-                            <span class="badge badge-info">@tariff.InsuranceProviderName</span>
+                            <span class="medical-badge">@tariff.InsuranceProviderName</span>
                         </td>
                         <td>
                             @if (tariff.TariffPrice.HasValue)
                             {
-                                <span class="text-success font-weight-bold">
+                                <span class="medical-price">
                                     @tariff.TariffPrice.Value.ToString("N0") تومان
                                 </span>
                             }
                             else
                             {
-                                <span class="text-muted">-</span>
+                                <span class="text-muted">
+                                    <i class="fas fa-minus"></i>
+                                </span>
                             }
                         </td>
                         <td>
                             @if (tariff.PatientShare.HasValue)
                             {
-                                <span class="text-warning font-weight-bold">
+                                <span class="medical-percentage text-warning">
                                     @tariff.PatientShare.Value.ToString("F1")%
                                 </span>
                             }
                             else
                             {
-                                <span class="text-muted">-</span>
+                                <span class="text-muted">
+                                    <i class="fas fa-minus"></i>
+                                </span>
                             }
                         </td>
                         <td>
                             @if (tariff.InsurerShare.HasValue)
                             {
-                                <span class="text-info font-weight-bold">
+                                <span class="medical-percentage text-info">
                                     @tariff.InsurerShare.Value.ToString("F1")%
                                 </span>
                             }
                             else
                             {
-                                <span class="text-muted">-</span>
+                                <span class="text-muted">
+                                    <i class="fas fa-minus"></i>
+                                </span>
                             }
                         </td>
                         <td>

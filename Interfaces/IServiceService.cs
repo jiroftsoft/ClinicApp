@@ -148,6 +148,14 @@ namespace ClinicApp.Interfaces
         /// <param name="daysBack">تعداد روزهای بررسی</param>
         /// <returns>لیست خدمات پرطرفدار</returns>
         Task<IEnumerable<TopServiceItem>> GetTopServicesAsync(int topCount = 10, int daysBack = 30);
+
+        /// <summary>
+        /// به‌روزرسانی قیمت خدمت بر اساس ServiceComponents
+        /// این method بعد از ایجاد یا ویرایش ServiceComponents فراخوانی می‌شود
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>نتیجه عملیات</returns>
+        Task<ServiceResult<decimal>> UpdateServicePriceAsync(int serviceId);
     }
 
     /// <summary>

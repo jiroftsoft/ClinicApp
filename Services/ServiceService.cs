@@ -36,15 +36,18 @@ public class ServiceService : IServiceService
     private readonly ApplicationDbContext _context;
     private readonly ILogger _log;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IServiceCalculationService _serviceCalculationService;
 
     public ServiceService(
         ApplicationDbContext context,
         ILogger logger,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IServiceCalculationService serviceCalculationService)
     {
         _context = context;
         _log = logger;
         _currentUserService = currentUserService;
+        _serviceCalculationService = serviceCalculationService;
     }
 
     /// <summary>
@@ -176,7 +179,7 @@ public class ServiceService : IServiceService
                     {
                         Title = model.Title,
                         ServiceCode = model.ServiceCode,
-                        Price = model.Price,
+                        Price = model.Price, // قیمت اولیه از model
                         Description = model.Description,
                         ServiceCategoryId = model.ServiceCategoryId,
                         IsDeleted = false,
@@ -186,6 +189,35 @@ public class ServiceService : IServiceService
 
                     _context.Services.Add(service);
                     await _context.SaveChangesAsync();
+
+                    // محاسبه قیمت نهایی بر اساس ServiceComponents (اگر موجود باشد)
+                    // ابتدا ServiceComponents را بارگیری کن
+                    await _context.Entry(service)
+                        .Collection(s => s.ServiceComponents)
+                        .LoadAsync();
+
+                    if (service.ServiceComponents != null && service.ServiceComponents.Any())
+                    {
+                        var calculatedPrice = _serviceCalculationService.CalculateServicePrice(service);
+                        if (calculatedPrice > 0 && calculatedPrice != service.Price)
+                        {
+                            service.Price = calculatedPrice;
+                            service.UpdatedAt = _currentUserService.UtcNow;
+                            service.UpdatedByUserId = _currentUserService.UserId;
+                            
+                            _log.Information(
+                                "قیمت خدمت محاسبه و به‌روزرسانی شد. ServiceId: {ServiceId}, OriginalPrice: {OriginalPrice}, CalculatedPrice: {CalculatedPrice}. User: {UserName} (Id: {UserId})",
+                                service.ServiceId, model.Price, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+                            
+                            await _context.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        _log.Information(
+                            "ServiceComponents موجود نیست - قیمت اولیه حفظ شد. ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
+                            service.ServiceId, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+                    }
 
                     transaction.Commit();
 
@@ -624,44 +656,44 @@ public class ServiceService : IServiceService
     // اضافه کردن فضای نام ضروری برای استفاده از ThenInclude
 
 
-/// <summary>
-/// بازیابی جزئیات کامل یک خدمات برای نمایش اطلاعات
-/// این متد فقط خدمات‌های فعال (غیرحذف شده) را بازمی‌گرداند و تمام استانداردهای سیستم‌های پزشکی را رعایت می‌کند
-/// 
-/// ویژگی‌های کلیدی:
-/// 1. رعایت کامل استانداردهای امنیتی پزشکی در مدیریت اطلاعات
-/// 2. پشتیبانی کامل از محیط‌های ایرانی و تبدیل تاریخ به شمسی
-/// 3. ارائه اطلاعات کامل برای تصمیم‌گیری‌های مدیریتی
-/// 4. بهینه‌سازی عملکرد برای سیستم‌های پزشکی با ترافیک بالا
-/// 5. مدیریت حرفه‌ای خطاها و ارائه پیام‌های کاربرپسند
-/// 6. ارائه آمار و تحلیل‌های پزشکی برای بهبود کیفیت خدمات
-/// 7. رعایت استانداردهای حفظ اطلاعات پزشکی (حداقل 10 سال)
-/// 8. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات
-/// 9. ارائه اطلاعات کاربران مرتبط با عملیات‌های سیستم
-/// 10. ارائه اطلاعات کامل برای گزارش‌گیری پزشکی
-/// </summary>
-/// <param name="serviceId">شناسه خدمات مورد نظر</param>
-/// <returns>مدل جزئیات کامل خدمات</returns>
-public async Task<ServiceResult<ServiceDetailsViewModel>> GetServiceDetailsAsync(int serviceId)
-{
-    _log.Information(
-        "درخواست دریافت جزئیات خدمات. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-        serviceId,
-        _currentUserService.UserName,
-        _currentUserService.UserId);
-
-    try
+    /// <summary>
+    /// بازیابی جزئیات کامل یک خدمات برای نمایش اطلاعات
+    /// این متد فقط خدمات‌های فعال (غیرحذف شده) را بازمی‌گرداند و تمام استانداردهای سیستم‌های پزشکی را رعایت می‌کند
+    /// 
+    /// ویژگی‌های کلیدی:
+    /// 1. رعایت کامل استانداردهای امنیتی پزشکی در مدیریت اطلاعات
+    /// 2. پشتیبانی کامل از محیط‌های ایرانی و تبدیل تاریخ به شمسی
+    /// 3. ارائه اطلاعات کامل برای تصمیم‌گیری‌های مدیریتی
+    /// 4. بهینه‌سازی عملکرد برای سیستم‌های پزشکی با ترافیک بالا
+    /// 5. مدیریت حرفه‌ای خطاها و ارائه پیام‌های کاربرپسند
+    /// 6. ارائه آمار و تحلیل‌های پزشکی برای بهبود کیفیت خدمات
+    /// 7. رعایت استانداردهای حفظ اطلاعات پزشکی (حداقل 10 سال)
+    /// 8. پشتیبانی از سیستم حذف نرم (Soft Delete) برای حفظ اطلاعات
+    /// 9. ارائه اطلاعات کاربران مرتبط با عملیات‌های سیستم
+    /// 10. ارائه اطلاعات کامل برای گزارش‌گیری پزشکی
+    /// </summary>
+    /// <param name="serviceId">شناسه خدمات مورد نظر</param>
+    /// <returns>مدل جزئیات کامل خدمات</returns>
+    public async Task<ServiceResult<ServiceDetailsViewModel>> GetServiceDetailsAsync(int serviceId)
     {
-        // اعتبارسنجی ورودی
-        if (serviceId <= 0)
+        _log.Information(
+            "درخواست دریافت جزئیات خدمات. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+            serviceId,
+            _currentUserService.UserName,
+            _currentUserService.UserId);
+
+        try
         {
-            _log.Warning(
-                "درخواست دریافت جزئیات خدمات با شناسه نامعتبر. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                serviceId,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-            return ServiceResult<ServiceDetailsViewModel>.Failed("شناسه خدمات معتبر نیست.");
-        }
+            // اعتبارسنجی ورودی
+            if (serviceId <= 0)
+            {
+                _log.Warning(
+                    "درخواست دریافت جزئیات خدمات با شناسه نامعتبر. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    serviceId,
+                    _currentUserService.UserName,
+                    _currentUserService.UserId);
+                return ServiceResult<ServiceDetailsViewModel>.Failed("شناسه خدمات معتبر نیست.");
+            }
 
             // دریافت خدمات با روابط مورد نیاز - استفاده صحیح از ThenInclude
             // دریافت خدمات با روابط مورد نیاز - استفاده صحیح از Include برای EF 6.1+
@@ -672,122 +704,122 @@ public async Task<ServiceResult<ServiceDetailsViewModel>> GetServiceDetailsAsync
                 .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
 
             if (service == null)
-        {
-            _log.Warning(
-                "درخواست جزئیات برای خدمات غیرموجود یا حذف شده. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                serviceId,
-                _currentUserService.UserName,
-                _currentUserService.UserId);
-            return ServiceResult<ServiceDetailsViewModel>.Failed("خدمات مشخص‌شده پیدا نشد یا حذف شده است.");
-        }
+            {
+                _log.Warning(
+                    "درخواست جزئیات برای خدمات غیرموجود یا حذف شده. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    serviceId,
+                    _currentUserService.UserName,
+                    _currentUserService.UserId);
+                return ServiceResult<ServiceDetailsViewModel>.Failed("خدمات مشخص‌شده پیدا نشد یا حذف شده است.");
+            }
 
-        // دریافت اطلاعات کاربران مرتبط به صورت یکجا برای کاهش تعداد کوئری‌ها
-        var userIds = new HashSet<string>();
-        if (!string.IsNullOrEmpty(service.CreatedByUserId)) userIds.Add(service.CreatedByUserId);
-        if (!string.IsNullOrEmpty(service.UpdatedByUserId)) userIds.Add(service.UpdatedByUserId);
-        if (!string.IsNullOrEmpty(service.DeletedByUserId)) userIds.Add(service.DeletedByUserId);
+            // دریافت اطلاعات کاربران مرتبط به صورت یکجا برای کاهش تعداد کوئری‌ها
+            var userIds = new HashSet<string>();
+            if (!string.IsNullOrEmpty(service.CreatedByUserId)) userIds.Add(service.CreatedByUserId);
+            if (!string.IsNullOrEmpty(service.UpdatedByUserId)) userIds.Add(service.UpdatedByUserId);
+            if (!string.IsNullOrEmpty(service.DeletedByUserId)) userIds.Add(service.DeletedByUserId);
 
-        var users = userIds.Any()
-            ? await _context.Users
-                .Where(u => userIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id)
-            : new Dictionary<string, ApplicationUser>();
+            var users = userIds.Any()
+                ? await _context.Users
+                    .Where(u => userIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id)
+                : new Dictionary<string, ApplicationUser>();
 
-        // محاسبه آمار استفاده و درآمد
-        var usageCount = await GetUsageCountAsync(serviceId);
-        var totalRevenue = await GetTotalRevenueAsync(serviceId);
+            // محاسبه آمار استفاده و درآمد
+            var usageCount = await GetUsageCountAsync(serviceId);
+            var totalRevenue = await GetTotalRevenueAsync(serviceId);
 
-        // محاسبه تاریخ آخرین استفاده
-        DateTime? lastUsageDate = null;
-        var lastUsage = await _context.ReceptionItems
-            .Where(ri => ri.ServiceId == serviceId && !ri.IsDeleted)
-            .OrderByDescending(ri => ri.CreatedAt)
-            .Select(ri => ri.CreatedAt)
-            .FirstOrDefaultAsync();
+            // محاسبه تاریخ آخرین استفاده
+            DateTime? lastUsageDate = null;
+            var lastUsage = await _context.ReceptionItems
+                .Where(ri => ri.ServiceId == serviceId && !ri.IsDeleted)
+                .OrderByDescending(ri => ri.CreatedAt)
+                .Select(ri => ri.CreatedAt)
+                .FirstOrDefaultAsync();
 
-        // بررسی اینکه آیا مقداری پیدا شده است یا نه
-        if (lastUsage != default(DateTime))
-        {
-            lastUsageDate = lastUsage;
-        }
+            // بررسی اینکه آیا مقداری پیدا شده است یا نه
+            if (lastUsage != default(DateTime))
+            {
+                lastUsageDate = lastUsage;
+            }
 
             // ساخت ViewModel به صورت دستی
             var details = new ServiceDetailsViewModel
+            {
+                ServiceId = service.ServiceId,
+                Title = service.Title,
+                ServiceCode = service.ServiceCode,
+                ServiceCategoryTitle = service.ServiceCategory?.Title,
+                DepartmentTitle = service.ServiceCategory?.Department?.Name,
+                ClinicTitle = service.ServiceCategory?.Department?.Clinic?.Name,
+                Price = service.Price,
+                Description = service.Description,
+                IsActive = !service.IsDeleted,
+                CreatedAt = service.CreatedAt,
+                UpdatedAt = service.UpdatedAt,
+                DeletedAt = service.DeletedAt
+            };
+
+            // تنظیم اطلاعات کاربران
+            details.CreatedBy = GetUserName(users, service.CreatedByUserId) ?? "سیستم";
+            details.UpdatedBy = GetUserName(users, service.UpdatedByUserId) ?? "";
+            details.DeletedBy = GetUserName(users, service.DeletedByUserId) ?? "";
+
+            // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
+            details.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.CreatedAt);
+            if (details.UpdatedAt.HasValue)
+                details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt.Value);
+            if (details.DeletedAt.HasValue)
+                details.DeletedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.DeletedAt.Value);
+            if (details.LastUsageDate.HasValue)
+                details.LastUsageDateShamsi = DateTimeExtensions.ToPersianDateTime(details.LastUsageDate.Value);
+
+            // افزودن اطلاعات اضافی برای گزارش‌گیری پزشکی
+            details.UsageCount = usageCount;
+            details.TotalRevenue = totalRevenue;
+            details.LastUsageDate = lastUsageDate;
+            details.LastUsageDateShamsi = details.LastUsageDate.HasValue ?
+                DateTimeExtensions.ToPersianDateTime(details.LastUsageDate.Value) : "نامشخص";
+
+            _log.Information(
+                "دریافت جزئیات خدمات با شناسه {ServiceId} با موفقیت انجام شد. User: {UserName} (Id: {UserId})",
+                serviceId,
+                _currentUserService.UserName,
+                _currentUserService.UserId);
+
+            return ServiceResult<ServiceDetailsViewModel>.Successful(details);
+        }
+        catch (Exception ex)
         {
-            ServiceId = service.ServiceId,
-            Title = service.Title,
-            ServiceCode = service.ServiceCode,
-            ServiceCategoryTitle = service.ServiceCategory?.Title,
-            DepartmentTitle = service.ServiceCategory?.Department?.Name,
-            ClinicTitle = service.ServiceCategory?.Department?.Clinic?.Name,
-            Price = service.Price,
-            Description = service.Description,
-            IsActive = !service.IsDeleted,
-            CreatedAt = service.CreatedAt,
-            UpdatedAt = service.UpdatedAt,
-            DeletedAt = service.DeletedAt
-        };
+            _log.Error(
+                ex,
+                "خطا در دریافت جزئیات خدمات. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                serviceId,
+                _currentUserService.UserName,
+                _currentUserService.UserId);
 
-        // تنظیم اطلاعات کاربران
-        details.CreatedBy = GetUserName(users, service.CreatedByUserId) ?? "سیستم";
-        details.UpdatedBy = GetUserName(users, service.UpdatedByUserId) ?? "";
-        details.DeletedBy = GetUserName(users, service.DeletedByUserId) ?? "";
-
-        // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
-        details.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.CreatedAt);
-        if (details.UpdatedAt.HasValue)
-            details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt.Value);
-        if (details.DeletedAt.HasValue)
-            details.DeletedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.DeletedAt.Value);
-        if (details.LastUsageDate.HasValue)
-            details.LastUsageDateShamsi = DateTimeExtensions.ToPersianDateTime(details.LastUsageDate.Value);
-
-        // افزودن اطلاعات اضافی برای گزارش‌گیری پزشکی
-        details.UsageCount = usageCount;
-        details.TotalRevenue = totalRevenue;
-        details.LastUsageDate = lastUsageDate;
-        details.LastUsageDateShamsi = details.LastUsageDate.HasValue ?
-            DateTimeExtensions.ToPersianDateTime(details.LastUsageDate.Value) : "نامشخص";
-
-        _log.Information(
-            "دریافت جزئیات خدمات با شناسه {ServiceId} با موفقیت انجام شد. User: {UserName} (Id: {UserId})",
-            serviceId,
-            _currentUserService.UserName,
-            _currentUserService.UserId);
-
-        return ServiceResult<ServiceDetailsViewModel>.Successful(details);
+            return ServiceResult<ServiceDetailsViewModel>.Failed(
+                "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید و در صورت تکرار خطا با پشتیبانی تماس بگیرید.");
+        }
     }
-    catch (Exception ex)
+
+    /// <summary>
+    /// کمک‌کننده برای دریافت نام کاربر
+    /// </summary>
+    private string GetUserName(Dictionary<string, ApplicationUser> users, string userId)
     {
-        _log.Error(
-            ex,
-            "خطا در دریافت جزئیات خدمات. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-            serviceId,
-            _currentUserService.UserName,
-            _currentUserService.UserId);
+        if (string.IsNullOrEmpty(userId) || !users.ContainsKey(userId))
+            return null;
 
-        return ServiceResult<ServiceDetailsViewModel>.Failed(
-            "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید و در صورت تکرار خطا با پشتیبانی تماس بگیرید.");
+        var user = users[userId];
+        return $"{user.FirstName} {user.LastName}".Trim();
     }
-}
-
-/// <summary>
-/// کمک‌کننده برای دریافت نام کاربر
-/// </summary>
-private string GetUserName(Dictionary<string, ApplicationUser> users, string userId)
-{
-    if (string.IsNullOrEmpty(userId) || !users.ContainsKey(userId))
-        return null;
-
-    var user = users[userId];
-    return $"{user.FirstName} {user.LastName}".Trim();
-}
 
 
-/// <summary>
-/// دریافت تاریخ آخرین استفاده از خدمات
-/// </summary>
-private async Task<DateTime?> GetLastUsageDateAsync(int serviceId)
+    /// <summary>
+    /// دریافت تاریخ آخرین استفاده از خدمات
+    /// </summary>
+    private async Task<DateTime?> GetLastUsageDateAsync(int serviceId)
     {
         try
         {
@@ -1544,4 +1576,69 @@ private async Task<DateTime?> GetLastUsageDateAsync(int serviceId)
             return new List<TopServiceItem>();
         }
     }
+
+    /// <summary>
+    /// به‌روزرسانی قیمت خدمت بر اساس ServiceComponents
+    /// این method بعد از ایجاد یا ویرایش ServiceComponents فراخوانی می‌شود
+    /// </summary>
+    /// <param name="serviceId">شناسه خدمت</param>
+    /// <returns>نتیجه عملیات</returns>
+    public async Task<ServiceResult<decimal>> UpdateServicePriceAsync(int serviceId)
+    {
+        try
+        {
+            _log.Information(
+                "درخواست به‌روزرسانی قیمت خدمت. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+            // دریافت خدمت با ServiceComponents
+            var service = await _context.Services
+                .Include(s => s.ServiceComponents)
+                .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+            if (service == null)
+            {
+                _log.Warning(
+                    "خدمت یافت نشد. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<decimal>.Failed("خدمت یافت نشد");
+            }
+
+            // محاسبه قیمت جدید
+            var calculatedPrice = _serviceCalculationService.CalculateServicePrice(service);
+            
+            if (calculatedPrice != service.Price)
+            {
+                var oldPrice = service.Price;
+                service.Price = calculatedPrice;
+                service.UpdatedAt = _currentUserService.UtcNow;
+                service.UpdatedByUserId = _currentUserService.UserId;
+
+                await _context.SaveChangesAsync();
+
+                _log.Information(
+                    "قیمت خدمت به‌روزرسانی شد. ServiceId: {ServiceId}, OldPrice: {OldPrice}, NewPrice: {NewPrice}. User: {UserName} (Id: {UserId})",
+                    serviceId, oldPrice, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<decimal>.Successful(calculatedPrice, "قیمت خدمت با موفقیت به‌روزرسانی شد");
+            }
+            else
+            {
+                _log.Information(
+                    "قیمت خدمت تغییری نکرده است. ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
+                    serviceId, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<decimal>.Successful(calculatedPrice, "قیمت خدمت تغییری نکرده است");
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex,
+                "خطا در به‌روزرسانی قیمت خدمت. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+            return ServiceResult<decimal>.Failed("خطا در به‌روزرسانی قیمت خدمت");
+        }
+    }
 }
+

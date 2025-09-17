@@ -43,17 +43,17 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     public decimal? TariffPrice { get; set; }
 
     /// <summary>
-    /// سهم بیمار به درصد (مثلاً 30 = 30%).
+    /// سهم بیمار به مبلغ (تومان).
     /// اگر null باشد، از سهم پیش‌فرض بیمه استفاده می‌شود.
     /// </summary>
-    [Range(0, 100, ErrorMessage = "سهم بیمار باید بین 0 تا 100 درصد باشد.")]
+    [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
     public decimal? PatientShare { get; set; }
 
     /// <summary>
-    /// سهم بیمه به درصد (مثلاً 70 = 70%).
+    /// سهم بیمه به مبلغ (تومان).
     /// اگر null باشد، از سهم پیش‌فرض بیمه استفاده می‌شود.
     /// </summary>
-    [Range(0, 100, ErrorMessage = "سهم بیمه باید بین 0 تا 100 درصد باشد.")]
+    [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
     public decimal? InsurerShare { get; set; }
 
     /// <summary>
@@ -168,13 +168,13 @@ public class InsuranceTariffConfig : EntityTypeConfiguration<InsuranceTariff>
 
         Property(t => t.PatientShare)
             .IsOptional()
-            .HasPrecision(5, 2)
+            .HasPrecision(18, 2)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_PatientShare")));
 
         Property(t => t.InsurerShare)
             .IsOptional()
-            .HasPrecision(5, 2)
+            .HasPrecision(18, 2)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_InsurerShare")));
 

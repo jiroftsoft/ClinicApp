@@ -137,12 +137,11 @@
                                         @class = "form-control", 
                                         type = "number", 
                                         min = "0", 
-                                        max = "100", 
-                                        step = "0.1", 
-                                        placeholder = "درصد سهم بیمار" 
+                                        step = "1000", 
+                                        placeholder = "مبلغ سهم بیمار (تومان)" 
                                     })
                                     @Html.ValidationMessageFor(model => model.PatientShare, "", new { @class = "text-danger small mt-1" })
-                                    <div class="form-note">درصد سهم بیمار (0-100)</div>
+                                    <div class="form-note">مبلغ سهم بیمار (تومان)</div>
                                 </div>
                             </div>
 
@@ -154,12 +153,11 @@
                                         @class = "form-control", 
                                         type = "number", 
                                         min = "0", 
-                                        max = "100", 
-                                        step = "0.1", 
-                                        placeholder = "درصد سهم بیمه" 
+                                        step = "1000", 
+                                        placeholder = "مبلغ سهم بیمه (تومان)" 
                                     })
                                     @Html.ValidationMessageFor(model => model.InsurerShare, "", new { @class = "text-danger small mt-1" })
-                                    <div class="form-note">درصد سهم بیمه (0-100)</div>
+                                    <div class="form-note">مبلغ سهم بیمه (تومان)</div>
                                 </div>
                             </div>
                         </div>
@@ -216,8 +214,8 @@
 
                     <h6>سهم بیمار و بیمه</h6>
                     <p class="text-muted small">
-                        می‌توانید درصد سهم بیمار و بیمه را برای این تعرفه خاص تعریف کنید. 
-                        اگر تعریف نشود، از تنظیمات طرح بیمه استفاده می‌شود.
+                        می‌توانید مبلغ سهم بیمار و بیمه را برای این تعرفه خاص تعریف کنید. 
+                        اگر تعریف نشود، از تنظیمات طرح بیمه محاسبه می‌شود.
                     </p>
 
                     <h6>مثال</h6>

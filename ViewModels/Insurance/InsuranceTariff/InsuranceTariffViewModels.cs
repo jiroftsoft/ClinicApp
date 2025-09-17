@@ -133,12 +133,12 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Range(0, double.MaxValue, ErrorMessage = "قیمت تعرفه نمی‌تواند منفی باشد.")]
         public decimal? TariffPrice { get; set; }
 
-        [Display(Name = "سهم بیمار (%)")]
-        [Range(0, 100, ErrorMessage = "سهم بیمار باید بین 0 تا 100 درصد باشد.")]
+        [Display(Name = "سهم بیمار (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
         public decimal? PatientShare { get; set; }
 
-        [Display(Name = "سهم بیمه (%)")]
-        [Range(0, 100, ErrorMessage = "سهم بیمه باید بین 0 تا 100 درصد باشد.")]
+        [Display(Name = "سهم بیمه (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
         public decimal? InsurerShare { get; set; }
 
         [Display(Name = "فعال")]
