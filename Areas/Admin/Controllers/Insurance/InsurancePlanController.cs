@@ -29,8 +29,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
     //[Authorize(Roles = "Admin")]
-    [RouteArea("Admin")]
-    [RoutePrefix("Insurance/Plan")]
     public class InsurancePlanController : Controller
     {
         private readonly IInsurancePlanService _insurancePlanService;
@@ -67,8 +65,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش صفحه اصلی طرح‌های بیمه
         /// </summary>
         [HttpGet]
-        [Route("")]
-        [Route("Index")]
         public async Task<ActionResult> Index(string searchTerm = "", int? providerId = null, bool? isActive = null, int page = 1)
         {
             _log.Information("بازدید از صفحه اصلی طرح‌های بیمه. SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsActive: {IsActive}, Page: {Page}. User: {UserName} (Id: {UserId})",
@@ -167,7 +163,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش جزئیات طرح بیمه
         /// </summary>
         [HttpGet]
-        [Route("Details/{id:int}")]
         public async Task<ActionResult> Details(int id)
         {
             _log.Information(
@@ -212,7 +207,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ایجاد طرح بیمه
         /// </summary>
         [HttpGet]
-        [Route("Create")]
         public async Task<ActionResult> Create(int? providerId = null)
         {
             _log.Information("بازدید از فرم ایجاد طرح بیمه. ProviderId: {ProviderId}. User: {UserName} (Id: {UserId})",
@@ -249,7 +243,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("Create")]
         public async Task<ActionResult> Create(InsurancePlanCreateEditViewModel model)
         {
             _log.Information(
@@ -284,7 +277,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         model?.Name, model?.PlanCode, model?.InsuranceProviderId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     _messageNotificationService.AddErrorMessage(result.Message);
-                    
+
                     // بارگیری مجدد لیست ارائه‌دهندگان بیمه
                     await LoadInsuranceProvidersForViewModelAsync(model);
 
@@ -305,7 +298,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     model?.Name, model?.PlanCode, model?.InsuranceProviderId, _currentUserService.UserName, _currentUserService.UserId);
 
                 _messageNotificationService.AddErrorMessage("خطا در ایجاد طرح بیمه");
-                
+
                 // بارگیری مجدد لیست ارائه‌دهندگان بیمه
                 await LoadInsuranceProvidersForViewModelAsync(model);
 
@@ -321,7 +314,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ویرایش طرح بیمه
         /// </summary>
         [HttpGet]
-        [Route("Edit/{id:int}")]
         public async Task<ActionResult> Edit(int id)
         {
             _log.Information(
@@ -369,7 +361,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("Edit")]
         public async Task<ActionResult> Edit(InsurancePlanCreateEditViewModel model)
         {
             _log.Information(
@@ -404,7 +395,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         model?.InsurancePlanId, model?.Name, model?.PlanCode, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     _messageNotificationService.AddErrorMessage(result.Message);
-                    
+
                     // بارگیری مجدد لیست ارائه‌دهندگان بیمه
                     await LoadInsuranceProvidersForViewModelAsync(model);
 
@@ -425,7 +416,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     model?.InsurancePlanId, model?.Name, model?.PlanCode, _currentUserService.UserName, _currentUserService.UserId);
 
                 _messageNotificationService.AddErrorMessage("خطا در به‌روزرسانی طرح بیمه");
-                
+
                 // بارگیری مجدد لیست ارائه‌دهندگان بیمه
                 await LoadInsuranceProvidersForViewModelAsync(model);
 
@@ -441,7 +432,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم تأیید حذف طرح بیمه
         /// </summary>
         [HttpGet]
-        [Route("Delete/{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
             _log.Information(
@@ -483,7 +473,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("Delete")]
         [ActionName("Delete")]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
@@ -512,7 +501,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     if (dependencyInfo.Success)
                     {
                         var message = $"طرح بیمه قابل حذف نیست. وابستگی‌ها: {dependencyInfo.Data.DependencySummary}";
-                        
+
                         _log.Warning(
                             "تلاش برای حذف طرح بیمه با وابستگی. PlanId: {PlanId}, Dependencies: {Dependencies}. User: {UserName} (Id: {UserId})",
                             id, dependencyInfo.Data.DependencySummary, _currentUserService.UserName, _currentUserService.UserId);
@@ -523,7 +512,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     {
                         _messageNotificationService.AddErrorMessage("طرح بیمه قابل حذف نیست. وابستگی‌هایی وجود دارد.");
                     }
-                    
+
                     return RedirectToAction("Index");
                 }
 
@@ -565,7 +554,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش وابستگی‌های طرح بیمه
         /// </summary>
         [HttpGet]
-        [Route("Dependencies/{id:int}")]
         public async Task<ActionResult> Dependencies(int id)
         {
             _log.Information(
@@ -611,7 +599,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("CheckPlanCodeExists")]
         public async Task<JsonResult> CheckPlanCodeExists(string planCode, int? excludeId = null)
         {
             try
@@ -651,7 +638,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("GetPlansByProvider")]
         public async Task<JsonResult> GetPlansByProvider(int providerId)
         {
             try

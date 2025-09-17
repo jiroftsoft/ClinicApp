@@ -2,7 +2,7 @@
 using ClinicApp.Helpers;
 using ClinicApp.Infrastructure;
 using ClinicApp.Interfaces;
-using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.OTP;
 using ClinicApp.Interfaces.Payment;
 using ClinicApp.Models;
@@ -24,6 +24,7 @@ using System.Configuration;
 using System.Data.Entity;
 using System.Security.Claims;
 using System.Web;
+using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Repositories.ClinicAdmin;
 using ClinicApp.Services.ClinicAdmin;
 using ClinicApp.ViewModels.DoctorManagementVM;
@@ -36,6 +37,7 @@ using ClinicApp.Repositories.Payment;
 using ClinicApp.Services.Insurance;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
+using ClinicApp.Services.DataSeeding;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -307,6 +309,18 @@ namespace ClinicApp
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
                 container.RegisterType<ApplicationUserManager>();
+
+                // ثبت سرویس‌های Seed Data
+                container.RegisterType<FactorSettingSeedService>(new PerRequestLifetimeManager());
+                container.RegisterType<ServiceSeedService>(new PerRequestLifetimeManager());
+                container.RegisterType<ServiceTemplateSeedService>(new PerRequestLifetimeManager());
+                container.RegisterType<SystemSeedService>(new PerRequestLifetimeManager());
+
+                // ثبت سرویس مدیریت کای‌ها
+                container.RegisterType<IFactorSettingService, FactorSettingService>(new PerRequestLifetimeManager());
+                
+                // ثبت سرویس مدیریت قالب‌های خدمات
+                container.RegisterType<ServiceTemplateService>(new PerRequestLifetimeManager());
                 // ثبت سرویس‌های ارتباطی پزشکی
                 container.RegisterType<IIdentityMessageService, AsanakSmsService>(new HierarchicalLifetimeManager());
 
@@ -390,6 +404,7 @@ namespace ClinicApp
                 container.RegisterType<IPatientInsuranceRepository, PatientInsuranceRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IPlanServiceRepository, PlanServiceRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceCalculationRepository, InsuranceCalculationRepository>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceTariffRepository, InsuranceTariffRepository>(new PerRequestLifetimeManager());
 
                 // Register Insurance Module Services
                 container.RegisterType<IInsuranceProviderService, InsuranceProviderService>(new PerRequestLifetimeManager());
@@ -398,9 +413,22 @@ namespace ClinicApp
                 container.RegisterType<IInsuranceCalculationService, InsuranceCalculationService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceValidationService, InsuranceValidationService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsurancePlanDependencyService, InsurancePlanDependencyService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceTariffService, InsuranceTariffService>(new PerRequestLifetimeManager());
+
+                // Register InsuranceTariff Validators
+                container.RegisterType<IValidator<ViewModels.Insurance.InsuranceTariff.InsuranceTariffCreateEditViewModel>, 
+                    InsuranceTariffCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Insurance.InsuranceTariff.InsuranceTariffFilterViewModel>, 
+                    InsuranceTariffFilterViewModelValidator>(new PerRequestLifetimeManager());
 
                 // Register Message Notification Service
                 container.RegisterType<IMessageNotificationService, MessageNotificationService>(new PerRequestLifetimeManager());
+
+                // Register Shared Service Management Service
+                container.RegisterType<ISharedServiceManagementService, SharedServiceManagementService>(new PerRequestLifetimeManager());
+
+                // Register Service Calculation Service
+                container.RegisterType<IServiceCalculationService, ServiceCalculationService>(new PerRequestLifetimeManager());
 
                 // Register External Inquiry and Security Token Services
                 container.RegisterType<IExternalInquiryService, ExternalInquiryService>(new PerRequestLifetimeManager());

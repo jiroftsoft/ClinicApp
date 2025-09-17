@@ -7,6 +7,7 @@ using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Entities.Reception;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Models.Entities.Clinic;
 
@@ -58,6 +59,15 @@ public class Service : ISoftDelete, ITrackable
     /// </summary>
     [MaxLength(1000, ErrorMessage = "توضیحات نمی‌تواند بیش از 1000 کاراکتر باشد.")]
     public string Description { get; set; }
+
+    /// <summary>
+    /// آیا این خدمت دارای هشتگ است؟
+    /// این ویژگی برای دسته‌بندی و فیلتر کردن خدمات استفاده می‌شود
+    /// </summary>
+    public bool IsHashtagged { get; set; } = false;
+
+    // فیلدهای TechnicalPart و ProfessionalPart حذف شدند
+    // استفاده از ServiceComponents به عنوان روش اصلی محاسبه
 
     /// <summary>
     /// شناسه دسته‌بندی خدمات مرتبط با این خدمات
@@ -150,6 +160,18 @@ public class Service : ISoftDelete, ITrackable
     public virtual ICollection<InsuranceTariff> Tariffs { get; set; } = new HashSet<InsuranceTariff>();
     public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
 
+    /// <summary>
+    /// لیست اجزای خدمت (فنی و حرفه‌ای)
+    /// این لیست برای محاسبه قیمت بر اساس کای‌ها استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<ServiceComponent> ServiceComponents { get; set; } = new HashSet<ServiceComponent>();
+
+    /// <summary>
+    /// لیست دپارتمان‌هایی که این خدمت در آن‌ها قابل استفاده است
+    /// این لیست برای مدیریت خدمات مشترک بین دپارتمان‌ها استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<SharedService> SharedServices { get; set; } = new HashSet<SharedService>();
+
     public bool IsActive { get; set; }
     public string Notes { get; set; }
 
@@ -190,6 +212,14 @@ public class ServiceConfig : EntityTypeConfiguration<Service>
         Property(s => s.Description)
             .IsOptional()
             .HasMaxLength(1000);
+
+        Property(s => s.IsHashtagged)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Service_IsHashtagged")));
+
+        // Property های TechnicalPart و ProfessionalPart حذف شدند
+        // استفاده از ServiceComponents به عنوان روش اصلی محاسبه
 
         // پیاده‌سازی ISoftDelete
         Property(s => s.IsDeleted)
@@ -247,6 +277,16 @@ public class ServiceConfig : EntityTypeConfiguration<Service>
         HasMany(s => s.Tariffs)
             .WithRequired(t => t.Service)
             .HasForeignKey(t => t.ServiceId)
+            .WillCascadeOnDelete(false);
+
+        HasMany(s => s.ServiceComponents)
+            .WithRequired(sc => sc.Service)
+            .HasForeignKey(sc => sc.ServiceId)
+            .WillCascadeOnDelete(false);
+
+        HasMany(s => s.SharedServices)
+            .WithRequired(ss => ss.Service)
+            .HasForeignKey(ss => ss.ServiceId)
             .WillCascadeOnDelete(false);
 
         HasOptional(s => s.DeletedByUser)

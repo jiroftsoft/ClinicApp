@@ -266,15 +266,15 @@ public class CashSessionConfig : EntityTypeConfiguration<CashSession>
 
         Property(cs => cs.OpeningBalance)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(cs => cs.CashBalance)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(cs => cs.PosBalance)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(cs => cs.Status)
             .IsRequired()

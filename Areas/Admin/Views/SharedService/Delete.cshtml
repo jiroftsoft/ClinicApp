@@ -1,0 +1,326 @@
+@model ClinicApp.ViewModels.SharedServiceDetailsViewModel
+@{
+    ViewBag.Title = "حذف خدمت مشترک";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-trash"></i>
+                        حذف خدمت مشترک
+                    </h4>
+                    <p class="mb-0">تأیید حذف خدمت مشترک</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <h5><i class="fas fa-exclamation-triangle"></i> هشدار مهم!</h5>
+                <p class="mb-0">
+                    شما در حال حذف خدمت مشترک <strong>@Model.ServiceTitle</strong> از دپارتمان <strong>@Model.DepartmentName</strong> هستید.
+                    این عمل قابل بازگشت نیست و ممکن است بر سایر بخش‌های سیستم تأثیر بگذارد.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Information Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        اطلاعات خدمت مشترک
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Service Information -->
+                        <div class="col-md-6">
+                            <div class="info-box bg-light">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-cogs"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">اطلاعات خدمت</span>
+                                    <span class="info-box-number">@Model.ServiceTitle</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-primary" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        کد: @Model.ServiceCode
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Information -->
+                        <div class="col-md-6">
+                            <div class="info-box bg-light">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-building"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">اطلاعات دپارتمان</span>
+                                    <span class="info-box-number">@Model.DepartmentName</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        شناسه: @Model.DepartmentId
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <!-- Status Information -->
+                        <div class="col-md-6">
+                            <div class="info-box bg-light">
+                                <span class="info-box-icon @(Model.IsActive ? "bg-success" : "bg-warning")">
+                                    <i class="fas @(Model.IsActive ? "fa-check-circle" : "fa-pause-circle")"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">وضعیت فعال</span>
+                                    <span class="info-box-number">@Model.IsActiveText</span>
+                                    <div class="progress">
+                                        <div class="progress-bar @(Model.IsActive ? "bg-success" : "bg-warning")" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        @(Model.IsActive ? "خدمت در دسترس است" : "خدمت غیرفعال است")
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Information -->
+                        <div class="col-md-6">
+                            <div class="info-box bg-light">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-money-bill-wave"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">قیمت خدمت</span>
+                                    <span class="info-box-number">@Model.ServicePriceFormatted</span>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-info" style="width: 100%"></div>
+                                    </div>
+                                    <span class="progress-description">
+                                        قیمت پایه خدمت
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed Information Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list-alt"></i>
+                        جزئیات کامل
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>شناسه خدمت مشترک:</strong></td>
+                                        <td>@Model.SharedServiceId</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>شناسه خدمت:</strong></td>
+                                        <td>@Model.ServiceId</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>عنوان خدمت:</strong></td>
+                                        <td>@Model.ServiceTitle</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>کد خدمت:</strong></td>
+                                        <td>@Model.ServiceCode</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>قیمت خدمت:</strong></td>
+                                        <td>@Model.ServicePriceFormatted</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tbody>
+                                    <tr>
+                                        <td><strong>شناسه دپارتمان:</strong></td>
+                                        <td>@Model.DepartmentId</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>نام دپارتمان:</strong></td>
+                                        <td>@Model.DepartmentName</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>وضعیت فعال:</strong></td>
+                                        <td>
+                                            <span class="badge @(Model.IsActive ? "badge-success" : "badge-warning")">
+                                                @Model.IsActiveText
+                                            </span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>توضیحات خاص دپارتمان:</strong></td>
+                                        <td>@(string.IsNullOrEmpty(Model.DepartmentSpecificNotes) ? "توضیحی ارائه نشده" : Model.DepartmentSpecificNotes)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ضریب فنی Override:</strong></td>
+                                        <td>@(Model.OverrideTechnicalFactor?.ToString("N2") ?? "استفاده از مقدار پیش‌فرض")</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>ضریب حرفه‌ای Override:</strong></td>
+                                        <td>@(Model.OverrideProfessionalFactor?.ToString("N2") ?? "استفاده از مقدار پیش‌فرض")</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Impact Analysis Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        تحلیل تأثیر حذف
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-warning text-warning"></i> تأثیرات احتمالی:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-danger"></i> این خدمت از دپارتمان @Model.DepartmentName حذف خواهد شد</li>
+                                <li><i class="fas fa-check text-danger"></i> امکان استفاده از این خدمت در این دپارتمان از بین خواهد رفت</li>
+                                <li><i class="fas fa-check text-danger"></i> محاسبات قیمت ممکن است تحت تأثیر قرار گیرد</li>
+                                <li><i class="fas fa-check text-danger"></i> گزارش‌های آماری ممکن است تغییر کنند</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6><i class="fas fa-info-circle text-info"></i> نکات مهم:</h6>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-info"></i> این عمل قابل بازگشت نیست</li>
+                                <li><i class="fas fa-check text-info"></i> تمام اطلاعات ردیابی حفظ خواهد شد</li>
+                                <li><i class="fas fa-check text-info"></i> خدمت اصلی حذف نخواهد شد</li>
+                                <li><i class="fas fa-check text-info"></i> فقط ارتباط با دپارتمان قطع خواهد شد</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirmation Section -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-check-circle"></i>
+                        تأیید حذف
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> لطفاً قبل از ادامه، موارد زیر را بررسی کنید:</h6>
+                        <ul class="mb-0">
+                            <li>آیا از حذف این خدمت مشترک اطمینان دارید؟</li>
+                            <li>آیا تأثیرات احتمالی را در نظر گرفته‌اید؟</li>
+                            <li>آیا با مدیران مربوطه مشورت کرده‌اید؟</li>
+                        </ul>
+                    </div>
+
+                    @using (Html.BeginForm("Delete", "SharedService", FormMethod.Post, new { @class = "form-horizontal" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.SharedServiceId)
+
+                        <div class="form-group">
+                            <div class="form-check">
+                                <input type="checkbox" class="form-check-input" id="confirmDelete" required>
+                                <label class="form-check-label" for="confirmDelete">
+                                    من تأیید می‌کنم که از حذف این خدمت مشترک اطمینان دارم و تأثیرات آن را در نظر گرفته‌ام
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <button type="submit" class="btn btn-danger" id="deleteButton" disabled>
+                                        <i class="fas fa-trash"></i>
+                                        حذف خدمت مشترک
+                                    </button>
+                                </div>
+                                <div>
+                                    <a href="@Url.Action("Details", new { id = Model.SharedServiceId })" class="btn btn-info">
+                                        <i class="fas fa-eye"></i>
+                                        مشاهده جزئیات
+                                    </a>
+                                    <a href="@Url.Action("Index")" class="btn btn-light">
+                                        <i class="fas fa-arrow-right"></i>
+                                        بازگشت به لیست
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // مدیریت فعال/غیرفعال کردن دکمه حذف
+            $('#confirmDelete').change(function() {
+                if ($(this).is(':checked')) {
+                    $('#deleteButton').prop('disabled', false);
+                } else {
+                    $('#deleteButton').prop('disabled', true);
+                }
+            });
+
+            // تأیید نهایی حذف
+            $('form').on('submit', function(e) {
+                if (!confirm('آیا از حذف این خدمت مشترک اطمینان دارید؟ این عمل قابل بازگشت نیست.')) {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+}

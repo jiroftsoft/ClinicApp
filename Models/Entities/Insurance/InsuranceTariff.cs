@@ -56,6 +56,12 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     [Range(0, 100, ErrorMessage = "سهم بیمه باید بین 0 تا 100 درصد باشد.")]
     public decimal? InsurerShare { get; set; }
 
+    /// <summary>
+    /// وضعیت فعال بودن تعرفه
+    /// این فیلد برای کنترل دسترسی به تعرفه‌ها در سیستم‌های پزشکی ضروری است
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
     /// نشان‌دهنده وضعیت حذف شدن تعرفه بیمه

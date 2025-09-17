@@ -1,0 +1,637 @@
+@using ClinicApp.Extensions
+@model ClinicApp.ViewModels.FactorSettingViewModel
+@{
+    ViewBag.Title = "جزئیات کای";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .details-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .details-header {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            color: white;
+            padding: 25px;
+            position: relative;
+        }
+
+        .details-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .details-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .factor-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .factor-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .factor-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            margin-bottom: 0;
+        }
+
+        .details-body {
+            padding: 30px;
+        }
+
+        .info-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1a6dcc;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e3f2fd;
+            display: flex;
+            align-items: center;
+        }
+
+        .section-title i {
+            margin-left: 10px;
+            font-size: 1.1rem;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .info-item {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 20px;
+            border-left: 4px solid #1a6dcc;
+            transition: all 0.3s ease;
+        }
+
+        .info-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .info-label {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .info-value {
+            font-size: 1.1rem;
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .status-active {
+            background-color: #d4edda;
+            color: #155724;
+        }
+
+        .status-inactive {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+
+        .status-frozen {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+
+        .type-badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 600;
+        }
+
+        .type-technical {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            color: #1976d2;
+        }
+
+        .type-professional {
+            background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+            color: #7b1fa2;
+        }
+
+        .hashtag-badge {
+            background: linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%);
+            color: #f57c00;
+            padding: 4px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .value-display {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a6dcc;
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 2px solid #dee2e6;
+        }
+
+        .calculation-preview {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            border-radius: 12px;
+            padding: 25px;
+            border: 2px solid #c3e6cb;
+        }
+
+        .calculation-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #155724;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .calculation-formula {
+            font-family: 'Courier New', monospace;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #c3e6cb;
+            margin-bottom: 15px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #155724;
+        }
+
+        .calculation-result {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #155724;
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #28a745;
+        }
+
+        .audit-section {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            border: 1px solid #dee2e6;
+        }
+
+        .audit-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .audit-item:last-child {
+            border-bottom: none;
+        }
+
+        .audit-label {
+            font-weight: 500;
+            color: #6c757d;
+        }
+
+        .audit-value {
+            color: #212529;
+            font-weight: 600;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .btn-action {
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: none;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #212529;
+        }
+
+        .btn-edit:hover {
+            background: linear-gradient(135deg, #e0a800 0%, #d39e00 100%);
+            color: #212529;
+            transform: translateY(-2px);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background: linear-gradient(135deg, #c82333 0%, #a71e2a 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+
+        .btn-back:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-freeze {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+        }
+
+        .btn-freeze:hover {
+            background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .warning-title {
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .warning-text {
+            color: #856404;
+            margin-bottom: 0;
+        }
+
+        .security-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        @@media (max-width: 768px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-action {
+                width: 100%;
+                max-width: 300px;
+                justify-content: center;
+            }
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="details-container">
+            <!-- هدر جزئیات -->
+            <div class="details-header">
+                <div class="security-indicator">
+                    <i class="fas fa-shield-alt"></i> امن
+                </div>
+                <div class="details-header-content">
+                    <div class="factor-icon">
+                        <i class="fas fa-calculator"></i>
+                    </div>
+                    <h1 class="factor-title">@Model.Name</h1>
+                    <p class="factor-subtitle">جزئیات کامل کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")</p>
+                </div>
+            </div>
+
+            <!-- محتوای جزئیات -->
+            <div class="details-body">
+                <!-- هشدار امنیتی -->
+                @if (!Model.IsActive)
+                {
+                    <div class="warning-box">
+                        <div class="warning-title">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            هشدار: کای غیرفعال
+                        </div>
+                        <p class="warning-text">
+                            این کای در حال حاضر غیرفعال است و در محاسبات قیمت خدمات استفاده نمی‌شود.
+                        </p>
+                    </div>
+                }
+
+                <!-- اطلاعات اصلی -->
+                <div class="info-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-info-circle"></i>
+                        اطلاعات اصلی
+                    </h3>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="info-label">نوع کای</div>
+                            <div class="info-value">
+                                <span class="type-badge @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "type-technical" : "type-professional")">
+                                    <i class="fas fa-@(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "cogs" : "user-md")"></i>
+                                    @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")
+                                </span>
+                                @if (Model.IsHashtagged)
+                                {
+                                    <span class="hashtag-badge ms-2">
+                                        <i class="fas fa-hashtag"></i> هشتگ‌دار
+                                    </span>
+                                }
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">سال مالی</div>
+                            <div class="info-value">
+                                <i class="fas fa-calendar-alt"></i>
+                                @Model.FinancialYear
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">وضعیت</div>
+                            <div class="info-value">
+                                <span class="status-badge @(Model.IsActive ? "status-active" : "status-inactive")">
+                                    <i class="fas fa-circle"></i>
+                                    @(Model.IsActive ? "فعال" : "غیرفعال")
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">مقدار کای</div>
+                            <div class="value-display">
+                                @if (Model.Value > 0)
+                                {
+                                    @Model.Value.ToString("N0") <text>ریال</text>
+                                    <br />
+                                    <small style="color: #666;">(@(Model.Value / 10).ToString("N0") تومان)</small>
+                                }
+                                else
+                                {
+                                    <span style="color: red;">خطا در مقدار: @Model.Value</span>
+                                }
+                                <br />
+                                <small style="color: #666;">مقدار خام: @Model.Value.ToString("F2") | نوع: @Model.Value.GetType().Name | FactorType: @Model.FactorType | IsHashtagged: @Model.IsHashtagged</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- پیش‌نمایش محاسبه -->
+                <div class="info-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-calculator"></i>
+                        پیش‌نمایش محاسبه
+                    </h3>
+                    <div class="calculation-preview">
+                        <div class="calculation-title">
+                            <i class="fas fa-chart-line"></i>
+                            نحوه محاسبه قیمت خدمت
+                        </div>
+                        <div class="calculation-formula">
+                            قیمت نهایی = (جزء @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") × کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای"))
+                        </div>
+                        <div class="calculation-result">
+                            @if (Model.Value > 0)
+                            {
+                                <text>مثال: جزء @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") 3.0 × کای @Model.Value.ToString("N0") = @((3.0m * Model.Value).ToString("N0")) ریال</text>
+                                <br />
+                                <small style="color: #666;">(@((3.0m * Model.Value / 10).ToString("N0")) تومان)</small>
+                            }
+                            else
+                            {
+                                <span style="color: red;">خطا در محاسبه: مقدار کای نامعتبر است</span>
+                            }
+                            <br />
+                            <small style="color: #666;">محاسبه خام: 3.0 × @Model.Value.ToString("F2") = @(Model.Value > 0 ? (3.0m * Model.Value).ToString("F2") : "خطا")</small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- توضیحات -->
+                @if (!string.IsNullOrEmpty(Model.Description))
+                {
+                    <div class="info-section">
+                        <h3 class="section-title">
+                            <i class="fas fa-comment-alt"></i>
+                            توضیحات
+                        </h3>
+                        <div class="info-item">
+                            <div class="info-value" style="line-height: 1.6;">
+                                @Model.Description
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- اطلاعات حسابرسی -->
+                <div class="info-section">
+                    <h3 class="section-title">
+                        <i class="fas fa-history"></i>
+                        اطلاعات حسابرسی
+                    </h3>
+                    <div class="audit-section">
+                        <div class="audit-item">
+                            <span class="audit-label">
+                                <i class="fas fa-user-plus"></i>
+                                ایجاد کننده
+                            </span>
+                            <span class="audit-value">@Model.CreatedBy</span>
+                        </div>
+                        <div class="audit-item">
+                            <span class="audit-label">
+                                <i class="fas fa-calendar-plus"></i>
+                                تاریخ ایجاد
+                            </span>
+                            <span class="audit-value">@Model.CreatedAtShamsi</span>
+                        </div>
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <div class="audit-item">
+                                <span class="audit-label">
+                                    <i class="fas fa-user-edit"></i>
+                                    آخرین ویرایش کننده
+                                </span>
+                                <span class="audit-value">@Model.UpdatedBy</span>
+                            </div>
+                            <div class="audit-item">
+                                <span class="audit-label">
+                                    <i class="fas fa-calendar-check"></i>
+                                    تاریخ آخرین ویرایش
+                                </span>
+                                <span class="audit-value">@Model.UpdatedAtShamsi</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- دکمه‌های عملیات -->
+                <div class="action-buttons">
+                    <a href="@Url.Action("Index")" class="btn-action btn-back">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت به لیست
+                    </a>
+                    
+                    @if (Model.IsActive)
+                    {
+                        <a href="@Url.Action("Edit", new { id = Model.Id })" class="btn-action btn-edit">
+                            <i class="fas fa-edit"></i>
+                            ویرایش کای
+                        </a>
+                    }
+                    
+                    <a href="@Url.Action("Delete", new { id = Model.Id })" class="btn-action btn-delete">
+                        <i class="fas fa-trash"></i>
+                        حذف کای
+                    </a>
+                    
+                    @if (Model.IsActive && Model.FinancialYear < DateTime.Now.Year + 621)
+                    {
+                        <a href="@Url.Action("FreezeFinancialYear", new { financialYear = Model.FinancialYear })" class="btn-action btn-freeze">
+                            <i class="fas fa-snowflake"></i>
+                            فریز سال مالی
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // انیمیشن ورود
+            $('.details-container').hide().fadeIn(800);
+            
+            // انیمیشن hover برای info-item ها
+            $('.info-item').hover(
+                function() {
+                    $(this).css('transform', 'translateY(-2px)');
+                },
+                function() {
+                    $(this).css('transform', 'translateY(0)');
+                }
+            );
+
+            // تأیید حذف
+            $('.btn-delete').on('click', function(e) {
+                if (!confirm('آیا مطمئن هستید که می‌خواهید این کای را حذف کنید؟\n\nاین عمل غیرقابل بازگشت است!')) {
+                    e.preventDefault();
+                }
+            });
+
+            // تأیید فریز
+            $('.btn-freeze').on('click', function(e) {
+                if (!confirm('آیا مطمئن هستید که می‌خواهید کای‌های سال مالی @Model.FinancialYear را فریز کنید؟\n\nاین عمل غیرقابل بازگشت است!')) {
+                    e.preventDefault();
+                }
+            });
+
+            // نمایش اطلاعات اضافی در hover
+            $('.type-badge').on('mouseenter', function() {
+                var tooltip = $(this).attr('title');
+                if (!tooltip) {
+                    var type = $(this).text().trim();
+                    var tooltipText = type === 'فنی' ? 
+                        'کای فنی برای محاسبه جزء فنی خدمات استفاده می‌شود' : 
+                        'کای حرفه‌ای برای محاسبه جزء حرفه‌ای خدمات استفاده می‌شود';
+                    $(this).attr('title', tooltipText);
+                }
+            });
+
+            // انیمیشن شمارش برای مقدار کای
+            var valueElement = $('.value-display');
+            var finalValue = @Model.Value;
+            var currentValue = 0;
+            var increment = finalValue / 50;
+            
+            var counter = setInterval(function() {
+                currentValue += increment;
+                if (currentValue >= finalValue) {
+                    currentValue = finalValue;
+                    clearInterval(counter);
+                }
+                valueElement.text(Math.floor(currentValue).toLocaleString('fa-IR') + ' تومان');
+            }, 30);
+        });
+    </script>
+}

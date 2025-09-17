@@ -80,6 +80,7 @@ namespace ClinicApp.Models
         public DbSet<Department> Departments { get; set; }
         public DbSet<ServiceCategory> ServiceCategories { get; set; }
         public DbSet<Service> Services { get; set; }
+        public DbSet<ServiceTemplate> ServiceTemplates { get; set; }
         // DbSet<Insurance> حذف شد - مدل قدیمی Insurance حذف شده است
         public DbSet<InsuranceTariff> InsuranceTariffs { get; set; }
         public DbSet<InsuranceProvider> InsuranceProviders { get; set; }
@@ -106,6 +107,9 @@ namespace ClinicApp.Models
         public DbSet<OtpRequest> OtpRequests { get; set; }
         public DbSet<DoctorDepartment> DoctorDepartments { get; set; }
         public DbSet<DoctorServiceCategory> DoctorServiceCategories { get; set; }
+        public DbSet<ServiceComponent> ServiceComponents { get; set; }
+        public DbSet<SharedService> SharedServices { get; set; }
+        public DbSet<FactorSetting> FactorSettings { get; set; }
         public DbSet<DoctorSchedule> DoctorSchedules { get; set; }
         public DbSet<DoctorWorkDay> DoctorWorkDays { get; set; }
         public DbSet<DoctorTimeRange> DoctorTimeRanges { get; set; }

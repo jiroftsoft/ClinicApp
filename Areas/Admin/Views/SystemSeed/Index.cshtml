@@ -1,0 +1,359 @@
+@model ClinicApp.Services.DataSeeding.SeedDataStatus
+@{
+    ViewBag.Title = "مدیریت داده‌های اولیه سیستم";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-database"></i>
+                        مدیریت داده‌های اولیه سیستم
+                    </h3>
+                </div>
+                <div class="card-body">
+                    @Html.AntiForgeryToken()
+                    <!-- وضعیت کلی -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="alert @(Model.IsComplete ? "alert-success" : "alert-warning")" role="alert">
+                                <h4 class="alert-heading">
+                                    <i class="fas @(Model.IsComplete ? "fa-check-circle" : "fa-exclamation-triangle")"></i>
+                                    وضعیت داده‌های اولیه
+                                </h4>
+                                <p>
+                                    @if (Model.IsComplete)
+                                    {
+                                        <text>✅ تمام داده‌های اولیه ایجاد شده‌اند و سیستم آماده استفاده است.</text>
+                                    }
+                                    else
+                                    {
+                                        <text>⚠️ برخی از داده‌های اولیه ایجاد نشده‌اند. لطفاً داده‌های اولیه را ایجاد کنید.</text>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آمار داده‌ها -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-cogs"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کای‌های تنظیم شده</span>
+                                    <span class="info-box-number">@Model.FactorSettingsCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-stethoscope"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">خدمات فعال</span>
+                                    <span class="info-box-number">@Model.ServicesCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-share-alt"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">خدمات مشترک</span>
+                                    <span class="info-box-number">@Model.SharedServicesCount</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-puzzle-piece"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">اجزای خدمات</span>
+                                    <span class="info-box-number">@Model.ServiceComponentsCount</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- وضعیت جزئی -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">وضعیت کای‌ها</h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.FactorsExist)
+                                    {
+                                        <div class="alert alert-success">
+                                            <i class="fas fa-check"></i>
+                                            کای‌های مورد نیاز ایجاد شده‌اند
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-times"></i>
+                                            کای‌های مورد نیاز ایجاد نشده‌اند
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">وضعیت خدمات</h5>
+                                </div>
+                                <div class="card-body">
+                                    @if (Model.ServicesExist)
+                                    {
+                                        <div class="alert alert-success">
+                                            <i class="fas fa-check"></i>
+                                            خدمات نمونه ایجاد شده‌اند
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="alert alert-danger">
+                                            <i class="fas fa-times"></i>
+                                            خدمات نمونه ایجاد نشده‌اند
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌های عملیات -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">عملیات</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="btn-group" role="group">
+                                        @if (!Model.IsComplete)
+                                        {
+                                            <button type="button" class="btn btn-primary" onclick="seedAllData()">
+                                                <i class="fas fa-database"></i>
+                                                ایجاد تمام داده‌های اولیه
+                                            </button>
+                                            <button type="button" class="btn btn-info" onclick="seedDataStepByStep()">
+                                                <i class="fas fa-step-forward"></i>
+                                                ایجاد مرحله‌ای
+                                            </button>
+                                        }
+                                        <button type="button" class="btn btn-secondary" onclick="refreshStatus()">
+                                            <i class="fas fa-sync"></i>
+                                            بروزرسانی وضعیت
+                                        </button>
+                                        <button type="button" class="btn btn-warning" onclick="testCalculations()">
+                                            <i class="fas fa-calculator"></i>
+                                            تست محاسبات
+                                        </button>
+                                        <button type="button" class="btn btn-info" onclick="testSharedServices()">
+                                            <i class="fas fa-share-alt"></i>
+                                            تست خدمات مشترک
+                                        </button>
+                                        @if (Model.IsComplete)
+                                        {
+                                            <button type="button" class="btn btn-danger" onclick="clearSeedData()">
+                                                <i class="fas fa-trash"></i>
+                                                پاک کردن داده‌ها
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // تابع کمکی برای دریافت Anti-Forgery Token
+        function getAntiForgeryToken() {
+            return $('input[name="__RequestVerificationToken"]').val();
+        }
+
+        // تابع کمکی برای ارسال درخواست POST با Anti-Forgery Token
+        function postWithAntiForgery(url, successCallback, errorCallback) {
+            var token = getAntiForgeryToken();
+            if (!token) {
+                showError('خطا در دریافت توکن امنیتی');
+                return;
+            }
+
+            $.ajax({
+                url: url,
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: token
+                },
+                success: successCallback,
+                error: errorCallback
+            });
+        }
+
+        function seedAllData() {
+            if (confirm('آیا مطمئن هستید که می‌خواهید تمام داده‌های اولیه را ایجاد کنید؟')) {
+                showLoading();
+                
+                postWithAntiForgery(
+                    '@Url.Action("SeedAllData", "SystemSeed")',
+                    function() {
+                        hideLoading();
+                        location.reload();
+                    },
+                    function(xhr) {
+                        hideLoading();
+                        var errorMessage = 'خطا در ایجاد داده‌های اولیه';
+                        if (xhr.responseText) {
+                            errorMessage += ': ' + xhr.responseText;
+                        }
+                        showError(errorMessage);
+                    }
+                );
+            }
+        }
+
+        function seedDataStepByStep() {
+            if (confirm('آیا مطمئن هستید که می‌خواهید داده‌های اولیه را به صورت مرحله‌ای ایجاد کنید؟')) {
+                showLoading();
+                
+                postWithAntiForgery(
+                    '@Url.Action("SeedDataStepByStep", "SystemSeed")',
+                    function() {
+                        hideLoading();
+                        location.reload();
+                    },
+                    function(xhr) {
+                        hideLoading();
+                        var errorMessage = 'خطا در ایجاد داده‌های اولیه';
+                        if (xhr.responseText) {
+                            errorMessage += ': ' + xhr.responseText;
+                        }
+                        showError(errorMessage);
+                    }
+                );
+            }
+        }
+
+        function refreshStatus() {
+            showLoading();
+            $.get('@Url.Action("GetStatus", "SystemSeed")')
+            .done(function(data) {
+                hideLoading();
+                location.reload();
+            })
+            .fail(function(xhr) {
+                hideLoading();
+                showError('خطا در بروزرسانی وضعیت: ' + xhr.responseText);
+            });
+        }
+
+                function testCalculations() {
+                    showLoading();
+                    $.get('@Url.Action("TestCalculations", "SystemSeed")')
+                    .done(function() {
+                        hideLoading();
+                        showInfo('تست محاسبات در حال توسعه است');
+                    })
+                    .fail(function(xhr) {
+                        hideLoading();
+                        showError('خطا در تست محاسبات: ' + xhr.responseText);
+                    });
+                }
+
+                function testSharedServices() {
+                    showLoading();
+                    $.get('@Url.Action("TestSharedServices", "SystemSeed")')
+                    .done(function(data) {
+                        hideLoading();
+                        if (data.success) {
+                            var message = `تست خدمات مشترک:\n`;
+                            message += `تعداد خدمات: ${data.servicesCount}\n`;
+                            message += `تعداد دپارتمان‌ها: ${data.departmentsCount}\n\n`;
+                            
+                            if (data.services.length > 0) {
+                                message += `خدمات:\n`;
+                                data.services.forEach(function(service) {
+                                    message += `- ${service.Title} (${service.ServiceCode})\n`;
+                                });
+                            }
+                            
+                            if (data.departments.length > 0) {
+                                message += `\nدپارتمان‌ها:\n`;
+                                data.departments.forEach(function(dept) {
+                                    message += `- ${dept.Name}\n`;
+                                });
+                            }
+                            
+                            showInfo(message);
+                        } else {
+                            showError('خطا در تست: ' + data.message);
+                        }
+                    })
+                    .fail(function(xhr) {
+                        hideLoading();
+                        showError('خطا در تست خدمات مشترک: ' + xhr.responseText);
+                    });
+                }
+
+        function clearSeedData() {
+            if (confirm('⚠️ آیا مطمئن هستید که می‌خواهید تمام داده‌های اولیه را پاک کنید؟\n\nاین عمل قابل برگشت نیست!')) {
+                showLoading();
+                
+                postWithAntiForgery(
+                    '@Url.Action("ClearSeedData", "SystemSeed")',
+                    function() {
+                        hideLoading();
+                        location.reload();
+                    },
+                    function(xhr) {
+                        hideLoading();
+                        var errorMessage = 'خطا در پاک کردن داده‌ها';
+                        if (xhr.responseText) {
+                            errorMessage += ': ' + xhr.responseText;
+                        }
+                        showError(errorMessage);
+                    }
+                );
+            }
+        }
+
+        function showLoading() {
+            // نمایش loading
+            $('body').append('<div id="loading" class="overlay"><i class="fas fa-spinner fa-spin"></i></div>');
+        }
+
+        function hideLoading() {
+            $('#loading').remove();
+        }
+
+        function showError(message) {
+            toastr.error(message);
+        }
+
+        function showInfo(message) {
+            toastr.info(message);
+        }
+    </script>
+}

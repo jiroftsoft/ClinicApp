@@ -450,15 +450,21 @@
     <Compile Include="Areas\Admin\Controllers\DoctorServiceCategoryController.cs" />
     <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\EmergencyBookingController.cs" />
+    <Compile Include="Areas\Admin\Controllers\FactorSettingController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceManagementController.cs" />
+    <Compile Include="Areas\Admin\Controllers\ServiceTemplateController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SharedServiceController.cs" />
     <Compile Include="Areas\Admin\Controllers\Shared\BaseAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\SpecializationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceCalculationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsurancePlanController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceProviderController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
+    <Compile Include="Areas\Admin\Controllers\SystemSeedController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
@@ -510,11 +516,12 @@
     <Compile Include="Interfaces\ClinicAdmin\IScheduleOptimizationService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceCategoryRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IServiceManagementService.cs" />
-    <Compile Include="Interfaces\ClinicAdmin\IServiceRepository.cs" />
+    <Compile Include="Interfaces\ClinicAdmin\ISharedServiceManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IExternalInquiryService.cs" />
+    <Compile Include="Interfaces\IFactorSettingService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
@@ -525,12 +532,16 @@
     <Compile Include="Interfaces\Insurance\IInsurancePlanService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceProviderRepository.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceProviderService.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceTariffRepository.cs" />
+    <Compile Include="Interfaces\Insurance\IInsuranceTariffService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceValidationService.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
     <Compile Include="Interfaces\IReceptionRepository.cs" />
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
+    <Compile Include="Interfaces\IServiceCalculationService.cs" />
+    <Compile Include="Interfaces\IServiceRepository.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayRepository.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayService.cs" />
@@ -547,7 +558,6 @@
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPaymentRepository.cs" />
-    <Compile Include="Interfaces\Repositories\IServiceRepository.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.cs" />
     <Compile Include="Migrations\202509090447343_CreateDatabaseClinic.Designer.cs">
       <DependentUpon>202509090447343_CreateDatabaseClinic.cs</DependentUpon>
@@ -576,7 +586,32 @@
     <Compile Include="Migrations\202509121048093_Change14040621.Designer.cs">
       <DependentUpon>202509121048093_Change14040621.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509150545449_ChangeNewSetting.cs" />
+    <Compile Include="Migrations\202509150545449_ChangeNewSetting.Designer.cs">
+      <DependentUpon>202509150545449_ChangeNewSetting.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509151737423_ChangeValueRange.cs" />
+    <Compile Include="Migrations\202509151737423_ChangeValueRange.Designer.cs">
+      <DependentUpon>202509151737423_ChangeValueRange.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509151745424_FixFactorSettingPrecision.cs" />
+    <Compile Include="Migrations\202509151745424_FixFactorSettingPrecision.Designer.cs">
+      <DependentUpon>202509151745424_FixFactorSettingPrecision.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509151829191_AddServiceTemplateTable.cs" />
+    <Compile Include="Migrations\202509151829191_AddServiceTemplateTable.Designer.cs">
+      <DependentUpon>202509151829191_AddServiceTemplateTable.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509152047582_Chnage14040625.cs" />
+    <Compile Include="Migrations\202509152047582_Chnage14040625.Designer.cs">
+      <DependentUpon>202509152047582_Chnage14040625.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509170542042_MakeNewChnage140402426.cs" />
+    <Compile Include="Migrations\202509170542042_MakeNewChnage140402426.Designer.cs">
+      <DependentUpon>202509170542042_MakeNewChnage140402426.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\ClinicDependencyInfo.cs" />
+    <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
     <Compile Include="Models\Core\ApplicationUser.cs" />
     <Compile Include="Models\Core\AppRoles.cs" />
     <Compile Include="Models\Core\AuditableEntity.cs" />
@@ -589,8 +624,12 @@
     <Compile Include="Models\Entities\Appointment\Class1.cs" />
     <Compile Include="Models\Entities\Clinic\Clinic.cs" />
     <Compile Include="Models\Entities\Clinic\Department.cs" />
+    <Compile Include="Models\Entities\Clinic\FactorSetting.cs" />
     <Compile Include="Models\Entities\Clinic\Service.cs" />
     <Compile Include="Models\Entities\Clinic\ServiceCategory.cs" />
+    <Compile Include="Models\Entities\Clinic\ServiceComponent.cs" />
+    <Compile Include="Models\Entities\Clinic\ServiceTemplate.cs" />
+    <Compile Include="Models\Entities\Clinic\SharedService.cs" />
     <Compile Include="Models\Entities\Doctor\Doctor.cs" />
     <Compile Include="Models\Entities\Doctor\DoctorAssignmentHistory.cs" />
     <Compile Include="Models\Entities\Doctor\DoctorDepartment.cs" />
@@ -618,6 +657,8 @@
     <Compile Include="Models\Entities\Notification\NotificationHistory.cs" />
     <Compile Include="Models\Enums\NotificationStatus.cs" />
     <Compile Include="Models\Entities\Notification\NotificationTemplate.cs" />
+    <Compile Include="Models\Enums\ServiceComponentType.cs" />
+    <Compile Include="Models\Enums\ServicePriceCalculationType.cs" />
     <Compile Include="Models\Enums\WorkLifeBalanceStatus.cs" />
     <Compile Include="Models\Enums\WorkloadBalanceStatus.cs" />
     <Compile Include="Models\Entities\Patient\PatientInsurance.cs" />
@@ -678,6 +719,7 @@
     <Compile Include="Repositories\Insurance\InsuranceCalculationRepository.cs" />
     <Compile Include="Repositories\Insurance\InsurancePlanRepository.cs" />
     <Compile Include="Repositories\Insurance\InsuranceProviderRepository.cs" />
+    <Compile Include="Repositories\Insurance\InsuranceTariffRepository.cs" />
     <Compile Include="Repositories\Insurance\PatientInsuranceRepository.cs" />
     <Compile Include="Repositories\Insurance\PlanServiceRepository.cs" />
     <Compile Include="Repositories\Payment\Gateway\PaymentGatewayRepository.cs" />
@@ -706,13 +748,19 @@
     <Compile Include="Services\ClinicAdmin\SpecializationService.cs" />
     <Compile Include="Services\ClinicManagementService.cs" />
     <Compile Include="Services\CurrentUserService.cs" />
+    <Compile Include="Services\DataSeeding\FactorSettingSeedService.cs" />
+    <Compile Include="Services\DataSeeding\ServiceSeedService.cs" />
+    <Compile Include="Services\DataSeeding\ServiceTemplateSeedService.cs" />
+    <Compile Include="Services\DataSeeding\SystemSeedService.cs" />
     <Compile Include="Services\DepartmentManagementService.cs" />
     <Compile Include="Services\ExternalInquiryService.cs" />
+    <Compile Include="Services\FactorSettingService.cs" />
     <Compile Include="Services\IMessageNotificationService.cs" />
     <Compile Include="Services\Insurance\InsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanService.cs" />
     <Compile Include="Services\Insurance\InsuranceProviderService.cs" />
+    <Compile Include="Services\Insurance\InsuranceTariffService.cs" />
     <Compile Include="Services\Insurance\InsuranceValidationService.cs" />
     <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
     <Compile Include="Services\MessageNotificationService.cs" />
@@ -726,9 +774,12 @@
     <Compile Include="Services\Payment\Web\WebPaymentService.cs" />
     <Compile Include="Services\ReceptionService.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
+    <Compile Include="Services\ServiceCalculationService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
     <Compile Include="Services\ServiceManagementService.cs" />
     <Compile Include="Services\ServiceService.cs" />
+    <Compile Include="Services\ServiceTemplateService.cs" />
+    <Compile Include="Services\SharedServiceManagementService.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
@@ -781,6 +832,7 @@
     <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderDetailsViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderIndexViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceTariff\InsuranceTariffViewModels.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceCreateEditViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceDetailsViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexItemViewModel.cs" />
@@ -854,6 +906,7 @@
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\InsuranceCalculationViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\InsurancePlanCreateEditViewModelValidator.cs" />
+    <Compile Include="ViewModels\Validators\InsuranceTariffCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\PatientCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\PatientInsuranceCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\Payment\Gateway\PaymentGatewayValidators.cs" />
@@ -897,6 +950,7 @@
     <Content Include="Content\css\notifications.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
+    <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\Images\default-avatar.png" />
     <Content Include="Content\Images\Doctors\doctor_profile_14040606_011423_b7cd6656f50d47d8a0072ed2246bf4bc.jpg" />
     <Content Include="Content\Images\Doctors\doctor_profile_14040606_083717_24500d7fa71c4234b0d65cbb6d0c73bb.png" />
@@ -3230,6 +3284,7 @@
     <Content Include="Scripts\app\insurance-plan-index.js" />
     <Content Include="Scripts\app\patient-insurance-form.js" />
     <Content Include="Scripts\app\patient-select2.js" />
+    <Content Include="Scripts\app\service-calculation.js" />
     <Content Include="Scripts\app\utility.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
@@ -3618,6 +3673,38 @@
     <Content Include="CONTRACTS\PERSIAN_DATEPICKER_STANDARD_CONTRACT.md" />
     <Content Include="CONTRACTS\INDEX_UX_UI_OPTIMIZATION_REPORT.md" />
     <Content Include="CONTRACTS\CREATE_FORM_UX_UI_OPTIMIZATION_REPORT.md" />
+    <Content Include="Areas\Admin\Views\SystemSeed\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\FreezeFinancialYear.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\DeleteConfirmed.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\FactorSetting\Edit.cshtml" />
+    <Content Include="Documentation\BestPracticesServiceComponents.md" />
+    <Content Include="Documentation\ServiceCalculationMigrationPlan.md" />
+    <Content Include="Documentation\TariffGuidelines1404.md" />
+    <Content Include="Areas\Admin\Views\ServiceComponent\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceComponent\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceComponent\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceComponent\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceComponent\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceTemplate\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceTemplate\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceTemplate\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceTemplate\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\ServiceTemplate\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\SharedService\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\SharedService\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\SharedService\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\SharedService\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\SharedService\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3890,7 +3977,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Areas\Admin\Views\Insurance\" />
     <Folder Include="Constants\" />
     <Folder Include="Models\ValueObjects\" />
     <Folder Include="Validators\" />
@@ -3940,6 +4026,24 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509121048093_Change14040621.resx">
       <DependentUpon>202509121048093_Change14040621.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509150545449_ChangeNewSetting.resx">
+      <DependentUpon>202509150545449_ChangeNewSetting.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509151737423_ChangeValueRange.resx">
+      <DependentUpon>202509151737423_ChangeValueRange.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509151745424_FixFactorSettingPrecision.resx">
+      <DependentUpon>202509151745424_FixFactorSettingPrecision.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509151829191_AddServiceTemplateTable.resx">
+      <DependentUpon>202509151829191_AddServiceTemplateTable.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509152047582_Chnage14040625.resx">
+      <DependentUpon>202509152047582_Chnage14040625.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509170542042_MakeNewChnage140402426.resx">
+      <DependentUpon>202509170542042_MakeNewChnage140402426.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

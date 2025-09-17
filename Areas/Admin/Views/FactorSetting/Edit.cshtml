@@ -1,0 +1,532 @@
+@using ClinicApp.Extensions
+@model ClinicApp.ViewModels.FactorSettingCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش کای";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .edit-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .edit-header {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #212529;
+            padding: 25px;
+            position: relative;
+        }
+
+        .edit-header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(0,0,0,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .edit-header-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .edit-icon {
+            width: 60px;
+            height: 60px;
+            background: rgba(0, 0, 0, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+
+        .edit-title {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .edit-subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            margin-bottom: 0;
+        }
+
+        .edit-body {
+            padding: 30px;
+        }
+
+        .form-section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 25px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            color: #1a6dcc;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e3f2fd;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section-title i {
+            margin-left: 10px;
+            font-size: 1.1rem;
+        }
+
+        .required:after {
+            content: " *";
+            color: #d32f2f;
+            margin-right: 2px;
+        }
+
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-control:focus {
+            border-color: #1a6dcc;
+            box-shadow: 0 0 0 0.2rem rgba(26, 109, 204, 0.25);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .form-note {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+
+        .validation-summary-errors {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-right: 3px solid #d32f2f;
+        }
+
+        .validation-summary-errors ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .validation-summary-errors li {
+            margin-bottom: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-submit:hover {
+            background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .current-values {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #c3e6cb;
+            margin-bottom: 25px;
+        }
+
+        .current-values-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #155724;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .current-value-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #c3e6cb;
+        }
+
+        .current-value-item:last-child {
+            border-bottom: none;
+        }
+
+        .current-value-label {
+            font-weight: 500;
+            color: #155724;
+        }
+
+        .current-value-value {
+            font-weight: 600;
+            color: #155724;
+        }
+
+        .warning-box {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            border: 2px solid #ffc107;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+
+        .warning-title {
+            color: #856404;
+            font-weight: 600;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+        }
+
+        .warning-text {
+            color: #856404;
+            margin-bottom: 0;
+        }
+
+        .security-indicator {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .validation-error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 10px;
+            margin-top: 10px;
+            color: #721c24;
+            font-size: 0.9rem;
+        }
+
+        @@media (max-width: 768px) {
+            .form-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-submit, .btn-cancel {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="edit-container">
+            <!-- هدر ویرایش -->
+            <div class="edit-header">
+                <div class="security-indicator">
+                    <i class="fas fa-shield-alt"></i> امن
+                </div>
+                <div class="edit-header-content">
+                    <div class="edit-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <h1 class="edit-title">ویرایش کای</h1>
+                    <p class="edit-subtitle">ویرایش اطلاعات کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")</p>
+                </div>
+            </div>
+
+            <!-- محتوای ویرایش -->
+            <div class="edit-body">
+                <!-- هشدار امنیتی -->
+                <div class="warning-box">
+                    <div class="warning-title">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        هشدار امنیتی
+                    </div>
+                    <p class="warning-text">
+                        تغییرات در کای‌ها بر روی محاسبات قیمت خدمات تأثیر می‌گذارد. لطفاً با دقت تغییرات را اعمال کنید.
+                    </p>
+                </div>
+
+                <!-- مقادیر فعلی -->
+                <div class="current-values">
+                    <div class="current-values-title">
+                        <i class="fas fa-info-circle"></i>
+                        مقادیر فعلی
+                    </div>
+                    <div class="current-value-item">
+                        <span class="current-value-label">نوع کای:</span>
+                        <span class="current-value-value">@(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")</span>
+                    </div>
+                    <div class="current-value-item">
+                        <span class="current-value-label">سال مالی:</span>
+                        <span class="current-value-value">@Model.FinancialYear</span>
+                    </div>
+                    <div class="current-value-item">
+                        <span class="current-value-label">وضعیت هشتگ‌دار:</span>
+                        <span class="current-value-value">@(Model.IsHashtagged ? "هشتگ‌دار" : "عادی")</span>
+                    </div>
+                    <div class="current-value-item">
+                        <span class="current-value-label">مقدار فعلی:</span>
+                        <span class="current-value-value">@Model.Value.ToString("N0") تومان</span>
+                    </div>
+                </div>
+
+                <!-- فرم ویرایش -->
+                <div class="form-section">
+                    <h3 class="form-section-title">
+                        <i class="fas fa-edit"></i>
+                        ویرایش اطلاعات کای
+                    </h3>
+
+                    @using (Html.BeginForm("Edit", "FactorSetting", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.Id)
+
+                        @Html.ValidationSummary(false, "", new { @class = "validation-summary-errors" })
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Name, new { @class = "form-label required" })
+                            @Html.TextBoxFor(model => model.Name, new { @class = "form-control", placeholder = "نام کای را وارد کنید", id = "factorName" })
+                            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">مثال: "کای فنی استاندارد"، "کای حرفه‌ای هشتگ‌دار"</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    @Html.LabelFor(model => model.FactorType, new { @class = "form-label required" })
+                                    @Html.DropDownListFor(model => model.FactorType,
+                                        new SelectList(new[] {
+                                            new { Value = "1", Text = "فنی" },
+                                            new { Value = "2", Text = "حرفه‌ای" }
+                                        }, "Value", "Text", Model.FactorType),
+                                        new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(model => model.FactorType, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">نوع ضریب: فنی یا حرفه‌ای</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    @Html.LabelFor(model => model.Value, new { @class = "form-label required" })
+                                    @Html.TextBoxFor(model => model.Value, new { 
+                                        @class = "form-control", 
+                                        type = "number", 
+                                        min = "0.01", 
+                                        max = "999999.99", 
+                                        step = "0.01",
+                                        placeholder = "مقدار کای" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.Value, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">مقدار ضریب (مثال: 3.0 یا 12.9)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    @Html.LabelFor(model => model.FinancialYear, new { @class = "form-label required" })
+                                    @Html.TextBoxFor(model => model.FinancialYear, new { 
+                                        @class = "form-control", 
+                                        type = "number", 
+                                        min = "1400", 
+                                        max = "1500",
+                                        placeholder = "سال مالی" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FinancialYear, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">سال مالی شمسی (مثال: 1404)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input" })
+                                        @Html.LabelFor(model => model.IsHashtagged, "آیا این کای هشتگ‌دار است؟", new { @class = "form-check-label" })
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">برای خدمات با ضرایب خاص</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Description, new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات کای را وارد کنید" })
+                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">توضیحات تکمیلی درباره این کای (اختیاری)</div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(model => model.IsActive, "فعال", new { @class = "form-check-label" })
+                            <div class="form-note">کای‌های غیرفعال در محاسبات استفاده نمی‌شوند</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn-submit">
+                                <i class="fas fa-save"></i> ذخیره تغییرات
+                            </button>
+                            <a href="@Url.Action("Details", new { id = Model.Id })" class="btn-cancel">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // انیمیشن ورود
+            $('.edit-container').hide().fadeIn(800);
+            
+            // اعتبارسنجی فرم
+            $('.needs-validation').on('submit', function(e) {
+                if (!this.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // تولید خودکار نام کای
+            function generateFactorName() {
+                var factorType = $('#FactorType').val();
+                var financialYear = $('#FinancialYear').val();
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+                
+                if (factorType && financialYear) {
+                    var typeText = factorType == '1' ? 'فنی' : 'حرفه‌ای';
+                    var hashtagText = isHashtagged ? ' هشتگ‌دار' : '';
+                    var name = 'کای ' + typeText + hashtagText + ' ' + financialYear;
+                    $('#factorName').val(name);
+                }
+            }
+
+            // تغییرات در فیلدها
+            $('#FactorType, #FinancialYear, #IsHashtagged').on('change', generateFactorName);
+
+            // اعتبارسنجی مقدار کای
+            $('#Value').on('input', function() {
+                var value = parseFloat($(this).val());
+                var factorType = $('#FactorType').val();
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+                
+                if (value > 0) {
+                    if (factorType == '1' && isHashtagged && value > 50000) {
+                        showValidationError('کای فنی هشتگ‌دار نمی‌تواند بیش از 50000 باشد');
+                    } else if (factorType == '2' && value > 100000) {
+                        showValidationError('کای حرفه‌ای نمی‌تواند بیش از 100000 باشد');
+                    } else {
+                        clearValidationError();
+                    }
+                }
+            });
+
+            // اعتبارسنجی سال مالی
+            $('#FinancialYear').on('input', function() {
+                var year = parseInt($(this).val());
+                var currentYear = new Date().getFullYear() + 621; // تبدیل به شمسی
+                
+                if (year < 1400 || year > currentYear + 1) {
+                    showValidationError('سال مالی باید بین 1400 تا ' + (currentYear + 1) + ' باشد');
+                } else {
+                    clearValidationError();
+                }
+            });
+
+            function showValidationError(message) {
+                if (!$('.validation-error').length) {
+                    $('<div class="alert alert-warning validation-error">' + message + '</div>').insertAfter('#Value');
+                }
+            }
+
+            function clearValidationError() {
+                $('.validation-error').remove();
+            }
+
+            // تأیید تغییرات مهم
+            $('.needs-validation').on('submit', function(e) {
+                var originalValue = @Model.Value;
+                var newValue = parseFloat($('#Value').val());
+                var originalType = @((int)Model.FactorType);
+                var newType = parseInt($('#FactorType').val());
+                
+                if (originalValue !== newValue || originalType !== newType) {
+                    if (!confirm('آیا مطمئن هستید که می‌خواهید این تغییرات مهم را اعمال کنید؟\n\nتغییرات در کای‌ها بر روی محاسبات قیمت خدمات تأثیر می‌گذارد.')) {
+                        e.preventDefault();
+                    }
+                }
+            });
+
+            // تولید اولیه نام
+            generateFactorName();
+        });
+    </script>
+}

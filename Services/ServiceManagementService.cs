@@ -1,6 +1,5 @@
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
-using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
 using FluentValidation;
@@ -9,7 +8,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Enums;
+using ClinicApp.Models;
 
 namespace ClinicApp.Services
 {
@@ -34,6 +36,8 @@ namespace ClinicApp.Services
         private readonly IValidator<ServiceCreateEditViewModel> _serviceValidator;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _log;
+        private readonly IServiceCalculationService _serviceCalculationService;
+        private readonly ApplicationDbContext _context;
 
         public ServiceManagementService(
             IServiceCategoryRepository categoryRepository,
@@ -41,7 +45,9 @@ namespace ClinicApp.Services
             IValidator<ServiceCategoryCreateEditViewModel> categoryValidator,
             IValidator<ServiceCreateEditViewModel> serviceValidator,
             ICurrentUserService currentUserService,
-            ILogger logger)
+            ILogger logger,
+            IServiceCalculationService serviceCalculationService,
+            ApplicationDbContext context)
         {
             _categoryRepo = categoryRepository;
             _serviceRepo = serviceRepository;
@@ -49,6 +55,8 @@ namespace ClinicApp.Services
             _serviceValidator = serviceValidator;
             _currentUserService = currentUserService;
             _log = logger.ForContext<ServiceManagementService>();
+            _serviceCalculationService = serviceCalculationService;
+            _context = context;
         }
 
         #region Service Category Management (مدیریت دسته‌بندی خدمات)
@@ -406,6 +414,7 @@ namespace ClinicApp.Services
                 var lookupItems = categories.Select(c => new LookupItemViewModel
                 {
                     Id = c.ServiceCategoryId,
+                    Name = c.Title,
                     Title = c.Title,
                     Description = c.Description
                 }).ToList();
@@ -603,10 +612,11 @@ namespace ClinicApp.Services
                 {
                     Title = model.Title?.Trim(),
                     ServiceCode = model.ServiceCode?.Trim(),
-                    Price = model.Price,
+                    Price = model.Price, // قیمت اولیه از کاربر
                     Description = model.Description?.Trim(),
                     ServiceCategoryId = model.ServiceCategoryId,
                     IsActive = model.IsActive,
+                    IsHashtagged = model.IsHashtagged,
                     CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = _currentUserService.UserId,
                     IsDeleted = false
@@ -615,6 +625,32 @@ namespace ClinicApp.Services
                 // Save to repository
                 _serviceRepo.Add(service);
                 await _serviceRepo.SaveChangesAsync();
+
+                // محاسبه و بروزرسانی قیمت بر اساس نوع محاسبه
+                if (model.PriceCalculationType == ServicePriceCalculationType.ComponentBased)
+                {
+                    try
+                    {
+                        // محاسبه قیمت بر اساس اجزای خدمت (اگر موجود باشند)
+                        var calculatedPrice = _serviceCalculationService.CalculateServicePrice(service.ServiceId, _context);
+                        
+                        // اگر قیمت محاسبه شده با قیمت اولیه متفاوت است، بروزرسانی کن
+                        if (calculatedPrice != model.Price)
+                        {
+                            service.Price = calculatedPrice;
+                            await _serviceRepo.SaveChangesAsync();
+                            
+                            _log.Information("قیمت خدمت بر اساس اجزای خدمت محاسبه و بروزرسانی شد. ServiceId: {ServiceId}, OriginalPrice: {OriginalPrice}, CalculatedPrice: {CalculatedPrice}",
+                                service.ServiceId, model.Price, calculatedPrice);
+                        }
+                    }
+                    catch (Exception calcEx)
+                    {
+                        _log.Warning(calcEx, "خطا در محاسبه قیمت خدمت. ServiceId: {ServiceId}, OriginalPrice: {OriginalPrice}",
+                            service.ServiceId, model.Price);
+                        // در صورت خطا، از قیمت اولیه استفاده کن
+                    }
+                }
                 
                 _log.Information("خدمت جدید ایجاد شد. Id: {Id}, Title: {Title}. User: {UserId}",
                     service.ServiceId, service.Title, _currentUserService.UserId);
@@ -813,22 +849,30 @@ namespace ClinicApp.Services
         /// <summary>
         /// دریافت لیست خدمات فعال یک دسته‌بندی برای لیست‌های کشویی.
         /// </summary>
-        public async Task<ServiceResult<List<LookupItemViewModel>>> GetActiveServicesForLookupAsync(int serviceCategoryId)
+        public async Task<ServiceResult<List<LookupItemViewModel>>> GetActiveServicesForLookupAsync(int serviceCategoryId = 0)
         {
             _log.Information("درخواست لیست خدمات فعال. CategoryId: {CategoryId}. User: {UserId}",
                 serviceCategoryId, _currentUserService.UserId);
 
             try
             {
-                if (serviceCategoryId <= 0)
+                List<Service> services;
+                
+                if (serviceCategoryId > 0)
                 {
-                    return ServiceResult<List<LookupItemViewModel>>.Failed("شناسه دسته‌بندی معتبر نیست.");
+                    // دریافت خدمات یک دسته‌بندی خاص
+                    services = await _serviceRepo.GetActiveServicesAsync(serviceCategoryId);
+                }
+                else
+                {
+                    // دریافت تمام خدمات فعال
+                    services = await _serviceRepo.GetAllActiveServicesAsync();
                 }
 
-                var services = await _serviceRepo.GetActiveServicesAsync(serviceCategoryId);
                 var lookupItems = services.Select(s => new LookupItemViewModel
                 {
                     Id = s.ServiceId,
+                    Name = s.Title,
                     Title = s.Title,
                     Description = $"کد: {s.ServiceCode} - قیمت: {s.Price:N0} تومان"
                 }).ToList();
@@ -925,5 +969,311 @@ namespace ClinicApp.Services
                 return "00000000-0000-0000-0000-000000000000"; // شناسه پیش‌فرض
             }
         }
+
+        #region ServiceComponents Management (مدیریت اجزای خدمات)
+
+        /// <summary>
+        /// دریافت اجزای یک خدمت
+        /// </summary>
+        public async Task<ServiceResult<List<ServiceComponentViewModel>>> GetServiceComponentsAsync(int serviceId)
+        {
+            _log.Information("درخواست اجزای خدمت. ServiceId: {ServiceId}. User: {UserId}", 
+                serviceId, _currentUserService.UserId);
+
+            try
+            {
+                if (serviceId <= 0)
+                {
+                    return ServiceResult<List<ServiceComponentViewModel>>.Failed("شناسه خدمت معتبر نیست.");
+                }
+
+                var components = await _serviceRepo.GetServiceComponentsAsync(serviceId);
+                var viewModels = components.Select(ServiceComponentViewModel.FromEntity).ToList();
+
+                _log.Information("اجزای خدمت بازیابی شد. ServiceId: {ServiceId}, Count: {Count}. User: {UserId}", 
+                    serviceId, viewModels.Count, _currentUserService.UserId);
+
+                return ServiceResult<List<ServiceComponentViewModel>>.Successful(viewModels);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت اجزای خدمت. ServiceId: {ServiceId}. User: {UserId}", 
+                    serviceId, _currentUserService.UserId);
+                return ServiceResult<List<ServiceComponentViewModel>>.Failed("خطا در دریافت اجزای خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات یک جزء خدمت
+        /// </summary>
+        public async Task<ServiceResult<ServiceComponentDetailsViewModel>> GetServiceComponentDetailsAsync(int serviceComponentId)
+        {
+            _log.Information("درخواست جزئیات جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                serviceComponentId, _currentUserService.UserId);
+
+            try
+            {
+                if (serviceComponentId <= 0)
+                {
+                    return ServiceResult<ServiceComponentDetailsViewModel>.Failed("شناسه جزء خدمت معتبر نیست.");
+                }
+
+                // این متد نیاز به پیاده‌سازی در Repository دارد
+                // فعلاً با پیام خطا برمی‌گردانیم
+                return ServiceResult<ServiceComponentDetailsViewModel>.Failed("این قابلیت در حال توسعه است.");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت جزئیات جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    serviceComponentId, _currentUserService.UserId);
+                return ServiceResult<ServiceComponentDetailsViewModel>.Failed("خطا در دریافت جزئیات جزء خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات یک جزء خدمت برای ویرایش
+        /// </summary>
+        public async Task<ServiceResult<ServiceComponentCreateEditViewModel>> GetServiceComponentForEditAsync(int serviceComponentId)
+        {
+            _log.Information("درخواست اطلاعات ویرایش جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                serviceComponentId, _currentUserService.UserId);
+
+            try
+            {
+                if (serviceComponentId <= 0)
+                {
+                    return ServiceResult<ServiceComponentCreateEditViewModel>.Failed("شناسه جزء خدمت معتبر نیست.");
+                }
+
+                // این متد نیاز به پیاده‌سازی در Repository دارد
+                // فعلاً با پیام خطا برمی‌گردانیم
+                return ServiceResult<ServiceComponentCreateEditViewModel>.Failed("این قابلیت در حال توسعه است.");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت اطلاعات ویرایش جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    serviceComponentId, _currentUserService.UserId);
+                return ServiceResult<ServiceComponentCreateEditViewModel>.Failed("خطا در دریافت اطلاعات ویرایش جزء خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// ایجاد جزء جدید برای خدمت
+        /// </summary>
+        public async Task<ServiceResult> CreateServiceComponentAsync(ServiceComponentCreateEditViewModel model)
+        {
+            _log.Information("درخواست ایجاد جزء خدمت. ServiceId: {ServiceId}, Type: {Type}. User: {UserId}", 
+                model.ServiceId, model.ComponentType, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی
+                var validationResult = await _serviceValidator.ValidateAsync(new ServiceCreateEditViewModel());
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    return ServiceResult.Failed($"اعتبارسنجی ناموفق: {errors}");
+                }
+
+                // تبدیل به Entity
+                var component = model.MapToEntity();
+                component.CreatedAt = DateTime.UtcNow;
+                component.CreatedByUserId = GetValidUserId();
+
+                // ذخیره
+                _serviceRepo.AddServiceComponent(component);
+                await _serviceRepo.SaveChangesAsync();
+
+                _log.Information("جزء خدمت با موفقیت ایجاد شد. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    component.ServiceComponentId, _currentUserService.UserId);
+
+                return ServiceResult.Successful();
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در ایجاد جزء خدمت. ServiceId: {ServiceId}. User: {UserId}", 
+                    model.ServiceId, _currentUserService.UserId);
+                return ServiceResult.Failed("خطا در ایجاد جزء خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی جزء خدمت
+        /// </summary>
+        public async Task<ServiceResult> UpdateServiceComponentAsync(ServiceComponentCreateEditViewModel model)
+        {
+            _log.Information("درخواست به‌روزرسانی جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                model.ServiceComponentId, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی
+                var validationResult = await _serviceValidator.ValidateAsync(new ServiceCreateEditViewModel());
+                if (!validationResult.IsValid)
+                {
+                    var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                    return ServiceResult.Failed($"اعتبارسنجی ناموفق: {errors}");
+                }
+
+                // تبدیل به Entity
+                var component = model.MapToEntity();
+                component.UpdatedAt = DateTime.UtcNow;
+                component.UpdatedByUserId = GetValidUserId();
+
+                // ذخیره
+                _serviceRepo.UpdateServiceComponent(component);
+                await _serviceRepo.SaveChangesAsync();
+
+                _log.Information("جزء خدمت با موفقیت به‌روزرسانی شد. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    component.ServiceComponentId, _currentUserService.UserId);
+
+                return ServiceResult.Successful();
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در به‌روزرسانی جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    model.ServiceComponentId, _currentUserService.UserId);
+                return ServiceResult.Failed("خطا در به‌روزرسانی جزء خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// حذف نرم جزء خدمت
+        /// </summary>
+        public async Task<ServiceResult> SoftDeleteServiceComponentAsync(int serviceComponentId)
+        {
+            _log.Information("درخواست حذف نرم جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                serviceComponentId, _currentUserService.UserId);
+
+            try
+            {
+                if (serviceComponentId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه جزء خدمت معتبر نیست.");
+                }
+
+                // این متد نیاز به پیاده‌سازی در Repository دارد
+                // فعلاً با پیام خطا برمی‌گردانیم
+                return ServiceResult.Failed("این قابلیت در حال توسعه است.");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در حذف نرم جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    serviceComponentId, _currentUserService.UserId);
+                return ServiceResult.Failed("خطا در حذف نرم جزء خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// بازیابی جزء خدمت حذف شده
+        /// </summary>
+        public async Task<ServiceResult> RestoreServiceComponentAsync(int serviceComponentId)
+        {
+            _log.Information("درخواست بازیابی جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                serviceComponentId, _currentUserService.UserId);
+
+            try
+            {
+                if (serviceComponentId <= 0)
+                {
+                    return ServiceResult.Failed("شناسه جزء خدمت معتبر نیست.");
+                }
+
+                // این متد نیاز به پیاده‌سازی در Repository دارد
+                // فعلاً با پیام خطا برمی‌گردانیم
+                return ServiceResult.Failed("این قابلیت در حال توسعه است.");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بازیابی جزء خدمت. ServiceComponentId: {ServiceComponentId}. User: {UserId}", 
+                    serviceComponentId, _currentUserService.UserId);
+                return ServiceResult.Failed("خطا در بازیابی جزء خدمت.");
+            }
+        }
+
+        /// <summary>
+        /// بررسی وضعیت اجزای یک خدمت
+        /// </summary>
+        public async Task<ServiceResult<ServiceComponentsStatusViewModel>> GetServiceComponentsStatusAsync(int serviceId)
+        {
+            _log.Information("درخواست وضعیت اجزای خدمت. ServiceId: {ServiceId}. User: {UserId}", 
+                serviceId, _currentUserService.UserId);
+
+            try
+            {
+                if (serviceId <= 0)
+                {
+                    return ServiceResult<ServiceComponentsStatusViewModel>.Failed("شناسه خدمت معتبر نیست.");
+                }
+
+                var components = await _serviceRepo.GetServiceComponentsAsync(serviceId);
+                var technicalComponent = components.FirstOrDefault(c => c.ComponentType == ServiceComponentType.Technical);
+                var professionalComponent = components.FirstOrDefault(c => c.ComponentType == ServiceComponentType.Professional);
+
+                var status = new ServiceComponentsStatusViewModel
+                {
+                    ServiceId = serviceId,
+                    HasTechnicalComponent = technicalComponent != null,
+                    HasProfessionalComponent = professionalComponent != null,
+                    IsComplete = technicalComponent != null && professionalComponent != null,
+                    TechnicalCoefficient = technicalComponent?.Coefficient ?? 0,
+                    ProfessionalCoefficient = professionalComponent?.Coefficient ?? 0,
+                    ComponentsCount = components.Count
+                };
+
+                _log.Information("وضعیت اجزای خدمت بررسی شد. ServiceId: {ServiceId}, Complete: {IsComplete}. User: {UserId}", 
+                    serviceId, status.IsComplete, _currentUserService.UserId);
+
+                return ServiceResult<ServiceComponentsStatusViewModel>.Successful(status);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وضعیت اجزای خدمت. ServiceId: {ServiceId}. User: {UserId}", 
+                    serviceId, _currentUserService.UserId);
+                return ServiceResult<ServiceComponentsStatusViewModel>.Failed("خطا در بررسی وضعیت اجزای خدمت.");
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// تعیین شناسه کاربر معتبر برای عملیات عادی
+        /// </summary>
+        private string GetValidUserId()
+        {
+            try
+            {
+                // 1. ابتدا سعی می‌کنیم از کاربر جاری استفاده کنیم
+                if (!string.IsNullOrWhiteSpace(_currentUserService.UserId))
+                {
+                    return _currentUserService.UserId;
+                }
+
+                // 2. اگر کاربر جاری موجود نبود، از کاربر سیستم استفاده می‌کنیم
+                if (!string.IsNullOrWhiteSpace(SystemUsers.SystemUserId))
+                {
+                    return SystemUsers.SystemUserId;
+                }
+
+                // 3. اگر کاربر سیستم هم موجود نبود، از کاربر ادمین استفاده می‌کنیم
+                if (!string.IsNullOrWhiteSpace(SystemUsers.AdminUserId))
+                {
+                    return SystemUsers.AdminUserId;
+                }
+
+                // 4. در نهایت، اگر هیچ کاربر سیستمی موجود نبود، یک شناسه پیش‌فرض استفاده می‌کنیم
+                _log.Warning("هیچ کاربر سیستمی یافت نشد. استفاده از شناسه پیش‌فرض.");
+                return "00000000-0000-0000-0000-000000000000"; // شناسه پیش‌فرض
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تعیین شناسه کاربر معتبر. استفاده از شناسه پیش‌فرض.");
+                return "00000000-0000-0000-0000-000000000000"; // شناسه پیش‌فرض
+            }
+        }
+
+        #endregion
     }
 }

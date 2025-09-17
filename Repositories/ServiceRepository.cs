@@ -1,4 +1,4 @@
-using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using System.Collections.Generic;
@@ -105,5 +105,132 @@ namespace ClinicApp.Repositories
         {
             return _context.SaveChangesAsync();
         }
+
+        #region ServiceComponents Management (مدیریت اجزای خدمات)
+
+        public Task<Service> GetByIdWithComponentsAsync(int id)
+        {
+            return _context.Services
+                .Include(s => s.ServiceCategory.Department.Clinic)
+                .Include(s => s.ServiceComponents)
+                .Include(s => s.CreatedByUser)
+                .Include(s => s.UpdatedByUser)
+                .FirstOrDefaultAsync(s => s.ServiceId == id);
+        }
+
+        public Task<List<ServiceComponent>> GetServiceComponentsAsync(int serviceId)
+        {
+            return _context.ServiceComponents
+                .AsNoTracking()
+                .Where(sc => sc.ServiceId == serviceId && !sc.IsDeleted)
+                .OrderBy(sc => sc.ComponentType)
+                .ToListAsync();
+        }
+
+        public void AddServiceComponent(ServiceComponent component)
+        {
+            _context.ServiceComponents.Add(component);
+        }
+
+        public void UpdateServiceComponent(ServiceComponent component)
+        {
+            _context.Entry(component).State = EntityState.Modified;
+        }
+
+        public void DeleteServiceComponent(ServiceComponent component)
+        {
+            _context.ServiceComponents.Remove(component);
+        }
+
+        #endregion
+
+        #region Additional Methods for Compatibility (متدهای اضافی برای سازگاری)
+
+        /// <summary>
+        /// Get service by ID (alternative method name for compatibility)
+        /// دریافت خدمت بر اساس شناسه (نام متد جایگزین برای سازگاری)
+        /// </summary>
+        public Task<Service> GetServiceByIdAsync(int serviceId)
+        {
+            return GetByIdAsync(serviceId);
+        }
+
+        /// <summary>
+        /// Get services by IDs
+        /// دریافت خدمات بر اساس لیست شناسه‌ها
+        /// </summary>
+        public async Task<List<Service>> GetServicesByIdsAsync(List<int> serviceIds)
+        {
+            if (serviceIds == null || !serviceIds.Any())
+                return new List<Service>();
+
+            return await _context.Services
+                .Where(s => serviceIds.Contains(s.ServiceId) && !s.IsDeleted)
+                .Include(s => s.ServiceCategory)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get active services by category (alternative method name for compatibility)
+        /// دریافت خدمات فعال بر اساس دسته‌بندی (نام متد جایگزین برای سازگاری)
+        /// </summary>
+        public Task<List<Service>> GetActiveServicesByCategoryAsync(int categoryId)
+        {
+            return GetActiveServicesAsync(categoryId);
+        }
+
+        /// <summary>
+        /// Get all active services
+        /// دریافت تمام خدمات فعال
+        /// </summary>
+        public async Task<List<Service>> GetAllActiveServicesAsync()
+        {
+            return await _context.Services
+                .Where(s => s.IsActive && !s.IsDeleted)
+                .Include(s => s.ServiceCategory)
+                .OrderBy(s => s.Title)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get all service categories
+        /// دریافت تمام دسته‌بندی‌های خدمات
+        /// </summary>
+        public async Task<List<ServiceCategory>> GetServiceCategoriesAsync()
+        {
+            return await _context.ServiceCategories
+                .Where(sc => !sc.IsDeleted)
+                .Include(sc => sc.Department)
+                .OrderBy(sc => sc.Title)
+                .ToListAsync();
+        }
+
+        /// <summary>
+        /// Get service category by ID
+        /// دریافت دسته‌بندی خدمت بر اساس شناسه
+        /// </summary>
+        public async Task<ServiceCategory> GetServiceCategoryByIdAsync(int categoryId)
+        {
+            return await _context.ServiceCategories
+                .Where(sc => sc.ServiceCategoryId == categoryId && !sc.IsDeleted)
+                .Include(sc => sc.Department)
+                .FirstOrDefaultAsync();
+        }
+
+        /// <summary>
+        /// Calculate total price for services
+        /// محاسبه مجموع قیمت خدمات
+        /// </summary>
+        public async Task<decimal> CalculateServicesTotalPriceAsync(List<int> serviceIds)
+        {
+            if (serviceIds == null || !serviceIds.Any())
+                return 0;
+
+            return await _context.Services
+                .Where(s => serviceIds.Contains(s.ServiceId) && !s.IsDeleted)
+                .SumAsync(s => s.Price);
+        }
+
+        #endregion
     }
 }

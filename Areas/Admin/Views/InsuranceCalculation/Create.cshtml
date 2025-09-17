@@ -546,7 +546,7 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(m => m.CalculationType, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.CalculationType, new { @class = "form-control", placeholder = "نوع محاسبه", required = "required" })
+                                    @Html.DropDownListFor(m => m.CalculationType, Model.CalculationTypeSelectList, new { @class = "form-control", required = "required" })
                                     @Html.ValidationMessageFor(m => m.CalculationType, "", new { @class = "invalid-feedback" })
                                 </div>
                             </div>
@@ -726,6 +726,19 @@
                 var patientId = e.params.data.id;
                 if (patientId) {
                     loadPatientInsurances(patientId);
+                }
+            });
+
+            // 🏥 Load insurance details when patient insurance is selected
+            $('#PatientInsuranceId').on('change', function() {
+                var patientInsuranceId = $(this).val();
+                if (patientInsuranceId) {
+                    loadPatientInsuranceDetails(patientInsuranceId);
+                } else {
+                    // پاک کردن اطلاعات بیمه
+                    $('#CoveragePercent').val('');
+                    $('#Deductible').val('');
+                    $('#calculationPreview').hide();
                 }
             });
 
@@ -961,6 +974,97 @@
                 });
             }
 
+            // 🏥 Load patient insurance details when insurance is selected
+            function loadPatientInsuranceDetails(patientInsuranceId) {
+                logClient(`Loading patient insurance details for insurance ID: ${patientInsuranceId}`, 'info');
+                $.ajax({
+                    url: '@Url.Action("GetPatientInsuranceDetails", "InsuranceCalculation")',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { patientInsuranceId: patientInsuranceId },
+                    success: function(response) {
+                        // Parse response if it's a string
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                            } catch (e) {
+                                logClient('Error parsing insurance details response', 'error', { error: e.message, response: response });
+                                showNotification('خطا در پردازش پاسخ سرور', 'error');
+                                return;
+                            }
+                        }
+                        
+                        if (response.success && response.data) {
+                            // تنظیم اطلاعات بیمه در فرم
+                            $('#CoveragePercent').val(response.data.coveragePercent);
+                            $('#Deductible').val(response.data.deductible);
+                            
+                            logClient(`Insurance details loaded - Coverage: ${response.data.coveragePercent}%, Deductible: ${response.data.deductible}`, 'info');
+                            
+                            // اگر مبلغ خدمت موجود است، محاسبه را انجام بده
+                            var serviceAmount = parseFloat($('#ServiceAmount').val()) || 0;
+                            if (serviceAmount > 0) {
+                                previewCalculation();
+                            }
+                            
+                            showNotification('اطلاعات بیمه بارگذاری شد', 'success');
+                        } else {
+                            logClient('No insurance details found', 'warning', { patientInsuranceId: patientInsuranceId });
+                            showNotification('اطلاعات بیمه یافت نشد', 'warning');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        logClient('Error loading insurance details', 'error', { xhr: xhr, status: status, error: error });
+                        console.error('خطا در بارگذاری اطلاعات بیمه:', error);
+                        showNotification('خطا در بارگذاری اطلاعات بیمه', 'error');
+                    }
+                });
+            }
+
+            // 🏥 Load service details (amount, etc.) when service is selected
+            function loadServiceDetails(serviceId) {
+                logClient(`Loading service details for service ID: ${serviceId}`, 'info');
+                $.ajax({
+                    url: '@Url.Action("GetServiceDetails", "InsuranceCalculation")',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: { serviceId: serviceId },
+                    success: function(response) {
+                        // Parse response if it's a string
+                        if (typeof response === 'string') {
+                            try {
+                                response = JSON.parse(response);
+                            } catch (e) {
+                                logClient('Error parsing service details response', 'error', { error: e.message, response: response });
+                                showNotification('خطا در پردازش پاسخ سرور', 'error');
+                                return;
+                            }
+                        }
+                        
+                        if (response.success && response.data) {
+                            // تنظیم مبلغ خدمت
+                            if (response.data.amount) {
+                                $('#ServiceAmount').val(response.data.amount);
+                                logClient(`Service amount set to: ${response.data.amount}`, 'info');
+                                
+                                // محاسبه خودکار
+                                previewCalculation();
+                            }
+                            
+                            showNotification('اطلاعات خدمت بارگذاری شد', 'success');
+                        } else {
+                            logClient('No service details found', 'warning', { serviceId: serviceId });
+                            showNotification('اطلاعات خدمت یافت نشد', 'warning');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        logClient('Error loading service details', 'error', { xhr: xhr, status: status, error: error });
+                        console.error('خطا در بارگذاری اطلاعات خدمت:', error);
+                        showNotification('خطا در بارگذاری اطلاعات خدمت', 'error');
+                    }
+                });
+            }
+
         // 🏥 Show notification
         function showNotification(message, type) {
             // Simple notification - can be enhanced with toast library
@@ -1016,22 +1120,69 @@
         }
 
         function previewCalculation() {
+            logClient('🏥 Starting calculation preview', 'info');
+            
             var serviceAmount = parseFloat($('#ServiceAmount').val()) || 0;
             var coveragePercent = parseFloat($('#CoveragePercent').val()) || 0;
             var deductible = parseFloat($('#Deductible').val()) || 0;
-            var insuranceShare = parseFloat($('#InsuranceShare').val()) || 0;
-            var patientShare = parseFloat($('#PatientShare').val()) || 0;
+            var copay = parseFloat($('#Copay').val()) || 0;
+            var coverageOverride = parseFloat($('#CoverageOverride').val()) || 0;
+
+            logClient('Calculation inputs', 'info', { 
+                serviceAmount: serviceAmount, 
+                coveragePercent: coveragePercent, 
+                deductible: deductible, 
+                copay: copay, 
+                coverageOverride: coverageOverride 
+            });
 
             if (serviceAmount > 0) {
-                $('#previewServiceAmount').text(serviceAmount.toLocaleString());
-                $('#previewCoveragePercent').text(coveragePercent.toFixed(1) + '%');
-                $('#previewDeductible').text(deductible.toLocaleString());
-                $('#previewInsuranceShare').text(insuranceShare.toLocaleString());
-                $('#previewPatientShare').text(patientShare.toLocaleString());
+                // محاسبه پوشش بیمه
+                var effectiveCoveragePercent = coverageOverride > 0 ? coverageOverride : coveragePercent;
+                
+                // محاسبه سهم بیمه
+                var insuranceShare = Math.round((serviceAmount * effectiveCoveragePercent / 100));
+                
+                // محاسبه سهم بیمار (بعد از کسر فرانشیز و کوپه)
+                var patientShare = serviceAmount - insuranceShare;
+                
+                // اعمال فرانشیز
+                if (deductible > 0) {
+                    patientShare = Math.max(patientShare, deductible);
+                }
+                
+                // اعمال کوپه
+                if (copay > 0) {
+                    patientShare = Math.max(patientShare, copay);
+                }
+                
+                // اطمینان از اینکه مجموع سهم‌ها برابر مبلغ کل باشد
+                insuranceShare = serviceAmount - patientShare;
+
+                logClient('Calculation results', 'info', { 
+                    insuranceShare: insuranceShare, 
+                    patientShare: patientShare, 
+                    effectiveCoveragePercent: effectiveCoveragePercent 
+                });
+
+                // نمایش نتایج
+                $('#previewServiceAmount').text(serviceAmount.toLocaleString('fa-IR') + ' ریال');
+                $('#previewCoveragePercent').text(effectiveCoveragePercent.toFixed(1) + '%');
+                $('#previewDeductible').text(deductible.toLocaleString('fa-IR') + ' ریال');
+                $('#previewInsuranceShare').text(insuranceShare.toLocaleString('fa-IR') + ' ریال');
+                $('#previewPatientShare').text(patientShare.toLocaleString('fa-IR') + ' ریال');
+
+                // به‌روزرسانی فیلدهای فرم
+                $('#InsuranceShare').val(insuranceShare);
+                $('#PatientShare').val(patientShare);
 
                 $('#calculationPreview').show();
+                
+                logClient('✅ Calculation preview completed successfully', 'info');
+                showNotification('محاسبه با موفقیت انجام شد', 'success');
             } else {
-                alert('لطفاً ابتدا مبلغ خدمت را وارد کنید');
+                logClient('❌ Service amount is zero or invalid', 'warning');
+                showNotification('لطفاً ابتدا مبلغ خدمت را وارد کنید', 'warning');
             }
         }
 
@@ -1054,6 +1205,15 @@
             }
         });
 
+        // 🏥 Auto-calculation when service amount or coverage changes
+        $('#ServiceAmount, #CoveragePercent, #Deductible, #Copay, #CoverageOverride').on('input change', function() {
+            logClient('🏥 Auto-calculation triggered by field change', 'info', { field: this.id, value: $(this).val() });
+            var serviceAmount = parseFloat($('#ServiceAmount').val()) || 0;
+            if (serviceAmount > 0) {
+                previewCalculation();
+            }
+        });
+
         // 🏥 سلسله مراتب: دپارتمان → سرفصل → خدمت
         $('#DepartmentId').on('change', function() {
             var departmentId = $(this).val();
@@ -1062,6 +1222,18 @@
             } else {
                 $('#ServiceCategoryId').empty().append('<option value="">ابتدا دپارتمان را انتخاب کنید</option>');
                 $('#ServiceId').empty().append('<option value="">ابتدا سرفصل را انتخاب کنید</option>');
+            }
+        });
+
+        // 🏥 بارگذاری اطلاعات خدمت هنگام انتخاب
+        $('#ServiceId').on('change', function() {
+            var serviceId = $(this).val();
+            if (serviceId) {
+                loadServiceDetails(serviceId);
+            } else {
+                // پاک کردن اطلاعات خدمت
+                $('#ServiceAmount').val('');
+                $('#calculationPreview').hide();
             }
         });
 

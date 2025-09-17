@@ -1,0 +1,200 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffIndexPageViewModel
+@{
+    ViewBag.Title = "مدیریت تعرفه‌های بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-money-bill-wave text-primary"></i>
+                        مدیریت تعرفه‌های بیمه
+                    </h1>
+                    <p class="text-muted mb-0">مدیریت تعرفه‌های خاص خدمات برای طرح‌های بیمه</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Create")" class="btn btn-primary">
+                        <i class="fas fa-plus"></i>
+                        تعرفه جدید
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-chart-bar"></i>
+                        آمار کلی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="card-title">@Model.Statistics.TotalTariffs</h3>
+                                    <p class="card-text">کل تعرفه‌های بیمه</p>
+                                    <i class="fas fa-money-bill-wave fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-success text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="card-title">@Model.Statistics.TariffsWithCustomPrice</h3>
+                                    <p class="card-text">تعرفه‌های با قیمت خاص</p>
+                                    <i class="fas fa-tag fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-warning text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="card-title">@Model.Statistics.TariffsWithCustomPatientShare</h3>
+                                    <p class="card-text">تعرفه‌های با سهم بیمار خاص</p>
+                                    <i class="fas fa-user fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="card bg-info text-white">
+                                <div class="card-body text-center">
+                                    <h3 class="card-title">@Model.Statistics.TariffsWithCustomInsurerShare</h3>
+                                    <p class="card-text">تعرفه‌های با سهم بیمه خاص</p>
+                                    <i class="fas fa-shield-alt fa-2x"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-filter"></i>
+                        فیلتر و جستجو
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form id="filterForm" method="post" action="@Url.Action("LoadTariffs")">
+                        @Html.AntiForgeryToken()
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="SearchTerm">جستجو</label>
+                                    <input type="text" id="SearchTerm" name="SearchTerm" class="form-control" 
+                                           value="@Model.Filter.SearchTerm" placeholder="جستجو در خدمات، طرح‌ها...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="ProviderId">ارائه‌دهنده بیمه</label>
+                                    @Html.DropDownList("InsuranceProviderId", Model.Filter.InsuranceProviderSelectList, 
+                                        "همه ارائه‌دهندگان", new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="PlanId">طرح بیمه</label>
+                                    @Html.DropDownList("InsurancePlanId", Model.Filter.InsurancePlanSelectList, 
+                                        "همه طرح‌ها", new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label for="ServiceId">خدمت</label>
+                                    @Html.DropDownList("ServiceId", Model.Filter.ServiceSelectList, 
+                                        "همه خدمات", new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    جستجو
+                                </button>
+                                <button type="button" id="clearFilter" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i>
+                                    پاک کردن
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-list"></i>
+                        لیست تعرفه‌های بیمه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div id="tariffsList">
+                        @Html.Partial("_InsuranceTariffListPartial", Model.Tariffs)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Filter form submission
+            $('#filterForm').on('submit', function(e) {
+                e.preventDefault();
+                loadTariffs();
+            });
+
+            // Clear filter
+            $('#clearFilter').on('click', function() {
+                $('#filterForm')[0].reset();
+                loadTariffs();
+            });
+
+            // Load tariffs function
+            function loadTariffs() {
+                var formData = $('#filterForm').serialize();
+                
+                $.ajax({
+                    url: '@Url.Action("LoadTariffs")',
+                    type: 'POST',
+                    data: formData,
+                    success: function(response) {
+                        $('#tariffsList').html(response);
+                    },
+                    error: function() {
+                        alert('خطا در بارگیری لیست تعرفه‌های بیمه');
+                    }
+                });
+            }
+
+            // Auto-load on page load
+            loadTariffs();
+        });
+    </script>
+}

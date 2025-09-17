@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces;
 using FluentValidation;
 using ClinicApp.ViewModels;
 

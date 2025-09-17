@@ -35,21 +35,36 @@ namespace ClinicApp.Services.Insurance
         private readonly IPatientInsuranceRepository _patientInsuranceRepository;
         private readonly IPlanServiceRepository _planServiceRepository;
         private readonly IInsuranceCalculationRepository _insuranceCalculationRepository;
+        private readonly IInsuranceTariffRepository _insuranceTariffRepository;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ApplicationDbContext _context;
 
         public InsuranceCalculationService(
             IPatientInsuranceRepository patientInsuranceRepository,
             IPlanServiceRepository planServiceRepository,
             IInsuranceCalculationRepository insuranceCalculationRepository,
+            IInsuranceTariffRepository insuranceTariffRepository,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
             _patientInsuranceRepository = patientInsuranceRepository ?? throw new ArgumentNullException(nameof(patientInsuranceRepository));
             _planServiceRepository = planServiceRepository ?? throw new ArgumentNullException(nameof(planServiceRepository));
             _insuranceCalculationRepository = insuranceCalculationRepository ?? throw new ArgumentNullException(nameof(insuranceCalculationRepository));
+            _insuranceTariffRepository = insuranceTariffRepository ?? throw new ArgumentNullException(nameof(insuranceTariffRepository));
             _log = logger.ForContext<InsuranceCalculationService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+        }
+
+        // Constructor برای استفاده در ReceptionService
+        public InsuranceCalculationService(
+            ApplicationDbContext context,
+            ICurrentUserService currentUserService,
+            ILogger logger)
+        {
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _log = logger.ForContext<InsuranceCalculationService>();
         }
 
         #region IInsuranceCalculationService Implementation
@@ -393,7 +408,7 @@ namespace ClinicApp.Services.Insurance
         /// محاسبه ضد گلوله پوشش بیمه بر اساس طرح بیمه و تنظیمات خدمت
         /// 🛡️ مقاوم در برابر تمام انواع خطاها - فرمول محاسباتی استاندارد سیستم‌های پزشکی ایران
         /// </summary>
-        private InsuranceCalculationResultViewModel CalculateInsuranceCoverage(
+        public InsuranceCalculationResultViewModel CalculateInsuranceCoverage(
             decimal serviceAmount,
             InsurancePlan insurancePlan,
             PlanService planService)
@@ -408,9 +423,9 @@ namespace ClinicApp.Services.Insurance
                     throw new ArgumentException($"ورودی‌های محاسبه نامعتبر: {string.Join(", ", validationResult.Errors)}");
                 }
 
-                var result = new InsuranceCalculationResultViewModel
-                {
-                    TotalAmount = serviceAmount,
+            var result = new InsuranceCalculationResultViewModel
+            {
+                TotalAmount = serviceAmount,
                     DeductibleAmount = SafeGetDeductible(insurancePlan)
                 };
 
@@ -441,6 +456,100 @@ namespace ClinicApp.Services.Insurance
                 _log.Error(ex, "خطای غیرمنتظره در محاسبه پوشش بیمه: ServiceAmount={ServiceAmount}, InsurancePlanId={InsurancePlanId}", 
                     serviceAmount, insurancePlan?.InsurancePlanId);
                 throw new InvalidOperationException("خطا در محاسبه پوشش بیمه", ex);
+            }
+        }
+
+        /// <summary>
+        /// محاسبه پوشش بیمه با استفاده از تعرفه بیمه (اگر موجود باشد)
+        /// 🏥 استفاده از تعرفه‌های خاص بیمه برای محاسبات دقیق‌تر
+        /// </summary>
+        public async Task<InsuranceCalculationResultViewModel> CalculateInsuranceCoverageWithTariffAsync(
+            decimal serviceAmount,
+            int serviceId,
+            InsurancePlan insurancePlan,
+            PlanService planService)
+        {
+            try
+            {
+                _log.Information("Starting insurance coverage calculation with tariff for ServiceId: {ServiceId}, PlanId: {PlanId}, Amount: {Amount}", 
+                    serviceId, insurancePlan.InsurancePlanId, serviceAmount);
+
+                // بررسی وجود تعرفه بیمه برای این خدمت و طرح
+                var tariff = await _insuranceTariffRepository.GetByPlanAndServiceAsync(insurancePlan.InsurancePlanId, serviceId);
+                
+                if (tariff != null && !tariff.IsDeleted)
+                {
+                    _log.Information("Insurance tariff found for ServiceId: {ServiceId}, PlanId: {PlanId}, TariffPrice: {TariffPrice}", 
+                        serviceId, insurancePlan.InsurancePlanId, tariff.TariffPrice);
+
+                    // استفاده از قیمت تعرفه اگر تعریف شده باشد
+                    var effectiveServiceAmount = tariff.TariffPrice ?? serviceAmount;
+                    
+                    var result = new InsuranceCalculationResultViewModel
+                    {
+                        TotalAmount = effectiveServiceAmount,
+                        DeductibleAmount = SafeGetDeductible(insurancePlan)
+                    };
+
+                    // محاسبه مبلغ قابل پوشش
+                    result.CoverableAmount = SafeCalculateCoverableAmount(effectiveServiceAmount, result.DeductibleAmount);
+
+                    // استفاده از درصدهای تعرفه اگر تعریف شده باشند
+                    decimal coveragePercent;
+                    if (tariff.InsurerShare.HasValue)
+                    {
+                        coveragePercent = tariff.InsurerShare.Value;
+                        _log.Information("Using tariff insurer share: {InsurerShare}%", coveragePercent);
+                    }
+                    else
+                    {
+                        coveragePercent = SafeGetCoveragePercent(insurancePlan, planService);
+                        _log.Information("Using plan default coverage: {CoveragePercent}%", coveragePercent);
+                    }
+
+                    result.CoveragePercent = coveragePercent;
+
+                    // محاسبه مبلغ پوشش بیمه
+                    result.InsuranceCoverage = SafeCalculateInsuranceCoverage(result.CoverableAmount, coveragePercent);
+
+                    // محاسبه مبلغ پرداخت بیمار
+                    if (tariff.PatientShare.HasValue)
+                    {
+                        // استفاده از درصد سهم بیمار تعرفه
+                        var patientSharePercent = tariff.PatientShare.Value;
+                        result.PatientPayment = SafeCalculatePatientPaymentWithPercent(effectiveServiceAmount, patientSharePercent);
+                        _log.Information("Using tariff patient share: {PatientShare}%", patientSharePercent);
+                    }
+                    else
+                    {
+                        // استفاده از محاسبه عادی
+                        result.PatientPayment = SafeCalculatePatientPayment(result.DeductibleAmount, result.CoverableAmount, result.InsuranceCoverage);
+                    }
+
+                    // بررسی و تصحیح صحت محاسبات
+                    result = ValidateAndCorrectCalculations(result, effectiveServiceAmount);
+
+                    _log.Information("Insurance calculation with tariff completed: ServiceAmount={ServiceAmount}, TariffPrice={TariffPrice}, InsuranceCoverage={InsuranceCoverage}, PatientPayment={PatientPayment}", 
+                        serviceAmount, tariff.TariffPrice, result.InsuranceCoverage, result.PatientPayment);
+
+                    return result;
+                }
+                else
+                {
+                    _log.Information("No insurance tariff found for ServiceId: {ServiceId}, PlanId: {PlanId}, using default calculation", 
+                        serviceId, insurancePlan.InsurancePlanId);
+                    
+                    // استفاده از محاسبه عادی
+                    return CalculateInsuranceCoverage(serviceAmount, insurancePlan, planService);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در محاسبه پوشش بیمه با تعرفه: ServiceId={ServiceId}, PlanId={PlanId}, Amount={Amount}", 
+                    serviceId, insurancePlan.InsurancePlanId, serviceAmount);
+                
+                // در صورت خطا، از محاسبه عادی استفاده کن
+                return CalculateInsuranceCoverage(serviceAmount, insurancePlan, planService);
             }
         }
 
@@ -562,16 +671,16 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                decimal coveragePercent;
+            decimal coveragePercent;
 
                 if (planService?.CoverageOverride.HasValue == true)
-                {
-                    // استفاده از درصد پوشش خاص خدمت
-                    coveragePercent = planService.CoverageOverride.Value;
-                }
-                else
-                {
-                    // استفاده از درصد پوشش پیش‌فرض طرح بیمه
+            {
+                // استفاده از درصد پوشش خاص خدمت
+                coveragePercent = planService.CoverageOverride.Value;
+            }
+            else
+            {
+                // استفاده از درصد پوشش پیش‌فرض طرح بیمه
                     coveragePercent = insurancePlan?.CoveragePercent ?? 0m;
                 }
 
@@ -626,6 +735,27 @@ namespace ClinicApp.Services.Insurance
         }
 
         /// <summary>
+        /// محاسبه امن مبلغ پرداخت بیمار بر اساس درصد
+        /// </summary>
+        private decimal SafeCalculatePatientPaymentWithPercent(decimal serviceAmount, decimal patientSharePercent)
+        {
+            try
+            {
+                if (patientSharePercent == 0)
+                    return 0m;
+
+                var patientPayment = serviceAmount * (patientSharePercent / 100);
+                return Math.Max(0, Math.Round(patientPayment, 2, MidpointRounding.AwayFromZero));
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در محاسبه مبلغ پرداخت بیمار بر اساس درصد. ServiceAmount: {ServiceAmount}, PatientSharePercent: {PatientSharePercent}", 
+                    serviceAmount, patientSharePercent);
+                return 0m;
+            }
+        }
+
+        /// <summary>
         /// بررسی و تصحیح صحت محاسبات
         /// </summary>
         private InsuranceCalculationResultViewModel ValidateAndCorrectCalculations(InsuranceCalculationResultViewModel result, decimal originalServiceAmount)
@@ -656,7 +786,7 @@ namespace ClinicApp.Services.Insurance
                         originalServiceAmount, finalTotal, finalDifference);
                 }
 
-                return result;
+            return result;
             }
             catch (Exception ex)
             {

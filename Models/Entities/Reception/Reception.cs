@@ -240,15 +240,15 @@ public class ReceptionConfig : EntityTypeConfiguration<Reception>
 
         Property(r => r.TotalAmount)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(r => r.PatientCoPay)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(r => r.InsurerShareAmount)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(r => r.Status)
             .IsRequired()

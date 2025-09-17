@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Core;
@@ -18,6 +19,8 @@ using ClinicApp.ViewModels.Reception;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Services;
+using ClinicApp.Services.Insurance;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Entities.Insurance;
@@ -66,6 +69,8 @@ namespace ClinicApp.Services
         private readonly IDoctorCrudService _doctorCrudService;
         private readonly IDoctorDepartmentRepository _doctorDepartmentRepository;
         private readonly ILogger _logger;
+        private readonly ApplicationDbContext _context;
+        private readonly IServiceCalculationService _serviceCalculationService;
         
 
         public ReceptionService(
@@ -79,7 +84,9 @@ namespace ClinicApp.Services
             IServiceService serviceService,
             IDoctorCrudService doctorCrudService,
             IDoctorDepartmentRepository doctorDepartmentRepository,
-            ILogger logger)
+            ILogger logger,
+            ApplicationDbContext context,
+            IServiceCalculationService serviceCalculationService)
         {
             _receptionRepository = receptionRepository ?? throw new ArgumentNullException(nameof(receptionRepository));
             _paymentTransactionRepository = paymentTransactionRepository ?? throw new ArgumentNullException(nameof(paymentTransactionRepository));
@@ -92,7 +99,8 @@ namespace ClinicApp.Services
             _doctorCrudService = doctorCrudService ?? throw new ArgumentNullException(nameof(doctorCrudService));
             _doctorDepartmentRepository = doctorDepartmentRepository ?? throw new ArgumentNullException(nameof(doctorDepartmentRepository));
             _logger = logger.ForContext<ReceptionService>();
-            
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
         }
 
         #endregion
@@ -1234,33 +1242,51 @@ namespace ClinicApp.Services
                     insurance = null; // Temporary fix
                 }
 
-                foreach (var service in services)
+                foreach (var serviceItem in services)
                 {
+                    // دریافت خدمت کامل از دیتابیس
+                    var service = _context.Services
+                        .Include(s => s.ServiceComponents)
+                        .FirstOrDefault(s => s.ServiceId == serviceItem.ServiceId && !s.IsDeleted);
+
+                    if (service == null)
+                        continue;
+
+                    // محاسبه قیمت واقعی خدمت با استفاده از ServiceCalculationService
+                    var calculatedPrice = _serviceCalculationService.CalculateServicePriceWithFactorSettings(
+                        service, _context, receptionDate);
+
                     var serviceCost = new ServiceCostDetailViewModel
                     {
                         ServiceId = service.ServiceId,
                         ServiceName = service.Title,
-                        BasePrice = service.Price
+                        BasePrice = calculatedPrice // استفاده از قیمت محاسبه شده
                     };
 
-                    // محاسبه سهم بیمه
+                    // محاسبه سهم بیمه با استفاده از InsuranceCalculationService
                     if (insurance != null && insurance.IsActive && insurance.InsurancePlan != null)
                     {
-                        var coveragePercentage = insurance.InsurancePlan.CoveragePercent;
-                        serviceCost.InsuranceShare = service.Price * (coveragePercentage / 100);
-                        serviceCost.PatientShare = service.Price - serviceCost.InsuranceShare;
-                        serviceCost.CoveragePercentage = coveragePercentage;
+                        // استفاده از InsuranceCalculationService برای محاسبه دقیق
+                        var insuranceCalculationService = new InsuranceCalculationService(
+                            _context, _currentUserService, _logger);
+                        
+                        var insuranceResult = insuranceCalculationService.CalculateInsuranceCoverage(
+                            calculatedPrice, insurance.InsurancePlan, null);
+
+                        serviceCost.InsuranceShare = insuranceResult.InsuranceCoverage;
+                        serviceCost.PatientShare = insuranceResult.PatientPayment;
+                        serviceCost.CoveragePercentage = insuranceResult.CoveragePercent;
                     }
                     else
                     {
                         serviceCost.InsuranceShare = 0;
-                        serviceCost.PatientShare = service.Price;
+                        serviceCost.PatientShare = calculatedPrice;
                         serviceCost.CoveragePercentage = 0;
                     }
 
                     result.ServiceDetails.Add(serviceCost);
 
-                    totalAmount += service.Price;
+                    totalAmount += calculatedPrice;
                     totalInsuranceShare += serviceCost.InsuranceShare;
                     totalPatientShare += serviceCost.PatientShare;
                 }

@@ -1,0 +1,431 @@
+@using ClinicApp.Extensions
+@model ClinicApp.ViewModels.FactorSettingCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد کای جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- بسته‌های CSS مورد نیاز -->
+@section Styles {
+    <style>
+        .form-section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            color: #1a6dcc;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section-title i {
+            margin-left: 8px;
+            font-size: 1.1rem;
+        }
+
+        .required:after {
+            content: " *";
+            color: #d32f2f;
+            margin-right: 2px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            color: white;
+            border: none;
+            padding: 10px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 109, 204, 0.4);
+        }
+
+        .btn-submit i {
+            margin-left: 8px;
+        }
+
+        .btn-cancel {
+            background-color: #f1f3f5;
+            color: #495057;
+            border-radius: 25px;
+            padding: 10px 25px;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.05rem;
+        }
+
+        .btn-cancel:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .btn-cancel i {
+            margin-left: 8px;
+        }
+
+        .form-control:focus {
+            border-color: #1a6dcc;
+            box-shadow: 0 0 0 0.2rem rgba(26, 109, 204, 0.25);
+        }
+
+        .form-note {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
+        .validation-summary-errors {
+            background-color: #ffebee;
+            border-radius: 6px;
+            padding: 12px;
+            margin-bottom: 15px;
+            border-right: 3px solid #d32f2f;
+        }
+
+        .validation-summary-errors ul {
+            margin-bottom: 0;
+            padding-left: 20px;
+        }
+
+        .validation-summary-errors li {
+            margin-bottom: 4px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .info-box {
+            background-color: #e3f2fd;
+            border-left: 3px solid #1a6dcc;
+            padding: 15px;
+            border-radius: 0 4px 4px 0;
+            margin-bottom: 20px;
+        }
+
+        .info-box h5 {
+            margin-top: 0;
+            color: #1a6dcc;
+        }
+
+        .info-box ul {
+            padding-right: 20px;
+            margin-bottom: 0;
+        }
+
+        .info-box li {
+            margin-bottom: 8px;
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- هدر صفحه -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-plus text-primary me-2"></i>
+                    ایجاد کای جدید
+                </h1>
+                <p class="text-muted mb-0">ایجاد ضریب جدید برای محاسبه قیمت خدمات</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <a href="@Url.Action("Index")" class="btn btn-cancel">
+                    <i class="fas fa-arrow-right me-1"></i> بازگشت به لیست
+                </a>
+            </div>
+        </div>
+
+        <!-- راهنمای سریع -->
+        <div class="info-box">
+            <h5><i class="fas fa-lightbulb"></i> راهنمای ایجاد کای</h5>
+            <ul>
+                <li><strong>کای فنی:</strong> ضریبی است که در جزء فنی خدمت ضرب می‌شود</li>
+                <li><strong>کای حرفه‌ای:</strong> ضریبی است که در جزء حرفه‌ای خدمت ضرب می‌شود</li>
+                <li><strong>هشتگ‌دار:</strong> برخی خدمات از ضرایب متفاوتی استفاده می‌کنند</li>
+                <li><strong>سال مالی:</strong> هر سال ضرایب جدیدی تعریف می‌شوند</li>
+            </ul>
+        </div>
+
+        <!-- فرم ایجاد کای -->
+        <div class="row">
+            <div class="col-lg-8">
+                @using (Html.BeginForm("Create", "FactorSetting", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-section">
+                        <h5 class="form-section-title">
+                            <i class="fas fa-calculator"></i> اطلاعات کای
+                        </h5>
+
+                        @Html.ValidationSummary(false, "", new { @class = "validation-summary-errors" })
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Name, new { @class = "form-label required" })
+                            @Html.TextBoxFor(model => model.Name, new { @class = "form-control form-control-lg", placeholder = "نام کای را وارد کنید", id = "factorName" })
+                            @Html.ValidationMessageFor(model => model.Name, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">مثال: "کای فنی استاندارد"، "کای حرفه‌ای هشتگ‌دار"</div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    @Html.LabelFor(model => model.FactorType, new { @class = "form-label required" })
+                                    @Html.DropDownListFor(model => model.FactorType,
+                                        new SelectList(new[] {
+                                            new { Value = "1", Text = "فنی" },
+                                            new { Value = "2", Text = "حرفه‌ای" }
+                                        }, "Value", "Text", "1"),
+                                        new { @class = "form-control form-control-lg" })
+                                    @Html.ValidationMessageFor(model => model.FactorType, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">نوع ضریب: فنی یا حرفه‌ای</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    @Html.LabelFor(model => model.Value, new { @class = "form-label required" })
+                                    @Html.TextBoxFor(model => model.Value, new { 
+                                        @class = "form-control form-control-lg", 
+                                        type = "number", 
+                                        min = "0.01", 
+                                        max = "999999.99", 
+                                        step = "0.01",
+                                        placeholder = "مقدار کای" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.Value, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">مقدار ضریب (مثال: 3.0 یا 12.9)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    @Html.LabelFor(model => model.FinancialYear, new { @class = "form-label required" })
+                                    @Html.TextBoxFor(model => model.FinancialYear, new { 
+                                        @class = "form-control form-control-lg", 
+                                        type = "number", 
+                                        min = "1400", 
+                                        max = "1500",
+                                        placeholder = "سال مالی" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.FinancialYear, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">سال مالی شمسی (مثال: 1404)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-4">
+                                    <label class="form-label">&nbsp;</label>
+                                    <div class="form-check">
+                                        @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input" })
+                                        @Html.LabelFor(model => model.IsHashtagged, "آیا این کای هشتگ‌دار است؟", new { @class = "form-check-label" })
+                                    </div>
+                                    @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">برای خدمات با ضرایب خاص</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            @Html.LabelFor(model => model.Description, new { @class = "form-label" })
+                            @Html.TextAreaFor(model => model.Description, new { @class = "form-control form-control-lg", rows = "3", placeholder = "توضیحات کای را وارد کنید" })
+                            @Html.ValidationMessageFor(model => model.Description, "", new { @class = "text-danger small mt-1" })
+                            <div class="form-note">توضیحات تکمیلی درباره این کای (اختیاری)</div>
+                        </div>
+
+                        <div class="form-check mb-4">
+                            @Html.CheckBoxFor(model => model.IsActive, new { @class = "form-check-input" })
+                            @Html.LabelFor(model => model.IsActive, "فعال", new { @class = "form-check-label" })
+                            <div class="form-note">کای‌های غیرفعال در محاسبات استفاده نمی‌شوند</div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-submit">
+                                <i class="fas fa-save"></i> ایجاد کای
+                            </button>
+                            <a href="@Url.Action("Index")" class="btn btn-cancel">
+                                <i class="fas fa-times"></i> انصراف
+                            </a>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="col-lg-4">
+                <!-- راهنمای تکمیلی -->
+                <div class="form-section">
+                    <h5 class="form-section-title">
+                        <i class="fas fa-info-circle"></i> نکات مهم
+                    </h5>
+                    <div class="text-muted">
+                        <h6>محاسبه قیمت خدمت:</h6>
+                        <p class="small">قیمت نهایی = (جزء فنی × کای فنی) + (جزء حرفه‌ای × کای حرفه‌ای)</p>
+                        
+                        <h6>مثال:</h6>
+                        <p class="small">
+                            ویزیت متخصص:<br>
+                            جزء فنی: 3.0<br>
+                            جزء حرفه‌ای: 12.9<br>
+                            کای فنی: 3000 تومان<br>
+                            کای حرفه‌ای: 12900 تومان<br>
+                            قیمت نهایی: 48,700 تومان
+                        </p>
+
+                        <h6>نکات:</h6>
+                        <ul class="small">
+                            <li>هر سال مالی ضرایب جدیدی تعریف می‌شوند</li>
+                            <li>خدمات هشتگ‌دار از ضرایب متفاوتی استفاده می‌کنند</li>
+                            <li>فقط کای‌های فعال در محاسبات استفاده می‌شوند</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- پیش‌نمایش محاسبه -->
+                <div class="form-section">
+                    <h5 class="form-section-title">
+                        <i class="fas fa-calculator"></i> پیش‌نمایش محاسبه
+                    </h5>
+                    <div id="calculationPreview" class="text-center text-muted">
+                        <p>مقدار کای را وارد کنید تا پیش‌نمایش محاسبه نمایش داده شود</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // اعتبارسنجی فرم
+            (function() {
+                'use strict';
+                window.addEventListener('load', function() {
+                    var forms = document.getElementsByClassName('needs-validation');
+                    Array.prototype.filter.call(forms, function(form) {
+                        form.addEventListener('submit', function(event) {
+                            if (form.checkValidity() === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            form.classList.add('was-validated');
+                        }, false);
+                    });
+                }, false);
+            })();
+
+            // پیش‌نمایش محاسبه
+            function updateCalculationPreview() {
+                var value = parseFloat($('#Value').val()) || 0;
+                var factorType = $('#FactorType').val();
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+
+                if (value > 0) {
+                    var typeText = factorType === '1' ? 'فنی' : 'حرفه‌ای';
+                    var hashtagText = isHashtagged ? ' (هشتگ‌دار)' : '';
+                    
+                    // مثال با جزء نمونه
+                    var sampleComponent = factorType === '1' ? 3.0 : 12.9;
+                    var calculatedPrice = value * sampleComponent;
+
+                    $('#calculationPreview').html(
+                        '<h6>مثال محاسبه:</h6>' +
+                        '<p class="mb-2">کای ' + typeText + hashtagText + ': ' + value.toFixed(2) + ' تومان</p>' +
+                        '<p class="mb-2">جزء نمونه: ' + sampleComponent + '</p>' +
+                        '<hr>' +
+                        '<p class="mb-0"><strong>نتیجه: ' + calculatedPrice.toLocaleString('fa-IR') + ' تومان</strong></p>'
+                    );
+                } else {
+                    $('#calculationPreview').html('<p class="text-muted">مقدار کای را وارد کنید تا پیش‌نمایش محاسبه نمایش داده شود</p>');
+                }
+            }
+
+            // رویدادهای به‌روزرسانی پیش‌نمایش
+            $('#Value, #FactorType, #IsHashtagged').on('change keyup', updateCalculationPreview);
+
+            // تولید خودکار نام کای
+            function generateFactorName() {
+                var factorType = $('#FactorType').val();
+                var financialYear = $('#FinancialYear').val();
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+                
+                if (factorType && financialYear) {
+                    var typeText = factorType == '1' ? 'فنی' : 'حرفه‌ای';
+                    var hashtagText = isHashtagged ? ' هشتگ‌دار' : '';
+                    var name = 'کای ' + typeText + hashtagText + ' ' + financialYear;
+                    $('#factorName').val(name);
+                }
+            }
+
+            // تغییرات در فیلدها
+            $('#FactorType, #FinancialYear, #IsHashtagged').on('change', generateFactorName);
+
+            // اعتبارسنجی مقدار کای
+            $('#Value').on('input', function() {
+                var value = parseFloat($(this).val());
+                var factorType = $('#FactorType').val();
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+                
+                if (value > 0) {
+                    if (factorType == '1' && isHashtagged && value > 50000) {
+                        showValidationError('کای فنی هشتگ‌دار نمی‌تواند بیش از 50000 باشد');
+                    } else if (factorType == '2' && value > 100000) {
+                        showValidationError('کای حرفه‌ای نمی‌تواند بیش از 100000 باشد');
+                    } else {
+                        clearValidationError();
+                    }
+                }
+            });
+
+            // اعتبارسنجی سال مالی
+            $('#FinancialYear').on('input', function() {
+                var year = parseInt($(this).val());
+                var currentYear = new Date().getFullYear() + 621; // تبدیل به شمسی
+                
+                if (year < 1400 || year > currentYear + 1) {
+                    showValidationError('سال مالی باید بین 1400 تا ' + (currentYear + 1) + ' باشد');
+                } else {
+                    clearValidationError();
+                }
+            });
+
+            function showValidationError(message) {
+                if (!$('.validation-error').length) {
+                    $('<div class="alert alert-warning validation-error mt-2">' + message + '</div>').insertAfter('#Value');
+                }
+            }
+
+            function clearValidationError() {
+                $('.validation-error').remove();
+            }
+
+            // تولید اولیه نام
+            generateFactorName();
+        });
+    </script>
+}

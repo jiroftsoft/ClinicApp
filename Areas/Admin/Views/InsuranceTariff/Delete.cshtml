@@ -1,0 +1,317 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffDetailsViewModel
+@{
+    ViewBag.Title = "حذف تعرفه بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-trash text-danger"></i>
+                        حذف تعرفه بیمه
+                    </h1>
+                    <p class="text-muted mb-0">تأیید حذف تعرفه بیمه</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Details", new { id = Model.InsuranceTariffId })" class="btn btn-info">
+                        <i class="fas fa-eye"></i>
+                        مشاهده جزئیات
+                    </a>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Warning Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-danger">
+                <h4 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    هشدار حذف
+                </h4>
+                <p>آیا مطمئن هستید که می‌خواهید این تعرفه بیمه را حذف کنید؟</p>
+                <hr>
+                <p class="mb-0">
+                    <strong>توجه:</strong> این عمل قابل بازگشت نیست و ممکن است بر روی محاسبات بیمه تأثیر بگذارد.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details Section -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        اطلاعات تعرفه بیمه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Service Information -->
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">خدمت:</label>
+                                <div class="info-value">
+                                    <strong>@Model.ServiceTitle</strong>
+                                    @if (!string.IsNullOrEmpty(Model.ServiceCode))
+                                    {
+                                        <br><small class="text-muted">کد: @Model.ServiceCode</small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insurance Plan Information -->
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">طرح بیمه:</label>
+                                <div class="info-value">
+                                    <strong>@Model.InsurancePlanName</strong>
+                                    @if (!string.IsNullOrEmpty(Model.InsurancePlanCode))
+                                    {
+                                        <br><small class="text-muted">کد: @Model.InsurancePlanCode</small>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Insurance Provider -->
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">ارائه‌دهنده بیمه:</label>
+                                <div class="info-value">
+                                    <span class="badge badge-info">@Model.InsuranceProviderName</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Service Category -->
+                        <div class="col-md-6">
+                            <div class="info-group">
+                                <label class="info-label">دسته‌بندی خدمت:</label>
+                                <div class="info-value">
+                                    @if (!string.IsNullOrEmpty(Model.ServiceCategoryTitle))
+                                    {
+                                        <span class="badge badge-secondary">@Model.ServiceCategoryTitle</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">تعریف نشده</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Tariff Information -->
+                    <div class="row">
+                        <div class="col-12">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-money-bill-wave"></i>
+                                اطلاعات تعرفه
+                            </h6>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Tariff Price -->
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">قیمت تعرفه:</label>
+                                <div class="info-value">
+                                    @if (Model.TariffPrice.HasValue)
+                                    {
+                                        <span class="text-success font-weight-bold h5">
+                                            @Model.TariffPrice.Value.ToString("N0") تومان
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">استفاده از قیمت پایه خدمت</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Patient Share -->
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">سهم بیمار:</label>
+                                <div class="info-value">
+                                    @if (Model.PatientShare.HasValue)
+                                    {
+                                        <span class="text-warning font-weight-bold h5">
+                                            @Model.PatientShare.Value.ToString("F1")%
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">استفاده از تنظیمات طرح بیمه</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Insurer Share -->
+                        <div class="col-md-4">
+                            <div class="info-group">
+                                <label class="info-label">سهم بیمه:</label>
+                                <div class="info-value">
+                                    @if (Model.InsurerShare.HasValue)
+                                    {
+                                        <span class="text-info font-weight-bold h5">
+                                            @Model.InsurerShare.Value.ToString("F1")%
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">استفاده از تنظیمات طرح بیمه</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.ServiceDescription))
+                    {
+                        <hr>
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="info-group">
+                                    <label class="info-label">توضیحات خدمت:</label>
+                                    <div class="info-value">
+                                        <p class="text-muted">@Model.ServiceDescription</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Delete Confirmation -->
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-trash"></i>
+                        تأیید حذف
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">برای حذف این تعرفه بیمه، دکمه زیر را کلیک کنید:</p>
+                    
+                    @using (Html.BeginForm("Delete", "InsuranceTariff", FormMethod.Post, new { @class = "d-inline" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.Hidden("id", Model.InsuranceTariffId)
+                        
+                        <button type="submit" class="btn btn-danger btn-block" onclick="return confirm('آیا مطمئن هستید؟')">
+                            <i class="fas fa-trash"></i>
+                            حذف تعرفه بیمه
+                        </button>
+                    }
+                </div>
+            </div>
+
+            <!-- Audit Information -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-history"></i>
+                        اطلاعات ثبت
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-group">
+                        <label class="info-label">تاریخ ایجاد:</label>
+                        <div class="info-value">
+                            @Model.CreatedAtShamsi
+                            @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
+                            {
+                                <br><small class="text-muted">توسط: @Model.CreatedByUserName</small>
+                            }
+                        </div>
+                    </div>
+
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <div class="info-group">
+                            <label class="info-label">آخرین ویرایش:</label>
+                            <div class="info-value">
+                                @Model.UpdatedAtShamsi
+                                @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                                {
+                                    <br><small class="text-muted">توسط: @Model.UpdatedByUserName</small>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Alternative Actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-undo"></i>
+                        عملیات جایگزین
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="btn btn-warning">
+                            <i class="fas fa-edit"></i>
+                            ویرایش به جای حذف
+                        </a>
+                        <a href="@Url.Action("Details", new { id = Model.InsuranceTariffId })" class="btn btn-info">
+                            <i class="fas fa-eye"></i>
+                            مشاهده جزئیات
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .info-group {
+        margin-bottom: 1rem;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+        display: block;
+    }
+
+    .info-value {
+        font-size: 1rem;
+        line-height: 1.4;
+    }
+</style>

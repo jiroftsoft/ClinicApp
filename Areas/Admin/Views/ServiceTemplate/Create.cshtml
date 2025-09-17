@@ -1,0 +1,347 @@
+@using ClinicApp.Extensions
+@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.ServiceTemplateCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد قالب خدمت جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <style>
+        /* استایل‌های اختصاصی برای فرم ایجاد قالب خدمت */
+        .form-section {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            color: #17a2b8;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-section-title i {
+            margin-left: 8px;
+            font-size: 1.1rem;
+        }
+
+        .required:after {
+            content: " *";
+            color: #d32f2f;
+            margin-right: 2px;
+        }
+
+        .btn-submit {
+            background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(23, 162, 184, 0.3);
+        }
+
+        .btn-cancel {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-cancel:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .form-control, .form-select {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: all 0.2s;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #17a2b8;
+            box-shadow: 0 0 0 0.2rem rgba(23, 162, 184, 0.25);
+        }
+
+        .form-label {
+            font-weight: 500;
+            color: #495057;
+            margin-bottom: 8px;
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: #0c5460;
+            border-radius: 8px;
+        }
+
+        .template-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .template-info h6 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .template-info p {
+            margin: 5px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .validation-summary {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .field-validation-error {
+            color: #dc3545;
+            font-size: 0.875rem;
+            margin-top: 5px;
+        }
+
+        .input-validation-error {
+            border-color: #dc3545;
+        }
+
+        .coefficient-help {
+            background-color: #e8f5e9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .coefficient-help h6 {
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        .coefficient-help p {
+            margin: 5px 0;
+            color: #388e3c;
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+<!-- Header Section -->
+<div class="form-section">
+    <h2 class="form-section-title">
+        <i class="fas fa-plus-circle"></i> ایجاد قالب خدمت جدید
+    </h2>
+    <p class="text-muted">لطفاً اطلاعات قالب خدمت را با دقت تکمیل کنید.</p>
+</div>
+
+<!-- Validation Summary -->
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="validation-summary">
+        <h6><i class="fas fa-exclamation-triangle"></i> خطاهای اعتبارسنجی</h6>
+        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+    </div>
+}
+
+<!-- Template Information -->
+<div class="template-info">
+    <h6><i class="fas fa-info-circle"></i> راهنمای قالب‌های خدمت</h6>
+    <p><strong>قالب خدمت:</strong> شامل ضرایب پیش‌فرض فنی و حرفه‌ای برای هر خدمت</p>
+    <p><strong>خدمات هشتگ‌دار:</strong> خدمات خاص که ضرایب فنی متفاوتی دارند</p>
+    <p><strong>ضرایب:</strong> مقادیر پیش‌فرض برای محاسبه قیمت خدمات</p>
+</div>
+
+<!-- Coefficient Help -->
+<div class="coefficient-help">
+    <h6><i class="fas fa-calculator"></i> راهنمای ضرایب</h6>
+    <p><strong>ضریب فنی:</strong> شامل هزینه‌های تجهیزات، امکانات و زیرساخت</p>
+    <p><strong>ضریب حرفه‌ای:</strong> شامل دستمزد و تخصص ارائه‌دهنده خدمت</p>
+    <p><strong>محدوده:</strong> ضرایب باید بین 0.01 تا 999999.99 باشند</p>
+</div>
+
+<!-- Create Form -->
+@using (Html.BeginForm("Create", "ServiceTemplate", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+{
+    @Html.AntiForgeryToken()
+    
+    <!-- Service Information -->
+    <div class="form-section">
+        <h4 class="form-section-title">
+            <i class="fas fa-stethoscope"></i> اطلاعات خدمت
+        </h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <label for="ServiceCode" class="form-label required">کد خدمت</label>
+                @Html.TextBoxFor(m => m.ServiceCode, new { @class = "form-control", required = "required", placeholder = "مثال: 001" })
+                @Html.ValidationMessageFor(m => m.ServiceCode, "", new { @class = "field-validation-error" })
+                <small class="form-text text-muted">کد منحصر به فرد خدمت (حداکثر 10 کاراکتر)</small>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="ServiceName" class="form-label required">نام خدمت</label>
+                @Html.TextBoxFor(m => m.ServiceName, new { @class = "form-control", required = "required", placeholder = "مثال: ویزیت عمومی" })
+                @Html.ValidationMessageFor(m => m.ServiceName, "", new { @class = "field-validation-error" })
+                <small class="form-text text-muted">نام کامل خدمت (حداکثر 100 کاراکتر)</small>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsHashtagged, new { @class = "form-check-input" })
+                    <label class="form-check-label" for="IsHashtagged">
+                        این خدمت هشتگ‌دار است (ضرایب فنی متفاوت)
+                    </label>
+                </div>
+                <small class="form-text text-muted">خدمات هشتگ‌دار ضرایب فنی خاصی دارند</small>
+            </div>
+        </div>
+    </div>
+
+    <!-- Coefficients -->
+    <div class="form-section">
+        <h4 class="form-section-title">
+            <i class="fas fa-calculator"></i> ضرایب پیش‌فرض
+        </h4>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <label for="DefaultTechnicalCoefficient" class="form-label required">ضریب فنی</label>
+                @Html.TextBoxFor(m => m.DefaultTechnicalCoefficient, new { @class = "form-control", type = "number", step = "0.01", min = "0.01", max = "999999.99", required = "required", placeholder = "مثال: 0.85" })
+                @Html.ValidationMessageFor(m => m.DefaultTechnicalCoefficient, "", new { @class = "field-validation-error" })
+                <small class="form-text text-muted">ضریب فنی (0.01 تا 999999.99)</small>
+            </div>
+            
+            <div class="col-md-6">
+                <label for="DefaultProfessionalCoefficient" class="form-label required">ضریب حرفه‌ای</label>
+                @Html.TextBoxFor(m => m.DefaultProfessionalCoefficient, new { @class = "form-control", type = "number", step = "0.01", min = "0.01", max = "999999.99", required = "required", placeholder = "مثال: 1.25" })
+                @Html.ValidationMessageFor(m => m.DefaultProfessionalCoefficient, "", new { @class = "field-validation-error" })
+                <small class="form-text text-muted">ضریب حرفه‌ای (0.01 تا 999999.99)</small>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <label for="Description" class="form-label">توضیحات</label>
+                @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات اختیاری در مورد این قالب خدمت..." })
+                @Html.ValidationMessageFor(m => m.Description, "", new { @class = "field-validation-error" })
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-md-12">
+                <div class="form-check">
+                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", @checked = "checked" })
+                    <label class="form-check-label" for="IsActive">
+                        قالب خدمت فعال باشد
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="form-section">
+        <div class="d-flex justify-content-between">
+            <a href="@Url.Action("Index")" class="btn-cancel">
+                <i class="fas fa-times"></i> انصراف
+            </a>
+            
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-save"></i> ایجاد قالب خدمت
+            </button>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="~/Content/plugins/select2/js/select2.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            // Form validation
+            (function() {
+                'use strict';
+                window.addEventListener('load', function() {
+                    var forms = document.getElementsByClassName('needs-validation');
+                    var validation = Array.prototype.filter.call(forms, function(form) {
+                        form.addEventListener('submit', function(event) {
+                            if (form.checkValidity() === false) {
+                                event.preventDefault();
+                                event.stopPropagation();
+                            }
+                            form.classList.add('was-validated');
+                        }, false);
+                    });
+                }, false);
+            })();
+
+            // Coefficient input validation
+            $('#DefaultTechnicalCoefficient, #DefaultProfessionalCoefficient').on('input', function() {
+                var value = parseFloat($(this).val());
+                if (value < 0.01 || value > 999999.99) {
+                    $(this).addClass('input-validation-error');
+                } else {
+                    $(this).removeClass('input-validation-error');
+                }
+            });
+
+            // Service code validation
+            $('#ServiceCode').on('input', function() {
+                var value = $(this).val();
+                if (value.length > 10) {
+                    $(this).addClass('input-validation-error');
+                } else {
+                    $(this).removeClass('input-validation-error');
+                }
+            });
+
+            // Service name validation
+            $('#ServiceName').on('input', function() {
+                var value = $(this).val();
+                if (value.length > 100) {
+                    $(this).addClass('input-validation-error');
+                } else {
+                    $(this).removeClass('input-validation-error');
+                }
+            });
+
+            // Hashtagged checkbox change handler
+            $('#IsHashtagged').on('change', function() {
+                if ($(this).is(':checked')) {
+                    $('#DefaultTechnicalCoefficient').attr('placeholder', 'مثال: 1.50 (هشتگ‌دار)');
+                } else {
+                    $('#DefaultTechnicalCoefficient').attr('placeholder', 'مثال: 0.85 (عادی)');
+                }
+            });
+        });
+    </script>
+}

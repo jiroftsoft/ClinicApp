@@ -15,6 +15,9 @@ using ClinicApp.ViewModels.Validators;
 using FluentValidation;
 using Serilog;
 using Microsoft.AspNet.Identity;
+using ClinicApp.Services;
+using ClinicApp.Models;
+using System.Data.Entity;
 using PatientInquiryViewModel = ClinicApp.ViewModels.Reception.PatientInquiryViewModel;
 
 namespace ClinicApp.Controllers
@@ -45,14 +48,20 @@ namespace ClinicApp.Controllers
 
         private readonly IReceptionService _receptionService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ApplicationDbContext _context;
+        private readonly IServiceCalculationService _serviceCalculationService;
 
         public ReceptionController(
             IReceptionService receptionService,
             ICurrentUserService currentUserService,
-            ILogger logger) : base(logger)
+            ApplicationDbContext context,
+            ILogger logger,
+            IServiceCalculationService serviceCalculationService) : base(logger)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
         }
 
         #endregion
@@ -1064,12 +1073,12 @@ namespace ClinicApp.Controllers
                     _logger.Error("خطا در دریافت پذیرش‌ها از Service. پیام: {Message}, کد خطا: {ErrorCode}, کاربر: {UserName}",
                         result.Message, result.Code, _currentUserService.UserName);
                     
-                    return Json(new {
-                        success = false,
+                return Json(new {
+                    success = false,
                         message = result.Message ?? "خطا در دریافت لیست پذیرش‌ها",
                         errorCode = result.Code ?? "SERVICE_ERROR",
-                        errorId = Guid.NewGuid().ToString("N").Substring(0, 8)
-                    }, JsonRequestBehavior.AllowGet);
+                    errorId = Guid.NewGuid().ToString("N").Substring(0, 8)
+                }, JsonRequestBehavior.AllowGet);
                 }
 
                 // تبدیل به فرمت مناسب برای UI
@@ -1707,6 +1716,177 @@ namespace ClinicApp.Controllers
                 data = data,
                 message = message
             }, JsonRequestBehavior.AllowGet);
+        }
+
+        #endregion
+
+        #region ServiceCalculationService Integration (یکپارچگی با ServiceCalculationService)
+
+        /// <summary>
+        /// محاسبه قیمت خدمت با استفاده از ServiceCalculationService
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> CalculateServicePriceWithComponents(int serviceId, DateTime? calculationDate = null)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: محاسبه قیمت خدمت با ServiceComponents. ServiceId: {ServiceId}, Date: {Date}, User: {UserName} (Id: {UserId})", 
+                    serviceId, calculationDate, _currentUserService.UserName, _currentUserService.UserId);
+
+                var service = await _context.Services
+                    .Include(s => s.ServiceComponents)
+                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+                if (service == null)
+                {
+                    _logger.Warning("🏥 MEDICAL: خدمت یافت نشد. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                        serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = "خدمت یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var calculatedPrice = _serviceCalculationService.CalculateServicePriceWithFactorSettings(
+                    service, _context, calculationDate ?? DateTime.Now);
+
+                var result = new
+                {
+                    success = true,
+                    serviceId = service.ServiceId,
+                    serviceTitle = service.Title,
+                    serviceCode = service.ServiceCode,
+                    calculatedPrice = calculatedPrice,
+                    calculationDate = calculationDate ?? DateTime.Now,
+                    components = service.ServiceComponents
+                        .Where(sc => !sc.IsDeleted && sc.IsActive)
+                        .Select(sc => new
+                        {
+                            sc.ComponentType,
+                            ComponentTypeName = sc.ComponentType == ServiceComponentType.Technical ? "فنی" : "حرفه‌ای",
+                            sc.Coefficient
+                        })
+                        .ToList()
+                };
+
+                _logger.Information("🏥 MEDICAL: محاسبه قیمت خدمت موفق. ServiceId: {ServiceId}, Price: {Price}, User: {UserName} (Id: {UserId})", 
+                    serviceId, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه قیمت خدمت. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات محاسبه خدمت
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> GetServiceCalculationDetails(int serviceId, DateTime? calculationDate = null)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: دریافت جزئیات محاسبه خدمت. ServiceId: {ServiceId}, Date: {Date}, User: {UserName} (Id: {UserId})", 
+                    serviceId, calculationDate, _currentUserService.UserName, _currentUserService.UserId);
+
+                var service = await _context.Services
+                    .Include(s => s.ServiceComponents)
+                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+                if (service == null)
+                {
+                    return Json(new { success = false, message = "خدمت یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var calculationDetails = _serviceCalculationService.CalculateServicePriceWithDetails(
+                    service, _context, calculationDate ?? DateTime.Now);
+
+                var result = new
+                {
+                    success = true,
+                    serviceId = service.ServiceId,
+                    serviceTitle = service.Title,
+                    serviceCode = service.ServiceCode,
+                    calculationDetails = new
+                    {
+                        calculationDetails.TotalAmount,
+                        calculationDetails.TechnicalAmount,
+                        calculationDetails.ProfessionalAmount,
+                        calculationDetails.TechnicalPart,
+                        calculationDetails.ProfessionalPart,
+                        calculationDetails.TechnicalFactor,
+                        calculationDetails.ProfessionalFactor,
+                        calculationDetails.CalculationDate,
+                        calculationDetails.HasDepartmentOverride,
+                        calculationDetails.DepartmentId
+                    }
+                };
+
+                _logger.Information("🏥 MEDICAL: جزئیات محاسبه خدمت دریافت شد. ServiceId: {ServiceId}, TotalAmount: {TotalAmount}, User: {UserName} (Id: {UserId})", 
+                    serviceId, calculationDetails.TotalAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت جزئیات محاسبه خدمت. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// بررسی وضعیت اجزای خدمت
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetServiceComponentsStatus(int serviceId)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: بررسی وضعیت اجزای خدمت. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var service = await _context.Services
+                    .Include(s => s.ServiceComponents)
+                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+                if (service == null)
+                {
+                    return Json(new { success = false, message = "خدمت یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var technicalComponent = service.ServiceComponents
+                    .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Technical && !sc.IsDeleted && sc.IsActive);
+                
+                var professionalComponent = service.ServiceComponents
+                    .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Professional && !sc.IsDeleted && sc.IsActive);
+
+                var status = new
+                {
+                    success = true,
+                    serviceId = service.ServiceId,
+                    serviceTitle = service.Title,
+                    serviceCode = service.ServiceCode,
+                    hasTechnicalComponent = technicalComponent != null,
+                    hasProfessionalComponent = professionalComponent != null,
+                    isComplete = technicalComponent != null && professionalComponent != null,
+                    technicalCoefficient = technicalComponent?.Coefficient ?? 0,
+                    professionalCoefficient = professionalComponent?.Coefficient ?? 0,
+                    componentsCount = service.ServiceComponents.Count(sc => !sc.IsDeleted && sc.IsActive)
+                };
+
+                _logger.Information("🏥 MEDICAL: وضعیت اجزای خدمت بررسی شد. ServiceId: {ServiceId}, Complete: {IsComplete}, User: {UserName} (Id: {UserId})", 
+                    serviceId, status.isComplete, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(status, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در بررسی وضعیت اجزای خدمت. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         #endregion

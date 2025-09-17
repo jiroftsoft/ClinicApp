@@ -224,7 +224,7 @@ public class AppointmentConfig : EntityTypeConfiguration<Appointment>
 
         Property(a => a.Price)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(a => a.Description)
             .IsOptional()

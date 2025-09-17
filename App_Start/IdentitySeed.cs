@@ -4,7 +4,6 @@ using System.Data.Entity;
 using System.Linq;
 using ClinicApp.Models;
 using ClinicApp.Models.Core;
-using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Entities.Insurance;

@@ -447,6 +447,59 @@
                             <div class="form-note">قیمت خدمات به تومان (بدون علامت) - مثال: 500000</div>
                         </div>
 
+                        <!-- بخش محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای -->
+                        <div class="form-section">
+                            <h5 class="form-section-title">
+                                <i class="fas fa-calculator"></i>
+                                محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای
+                            </h5>
+
+                            <!-- فیلدهای TechnicalPart و ProfessionalPart حذف شدند -->
+                            <!-- استفاده از ServiceComponents به عنوان روش اصلی محاسبه -->
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>نکته:</strong> اجزای فنی و حرفه‌ای خدمات از طریق جدول ServiceComponents مدیریت می‌شوند.
+                                        برای مشاهده و ویرایش اجزای محاسباتی، از بخش مدیریت اجزای خدمات استفاده کنید.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        @Html.LabelFor(model => model.IsHashtagged, new { @class = "form-label" })
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(model => model.IsHashtagged, new { @class = "form-check-input" })
+                                            @Html.LabelFor(model => model.IsHashtagged, "آیا این خدمت هشتگ‌دار است؟", new { @class = "form-check-label" })
+                                        </div>
+                                        @Html.ValidationMessageFor(model => model.IsHashtagged, "", new { @class = "text-danger small mt-1" })
+                                        <div class="form-note">خدمات هشتگ‌دار از کای‌های متفاوتی استفاده می‌کنند</div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        @Html.LabelFor(model => model.PriceCalculationType, new { @class = "form-label" })
+                                        @Html.DropDownListFor(model => model.PriceCalculationType,
+                                            new SelectList(new[] {
+                                                new { Value = "1", Text = "قیمت ثابت" },
+                                                new { Value = "2", Text = "محاسبه بر اساس اجزای فنی و حرفه‌ای" }
+                                            }, "Value", "Text", "2"),
+                                            new { @class = "form-control" })
+                                        @Html.ValidationMessageFor(model => model.PriceCalculationType, "", new { @class = "text-danger small mt-1" })
+                                        <div class="form-note">نوع محاسبه قیمت خدمت</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- نمایش محاسبه قیمت -->
+                            <div class="alert alert-info" id="price-calculation-info" style="display: none;">
+                                <h6><i class="fas fa-info-circle"></i> محاسبه قیمت</h6>
+                                <p class="mb-0" id="price-calculation-text"></p>
+                            </div>
+                        </div>
+
                         <div class="mb-4">
                             @Html.LabelFor(model => model.Description, new { @class = "form-label" })
                             @Html.TextAreaFor(model => model.Description, new { @class = "form-control form-control-lg", rows = "4", placeholder = "توضیحات خدمات را وارد کنید" })
@@ -715,6 +768,137 @@
                 } else {
                     console.warn('🏥 MEDICAL: Price value not found or invalid:', priceValue);
                 }
+            });
+
+            // محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای
+            function calculatePriceFromComponents() {
+                // فیلدهای TechnicalPart و ProfessionalPart حذف شدند
+                // محاسبه از طریق ServiceComponents انجام می‌شود
+                var isHashtagged = $('#IsHashtagged').is(':checked');
+                var calculationType = $('#PriceCalculationType').val();
+
+                if (calculationType === '2') {
+                    // محاسبه از طریق ServiceComponents - نیاز به UI جدید
+                    $('#price-calculation-info').hide();
+                    showServiceComponentsInfo();
+                } else {
+                    $('#price-calculation-info').hide();
+                }
+            }
+
+            // نمایش اطلاعات ServiceComponents
+            function showServiceComponentsInfo() {
+                $('#price-calculation-text').html(
+                    '<div class="alert alert-warning">' +
+                    '<i class="fas fa-exclamation-triangle"></i> ' +
+                    '<strong>توجه:</strong> برای محاسبه قیمت بر اساس اجزای فنی و حرفه‌ای، ' +
+                    'اجزای محاسباتی را در بخش مدیریت اجزای خدمات ویرایش کنید.' +
+                    '</div>'
+                );
+                $('#price-calculation-info').show();
+            }
+
+            // دریافت کای‌ها از سرور
+            function fetchKaiFactors(technicalPart, professionalPart, isHashtagged) {
+                var currentYear = 1404; // سال مالی جاری
+
+                // نمایش لودینگ
+                $('#price-calculation-text').html('<i class="fas fa-spinner fa-spin"></i> در حال محاسبه...');
+                $('#price-calculation-info').show();
+
+                // درخواست‌های موازی برای دریافت کای‌های فنی و حرفه‌ای
+                var technicalPromise = $.get('@Url.Action("GetFactorsByType", "FactorSetting")', {
+                    factorType: 1, // Technical
+                    financialYear: currentYear
+                });
+
+                var professionalPromise = $.get('@Url.Action("GetFactorsByType", "FactorSetting")', {
+                    factorType: 2, // Professional
+                    financialYear: currentYear
+                });
+
+                $.when(technicalPromise, professionalPromise).done(function(technicalResponse, professionalResponse) {
+                    var technicalFactors = technicalResponse[0];
+                    var professionalFactors = professionalResponse[0];
+
+                    // پیدا کردن کای مناسب
+                    var technicalKai = findAppropriateKai(technicalFactors, isHashtagged);
+                    var professionalKai = findAppropriateKai(professionalFactors, isHashtagged);
+
+                    if (technicalKai && professionalKai) {
+                        calculateAndDisplayPrice(technicalPart, professionalPart, technicalKai, professionalKai);
+                    } else {
+                        showKaiNotFoundError(isHashtagged, currentYear);
+                    }
+                }).fail(function() {
+                    $('#price-calculation-text').html('<span class="text-danger">خطا در دریافت کای‌ها از سرور</span>');
+                });
+            }
+
+            // پیدا کردن کای مناسب
+            function findAppropriateKai(factors, isHashtagged) {
+                // ابتدا کای مطابق با وضعیت هشتگ را جستجو کن
+                var exactMatch = factors.find(function(f) {
+                    return f.isActive && f.isHashtagged === isHashtagged;
+                });
+
+                if (exactMatch) {
+                    return exactMatch;
+                }
+
+                // اگر یافت نشد، اولین کای فعال را برگردان
+                var fallback = factors.find(function(f) {
+                    return f.isActive;
+                });
+
+                return fallback;
+            }
+
+            // محاسبه و نمایش قیمت
+            function calculateAndDisplayPrice(technicalPart, professionalPart, technicalKai, professionalKai) {
+                var technicalTotal = technicalPart * technicalKai.value;
+                var professionalTotal = professionalPart * professionalKai.value;
+                var calculatedPrice = technicalTotal + professionalTotal;
+
+                var calculationHtml = '';
+                
+                if (technicalPart > 0) {
+                    calculationHtml += 'جزء فنی: ' + technicalPart + ' × کای فنی (' + technicalKai.name + '): ' + 
+                                     technicalKai.value.toFixed(2) + ' = ' + technicalTotal.toFixed(0) + ' ریال<br>';
+                    calculationHtml += '<small style="color: #666;">(' + (technicalTotal / 10).toFixed(0) + ' تومان)</small><br>';
+                }
+                
+                if (professionalPart > 0) {
+                    calculationHtml += 'جزء حرفه‌ای: ' + professionalPart + ' × کای حرفه‌ای (' + professionalKai.name + '): ' + 
+                                     professionalKai.value.toFixed(2) + ' = ' + professionalTotal.toFixed(0) + ' ریال<br>';
+                    calculationHtml += '<small style="color: #666;">(' + (professionalTotal / 10).toFixed(0) + ' تومان)</small><br>';
+                }
+                
+                calculationHtml += '<hr><strong>قیمت کل: ' + calculatedPrice.toFixed(0) + ' ریال</strong><br>';
+                calculationHtml += '<small style="color: #666;">(' + (calculatedPrice / 10).toFixed(0) + ' تومان)</small>';
+
+                $('#price-calculation-text').html(calculationHtml);
+                $('#price-calculation-info').show();
+
+                // به‌روزرسانی فیلد قیمت
+                $('#Price').val(Math.round(calculatedPrice));
+            }
+
+            // نمایش خطای عدم وجود کای
+            function showKaiNotFoundError(isHashtagged, currentYear) {
+                var hashtagText = isHashtagged ? 'هشتگ‌دار' : 'عادی';
+                $('#price-calculation-text').html(
+                    '<span class="text-warning">' +
+                    '<i class="fas fa-exclamation-triangle"></i> ' +
+                    'کای‌های مورد نیاز برای خدمات ' + hashtagText + ' در سال مالی ' + currentYear + ' یافت نشد.<br>' +
+                    'لطفاً ابتدا کای‌های مربوطه را در <a href="@Url.Action("Index", "FactorSetting")" target="_blank">بخش مدیریت کای‌ها</a> تعریف کنید.' +
+                    '</span>'
+                );
+            }
+
+            // رویدادهای محاسبه قیمت
+            $('#IsHashtagged, #PriceCalculationType').on('change keyup', function() {
+                calculatePriceFromComponents();
             });
 
             // حذف محدودیت‌های اضافی برای ورود مستقیم

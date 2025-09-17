@@ -1,0 +1,425 @@
+@using ClinicApp.Extensions
+@model IEnumerable<ClinicApp.ViewModels.FactorSettingViewModel>
+@{
+    ViewBag.Title = "مدیریت کای‌ها";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<!-- بسته‌های CSS مورد نیاز -->
+@section Styles {
+    <style>
+        .factor-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            transition: transform 0.2s ease;
+        }
+
+        .factor-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+
+        .factor-header {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .factor-body {
+            padding: 20px;
+        }
+
+        .factor-type-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .factor-technical {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .factor-professional {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .factor-value {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: #1a6dcc;
+        }
+
+        .factor-year {
+            background-color: #f8f9fa;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #495057;
+        }
+
+        .status-active {
+            color: #28a745;
+        }
+
+        .status-inactive {
+            color: #dc3545;
+        }
+
+        .hashtag-badge {
+            background-color: #fff3cd;
+            color: #856404;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+        }
+
+        .btn-create {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+        }
+
+        .filters-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .stats-section {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            background: #f8f9fa;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #1a6dcc;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <!-- هدر صفحه -->
+        <div class="row align-items-center mb-4">
+            <div class="col-md-6">
+                <h1 class="page-title mb-0">
+                    <i class="fas fa-calculator text-primary me-2"></i>
+                    مدیریت کای‌ها
+                </h1>
+                <p class="text-muted mb-0">مدیریت ضرایب فنی و حرفه‌ای برای محاسبه قیمت خدمات</p>
+            </div>
+            <div class="col-md-6 text-md-end mt-2 mt-md-0">
+                <a href="@Url.Action("Create")" class="btn btn-create">
+                    <i class="fas fa-plus me-1"></i> ایجاد کای جدید
+                </a>
+            </div>
+        </div>
+
+        <!-- آمار کلی -->
+        <div class="stats-section">
+            <div class="row">
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <div class="stat-number">@ViewBag.TotalCount</div>
+                        <div class="stat-label">کل کای‌ها</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.Count(f => f.IsActive)</div>
+                        <div class="stat-label">کای‌های فعال</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.Count(f => f.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical)</div>
+                        <div class="stat-label">کای‌های فنی</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.Count(f => f.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Professional)</div>
+                        <div class="stat-label">کای‌های حرفه‌ای</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.Count(f => f.IsHashtagged)</div>
+                        <div class="stat-label">هشتگ‌دار</div>
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <div class="stat-item">
+                        <div class="stat-number">@Model.Count(f => !f.IsActive)</div>
+                        <div class="stat-label">غیرفعال</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- فیلترها -->
+        <div class="filters-section">
+            <div class="row">
+                <div class="col-md-3">
+                    <label class="form-label">فیلتر بر اساس نوع:</label>
+                    <select id="typeFilter" class="form-control">
+                        <option value="">همه</option>
+                        <option value="Technical">فنی</option>
+                        <option value="Professional">حرفه‌ای</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">فیلتر بر اساس سال مالی:</label>
+                    <select id="yearFilter" class="form-control">
+                        <option value="">همه سال‌ها</option>
+                        @foreach (var year in Model.Select(f => f.FinancialYear).Distinct().OrderByDescending(y => y))
+                        {
+                            <option value="@year">@year</option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">فیلتر بر اساس وضعیت:</label>
+                    <select id="statusFilter" class="form-control">
+                        <option value="">همه</option>
+                        <option value="true">فعال</option>
+                        <option value="false">غیرفعال</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">جستجو:</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="جستجو در نام یا توضیحات...">
+                </div>
+            </div>
+        </div>
+
+        <!-- لیست کای‌ها -->
+        <div class="row" id="factorsContainer">
+            @if (Model.Any())
+            {
+                foreach (var factor in Model)
+                {
+                    <div class="col-lg-6 col-xl-4 factor-item" 
+                         data-type="@factor.FactorType" 
+                         data-year="@factor.FinancialYear" 
+                         data-status="@factor.IsActive.ToString().ToLower()"
+                         data-search="@(factor.Name + " " + factor.Description)">
+                        <div class="factor-card">
+                            <div class="factor-header">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0">@factor.Name</h5>
+                                    <span class="factor-type-badge @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "factor-technical" : "factor-professional")">
+                                        @factor.FactorTypeText
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="factor-body">
+                                <div class="row mb-3">
+                                    <div class="col-6">
+                                        <div class="factor-value">@factor.Value.ToString("N2")</div>
+                                        <small class="text-muted">مقدار کای</small>
+                                    </div>
+                                    <div class="col-6 text-end">
+                                        <span class="factor-year">@factor.FinancialYear</span>
+                                        <br>
+                                        <small class="text-muted">سال مالی</small>
+                                    </div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(factor.Description))
+                                {
+                                    <p class="text-muted small mb-3">@factor.Description</p>
+                                }
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <i class="fas fa-circle @(factor.IsActive ? "status-active" : "status-inactive")"></i>
+                                        <span class="@(factor.IsActive ? "status-active" : "status-inactive")">
+                                            @(factor.IsActive ? "فعال" : "غیرفعال")
+                                        </span>
+                                    </div>
+                                    @if (factor.IsHashtagged)
+                                    {
+                                        <span class="hashtag-badge"># هشتگ‌دار</span>
+                                    }
+                                </div>
+
+                                <div class="text-muted small mb-3">
+                                    <i class="fas fa-user me-1"></i> @factor.CreatedBy
+                                    <br>
+                                    <i class="fas fa-calendar me-1"></i> @factor.CreatedAtShamsi
+                                </div>
+
+                                <div class="btn-group w-100" role="group">
+                                    <a href="@Url.Action("Details", new { id = factor.Id })" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-eye"></i> جزئیات
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = factor.Id })" class="btn btn-outline-warning btn-sm">
+                                        <i class="fas fa-edit"></i> ویرایش
+                                    </a>
+                                    <a href="@Url.Action("Delete", new { id = factor.Id })" class="btn btn-outline-danger btn-sm">
+                                        <i class="fas fa-trash"></i> حذف
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12">
+                    <div class="alert alert-info text-center">
+                        <i class="fas fa-info-circle fa-3x mb-3"></i>
+                        <h5>هیچ کای‌ای یافت نشد</h5>
+                        <p>برای شروع، یک کای جدید ایجاد کنید.</p>
+                        <a href="@Url.Action("Create")" class="btn btn-create">
+                            <i class="fas fa-plus me-1"></i> ایجاد اولین کای
+                        </a>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Pagination -->
+        @if (ViewBag.TotalPages > 1)
+        {
+            <div class="pagination-section">
+                <nav aria-label="صفحه‌بندی کای‌ها">
+                    <ul class="pagination justify-content-center">
+                        @{
+                            var currentPage = ViewBag.CurrentPage;
+                            var totalPages = ViewBag.TotalPages;
+                            var startPage = Math.Max(1, currentPage - 2);
+                            var endPage = Math.Min(totalPages, currentPage + 2);
+                        }
+
+                        @if (currentPage > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { page = 1, pageSize = ViewBag.PageSize, searchTerm = ViewBag.SearchTerm, factorType = ViewBag.FactorType, financialYear = ViewBag.FinancialYear, isActive = ViewBag.IsActive })">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { page = currentPage - 1, pageSize = ViewBag.PageSize, searchTerm = ViewBag.SearchTerm, factorType = ViewBag.FactorType, financialYear = ViewBag.FinancialYear, isActive = ViewBag.IsActive })">
+                                    <i class="fas fa-angle-right"></i>
+                                </a>
+                            </li>
+                        }
+
+                        @for (int i = startPage; i <= endPage; i++)
+                        {
+                            <li class="page-item @(i == currentPage ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("Index", new { page = i, pageSize = ViewBag.PageSize, searchTerm = ViewBag.SearchTerm, factorType = ViewBag.FactorType, financialYear = ViewBag.FinancialYear, isActive = ViewBag.IsActive })">@i</a>
+                            </li>
+                        }
+
+                        @if (currentPage < totalPages)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { page = currentPage + 1, pageSize = ViewBag.PageSize, searchTerm = ViewBag.SearchTerm, factorType = ViewBag.FactorType, financialYear = ViewBag.FinancialYear, isActive = ViewBag.IsActive })">
+                                    <i class="fas fa-angle-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="@Url.Action("Index", new { page = totalPages, pageSize = ViewBag.PageSize, searchTerm = ViewBag.SearchTerm, factorType = ViewBag.FactorType, financialYear = ViewBag.FinancialYear, isActive = ViewBag.IsActive })">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+
+                <div class="pagination-info text-center">
+                    <small class="text-muted">
+                        نمایش @((currentPage - 1) * ViewBag.PageSize + 1) تا @(Math.Min(currentPage * ViewBag.PageSize, ViewBag.TotalCount)) از @ViewBag.TotalCount کای
+                    </small>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // فیلترها
+            function applyFilters() {
+                var typeFilter = $('#typeFilter').val();
+                var yearFilter = $('#yearFilter').val();
+                var statusFilter = $('#statusFilter').val();
+                var searchText = $('#searchInput').val().toLowerCase();
+
+                $('.factor-item').each(function() {
+                    var $item = $(this);
+                    var itemType = $item.data('type');
+                    var itemYear = $item.data('year').toString();
+                    var itemStatus = $item.data('status').toString();
+                    var itemSearch = $item.data('search').toLowerCase();
+
+                    var showItem = true;
+
+                    // فیلتر نوع
+                    if (typeFilter && itemType !== typeFilter) {
+                        showItem = false;
+                    }
+
+                    // فیلتر سال
+                    if (yearFilter && itemYear !== yearFilter) {
+                        showItem = false;
+                    }
+
+                    // فیلتر وضعیت
+                    if (statusFilter && itemStatus !== statusFilter) {
+                        showItem = false;
+                    }
+
+                    // جستجو
+                    if (searchText && itemSearch.indexOf(searchText) === -1) {
+                        showItem = false;
+                    }
+
+                    $item.toggle(showItem);
+                });
+            }
+
+            // رویدادهای فیلتر
+            $('#typeFilter, #yearFilter, #statusFilter').on('change', applyFilters);
+            $('#searchInput').on('keyup', applyFilters);
+        });
+    </script>
+}

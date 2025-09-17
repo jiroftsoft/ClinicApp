@@ -99,12 +99,56 @@ public interface IServiceManagementService
     /// <summary>
     /// دریافت لیست خدمات فعال یک دسته‌بندی برای لیست‌های کشویی.
     /// </summary>
-    Task<ServiceResult<List<LookupItemViewModel>>> GetActiveServicesForLookupAsync(int serviceCategoryId);
+        Task<ServiceResult<List<LookupItemViewModel>>> GetActiveServicesForLookupAsync(int serviceCategoryId = 0);
 
     /// <summary>
     /// بررسی تکراری بودن کد خدمت - Medical Environment
     /// </summary>
     Task<bool> IsServiceCodeDuplicateAsync(string serviceCode, int? serviceCategoryId = null, int? excludeServiceId = null);
+
+    #endregion
+
+    #region ServiceComponents Management (مدیریت اجزای خدمات)
+
+    /// <summary>
+    /// دریافت اجزای یک خدمت
+    /// </summary>
+    Task<ServiceResult<List<ServiceComponentViewModel>>> GetServiceComponentsAsync(int serviceId);
+
+    /// <summary>
+    /// دریافت جزئیات یک جزء خدمت
+    /// </summary>
+    Task<ServiceResult<ServiceComponentDetailsViewModel>> GetServiceComponentDetailsAsync(int serviceComponentId);
+
+    /// <summary>
+    /// دریافت اطلاعات یک جزء خدمت برای ویرایش
+    /// </summary>
+    Task<ServiceResult<ServiceComponentCreateEditViewModel>> GetServiceComponentForEditAsync(int serviceComponentId);
+
+    /// <summary>
+    /// ایجاد جزء جدید برای خدمت
+    /// </summary>
+    Task<ServiceResult> CreateServiceComponentAsync(ServiceComponentCreateEditViewModel model);
+
+    /// <summary>
+    /// به‌روزرسانی جزء خدمت
+    /// </summary>
+    Task<ServiceResult> UpdateServiceComponentAsync(ServiceComponentCreateEditViewModel model);
+
+    /// <summary>
+    /// حذف نرم جزء خدمت
+    /// </summary>
+    Task<ServiceResult> SoftDeleteServiceComponentAsync(int serviceComponentId);
+
+    /// <summary>
+    /// بازیابی جزء خدمت حذف شده
+    /// </summary>
+    Task<ServiceResult> RestoreServiceComponentAsync(int serviceComponentId);
+
+    /// <summary>
+    /// بررسی وضعیت اجزای یک خدمت
+    /// </summary>
+    Task<ServiceResult<ServiceComponentsStatusViewModel>> GetServiceComponentsStatusAsync(int serviceId);
 
     #endregion
 }

@@ -214,7 +214,7 @@ public class InsurancePlanConfig : EntityTypeConfiguration<InsurancePlan>
 
         Property(plan => plan.Deductible)
             .IsRequired()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(plan => plan.ValidFrom)
             .IsRequired()

@@ -5,13 +5,18 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 using ClinicApp.Services;
 using FluentValidation;
 using Serilog;
+using ClinicApp.Models;
+using System.Data.Entity;
 
 namespace ClinicApp.Areas.Admin.Controllers.Insurance
 {
@@ -45,6 +50,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly IServiceService _serviceService;
         private readonly IServiceCategoryService _serviceCategoryService;
         private readonly IPatientInsuranceService _patientInsuranceService;
+        private readonly IDepartmentManagementService _departmentManagementService;
+        private readonly IServiceManagementService _serviceManagementService;
+        private readonly ApplicationDbContext _context;
+        private readonly IServiceCalculationService _serviceCalculationService;
 
         public InsuranceCalculationController(
             IInsuranceCalculationService insuranceCalculationService,
@@ -57,7 +66,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             IPatientService patientService,
             IServiceService serviceService,
             IServiceCategoryService serviceCategoryService,
-            IPatientInsuranceService patientInsuranceService)
+            IPatientInsuranceService patientInsuranceService,
+            IDepartmentManagementService departmentManagementService,
+            IServiceManagementService serviceManagementService,
+            ApplicationDbContext context,
+            IServiceCalculationService serviceCalculationService)
         {
             _insuranceCalculationService = insuranceCalculationService ?? throw new ArgumentNullException(nameof(insuranceCalculationService));
             _insuranceValidationService = insuranceValidationService ?? throw new ArgumentNullException(nameof(insuranceValidationService));
@@ -70,6 +83,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
             _serviceCategoryService = serviceCategoryService ?? throw new ArgumentNullException(nameof(serviceCategoryService));
             _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
+            _departmentManagementService = departmentManagementService ?? throw new ArgumentNullException(nameof(departmentManagementService));
+            _serviceManagementService = serviceManagementService ?? throw new ArgumentNullException(nameof(serviceManagementService));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
         }
 
         #region Calculate
@@ -561,7 +578,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 var model = new InsuranceCalculationViewModel
                 {
-                    CalculationDate = DateTime.Now
+                    CalculationDate = DateTime.Now,
+                    CalculationType = "Service" // مقدار پیش‌فرض
                 };
 
                 // بارگذاری SelectLists
@@ -1097,8 +1115,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     new SelectListItem { Value = "", Text = "جستجو و انتخاب بیمار..." }
                 }, "Value", "Text");
-                
+
                 _log.Information("Patient Select2 initialized for server-side processing");
+
+                // 🏥 بارگذاری انواع محاسبه
+                model.CalculationTypeSelectList = new SelectList(new List<SelectListItem>
+                {
+                    new SelectListItem { Value = "Service", Text = "محاسبه خدمت" },
+                    new SelectListItem { Value = "Reception", Text = "محاسبه پذیرش" },
+                    new SelectListItem { Value = "Appointment", Text = "محاسبه قرار ملاقات" },
+                    new SelectListItem { Value = "Emergency", Text = "محاسبه اورژانس" },
+                    new SelectListItem { Value = "Package", Text = "محاسبه پکیج" }
+                }, "Value", "Text", model.CalculationType);
+
+                _log.Information("Calculation type SelectList loaded with {Count} options", model.CalculationTypeSelectList.Count());
 
                 // 🏥 بارگذاری بیمه‌های بیمار (خالی - بعد از انتخاب بیمار پر می‌شود)
                 model.PatientInsuranceSelectList = new SelectList(new List<SelectListItem>
@@ -1283,13 +1313,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     categoryId, _currentUserService.UserName, _currentUserService.UserId);
 
                 // دریافت خدمات فعال بر اساس دسته‌بندی از سرویس
-                var services = await _serviceService.GetActiveServicesByCategoryAsync(categoryId);
-                if (services != null && services.Any())
+                var servicesResult = await _serviceManagementService.GetActiveServicesForLookupAsync(categoryId);
+                if (servicesResult.Success && servicesResult.Data != null && servicesResult.Data.Any())
                 {
-                    var selectItems = services.Select(s => new SelectListItem
+                    var selectItems = servicesResult.Data.Select(s => new SelectListItem
                     {
-                        Value = s.ServiceId.ToString(),
-                        Text = $"{s.Title} - {s.Price:C0} ریال"
+                        Value = s.Id.ToString(),
+                        Text = s.Title ?? s.Name
                     }).ToList();
 
                     _log.Information("Successfully loaded {Count} services for CategoryId: {CategoryId}", 
@@ -1321,26 +1351,35 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت دپارتمان‌ها برای سلسله مراتب دسته‌بندی
         /// </summary>
         [HttpPost]
-        public ActionResult GetDepartmentsForHierarchy()
+        public async Task<ActionResult> GetDepartmentsForHierarchy()
         {
             try
             {
                 _log.Information("Getting departments for service hierarchy. User: {UserName} (Id: {UserId})", 
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                // TODO: پیاده‌سازی دریافت دپارتمان‌ها از سرویس
-                // فعلاً با داده‌های نمونه
-                var departments = new List<SelectListItem>
+                // دریافت دپارتمان‌های فعال از دیتابیس
+                // TODO: استفاده از شناسه کلینیک واقعی کاربر
+                var currentClinicId = 1; // مقدار ثابت برای تست - باید از سرویس کاربر دریافت شود
+                
+                var departmentsResult = await _departmentManagementService.GetActiveDepartmentsForLookupAsync(currentClinicId);
+                if (departmentsResult.Success && departmentsResult.Data != null)
                 {
-                    new SelectListItem { Value = "1", Text = "دپارتمان قلب و عروق" },
-                    new SelectListItem { Value = "2", Text = "دپارتمان داخلی" },
-                    new SelectListItem { Value = "3", Text = "دپارتمان جراحی" },
-                    new SelectListItem { Value = "4", Text = "دپارتمان زنان و زایمان" },
-                    new SelectListItem { Value = "5", Text = "دپارتمان اطفال" }
-                };
+                    var departments = departmentsResult.Data.Select(d => new SelectListItem
+                    {
+                        Value = d.Id.ToString(),
+                        Text = d.Name
+                    }).ToList();
 
-                _log.Information("Successfully loaded {Count} departments for hierarchy", departments.Count);
-                return Json(new { success = true, data = departments });
+                    _log.Information("Successfully loaded {Count} departments for hierarchy from database", departments.Count);
+                    return Json(new { success = true, data = departments });
+                }
+                else
+                {
+                    _log.Warning("Failed to load departments from service. Success: {Success}, Message: {Message}", 
+                        departmentsResult.Success, departmentsResult.Message);
+                    return Json(new { success = false, error = departmentsResult.Message ?? "خطا در دریافت دپارتمان‌ها" });
+                }
             }
             catch (Exception ex)
             {
@@ -1362,13 +1401,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     departmentId, _currentUserService.UserName, _currentUserService.UserId);
 
                 // دریافت دسته‌بندی‌های فعال بر اساس دپارتمان
-                var serviceCategories = await _serviceCategoryService.GetActiveServiceCategoriesByDepartmentAsync(departmentId);
-                if (serviceCategories != null && serviceCategories.Any())
+                var serviceCategoriesResult = await _serviceManagementService.GetActiveServiceCategoriesForLookupAsync(departmentId);
+                if (serviceCategoriesResult.Success && serviceCategoriesResult.Data != null && serviceCategoriesResult.Data.Any())
                 {
-                    var selectItems = serviceCategories.Select(sc => new SelectListItem
+                    var selectItems = serviceCategoriesResult.Data.Select(sc => new SelectListItem
                     {
-                        Value = sc.ServiceCategoryId.ToString(),
-                        Text = sc.Title
+                        Value = sc.Id.ToString(),
+                        Text = sc.Title ?? sc.Name
                     }).ToList();
 
                     _log.Information("Successfully loaded {Count} service categories for DepartmentId: {DepartmentId}", 
@@ -1414,6 +1453,289 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Error(ex, "Error logging client error. User: {UserName} (Id: {UserId})", 
                     _currentUserService.UserName, _currentUserService.UserId);
                 return Json(new { success = false });
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات بیمه بیمار برای محاسبه
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetPatientInsuranceDetails(int patientInsuranceId)
+        {
+            try
+            {
+                _log.Information("Getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                if (patientInsuranceId <= 0)
+                {
+                    _log.Warning("Invalid PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                        patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, error = "شناسه بیمه بیمار نامعتبر است" });
+                }
+
+                // دریافت اطلاعات بیمه بیمار از سرویس
+                var patientInsuranceResult = await _patientInsuranceService.GetPatientInsuranceDetailsAsync(patientInsuranceId);
+                if (patientInsuranceResult.Success && patientInsuranceResult.Data != null)
+                {
+                    var patientInsurance = patientInsuranceResult.Data;
+                    var insuranceDetails = new
+                    {
+                        patientInsuranceId = patientInsurance.PatientInsuranceId,
+                        insurancePlanId = patientInsurance.InsurancePlanId,
+                        insurancePlanName = patientInsurance.InsurancePlanName,
+                        insuranceProviderName = patientInsurance.InsuranceProviderName,
+                        coveragePercent = patientInsurance.CoveragePercent,
+                        deductible = patientInsurance.Deductible,
+                        policyNumber = patientInsurance.PolicyNumber
+                    };
+
+                    _log.Information("Successfully loaded patient insurance details for PatientInsuranceId: {PatientInsuranceId}. CoveragePercent: {CoveragePercent}, Deductible: {Deductible}", 
+                        patientInsuranceId, insuranceDetails.coveragePercent, insuranceDetails.deductible);
+
+                    return Json(new { success = true, data = insuranceDetails });
+                }
+                else
+                {
+                    _log.Warning("Patient insurance not found for PatientInsuranceId: {PatientInsuranceId}. Success: {Success}, Message: {Message}", 
+                        patientInsuranceId, patientInsuranceResult.Success, patientInsuranceResult.Message);
+                    return Json(new { success = false, error = patientInsuranceResult.Message ?? "بیمه بیمار یافت نشد" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting patient insurance details for PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    patientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, error = "خطا در دریافت اطلاعات بیمه بیمار" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات خدمت (مبلغ و سایر اطلاعات)
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetServiceDetails(int serviceId)
+        {
+            try
+            {
+                _log.Information("Getting service details for ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                if (serviceId <= 0)
+                {
+                    _log.Warning("Invalid ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})", 
+                        serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, error = "شناسه خدمت نامعتبر است" });
+                }
+
+                // دریافت اطلاعات خدمت از سرویس
+                var serviceResult = await _serviceManagementService.GetServiceDetailsAsync(serviceId);
+                if (serviceResult.Success && serviceResult.Data != null)
+                {
+                    var service = serviceResult.Data;
+                    var serviceDetails = new
+                    {
+                        serviceId = service.ServiceId,
+                        amount = service.Price, // مبلغ واقعی از دیتابیس
+                        title = service.Title,
+                        description = service.Description
+                    };
+
+                    _log.Information("Successfully loaded service details for ServiceId: {ServiceId}. Amount: {Amount}", 
+                        serviceId, serviceDetails.amount);
+
+                    return Json(new { success = true, data = serviceDetails });
+                }
+                else
+                {
+                    _log.Warning("Service not found for ServiceId: {ServiceId}. Success: {Success}, Message: {Message}", 
+                        serviceId, serviceResult.Success, serviceResult.Message);
+                    return Json(new { success = false, error = serviceResult.Message ?? "خدمت مورد نظر یافت نشد" });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting service details for ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, error = "خطا در دریافت اطلاعات خدمت" });
+            }
+        }
+
+        #endregion
+
+        #region ServiceComponents Integration (یکپارچگی با ServiceComponents)
+
+        /// <summary>
+        /// محاسبه قیمت خدمت با استفاده از ServiceComponents
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> CalculateServicePriceWithComponents(int serviceId, DateTime? calculationDate = null)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: محاسبه قیمت خدمت با ServiceComponents. ServiceId: {ServiceId}, Date: {Date}, User: {UserName} (Id: {UserId})", 
+                    serviceId, calculationDate, _currentUserService.UserName, _currentUserService.UserId);
+
+                var service = await _context.Services
+                    .Include(s => s.ServiceComponents)
+                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+                if (service == null)
+                {
+                    _log.Warning("🏥 MEDICAL: خدمت یافت نشد. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                        serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = "خدمت یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var calculatedPrice = _serviceCalculationService.CalculateServicePriceWithFactorSettings(
+                    service, _context, calculationDate ?? DateTime.Now);
+
+                var result = new
+                {
+                    success = true,
+                    serviceId = service.ServiceId,
+                    serviceTitle = service.Title,
+                    serviceCode = service.ServiceCode,
+                    calculatedPrice = calculatedPrice,
+                    calculationDate = calculationDate ?? DateTime.Now,
+                    components = service.ServiceComponents
+                        .Where(sc => !sc.IsDeleted && sc.IsActive)
+                        .Select(sc => new
+                        {
+                            sc.ComponentType,
+                            ComponentTypeName = sc.ComponentType == ServiceComponentType.Technical ? "فنی" : "حرفه‌ای",
+                            sc.Coefficient
+                        })
+                        .ToList()
+                };
+
+                _log.Information("🏥 MEDICAL: محاسبه قیمت خدمت موفق. ServiceId: {ServiceId}, Price: {Price}, User: {UserName} (Id: {UserId})", 
+                    serviceId, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه قیمت خدمت. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// محاسبه جزئیات بیمه با استفاده از ServiceComponents
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> CalculateInsuranceWithServiceComponents(int patientId, int serviceId, DateTime? calculationDate = null)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: محاسبه بیمه با ServiceComponents. PatientId: {PatientId}, ServiceId: {ServiceId}, Date: {Date}, User: {UserName} (Id: {UserId})", 
+                    patientId, serviceId, calculationDate, _currentUserService.UserName, _currentUserService.UserId);
+
+                // محاسبه قیمت خدمت با ServiceComponents
+                var servicePriceResult = await CalculateServicePriceWithComponents(serviceId, calculationDate);
+                var servicePriceData = servicePriceResult.Data as dynamic;
+                if (servicePriceData == null || !servicePriceData.success)
+                {
+                    return Json(new { success = false, message = "خطا در محاسبه قیمت خدمت" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var servicePrice = (decimal)servicePriceData.calculatedPrice;
+
+                // محاسبه بیمه با قیمت محاسبه شده
+                var insuranceResult = await _insuranceCalculationService.CalculatePatientShareAsync(patientId, serviceId, calculationDate ?? DateTime.Now);
+                if (!insuranceResult.Success)
+                {
+                    return Json(new { success = false, message = insuranceResult.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var insuranceData = insuranceResult.Data;
+                
+                // محاسبه نهایی با قیمت واقعی
+                var totalAmount = servicePrice;
+                var insuranceCoverage = (totalAmount * insuranceData.CoveragePercent / 100);
+                var patientPayment = totalAmount - insuranceCoverage;
+
+                var result = new
+                {
+                    success = true,
+                    patientId = patientId,
+                    serviceId = serviceId,
+                    servicePrice = servicePrice,
+                    totalAmount = totalAmount,
+                    coveragePercent = insuranceData.CoveragePercent,
+                    insuranceCoverage = insuranceCoverage,
+                    patientPayment = patientPayment,
+                    deductible = insuranceData.Deductible,
+                    insurancePlanName = insuranceData.InsurancePlanName,
+                    insuranceProviderName = insuranceData.InsuranceProviderName,
+                    policyNumber = insuranceData.PolicyNumber,
+                    calculationDate = calculationDate ?? DateTime.Now
+                };
+
+                _log.Information("🏥 MEDICAL: محاسبه بیمه با ServiceComponents موفق. PatientId: {PatientId}, ServiceId: {ServiceId}, TotalAmount: {TotalAmount}, InsuranceCoverage: {InsuranceCoverage}, PatientPayment: {PatientPayment}, User: {UserName} (Id: {UserId})", 
+                    patientId, serviceId, totalAmount, insuranceCoverage, patientPayment, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه بیمه با ServiceComponents. PatientId: {PatientId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    patientId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت وضعیت ServiceComponents برای خدمت
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetServiceComponentsStatus(int serviceId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت وضعیت ServiceComponents. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var service = await _context.Services
+                    .Include(s => s.ServiceComponents)
+                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+                if (service == null)
+                {
+                    return Json(new { success = false, message = "خدمت یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var technicalComponent = service.ServiceComponents
+                    .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Technical && sc.IsActive && !sc.IsDeleted);
+                var professionalComponent = service.ServiceComponents
+                    .FirstOrDefault(sc => sc.ComponentType == ServiceComponentType.Professional && sc.IsActive && !sc.IsDeleted);
+
+                var result = new
+                {
+                    success = true,
+                    serviceId = service.ServiceId,
+                    serviceTitle = service.Title,
+                    serviceCode = service.ServiceCode,
+                    hasTechnicalComponent = technicalComponent != null,
+                    hasProfessionalComponent = professionalComponent != null,
+                    isComplete = technicalComponent != null && professionalComponent != null,
+                    technicalCoefficient = technicalComponent?.Coefficient ?? 0,
+                    professionalCoefficient = professionalComponent?.Coefficient ?? 0,
+                    componentsCount = service.ServiceComponents.Count(sc => !sc.IsDeleted && sc.IsActive)
+                };
+
+                _log.Information("🏥 MEDICAL: وضعیت ServiceComponents دریافت شد. ServiceId: {ServiceId}, Complete: {IsComplete}, ComponentsCount: {ComponentsCount}, User: {UserName} (Id: {UserId})", 
+                    serviceId, result.isComplete, result.componentsCount, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت وضعیت ServiceComponents. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
             }
         }
 

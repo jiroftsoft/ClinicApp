@@ -1,0 +1,193 @@
+@{
+    ViewBag.Title = "کای حذف شد";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .success-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            text-align: center;
+            padding: 50px 30px;
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            color: white;
+            margin: 0 auto 25px;
+            animation: successPulse 2s infinite;
+        }
+
+        @keyframes successPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+
+        .success-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #28a745;
+            margin-bottom: 15px;
+        }
+
+        .success-message {
+            font-size: 1.1rem;
+            color: #6c757d;
+            margin-bottom: 30px;
+            line-height: 1.6;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #1a6dcc 0%, #0d4a9e 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0d4a9e 0%, #0a3d7a 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-secondary:hover {
+            background: linear-gradient(135deg, #5a6268 0%, #495057 100%);
+            color: white;
+            transform: translateY(-2px);
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+            border: 2px solid #c3e6cb;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+
+        .info-title {
+            color: #155724;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .info-text {
+            color: #155724;
+            margin-bottom: 0;
+        }
+
+        @media (max-width: 768px) {
+            .action-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn-primary, .btn-secondary {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+}
+
+<div class="page-content">
+    <div class="container-fluid">
+        <div class="success-container">
+            <div class="success-icon">
+                <i class="fas fa-check"></i>
+            </div>
+            
+            <h1 class="success-title">کای با موفقیت حذف شد</h1>
+            
+            <p class="success-message">
+                کای مورد نظر به صورت دائمی از سیستم حذف شد. 
+                این عملیات غیرقابل بازگشت است.
+            </p>
+
+            <div class="info-box">
+                <div class="info-title">
+                    <i class="fas fa-info-circle"></i>
+                    نکته مهم
+                </div>
+                <p class="info-text">
+                    در صورت نیاز به بازیابی اطلاعات، لطفاً با مدیر سیستم تماس بگیرید.
+                </p>
+            </div>
+
+            <div class="action-buttons">
+                <a href="@Url.Action("Index")" class="btn-primary">
+                    <i class="fas fa-list"></i>
+                    بازگشت به لیست کای‌ها
+                </a>
+                <a href="@Url.Action("Create")" class="btn-secondary">
+                    <i class="fas fa-plus"></i>
+                    ایجاد کای جدید
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // انیمیشن ورود
+            $('.success-container').hide().fadeIn(1000);
+            
+            // انیمیشن hover برای دکمه‌ها
+            $('.btn-primary, .btn-secondary').hover(
+                function() {
+                    $(this).css('transform', 'translateY(-2px)');
+                },
+                function() {
+                    $(this).css('transform', 'translateY(0)');
+                }
+            );
+
+            // پیام موفقیت
+            setTimeout(function() {
+                if (typeof toastr !== 'undefined') {
+                    toastr.success('کای با موفقیت حذف شد', 'عملیات موفق');
+                }
+            }, 500);
+        });
+    </script>
+}

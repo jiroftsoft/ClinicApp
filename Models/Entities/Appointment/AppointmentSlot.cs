@@ -159,7 +159,7 @@ public class AppointmentSlotConfiguration : EntityTypeConfiguration<AppointmentS
             .IsRequired();
 
         Property(aps => aps.Price)
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(aps => aps.Notes)
             .HasMaxLength(500);

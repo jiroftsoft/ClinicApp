@@ -1,0 +1,392 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffCreateEditViewModel
+@{
+    ViewBag.Title = "ایجاد تعرفه بیمه جدید";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h1 class="h3 mb-0">
+                        <i class="fas fa-plus text-success"></i>
+                        ایجاد تعرفه بیمه جدید
+                    </h1>
+                    <p class="text-muted mb-0">تعریف تعرفه خاص برای خدمت در طرح بیمه</p>
+                </div>
+                <div>
+                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت به لیست
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Form Section -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit"></i>
+                        اطلاعات تعرفه بیمه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Create", "InsuranceTariff", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+
+                        <div class="row">
+                            <!-- Department Selection -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label required">دپارتمان</label>
+                                    <select id="DepartmentId" class="form-control" required>
+                                        <option value="">انتخاب دپارتمان</option>
+                                    </select>
+                                    <div class="form-note">دپارتمان مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+
+                            <!-- Service Category Selection -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="form-label">سرفصل خدمت</label>
+                                    <select id="ServiceCategoryId" class="form-control">
+                                        <option value="">انتخاب سرفصل خدمت</option>
+                                    </select>
+                                    <div class="form-note">سرفصل خدمت مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+
+                            <!-- Service Selection -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.ServiceId, new { @class = "form-label required" })
+                                    @Html.DropDownListFor(model => model.ServiceId, Model.ServiceSelectList, 
+                                        "انتخاب خدمت", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(model => model.ServiceId, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">خدمت مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Insurance Provider Selection -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="form-label required">ارائه‌دهنده بیمه</label>
+                                    @Html.DropDownListFor(model => model.InsuranceProviderId, Model.InsuranceProviderSelectList, 
+                                        "انتخاب ارائه‌دهنده بیمه", new { @class = "form-control", required = "required" })
+                                    <div class="form-note">ارائه‌دهنده بیمه مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+
+                            <!-- Insurance Plan Selection -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.InsurancePlanId, new { @class = "form-label required" })
+                                    @Html.DropDownListFor(model => model.InsurancePlanId, Model.InsurancePlanSelectList, 
+                                        "انتخاب طرح بیمه", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(model => model.InsurancePlanId, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">طرح بیمه مورد نظر را انتخاب کنید</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Tariff Price -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.TariffPrice, new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.TariffPrice, new { 
+                                        @class = "form-control", 
+                                        type = "number", 
+                                        min = "0", 
+                                        step = "1000", 
+                                        placeholder = "قیمت تعرفه (تومان)" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.TariffPrice, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">قیمت خاص برای این تعرفه (اختیاری)</div>
+                                </div>
+                            </div>
+
+                            <!-- Patient Share -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.PatientShare, new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.PatientShare, new { 
+                                        @class = "form-control", 
+                                        type = "number", 
+                                        min = "0", 
+                                        max = "100", 
+                                        step = "0.1", 
+                                        placeholder = "درصد سهم بیمار" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.PatientShare, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">درصد سهم بیمار (0-100)</div>
+                                </div>
+                            </div>
+
+                            <!-- Insurer Share -->
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    @Html.LabelFor(model => model.InsurerShare, new { @class = "form-label" })
+                                    @Html.TextBoxFor(model => model.InsurerShare, new { 
+                                        @class = "form-control", 
+                                        type = "number", 
+                                        min = "0", 
+                                        max = "100", 
+                                        step = "0.1", 
+                                        placeholder = "درصد سهم بیمه" 
+                                    })
+                                    @Html.ValidationMessageFor(model => model.InsurerShare, "", new { @class = "text-danger small mt-1" })
+                                    <div class="form-note">درصد سهم بیمه (0-100)</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Validation Summary -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <h6><i class="fas fa-info-circle"></i> نکات مهم:</h6>
+                                    <ul class="mb-0">
+                                        <li>اگر قیمت تعرفه وارد نشود، از قیمت پایه خدمت استفاده می‌شود</li>
+                                        <li>اگر سهم بیمار و بیمه وارد نشود، از تنظیمات طرح بیمه استفاده می‌شود</li>
+                                        <li>مجموع سهم بیمار و بیمه نباید بیش از 100 درصد باشد</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-success">
+                                        <i class="fas fa-save"></i>
+                                        ایجاد تعرفه بیمه
+                                    </button>
+                                    <a href="@Url.Action("Index")" class="btn btn-secondary">
+                                        <i class="fas fa-times"></i>
+                                        انصراف
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Info Panel -->
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info-circle"></i>
+                        راهنمای تعرفه بیمه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <h6>تعرفه بیمه چیست؟</h6>
+                    <p class="text-muted small">
+                        تعرفه بیمه قیمت خاصی است که برای یک خدمت در یک طرح بیمه تعریف می‌شود. 
+                        این تعرفه می‌تواند با قیمت پایه خدمت متفاوت باشد.
+                    </p>
+
+                    <h6>سهم بیمار و بیمه</h6>
+                    <p class="text-muted small">
+                        می‌توانید درصد سهم بیمار و بیمه را برای این تعرفه خاص تعریف کنید. 
+                        اگر تعریف نشود، از تنظیمات طرح بیمه استفاده می‌شود.
+                    </p>
+
+                    <h6>مثال</h6>
+                    <div class="bg-light p-3 rounded">
+                        <small>
+                            <strong>خدمت:</strong> آزمایش خون<br>
+                            <strong>قیمت پایه:</strong> 50,000 تومان<br>
+                            <strong>تعرفه بیمه:</strong> 45,000 تومان<br>
+                            <strong>سهم بیمه:</strong> 80%<br>
+                            <strong>سهم بیمار:</strong> 20%
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Form validation
+            $('.needs-validation').on('submit', function(e) {
+                if (!this.checkValidity()) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+                $(this).addClass('was-validated');
+            });
+
+            // Cascade Dropdowns
+            loadDepartments();
+            
+            $('#DepartmentId').on('change', function() {
+                var departmentId = $(this).val();
+                if (departmentId) {
+                    loadServiceCategories(departmentId);
+                } else {
+                    $('#ServiceCategoryId').empty().append('<option value="">انتخاب سرفصل خدمت</option>');
+                    $('#ServiceId').empty().append('<option value="">انتخاب خدمت</option>');
+                }
+            });
+            
+            $('#ServiceCategoryId').on('change', function() {
+                var serviceCategoryId = $(this).val();
+                if (serviceCategoryId) {
+                    loadServices(serviceCategoryId);
+                } else {
+                    $('#ServiceId').empty().append('<option value="">انتخاب خدمت</option>');
+                }
+            });
+            
+            $('#InsuranceProviderId').on('change', function() {
+                var providerId = $(this).val();
+                if (providerId) {
+                    loadInsurancePlans(providerId);
+                } else {
+                    $('#InsurancePlanId').empty().append('<option value="">انتخاب طرح بیمه</option>');
+                }
+            });
+
+            // Check for existing tariff
+            $('#ServiceId, #InsurancePlanId').on('change', function() {
+                var serviceId = $('#ServiceId').val();
+                var planId = $('#InsurancePlanId').val();
+                
+                if (serviceId && planId) {
+                    checkExistingTariff(serviceId, planId);
+                }
+            });
+
+            function checkExistingTariff(serviceId, planId) {
+                $.ajax({
+                    url: '@Url.Action("CheckTariffExists")',
+                    type: 'POST',
+                    data: {
+                        serviceId: serviceId,
+                        planId: planId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.exists) {
+                            showWarning('تعرفه بیمه برای این خدمت و طرح قبلاً تعریف شده است.');
+                        }
+                    }
+                });
+            }
+
+            function showWarning(message) {
+                var alert = $('<div class="alert alert-warning alert-dismissible fade show" role="alert">' +
+                    '<i class="fas fa-exclamation-triangle"></i> ' + message +
+                    '<button type="button" class="close" data-dismiss="alert">' +
+                    '<span>&times;</span></button></div>');
+                
+                $('.card-body').prepend(alert);
+                
+                setTimeout(function() {
+                    alert.fadeOut();
+                }, 5000);
+            }
+            
+            // Cascade Dropdown Functions
+            function loadDepartments() {
+                $.ajax({
+                    url: '@Url.Action("GetDepartments")',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            var options = '<option value="">انتخاب دپارتمان</option>';
+                            $.each(response.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            $('#DepartmentId').html(options);
+                        }
+                    },
+                    error: function() {
+                        showWarning('خطا در بارگیری دپارتمان‌ها');
+                    }
+                });
+            }
+            
+            function loadServiceCategories(departmentId) {
+                $.ajax({
+                    url: '@Url.Action("GetServiceCategories")',
+                    type: 'GET',
+                    data: { departmentId: departmentId },
+                    success: function(response) {
+                        if (response.success) {
+                            var options = '<option value="">انتخاب سرفصل خدمت</option>';
+                            $.each(response.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            $('#ServiceCategoryId').html(options);
+                            $('#ServiceId').empty().append('<option value="">انتخاب خدمت</option>');
+                        }
+                    },
+                    error: function() {
+                        showWarning('خطا در بارگیری سرفصل‌های خدماتی');
+                    }
+                });
+            }
+            
+            function loadServices(serviceCategoryId) {
+                $.ajax({
+                    url: '@Url.Action("GetServices")',
+                    type: 'GET',
+                    data: { serviceCategoryId: serviceCategoryId },
+                    success: function(response) {
+                        if (response.success) {
+                            var options = '<option value="">انتخاب خدمت</option>';
+                            $.each(response.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            $('#ServiceId').html(options);
+                        }
+                    },
+                    error: function() {
+                        showWarning('خطا در بارگیری خدمات');
+                    }
+                });
+            }
+            
+            function loadInsurancePlans(providerId) {
+                $.ajax({
+                    url: '@Url.Action("GetInsurancePlans")',
+                    type: 'GET',
+                    data: { providerId: providerId },
+                    success: function(response) {
+                        if (response.success) {
+                            var options = '<option value="">انتخاب طرح بیمه</option>';
+                            $.each(response.data, function(index, item) {
+                                options += '<option value="' + item.id + '">' + item.name + '</option>';
+                            });
+                            $('#InsurancePlanId').html(options);
+                        }
+                    },
+                    error: function() {
+                        showWarning('خطا در بارگیری طرح‌های بیمه');
+                    }
+                });
+            }
+        });
+    </script>
+}

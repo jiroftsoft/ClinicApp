@@ -1,0 +1,312 @@
+@using ClinicApp.Helpers
+@model ClinicApp.ViewModels.ServiceComponentDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات جزء خدمت: " + Model.ServiceTitle;
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        /* استایل‌های اختصاصی برای صفحه جزئیات جزء خدمت */
+        .component-header {
+            background-color: #28a745;
+            color: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .component-status {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            display: inline-block;
+            margin-top: 5px;
+        }
+
+        .status-active {
+            background-color: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .status-inactive {
+            background-color: #ffebee;
+            color: #c62828;
+        }
+
+        .component-card {
+            background-color: #fff;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 20px;
+        }
+
+        .component-card-title {
+            font-weight: 600;
+            color: #28a745;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            align-items: center;
+        }
+
+        .component-card-title i {
+            margin-left: 8px;
+            font-size: 1.1rem;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 120px;
+        }
+
+        .info-value {
+            color: #212529;
+            text-align: left;
+        }
+
+        .component-type-badge {
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .component-type-technical {
+            background-color: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .component-type-professional {
+            background-color: #f3e5f5;
+            color: #7b1fa2;
+        }
+
+        .coefficient-display {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #28a745;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .btn-action {
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-weight: 500;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-edit {
+            background: linear-gradient(135deg, #ffc107 0%, #ff8f00 100%);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+        }
+
+        .btn-delete {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+        }
+
+        .btn-back {
+            background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+            color: white;
+        }
+
+        .btn-back:hover {
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3);
+        }
+
+        .service-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+
+        .service-info h5 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .service-info p {
+            margin: 5px 0;
+            color: #6c757d;
+        }
+
+        .audit-info {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+        }
+
+        .audit-info h6 {
+            color: #495057;
+            margin-bottom: 10px;
+        }
+
+        .audit-info p {
+            margin: 5px 0;
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+    </style>
+}
+
+<!-- Header Section -->
+<div class="component-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <h2><i class="fas fa-cogs"></i> جزئیات جزء خدمت</h2>
+            <p class="mb-0">مشاهده اطلاعات کامل جزء خدمت</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <span class="component-status status-@(Model.IsActive ? "active" : "inactive")">
+                @(Model.IsActive ? "فعال" : "غیرفعال")
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Service Information -->
+<div class="service-info">
+    <h5><i class="fas fa-stethoscope"></i> اطلاعات خدمت مرتبط</h5>
+    <p><strong>عنوان خدمت:</strong> @Model.ServiceTitle</p>
+    <p><strong>کد خدمت:</strong> <code>@Model.ServiceCode</code></p>
+</div>
+
+<!-- Component Details -->
+<div class="component-card">
+    <h4 class="component-card-title">
+        <i class="fas fa-info-circle"></i> اطلاعات جزء خدمت
+    </h4>
+    
+    <div class="info-row">
+        <span class="info-label">شناسه جزء:</span>
+        <span class="info-value">@Model.ServiceComponentId</span>
+    </div>
+    
+    <div class="info-row">
+        <span class="info-label">نوع جزء:</span>
+        <span class="info-value">
+            <span class="component-type-badge component-type-@(Model.ComponentType.ToString().ToLower())">
+                @Model.ComponentTypeName
+            </span>
+        </span>
+    </div>
+    
+    <div class="info-row">
+        <span class="info-label">ضریب (کای):</span>
+        <span class="info-value">
+            <span class="coefficient-display">@Model.Coefficient.ToString("N2")</span>
+        </span>
+    </div>
+    
+    <div class="info-row">
+        <span class="info-label">توضیحات:</span>
+        <span class="info-value">
+            @if (!string.IsNullOrEmpty(Model.Description))
+            {
+                @Model.Description
+            }
+            else
+            {
+                <span class="text-muted">توضیحاتی ارائه نشده است</span>
+            }
+        </span>
+    </div>
+    
+    <div class="info-row">
+        <span class="info-label">وضعیت:</span>
+        <span class="info-value">
+            <span class="component-status status-@(Model.IsActive ? "active" : "inactive")">
+                @(Model.IsActive ? "فعال" : "غیرفعال")
+            </span>
+        </span>
+    </div>
+</div>
+
+<!-- Audit Information -->
+<div class="audit-info">
+    <h6><i class="fas fa-history"></i> اطلاعات ردیابی</h6>
+    
+    <div class="row">
+        <div class="col-md-6">
+            <p><strong>تاریخ ایجاد:</strong> @Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</p>
+            <p><strong>ایجاد شده توسط:</strong> @Model.CreatedBy</p>
+        </div>
+        <div class="col-md-6">
+            @if (Model.UpdatedAt.HasValue)
+            {
+                <p><strong>آخرین بروزرسانی:</strong> @Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</p>
+                <p><strong>بروزرسانی شده توسط:</strong> @Model.UpdatedBy</p>
+            }
+            else
+            {
+                <p><strong>آخرین بروزرسانی:</strong> <span class="text-muted">هیچ بروزرسانی انجام نشده</span></p>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Action Buttons -->
+<div class="action-buttons">
+    <a href="@Url.Action("Index")" class="btn-action btn-back">
+        <i class="fas fa-arrow-right"></i> بازگشت به لیست
+    </a>
+    
+    <a href="@Url.Action("Edit", new { id = Model.ServiceComponentId })" class="btn-action btn-edit">
+        <i class="fas fa-edit"></i> ویرایش
+    </a>
+    
+    <a href="@Url.Action("Delete", new { id = Model.ServiceComponentId })" class="btn-action btn-delete">
+        <i class="fas fa-trash"></i> حذف
+    </a>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Add any specific JavaScript functionality here
+            console.log('ServiceComponent Details page loaded');
+        });
+    </script>
+}

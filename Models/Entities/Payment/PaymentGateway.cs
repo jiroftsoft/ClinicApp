@@ -328,7 +328,7 @@ public class PaymentGatewayConfig : EntityTypeConfiguration<PaymentGateway>
 
         Property(pg => pg.FixedFee)
             .IsOptional()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(pg => pg.Description)
             .IsOptional()

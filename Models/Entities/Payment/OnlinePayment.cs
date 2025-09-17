@@ -358,17 +358,17 @@ public class OnlinePaymentConfig : EntityTypeConfiguration<OnlinePayment>
 
         Property(op => op.Amount)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 4)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_OnlinePayment_Amount")));
 
         Property(op => op.GatewayFee)
             .IsOptional()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(op => op.NetAmount)
             .IsOptional()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 4);
 
         Property(op => op.GatewayTransactionId)
             .IsOptional()

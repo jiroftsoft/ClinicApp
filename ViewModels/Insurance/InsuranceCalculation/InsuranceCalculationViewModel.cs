@@ -109,6 +109,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
         [Display(Name = "لیست دسته‌بندی‌های خدمت")]
         public SelectList ServiceCategorySelectList { get; set; }
 
+        [Display(Name = "لیست انواع محاسبه")]
+        public SelectList CalculationTypeSelectList { get; set; }
+
         #endregion
 
         #region Factory Methods
