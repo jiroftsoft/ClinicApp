@@ -9,6 +9,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using Serilog;
@@ -33,20 +34,84 @@ namespace ClinicApp.Services.Insurance
     {
         private readonly IPatientInsuranceRepository _patientInsuranceRepository;
         private readonly ICombinedInsuranceCalculationService _combinedInsuranceCalculationService;
+        private readonly IServiceRepository _serviceRepository;
+        private readonly IPatientService _patientService;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
 
         public PatientInsuranceService(
             IPatientInsuranceRepository patientInsuranceRepository,
             ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
+            IServiceRepository serviceRepository,
+            IPatientService patientService,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
             _patientInsuranceRepository = patientInsuranceRepository ?? throw new ArgumentNullException(nameof(patientInsuranceRepository));
             _combinedInsuranceCalculationService = combinedInsuranceCalculationService ?? throw new ArgumentNullException(nameof(combinedInsuranceCalculationService));
+            _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _log = logger.ForContext<PatientInsuranceService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
+
+        #region Validation Methods
+
+        /// <summary>
+        /// بررسی وجود خدمت
+        /// </summary>
+        public async Task<ServiceResult<bool>> ServiceExistsAsync(int serviceId)
+        {
+            try
+            {
+                _log.Information("بررسی وجود خدمت. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // استفاده از ServiceRepository موجود
+                var service = await _serviceRepository.GetByIdAsync(serviceId);
+                var exists = service != null && !service.IsDeleted;
+                
+                _log.Information("نتیجه بررسی وجود خدمت. ServiceId: {ServiceId}, Exists: {Exists}. User: {UserName} (Id: {UserId})",
+                    serviceId, exists, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(exists);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وجود خدمت. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<bool>.Failed("خطا در بررسی وجود خدمت");
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود بیمار
+        /// </summary>
+        public async Task<ServiceResult<bool>> PatientExistsAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("بررسی وجود بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // استفاده از PatientService موجود
+                var patientResult = await _patientService.GetPatientDetailsAsync(patientId);
+                var exists = patientResult.Success;
+                
+                _log.Information("نتیجه بررسی وجود بیمار. PatientId: {PatientId}, Exists: {Exists}. User: {UserName} (Id: {UserId})",
+                    patientId, exists, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(exists);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وجود بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<bool>.Failed("خطا در بررسی وجود بیمار");
+            }
+        }
+
+        #endregion
 
         #region IPatientInsuranceService Implementation
 
@@ -270,6 +335,61 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت بیمه اصلی بیمار بر اساس شماره بیمه
+        /// </summary>
+        public async Task<ServiceResult<PatientInsurance>> GetPrimaryInsuranceByPolicyNumberAsync(int patientId, string policyNumber)
+        {
+            try
+            {
+                _log.Information("Getting primary insurance by policy number for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                // استفاده از متد ریپازیتوری که واقعاً کار می‌کند
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryInsuranceByPolicyNumberAsync(patientId, policyNumber);
+                return ServiceResult<PatientInsurance>.Successful(primaryInsurance);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting primary insurance by policy number: PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<PatientInsurance>.Failed("خطا در دریافت بیمه اصلی");
+            }
+        }
+
+        /// <summary>
+        /// دریافت شماره بیمه پایه بیمار
+        /// </summary>
+        public async Task<ServiceResult<string>> GetPrimaryInsurancePolicyNumberAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("Getting primary insurance policy number for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت بیمه اصلی بیمار
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryInsuranceByPatientIdAsync(patientId);
+                if (primaryInsurance != null && !string.IsNullOrEmpty(primaryInsurance.PolicyNumber))
+                {
+                    _log.Information("Primary insurance policy number found for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                        patientId, primaryInsurance.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<string>.Successful(primaryInsurance.PolicyNumber);
+                }
+                else
+                {
+                    _log.Warning("No primary insurance found for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<string>.Failed("بیمه پایه برای این بیمار تعریف نشده است");
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting primary insurance policy number: PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<string>.Failed("خطا در دریافت شماره بیمه پایه");
+            }
+        }
+
         public async Task<ServiceResult<Dictionary<string, string>>> ValidatePatientInsuranceAsync(PatientInsuranceCreateEditViewModel model)
         {
             try
@@ -279,11 +399,23 @@ namespace ClinicApp.Services.Insurance
 
                 var errors = new Dictionary<string, string>();
 
-                // بررسی وجود شماره بیمه تکراری
-                var policyExistsResult = await DoesPolicyNumberExistAsync(model.PolicyNumber, model.PatientInsuranceId);
-                if (policyExistsResult.Success && policyExistsResult.Data)
+                // بررسی وجود شماره بیمه تکراری (فقط برای بیمه اصلی)
+                if (model.IsPrimary)
                 {
-                    errors.Add("PolicyNumber", "شماره بیمه قبلاً ثبت شده است.");
+                    var policyExistsResult = await DoesPolicyNumberExistAsync(model.PolicyNumber, model.PatientInsuranceId);
+                    if (policyExistsResult.Success && policyExistsResult.Data)
+                    {
+                        errors.Add("PolicyNumber", "شماره بیمه قبلاً ثبت شده است.");
+                    }
+                }
+                else
+                {
+                    // برای بیمه تکمیلی، بررسی کنیم که آیا بیمه پایه با همین شماره بیمه وجود دارد
+                    var primaryInsuranceResult = await GetPrimaryInsuranceByPolicyNumberAsync(model.PatientId, model.PolicyNumber);
+                    if (!primaryInsuranceResult.Success || primaryInsuranceResult.Data == null)
+                    {
+                        errors.Add("PolicyNumber", "ابتدا باید بیمه پایه با این شماره بیمه تعریف شود.");
+                    }
                 }
 
                 // بررسی وجود بیمه اصلی برای بیمار (اگر این بیمه اصلی است)
@@ -296,12 +428,32 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
-                // بررسی تداخل تاریخ‌ها
-                var dateOverlapResult = await DoesDateOverlapExistAsync(
-                    model.PatientId, model.StartDate, model.EndDate ?? DateTime.MaxValue, model.PatientInsuranceId);
-                if (dateOverlapResult.Success && dateOverlapResult.Data)
+                // بررسی تداخل تاریخ‌ها (فقط برای بیمه اصلی)
+                if (model.IsPrimary)
                 {
-                    errors.Add("StartDate", "تاریخ‌های انتخاب شده با بیمه‌های موجود این بیمار تداخل دارد.");
+                    var dateOverlapResult = await DoesDateOverlapExistAsync(
+                        model.PatientId, model.StartDate, model.EndDate ?? DateTime.MaxValue, model.PatientInsuranceId);
+                    if (dateOverlapResult.Success && dateOverlapResult.Data)
+                    {
+                        errors.Add("StartDate", "تاریخ‌های انتخاب شده با بیمه‌های موجود این بیمار تداخل دارد.");
+                    }
+                }
+                else
+                {
+                    // برای بیمه تکمیلی، بررسی کنیم که بیمه پایه فعال باشد
+                    var primaryInsuranceResult = await GetPrimaryInsuranceByPolicyNumberAsync(model.PatientId, model.PolicyNumber);
+                    if (primaryInsuranceResult.Success && primaryInsuranceResult.Data != null)
+                    {
+                        var primaryInsurance = primaryInsuranceResult.Data;
+                        if (!primaryInsurance.IsActive)
+                        {
+                            errors.Add("StartDate", "بیمه پایه این بیمار غیرفعال است. ابتدا بیمه پایه را فعال کنید.");
+                        }
+                        else if (primaryInsurance.EndDate.HasValue && primaryInsurance.EndDate.Value < model.StartDate)
+                        {
+                            errors.Add("StartDate", "تاریخ شروع بیمه تکمیلی نمی‌تواند بعد از تاریخ پایان بیمه پایه باشد.");
+                        }
+                    }
                 }
 
                 return ServiceResult<Dictionary<string, string>>.Successful(errors);
@@ -334,6 +486,33 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت فقط بیمه‌های تکمیلی بیمار
+        /// </summary>
+        public async Task<ServiceResult<List<PatientInsuranceIndexViewModel>>> GetSupplementaryInsurancesByPatientAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("Getting supplementary insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت فقط بیمه‌های تکمیلی (غیر اصلی) از ریپازیتوری
+                var supplementaryInsurances = await _patientInsuranceRepository.GetSupplementaryByPatientIdAsync(patientId);
+                var viewModels = supplementaryInsurances.Select(ConvertToIndexViewModel).ToList();
+                
+                _log.Information("Found {Count} supplementary insurances for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    viewModels.Count, patientId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Successful(viewModels);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting supplementary insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت بیمه‌های تکمیلی بیمار");
+            }
+        }
+
         public async Task<ServiceResult<PatientInsuranceDetailsViewModel>> GetPrimaryInsuranceByPatientAsync(int patientId)
         {
             try
@@ -359,26 +538,6 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
-        public async Task<ServiceResult<List<PatientInsuranceIndexViewModel>>> GetSupplementaryInsurancesByPatientAsync(int patientId)
-        {
-            try
-            {
-                _log.Information("Getting supplementary insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
-                    patientId, _currentUserService.UserName, _currentUserService.UserId);
-
-                // دریافت بیمه‌های تکمیلی بیمار از ریپازیتوری
-                var supplementaryInsurances = await _patientInsuranceRepository.GetSupplementaryByPatientIdAsync(patientId);
-                var viewModels = supplementaryInsurances.Select(ConvertToIndexViewModel).ToList();
-                
-                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Successful(viewModels);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "Error getting supplementary insurances by patient for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
-                    patientId, _currentUserService.UserName, _currentUserService.UserId);
-                return ServiceResult<List<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت بیمه‌های تکمیلی بیمار");
-            }
-        }
 
         public async Task<ServiceResult> SetPrimaryInsuranceAsync(int patientInsuranceId)
         {
@@ -696,6 +855,19 @@ namespace ClinicApp.Services.Insurance
                 var patientInsurance = ConvertToEntity(model);
                 patientInsurance.IsActive = true;
                 patientInsurance.IsDeleted = false;
+
+                // تنظیم خودکار Priority بر اساس نوع بیمه
+                if (model.IsPrimary)
+                {
+                    patientInsurance.Priority = InsurancePriority.Primary; // بیمه اصلی همیشه اولویت Primary
+                }
+                else
+                {
+                    // برای بیمه تکمیلی، اولویت را بر اساس تعداد بیمه‌های موجود تنظیم کن
+                    var existingInsurances = await _patientInsuranceRepository.GetByPatientIdAsync(model.PatientId);
+                    var existingPriorities = existingInsurances.Where(pi => !pi.IsPrimary).Select(pi => pi.Priority);
+                    patientInsurance.Priority = InsurancePriorityHelper.GetNextSupplementaryPriority(existingPriorities);
+                }
 
                 // ذخیره در Repository
                 _patientInsuranceRepository.Add(patientInsurance);
@@ -1018,7 +1190,8 @@ namespace ClinicApp.Services.Insurance
                 IsPrimary = model.IsPrimary,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
-                IsActive = model.IsActive
+                IsActive = model.IsActive,
+                Priority = model.Priority
             };
         }
 

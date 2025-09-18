@@ -1,0 +1,728 @@
+/**
+ * CSS برای بیمه تکمیلی
+ * طراحی شده برای سیستم‌های پزشکی کلینیک شفا
+ * 
+ * ویژگی‌های کلیدی:
+ * 1. طراحی responsive و مدرن
+ * 2. رنگ‌بندی مناسب برای محیط پزشکی
+ * 3. انیمیشن‌های نرم و کاربرپسند
+ * 4. سازگاری با RTL
+ * 5. بهینه‌سازی برای عملکرد
+ */
+
+/* ===== متغیرهای CSS ===== */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --danger-color: #dc3545;
+    --warning-color: #ffc107;
+    --info-color: #17a2b8;
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    
+    --supplementary-primary: #2c5aa0;
+    --supplementary-secondary: #4a90e2;
+    --supplementary-success: #5cb85c;
+    --supplementary-warning: #f0ad4e;
+    --supplementary-danger: #d9534f;
+    --supplementary-info: #5bc0de;
+    
+    --border-radius: 8px;
+    --box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    --box-shadow-hover: 0 4px 8px rgba(0,0,0,0.15);
+    --transition: all 0.3s ease;
+}
+
+/* ===== استایل‌های کلی ===== */
+.supplementary-insurance-container {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    direction: rtl;
+    text-align: right;
+}
+
+.supplementary-card {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    transition: var(--transition);
+    margin-bottom: 20px;
+}
+
+.supplementary-card:hover {
+    box-shadow: var(--box-shadow-hover);
+    transform: translateY(-2px);
+}
+
+.supplementary-card-header {
+    background: linear-gradient(135deg, var(--supplementary-primary), var(--supplementary-secondary));
+    color: white;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    padding: 15px 20px;
+    border: none;
+}
+
+.supplementary-card-title {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.supplementary-card-title i {
+    font-size: 1.1em;
+}
+
+/* ===== فرم‌ها ===== */
+.supplementary-form {
+    padding: 20px;
+}
+
+.supplementary-form .form-group {
+    margin-bottom: 20px;
+}
+
+.supplementary-form .form-label {
+    font-weight: 600;
+    color: var(--dark-color);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.supplementary-form .form-label i {
+    color: var(--supplementary-primary);
+    font-size: 0.9em;
+}
+
+.supplementary-form .form-control {
+    border: 2px solid #e9ecef;
+    border-radius: var(--border-radius);
+    padding: 12px 15px;
+    font-size: 14px;
+    transition: var(--transition);
+    direction: rtl;
+}
+
+.supplementary-form .form-control:focus {
+    border-color: var(--supplementary-primary);
+    box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+    outline: none;
+}
+
+.supplementary-form .form-control.is-valid {
+    border-color: var(--success-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%2328a745' d='m2.3 6.73.94-.94 1.88-1.88'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
+}
+
+.supplementary-form .form-control.is-invalid {
+    border-color: var(--danger-color);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23dc3545'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4 1.4-1.4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right 12px center;
+    background-size: 16px 16px;
+}
+
+.supplementary-form .invalid-feedback {
+    display: block;
+    color: var(--danger-color);
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+.supplementary-form .valid-feedback {
+    display: block;
+    color: var(--success-color);
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+/* ===== دکمه‌ها ===== */
+.supplementary-btn {
+    border-radius: var(--border-radius);
+    padding: 10px 20px;
+    font-weight: 600;
+    transition: var(--transition);
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.supplementary-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--box-shadow-hover);
+}
+
+.supplementary-btn-primary {
+    background: linear-gradient(135deg, var(--supplementary-primary), var(--supplementary-secondary));
+    color: white;
+}
+
+.supplementary-btn-primary:hover {
+    background: linear-gradient(135deg, #1e3d6f, #357abd);
+    color: white;
+}
+
+.supplementary-btn-success {
+    background: linear-gradient(135deg, var(--supplementary-success), #4cae4c);
+    color: white;
+}
+
+.supplementary-btn-success:hover {
+    background: linear-gradient(135deg, #449d44, #3d8b3d);
+    color: white;
+}
+
+.supplementary-btn-danger {
+    background: linear-gradient(135deg, var(--supplementary-danger), #c9302c);
+    color: white;
+}
+
+.supplementary-btn-danger:hover {
+    background: linear-gradient(135deg, #c12e2a, #a02620);
+    color: white;
+}
+
+.supplementary-btn-warning {
+    background: linear-gradient(135deg, var(--supplementary-warning), #ec971f);
+    color: white;
+}
+
+.supplementary-btn-warning:hover {
+    background: linear-gradient(135deg, #eb9316, #d58512);
+    color: white;
+}
+
+.supplementary-btn-info {
+    background: linear-gradient(135deg, var(--supplementary-info), #46b8da);
+    color: white;
+}
+
+.supplementary-btn-info:hover {
+    background: linear-gradient(135deg, #39b3d7, #31b0d5);
+    color: white;
+}
+
+/* ===== Info Box ها ===== */
+.supplementary-info-box {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: 20px;
+    margin-bottom: 15px;
+    transition: var(--transition);
+    border-right: 4px solid var(--supplementary-primary);
+}
+
+.supplementary-info-box:hover {
+    box-shadow: var(--box-shadow-hover);
+    transform: translateX(-2px);
+}
+
+.supplementary-info-box-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.supplementary-info-box-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.2em;
+}
+
+.supplementary-info-box-icon.bg-primary {
+    background: var(--supplementary-primary);
+}
+
+.supplementary-info-box-icon.bg-success {
+    background: var(--supplementary-success);
+}
+
+.supplementary-info-box-icon.bg-warning {
+    background: var(--supplementary-warning);
+}
+
+.supplementary-info-box-icon.bg-danger {
+    background: var(--supplementary-danger);
+}
+
+.supplementary-info-box-icon.bg-info {
+    background: var(--supplementary-info);
+}
+
+.supplementary-info-box-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--dark-color);
+    margin: 0;
+}
+
+.supplementary-info-box-content {
+    color: var(--secondary-color);
+    line-height: 1.6;
+}
+
+/* ===== جدول‌ها ===== */
+.supplementary-table {
+    background: white;
+    border-radius: var(--border-radius);
+    overflow: hidden;
+    box-shadow: var(--box-shadow);
+}
+
+.supplementary-table table {
+    margin: 0;
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.supplementary-table thead {
+    background: linear-gradient(135deg, var(--supplementary-primary), var(--supplementary-secondary));
+    color: white;
+}
+
+.supplementary-table thead th {
+    padding: 15px 12px;
+    font-weight: 600;
+    text-align: right;
+    border: none;
+    font-size: 0.9rem;
+}
+
+.supplementary-table tbody tr {
+    transition: var(--transition);
+    border-bottom: 1px solid #e9ecef;
+}
+
+.supplementary-table tbody tr:hover {
+    background-color: #f8f9fa;
+    transform: scale(1.01);
+}
+
+.supplementary-table tbody td {
+    padding: 12px;
+    vertical-align: middle;
+    border: none;
+}
+
+.supplementary-table .badge {
+    font-size: 0.8rem;
+    padding: 6px 10px;
+    border-radius: 20px;
+}
+
+/* ===== Badge ها ===== */
+.supplementary-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.supplementary-badge-primary {
+    background-color: var(--supplementary-primary);
+    color: white;
+}
+
+.supplementary-badge-success {
+    background-color: var(--supplementary-success);
+    color: white;
+}
+
+.supplementary-badge-warning {
+    background-color: var(--supplementary-warning);
+    color: white;
+}
+
+.supplementary-badge-danger {
+    background-color: var(--supplementary-danger);
+    color: white;
+}
+
+.supplementary-badge-info {
+    background-color: var(--supplementary-info);
+    color: white;
+}
+
+.supplementary-badge-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+}
+
+/* ===== Loading و Spinner ===== */
+.supplementary-loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.supplementary-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid var(--supplementary-primary);
+    border-radius: 50%;
+    animation: supplementary-spin 1s linear infinite;
+}
+
+@keyframes supplementary-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.supplementary-loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+/* ===== Alert ها ===== */
+.supplementary-alert {
+    border: none;
+    border-radius: var(--border-radius);
+    padding: 15px 20px;
+    margin-bottom: 20px;
+    border-right: 4px solid;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.supplementary-alert-success {
+    background-color: #d4edda;
+    color: #155724;
+    border-right-color: var(--success-color);
+}
+
+.supplementary-alert-danger {
+    background-color: #f8d7da;
+    color: #721c24;
+    border-right-color: var(--danger-color);
+}
+
+.supplementary-alert-warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-right-color: var(--warning-color);
+}
+
+.supplementary-alert-info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border-right-color: var(--info-color);
+}
+
+/* ===== Modal ها ===== */
+.supplementary-modal .modal-content {
+    border: none;
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.supplementary-modal .modal-header {
+    background: linear-gradient(135deg, var(--supplementary-primary), var(--supplementary-secondary));
+    color: white;
+    border-radius: var(--border-radius) var(--border-radius) 0 0;
+    border: none;
+    padding: 20px;
+}
+
+.supplementary-modal .modal-title {
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.supplementary-modal .close {
+    color: white;
+    opacity: 0.8;
+    font-size: 1.5rem;
+}
+
+.supplementary-modal .close:hover {
+    opacity: 1;
+}
+
+.supplementary-modal .modal-body {
+    padding: 30px;
+}
+
+.supplementary-modal .modal-footer {
+    border: none;
+    padding: 20px 30px;
+    background-color: #f8f9fa;
+    border-radius: 0 0 var(--border-radius) var(--border-radius);
+}
+
+/* ===== Progress Bar ===== */
+.supplementary-progress {
+    height: 8px;
+    border-radius: 4px;
+    background-color: #e9ecef;
+    overflow: hidden;
+    margin: 10px 0;
+}
+
+.supplementary-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--supplementary-primary), var(--supplementary-secondary));
+    transition: width 0.6s ease;
+    border-radius: 4px;
+}
+
+/* ===== Tooltip ===== */
+.supplementary-tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.supplementary-tooltip .tooltip-text {
+    visibility: hidden;
+    width: 200px;
+    background-color: var(--dark-color);
+    color: white;
+    text-align: center;
+    border-radius: var(--border-radius);
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    right: 50%;
+    margin-right: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.8rem;
+}
+
+.supplementary-tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* ===== Responsive Design ===== */
+@media (max-width: 768px) {
+    .supplementary-card {
+        margin-bottom: 15px;
+    }
+    
+    .supplementary-form {
+        padding: 15px;
+    }
+    
+    .supplementary-form .form-control {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+    
+    .supplementary-btn {
+        padding: 8px 16px;
+        font-size: 0.9rem;
+    }
+    
+    .supplementary-table thead th,
+    .supplementary-table tbody td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+    }
+    
+    .supplementary-modal .modal-body {
+        padding: 20px;
+    }
+    
+    .supplementary-modal .modal-footer {
+        padding: 15px 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .supplementary-card-header {
+        padding: 12px 15px;
+    }
+    
+    .supplementary-card-title {
+        font-size: 1.1rem;
+    }
+    
+    .supplementary-form {
+        padding: 12px;
+    }
+    
+    .supplementary-btn {
+        width: 100%;
+        justify-content: center;
+        margin-bottom: 10px;
+    }
+    
+    .supplementary-table {
+        font-size: 0.75rem;
+    }
+    
+    .supplementary-table thead th,
+    .supplementary-table tbody td {
+        padding: 6px 4px;
+    }
+}
+
+/* ===== انیمیشن‌ها ===== */
+@keyframes supplementary-fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes supplementary-slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.supplementary-fade-in {
+    animation: supplementary-fadeIn 0.5s ease-out;
+}
+
+.supplementary-slide-in {
+    animation: supplementary-slideIn 0.5s ease-out;
+}
+
+/* ===== Utility Classes ===== */
+.supplementary-text-center {
+    text-align: center;
+}
+
+.supplementary-text-right {
+    text-align: right;
+}
+
+.supplementary-text-left {
+    text-align: left;
+}
+
+.supplementary-mb-0 {
+    margin-bottom: 0;
+}
+
+.supplementary-mb-1 {
+    margin-bottom: 0.25rem;
+}
+
+.supplementary-mb-2 {
+    margin-bottom: 0.5rem;
+}
+
+.supplementary-mb-3 {
+    margin-bottom: 1rem;
+}
+
+.supplementary-mb-4 {
+    margin-bottom: 1.5rem;
+}
+
+.supplementary-mb-5 {
+    margin-bottom: 3rem;
+}
+
+.supplementary-mt-0 {
+    margin-top: 0;
+}
+
+.supplementary-mt-1 {
+    margin-top: 0.25rem;
+}
+
+.supplementary-mt-2 {
+    margin-top: 0.5rem;
+}
+
+.supplementary-mt-3 {
+    margin-top: 1rem;
+}
+
+.supplementary-mt-4 {
+    margin-top: 1.5rem;
+}
+
+.supplementary-mt-5 {
+    margin-top: 3rem;
+}
+
+.supplementary-p-0 {
+    padding: 0;
+}
+
+.supplementary-p-1 {
+    padding: 0.25rem;
+}
+
+.supplementary-p-2 {
+    padding: 0.5rem;
+}
+
+.supplementary-p-3 {
+    padding: 1rem;
+}
+
+.supplementary-p-4 {
+    padding: 1.5rem;
+}
+
+.supplementary-p-5 {
+    padding: 3rem;
+}
+
+/* ===== Print Styles ===== */
+@media print {
+    .supplementary-card {
+        box-shadow: none;
+        border: 1px solid #ddd;
+    }
+    
+    .supplementary-btn {
+        display: none;
+    }
+    
+    .supplementary-modal {
+        display: none;
+    }
+    
+    .supplementary-loading-overlay {
+        display: none;
+    }
+}

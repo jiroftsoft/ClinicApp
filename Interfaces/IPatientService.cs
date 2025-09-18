@@ -125,6 +125,12 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult<PatientCreateEditViewModel>> GetPatientForEditAsync(int patientId);
 
         /// <summary>
+        /// دریافت لیست بیماران فعال برای Lookup (مثل Dropdown ها)
+        /// </summary>
+        /// <returns>لیست بیماران فعال برای انتخاب</returns>
+        Task<ServiceResult<List<PatientLookupViewModel>>> GetActivePatientsForLookupAsync();
+
+        /// <summary>
         /// ایجاد یک بیمار جدید با رعایت تمام استانداردهای امنیتی و پزشکی
         /// 
         /// ویژگی‌های کلیدی:

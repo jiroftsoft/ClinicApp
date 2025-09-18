@@ -161,6 +161,41 @@ namespace ClinicApp.Interfaces.Insurance
 
         #endregion
 
+        #region Supplementary Insurance Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی
+        /// </summary>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <returns>لیست تعرفه‌های بیمه تکمیلی</returns>
+        Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId);
+
+        /// <summary>
+        /// محاسبه تعرفه بیمه تکمیلی
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="baseAmount">مبلغ پایه</param>
+        /// <returns>مبلغ محاسبه شده تعرفه بیمه تکمیلی</returns>
+        Task<ServiceResult<decimal>> CalculateSupplementaryTariffAsync(int serviceId, int planId, decimal baseAmount);
+
+        /// <summary>
+        /// دریافت تنظیمات بیمه تکمیلی
+        /// </summary>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <returns>تنظیمات بیمه تکمیلی</returns>
+        Task<ServiceResult<Dictionary<string, object>>> GetSupplementarySettingsAsync(int planId);
+
+        /// <summary>
+        /// به‌روزرسانی تنظیمات بیمه تکمیلی
+        /// </summary>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="settings">تنظیمات جدید</param>
+        /// <returns>نتیجه به‌روزرسانی</returns>
+        Task<ServiceResult> UpdateSupplementarySettingsAsync(int planId, Dictionary<string, object> settings);
+
+        #endregion
+
         #region Statistics Operations
 
         /// <summary>

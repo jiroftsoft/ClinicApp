@@ -57,6 +57,7 @@ namespace ClinicApp.Services
 
         public string UserId => _systemUserId;
         public string UserName => "سیستم";
+        public IEnumerable<string> Roles => _isSystemAdmin ? new[] { AppRoles.Admin } : new string[0];
         public string UserFullName => "کاربر سیستم";
         public bool IsAuthenticated => true;
         public bool IsAdmin => _isSystemAdmin;

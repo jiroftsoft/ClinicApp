@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Web.Mvc;
 using ClinicApp.Extensions;
 using ClinicApp.Filters;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Insurance.PatientInsurance
 {
@@ -94,6 +95,14 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
 
+        /// <summary>
+        /// اولویت بیمه
+        /// استفاده از enum برای مدیریت بهتر اولویت‌ها
+        /// </summary>
+        [Required(ErrorMessage = "اولویت بیمه الزامی است.")]
+        [Display(Name = "اولویت بیمه")]
+        public InsurancePriority Priority { get; set; } = InsurancePriority.Primary;
+
         #region Select Lists
 
         [Display(Name = "لیست بیماران")]
@@ -182,6 +191,7 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 EndDate = entity.EndDate,
                 IsPrimary = entity.IsPrimary,
                 IsActive = entity.IsActive,
+                Priority = entity.Priority,
                 // پر کردن فیلدهای نمایشی
                 PatientName = entity.Patient != null ? $"{entity.Patient.FirstName} {entity.Patient.LastName}" : null,
                 InsurancePlanName = entity.InsurancePlan != null ? entity.InsurancePlan.Name : null
@@ -210,7 +220,8 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 StartDate = this.StartDate,
                 EndDate = this.EndDate,
                 IsPrimary = this.IsPrimary,
-                IsActive = this.IsActive
+                IsActive = this.IsActive,
+                Priority = this.Priority
             };
         }
 
@@ -231,6 +242,7 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
             entity.EndDate = this.EndDate;
             entity.IsPrimary = this.IsPrimary;
             entity.IsActive = this.IsActive;
+            entity.Priority = this.Priority;
         }
 
         #region Custom Validation Methods

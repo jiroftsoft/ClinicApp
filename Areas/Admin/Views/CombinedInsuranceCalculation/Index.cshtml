@@ -5,40 +5,97 @@
 
 @section Styles {
     <style>
+        /* 🏥 Medical Environment Styles - بهینه شده برای محیط درمانی */
         .calculation-card {
             border: 1px solid #e3e6f0;
             border-radius: 0.35rem;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            transition: all 0.3s ease;
+        }
+        
+        .calculation-card:hover {
+            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.25);
+            transform: translateY(-2px);
         }
         
         .result-card {
-            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-        }
-        
-        .coverage-badge {
-            font-size: 0.875rem;
-            padding: 0.375rem 0.75rem;
+            border-radius: 0.5rem;
         }
         
         .medical-icon {
             color: #1cc88a;
+            font-size: 1.2rem;
         }
         
         .calculation-step {
-            border-left: 3px solid #1cc88a;
+            border-left: 4px solid #1cc88a;
             padding-left: 1rem;
             margin-bottom: 1rem;
+            background: rgba(28, 200, 138, 0.05);
+            border-radius: 0.25rem;
+            padding: 1rem;
         }
         
         .amount-display {
-            font-size: 1.25rem;
-            font-weight: 600;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #2c3e50;
         }
         
         .percentage-display {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1cc88a;
+        }
+        
+        /* 🚀 Performance Optimizations */
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .loading-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            text-align: center;
+            box-shadow: 0 1rem 3rem rgba(0,0,0,0.3);
+        }
+        
+        /* 📱 Responsive Design */
+        @@media (max-width: 768px) {
+            .calculation-card {
+                margin-bottom: 1rem;
+            }
+            
+            .amount-display {
+                font-size: 1.2rem;
+            }
+        }
+        
+        /* 🎨 Medical Theme Colors */
+        .medical-primary { color: #1cc88a; }
+        .medical-secondary { color: #36b9cc; }
+        .medical-warning { color: #f6c23e; }
+        .medical-danger { color: #e74a3b; }
+        
+        /* 🔒 Security Indicators */
+        .security-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: #1cc88a;
             font-size: 1.1rem;
-            font-weight: 500;
         }
     </style>
 }
@@ -64,6 +121,7 @@
                         </div>
                         <div class="card-body">
                             <form id="calculationForm">
+                                @Html.AntiForgeryToken()
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
@@ -210,11 +268,16 @@
         $(document).ready(function() {
             console.log('🏥 MEDICAL: صفحه محاسبه بیمه ترکیبی بارگذاری شد');
             
-            // بارگیری لیست بیماران
-            loadPatients();
-            
-            // بارگیری لیست خدمات
-            loadServices();
+            // بارگیری همزمان لیست بیماران و خدمات برای بهبود Performance
+            Promise.all([
+                loadPatients(),
+                loadServices()
+            ]).then(function() {
+                console.log('🏥 MEDICAL: تمام داده‌ها بارگذاری شد');
+            }).catch(function(error) {
+                console.error('🏥 MEDICAL: خطا در بارگذاری داده‌ها', error);
+                showError('خطا در بارگذاری داده‌های اولیه');
+            });
             
             // مدیریت فرم
             $('#calculationForm').on('submit', function(e) {
@@ -230,21 +293,138 @@
         });
         
         function loadPatients() {
-            // TODO: بارگیری لیست بیماران از API
             console.log('🏥 MEDICAL: بارگیری لیست بیماران...');
+            
+            // بررسی Cache
+            if (window.patientsCache && window.patientsCache.length > 0) {
+                console.log('🏥 MEDICAL: استفاده از Cache بیماران');
+                populatePatientSelect(window.patientsCache);
+                return Promise.resolve();
+            }
+            
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                url: '@Url.Action("GetPatients", "CombinedInsuranceCalculation")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        console.log('🏥 MEDICAL: لیست بیماران دریافت شد', response.data);
+                        
+                        // ذخیره در Cache
+                        window.patientsCache = response.data;
+                        
+                        populatePatientSelect(response.data);
+                        resolve();
+                    } else {
+                        console.error('🏥 MEDICAL: خطا در دریافت لیست بیماران', response.message);
+                        showError('خطا در دریافت لیست بیماران: ' + response.message);
+                        reject(response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('🏥 MEDICAL: خطای AJAX در دریافت بیماران', error);
+                    showError('خطا در ارتباط با سرور برای دریافت بیماران');
+                    reject(error);
+                }
+            });
+            });
+        }
+        
+        function populatePatientSelect(patients) {
+            var patientSelect = $('#patientId');
+            patientSelect.empty();
+            patientSelect.append('<option value="">انتخاب بیمار...</option>');
+            
+            patients.forEach(function(patient) {
+                patientSelect.append('<option value="' + patient.id + '">' + 
+                    patient.name + ' (' + patient.nationalId + ')</option>');
+            });
+            
+            // فعال کردن Select2 برای جستجو
+            patientSelect.select2({
+                placeholder: 'انتخاب بیمار...',
+                allowClear: true,
+                language: {
+                    noResults: function() {
+                        return 'بیماری یافت نشد';
+                    }
+                }
+            });
         }
         
         function loadServices() {
-            // TODO: بارگیری لیست خدمات از API
             console.log('🏥 MEDICAL: بارگیری لیست خدمات...');
+            
+            $.ajax({
+                url: '@Url.Action("GetServices", "CombinedInsuranceCalculation")',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        console.log('🏥 MEDICAL: لیست خدمات دریافت شد', response.data);
+                        
+                        var serviceSelect = $('#serviceId');
+                        serviceSelect.empty();
+                        serviceSelect.append('<option value="">انتخاب خدمت...</option>');
+                        
+                        response.data.forEach(function(service) {
+                            serviceSelect.append('<option value="' + service.id + '" data-price="' + service.basePrice + '">' + 
+                                service.name + ' (' + service.category + ') - ' + service.basePrice.toLocaleString() + ' تومان</option>');
+                        });
+                        
+                        // فعال کردن Select2 برای جستجو
+                        serviceSelect.select2({
+                            placeholder: 'انتخاب خدمت...',
+                            allowClear: true,
+                            language: {
+                                noResults: function() {
+                                    return 'خدمتی یافت نشد';
+                                }
+                            }
+                        });
+                        
+                        // تنظیم مبلغ خودکار هنگام انتخاب خدمت
+                        serviceSelect.on('change', function() {
+                            var selectedOption = $(this).find('option:selected');
+                            var basePrice = selectedOption.data('price');
+                            if (basePrice) {
+                                $('#serviceAmount').val(basePrice);
+                            }
+                        });
+                    } else {
+                        console.error('🏥 MEDICAL: خطا در دریافت لیست خدمات', response.message);
+                        showError('خطا در دریافت لیست خدمات: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('🏥 MEDICAL: خطای AJAX در دریافت خدمات', error);
+                    showError('خطا در ارتباط با سرور برای دریافت خدمات');
+                }
+            });
         }
         
         function calculateCombinedInsurance() {
+            // اعتبارسنجی ورودی‌ها
+            var patientId = $('#patientId').val();
+            var serviceId = $('#serviceId').val();
+            var serviceAmount = $('#serviceAmount').val();
+            var calculationDate = $('#calculationDate').val();
+            
+            if (!patientId || !serviceId || !serviceAmount) {
+                showError('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+            
+            if (parseFloat(serviceAmount) <= 0) {
+                showError('مبلغ خدمت باید بیشتر از صفر باشد');
+                return;
+            }
+            
             var formData = {
-                patientId: $('#patientId').val(),
-                serviceId: $('#serviceId').val(),
-                serviceAmount: $('#serviceAmount').val(),
-                calculationDate: $('#calculationDate').val()
+                patientId: patientId,
+                serviceId: serviceId,
+                serviceAmount: serviceAmount,
+                calculationDate: calculationDate,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             };
             
             console.log('🏥 MEDICAL: شروع محاسبه بیمه ترکیبی', formData);
@@ -253,7 +433,7 @@
             showLoadingIndicator();
             
             $.ajax({
-                url: '@Url.Action("Calculate", "CombinedInsuranceCalculation")',
+                url: '@Url.Action("CalculateCombinedInsurance", "CombinedInsuranceCalculation")',
                 type: 'POST',
                 data: formData,
                 success: function(response) {
@@ -270,7 +450,20 @@
                 error: function(xhr, status, error) {
                     hideLoadingIndicator();
                     console.error('🏥 MEDICAL: خطای AJAX', error);
-                    showError('خطا در ارتباط با سرور');
+                    
+                    // تشخیص نوع خطا
+                    var errorMessage = 'خطا در ارتباط با سرور';
+                    if (xhr.status === 401) {
+                        errorMessage = 'دسترسی غیرمجاز - لطفاً دوباره وارد شوید';
+                    } else if (xhr.status === 403) {
+                        errorMessage = 'دسترسی غیرمجاز - شما مجاز به انجام این عملیات نیستید';
+                    } else if (xhr.status === 500) {
+                        errorMessage = 'خطای سرور - لطفاً با مدیر سیستم تماس بگیرید';
+                    } else if (xhr.status === 0) {
+                        errorMessage = 'خطا در اتصال به سرور - لطفاً اتصال اینترنت خود را بررسی کنید';
+                    }
+                    
+                    showError(errorMessage);
                 }
             });
         }
@@ -316,19 +509,91 @@
         }
         
         function showLoadingIndicator() {
-            // TODO: نمایش loading indicator
             console.log('🏥 MEDICAL: نمایش loading indicator');
+            
+            // نمایش loading overlay بهینه شده
+            if ($('#loadingOverlay').length === 0) {
+                $('body').append(`
+                    <div id="loadingOverlay" class="loading-overlay">
+                        <div class="loading-content">
+                            <i class="fas fa-spinner fa-spin fa-3x medical-primary"></i>
+                            <h5 class="mt-3 mb-2">در حال محاسبه بیمه ترکیبی...</h5>
+                            <p class="text-muted">لطفاً صبر کنید</p>
+                            <div class="progress mt-3" style="width: 200px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                     role="progressbar" style="width: 100%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `);
+            }
+            
+            // غیرفعال کردن دکمه محاسبه
+            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال محاسبه...');
+            
+            // اضافه کردن security indicator
+            $('body').append('<div class="security-indicator"><i class="fas fa-shield-alt"></i></div>');
         }
         
         function hideLoadingIndicator() {
-            // TODO: مخفی کردن loading indicator
             console.log('🏥 MEDICAL: مخفی کردن loading indicator');
+            
+            // مخفی کردن loading overlay با animation
+            $('#loadingOverlay').fadeOut(300, function() {
+                $(this).remove();
+            });
+            
+            // حذف security indicator
+            $('.security-indicator').fadeOut(200, function() {
+                $(this).remove();
+            });
+            
+            // فعال کردن دکمه محاسبه
+            $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-calculator"></i> محاسبه بیمه ترکیبی');
         }
         
         function showError(message) {
-            // TODO: نمایش پیام خطا
             console.error('🏥 MEDICAL: خطا', message);
-            alert('خطا: ' + message);
+            
+            // نمایش پیام خطا بهینه شده برای محیط درمانی
+            if (typeof toastr !== 'undefined') {
+                toastr.error(message, 'خطا در محاسبه بیمه', {
+                    timeOut: 8000,
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-right',
+                    showMethod: 'slideDown',
+                    hideMethod: 'slideUp',
+                    showDuration: 300,
+                    hideDuration: 300
+                });
+            } else {
+                // Fallback برای محیط‌هایی که toastr ندارند
+                alert('🏥 خطا در محاسبه بیمه:\n' + message);
+            }
+            
+            // ثبت خطا در console برای debugging
+            console.error('🏥 MEDICAL ERROR:', {
+                message: message,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent
+            });
+        }
+        
+        function showSuccess(message) {
+            console.log('🏥 MEDICAL: موفقیت', message);
+            
+            // نمایش پیام موفقیت
+            if (typeof toastr !== 'undefined') {
+                toastr.success(message, 'موفقیت', {
+                    timeOut: 3000,
+                    closeButton: true,
+                    progressBar: true,
+                    positionClass: 'toast-top-right'
+                });
+            } else {
+                alert('موفقیت: ' + message);
+            }
         }
     </script>
 }

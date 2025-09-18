@@ -146,6 +146,38 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     /// این ارتباط برای نمایش اطلاعات خدمت در سیستم‌های پزشکی ضروری است
     /// </summary>
     public virtual Service Service { get; set; }
+
+    #region فیلدهای بیمه تکمیلی
+
+    /// <summary>
+    /// نوع بیمه (اصلی/تکمیلی)
+    /// این فیلد برای تمایز بین بیمه اصلی و تکمیلی استفاده می‌شود
+    /// </summary>
+    [Required(ErrorMessage = "نوع بیمه الزامی است.")]
+    public InsuranceType InsuranceType { get; set; } = InsuranceType.Primary;
+
+    /// <summary>
+    /// تنظیمات خاص بیمه تکمیلی (JSON)
+    /// این فیلد برای ذخیره تنظیمات پیچیده بیمه تکمیلی استفاده می‌شود
+    /// </summary>
+    [MaxLength(2000, ErrorMessage = "تنظیمات بیمه تکمیلی نمی‌تواند بیش از 2000 کاراکتر باشد.")]
+    public string SupplementarySettings { get; set; }
+
+    /// <summary>
+    /// درصد پوشش بیمه تکمیلی
+    /// این فیلد برای تعریف درصد پوشش بیمه تکمیلی استفاده می‌شود
+    /// </summary>
+    [Range(0, 100, ErrorMessage = "درصد پوشش بیمه تکمیلی باید بین 0 تا 100 باشد.")]
+    public decimal? SupplementaryCoveragePercent { get; set; }
+
+    /// <summary>
+    /// سقف پرداخت بیمه تکمیلی
+    /// این فیلد برای تعریف حداکثر مبلغ پرداخت بیمه تکمیلی استفاده می‌شود
+    /// </summary>
+    [Range(0, double.MaxValue, ErrorMessage = "سقف پرداخت بیمه تکمیلی نمی‌تواند منفی باشد.")]
+    public decimal? SupplementaryMaxPayment { get; set; }
+
+    #endregion
     #endregion
 }
 /// <summary>
@@ -226,6 +258,28 @@ public class InsuranceTariffConfig : EntityTypeConfiguration<InsuranceTariff>
         Property(t => t.ServiceId)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_ServiceId")));
+
+        // فیلدهای بیمه تکمیلی
+        Property(t => t.InsuranceType)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_InsuranceType")));
+
+        Property(t => t.SupplementarySettings)
+            .IsOptional()
+            .HasMaxLength(2000);
+
+        Property(t => t.SupplementaryCoveragePercent)
+            .IsOptional()
+            .HasPrecision(5, 2)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_SupplementaryCoveragePercent")));
+
+        Property(t => t.SupplementaryMaxPayment)
+            .IsOptional()
+            .HasPrecision(18, 2)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_SupplementaryMaxPayment")));
 
         // روابط
         // رابطه با مدل قدیمی Insurance حذف شد

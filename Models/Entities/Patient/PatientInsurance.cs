@@ -6,6 +6,7 @@ using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Models.Entities.Patient;
 
@@ -82,11 +83,10 @@ public class PatientInsurance : ISoftDelete, ITrackable
 
     /// <summary>
     /// اولویت بیمه
-    /// 1 = اصلی، 2 = تکمیلی اول، 3 = تکمیلی دوم و...
+    /// استفاده از enum برای مدیریت بهتر اولویت‌ها
     /// </summary>
     [Required(ErrorMessage = "اولویت بیمه الزامی است.")]
-    [Range(1, 10, ErrorMessage = "اولویت بیمه باید بین 1 تا 10 باشد.")]
-    public int Priority { get; set; } = 1;
+    public InsurancePriority Priority { get; set; } = InsurancePriority.Primary;
 
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>

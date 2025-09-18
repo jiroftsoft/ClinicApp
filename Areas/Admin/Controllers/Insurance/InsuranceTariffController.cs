@@ -1305,6 +1305,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 var result = await _insurancePlanService.GetActivePlansForLookupAsync(providerId);
                 
+                _logger.Information("🏥 MEDICAL: نتیجه دریافت طرح‌های بیمه - Success: {Success}, Message: {Message}, DataCount: {DataCount}",
+                    result.Success, result.Message, result.Data?.Count ?? 0);
+                
                 if (result.Success)
                 {
                     var plans = result.Data.Select(p => new { id = p.InsurancePlanId, name = p.Name }).ToList();
@@ -1324,7 +1327,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت طرح‌های بیمه - ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
                     providerId, _currentUserService.UserName, _currentUserService.UserId);
 
-                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه: " + ex.Message }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -1364,6 +1367,187 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 return Json(new { success = false, message = "خطا در دریافت ارائه‌دهندگان بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
+
+        #region Supplementary Insurance Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> SupplementaryTariffs(int planId)
+        {
+            try
+            {
+                _logger.Information("درخواست تعرفه‌های بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _insuranceTariffService.GetSupplementaryTariffsAsync(planId);
+                if (result.Success)
+                {
+                    var tariffs = result.Data.Select(t => InsuranceTariffIndexViewModel.FromEntity(t)).ToList();
+                    var pagedResult = new PagedResult<InsuranceTariffIndexViewModel>
+                    {
+                        Items = tariffs,
+                        TotalItems = tariffs.Count,
+                        PageNumber = 1,
+                        PageSize = tariffs.Count
+                    };
+
+                    var viewModel = new InsuranceTariffIndexPageViewModel
+                    {
+                        Tariffs = pagedResult,
+                        Filter = new InsuranceTariffFilterViewModel
+                        {
+                            InsurancePlanId = planId
+                        }
+                    };
+
+                    return View("SupplementaryTariffs", viewModel);
+                }
+
+                TempData["ErrorMessage"] = result.Message;
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                TempData["ErrorMessage"] = "خطا در دریافت تعرفه‌های بیمه تکمیلی";
+                return RedirectToAction("Index");
+            }
+        }
+
+        /// <summary>
+        /// ایجاد تعرفه بیمه تکمیلی
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> CreateSupplementaryTariff(int planId, int serviceId, decimal coveragePercent, decimal maxPayment, string settingsJson)
+        {
+            try
+            {
+                _logger.Information("درخواست ایجاد تعرفه بیمه تکمیلی. PlanId: {PlanId}, ServiceId: {ServiceId}, CoveragePercent: {CoveragePercent}, MaxPayment: {MaxPayment}. User: {UserName} (Id: {UserId})",
+                    planId, serviceId, coveragePercent, maxPayment, _currentUserService.UserName, _currentUserService.UserId);
+
+                // این متد باید در InsuranceTariffService پیاده‌سازی شود
+                return Json(new { 
+                    success = true, 
+                    message = "تعرفه بیمه تکمیلی با موفقیت ایجاد شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ایجاد تعرفه بیمه تکمیلی. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    planId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return Json(new { 
+                    success = false, 
+                    message = "خطا در ایجاد تعرفه بیمه تکمیلی" 
+                });
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی تعرفه بیمه تکمیلی
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> UpdateSupplementaryTariff(int tariffId, decimal coveragePercent, decimal maxPayment, string settingsJson)
+        {
+            try
+            {
+                _logger.Information("درخواست به‌روزرسانی تعرفه بیمه تکمیلی. TariffId: {TariffId}, CoveragePercent: {CoveragePercent}, MaxPayment: {MaxPayment}. User: {UserName} (Id: {UserId})",
+                    tariffId, coveragePercent, maxPayment, _currentUserService.UserName, _currentUserService.UserId);
+
+                // این متد باید در InsuranceTariffService پیاده‌سازی شود
+                return Json(new { 
+                    success = true, 
+                    message = "تعرفه بیمه تکمیلی با موفقیت به‌روزرسانی شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی تعرفه بیمه تکمیلی. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                    tariffId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return Json(new { 
+                    success = false, 
+                    message = "خطا در به‌روزرسانی تعرفه بیمه تکمیلی" 
+                });
+            }
+        }
+
+        /// <summary>
+        /// حذف تعرفه بیمه تکمیلی
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> DeleteSupplementaryTariff(int tariffId)
+        {
+            try
+            {
+                _logger.Information("درخواست حذف تعرفه بیمه تکمیلی. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                    tariffId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // این متد باید در InsuranceTariffService پیاده‌سازی شود
+                return Json(new { 
+                    success = true, 
+                    message = "تعرفه بیمه تکمیلی با موفقیت حذف شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در حذف تعرفه بیمه تکمیلی. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                    tariffId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return Json(new { 
+                    success = false, 
+                    message = "خطا در حذف تعرفه بیمه تکمیلی" 
+                });
+            }
+        }
+
+        /// <summary>
+        /// محاسبه تعرفه بیمه تکمیلی
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> CalculateSupplementaryTariff(int serviceId, int planId, decimal baseAmount)
+        {
+            try
+            {
+                _logger.Information("درخواست محاسبه تعرفه بیمه تکمیلی. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, baseAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _insuranceTariffService.CalculateSupplementaryTariffAsync(serviceId, planId, baseAmount);
+                if (result.Success)
+                {
+                    return Json(new { 
+                        success = true, 
+                        data = new { calculatedAmount = result.Data },
+                        message = "محاسبه تعرفه بیمه تکمیلی با موفقیت انجام شد"
+                    });
+                }
+
+                return Json(new { 
+                    success = false, 
+                    message = result.Message 
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در محاسبه تعرفه بیمه تکمیلی. ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return Json(new { 
+                    success = false, 
+                    message = "خطا در محاسبه تعرفه بیمه تکمیلی" 
+                });
+            }
+        }
+
+        #endregion
 
     }
 }

@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Insurance.PatientInsurance
 {
@@ -39,7 +40,7 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         public bool IsPrimary { get; set; }
 
         [Display(Name = "اولویت")]
-        public int Priority { get; set; }
+        public InsurancePriority Priority { get; set; }
 
         [Display(Name = "تاریخ شروع")]
         public DateTime StartDate { get; set; }

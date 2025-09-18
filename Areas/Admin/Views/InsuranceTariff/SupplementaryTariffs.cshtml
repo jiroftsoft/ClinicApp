@@ -1,0 +1,379 @@
+@model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffIndexPageViewModel
+@{
+    ViewBag.Title = "تعرفه‌های بیمه تکمیلی";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-shield-alt text-info"></i>
+                        تعرفه‌های بیمه تکمیلی
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-info btn-sm" onclick="showAddSupplementaryTariffModal()">
+                            <i class="fas fa-plus"></i>
+                            افزودن تعرفه تکمیلی
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @if (Model.Tariffs != null && Model.Tariffs.Items != null && Model.Tariffs.Items.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="thead-dark">
+                                    <tr>
+                                        <th>خدمت</th>
+                                        <th>طرح بیمه</th>
+                                        <th>درصد پوشش</th>
+                                        <th>حداکثر پرداخت</th>
+                                        <th>وضعیت</th>
+                                        <th>تاریخ ایجاد</th>
+                                        <th>عملیات</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var tariff in Model.Tariffs.Items)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@tariff.ServiceTitle</strong>
+                                            </td>
+                                            <td>@tariff.InsurancePlanName</td>
+                                            <td>
+                                                <span class="badge badge-info">
+                                                    80%
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="text-success">1,000,000 تومان</span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-success">
+                                                    فعال
+                                                </span>
+                                            </td>
+                                            <td>@tariff.CreatedAt.ToString("yyyy/MM/dd")</td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm">
+                                                    <button type="button" class="btn btn-outline-primary" onclick="editSupplementaryTariff(@tariff.InsuranceTariffId)">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-success" onclick="calculateSupplementaryTariff(@tariff.InsuranceTariffId)">
+                                                        <i class="fas fa-calculator"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-danger" onclick="deleteSupplementaryTariff(@tariff.InsuranceTariffId)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fas fa-shield-alt fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">هیچ تعرفه بیمه تکمیلی یافت نشد</h5>
+                            <p class="text-muted">برای افزودن تعرفه جدید، روی دکمه "افزودن تعرفه تکمیلی" کلیک کنید.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای افزودن تعرفه بیمه تکمیلی -->
+<div class="modal fade" id="addSupplementaryTariffModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-shield-alt text-info"></i>
+                    افزودن تعرفه بیمه تکمیلی
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="addSupplementaryTariffForm">
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tariffServiceId">خدمت</label>
+                                <select class="form-control" id="tariffServiceId" name="ServiceId" required>
+                                    <option value="">انتخاب کنید...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tariffPlanId">طرح بیمه</label>
+                                <select class="form-control" id="tariffPlanId" name="PlanId" required>
+                                    <option value="">انتخاب کنید...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tariffCoveragePercent">درصد پوشش</label>
+                                <input type="number" class="form-control" id="tariffCoveragePercent" name="CoveragePercent" min="0" max="100" step="0.01" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tariffMaxPayment">حداکثر پرداخت</label>
+                                <input type="number" class="form-control" id="tariffMaxPayment" name="MaxPayment" min="0" step="1000">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tariffDeductible">فرانشیز</label>
+                                <input type="number" class="form-control" id="tariffDeductible" name="Deductible" min="0" step="1000">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="tariffMinimumAmount">حداقل مبلغ</label>
+                                <input type="number" class="form-control" id="tariffMinimumAmount" name="MinimumAmount" min="0" step="1000">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="tariffSettingsJson">تنظیمات JSON (اختیاری)</label>
+                        <textarea class="form-control" id="tariffSettingsJson" name="SettingsJson" rows="3" placeholder='{"specialRules": ["Emergency", "Surgery"], "exclusions": ["Cosmetic"]}'></textarea>
+                        <small class="form-text text-muted">تنظیمات پیشرفته به صورت JSON</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-info" onclick="saveSupplementaryTariff()">
+                    <i class="fas fa-save"></i>
+                    ذخیره
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای محاسبه تعرفه بیمه تکمیلی -->
+<div class="modal fade" id="calculateSupplementaryTariffModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-calculator text-success"></i>
+                    محاسبه تعرفه بیمه تکمیلی
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="calculateSupplementaryTariffForm">
+                    @Html.AntiForgeryToken()
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="calcServiceId">خدمت</label>
+                                <select class="form-control" id="calcServiceId" name="ServiceId" required>
+                                    <option value="">انتخاب کنید...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="calcPlanId">طرح بیمه</label>
+                                <select class="form-control" id="calcPlanId" name="PlanId" required>
+                                    <option value="">انتخاب کنید...</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="calcBaseAmount">مبلغ پایه</label>
+                                <input type="number" class="form-control" id="calcBaseAmount" name="BaseAmount" min="0" step="1000" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="calcDate">تاریخ محاسبه</label>
+                                <input type="text" class="form-control persian-datepicker" id="calcDate" name="CalculationDate" required>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+                <div id="tariffCalculationResult" class="mt-3" style="display: none;">
+                    <div class="alert alert-success">
+                        <h6><i class="fas fa-check-circle"></i> نتیجه محاسبه:</h6>
+                        <div id="tariffCalculationDetails"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+                <button type="button" class="btn btn-success" onclick="performTariffCalculation()">
+                    <i class="fas fa-calculator"></i>
+                    محاسبه
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize Persian DatePicker
+            $('.persian-datepicker').persianDatepicker({
+                format: 'YYYY/MM/DD',
+                altField: '.gregorian-datepicker'
+            });
+
+            // Load services and plans
+            loadServicesForTariff();
+            loadPlansForTariff();
+        });
+
+        function showAddSupplementaryTariffModal() {
+            $('#addSupplementaryTariffModal').modal('show');
+        }
+
+        function loadServicesForTariff() {
+            $.ajax({
+                url: '@Url.Action("GetActiveServices", "Service", new { area = "Admin" })',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        var options = '<option value="">انتخاب کنید...</option>';
+                        $.each(response.data, function(index, service) {
+                            options += '<option value="' + service.id + '">' + service.name + '</option>';
+                        });
+                        $('#tariffServiceId, #calcServiceId').html(options);
+                    }
+                },
+                error: function() {
+                    console.error('خطا در دریافت خدمات');
+                }
+            });
+        }
+
+        function loadPlansForTariff() {
+            $.ajax({
+                url: '@Url.Action("GetInsurancePlans", "InsurancePlan", new { area = "Admin" })',
+                type: 'GET',
+                success: function(response) {
+                    if (response.success) {
+                        var options = '<option value="">انتخاب کنید...</option>';
+                        $.each(response.data, function(index, plan) {
+                            options += '<option value="' + plan.id + '">' + plan.name + '</option>';
+                        });
+                        $('#tariffPlanId, #calcPlanId').html(options);
+                    }
+                },
+                error: function() {
+                    console.error('خطا در دریافت طرح‌های بیمه');
+                }
+            });
+        }
+
+        function saveSupplementaryTariff() {
+            var form = $('#addSupplementaryTariffForm');
+            var formData = form.serialize();
+            
+            $.ajax({
+                url: '@Url.Action("CreateSupplementaryTariff", "InsuranceTariff", new { area = "Admin" })',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        $('#addSupplementaryTariffModal').modal('hide');
+                        location.reload();
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطا در ذخیره تعرفه بیمه تکمیلی');
+                }
+            });
+        }
+
+        function calculateSupplementaryTariff(tariffId) {
+            $('#calculateSupplementaryTariffModal').modal('show');
+        }
+
+        function performTariffCalculation() {
+            var form = $('#calculateSupplementaryTariffForm');
+            var formData = form.serialize();
+            
+            $.ajax({
+                url: '@Url.Action("CalculateSupplementaryTariff", "InsuranceTariff", new { area = "Admin" })',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        showTariffCalculationResult(response.data);
+                    } else {
+                        alert('خطا: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('خطا در محاسبه تعرفه بیمه تکمیلی');
+                }
+            });
+        }
+
+        function showTariffCalculationResult(data) {
+            var resultHtml = '<div class="row">';
+            resultHtml += '<div class="col-md-6"><strong>مبلغ محاسبه شده:</strong> ' + data.calculatedAmount + ' تومان</div>';
+            resultHtml += '<div class="col-md-6"><strong>درصد پوشش:</strong> ' + data.coveragePercent + '%</div>';
+            resultHtml += '</div>';
+            
+            $('#tariffCalculationDetails').html(resultHtml);
+            $('#tariffCalculationResult').show();
+        }
+
+        function editSupplementaryTariff(tariffId) {
+            // Implementation for editing supplementary tariff
+            console.log('Edit supplementary tariff:', tariffId);
+        }
+
+        function deleteSupplementaryTariff(tariffId) {
+            if (confirm('آیا از حذف این تعرفه بیمه تکمیلی اطمینان دارید؟')) {
+                $.ajax({
+                    url: '@Url.Action("DeleteSupplementaryTariff", "InsuranceTariff", new { area = "Admin" })',
+                    type: 'POST',
+                    data: { tariffId: tariffId, __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val() },
+                    success: function(response) {
+                        if (response.success) {
+                            location.reload();
+                        } else {
+                            alert('خطا: ' + response.message);
+                        }
+                    },
+                    error: function() {
+                        alert('خطا در حذف تعرفه بیمه تکمیلی');
+                    }
+                });
+            }
+        }
+    </script>
+}

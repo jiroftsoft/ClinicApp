@@ -110,6 +110,43 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers" }
             );
 
+            // Supplementary Insurance Routes
+            context.MapRoute(
+                name: "Admin_SupplementaryInsurance_Index",
+                url: "Admin/Insurance/Supplementary/{action}/{id}",
+                defaults: new { controller = "SupplementaryInsurance", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            context.MapRoute(
+                name: "Admin_CombinedInsuranceCalculation_Index",
+                url: "Admin/Insurance/CombinedCalculation/{action}/{id}",
+                defaults: new { controller = "CombinedInsuranceCalculation", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            // Supplementary Insurance API Routes
+            context.MapRoute(
+                name: "Admin_SupplementaryInsurance_Calculate",
+                url: "Admin/Insurance/CombinedCalculation/CalculateSupplementary",
+                defaults: new { controller = "CombinedInsuranceCalculation", action = "CalculateSupplementary" },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            context.MapRoute(
+                name: "Admin_SupplementaryInsurance_Tariffs",
+                url: "Admin/Insurance/CombinedCalculation/SupplementaryTariffs/{planId}",
+                defaults: new { controller = "CombinedInsuranceCalculation", action = "GetSupplementaryTariffs" },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
+            context.MapRoute(
+                name: "Admin_SupplementaryInsurance_Settings",
+                url: "Admin/Insurance/CombinedCalculation/SupplementarySettings/{planId}",
+                defaults: new { controller = "CombinedInsuranceCalculation", action = "GetSupplementarySettings" },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
             context.MapRoute(
                 "Admin_default",
                 "Admin/{controller}/{action}/{id}",

@@ -1,0 +1,283 @@
+@model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryCalculationResult
+
+@{
+    ViewBag.Title = "فرم محاسبه بیمه تکمیلی";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-calculator text-primary"></i>
+            محاسبه بیمه تکمیلی
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="supplementaryCalculationForm" class="needs-validation" novalidate>
+            @Html.AntiForgeryToken()
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="patientId" class="form-label">
+                            <i class="fas fa-user text-info"></i>
+                            شناسه بیمار
+                        </label>
+                        <input type="number" class="form-control" id="patientId" name="patientId" required>
+                        <div class="invalid-feedback">
+                            لطفاً شناسه بیمار را وارد کنید
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="serviceId" class="form-label">
+                            <i class="fas fa-stethoscope text-success"></i>
+                            شناسه خدمت
+                        </label>
+                        <input type="number" class="form-control" id="serviceId" name="serviceId" required>
+                        <div class="invalid-feedback">
+                            لطفاً شناسه خدمت را وارد کنید
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="serviceAmount" class="form-label">
+                            <i class="fas fa-money-bill-wave text-warning"></i>
+                            مبلغ خدمت (ریال)
+                        </label>
+                        <input type="number" class="form-control" id="serviceAmount" name="serviceAmount" 
+                               step="0.01" min="0" required>
+                        <div class="invalid-feedback">
+                            لطفاً مبلغ خدمت را وارد کنید
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="primaryCoverage" class="form-label">
+                            <i class="fas fa-shield-alt text-primary"></i>
+                            پوشش بیمه اصلی (ریال)
+                        </label>
+                        <input type="number" class="form-control" id="primaryCoverage" name="primaryCoverage" 
+                               step="0.01" min="0" required>
+                        <div class="invalid-feedback">
+                            لطفاً مبلغ پوشش بیمه اصلی را وارد کنید
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="calculationDate" class="form-label">
+                            <i class="fas fa-calendar-alt text-info"></i>
+                            تاریخ محاسبه
+                        </label>
+                        <input type="date" class="form-control" id="calculationDate" name="calculationDate">
+                        <div class="invalid-feedback">
+                            لطفاً تاریخ محاسبه را وارد کنید
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-calculator"></i>
+                    محاسبه بیمه تکمیلی
+                </button>
+                <button type="reset" class="btn btn-secondary">
+                    <i class="fas fa-undo"></i>
+                    پاک کردن فرم
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="calculationResult" class="card mt-4" style="display: none;">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-chart-line text-success"></i>
+            نتیجه محاسبه
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-info">
+                        <i class="fas fa-money-bill-wave"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">مبلغ خدمت</span>
+                        <span class="info-box-number" id="resultServiceAmount">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-primary">
+                        <i class="fas fa-shield-alt"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">پوشش بیمه اصلی</span>
+                        <span class="info-box-number" id="resultPrimaryCoverage">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-success">
+                        <i class="fas fa-plus-circle"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">پوشش بیمه تکمیلی</span>
+                        <span class="info-box-number" id="resultSupplementaryCoverage">0</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="info-box">
+                    <span class="info-box-icon bg-warning">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">سهم نهایی بیمار</span>
+                        <span class="info-box-number" id="resultFinalPatientShare">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-12">
+                <div class="info-box">
+                    <span class="info-box-icon bg-success">
+                        <i class="fas fa-chart-pie"></i>
+                    </span>
+                    <div class="info-box-content">
+                        <span class="info-box-text">مجموع پوشش بیمه</span>
+                        <span class="info-box-number" id="resultTotalCoverage">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="alert alert-info mt-3">
+            <i class="fas fa-info-circle"></i>
+            <strong>توضیحات:</strong>
+            <span id="resultNotes">-</span>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // تنظیم تاریخ امروز به عنوان پیش‌فرض
+    var today = new Date().toISOString().split('T')[0];
+    $('#calculationDate').val(today);
+    
+    // اعتبارسنجی فرم
+    var form = document.getElementById('supplementaryCalculationForm');
+    form.addEventListener('submit', function(event) {
+        event.preventDefault();
+        event.stopPropagation();
+        
+        if (form.checkValidity()) {
+            calculateSupplementaryInsurance();
+        }
+        
+        form.classList.add('was-validated');
+    });
+    
+    // تابع محاسبه بیمه تکمیلی
+    function calculateSupplementaryInsurance() {
+        var formData = {
+            patientId: $('#patientId').val(),
+            serviceId: $('#serviceId').val(),
+            serviceAmount: $('#serviceAmount').val(),
+            primaryCoverage: $('#primaryCoverage').val(),
+            calculationDate: $('#calculationDate').val()
+        };
+        
+        // نمایش loading
+        showLoading();
+        
+        $.ajax({
+            url: '@Url.Action("CalculateSupplementary", "CombinedInsuranceCalculation")',
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                hideLoading();
+                
+                if (response.success) {
+                    displayCalculationResult(response.data);
+                    showSuccessMessage('محاسبه بیمه تکمیلی با موفقیت انجام شد');
+                } else {
+                    showErrorMessage(response.message || 'خطا در محاسبه بیمه تکمیلی');
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                showErrorMessage('خطا در ارتباط با سرور: ' + error);
+            }
+        });
+    }
+    
+    // نمایش نتیجه محاسبه
+    function displayCalculationResult(data) {
+        $('#resultServiceAmount').text(formatCurrency(data.serviceAmount));
+        $('#resultPrimaryCoverage').text(formatCurrency(data.primaryCoverage));
+        $('#resultSupplementaryCoverage').text(formatCurrency(data.supplementaryCoverage));
+        $('#resultFinalPatientShare').text(formatCurrency(data.finalPatientShare));
+        $('#resultTotalCoverage').text(formatCurrency(data.totalCoverage));
+        $('#resultNotes').text(data.notes || '-');
+        
+        $('#calculationResult').show();
+    }
+    
+    // فرمت کردن مبلغ
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('fa-IR').format(amount) + ' ریال';
+    }
+    
+    // نمایش loading
+    function showLoading() {
+        $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال محاسبه...');
+    }
+    
+    // مخفی کردن loading
+    function hideLoading() {
+        $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-calculator"></i> محاسبه بیمه تکمیلی');
+    }
+    
+    // نمایش پیام موفقیت
+    function showSuccessMessage(message) {
+        toastr.success(message, 'موفقیت', {
+            positionClass: 'toast-top-left',
+            timeOut: 5000
+        });
+    }
+    
+    // نمایش پیام خطا
+    function showErrorMessage(message) {
+        toastr.error(message, 'خطا', {
+            positionClass: 'toast-top-left',
+            timeOut: 5000
+        });
+    }
+});
+</script>

@@ -1,0 +1,287 @@
+@model List<ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffViewModel>
+
+@{
+    ViewBag.Title = "لیست تعرفه‌های بیمه تکمیلی";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="fas fa-list text-primary"></i>
+            لیست تعرفه‌های بیمه تکمیلی
+        </h5>
+        <div class="card-tools">
+            <button type="button" class="btn btn-primary btn-sm" onclick="addNewTariff()">
+                <i class="fas fa-plus"></i>
+                افزودن تعرفه جدید
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Model != null && Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="supplementaryTariffTable">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>
+                                <i class="fas fa-hashtag"></i>
+                                شناسه
+                            </th>
+                            <th>
+                                <i class="fas fa-stethoscope"></i>
+                                نام خدمت
+                            </th>
+                            <th>
+                                <i class="fas fa-percentage"></i>
+                                درصد پوشش
+                            </th>
+                            <th>
+                                <i class="fas fa-money-bill-wave"></i>
+                                حداکثر پرداخت
+                            </th>
+                            <th>
+                                <i class="fas fa-minus-circle"></i>
+                                فرانشیز
+                            </th>
+                            <th>
+                                <i class="fas fa-cog"></i>
+                                تنظیمات پیشرفته
+                            </th>
+                            <th>
+                                <i class="fas fa-calendar"></i>
+                                تاریخ ایجاد
+                            </th>
+                            <th>
+                                <i class="fas fa-tools"></i>
+                                عملیات
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tariff in Model)
+                        {
+                            <tr data-tariff-id="@tariff.TariffId">
+                                <td>
+                                    <span class="badge badge-info">@tariff.TariffId</span>
+                                </td>
+                                <td>
+                                    <strong>@tariff.ServiceName</strong>
+                                    <br>
+                                    <small class="text-muted">شناسه خدمت: @tariff.ServiceId</small>
+                                </td>
+                                <td>
+                                    <span class="badge badge-success">
+                                        @tariff.CoveragePercent.ToString("F2")%
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-warning font-weight-bold">
+                                        @tariff.MaxPayment.ToString("N0") ریال
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="text-danger">
+                                        @tariff.Deductible.ToString("N0") ریال
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (tariff.UseAdvancedSettings)
+                                    {
+                                        <span class="badge badge-info">
+                                            <i class="fas fa-check"></i>
+                                            فعال
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-times"></i>
+                                            غیرفعال
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="text-muted">
+                                        @tariff.CreatedAt.ToString("yyyy/MM/dd")
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                onclick="editTariff(@tariff.TariffId)" 
+                                                title="ویرایش">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-info" 
+                                                onclick="viewTariffDetails(@tariff.TariffId)" 
+                                                title="مشاهده جزئیات">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-danger" 
+                                                onclick="deleteTariff(@tariff.TariffId)" 
+                                                title="حذف">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="alert alert-info text-center">
+                <i class="fas fa-info-circle fa-2x mb-3"></i>
+                <h5>هیچ تعرفه بیمه تکمیلی یافت نشد</h5>
+                <p class="mb-3">هنوز هیچ تعرفه بیمه تکمیلی تعریف نشده است.</p>
+                <button type="button" class="btn btn-primary" onclick="addNewTariff()">
+                    <i class="fas fa-plus"></i>
+                    ایجاد اولین تعرفه
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Modal برای ویرایش تعرفه -->
+<div class="modal fade" id="editTariffModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit text-primary"></i>
+                    ویرایش تعرفه بیمه تکمیلی
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="editTariffModalBody">
+                <!-- محتوای فرم ویرایش اینجا بارگذاری می‌شود -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal برای مشاهده جزئیات -->
+<div class="modal fade" id="viewTariffModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-eye text-info"></i>
+                    جزئیات تعرفه بیمه تکمیلی
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="viewTariffModalBody">
+                <!-- جزئیات تعرفه اینجا نمایش داده می‌شود -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize DataTable
+    if ($('#supplementaryTariffTable').length) {
+        $('#supplementaryTariffTable').DataTable({
+            "language": {
+                "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Persian.json"
+            },
+            "responsive": true,
+            "pageLength": 25,
+            "order": [[0, "desc"]],
+            "columnDefs": [
+                { "orderable": false, "targets": 7 } // عملیات
+            ]
+        });
+    }
+    
+    // تابع افزودن تعرفه جدید
+    window.addNewTariff = function() {
+        window.location.href = '@Url.Action("CreateSupplementaryTariff", "CombinedInsuranceCalculation")';
+    };
+    
+    // تابع ویرایش تعرفه
+    window.editTariff = function(tariffId) {
+        $.ajax({
+            url: '@Url.Action("EditSupplementaryTariff", "CombinedInsuranceCalculation")',
+            type: 'GET',
+            data: { id: tariffId },
+            success: function(response) {
+                $('#editTariffModalBody').html(response);
+                $('#editTariffModal').modal('show');
+            },
+            error: function(xhr, status, error) {
+                showErrorMessage('خطا در بارگذاری فرم ویرایش: ' + error);
+            }
+        });
+    };
+    
+    // تابع مشاهده جزئیات تعرفه
+    window.viewTariffDetails = function(tariffId) {
+        $.ajax({
+            url: '@Url.Action("ViewSupplementaryTariffDetails", "CombinedInsuranceCalculation")',
+            type: 'GET',
+            data: { id: tariffId },
+            success: function(response) {
+                $('#viewTariffModalBody').html(response);
+                $('#viewTariffModal').modal('show');
+            },
+            error: function(xhr, status, error) {
+                showErrorMessage('خطا در بارگذاری جزئیات: ' + error);
+            }
+        });
+    };
+    
+    // تابع حذف تعرفه
+    window.deleteTariff = function(tariffId) {
+        if (confirm('آیا از حذف این تعرفه اطمینان دارید؟')) {
+            $.ajax({
+                url: '@Url.Action("DeleteSupplementaryTariff", "CombinedInsuranceCalculation")',
+                type: 'POST',
+                data: { 
+                    id: tariffId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showSuccessMessage('تعرفه با موفقیت حذف شد');
+                        // حذف ردیف از جدول
+                        $('tr[data-tariff-id="' + tariffId + '"]').fadeOut(500, function() {
+                            $(this).remove();
+                        });
+                    } else {
+                        showErrorMessage(response.message || 'خطا در حذف تعرفه');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showErrorMessage('خطا در ارتباط با سرور: ' + error);
+                }
+            });
+        }
+    };
+    
+    // نمایش پیام موفقیت
+    function showSuccessMessage(message) {
+        toastr.success(message, 'موفقیت', {
+            positionClass: 'toast-top-left',
+            timeOut: 5000
+        });
+    }
+    
+    // نمایش پیام خطا
+    function showErrorMessage(message) {
+        toastr.error(message, 'خطا', {
+            positionClass: 'toast-top-left',
+            timeOut: 5000
+        });
+    }
+});
+</script>

@@ -187,18 +187,19 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<List<PatientInsuranceIndexViewModel>>> GetPatientInsurancesByPatientAsync(int patientId);
 
         /// <summary>
+        /// دریافت فقط بیمه‌های تکمیلی بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>لیست بیمه‌های تکمیلی بیمار</returns>
+        Task<ServiceResult<List<PatientInsuranceIndexViewModel>>> GetSupplementaryInsurancesByPatientAsync(int patientId);
+
+        /// <summary>
         /// دریافت بیمه اصلی بیمار
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
         /// <returns>بیمه اصلی بیمار</returns>
         Task<ServiceResult<PatientInsuranceDetailsViewModel>> GetPrimaryInsuranceByPatientAsync(int patientId);
 
-        /// <summary>
-        /// دریافت بیمه‌های تکمیلی بیمار
-        /// </summary>
-        /// <param name="patientId">شناسه بیمار</param>
-        /// <returns>لیست بیمه‌های تکمیلی بیمار</returns>
-        Task<ServiceResult<List<PatientInsuranceIndexViewModel>>> GetSupplementaryInsurancesByPatientAsync(int patientId);
 
         /// <summary>
         /// تنظیم بیمه اصلی بیمار
@@ -239,6 +240,27 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="patientId">شناسه بیمار</param>
         /// <returns>لیست بیمه‌های فعال و تکمیلی</returns>
         Task<ServiceResult<List<PatientInsuranceLookupViewModel>>> GetActiveAndSupplementaryByPatientIdAsync(int patientId);
+
+        /// <summary>
+        /// بررسی وجود خدمت
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>نتیجه بررسی</returns>
+        Task<ServiceResult<bool>> ServiceExistsAsync(int serviceId);
+
+        /// <summary>
+        /// دریافت شماره بیمه پایه بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>شماره بیمه پایه بیمار</returns>
+        Task<ServiceResult<string>> GetPrimaryInsurancePolicyNumberAsync(int patientId);
+
+        /// <summary>
+        /// بررسی وجود بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>نتیجه بررسی</returns>
+        Task<ServiceResult<bool>> PatientExistsAsync(int patientId);
 
         /// <summary>
         /// بررسی وجود بیمه ترکیبی برای بیمار

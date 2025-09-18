@@ -106,6 +106,10 @@
                     <i class="fas fa-star"></i> بیمه اصلی
                 </button>
             }
+            <a href="@Url.Action("SupplementaryInsurances", "PatientInsurance", new { patientId = Model.PatientId })"
+               class="btn btn-outline-info btn-sm">
+                <i class="fas fa-shield-alt"></i> بیمه‌های تکمیلی
+            </a>
             <a href="@Url.Action("Delete", "PatientInsurance", new { id = Model.PatientInsuranceId })"
                class="btn btn-outline-danger btn-sm"
                onclick="return confirm('آیا مطمئن هستید که می‌خواهید این بیمه بیمار را حذف کنید؟')">

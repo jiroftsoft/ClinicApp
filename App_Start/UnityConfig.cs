@@ -415,6 +415,9 @@ namespace ClinicApp
                 container.RegisterType<IInsuranceValidationService, InsuranceValidationService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsurancePlanDependencyService, InsurancePlanDependencyService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceTariffService, InsuranceTariffService>(new PerRequestLifetimeManager());
+                container.RegisterType<ISupplementaryInsuranceService, SupplementaryInsuranceService>(new PerRequestLifetimeManager());
+                container.RegisterType<ISupplementaryInsuranceCacheService, SupplementaryInsuranceCacheService>(new PerRequestLifetimeManager());
+                container.RegisterType<ISupplementaryInsuranceMonitoringService, SupplementaryInsuranceMonitoringService>(new PerRequestLifetimeManager());
 
                 // Register InsuranceTariff Validators
                 container.RegisterType<IValidator<ViewModels.Insurance.InsuranceTariff.InsuranceTariffCreateEditViewModel>, 
@@ -447,6 +450,14 @@ namespace ClinicApp
                 container.RegisterType<IValidator<InsuranceCalculationViewModel>, InsuranceCalculationViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<PatientInsuranceCreateEditViewModel>, PatientInsuranceCreateEditViewModelValidator>(new PerRequestLifetimeManager());
                 container.RegisterType<IValidator<PatientCreateEditViewModel>, PatientCreateEditViewModelValidator>(new PerRequestLifetimeManager());
+
+                // Register Supplementary Insurance Validators
+                container.RegisterType<IValidator<ViewModels.Insurance.Supplementary.SupplementaryTariffViewModel>, 
+                    ClinicApp.Validators.Insurance.SupplementaryTariffViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Insurance.Supplementary.SupplementarySettings>, 
+                    ClinicApp.Validators.Insurance.SupplementarySettingsValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Insurance.Supplementary.SupplementaryCalculationResult>, 
+                    ClinicApp.Validators.Insurance.SupplementaryCalculationResultValidator>(new PerRequestLifetimeManager());
 
 
                 // طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم

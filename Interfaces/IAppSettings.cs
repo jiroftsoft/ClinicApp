@@ -46,4 +46,16 @@ public interface IAppSettings
     int MaxRegisterAttempts { get; set; }
 
     #endregion
+
+    #region Application Information Settings
+    /// <summary>
+    /// نسخه برنامه
+    /// </summary>
+    string ApplicationVersion { get; }
+    
+    /// <summary>
+    /// محیط اجرای برنامه (Development, Staging, Production)
+    /// </summary>
+    string Environment { get; }
+    #endregion
 }

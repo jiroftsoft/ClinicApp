@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Interfaces
 {
@@ -208,6 +209,13 @@ namespace ClinicApp.Interfaces
         /// <param name="serviceIds">List of service IDs</param>
         /// <returns>Total price</returns>
         Task<decimal> CalculateServicesTotalPriceAsync(List<int> serviceIds);
+
+        /// <summary>
+        /// Get active services for lookup (like dropdowns)
+        /// دریافت خدمات فعال برای انتخاب (مثل Dropdown ها)
+        /// </summary>
+        /// <returns>List of active services for selection</returns>
+        Task<ServiceResult<List<Service>>> GetActiveServicesForLookupAsync();
 
         #endregion
     }

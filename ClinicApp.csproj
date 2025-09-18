@@ -468,6 +468,7 @@
     <Compile Include="Areas\Admin\Controllers\SystemSeedController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
+    <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
@@ -486,6 +487,7 @@
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\EnumExtensions.cs" />
+    <Compile Include="Helpers\InsurancePriorityHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
@@ -540,6 +542,9 @@
     <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
+    <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceCacheService.cs" />
+    <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceMonitoringService.cs" />
+    <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceService.cs" />
     <Compile Include="Interfaces\IReceptionRepository.cs" />
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\IServiceCalculationService.cs" />
@@ -616,6 +621,10 @@
     <Compile Include="Migrations\202509171504493_InitialNewchange.Designer.cs">
       <DependentUpon>202509171504493_InitialNewchange.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509180704020_AddSupplementaryInsuranceFields.cs" />
+    <Compile Include="Migrations\202509180704020_AddSupplementaryInsuranceFields.Designer.cs">
+      <DependentUpon>202509180704020_AddSupplementaryInsuranceFields.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
@@ -654,12 +663,14 @@
     <Compile Include="Models\Entities\Insurance\InsurancePlan.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceProvider.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceTariff.cs" />
+    <Compile Include="Models\Entities\Insurance\InsuranceType.cs" />
     <Compile Include="Models\Enums\AssignmentHistoryImportance.cs" />
     <Compile Include="Models\Enums\BreakType.cs" />
     <Compile Include="Models\Enums\EmergencyBookingStatus.cs" />
     <Compile Include="Models\Enums\EmergencyConflictSeverity.cs" />
     <Compile Include="Models\Enums\EmergencyPriority.cs" />
     <Compile Include="Models\Enums\EmergencyType.cs" />
+    <Compile Include="Models\Enums\InsurancePriority.cs" />
     <Compile Include="Models\Enums\NotificationChannelType.cs" />
     <Compile Include="Models\Entities\Notification\NotificationHistory.cs" />
     <Compile Include="Models\Enums\NotificationStatus.cs" />
@@ -703,6 +714,12 @@
     <Compile Include="Models\Enums\ReceptionType.cs" />
     <Compile Include="Models\Enums\ReportType.cs" />
     <Compile Include="Models\Enums\TemplateType.cs" />
+    <Compile Include="Models\Insurance\CacheStatistics.cs" />
+    <Compile Include="Models\Insurance\CalculationEvent.cs" />
+    <Compile Include="Models\Insurance\ErrorEvent.cs" />
+    <Compile Include="Models\Insurance\PerformanceReport.cs" />
+    <Compile Include="Models\Insurance\SystemHealthStatus.cs" />
+    <Compile Include="Models\Insurance\UsageStatistics.cs" />
     <Compile Include="Models\Statistics\DailyPaymentStatistics.cs" />
     <Compile Include="Models\Statistics\GatewayFeeCalculation.cs" />
     <Compile Include="Models\Statistics\MonthlyPaymentStatistics.cs" />
@@ -771,6 +788,9 @@
     <Compile Include="Services\Insurance\InsuranceTariffService.cs" />
     <Compile Include="Services\Insurance\InsuranceValidationService.cs" />
     <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
+    <Compile Include="Services\Insurance\SupplementaryInsuranceCacheService.cs" />
+    <Compile Include="Services\Insurance\SupplementaryInsuranceMonitoringService.cs" />
+    <Compile Include="Services\Insurance\SupplementaryInsuranceService.cs" />
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
@@ -788,6 +808,9 @@
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="Services\ServiceTemplateService.cs" />
     <Compile Include="Services\SharedServiceManagementService.cs" />
+    <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
+    <Compile Include="Validators\Insurance\SupplementarySettingsValidator.cs" />
+    <Compile Include="Validators\Insurance\SupplementaryTariffViewModelValidator.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
@@ -831,6 +854,8 @@
     <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationResultViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceValidationViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\PatientLookupItem.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\ServiceLookupItem.cs" />
     <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanCreateEditViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanDetailsViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsurancePlan\InsurancePlanIndexPageViewModel.cs" />
@@ -850,7 +875,11 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceListPartialViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\SupplementaryCalculationResult.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\SupplementarySettings.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\SupplementaryTariffViewModel.cs" />
     <Compile Include="ViewModels\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\PatientLookupViewModel.cs" />
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
@@ -988,6 +1017,8 @@
     <Content Include="Content\Images\Doctors\doctor_profile_14040615_192827_12b53e9f55fe43b781066393ff4f5587.jpg" />
     <Content Include="Content\Images\Doctors\doctor_profile_14040621_145835_c3380db90c714f938c2207192480d881.jpg" />
     <Content Include="Content\Images\shafa-logo.png" />
+    <Content Include="Content\Insurance\supplementary-insurance.css" />
+    <Content Include="Content\Insurance\supplementary-tariff.css" />
     <Content Include="Content\js\admin-layout.js" />
     <Content Include="Content\js\jquery-protection.js" />
     <Content Include="Content\js\medical-debug.js" />
@@ -3714,7 +3745,12 @@
     <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\CombinedInsuranceCalculation\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\SupplementaryTariffs.cshtml" />
+    <Content Include="Areas\Admin\Views\PatientInsurance\SupplementaryInsurances.cshtml" />
+    <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryCalculationForm.cshtml" />
+    <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryTariffList.cshtml" />
+    <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryTariffSettings.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -3876,6 +3912,8 @@
     <Content Include="Scripts\i18n\vi.js" />
     <Content Include="Scripts\i18n\zh-CN.js" />
     <Content Include="Scripts\i18n\zh-TW.js" />
+    <Content Include="Scripts\Insurance\supplementary-insurance.js" />
+    <Content Include="Scripts\Insurance\supplementary-tariff-manager.js" />
     <Content Include="Scripts\jquery-3.7.0.min.map" />
     <Content Include="Scripts\jquery-3.7.0.slim.min.map" />
     <Content Include="Content\plugins\DataTables\js\fa.json" />
@@ -3986,10 +4024,12 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
+    <Folder Include="Areas\Admin\Controllers\Base\" />
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Constants\" />
+    <Folder Include="Interfaces\Medical\" />
+    <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
-    <Folder Include="Validators\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -4057,6 +4097,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509171504493_InitialNewchange.resx">
       <DependentUpon>202509171504493_InitialNewchange.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509180704020_AddSupplementaryInsuranceFields.resx">
+      <DependentUpon>202509180704020_AddSupplementaryInsuranceFields.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

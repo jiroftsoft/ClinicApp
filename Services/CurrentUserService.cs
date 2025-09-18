@@ -82,6 +82,7 @@ namespace ClinicApp.Services
         public DateTime UtcNow => DateTime.UtcNow;
         public DateTime Now => DateTime.Now;
         public ClaimsPrincipal ClaimsPrincipal => _httpContext?.User as ClaimsPrincipal;
+        public IEnumerable<string> Roles => GetUserRoles();
 
         #endregion
 

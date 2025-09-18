@@ -257,6 +257,7 @@ namespace ClinicApp.Helpers
             public bool IsAuthenticated => _httpContext.User.Identity.IsAuthenticated;
             public ClaimsPrincipal ClaimsPrincipal => _httpContext.User as ClaimsPrincipal;
             public DateTime UtcNow => DateTime.UtcNow;
+            public IEnumerable<string> Roles => GetUserRoles();
             public DateTime Now => DateTime.Now;
 
             public bool IsAdmin => IsInRole(AppRoles.Admin);
@@ -341,6 +342,7 @@ namespace ClinicApp.Helpers
             public ClaimsPrincipal ClaimsPrincipal => _principal as ClaimsPrincipal;
             public DateTime UtcNow => DateTime.UtcNow;
             public DateTime Now => DateTime.Now;
+            public IEnumerable<string> Roles => GetUserRoles();
 
             public bool IsAdmin => IsInRole(AppRoles.Admin);
             public bool IsDoctor => IsInRole(AppRoles.Doctor);
@@ -415,6 +417,7 @@ namespace ClinicApp.Helpers
             public ClaimsPrincipal ClaimsPrincipal => null;
             public DateTime UtcNow => DateTime.UtcNow;
             public DateTime Now => DateTime.Now;
+            public IEnumerable<string> Roles => new[] { AppRoles.Admin };
 
             public bool IsAdmin => true;
             public bool IsDoctor => false;

@@ -21,6 +21,7 @@ using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Services;
 using ClinicApp.Services.Insurance;
+using ClinicApp.ViewModels.Insurance.Supplementary;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Entities.Doctor;
 using ClinicApp.Models.Entities.Insurance;
@@ -1294,9 +1295,9 @@ namespace ClinicApp.Services
                         {
                             if (hasCombinedInsurance)
                             {
-                                // استفاده از CombinedInsuranceCalculationService برای محاسبه ترکیبی
-                                var combinedResult = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
-                                    patientId, service.ServiceId, calculatedPrice, receptionDate);
+                                // استفاده از CombinedInsuranceCalculationService برای محاسبه ترکیبی پیشرفته
+                                var combinedResult = await _combinedInsuranceCalculationService.CalculateAdvancedCombinedInsuranceAsync(
+                                    patientId, service.ServiceId, calculatedPrice, receptionDate, GetAdvancedCalculationSettings());
 
                                 if (combinedResult.Success)
                                 {
@@ -1305,7 +1306,7 @@ namespace ClinicApp.Services
                                     serviceCost.PatientShare = combinedData.FinalPatientShare;
                                     serviceCost.CoveragePercentage = combinedData.TotalCoveragePercent;
                                     
-                                    _logger.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی موفق - ServiceId: {ServiceId}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
+                                    _logger.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی پیشرفته موفق - ServiceId: {ServiceId}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
                                         service.ServiceId, combinedData.PrimaryCoverage, combinedData.SupplementaryCoverage, combinedData.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
                                 }
                                 else
@@ -2306,6 +2307,86 @@ namespace ClinicApp.Services
             }
 
             return ServiceResult<bool>.Successful(true);
+        }
+
+        /// <summary>
+        /// دریافت تنظیمات پیشرفته برای محاسبات بیمه
+        /// </summary>
+        private Dictionary<string, object> GetAdvancedCalculationSettings()
+        {
+            try
+            {
+                var settings = new Dictionary<string, object>();
+                
+                // تنظیمات پیش‌فرض
+                settings["enableAdvancedCalculation"] = true;
+                settings["includeTimeRestrictions"] = true;
+                settings["enableDiscounts"] = true;
+                
+                // تنظیمات خاص کلینیک
+                var currentHour = DateTime.Now.Hour;
+                if (currentHour >= 8 && currentHour <= 18)
+                {
+                    settings["businessHours"] = true;
+                }
+                else
+                {
+                    settings["businessHours"] = false;
+                    settings["emergencySurcharge"] = 0.1m; // 10% اضافه در ساعات غیراداری
+                }
+                
+                // تنظیمات تخفیف
+                var dayOfWeek = DateTime.Now.DayOfWeek;
+                if (dayOfWeek == DayOfWeek.Saturday || dayOfWeek == DayOfWeek.Sunday)
+                {
+                    settings["weekendDiscount"] = 0.05m; // 5% تخفیف در آخر هفته
+                }
+                
+                _logger.Information("🏥 MEDICAL: تنظیمات پیشرفته محاسبه بیمه بارگذاری شد - BusinessHours: {BusinessHours}, WeekendDiscount: {WeekendDiscount}. User: {UserName} (Id: {UserId})",
+                    settings["businessHours"], settings.ContainsKey("weekendDiscount") ? settings["weekendDiscount"] : 0, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return settings;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تنظیمات پیشرفته محاسبه بیمه");
+                return new Dictionary<string, object>(); // تنظیمات خالی در صورت خطا
+            }
+        }
+
+        /// <summary>
+        /// محاسبه مقایسه‌ای بیمه‌های مختلف برای بیمار
+        /// </summary>
+        public async Task<ServiceResult<List<CombinedInsuranceCalculationResult>>> CompareInsuranceOptionsForPatientAsync(
+            int patientId, 
+            int serviceId, 
+            decimal serviceAmount, 
+            DateTime calculationDate,
+            List<int> alternativePlanIds = null)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: شروع مقایسه گزینه‌های بیمه برای بیمار - PatientId: {PatientId}, ServiceId: {ServiceId}, ServiceAmount: {ServiceAmount}. User: {UserName} (Id: {UserId})",
+                    patientId, serviceId, serviceAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                var comparisonResult = await _combinedInsuranceCalculationService.CompareInsuranceOptionsAsync(
+                    patientId, serviceId, serviceAmount, calculationDate, alternativePlanIds);
+
+                if (comparisonResult.Success)
+                {
+                    _logger.Information("🏥 MEDICAL: مقایسه گزینه‌های بیمه تکمیل شد - OptionsCount: {OptionsCount}. User: {UserName} (Id: {UserId})",
+                        comparisonResult.Data.Count, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                return comparisonResult;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در مقایسه گزینه‌های بیمه - PatientId: {PatientId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    patientId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return ServiceResult<List<CombinedInsuranceCalculationResult>>.Failed("خطا در مقایسه گزینه‌های بیمه");
+            }
         }
 
         #endregion

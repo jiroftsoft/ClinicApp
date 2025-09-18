@@ -206,5 +206,11 @@ public interface ICurrentUserService
     /// <returns>نام کاربر جاری</returns>
     string GetCurrentUserName();
 
+    /// <summary>
+    /// دریافت لیست نقش‌های کاربر جاری
+    /// </summary>
+    /// <returns>لیست نقش‌های کاربر</returns>
+    IEnumerable<string> Roles { get; }
+
     #endregion
 }

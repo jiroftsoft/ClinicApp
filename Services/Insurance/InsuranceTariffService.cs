@@ -965,6 +965,192 @@ namespace ClinicApp.Services.Insurance
 
         #endregion
 
+        #region Supplementary Insurance Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId)
+        {
+            try
+            {
+                _logger.Information("درخواست تعرفه‌های بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var tariffs = await _tariffRepository.GetByPlanIdAsync(planId);
+                var supplementaryTariffs = tariffs.Where(t => t.InsuranceType == InsuranceType.Supplementary).ToList();
+
+                _logger.Information("تعرفه‌های بیمه تکمیلی با موفقیت دریافت شد. PlanId: {PlanId}, Count: {Count}. User: {UserName} (Id: {UserId})",
+                    planId, supplementaryTariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceTariff>>.Successful(supplementaryTariffs);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<List<InsuranceTariff>>.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه تعرفه بیمه تکمیلی
+        /// </summary>
+        public async Task<ServiceResult<decimal>> CalculateSupplementaryTariffAsync(int serviceId, int planId, decimal baseAmount)
+        {
+            try
+            {
+                _logger.Information("محاسبه تعرفه بیمه تکمیلی. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, baseAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت تعرفه بیمه تکمیلی
+                var supplementaryTariffs = await GetSupplementaryTariffsAsync(planId);
+                if (!supplementaryTariffs.Success)
+                {
+                    return ServiceResult<decimal>.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
+                }
+
+                var tariff = supplementaryTariffs.Data.FirstOrDefault(t => t.ServiceId == serviceId);
+                if (tariff == null)
+                {
+                    _logger.Warning("تعرفه بیمه تکمیلی برای خدمت یافت نشد. ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                        serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<decimal>.Failed("تعرفه بیمه تکمیلی برای این خدمت تعریف نشده است");
+                }
+
+                // محاسبه تعرفه بر اساس تنظیمات
+                decimal calculatedAmount = baseAmount;
+                
+                if (tariff.SupplementaryCoveragePercent.HasValue)
+                {
+                    calculatedAmount = baseAmount * (tariff.SupplementaryCoveragePercent.Value / 100);
+                }
+
+                if (tariff.SupplementaryMaxPayment.HasValue && calculatedAmount > tariff.SupplementaryMaxPayment.Value)
+                {
+                    calculatedAmount = tariff.SupplementaryMaxPayment.Value;
+                }
+
+                _logger.Information("محاسبه تعرفه بیمه تکمیلی تکمیل شد. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}, CalculatedAmount: {CalculatedAmount}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, baseAmount, calculatedAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<decimal>.Successful(calculatedAmount);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در محاسبه تعرفه بیمه تکمیلی. ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<decimal>.Failed("خطا در محاسبه تعرفه بیمه تکمیلی");
+            }
+        }
+
+        /// <summary>
+        /// دریافت تنظیمات بیمه تکمیلی
+        /// </summary>
+        public async Task<ServiceResult<Dictionary<string, object>>> GetSupplementarySettingsAsync(int planId)
+        {
+            try
+            {
+                _logger.Information("درخواست تنظیمات بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var supplementaryTariffs = await GetSupplementaryTariffsAsync(planId);
+                if (!supplementaryTariffs.Success)
+                {
+                    return ServiceResult<Dictionary<string, object>>.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
+                }
+
+                var settings = new Dictionary<string, object>();
+                
+                foreach (var tariff in supplementaryTariffs.Data)
+                {
+                    if (!string.IsNullOrEmpty(tariff.SupplementarySettings))
+                    {
+                        try
+                        {
+                            // Parse JSON settings if available
+                            var tariffSettings = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(tariff.SupplementarySettings);
+                            foreach (var setting in tariffSettings)
+                            {
+                                settings[$"{tariff.ServiceId}_{setting.Key}"] = setting.Value;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Warning("خطا در تجزیه تنظیمات JSON. ServiceId: {ServiceId}, Settings: {Settings}. User: {UserName} (Id: {UserId})",
+                                tariff.ServiceId, tariff.SupplementarySettings, _currentUserService.UserName, _currentUserService.UserId);
+                        }
+                    }
+                }
+
+                _logger.Information("تنظیمات بیمه تکمیلی با موفقیت دریافت شد. PlanId: {PlanId}, SettingsCount: {Count}. User: {UserName} (Id: {UserId})",
+                    planId, settings.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<Dictionary<string, object>>.Successful(settings);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تنظیمات بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<Dictionary<string, object>>.Failed("خطا در دریافت تنظیمات بیمه تکمیلی");
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی تنظیمات بیمه تکمیلی
+        /// </summary>
+        public async Task<ServiceResult> UpdateSupplementarySettingsAsync(int planId, Dictionary<string, object> settings)
+        {
+            try
+            {
+                _logger.Information("درخواست به‌روزرسانی تنظیمات بیمه تکمیلی. PlanId: {PlanId}, SettingsCount: {Count}. User: {UserName} (Id: {UserId})",
+                    planId, settings.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                var supplementaryTariffs = await GetSupplementaryTariffsAsync(planId);
+                if (!supplementaryTariffs.Success)
+                {
+                    return ServiceResult.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
+                }
+
+                foreach (var tariff in supplementaryTariffs.Data)
+                {
+                    var tariffSettings = new Dictionary<string, object>();
+                    
+                    // استخراج تنظیمات مربوط به این تعرفه
+                    foreach (var setting in settings)
+                    {
+                        if (setting.Key.StartsWith($"{tariff.ServiceId}_"))
+                        {
+                            var key = setting.Key.Substring($"{tariff.ServiceId}_".Length);
+                            tariffSettings[key] = setting.Value;
+                        }
+                    }
+
+                    if (tariffSettings.Any())
+                    {
+                        tariff.SupplementarySettings = System.Text.Json.JsonSerializer.Serialize(tariffSettings);
+                        tariff.UpdatedAt = DateTime.UtcNow;
+                        tariff.UpdatedByUserId = _currentUserService.UserId;
+
+                        await _tariffRepository.UpdateAsync(tariff);
+                    }
+                }
+
+                _logger.Information("تنظیمات بیمه تکمیلی با موفقیت به‌روزرسانی شد. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult.Successful("تنظیمات بیمه تکمیلی با موفقیت به‌روزرسانی شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی تنظیمات بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    planId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult.Failed("خطا در به‌روزرسانی تنظیمات بیمه تکمیلی");
+            }
+        }
+
+        #endregion
+
         #region Additional Methods for Controller Compatibility
 
         /// <summary>

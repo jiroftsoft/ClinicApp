@@ -1054,6 +1054,60 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// دریافت لیست بیماران فعال برای Lookup (مثل Dropdown ها)
+        /// </summary>
+        public async Task<ServiceResult<List<PatientLookupViewModel>>> GetActivePatientsForLookupAsync()
+        {
+            _log.Information(
+                "درخواست دریافت لیست بیماران فعال برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت تمام بیماران فعال
+                var patients = await _context.Patients
+                    .AsNoTracking()
+                    .Where(p => !p.IsDeleted)
+                    .OrderBy(p => p.FirstName)
+                    .ThenBy(p => p.LastName)
+                    .Select(p => new PatientLookupViewModel
+                    {
+                        PatientId = p.PatientId,
+                        FullName = p.FirstName + " " + p.LastName,
+                        NationalCode = p.NationalCode,
+                        PhoneNumber = p.PhoneNumber,
+                        IsDeleted = p.IsDeleted
+                    })
+                    .ToListAsync();
+
+                _log.Information(
+                    "لیست بیماران فعال برای Lookup با موفقیت دریافت شد. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    patients.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientLookupViewModel>>.Successful(
+                    patients,
+                    "لیست بیماران فعال با موفقیت دریافت شد.",
+                    "GetActivePatientsForLookup",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در دریافت لیست بیماران فعال برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientLookupViewModel>>.Failed(
+                    "خطا در دریافت لیست بیماران فعال. لطفاً دوباره تلاش کنید.",
+                    "GET_ACTIVE_PATIENTS_LOOKUP_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
         /// دریافت لیست بیماران برای SelectList
         /// </summary>
         public async Task<ServiceResult<List<SelectListItem>>> GetPatientsForLookupAsync()

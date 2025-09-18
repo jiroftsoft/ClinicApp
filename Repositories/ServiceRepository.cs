@@ -6,6 +6,8 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Helpers;
+using System;
 
 namespace ClinicApp.Repositories
 {
@@ -229,6 +231,29 @@ namespace ClinicApp.Repositories
             return await _context.Services
                 .Where(s => serviceIds.Contains(s.ServiceId) && !s.IsDeleted)
                 .SumAsync(s => s.Price);
+        }
+
+        /// <summary>
+        /// Get active services for lookup (like dropdowns)
+        /// دریافت خدمات فعال برای انتخاب (مثل Dropdown ها)
+        /// </summary>
+        public async Task<ServiceResult<List<Service>>> GetActiveServicesForLookupAsync()
+        {
+            try
+            {
+                var services = await _context.Services
+                    .AsNoTracking()
+                    .Include(s => s.ServiceCategory)
+                    .Where(s => !s.IsDeleted)
+                    .OrderBy(s => s.Title)
+                    .ToListAsync();
+
+                return ServiceResult<List<Service>>.Successful(services, "لیست خدمات فعال دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<List<Service>>.Failed("خطا در دریافت لیست خدمات فعال");
+            }
         }
 
         #endregion

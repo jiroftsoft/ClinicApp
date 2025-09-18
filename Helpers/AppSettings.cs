@@ -78,6 +78,13 @@ namespace ClinicApp.Helpers
 
         #endregion
 
+        #region Application Information Settings (تنظیمات اطلاعات برنامه)
+
+        public string ApplicationVersion { get; set; }
+        public string Environment { get; set; }
+
+        #endregion
+
         #region Constructor & Initialization (سازنده و مقداردهی اولیه)
 
         private AppSettings()
@@ -86,6 +93,7 @@ namespace ClinicApp.Helpers
             LoadSecuritySettings();
             LoadNotificationSettings();
             LoadMedicalSystemSettings();
+            LoadApplicationInformationSettings();
 
             _log.Information("تنظیمات سیستم با موفقیت بارگذاری شدند");
         }
@@ -276,6 +284,19 @@ namespace ClinicApp.Helpers
                 0,
                 "حداقل سن بیمار",
                 0, 18);
+        }
+
+        private void LoadApplicationInformationSettings()
+        {
+            // ApplicationVersion
+            ApplicationVersion = GetStringSetting("Application:Version",
+                Helpers.ApplicationVersion.GetVersion(),
+                "نسخه برنامه");
+
+            // Environment
+            Environment = GetStringSetting("Application:Environment",
+                System.Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Production",
+                "محیط اجرای برنامه");
         }
 
         #endregion

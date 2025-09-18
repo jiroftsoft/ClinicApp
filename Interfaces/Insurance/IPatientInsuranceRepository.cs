@@ -173,6 +173,21 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>بیمه فعال بیمار</returns>
         Task<ServiceResult<PatientInsurance>> GetActiveByPatientAsync(int patientId);
 
+        /// <summary>
+        /// دریافت بیمه اصلی بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>بیمه اصلی بیمار</returns>
+        Task<PatientInsurance> GetPrimaryInsuranceByPatientIdAsync(int patientId);
+
+        /// <summary>
+        /// دریافت بیمه اصلی بیمار بر اساس شماره بیمه
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="policyNumber">شماره بیمه</param>
+        /// <returns>بیمه اصلی بیمار</returns>
+        Task<PatientInsurance> GetPrimaryInsuranceByPolicyNumberAsync(int patientId, string policyNumber);
+
         #endregion
 
         #region Paged Operations
@@ -261,6 +276,32 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <returns>Transaction object</returns>
         Task<System.Data.Entity.DbContextTransaction> BeginTransactionAsync();
+
+        #endregion
+
+        #region Supplementary Insurance Methods
+
+        /// <summary>
+        /// دریافت بیمه تکمیلی فعال بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="calculationDate">تاریخ محاسبه (اختیاری)</param>
+        /// <returns>بیمه تکمیلی فعال بیمار</returns>
+        Task<PatientInsurance> GetActiveSupplementaryByPatientIdAsync(int patientId, DateTime? calculationDate = null);
+
+        /// <summary>
+        /// بررسی وجود بیمه تکمیلی فعال برای بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="calculationDate">تاریخ محاسبه (اختیاری)</param>
+        /// <returns>آیا بیمه تکمیلی فعال دارد یا نه</returns>
+        Task<bool> HasActiveSupplementaryInsuranceAsync(int patientId, DateTime? calculationDate = null);
+
+        /// <summary>
+        /// دریافت آمار بیمه‌های تکمیلی
+        /// </summary>
+        /// <returns>آمار بیمه‌های تکمیلی</returns>
+        Task<Dictionary<string, int>> GetSupplementaryInsuranceStatisticsAsync();
 
         #endregion
     }

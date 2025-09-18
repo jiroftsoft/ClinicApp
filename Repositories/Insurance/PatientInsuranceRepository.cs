@@ -206,7 +206,8 @@ namespace ClinicApp.Repositories.Insurance
                 return await _context.PatientInsurances
                     .Where(pi => pi.PatientId == patientId && !pi.IsPrimary && pi.IsActive)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
-                    .OrderBy(pi => pi.StartDate)
+                    .OrderBy(pi => pi.Priority)
+                    .ThenBy(pi => pi.StartDate)
                     .AsNoTracking()
                     .ToListAsync();
             }
@@ -880,6 +881,173 @@ namespace ClinicApp.Repositories.Insurance
         public async Task<System.Data.Entity.DbContextTransaction> BeginTransactionAsync()
         {
             return _context.Database.BeginTransaction();
+        }
+
+        #endregion
+
+        #region Supplementary Insurance Methods
+
+        /// <summary>
+        /// دریافت بیمه تکمیلی فعال بیمار
+        /// </summary>
+        public async Task<PatientInsurance> GetActiveSupplementaryByPatientIdAsync(int patientId, DateTime? calculationDate = null)
+        {
+            try
+            {
+                var date = calculationDate ?? DateTime.Now;
+                _logger.Information("درخواست بیمه تکمیلی فعال بیمار. PatientId: {PatientId}, Date: {Date}", patientId, date);
+
+                var activeSupplementary = await _context.PatientInsurances
+                    .Where(pi => pi.PatientId == patientId && 
+                                !pi.IsPrimary && 
+                                pi.IsActive && 
+                                !pi.IsDeleted &&
+                                pi.StartDate <= date &&
+                                (pi.EndDate == null || pi.EndDate >= date))
+                    .Include(pi => pi.Patient)
+                    .Include(pi => pi.InsurancePlan)
+                    .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .OrderByDescending(pi => pi.StartDate)
+                    .FirstOrDefaultAsync();
+
+                if (activeSupplementary != null)
+                {
+                    _logger.Information("بیمه تکمیلی فعال بیمار یافت شد. PatientId: {PatientId}, InsuranceId: {InsuranceId}", 
+                        patientId, activeSupplementary.PatientInsuranceId);
+                }
+                else
+                {
+                    _logger.Warning("بیمه تکمیلی فعال برای بیمار یافت نشد. PatientId: {PatientId}", patientId);
+                }
+
+                return activeSupplementary;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمه تکمیلی فعال بیمار. PatientId: {PatientId}", patientId);
+                throw new InvalidOperationException($"خطا در دریافت بیمه تکمیلی فعال بیمار {patientId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود بیمه تکمیلی فعال برای بیمار
+        /// </summary>
+        public async Task<bool> HasActiveSupplementaryInsuranceAsync(int patientId, DateTime? calculationDate = null)
+        {
+            try
+            {
+                var date = calculationDate ?? DateTime.Now;
+                _logger.Information("بررسی وجود بیمه تکمیلی فعال. PatientId: {PatientId}, Date: {Date}", patientId, date);
+
+                var hasActive = await _context.PatientInsurances
+                    .AnyAsync(pi => pi.PatientId == patientId && 
+                                   !pi.IsPrimary && 
+                                   pi.IsActive && 
+                                   !pi.IsDeleted &&
+                                   pi.StartDate <= date &&
+                                   (pi.EndDate == null || pi.EndDate >= date));
+
+                _logger.Information("نتیجه بررسی بیمه تکمیلی فعال. PatientId: {PatientId}, HasActive: {HasActive}", 
+                    patientId, hasActive);
+
+                return hasActive;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی وجود بیمه تکمیلی فعال. PatientId: {PatientId}", patientId);
+                throw new InvalidOperationException($"خطا در بررسی وجود بیمه تکمیلی فعال بیمار {patientId}", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه اصلی بیمار
+        /// </summary>
+        public async Task<PatientInsurance> GetPrimaryInsuranceByPatientIdAsync(int patientId)
+        {
+            try
+            {
+                _logger.Information("Getting primary insurance for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return await _context.PatientInsurances
+                    .Where(pi => pi.PatientId == patientId && 
+                                pi.IsPrimary == true && 
+                                pi.IsActive == true && 
+                                pi.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error getting primary insurance for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه اصلی بیمار بر اساس شماره بیمه
+        /// </summary>
+        public async Task<PatientInsurance> GetPrimaryInsuranceByPolicyNumberAsync(int patientId, string policyNumber)
+        {
+            try
+            {
+                _logger.Information("Getting primary insurance by policy number for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return await _context.PatientInsurances
+                    .Where(pi => pi.PatientId == patientId && 
+                                pi.PolicyNumber == policyNumber && 
+                                pi.IsPrimary == true && 
+                                pi.IsActive == true && 
+                                pi.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error getting primary insurance by policy number: PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت آمار بیمه‌های تکمیلی
+        /// </summary>
+        public async Task<Dictionary<string, int>> GetSupplementaryInsuranceStatisticsAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست آمار بیمه‌های تکمیلی");
+
+                var totalSupplementary = await _context.PatientInsurances
+                    .Where(pi => !pi.IsPrimary && !pi.IsDeleted)
+                    .CountAsync();
+
+                var activeSupplementary = await _context.PatientInsurances
+                    .Where(pi => !pi.IsPrimary && pi.IsActive && !pi.IsDeleted)
+                    .CountAsync();
+
+                var expiredSupplementary = await _context.PatientInsurances
+                    .Where(pi => !pi.IsPrimary && !pi.IsDeleted && pi.EndDate.HasValue && pi.EndDate < DateTime.Now)
+                    .CountAsync();
+
+                var statistics = new Dictionary<string, int>
+                {
+                    { "TotalSupplementary", totalSupplementary },
+                    { "ActiveSupplementary", activeSupplementary },
+                    { "ExpiredSupplementary", expiredSupplementary }
+                };
+
+                _logger.Information("آمار بیمه‌های تکمیلی با موفقیت دریافت شد. Total: {Total}, Active: {Active}, Expired: {Expired}", 
+                    totalSupplementary, activeSupplementary, expiredSupplementary);
+
+                return statistics;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت آمار بیمه‌های تکمیلی");
+                throw new InvalidOperationException("خطا در دریافت آمار بیمه‌های تکمیلی", ex);
+            }
         }
 
         #endregion
