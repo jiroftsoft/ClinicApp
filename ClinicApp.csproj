@@ -451,6 +451,7 @@
     <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\EmergencyBookingController.cs" />
     <Compile Include="Areas\Admin\Controllers\FactorSettingController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
@@ -526,6 +527,7 @@
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
     <Compile Include="Interfaces\INotificationTemplateService.cs" />
+    <Compile Include="Interfaces\Insurance\ICombinedInsuranceCalculationService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceCalculationRepository.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceCalculationService.cs" />
     <Compile Include="Interfaces\Insurance\IInsurancePlanRepository.cs" />
@@ -761,6 +763,7 @@
     <Compile Include="Services\ExternalInquiryService.cs" />
     <Compile Include="Services\FactorSettingService.cs" />
     <Compile Include="Services\IMessageNotificationService.cs" />
+    <Compile Include="Services\Insurance\CombinedInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanService.cs" />
@@ -821,6 +824,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleConflict.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationViewModels.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceCalculation\CombinedInsuranceCalculationResult.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationDetailsViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationIndexPageViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceCalculation\InsuranceCalculationIndexViewModel.cs" />
@@ -3710,6 +3714,7 @@
     <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\Insurance\CombinedInsuranceCalculation\Index.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

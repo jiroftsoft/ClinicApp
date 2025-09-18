@@ -8,7 +8,147 @@
     <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2-bootstrap4.min.css" rel="stylesheet" />
-
+    
+    <!-- 🏥 Medical Environment Specific Styles -->
+    <style>
+        .medical-form-section {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .medical-section-title {
+            color: #2c5aa0;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 0.5rem;
+        }
+        
+        .required-indicator {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        
+        .medical-form-control {
+            border: 2px solid #dee2e6;
+            border-radius: 6px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .medical-form-control:focus {
+            border-color: #2c5aa0;
+            box-shadow: 0 0 0 0.2rem rgba(44, 90, 160, 0.25);
+        }
+        
+        .medical-info-box {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 6px;
+            padding: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .medical-validation-alert {
+            border-left: 4px solid #dc3545;
+            background: #f8d7da;
+            border-color: #f5c6cb;
+        }
+        
+        .medical-validation-list {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .medical-validation-list li {
+            padding: 0.25rem 0;
+            color: #721c24;
+        }
+        
+        .medical-validation-message {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .btn-medical-primary {
+            background: linear-gradient(135deg, #2c5aa0 0%, #1e3a5f 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-medical-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(44, 90, 160, 0.3);
+        }
+        
+        .medical-form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .medical-form-label {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .medical-info-text {
+            color: #1976d2;
+            font-size: 0.9rem;
+        }
+        
+        .medical-info-text ul {
+            margin: 0.5rem 0 0 1rem;
+        }
+        
+        .medical-info-text li {
+            margin-bottom: 0.25rem;
+        }
+        
+        /* Loading States */
+        .medical-loading {
+            position: relative;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .medical-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #2c5aa0;
+            border-radius: 50%;
+            animation: medical-spin 1s linear infinite;
+        }
+        
+        @@keyframes medical-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .medical-form-section {
+                padding: 1rem;
+            }
+            
+            .btn-medical-primary {
+                width: 100%;
+                margin-bottom: 1rem;
+            }
+        }
+    </style>
 }
 
 <div class="container-fluid">
@@ -30,14 +170,22 @@
 
                             @Html.Partial("_PatientInsuranceForm", Model)
 
-                            <!-- Form Actions -->
-                            <div class="text-center">
-                                <button type="submit" class="btn btn-primary btn-lg me-3">
+                            <!-- 🏥 Medical Environment Form Actions -->
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-medical-primary btn-lg me-3" id="saveButton">
                                     <i class="fas fa-save"></i> ذخیره بیمه بیمار
                                 </button>
                                 <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary btn-lg">
                                     <i class="fas fa-times"></i> انصراف
                                 </a>
+                            </div>
+                            
+                            <!-- 🏥 Medical Environment Loading Indicator -->
+                            <div class="text-center mt-3" id="loadingIndicator" style="display: none;">
+                                <div class="spinner-border text-primary" role="status">
+                                    <span class="sr-only">در حال ذخیره...</span>
+                                </div>
+                                <p class="mt-2 text-muted">در حال ذخیره اطلاعات بیمه بیمار...</p>
                             </div>
                         }
                     </div>
@@ -51,4 +199,199 @@
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
     <script src="~/Scripts/app/patient-select2.js"></script>
     <script src="~/Scripts/app/patient-insurance-form.js"></script>
+    
+    <!-- 🏥 Medical Environment Specific JavaScript -->
+    <script>
+        $(document).ready(function() {
+            // 🏥 Medical Environment Form Enhancement
+            initializeMedicalFormEnhancements();
+            
+            // 🏥 Medical Environment Form Submission
+            initializeMedicalFormSubmission();
+            
+            // 🏥 Medical Environment Real-time Validation
+            initializeMedicalRealTimeValidation();
+        });
+        
+        /**
+         * 🏥 Initialize Medical Environment Form Enhancements
+         */
+        function initializeMedicalFormEnhancements() {
+            // Add medical environment specific classes
+            $('.form-control').addClass('medical-form-control');
+            $('.form-group').addClass('medical-form-group');
+            $('.form-label').addClass('medical-form-label');
+            
+            // Add focus effects for medical environment
+            $('.medical-form-control').on('focus', function() {
+                $(this).closest('.medical-form-group').addClass('focused');
+            }).on('blur', function() {
+                $(this).closest('.medical-form-group').removeClass('focused');
+            });
+            
+            // Add medical environment tooltips
+            $('[data-medical-field]').each(function() {
+                var field = $(this).data('medical-field');
+                var tooltip = getMedicalTooltip(field);
+                if (tooltip) {
+                    $(this).attr('title', tooltip);
+                    $(this).tooltip();
+                }
+            });
+        }
+        
+        /**
+         * 🏥 Initialize Medical Environment Form Submission
+         */
+        function initializeMedicalFormSubmission() {
+            $('form').on('submit', function(e) {
+                var $form = $(this);
+                var $saveButton = $('#saveButton');
+                var $loadingIndicator = $('#loadingIndicator');
+                
+                // Show loading state
+                $saveButton.prop('disabled', true).addClass('medical-loading');
+                $loadingIndicator.show();
+                
+                // Add medical environment specific validation
+                if (!validateMedicalForm($form)) {
+                    e.preventDefault();
+                    $saveButton.prop('disabled', false).removeClass('medical-loading');
+                    $loadingIndicator.hide();
+                    return false;
+                }
+                
+                // Log medical environment action
+                console.log('🏥 Medical Environment: Submitting patient insurance form');
+            });
+        }
+        
+        /**
+         * 🏥 Initialize Medical Environment Real-time Validation
+         */
+        function initializeMedicalRealTimeValidation() {
+            // Real-time validation for policy number
+            $('#PolicyNumber').on('input', function() {
+                var policyNumber = $(this).val();
+                if (policyNumber.length > 0) {
+                    validatePolicyNumberFormat(policyNumber);
+                }
+            });
+            
+            // Real-time validation for dates
+            $('.persian-datepicker').on('change', function() {
+                var dateValue = $(this).val();
+                if (dateValue) {
+                    validateDateRange();
+                }
+            });
+        }
+        
+        /**
+         * 🏥 Validate Medical Form
+         */
+        function validateMedicalForm($form) {
+            var isValid = true;
+            
+            // Check required fields
+            $form.find('[required]').each(function() {
+                if (!$(this).val()) {
+                    $(this).addClass('is-invalid');
+                    isValid = false;
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+            
+            // Check policy number format
+            var policyNumber = $('#PolicyNumber').val();
+            if (policyNumber && !validatePolicyNumberFormat(policyNumber)) {
+                isValid = false;
+            }
+            
+            // Check date range
+            if (!validateDateRange()) {
+                isValid = false;
+            }
+            
+            return isValid;
+        }
+        
+        /**
+         * 🏥 Validate Policy Number Format
+         */
+        function validatePolicyNumberFormat(policyNumber) {
+            var regex = /^[A-Za-z0-9\-_]+$/;
+            var $field = $('#PolicyNumber');
+            
+            if (!regex.test(policyNumber)) {
+                $field.addClass('is-invalid');
+                showMedicalValidationMessage($field, 'شماره بیمه فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد');
+                return false;
+            } else {
+                $field.removeClass('is-invalid');
+                hideMedicalValidationMessage($field);
+                return true;
+            }
+        }
+        
+        /**
+         * 🏥 Validate Date Range
+         */
+        function validateDateRange() {
+            var startDate = $('#StartDate').val();
+            var endDate = $('#EndDate').val();
+            var isValid = true;
+            
+            if (startDate && endDate) {
+                var start = new Date(startDate);
+                var end = new Date(endDate);
+                
+                if (start >= end) {
+                    $('#EndDate').addClass('is-invalid');
+                    showMedicalValidationMessage($('#EndDate'), 'تاریخ پایان باید بعد از تاریخ شروع باشد');
+                    isValid = false;
+                } else {
+                    $('#EndDate').removeClass('is-invalid');
+                    hideMedicalValidationMessage($('#EndDate'));
+                }
+            }
+            
+            return isValid;
+        }
+        
+        /**
+         * 🏥 Show Medical Validation Message
+         */
+        function showMedicalValidationMessage($field, message) {
+            var $message = $field.siblings('.medical-validation-message');
+            if ($message.length === 0) {
+                $message = $('<div class="medical-validation-message text-danger"></div>');
+                $field.after($message);
+            }
+            $message.text(message).show();
+        }
+        
+        /**
+         * 🏥 Hide Medical Validation Message
+         */
+        function hideMedicalValidationMessage($field) {
+            $field.siblings('.medical-validation-message').hide();
+        }
+        
+        /**
+         * 🏥 Get Medical Tooltip
+         */
+        function getMedicalTooltip(field) {
+            var tooltips = {
+                'patient-selection': 'انتخاب بیمار برای ثبت بیمه',
+                'policy-number': 'شماره بیمه‌نامه بیمار',
+                'insurance-plan': 'طرح بیمه مورد نظر',
+                'start-date': 'تاریخ شروع اعتبار بیمه',
+                'end-date': 'تاریخ پایان اعتبار بیمه (اختیاری)',
+                'is-primary': 'آیا این بیمه اصلی بیمار است؟'
+            };
+            return tooltips[field] || '';
+        }
+    </script>
 }

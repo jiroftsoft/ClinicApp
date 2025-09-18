@@ -10,6 +10,7 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
+using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using Serilog;
 
 namespace ClinicApp.Services.Insurance
@@ -31,16 +32,18 @@ namespace ClinicApp.Services.Insurance
     public class PatientInsuranceService : IPatientInsuranceService
     {
         private readonly IPatientInsuranceRepository _patientInsuranceRepository;
+        private readonly ICombinedInsuranceCalculationService _combinedInsuranceCalculationService;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
-        private IPatientInsuranceService _patientInsuranceServiceImplementation;
 
         public PatientInsuranceService(
             IPatientInsuranceRepository patientInsuranceRepository,
+            ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
             _patientInsuranceRepository = patientInsuranceRepository ?? throw new ArgumentNullException(nameof(patientInsuranceRepository));
+            _combinedInsuranceCalculationService = combinedInsuranceCalculationService ?? throw new ArgumentNullException(nameof(combinedInsuranceCalculationService));
             _log = logger.ForContext<PatientInsuranceService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
@@ -61,6 +64,34 @@ namespace ClinicApp.Services.Insurance
             {
                 _log.Error(ex, "Error getting patient insurances with PatientId: {PatientId}, SearchTerm: {SearchTerm}, Page: {PageNumber}, Size: {PageSize}. User: {UserName} (Id: {UserId})", 
                     patientId, searchTerm, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت لیست بیمه‌های بیماران");
+            }
+        }
+
+        /// <summary>
+        /// دریافت لیست بیمه‌های بیماران با فیلترهای کامل
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPatientInsurancesWithFiltersAsync(
+            int? patientId = null, 
+            string searchTerm = "", 
+            int? providerId = null, 
+            bool? isPrimary = null, 
+            bool? isActive = null, 
+            int pageNumber = 1, 
+            int pageSize = 10)
+        {
+            try
+            {
+                _log.Information("Getting patient insurances with filters - PatientId: {PatientId}, SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, Page: {PageNumber}, Size: {PageSize}. User: {UserName} (Id: {UserId})", 
+                    patientId, searchTerm, providerId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+
+                // استفاده از متد GetPagedAsync با فیلترهای کامل
+                return await GetPagedAsync(searchTerm, providerId, null, isPrimary, isActive, null, null, pageNumber, pageSize);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting patient insurances with filters - PatientId: {PatientId}, SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, Page: {PageNumber}, Size: {PageSize}. User: {UserName} (Id: {UserId})", 
+                    patientId, searchTerm, providerId, isPrimary, isActive, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>.Failed("خطا در دریافت لیست بیمه‌های بیماران");
             }
         }
@@ -1010,6 +1041,135 @@ namespace ClinicApp.Services.Insurance
                 IsPrimary = patientInsurance.IsPrimary,
                 CoveragePercent = patientInsurance.InsurancePlan?.CoveragePercent ?? 0
             };
+        }
+
+        #endregion
+
+        #region Combined Insurance Calculation Methods
+
+        /// <summary>
+        /// محاسبه بیمه ترکیبی برای بیمار و خدمت مشخص
+        /// </summary>
+        public async Task<ServiceResult<CombinedInsuranceCalculationResult>> CalculateCombinedInsuranceForPatientAsync(
+            int patientId, 
+            int serviceId, 
+            decimal serviceAmount, 
+            DateTime? calculationDate = null)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست محاسبه بیمه ترکیبی - PatientId: {PatientId}, ServiceId: {ServiceId}, Amount: {Amount}. User: {UserName} (Id: {UserId})",
+                    patientId, serviceId, serviceAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                var effectiveDate = calculationDate ?? DateTime.Now;
+
+                var result = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
+                    patientId, serviceId, serviceAmount, effectiveDate);
+
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی موفق - PatientId: {PatientId}, ServiceId: {ServiceId}, TotalCoverage: {TotalCoverage}, PatientShare: {PatientShare}. User: {UserName} (Id: {UserId})",
+                        patientId, serviceId, result.Data.TotalInsuranceCoverage, result.Data.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی - PatientId: {PatientId}, ServiceId: {ServiceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        patientId, serviceId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در محاسبه بیمه ترکیبی - PatientId: {PatientId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    patientId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<CombinedInsuranceCalculationResult>.Failed("خطا در محاسبه بیمه ترکیبی");
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات بیمه‌های فعال بیمار (اصلی + تکمیلی)
+        /// </summary>
+        public async Task<ServiceResult<List<PatientInsuranceLookupViewModel>>> GetActiveAndSupplementaryByPatientIdAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست دریافت بیمه‌های فعال و تکمیلی - PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت بیمه اصلی
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryByPatientIdAsync(patientId);
+                
+                // دریافت بیمه‌های تکمیلی
+                var supplementaryInsurances = await _patientInsuranceRepository.GetSupplementaryByPatientIdAsync(patientId);
+
+                var result = new List<PatientInsuranceLookupViewModel>();
+
+                // اضافه کردن بیمه اصلی
+                if (primaryInsurance != null)
+                {
+                    result.Add(ConvertToLookupViewModel(primaryInsurance));
+                }
+
+                // اضافه کردن بیمه‌های تکمیلی
+                if (supplementaryInsurances != null && supplementaryInsurances.Any())
+                {
+                    foreach (var supplementary in supplementaryInsurances)
+                    {
+                        result.Add(ConvertToLookupViewModel(supplementary));
+                    }
+                }
+
+                _log.Information("🏥 MEDICAL: دریافت بیمه‌های فعال و تکمیلی موفق - PatientId: {PatientId}, Count: {Count}. User: {UserName} (Id: {UserId})",
+                    patientId, result.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientInsuranceLookupViewModel>>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت بیمه‌های فعال و تکمیلی - PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<PatientInsuranceLookupViewModel>>.Failed("خطا در دریافت بیمه‌های فعال و تکمیلی");
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود بیمه ترکیبی برای بیمار
+        /// </summary>
+        public async Task<ServiceResult<bool>> HasCombinedInsuranceAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: بررسی وجود بیمه ترکیبی - PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // بررسی وجود بیمه اصلی
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryByPatientIdAsync(patientId);
+                if (primaryInsurance == null)
+                {
+                    return ServiceResult<bool>.Successful(false);
+                }
+
+                // بررسی وجود بیمه تکمیلی
+                var supplementaryInsurances = await _patientInsuranceRepository.GetSupplementaryByPatientIdAsync(patientId);
+                var hasSupplementary = supplementaryInsurances != null && supplementaryInsurances.Any();
+
+                var hasCombined = primaryInsurance != null && hasSupplementary;
+
+                _log.Information("🏥 MEDICAL: بررسی بیمه ترکیبی - PatientId: {PatientId}, HasCombined: {HasCombined}. User: {UserName} (Id: {UserId})",
+                    patientId, hasCombined, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(hasCombined);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در بررسی بیمه ترکیبی - PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Failed("خطا در بررسی بیمه ترکیبی");
+            }
         }
 
         #endregion

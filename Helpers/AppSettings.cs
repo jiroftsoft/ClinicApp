@@ -411,7 +411,7 @@ namespace ClinicApp.Helpers
         
         public const string FreeInsuranceName = "بیمه آزاد";
         public const string PatientRole = "Patient";
-        public const int DefaultPageSize = 10;
+        public const int DefaultPageSize = 50; // ✅ بهینه‌سازی برای 7000 بیمار
         public const int MaxLoginAttempts = 5;
         public const int RateLimitMinutes = 1;
         public const int MaxFailedAccessAttemptsBeforeLockout = 5;

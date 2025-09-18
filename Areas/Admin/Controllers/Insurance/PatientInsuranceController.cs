@@ -49,7 +49,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// 
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
-    //[Authorize] // فعال‌سازی کنترل دسترسی - Critical Security Fix
+    [Authorize] // فعال‌سازی کنترل دسترسی - Critical Security Fix
     // Routing attributes حذف شده - از conventional routing استفاده می‌کنیم
     public class PatientInsuranceController : Controller
     {
@@ -404,13 +404,16 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpGet]
         public async Task<ActionResult> Index(string searchTerm = "", int? providerId = null, int? planId = null, 
-            bool? isPrimary = null, bool? isActive = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1)
+            bool? isPrimary = null, bool? isActive = null, DateTime? fromDate = null, DateTime? toDate = null, int page = 1, int pageSize = 0)
         {
             _log.Information("بازدید از صفحه اصلی بیمه‌های بیماران. SearchTerm: {SearchTerm}, ProviderId: {ProviderId}, PlanId: {PlanId}, IsPrimary: {IsPrimary}, IsActive: {IsActive}, Page: {Page}. User: {UserName} (Id: {UserId})",
                 searchTerm, providerId, planId, isPrimary, isActive, page, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
+                // ✅ **بهینه‌سازی PageSize برای 7000 بیمار**
+                var effectivePageSize = pageSize > 0 ? Math.Min(pageSize, 100) : PageSize; // حداکثر 100 رکورد
+                
                 var model = new PatientInsuranceIndexPageViewModel
                 {
                     SearchTerm = searchTerm,
@@ -421,7 +424,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     FromDate = fromDate,
                     ToDate = toDate,
                     CurrentPage = page,
-                    PageSize = PageSize
+                    PageSize = effectivePageSize
                 };
 
                 // بررسی وضعیت سیستم قبل از عملیات اصلی
@@ -445,7 +448,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     fromDate: fromDate,
                     toDate: toDate,
                     pageNumber: page,
-                    pageSize: PageSize);
+                    pageSize: effectivePageSize);
 
                 if (result.Success)
                 {
@@ -528,9 +531,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
             try
             {
-                // برای حال حاضر، فقط از پارامترهای اصلی استفاده می‌کنیم
-                // TODO: در آینده می‌توان فیلترهای اضافی را به Service اضافه کرد
-                var result = await _patientInsuranceService.GetPatientInsurancesAsync(patientId, searchTerm, page, PageSize);
+                // استفاده از متد جدید با فیلترهای کامل
+                var result = await _patientInsuranceService.GetPatientInsurancesWithFiltersAsync(patientId, searchTerm, providerId, isPrimary, isActive, page, PageSize);
                 if (!result.Success)
                 {
                     _log.Warning(
@@ -661,11 +663,22 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         [HttpGet]
         public async Task<ActionResult> Create(int? patientId = null)
         {
-            _log.Information("بازدید از فرم ایجاد بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+            _log.Information("🏥 MEDICAL: بازدید از فرم ایجاد بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                 patientId, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
+                // 🏥 Medical Environment: بررسی وضعیت سیستم
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای ایجاد بیمه بیمار. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = "سیستم در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.";
+                    return RedirectToAction("Index");
+                }
+
                 var model = new PatientInsuranceCreateEditViewModel
                 {
                     PatientId = patientId ?? 0,
@@ -674,14 +687,29 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     IsPrimary = false
                 };
 
-                // بارگیری لیست طرح‌های بیمه
+                // 🏥 Medical Environment: بارگیری لیست طرح‌های بیمه با بهینه‌سازی
                 await LoadDropdownsForModelAsync(model);
+
+                // 🏥 Medical Environment: بررسی وجود بیمه اصلی برای بیمار
+                if (patientId.HasValue && patientId.Value > 0)
+                {
+                    // TODO: بررسی وجود بیمه اصلی برای بیمار
+                    // var hasPrimaryInsurance = await _patientInsuranceService.CheckPrimaryInsuranceExistsAsync(patientId.Value, null);
+                    // if (hasPrimaryInsurance.Success && hasPrimaryInsurance.Data)
+                    // {
+                    //     TempData["InfoMessage"] = "این بیمار قبلاً بیمه اصلی دارد. بیمه جدید به عنوان بیمه تکمیلی ثبت خواهد شد.";
+                    //     model.IsPrimary = false;
+                    // }
+                }
+
+                _log.Information("🏥 MEDICAL: فرم ایجاد بیمه بیمار با موفقیت بارگذاری شد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return View(model);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطای سیستمی در نمایش فرم ایجاد بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در نمایش فرم ایجاد بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["ErrorMessage"] = "خطا در نمایش فرم ایجاد بیمه بیمار";
@@ -697,77 +725,93 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public async Task<ActionResult> Create(PatientInsuranceCreateEditViewModel model)
         {
             _log.Information(
-                "درخواست ایجاد بیمه بیمار جدید. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                "🏥 MEDICAL: درخواست ایجاد بیمه بیمار جدید. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
                 model?.PatientId, model?.PolicyNumber, model?.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
-                // تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                // 🏥 Medical Environment: بررسی وضعیت سیستم
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای ایجاد بیمه بیمار. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = "سیستم در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.";
+                    await LoadDropdownsForModelAsync(model);
+                    return View(model);
+                }
+
+                // 🏥 Medical Environment: تبدیل تاریخ‌های شمسی به میلادی قبل از validation
                 if (model != null)
                 {
                     model.ConvertPersianDatesToGregorian();
                 }
 
+                // 🏥 Medical Environment: اعتبارسنجی ModelState
                 if (!ModelState.IsValid)
                 {
                     var validationErrors = ModelState.Where(x => x.Value.Errors.Count > 0)
                         .ToDictionary(x => x.Key, x => x.Value.Errors.Select(e => e.ErrorMessage).ToList());
                     
-                    // Validation errors logged
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی در فرم ایجاد بیمه بیمار. Errors: {ValidationErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationErrors.SelectMany(x => x.Value)), _currentUserService.UserName, _currentUserService.UserId);
 
-                    // اضافه کردن پیام خطای کلی
                     TempData["ErrorMessage"] = "لطفاً تمام فیلدهای اجباری را به درستی پر کنید.";
-
-                    // بارگیری مجدد لیست طرح‌های بیمه
                     await LoadDropdownsForModelAsync(model);
-
                     return View(model);
                 }
 
-                // اعتبارسنجی اضافی server-side (منطق کسب‌وکار در سرویس)
+                // 🏥 Medical Environment: اعتبارسنجی اضافی server-side (منطق کسب‌وکار در سرویس)
                 var validationResult = await _patientInsuranceService.ValidatePatientInsuranceAsync(model);
                 if (!validationResult.Success || validationResult.Data.Count > 0)
                 {
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی کسب‌وکار در ایجاد بیمه بیمار. Errors: {BusinessErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationResult.Data.Select(x => $"{x.Key}: {x.Value}")), _currentUserService.UserName, _currentUserService.UserId);
+
                     foreach (var error in validationResult.Data)
                     {
                         ModelState.AddModelError(error.Key, error.Value);
                     }
                     
-                    // Validation errors logged
                     TempData["ErrorMessage"] = "اطلاعات وارد شده معتبر نیست.";
-                    
                     await LoadDropdownsForModelAsync(model);
                     return View(model);
                 }
 
+                // 🏥 Medical Environment: ایجاد بیمه بیمار
                 var result = await _patientInsuranceService.CreatePatientInsuranceAsync(model);
                 if (!result.Success)
                 {
                     _log.Warning(
-                        "خطا در ایجاد بیمه بیمار. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        "🏥 MEDICAL: خطا در ایجاد بیمه بیمار. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}, Error: {Error}. User: {UserName} (Id: {UserId})",
                         model?.PatientId, model?.PolicyNumber, model?.InsurancePlanId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
-                    
-                    // بارگیری مجدد لیست طرح‌های بیمه
                     await LoadDropdownsForModelAsync(model);
-
                     return View(model);
                 }
 
-                // Audit Trail logged
+                // 🏥 Medical Environment: Audit Trail
+                _log.Information("🏥 MEDICAL: بیمه بیمار جدید با موفقیت ایجاد شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    result.Data, model?.PatientId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["SuccessMessage"] = "بیمه بیمار جدید با موفقیت ایجاد شد";
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
             {
-                // مدیریت خطا
-                return HandleException(ex, "ایجاد بیمه بیمار", model);
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در ایجاد بیمه بیمار. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    model?.PatientId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطا در ایجاد بیمه بیمار. لطفاً دوباره تلاش کنید.";
+                await LoadDropdownsForModelAsync(model);
+                return View(model);
             }
         }
 
         #endregion
+
 
         #region Edit
 
@@ -778,38 +822,47 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public async Task<ActionResult> Edit(int id)
         {
             _log.Information(
-                "درخواست فرم ویرایش بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})",
+                "🏥 MEDICAL: درخواست فرم ویرایش بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})",
                 id, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
+                // 🏥 Medical Environment: بررسی وضعیت سیستم
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای ویرایش بیمه بیمار. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = "سیستم در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.";
+                    return RedirectToAction("Index");
+                }
+
                 var result = await _patientInsuranceService.GetPatientInsuranceForEditAsync(id);
                 if (!result.Success)
                 {
                     _log.Warning(
-                        "خطا در دریافت بیمه بیمار برای ویرایش. PatientInsuranceId: {PatientInsuranceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        "🏥 MEDICAL: خطا در دریافت بیمه بیمار برای ویرایش. PatientInsuranceId: {PatientInsuranceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
                         id, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
                     return RedirectToAction("Index");
                 }
 
-                // بارگیری لیست طرح‌های بیمه
+                // 🏥 Medical Environment: بارگیری لیست طرح‌های بیمه با بهینه‌سازی
                 await LoadDropdownsForModelAsync(result.Data);
 
-                // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
-                _log.Information("🔍 Debug: StartDate before conversion: {StartDate}", result.Data.StartDate);
-                _log.Information("🔍 Debug: EndDate before conversion: {EndDate}", result.Data.EndDate);
-                _log.Information("🔍 Debug: StartDateShamsi before conversion: {StartDateShamsi}", result.Data.StartDateShamsi);
-                _log.Information("🔍 Debug: EndDateShamsi before conversion: {EndDateShamsi}", result.Data.EndDateShamsi);
+                // 🏥 Medical Environment: تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
+                _log.Information("🏥 MEDICAL: تبدیل تاریخ‌ها - StartDate: {StartDate}, EndDate: {EndDate}. User: {UserName} (Id: {UserId})",
+                    result.Data.StartDate, result.Data.EndDate, _currentUserService.UserName, _currentUserService.UserId);
                 
                 result.Data.ConvertGregorianDatesToPersian();
                 
-                _log.Information("🔍 Debug: StartDateShamsi after conversion: {StartDateShamsi}", result.Data.StartDateShamsi);
-                _log.Information("🔍 Debug: EndDateShamsi after conversion: {EndDateShamsi}", result.Data.EndDateShamsi);
+                _log.Information("🏥 MEDICAL: تاریخ‌های شمسی - StartDateShamsi: {StartDateShamsi}, EndDateShamsi: {EndDateShamsi}. User: {UserName} (Id: {UserId})",
+                    result.Data.StartDateShamsi, result.Data.EndDateShamsi, _currentUserService.UserName, _currentUserService.UserId);
 
                 _log.Information(
-                    "فرم ویرایش بیمه بیمار با موفقیت دریافت شد. PatientInsuranceId: {PatientInsuranceId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    "🏥 MEDICAL: فرم ویرایش بیمه بیمار با موفقیت دریافت شد. PatientInsuranceId: {PatientInsuranceId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
                     id, result.Data.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
 
                 return View(result.Data);
@@ -817,7 +870,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             catch (Exception ex)
             {
                 _log.Error(ex,
-                    "خطای سیستمی در دریافت فرم ویرایش بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})",
+                    "🏥 MEDICAL: خطای سیستمی در دریافت فرم ویرایش بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})",
                     id, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["ErrorMessage"] = "خطا در دریافت فرم ویرایش بیمه بیمار";
@@ -833,80 +886,80 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public async Task<ActionResult> Edit(PatientInsuranceCreateEditViewModel model)
         {
             _log.Information(
-                "درخواست به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                "🏥 MEDICAL: درخواست به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
                 model?.PatientInsuranceId, model?.PatientId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
 
             try
             {
-                // تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                // 🏥 Medical Environment: بررسی وضعیت سیستم
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای به‌روزرسانی بیمه بیمار. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    TempData["ErrorMessage"] = "سیستم در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید.";
+                    await LoadDropdownsForModelAsync(model);
+                    model.ConvertGregorianDatesToPersian();
+                    return View(model);
+                }
+
+                // 🏥 Medical Environment: تبدیل تاریخ‌های شمسی به میلادی قبل از validation
                 if (model != null)
                 {
                     model.ConvertPersianDatesToGregorian();
                 }
 
+                // 🏥 Medical Environment: اعتبارسنجی ModelState
                 if (!ModelState.IsValid)
                 {
                     var validationErrors = ModelState.Where(x => x.Value.Errors.Count > 0)
                         .ToDictionary(x => x.Key, x => x.Value.Errors.Select(e => e.ErrorMessage).ToList());
                     
-                    // Validation errors logged
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی در ویرایش بیمه بیمار. Errors: {ValidationErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationErrors.SelectMany(x => x.Value)), _currentUserService.UserName, _currentUserService.UserId);
 
-                    _log.Warning(
-                        "مدل بیمه بیمار معتبر نیست. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
-                        model?.PatientInsuranceId, model?.PatientId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
-
-                    // اضافه کردن پیام خطای کلی
                     TempData["ErrorMessage"] = "لطفاً تمام فیلدهای اجباری را به درستی پر کنید.";
-
-                    // بارگیری مجدد لیست طرح‌های بیمه
                     await LoadDropdownsForModelAsync(model);
-                    
-                    // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم (حفظ مقادیر موجود)
                     model.ConvertGregorianDatesToPersian();
-
                     return View(model);
                 }
 
-                // اعتبارسنجی اضافی server-side (منطق کسب‌وکار در سرویس)
+                // 🏥 Medical Environment: اعتبارسنجی اضافی server-side (منطق کسب‌وکار در سرویس)
                 var validationResult = await _patientInsuranceService.ValidatePatientInsuranceAsync(model);
                 if (!validationResult.Success || validationResult.Data.Count > 0)
                 {
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی کسب‌وکار در ویرایش بیمه بیمار. Errors: {BusinessErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationResult.Data.Select(x => $"{x.Key}: {x.Value}")), _currentUserService.UserName, _currentUserService.UserId);
+
                     foreach (var error in validationResult.Data)
                     {
                         ModelState.AddModelError(error.Key, error.Value);
                     }
                     
-                    // Validation errors logged
                     TempData["ErrorMessage"] = "اطلاعات وارد شده معتبر نیست.";
-                    
                     await LoadDropdownsForModelAsync(model);
-                    
-                    // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم (حفظ مقادیر موجود)
                     model.ConvertGregorianDatesToPersian();
-                    
                     return View(model);
                 }
 
+                // 🏥 Medical Environment: به‌روزرسانی بیمه بیمار
                 var result = await _patientInsuranceService.UpdatePatientInsuranceAsync(model);
                 if (!result.Success)
                 {
                     _log.Warning(
-                        "خطا در به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        "🏥 MEDICAL: خطا در به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, Error: {Error}. User: {UserName} (Id: {UserId})",
                         model?.PatientInsuranceId, model?.PatientId, model?.PolicyNumber, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
                     TempData["ErrorMessage"] = result.Message;
-                    
-                    // بارگیری مجدد لیست طرح‌های بیمه
                     await LoadDropdownsForModelAsync(model);
-                    
-                    // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم (حفظ مقادیر موجود)
                     model.ConvertGregorianDatesToPersian();
-
                     return View(model);
                 }
 
+                // 🏥 Medical Environment: Audit Trail
                 _log.Information(
-                    "بیمه بیمار با موفقیت به‌روزرسانی شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    "🏥 MEDICAL: بیمه بیمار با موفقیت به‌روزرسانی شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
                     model.PatientInsuranceId, model.PatientId, model.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
 
                 TempData["SuccessMessage"] = "بیمه بیمار با موفقیت به‌روزرسانی شد";
@@ -914,8 +967,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
             catch (Exception ex)
             {
-                // مدیریت خطا
-                return HandleException(ex, "به‌روزرسانی بیمه بیمار", model);
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    model?.PatientInsuranceId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                TempData["ErrorMessage"] = "خطا در به‌روزرسانی بیمه بیمار. لطفاً دوباره تلاش کنید.";
+                await LoadDropdownsForModelAsync(model);
+                model.ConvertGregorianDatesToPersian();
+                return View(model);
             }
         }
 

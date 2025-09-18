@@ -23,8 +23,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
     //[Authorize(Roles = AppRoles.Admin)]
-    [RouteArea("Admin")]
-    [RoutePrefix("Insurance/Provider")]
     public class InsuranceProviderController : Controller
     {
         private readonly IInsuranceProviderService _insuranceProviderService;
@@ -52,7 +50,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش صفحه اصلی ارائه‌دهندگان بیمه
         /// </summary>
         [HttpGet]
-       
+
         public ActionResult Index()
         {
             _log.Information("بازدید از صفحه اصلی ارائه‌دهندگان بیمه. User: {UserName} (Id: {UserId})",
@@ -66,7 +64,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("LoadProviders")]
         public async Task<PartialViewResult> LoadProviders(string searchTerm = "", int page = 1)
         {
             _log.Information(
@@ -109,7 +106,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش جزئیات ارائه‌دهنده بیمه
         /// </summary>
         [HttpGet]
-        [Route("Details/{id:int}")]
         public async Task<ActionResult> Details(int id)
         {
             _log.Information(
@@ -154,7 +150,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ایجاد ارائه‌دهنده بیمه
         /// </summary>
         [HttpGet]
-        [Route("Create")]
         public ActionResult Create()
         {
             _log.Information("بازدید از فرم ایجاد ارائه‌دهنده بیمه. User: {UserName} (Id: {UserId})",
@@ -173,7 +168,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("Create")]
         public async Task<ActionResult> Create(InsuranceProviderCreateEditViewModel model)
         {
             _log.Information(
@@ -228,7 +222,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم ویرایش ارائه‌دهنده بیمه
         /// </summary>
         [HttpGet]
-        [Route("Edit/{id:int}")]
         public async Task<ActionResult> Edit(int id)
         {
             _log.Information(
@@ -270,7 +263,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("Edit")]
         public async Task<ActionResult> Edit(InsuranceProviderCreateEditViewModel model)
         {
             _log.Information(
@@ -325,7 +317,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// نمایش فرم تأیید حذف ارائه‌دهنده بیمه
         /// </summary>
         [HttpGet]
-        [Route("Delete/{id:int}")]
         public async Task<ActionResult> Delete(int id)
         {
             _log.Information(
@@ -367,7 +358,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Route("Delete")]
         [ActionName("Delete")]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {

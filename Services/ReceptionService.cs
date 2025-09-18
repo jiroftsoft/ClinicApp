@@ -63,6 +63,8 @@ namespace ClinicApp.Services
         private readonly IPatientService _patientService;
         private readonly IExternalInquiryService _externalInquiryService;
         private readonly IInsuranceCalculationService _insuranceCalculationService;
+        private readonly ICombinedInsuranceCalculationService _combinedInsuranceCalculationService;
+        private readonly IPatientInsuranceService _patientInsuranceService;
         private readonly ICurrentUserService _currentUserService;
         private readonly IServiceCategoryService _serviceCategoryService;
         private readonly IServiceService _serviceService;
@@ -79,6 +81,8 @@ namespace ClinicApp.Services
             IPatientService patientService,
             IExternalInquiryService externalInquiryService,
             IInsuranceCalculationService insuranceCalculationService,
+            ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
+            IPatientInsuranceService patientInsuranceService,
             ICurrentUserService currentUserService,
             IServiceCategoryService serviceCategoryService,
             IServiceService serviceService,
@@ -93,6 +97,8 @@ namespace ClinicApp.Services
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _externalInquiryService = externalInquiryService ?? throw new ArgumentNullException(nameof(externalInquiryService));
             _insuranceCalculationService = insuranceCalculationService ?? throw new ArgumentNullException(nameof(insuranceCalculationService));
+            _combinedInsuranceCalculationService = combinedInsuranceCalculationService ?? throw new ArgumentNullException(nameof(combinedInsuranceCalculationService));
+            _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _serviceCategoryService = serviceCategoryService ?? throw new ArgumentNullException(nameof(serviceCategoryService));
             _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
@@ -1162,20 +1168,35 @@ namespace ClinicApp.Services
 
             try
             {
-                // دریافت بیمه‌های فعال بیمار (موقت - باید در Repository پیاده‌سازی شود)
-                var insurances = new List<PatientInsurance>(); // TODO: پیاده‌سازی GetPatientActiveInsurancesAsync
+                // 🏥 MEDICAL: استفاده از PatientInsuranceService برای دریافت بیمه‌های فعال
+                var patientInsurancesResult = await _patientInsuranceService.GetActiveAndSupplementaryByPatientIdAsync(patientId);
                 
-                var result = insurances.Select(i => new ReceptionPatientInsuranceLookupViewModel
+                if (!patientInsurancesResult.Success)
                 {
-                    PatientInsuranceId = i.PatientInsuranceId,
-                    PatientId = i.PatientId,
-                    InsuranceProviderName = "نامشخص", // TODO: از رابطه InsuranceProvider استفاده شود
-                    PolicyNumber = i.PolicyNumber,
-                    StartDate = i.StartDate,
-                    EndDate = i.EndDate,
-                    IsActive = i.IsActive && (i.EndDate == null || i.EndDate > DateTime.Now),
-                    CoveragePercentage = 0 // TODO: از InsurancePlan.CoveragePercent استفاده شود
+                    _logger.Warning("خطا در دریافت بیمه‌های فعال بیمار. بیمار: {PatientId}, خطا: {Error}, کاربر: {UserName}",
+                        patientId, patientInsurancesResult.Message, _currentUserService.UserName);
+                    
+                    return ServiceResult<List<ReceptionPatientInsuranceLookupViewModel>>.Failed(
+                        "خطا در دریافت بیمه‌های بیمار. لطفاً مجدداً تلاش کنید.",
+                        "PATIENT_INSURANCES_ERROR",
+                        ErrorCategory.System,
+                        SecurityLevel.Medium);
+                }
+
+                var result = patientInsurancesResult.Data.Select(pi => new ReceptionPatientInsuranceLookupViewModel
+                {
+                    PatientInsuranceId = pi.PatientInsuranceId,
+                    PatientId = pi.PatientId,
+                    InsuranceProviderName = pi.InsuranceProviderName ?? "نامشخص",
+                    PolicyNumber = pi.PolicyNumber,
+                    StartDate = pi.StartDate,
+                    EndDate = pi.EndDate,
+                    IsActive = pi.IsActive && (pi.EndDate == null || pi.EndDate > DateTime.Now),
+                    CoveragePercentage = pi.CoveragePercent
                 }).ToList();
+
+                _logger.Information("🏥 MEDICAL: دریافت بیمه‌های فعال بیمار موفق. بیمار: {PatientId}, تعداد: {Count}, کاربر: {UserName}",
+                    patientId, result.Count, _currentUserService.UserName);
 
                 return ServiceResult<List<ReceptionPatientInsuranceLookupViewModel>>.Successful(result);
             }
@@ -1232,14 +1253,17 @@ namespace ClinicApp.Services
                         SecurityLevel.Medium);
                 }
 
-                // دریافت اطلاعات بیمه اگر انتخاب شده باشد
-                PatientInsurance insurance = null;
+                // 🏥 MEDICAL: بررسی وجود بیمه ترکیبی برای بیمار
+                bool hasCombinedInsurance = false;
                 if (insuranceId.HasValue)
                 {
-                    // TODO: پیاده‌سازی دریافت اطلاعات بیمه بیمار
-                    // در حال حاضر از InsuranceCalculationService استفاده نمی‌شود
-                    // باید متد مناسب در IInsuranceCalculationService اضافه شود
-                    insurance = null; // Temporary fix
+                    var combinedInsuranceCheck = await _patientInsuranceService.HasCombinedInsuranceAsync(patientId);
+                    if (combinedInsuranceCheck.Success)
+                    {
+                        hasCombinedInsurance = combinedInsuranceCheck.Data;
+                        _logger.Information("🏥 MEDICAL: بررسی بیمه ترکیبی - PatientId: {PatientId}, HasCombined: {HasCombined}, User: {UserName}",
+                            patientId, hasCombinedInsurance, _currentUserService.UserName);
+                    }
                 }
 
                 foreach (var serviceItem in services)
@@ -1263,19 +1287,57 @@ namespace ClinicApp.Services
                         BasePrice = calculatedPrice // استفاده از قیمت محاسبه شده
                     };
 
-                    // محاسبه سهم بیمه با استفاده از InsuranceCalculationService
-                    if (insurance != null && insurance.IsActive && insurance.InsurancePlan != null)
+                    // 🏥 MEDICAL: محاسبه سهم بیمه با استفاده از CombinedInsuranceCalculationService
+                    if (insuranceId.HasValue)
                     {
-                        // استفاده از InsuranceCalculationService برای محاسبه دقیق
-                        var insuranceCalculationService = new InsuranceCalculationService(
-                            _context, _currentUserService, _logger);
-                        
-                        var insuranceResult = insuranceCalculationService.CalculateInsuranceCoverage(
-                            calculatedPrice, insurance.InsurancePlan, null);
+                        try
+                        {
+                            if (hasCombinedInsurance)
+                            {
+                                // استفاده از CombinedInsuranceCalculationService برای محاسبه ترکیبی
+                                var combinedResult = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
+                                    patientId, service.ServiceId, calculatedPrice, receptionDate);
 
-                        serviceCost.InsuranceShare = insuranceResult.InsuranceCoverage;
-                        serviceCost.PatientShare = insuranceResult.PatientPayment;
-                        serviceCost.CoveragePercentage = insuranceResult.CoveragePercent;
+                                if (combinedResult.Success)
+                                {
+                                    var combinedData = combinedResult.Data;
+                                    serviceCost.InsuranceShare = combinedData.TotalInsuranceCoverage;
+                                    serviceCost.PatientShare = combinedData.FinalPatientShare;
+                                    serviceCost.CoveragePercentage = combinedData.TotalCoveragePercent;
+                                    
+                                    _logger.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی موفق - ServiceId: {ServiceId}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
+                                        service.ServiceId, combinedData.PrimaryCoverage, combinedData.SupplementaryCoverage, combinedData.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+                                }
+                                else
+                                {
+                                    // Fallback به محاسبه عادی در صورت خطا
+                                    _logger.Warning("🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی، استفاده از محاسبه عادی - ServiceId: {ServiceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                                        service.ServiceId, combinedResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+                                    
+                                    // محاسبه عادی بیمه
+                                    serviceCost.InsuranceShare = 0;
+                                    serviceCost.PatientShare = calculatedPrice;
+                                    serviceCost.CoveragePercentage = 0;
+                                }
+                            }
+                            else
+                            {
+                                // محاسبه عادی بیمه (بدون بیمه ترکیبی)
+                                serviceCost.InsuranceShare = 0;
+                                serviceCost.PatientShare = calculatedPrice;
+                                serviceCost.CoveragePercentage = 0;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی - ServiceId: {ServiceId}, PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                                service.ServiceId, patientId, _currentUserService.UserName, _currentUserService.UserId);
+                            
+                            // Fallback به محاسبه عادی
+                            serviceCost.InsuranceShare = 0;
+                            serviceCost.PatientShare = calculatedPrice;
+                            serviceCost.CoveragePercentage = 0;
+                        }
                     }
                     else
                     {

@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace ClinicApp.ViewModels.Insurance.PatientInsurance
@@ -46,6 +47,15 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "بیمه اصلی")]
         public bool IsPrimary { get; set; }
 
+        [Display(Name = "تاریخ شروع")]
+        public DateTime StartDate { get; set; }
+
+        [Display(Name = "تاریخ پایان")]
+        public DateTime? EndDate { get; set; }
+
+        [Display(Name = "فعال")]
+        public bool IsActive { get; set; }
+
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
@@ -64,7 +74,10 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 InsurancePlanName = entity.InsurancePlan?.Name,
                 InsuranceProviderName = entity.InsurancePlan?.InsuranceProvider?.Name,
                 InsuranceType = entity.IsPrimary ? "اصلی" : "تکمیلی",
-                IsPrimary = entity.IsPrimary
+                IsPrimary = entity.IsPrimary,
+                StartDate = entity.StartDate,
+                EndDate = entity.EndDate,
+                IsActive = entity.IsActive
             };
         }
     }

@@ -8,6 +8,219 @@
     <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2-bootstrap4.min.css" rel="stylesheet" />
+    
+    <!-- 🏥 Medical Environment Specific Styles for Edit -->
+    <style>
+        .medical-edit-header {
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border: 2px solid #2196f3;
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.15);
+        }
+        
+        .medical-insurance-info h5 {
+            color: #1976d2;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+        
+        .patient-details {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .patient-name-badge {
+            background: #4caf50;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .insurance-plan-badge {
+            background: #ff9800;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.875rem;
+            font-weight: 600;
+        }
+        
+        .medical-form-container {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        
+        .medical-form-actions {
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 2px solid #e0e0e0;
+        }
+        
+        .medical-save-btn {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+        }
+        
+        .medical-save-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(76, 175, 80, 0.4);
+        }
+        
+        .medical-details-btn {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(33, 150, 243, 0.3);
+        }
+        
+        .medical-details-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(33, 150, 243, 0.4);
+        }
+        
+        .medical-cancel-btn {
+            background: linear-gradient(135deg, #757575 0%, #616161 100%);
+            border: none;
+            color: white;
+            font-weight: 600;
+            padding: 0.75rem 2rem;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(117, 117, 117, 0.3);
+        }
+        
+        .medical-cancel-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 16px rgba(117, 117, 117, 0.4);
+        }
+        
+        .medical-form-help {
+            margin-top: 1.5rem;
+        }
+        
+        .medical-form-help .alert {
+            border: none;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+            border-left: 4px solid #2196f3;
+        }
+        
+        .medical-form-help .alert ul {
+            margin: 0.5rem 0 0 1rem;
+        }
+        
+        .medical-form-help .alert li {
+            margin-bottom: 0.25rem;
+            color: #1976d2;
+        }
+        
+        /* Loading States for Edit */
+        .medical-loading {
+            position: relative;
+            opacity: 0.6;
+            pointer-events: none;
+        }
+        
+        .medical-loading::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #4caf50;
+            border-radius: 50%;
+            animation: medical-spin 1s linear infinite;
+        }
+        
+        @@keyframes medical-spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Enhanced Form Controls for Edit */
+        .medical-form-control {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            transition: all 0.3s ease;
+            background: white;
+        }
+        
+        .medical-form-control:focus {
+            border-color: #4caf50;
+            box-shadow: 0 0 0 0.2rem rgba(76, 175, 80, 0.25);
+            background: #f8fff8;
+        }
+        
+        .medical-form-control.is-invalid {
+            border-color: #f44336;
+            box-shadow: 0 0 0 0.2rem rgba(244, 67, 54, 0.25);
+        }
+        
+        /* Responsive Design for Edit */
+        @@media (max-width: 768px) {
+            .medical-edit-header {
+                padding: 1rem;
+            }
+            
+            .medical-form-container {
+                padding: 1rem;
+            }
+            
+            .medical-form-actions .d-flex {
+                flex-direction: column;
+            }
+            
+            .medical-save-btn,
+            .medical-details-btn,
+            .medical-cancel-btn {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+            
+            .patient-details {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+        }
+        
+        /* Medical Environment Validation Messages */
+        .medical-validation-message {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            color: #f44336;
+            font-weight: 500;
+        }
+        
+        .medical-success-message {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+            color: #4caf50;
+            font-weight: 500;
+        }
+    </style>
 }
 <div class="container-fluid">
     <div class="row">
@@ -55,7 +268,7 @@
                             <!-- 🏥 Medical Environment Form Actions -->
                             <div class="form-actions medical-form-actions">
                                 <div class="d-flex justify-content-center gap-3 flex-wrap">
-                                    <button type="submit" class="btn btn-success btn-lg medical-save-btn">
+                                    <button type="submit" class="btn btn-success btn-lg medical-save-btn" id="saveEditButton">
                                         <i class="fas fa-save me-2"></i> ذخیره تغییرات
                                     </button>
                                     <a href="@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })" class="btn btn-info btn-lg medical-details-btn">
@@ -64,6 +277,14 @@
                                     <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary btn-lg medical-cancel-btn">
                                         <i class="fas fa-times me-2"></i> انصراف
                                     </a>
+                                </div>
+                                
+                                <!-- 🏥 Medical Environment Loading Indicator -->
+                                <div class="text-center mt-3" id="editLoadingIndicator" style="display: none;">
+                                    <div class="spinner-border text-success" role="status">
+                                        <span class="sr-only">در حال ذخیره تغییرات...</span>
+                                    </div>
+                                    <p class="mt-2 text-muted">در حال ذخیره تغییرات بیمه بیمار...</p>
                                 </div>
                                 
                                 <!-- Medical Environment Form Help -->
@@ -161,6 +382,14 @@
                     $('#patientInsuranceEditForm').on('submit', function(e) {
                         console.log('🏥 Medical Environment: Form submission validation');
                         
+                        var $form = $(this);
+                        var $saveButton = $('#saveEditButton');
+                        var $loadingIndicator = $('#editLoadingIndicator');
+                        
+                        // Show loading state
+                        $saveButton.prop('disabled', true).addClass('medical-loading');
+                        $loadingIndicator.show();
+                        
                         var isValid = true;
                         var errors = [];
 
@@ -188,6 +417,10 @@
                         if (!isValid) {
                             e.preventDefault();
                             console.log('🏥 Medical Environment: Form validation failed', errors);
+                            
+                            // Hide loading state
+                            $saveButton.prop('disabled', false).removeClass('medical-loading');
+                            $loadingIndicator.hide();
                             
                             // Show medical environment error message
                             if (typeof toastr !== 'undefined') {
@@ -243,6 +476,75 @@
                 });
             }
 
+            // 🏥 Medical Environment Policy Number Validation
+            function validatePolicyNumberFormat(policyNumber) {
+                var regex = /^[A-Za-z0-9\-_]+$/;
+                var $field = $('#PolicyNumber');
+                
+                if (!regex.test(policyNumber)) {
+                    $field.addClass('is-invalid');
+                    showMedicalValidationMessage($field, 'شماره بیمه فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد');
+                    return false;
+                } else {
+                    $field.removeClass('is-invalid');
+                    hideMedicalValidationMessage($field);
+                    return true;
+                }
+            }
+            
+            // 🏥 Medical Environment Date Range Validation
+            function validateDateRange() {
+                var startDate = $('#StartDateShamsi').val();
+                var endDate = $('#EndDateShamsi').val();
+                var isValid = true;
+                
+                if (startDate && endDate) {
+                    var start = new Date(startDate);
+                    var end = new Date(endDate);
+                    
+                    if (start >= end) {
+                        $('#EndDateShamsi').addClass('is-invalid');
+                        showMedicalValidationMessage($('#EndDateShamsi'), 'تاریخ پایان باید بعد از تاریخ شروع باشد');
+                        isValid = false;
+                    } else {
+                        $('#EndDateShamsi').removeClass('is-invalid');
+                        hideMedicalValidationMessage($('#EndDateShamsi'));
+                    }
+                }
+                
+                return isValid;
+            }
+            
+            // 🏥 Medical Environment Insurance Plan Validation
+            function validateInsurancePlan(planId) {
+                var $field = $('#InsurancePlanId');
+                
+                if (!planId || planId === '') {
+                    $field.addClass('is-invalid');
+                    showMedicalValidationMessage($field, 'لطفاً طرح بیمه را انتخاب کنید');
+                    return false;
+                } else {
+                    $field.removeClass('is-invalid');
+                    hideMedicalValidationMessage($field);
+                    return true;
+                }
+            }
+            
+            // 🏥 Medical Environment Show Validation Message
+            function showMedicalValidationMessage($field, message) {
+                var $message = $field.siblings('.medical-validation-message');
+                if ($message.length === 0) {
+                    $message = $('<div class="medical-validation-message text-danger"></div>');
+                    $field.after($message);
+                }
+                $message.text(message).show();
+            }
+            
+            // 🏥 Medical Environment Hide Validation Message
+            function hideMedicalValidationMessage($field) {
+                $field.siblings('.medical-validation-message').hide();
+            }
+            
             // شروع initialization
             initializeMedicalEditPage();
         })();

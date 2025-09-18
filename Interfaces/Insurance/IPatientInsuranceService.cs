@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
+using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 
 namespace ClinicApp.Interfaces.Insurance
 {
@@ -39,6 +40,26 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>نتیجه صفحه‌بندی شده بیمه‌های بیماران</returns>
         Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPatientInsurancesAsync(int? patientId, string searchTerm, int pageNumber, int pageSize);
+
+        /// <summary>
+        /// دریافت لیست بیمه‌های بیماران با فیلترهای کامل
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار (اختیاری)</param>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>
+        /// <param name="isPrimary">نوع بیمه (اصلی/تکمیلی)</param>
+        /// <param name="isActive">وضعیت فعال</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه صفحه‌بندی شده بیمه‌های بیماران</returns>
+        Task<ServiceResult<PagedResult<PatientInsuranceIndexViewModel>>> GetPatientInsurancesWithFiltersAsync(
+            int? patientId = null, 
+            string searchTerm = "", 
+            int? providerId = null, 
+            bool? isPrimary = null, 
+            bool? isActive = null, 
+            int pageNumber = 1, 
+            int pageSize = 10);
 
         /// <summary>
         /// دریافت لیست بیمه‌های بیماران با صفحه‌بندی و جستجو (بهینه‌سازی شده)
@@ -193,6 +214,38 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="checkDate">تاریخ بررسی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
         Task<ServiceResult<bool>> IsPatientInsuranceValidAsync(int patientInsuranceId, System.DateTime checkDate);
+
+        #endregion
+
+        #region Combined Insurance Calculation Methods
+
+        /// <summary>
+        /// محاسبه بیمه ترکیبی برای بیمار و خدمت مشخص
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="serviceAmount">مبلغ خدمت</param>
+        /// <param name="calculationDate">تاریخ محاسبه (اختیاری)</param>
+        /// <returns>نتیجه محاسبه بیمه ترکیبی</returns>
+        Task<ServiceResult<CombinedInsuranceCalculationResult>> CalculateCombinedInsuranceForPatientAsync(
+            int patientId, 
+            int serviceId, 
+            decimal serviceAmount, 
+            DateTime? calculationDate = null);
+
+        /// <summary>
+        /// دریافت اطلاعات بیمه‌های فعال بیمار (اصلی + تکمیلی)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>لیست بیمه‌های فعال و تکمیلی</returns>
+        Task<ServiceResult<List<PatientInsuranceLookupViewModel>>> GetActiveAndSupplementaryByPatientIdAsync(int patientId);
+
+        /// <summary>
+        /// بررسی وجود بیمه ترکیبی برای بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>آیا بیمار بیمه ترکیبی دارد یا نه</returns>
+        Task<ServiceResult<bool>> HasCombinedInsuranceAsync(int patientId);
 
         #endregion
     }
