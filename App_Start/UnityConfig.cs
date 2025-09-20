@@ -417,6 +417,10 @@ namespace ClinicApp
                 container.RegisterType<IInsuranceTariffService, InsuranceTariffService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceService, SupplementaryInsuranceService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceCacheService, SupplementaryInsuranceCacheService>(new PerRequestLifetimeManager());
+                
+                // Register Business Rules Engine
+                container.RegisterType<IBusinessRuleEngine, BusinessRuleEngine>(new PerRequestLifetimeManager());
+                container.RegisterType<IBusinessRuleRepository, BusinessRuleRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceMonitoringService, SupplementaryInsuranceMonitoringService>(new PerRequestLifetimeManager());
 
                 // Register InsuranceTariff Validators
@@ -444,6 +448,12 @@ namespace ClinicApp
 
                 // ثبت سرویس‌های پرداخت
                 container.RegisterType<IPaymentTransactionRepository, PaymentTransactionRepository>(new PerRequestLifetimeManager());
+
+                // Register Supplementary Tariff Seeder Service
+                container.RegisterType<SupplementaryTariffSeederService>(new PerRequestLifetimeManager());
+
+                // Register Combined Insurance Calculation Test Service
+                container.RegisterType<CombinedInsuranceCalculationTestService>(new PerRequestLifetimeManager());
 
                 // Register Insurance Validators
                 container.RegisterType<IValidator<InsurancePlanCreateEditViewModel>, InsurancePlanCreateEditViewModelValidator>(new PerRequestLifetimeManager());

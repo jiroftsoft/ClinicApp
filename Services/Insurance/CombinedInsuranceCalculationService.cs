@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Core;
@@ -13,6 +14,7 @@ using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.Supplementary;
+using ClinicApp.ViewModels.Insurance;
 using Serilog;
 
 namespace ClinicApp.Services.Insurance
@@ -40,6 +42,7 @@ namespace ClinicApp.Services.Insurance
         private readonly ISupplementaryInsuranceService _supplementaryInsuranceService;
         private readonly IServiceRepository _serviceRepository;
         private readonly IPatientService _patientService;
+        private readonly ApplicationDbContext _context;
         // حذف مرجع دایره‌ای - PatientInsuranceService نباید در CombinedInsuranceCalculationService استفاده شود
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
@@ -50,6 +53,7 @@ namespace ClinicApp.Services.Insurance
             ISupplementaryInsuranceService supplementaryInsuranceService,
             IServiceRepository serviceRepository,
             IPatientService patientService,
+            ApplicationDbContext context,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
@@ -58,6 +62,7 @@ namespace ClinicApp.Services.Insurance
             _supplementaryInsuranceService = supplementaryInsuranceService ?? throw new ArgumentNullException(nameof(supplementaryInsuranceService));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _log = logger.ForContext<CombinedInsuranceCalculationService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
@@ -122,19 +127,22 @@ namespace ClinicApp.Services.Insurance
 
                 var primaryResult = primaryCalculationResult.Data;
 
-                // بررسی وجود بیمه تکمیلی
-                var supplementaryInsurance = patientInsurances.FirstOrDefault(pi => !pi.IsPrimary && pi.IsActive);
+                // دریافت بیمه‌های تکمیلی بر اساس اولویت
+                var supplementaryInsurances = patientInsurances
+                    .Where(pi => !pi.IsPrimary && pi.IsActive)
+                    .OrderBy(pi => pi.Priority)
+                    .ToList();
                 
                 CombinedInsuranceCalculationResult finalResult;
 
-                if (supplementaryInsurance != null)
+                if (supplementaryInsurances.Any())
                 {
-                    // محاسبه بیمه ترکیبی (اصلی + تکمیلی)
-                    finalResult = await CalculateCombinedInsuranceAsync(
-                        primaryResult, supplementaryInsurance, serviceId, serviceAmount, calculationDate);
+                    // محاسبه بیمه ترکیبی (اصلی + تکمیلی‌های متعدد)
+                    finalResult = await CalculateMultipleSupplementaryInsuranceAsync(
+                        primaryResult, supplementaryInsurances, serviceId, serviceAmount, calculationDate, patientId);
                     
-                    _log.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی تکمیل شد - PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
-                        primaryResult.InsuranceCoverage, finalResult.SupplementaryCoverage, finalResult.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+                    _log.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی تکمیل شد - PrimaryCoverage: {PrimaryCoverage}, SupplementaryCount: {SupplementaryCount}, TotalSupplementaryCoverage: {TotalSupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
+                        primaryResult.InsuranceCoverage, supplementaryInsurances.Count, finalResult.SupplementaryCoverage, finalResult.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
                 }
                 else
                 {
@@ -414,7 +422,7 @@ namespace ClinicApp.Services.Insurance
                 }
 
                 // بررسی وجود خدمت
-                var serviceExists = await _serviceRepository.DoesServiceExistAsync(serviceId, null, null);
+                var serviceExists = await _serviceRepository.DoesServiceExistByIdAsync(serviceId);
                 if (!serviceExists)
                 {
                     return ServiceResult.Failed("خدمت یافت نشد");
@@ -456,28 +464,284 @@ namespace ClinicApp.Services.Insurance
 
 
         /// <summary>
-        /// محاسبه بیمه اصلی
+        /// محاسبه بیمه اصلی با پشتیبانی از تعرفه‌های ناقص
         /// </summary>
         private async Task<ServiceResult<InsuranceCalculationResultViewModel>> CalculatePrimaryInsuranceAsync(
             PatientInsurance primaryInsurance, int serviceId, decimal serviceAmount, DateTime calculationDate)
         {
             try
             {
+                _log.Information("🏥 MEDICAL: شروع محاسبه بیمه اصلی - PatientInsuranceId: {PatientInsuranceId}, ServiceId: {ServiceId}, ServiceAmount: {ServiceAmount}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    primaryInsurance.PatientInsuranceId, serviceId, serviceAmount, primaryInsurance.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // ابتدا سعی کن از سرویس عادی محاسبه کن
                 var result = await _insuranceCalculationService.CalculatePatientShareAsync(
                     primaryInsurance.PatientId, serviceId, calculationDate);
 
-                if (!result.Success)
+                if (result.Success)
                 {
-                    return ServiceResult<InsuranceCalculationResultViewModel>.Failed(result.Message);
+                    _log.Information("🏥 MEDICAL: محاسبه بیمه اصلی موفق - InsuranceCoverage: {InsuranceCoverage}, PatientPayment: {PatientPayment}. User: {UserName} (Id: {UserId})",
+                        result.Data.InsuranceCoverage, result.Data.PatientPayment, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<InsuranceCalculationResultViewModel>.Successful(result.Data);
                 }
 
-                return ServiceResult<InsuranceCalculationResultViewModel>.Successful(result.Data);
+                // اگر محاسبه عادی ناموفق بود، از fallback logic استفاده کن
+                _log.Warning("🏥 MEDICAL: محاسبه عادی بیمه اصلی ناموفق، استفاده از fallback logic - Error: {Error}. User: {UserName} (Id: {UserId})",
+                    result.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                var fallbackResult = await CalculatePrimaryInsuranceFallbackAsync(
+                    primaryInsurance, serviceId, serviceAmount, calculationDate);
+
+                if (fallbackResult.Success)
+                {
+                    _log.Information("🏥 MEDICAL: محاسبه fallback بیمه اصلی موفق - InsuranceCoverage: {InsuranceCoverage}, PatientPayment: {PatientPayment}. User: {UserName} (Id: {UserId})",
+                        fallbackResult.Data.InsuranceCoverage, fallbackResult.Data.PatientPayment, _currentUserService.UserName, _currentUserService.UserId);
+                    return fallbackResult;
+                }
+
+                return ServiceResult<InsuranceCalculationResultViewModel>.Failed($"خطا در محاسبه بیمه اصلی: {result.Message}");
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "خطا در محاسبه بیمه اصلی - PatientInsuranceId: {PatientInsuranceId}, ServiceId: {ServiceId}",
-                    primaryInsurance.PatientInsuranceId, serviceId);
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه بیمه اصلی - PatientInsuranceId: {PatientInsuranceId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    primaryInsurance.PatientInsuranceId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<InsuranceCalculationResultViewModel>.Failed("خطا در محاسبه بیمه اصلی");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه fallback بیمه اصلی با استفاده از درصد پوشش طرح بیمه
+        /// </summary>
+        private async Task<ServiceResult<InsuranceCalculationResultViewModel>> CalculatePrimaryInsuranceFallbackAsync(
+            PatientInsurance primaryInsurance, int serviceId, decimal serviceAmount, DateTime calculationDate)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: شروع محاسبه fallback بیمه اصلی - PlanId: {PlanId}, ServiceId: {ServiceId}, ServiceAmount: {ServiceAmount}. User: {UserName} (Id: {UserId})",
+                    primaryInsurance.InsurancePlanId, serviceId, serviceAmount, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت تعرفه بیمه اصلی از دیتابیس
+                var primaryTariff = await _context.InsuranceTariffs
+                    .Where(t => t.ServiceId == serviceId && 
+                                t.InsurancePlanId == primaryInsurance.InsurancePlanId && 
+                                t.InsuranceType == InsuranceType.Primary &&
+                                !t.IsDeleted && t.IsActive)
+                    .FirstOrDefaultAsync();
+                
+                decimal coveragePercent;
+                decimal deductibleAmount;
+
+                if (primaryTariff == null)
+                {
+                    _log.Warning("🏥 MEDICAL: تعرفه بیمه اصلی یافت نشد - ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                        serviceId, primaryInsurance.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    // Fallback به طرح بیمه
+                    var insurancePlan = await _context.InsurancePlans
+                        .Where(ip => ip.InsurancePlanId == primaryInsurance.InsurancePlanId && !ip.IsDeleted)
+                        .FirstOrDefaultAsync();
+                    
+                    if (insurancePlan == null)
+                    {
+                        return ServiceResult<InsuranceCalculationResultViewModel>.Failed("اطلاعات طرح بیمه یافت نشد");
+                    }
+
+                    coveragePercent = insurancePlan.CoveragePercent;
+                    deductibleAmount = insurancePlan.Deductible;
+                    
+                    _log.Information("🏥 MEDICAL: استفاده از fallback طرح بیمه - CoveragePercent: {CoveragePercent}, Deductible: {Deductible}. User: {UserName} (Id: {UserId})",
+                        coveragePercent, deductibleAmount, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    // استفاده از تعرفه بیمه اصلی
+                    coveragePercent = (decimal)primaryTariff.InsurerShare / (decimal)primaryTariff.TariffPrice * 100;
+                    deductibleAmount = 0m; // فرانشیز در تعرفه محاسبه شده
+                    
+                    _log.Information("🏥 MEDICAL: استفاده از تعرفه بیمه اصلی - TariffId: {TariffId}, CoveragePercent: {CoveragePercent}. User: {UserName} (Id: {UserId})",
+                        primaryTariff.InsuranceTariffId, coveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // محاسبه مبلغ قابل پوشش (بعد از کسر فرانشیز)
+                var coverableAmount = Math.Max(0, serviceAmount - deductibleAmount);
+
+                // محاسبه مبلغ پوشش بیمه
+                var insuranceCoverage = coverableAmount * (coveragePercent / 100);
+
+                // محاسبه مبلغ پرداخت بیمار
+                var patientPayment = serviceAmount - insuranceCoverage;
+
+                var result = new InsuranceCalculationResultViewModel
+                {
+                    PatientId = primaryInsurance.PatientId,
+                    ServiceId = serviceId,
+                    TotalAmount = serviceAmount,
+                    DeductibleAmount = deductibleAmount,
+                    CoverableAmount = coverableAmount,
+                    CoveragePercent = coveragePercent,
+                    InsuranceCoverage = insuranceCoverage,
+                    PatientPayment = patientPayment
+                };
+
+                _log.Information("🏥 MEDICAL: محاسبه fallback بیمه اصلی تکمیل شد - CoveragePercent: {CoveragePercent}, InsuranceCoverage: {InsuranceCoverage}, PatientPayment: {PatientPayment}. User: {UserName} (Id: {UserId})",
+                    coveragePercent, insuranceCoverage, patientPayment, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<InsuranceCalculationResultViewModel>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه fallback بیمه اصلی - PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    primaryInsurance.InsurancePlanId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<InsuranceCalculationResultViewModel>.Failed("خطا در محاسبه fallback بیمه اصلی");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه بیمه ترکیبی با چندین بیمه تکمیلی - بهینه شده برای محیط عملیاتی درمانی
+        /// </summary>
+        private async Task<CombinedInsuranceCalculationResult> CalculateMultipleSupplementaryInsuranceAsync(
+            InsuranceCalculationResultViewModel primaryResult,
+            List<PatientInsurance> supplementaryInsurances,
+            int serviceId,
+            decimal serviceAmount,
+            DateTime calculationDate,
+            int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: شروع محاسبه بیمه ترکیبی پیشرفته - ServiceId: {ServiceId}, ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCount: {SupplementaryCount}. User: {UserName} (Id: {UserId})",
+                    serviceId, serviceAmount, primaryResult.InsuranceCoverage, supplementaryInsurances.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                var totalSupplementaryCoverage = 0m;
+                var remainingAmount = serviceAmount - primaryResult.InsuranceCoverage;
+                var supplementaryDetails = new List<SupplementaryInsuranceDetail>();
+                var primaryInsuranceId = supplementaryInsurances.FirstOrDefault()?.PatientInsuranceId ?? 0; // استفاده از PatientInsuranceId صحیح
+
+                // دریافت تعرفه‌های بیمه تکمیلی برای این خدمت
+                var supplementaryTariffs = await _context.InsuranceTariffs
+                    .Where(t => t.ServiceId == serviceId && 
+                                t.InsuranceType == InsuranceType.Supplementary &&
+                                !t.IsDeleted && t.IsActive)
+                    .OrderBy(t => t.Priority ?? 0)
+                    .ToListAsync();
+
+                _log.Information("🏥 MEDICAL: تعرفه‌های بیمه تکمیلی یافت شد - ServiceId: {ServiceId}, Count: {Count}. User: {UserName} (Id: {UserId})",
+                    serviceId, supplementaryTariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                // بررسی اینکه آیا بیمه اصلی کل مبلغ را پوشش داده یا نه
+                if (remainingAmount <= 0)
+                {
+                    _log.Information("🏥 MEDICAL: بیمه اصلی کل مبلغ را پوشش داده - ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage}. User: {UserName} (Id: {UserId})",
+                        serviceAmount, primaryResult.InsuranceCoverage, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return new CombinedInsuranceCalculationResult
+                    {
+                        PatientId = patientId,
+                        ServiceId = serviceId,
+                        ServiceAmount = serviceAmount,
+                        PrimaryInsuranceId = primaryInsuranceId,
+                        PrimaryCoverage = primaryResult.InsuranceCoverage,
+                        PrimaryCoveragePercent = primaryResult.CoveragePercent,
+                        SupplementaryInsuranceId = null,
+                        SupplementaryCoverage = 0,
+                        SupplementaryCoveragePercent = 0,
+                        FinalPatientShare = 0,
+                        TotalInsuranceCoverage = primaryResult.InsuranceCoverage,
+                        CalculationDate = calculationDate,
+                        HasSupplementaryInsurance = true,
+                        Notes = "بیمه اصلی کل مبلغ را پوشش داده است"
+                    };
+                }
+
+                // محاسبه تدریجی بیمه‌های تکمیلی با استفاده از تعرفه‌ها
+                foreach (var supplementaryInsurance in supplementaryInsurances)
+                {
+                    if (remainingAmount <= 0) break;
+
+                    // پیدا کردن تعرفه بیمه تکمیلی مناسب
+                    var supplementaryTariff = supplementaryTariffs
+                        .Where(t => t.InsurancePlanId == supplementaryInsurance.InsurancePlanId)
+                        .FirstOrDefault();
+
+                    if (supplementaryTariff != null)
+                    {
+                        // محاسبه بر اساس تعرفه بیمه تکمیلی
+                        var supplementaryCoverage = 0m;
+                        
+                        if (supplementaryTariff.SupplementaryCoveragePercent.HasValue)
+                        {
+                            // محاسبه بر اساس درصد پوشش
+                            supplementaryCoverage = remainingAmount * (supplementaryTariff.SupplementaryCoveragePercent.Value / 100);
+                            
+                            // اعمال سقف پرداخت
+                            if (supplementaryTariff.SupplementaryMaxPayment.HasValue && 
+                                supplementaryCoverage > supplementaryTariff.SupplementaryMaxPayment.Value)
+                            {
+                                supplementaryCoverage = supplementaryTariff.SupplementaryMaxPayment.Value;
+                            }
+                        }
+                        else
+                        {
+                            // محاسبه بر اساس تعرفه ثابت
+                            supplementaryCoverage = Math.Min(remainingAmount, (decimal)supplementaryTariff.InsurerShare);
+                        }
+
+                        totalSupplementaryCoverage += supplementaryCoverage;
+                        remainingAmount -= supplementaryCoverage;
+
+                        supplementaryDetails.Add(new SupplementaryInsuranceDetail
+                        {
+                            InsuranceId = supplementaryInsurance.PatientInsuranceId,
+                            Coverage = supplementaryCoverage,
+                            Priority = supplementaryInsurance.Priority
+                        });
+
+                        _log.Information("🏥 MEDICAL: بیمه تکمیلی محاسبه شد - InsuranceId: {InsuranceId}, Priority: {Priority}, Coverage: {Coverage}, RemainingAmount: {RemainingAmount}, TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                            supplementaryInsurance.PatientInsuranceId, supplementaryInsurance.Priority, supplementaryCoverage, remainingAmount, supplementaryTariff.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+                    else
+                    {
+                        _log.Warning("🏥 MEDICAL: تعرفه بیمه تکمیلی یافت نشد - InsuranceId: {InsuranceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                            supplementaryInsurance.PatientInsuranceId, supplementaryInsurance.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    }
+                }
+
+                // محاسبه درصد پوشش بیمه تکمیلی
+                decimal supplementaryCoveragePercent = 0;
+                if (serviceAmount > 0)
+                {
+                    supplementaryCoveragePercent = (totalSupplementaryCoverage / serviceAmount) * 100;
+                }
+
+                var finalResult = new CombinedInsuranceCalculationResult
+                {
+                    PatientId = patientId,
+                    ServiceId = serviceId,
+                    ServiceAmount = serviceAmount,
+                    PrimaryInsuranceId = primaryInsuranceId,
+                    PrimaryCoverage = primaryResult.InsuranceCoverage,
+                    PrimaryCoveragePercent = primaryResult.CoveragePercent,
+                    SupplementaryInsuranceId = supplementaryInsurances.FirstOrDefault()?.PatientInsuranceId,
+                    SupplementaryCoverage = totalSupplementaryCoverage,
+                    SupplementaryCoveragePercent = supplementaryCoveragePercent,
+                    FinalPatientShare = remainingAmount,
+                    TotalInsuranceCoverage = primaryResult.InsuranceCoverage + totalSupplementaryCoverage,
+                    CalculationDate = calculationDate,
+                    HasSupplementaryInsurance = true,
+                    Notes = $"بیمه اصلی: {primaryResult.CoveragePercent:F1}%, بیمه تکمیلی: {supplementaryCoveragePercent:F1}% (تعداد: {supplementaryDetails.Count})"
+                };
+
+                _log.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی پیشرفته تکمیل شد - ServiceAmount: {ServiceAmount}, PrimaryCoverage: {PrimaryCoverage}, TotalSupplementaryCoverage: {TotalSupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}, TotalCoverage: {TotalCoverage}. User: {UserName} (Id: {UserId})",
+                    serviceAmount, primaryResult.InsuranceCoverage, totalSupplementaryCoverage, 
+                    finalResult.FinalPatientShare, finalResult.TotalInsuranceCoverage, _currentUserService.UserName, _currentUserService.UserId);
+
+                return finalResult;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی پیشرفته - ServiceId: {ServiceId}, ServiceAmount: {ServiceAmount}. User: {UserName} (Id: {UserId})",
+                    serviceId, serviceAmount, _currentUserService.UserName, _currentUserService.UserId);
+                throw;
             }
         }
 

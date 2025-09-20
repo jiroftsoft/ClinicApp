@@ -476,6 +476,48 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت پیکربندی بیمه بر اساس ServiceId
+        /// </summary>
+        public async Task<ServiceResult<PlanService>> GetByPlanAndServiceAsync(int planId, int serviceId)
+        {
+            try
+            {
+                _logger.Information("Getting plan service by PlanId: {PlanId}, ServiceId: {ServiceId}", planId, serviceId);
+
+                // ابتدا ServiceCategoryId را از Service دریافت کن
+                var service = await _context.Services
+                    .Where(s => s.ServiceId == serviceId && !s.IsDeleted)
+                    .Select(s => new { s.ServiceCategoryId })
+                    .FirstOrDefaultAsync();
+
+                if (service == null)
+                {
+                    return ServiceResult<PlanService>.Failed("خدمت یافت نشد");
+                }
+
+                // سپس PlanService را بر اساس ServiceCategoryId جستجو کن
+                var planService = await _context.PlanServices
+                    .Include(ps => ps.InsurancePlan)
+                    .Include(ps => ps.ServiceCategory)
+                    .FirstOrDefaultAsync(ps => ps.InsurancePlanId == planId && 
+                                              ps.ServiceCategoryId == service.ServiceCategoryId && 
+                                              !ps.IsDeleted);
+
+                if (planService == null)
+                {
+                    return ServiceResult<PlanService>.Failed("پیکربندی بیمه برای این خدمت یافت نشد");
+                }
+
+                return ServiceResult<PlanService>.Successful(planService);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error getting plan service by PlanId: {PlanId}, ServiceId: {ServiceId}", planId, serviceId);
+                return ServiceResult<PlanService>.Failed("خطا در دریافت پیکربندی بیمه");
+            }
+        }
+
         #endregion
 
         #region Database Operations

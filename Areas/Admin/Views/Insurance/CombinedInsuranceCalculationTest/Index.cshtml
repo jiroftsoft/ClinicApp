@@ -1,0 +1,272 @@
+@{
+    ViewBag.Title = "تست محاسبه بیمه ترکیبی";
+    Layout = "~/Areas/Admin/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-calculator text-primary"></i>
+                        تست محاسبه بیمه ترکیبی
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- دکمه‌های عملیات -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-primary" id="runComprehensiveTests">
+                                    <i class="fas fa-play"></i>
+                                    اجرای تست‌های جامع
+                                </button>
+                                <button type="button" class="btn btn-info" id="getTestReport">
+                                    <i class="fas fa-chart-bar"></i>
+                                    دریافت گزارش تست
+                                </button>
+                                <button type="button" class="btn btn-success" id="exportTestResults">
+                                    <i class="fas fa-download"></i>
+                                    صادرات نتایج
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- پیام‌های سیستم -->
+                    <div id="systemMessages" class="row mb-4" style="display: none;">
+                        <div class="col-12">
+                            <div id="messageContainer"></div>
+                        </div>
+                    </div>
+
+                    <!-- نتایج تست -->
+                    <div id="testResults" class="row" style="display: none;">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <i class="fas fa-chart-line"></i>
+                                        نتایج تست‌های محاسبه بیمه ترکیبی
+                                    </h3>
+                                </div>
+                                <div class="card-body">
+                                    <!-- آمار کلی -->
+                                    <div class="row mb-4">
+                                        <div class="col-lg-3 col-6">
+                                            <div class="small-box bg-info">
+                                                <div class="inner">
+                                                    <h3 id="totalScenarios">-</h3>
+                                                    <p>کل سناریوها</p>
+                                                </div>
+                                                <div class="icon">
+                                                    <i class="fas fa-list"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3 col-6">
+                                            <div class="small-box bg-success">
+                                                <div class="inner">
+                                                    <h3 id="successfulScenarios">-</h3>
+                                                    <p>سناریوهای موفق</p>
+                                                </div>
+                                                <div class="icon">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3 col-6">
+                                            <div class="small-box bg-warning">
+                                                <div class="inner">
+                                                    <h3 id="successRate">-</h3>
+                                                    <p>نرخ موفقیت (%)</p>
+                                                </div>
+                                                <div class="icon">
+                                                    <i class="fas fa-percentage"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-lg-3 col-6">
+                                            <div class="small-box bg-danger">
+                                                <div class="inner">
+                                                    <h3 id="testDuration">-</h3>
+                                                    <p>مدت زمان تست</p>
+                                                </div>
+                                                <div class="icon">
+                                                    <i class="fas fa-clock"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- جدول نتایج سناریوها -->
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered table-striped" id="scenariosTable">
+                                            <thead>
+                                                <tr>
+                                                    <th>نام سناریو</th>
+                                                    <th>سهم بیمار مورد انتظار</th>
+                                                    <th>سهم بیمار واقعی</th>
+                                                    <th>پوشش بیمه مورد انتظار</th>
+                                                    <th>پوشش بیمه واقعی</th>
+                                                    <th>وضعیت</th>
+                                                    <th>پیام خطا</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                <tr>
+                                                    <td colspan="7" class="text-center">
+                                                        <i class="fas fa-spinner fa-spin"></i>
+                                                        در حال بارگذاری...
+                                                    </td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // رویدادهای دکمه‌ها
+            $('#runComprehensiveTests').click(function() {
+                runComprehensiveTests();
+            });
+            
+            $('#getTestReport').click(function() {
+                getTestReport();
+            });
+            
+            $('#exportTestResults').click(function() {
+                exportTestResults();
+            });
+        });
+
+        function runComprehensiveTests() {
+            $('#runComprehensiveTests').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال اجرا...');
+
+            $.ajax({
+                url: '@Url.Action("RunComprehensiveTests", "CombinedInsuranceCalculationTest")',
+                type: 'POST',
+                data: {
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showMessage('تست‌های جامع با موفقیت اجرا شدند: ' + response.message, 'success');
+                        displayTestResults(response.data);
+                    } else {
+                        showMessage('خطا در اجرای تست‌های جامع: ' + response.message, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showMessage('خطا در اجرای تست‌های جامع: ' + error, 'error');
+                },
+                complete: function() {
+                    $('#runComprehensiveTests').prop('disabled', false).html('<i class="fas fa-play"></i> اجرای تست‌های جامع');
+                }
+            });
+        }
+
+        function getTestReport() {
+            $('#getTestReport').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال دریافت...');
+
+            $.ajax({
+                url: '@Url.Action("GetTestReport", "CombinedInsuranceCalculationTest")',
+                type: 'GET',
+                dataType: 'json',
+                success: function(response) {
+                    if (response.success) {
+                        showMessage('گزارش تست با موفقیت دریافت شد', 'success');
+                        displayTestResults(response.data);
+                    } else {
+                        showMessage('خطا در دریافت گزارش تست: ' + response.message, 'error');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showMessage('خطا در دریافت گزارش تست: ' + error, 'error');
+                },
+                complete: function() {
+                    $('#getTestReport').prop('disabled', false).html('<i class="fas fa-chart-bar"></i> دریافت گزارش تست');
+                }
+            });
+        }
+
+        function displayTestResults(data) {
+            // نمایش آمار کلی
+            $('#totalScenarios').text(data.testScenarios.length);
+            $('#successfulScenarios').text(data.testScenarios.filter(s => s.isSuccess).length);
+            $('#successRate').text(data.successRate.toFixed(2) + '%');
+            $('#testDuration').text(formatDuration(data.totalDuration));
+
+            // نمایش جدول سناریوها
+            var tbody = $('#scenariosTable tbody');
+            tbody.empty();
+
+            data.testScenarios.forEach(function(scenario) {
+                var row = '<tr>' +
+                    '<td>' + scenario.scenarioName + '</td>' +
+                    '<td>' + scenario.expectedPatientShare.toFixed(2) + '</td>' +
+                    '<td>' + scenario.actualPatientShare.toFixed(2) + '</td>' +
+                    '<td>' + scenario.expectedInsuranceCoverage.toFixed(2) + '</td>' +
+                    '<td>' + scenario.actualInsuranceCoverage.toFixed(2) + '</td>' +
+                    '<td>' + (scenario.isSuccess ? '<span class="badge badge-success">موفق</span>' : '<span class="badge badge-danger">ناموفق</span>') + '</td>' +
+                    '<td>' + (scenario.errorMessage || '-') + '</td>' +
+                    '</tr>';
+                tbody.append(row);
+            });
+
+            // نمایش نتایج
+            $('#testResults').show();
+        }
+
+        function exportTestResults() {
+            showMessage('قابلیت صادرات نتایج در نسخه بعدی اضافه خواهد شد', 'info');
+        }
+
+        function formatDuration(duration) {
+            if (duration.seconds) {
+                return duration.seconds + ' ثانیه';
+            } else if (duration.milliseconds) {
+                return duration.milliseconds + ' میلی‌ثانیه';
+            } else {
+                return 'کمتر از 1 میلی‌ثانیه';
+            }
+        }
+
+        function showMessage(message, type) {
+            var alertClass = type === 'success' ? 'alert-success' : type === 'error' ? 'alert-danger' : 'alert-info';
+            var icon = type === 'success' ? 'fas fa-check-circle' : type === 'error' ? 'fas fa-exclamation-triangle' : 'fas fa-info-circle';
+            
+            var messageHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                '<i class="' + icon + '"></i> ' + message +
+                '<button type="button" class="close" data-dismiss="alert">' +
+                '<span>&times;</span>' +
+                '</button>' +
+                '</div>';
+            
+            $('#messageContainer').html(messageHtml);
+            $('#systemMessages').show();
+            
+            // مخفی کردن پیام بعد از 5 ثانیه
+            setTimeout(function() {
+                $('#systemMessages').fadeOut();
+            }, 5000);
+        }
+    </script>
+}

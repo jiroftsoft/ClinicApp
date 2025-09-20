@@ -198,6 +198,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
     {
         public int ServiceId { get; set; }
         public string Title { get; set; }
+        public string ServiceCode { get; set; }
         public string ServiceCategoryName { get; set; }
     }
 

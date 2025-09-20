@@ -1,0 +1,658 @@
+/**
+ * Supplementary Tariff Styles
+ * استایل‌های مخصوص تعرفه‌های بیمه تکمیلی
+ * 
+ * @author ClinicApp Team
+ * @version 1.0.0
+ * @description CSS styles specifically for supplementary tariff management
+ */
+
+/* ===== SUPPLEMENTARY TARIFF COLORS ===== */
+:root {
+    --supplementary-primary: #667eea;
+    --supplementary-secondary: #764ba2;
+    --supplementary-success: #4facfe;
+    --supplementary-warning: #f093fb;
+    --supplementary-danger: #ff6b6b;
+    --supplementary-info: #00f2fe;
+    --supplementary-light: #f8f9fa;
+    --supplementary-dark: #495057;
+    --supplementary-white: #ffffff;
+    --supplementary-gray: #6c757d;
+    --supplementary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* ===== SUPPLEMENTARY TARIFF CARDS ===== */
+.supplementary-tariff-card {
+    background: var(--supplementary-white);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border: none;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    margin-bottom: 20px;
+}
+
+.supplementary-tariff-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+}
+
+.supplementary-tariff-card .card-header {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+    border: none;
+    border-radius: 15px 15px 0 0;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.supplementary-tariff-card .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.supplementary-tariff-card .card-body {
+    padding: 25px;
+    background: var(--supplementary-white);
+}
+
+.supplementary-tariff-card .card-footer {
+    background: var(--supplementary-light);
+    border-top: 1px solid #e9ecef;
+    border-radius: 0 0 15px 15px;
+    padding: 20px 25px;
+}
+
+/* ===== SUPPLEMENTARY TARIFF TABLE ===== */
+.supplementary-tariff-table {
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background: var(--supplementary-white);
+    margin-bottom: 20px;
+}
+
+.supplementary-tariff-table thead th {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+    border: none;
+    padding: 15px 10px;
+    font-weight: 600;
+    text-align: center;
+    position: relative;
+}
+
+.supplementary-tariff-table thead th::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.supplementary-tariff-table tbody tr {
+    transition: all 0.3s ease;
+}
+
+.supplementary-tariff-table tbody tr:hover {
+    background-color: var(--supplementary-light);
+    transform: scale(1.01);
+}
+
+.supplementary-tariff-table tbody td {
+    padding: 15px 10px;
+    vertical-align: middle;
+    text-align: center;
+    border-bottom: 1px solid #e9ecef;
+}
+
+/* ===== SUPPLEMENTARY TARIFF FILTERS ===== */
+.supplementary-tariff-filters {
+    background: var(--supplementary-white);
+    border-radius: 15px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+    border: none;
+}
+
+.supplementary-tariff-filters .card-header {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+    border: none;
+    border-radius: 15px 15px 0 0;
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.supplementary-tariff-filters .card-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.supplementary-tariff-filters .card-body {
+    padding: 25px;
+    background: var(--supplementary-white);
+}
+
+.supplementary-tariff-filters .form-group {
+    margin-bottom: 20px;
+}
+
+.supplementary-tariff-filters .form-label {
+    font-weight: 600;
+    color: var(--supplementary-dark);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.supplementary-tariff-filters .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 10px 15px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.supplementary-tariff-filters .form-control:focus {
+    border-color: var(--supplementary-primary);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    outline: none;
+}
+
+/* ===== SUPPLEMENTARY TARIFF CALCULATION PREVIEW ===== */
+.calculation-preview {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.calculation-preview::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.calculation-preview .calculation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.2);
+    position: relative;
+    z-index: 1;
+}
+
+.calculation-preview .calculation-item:last-child {
+    border-bottom: none;
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+.calculation-preview .calculation-item .currency-format {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+}
+
+/* ===== SUPPLEMENTARY TARIFF BADGES ===== */
+.supplementary-badge {
+    padding: 8px 20px;
+    border-radius: 25px;
+    font-weight: 500;
+    font-size: 0.9rem;
+    display: inline-block;
+    transition: all 0.3s ease;
+}
+
+.supplementary-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+.supplementary-badge-success {
+    background: linear-gradient(135deg, var(--supplementary-success) 0%, var(--supplementary-info) 100%);
+    color: var(--supplementary-white);
+}
+
+.supplementary-badge-danger {
+    background: linear-gradient(135deg, var(--supplementary-danger) 0%, #ee5a24 100%);
+    color: var(--supplementary-white);
+}
+
+.supplementary-badge-warning {
+    background: linear-gradient(135deg, var(--supplementary-warning) 0%, var(--supplementary-danger) 100%);
+    color: var(--supplementary-white);
+}
+
+.supplementary-badge-secondary {
+    background: linear-gradient(135deg, var(--supplementary-gray) 0%, var(--supplementary-dark) 100%);
+    color: var(--supplementary-white);
+}
+
+.supplementary-badge-info {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+}
+
+/* ===== SUPPLEMENTARY TARIFF BUTTONS ===== */
+.btn-supplementary {
+    background: var(--supplementary-gradient);
+    border: none;
+    border-radius: 25px;
+    color: var(--supplementary-white);
+    padding: 12px 30px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.btn-supplementary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    color: var(--supplementary-white);
+    text-decoration: none;
+}
+
+.btn-supplementary:focus {
+    outline: none;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-supplementary-secondary {
+    background: linear-gradient(135deg, var(--supplementary-warning) 0%, var(--supplementary-danger) 100%);
+    border: none;
+    border-radius: 25px;
+    color: var(--supplementary-white);
+    padding: 12px 30px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.btn-supplementary-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    color: var(--supplementary-white);
+    text-decoration: none;
+}
+
+.btn-supplementary-success {
+    background: linear-gradient(135deg, var(--supplementary-success) 0%, var(--supplementary-info) 100%);
+    border: none;
+    border-radius: 25px;
+    color: var(--supplementary-white);
+    padding: 12px 30px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.btn-supplementary-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    color: var(--supplementary-white);
+    text-decoration: none;
+}
+
+.btn-supplementary-danger {
+    background: linear-gradient(135deg, var(--supplementary-danger) 0%, #ee5a24 100%);
+    border: none;
+    border-radius: 25px;
+    color: var(--supplementary-white);
+    padding: 12px 30px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-block;
+    cursor: pointer;
+}
+
+.btn-supplementary-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    color: var(--supplementary-white);
+    text-decoration: none;
+}
+
+/* ===== SUPPLEMENTARY TARIFF FORMS ===== */
+.supplementary-form {
+    background: var(--supplementary-white);
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.supplementary-form .form-group {
+    margin-bottom: 25px;
+}
+
+.supplementary-form .form-label {
+    font-weight: 600;
+    color: var(--supplementary-dark);
+    margin-bottom: 8px;
+    display: block;
+}
+
+.supplementary-form .form-control {
+    border-radius: 10px;
+    border: 2px solid #e9ecef;
+    padding: 12px 15px;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.supplementary-form .form-control:focus {
+    border-color: var(--supplementary-primary);
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    outline: none;
+}
+
+.supplementary-form .form-control.is-invalid {
+    border-color: var(--supplementary-danger);
+}
+
+.supplementary-form .form-control.is-valid {
+    border-color: var(--supplementary-success);
+}
+
+.supplementary-form .invalid-feedback {
+    display: block;
+    color: var(--supplementary-danger);
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+.supplementary-form .valid-feedback {
+    display: block;
+    color: var(--supplementary-success);
+    font-size: 0.875rem;
+    margin-top: 5px;
+}
+
+/* ===== SUPPLEMENTARY TARIFF ALERTS ===== */
+.alert-supplementary {
+    border-radius: 15px;
+    border: none;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+}
+
+.alert-supplementary::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.alert-supplementary-info {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+}
+
+.alert-supplementary-success {
+    background: linear-gradient(135deg, var(--supplementary-success) 0%, var(--supplementary-info) 100%);
+    color: var(--supplementary-white);
+}
+
+.alert-supplementary-warning {
+    background: linear-gradient(135deg, var(--supplementary-warning) 0%, var(--supplementary-danger) 100%);
+    color: var(--supplementary-white);
+}
+
+.alert-supplementary-danger {
+    background: linear-gradient(135deg, var(--supplementary-danger) 0%, #ee5a24 100%);
+    color: var(--supplementary-white);
+}
+
+/* ===== SUPPLEMENTARY TARIFF MODALS ===== */
+.supplementary-modal .modal-content {
+    border-radius: 15px;
+    border: none;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+}
+
+.supplementary-modal .modal-header {
+    background: var(--supplementary-gradient);
+    color: var(--supplementary-white);
+    border: none;
+    border-radius: 15px 15px 0 0;
+    padding: 25px;
+    position: relative;
+    overflow: hidden;
+}
+
+.supplementary-modal .modal-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.supplementary-modal .modal-body {
+    padding: 30px;
+    background: var(--supplementary-white);
+}
+
+.supplementary-modal .modal-footer {
+    background: var(--supplementary-light);
+    border: none;
+    border-radius: 0 0 15px 15px;
+    padding: 20px 30px;
+}
+
+/* ===== SUPPLEMENTARY TARIFF LOADING ===== */
+.supplementary-loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+
+.supplementary-loading .spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid var(--supplementary-primary);
+    border-radius: 50%;
+    animation: supplementary-spin 1s linear infinite;
+}
+
+@keyframes supplementary-spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* ===== SUPPLEMENTARY TARIFF UTILITIES ===== */
+.supplementary-currency-format {
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: var(--supplementary-dark);
+}
+
+.supplementary-gradient-text {
+    background: var(--supplementary-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    font-weight: bold;
+}
+
+.supplementary-shadow {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.supplementary-shadow-lg {
+    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+}
+
+.supplementary-border-radius {
+    border-radius: 15px;
+}
+
+.supplementary-border-radius-lg {
+    border-radius: 25px;
+}
+
+/* ===== SUPPLEMENTARY TARIFF ANIMATIONS ===== */
+@keyframes supplementary-fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes supplementary-slideIn {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+
+@keyframes supplementary-bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+    40% { transform: translateY(-10px); }
+    60% { transform: translateY(-5px); }
+}
+
+.supplementary-fade-in {
+    animation: supplementary-fadeIn 0.5s ease-out;
+}
+
+.supplementary-slide-in {
+    animation: supplementary-slideIn 0.5s ease-out;
+}
+
+.supplementary-bounce {
+    animation: supplementary-bounce 1s ease-out;
+}
+
+/* ===== SUPPLEMENTARY TARIFF STATUS INDICATORS ===== */
+.supplementary-status-indicator {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.supplementary-status-indicator.active {
+    background: var(--supplementary-success);
+    box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+}
+
+.supplementary-status-indicator.inactive {
+    background: var(--supplementary-gray);
+}
+
+.supplementary-status-indicator.warning {
+    background: var(--supplementary-warning);
+    box-shadow: 0 0 10px rgba(240, 147, 251, 0.5);
+}
+
+.supplementary-status-indicator.danger {
+    background: var(--supplementary-danger);
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+    .supplementary-tariff-card .card-header {
+        padding: 15px;
+    }
+    
+    .supplementary-tariff-card .card-body {
+        padding: 20px;
+    }
+    
+    .supplementary-form {
+        padding: 20px;
+    }
+    
+    .btn-supplementary,
+    .btn-supplementary-secondary,
+    .btn-supplementary-success,
+    .btn-supplementary-danger {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
+    
+    .calculation-preview {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 576px) {
+    .supplementary-tariff-card .card-header {
+        padding: 12px;
+    }
+    
+    .supplementary-tariff-card .card-body {
+        padding: 15px;
+    }
+    
+    .supplementary-form {
+        padding: 15px;
+    }
+    
+    .btn-supplementary,
+    .btn-supplementary-secondary,
+    .btn-supplementary-success,
+    .btn-supplementary-danger {
+        padding: 8px 15px;
+        font-size: 12px;
+    }
+    
+    .calculation-preview {
+        padding: 15px;
+    }
+    
+    .supplementary-tariff-table tbody td {
+        padding: 10px 5px;
+        font-size: 12px;
+    }
+}

@@ -4,6 +4,10 @@
 }
 
 @section Styles {
+    <link href="~/Content/css/medical-environment.css" rel="stylesheet" />
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
+    <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
+
     <style>
         /* 🏥 Medical Environment Styles - بهینه شده برای محیط درمانی */
         .calculation-card {
@@ -11,6 +15,43 @@
             border-radius: 0.35rem;
             box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
             transition: all 0.3s ease;
+            position: relative;
+            min-height: 500px; /* حداقل ارتفاع برای خوانایی بهتر */
+        }
+        
+        /* 📏 بزرگ کردن فرم‌ها */
+        .form-control {
+            font-size: 1.1rem;
+            padding: 0.75rem 1rem;
+            height: auto;
+            min-height: 50px;
+        }
+        
+        .form-label {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+        }
+        
+        .card-body {
+            padding: 2rem;
+        }
+        
+        .card-header {
+            padding: 1.5rem 2rem;
+            font-size: 1.2rem;
+        }
+        
+        .btn {
+            font-size: 1.1rem;
+            padding: 0.75rem 1.5rem;
+            min-height: 50px;
+        }
+        
+        .btn-lg {
+            font-size: 1.2rem;
+            padding: 1rem 2rem;
+            min-height: 60px;
         }
         
         .calculation-card:hover {
@@ -22,6 +63,19 @@
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-radius: 0.5rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .result-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+            pointer-events: none;
         }
         
         .medical-icon {
@@ -36,12 +90,19 @@
             background: rgba(28, 200, 138, 0.05);
             border-radius: 0.25rem;
             padding: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .calculation-step:hover {
+            background: rgba(28, 200, 138, 0.1);
+            transform: translateX(5px);
         }
         
         .amount-display {
             font-size: 1.5rem;
             font-weight: 700;
             color: #2c3e50;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.1);
         }
         
         .percentage-display {
@@ -57,11 +118,12 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             z-index: 9999;
             display: flex;
             align-items: center;
             justify-content: center;
+            backdrop-filter: blur(5px);
         }
         
         .loading-content {
@@ -70,6 +132,13 @@
             border-radius: 1rem;
             text-align: center;
             box-shadow: 0 1rem 3rem rgba(0,0,0,0.3);
+            animation: pulse 2s infinite;
+        }
+        
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
         }
         
         /* 📱 Responsive Design */
@@ -81,6 +150,14 @@
             .amount-display {
                 font-size: 1.2rem;
             }
+            
+            .result-card .row {
+                flex-direction: column;
+            }
+            
+            .result-card .col-md-3 {
+                margin-bottom: 1rem;
+            }
         }
         
         /* 🎨 Medical Theme Colors */
@@ -88,6 +165,7 @@
         .medical-secondary { color: #36b9cc; }
         .medical-warning { color: #f6c23e; }
         .medical-danger { color: #e74a3b; }
+        .medical-success { color: #28a745; }
         
         /* 🔒 Security Indicators */
         .security-indicator {
@@ -96,6 +174,165 @@
             right: 10px;
             color: #1cc88a;
             font-size: 1.1rem;
+            animation: blink 2s infinite;
+        }
+        
+        @@keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0.3; }
+        }
+        
+        /* 🎯 Enhanced Form Styling */
+        .form-control:focus {
+            border-color: #1cc88a;
+            box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #1cc88a, #17a2b8);
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(45deg, #17a2b8, #1cc88a);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        /* 📊 Enhanced Results Display */
+        .result-item {
+            background: rgba(255,255,255,0.1);
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s ease;
+        }
+        
+        .result-item:hover {
+            background: rgba(255,255,255,0.2);
+            transform: scale(1.02);
+        }
+        
+        /* 🚨 Error Handling */
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            border-radius: 0.25rem;
+            padding: 0.75rem;
+            margin: 1rem 0;
+        }
+        
+        /* 🔄 Loading States */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1cc88a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @@keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* 📈 Progress Indicators */
+        .progress-bar {
+            background: linear-gradient(45deg, #1cc88a, #17a2b8);
+        }
+        
+        /* 🎨 Enhanced Typography */
+        .medical-title {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+        
+        .medical-subtitle {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-weight: 400;
+            color: #6c757d;
+        }
+        
+        /* 🎯 UX/UI Enhancements */
+        .is-disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            background-color: #f8f9fa;
+        }
+        
+        .form-label i {
+            margin-right: 5px;
+            color: #1cc88a;
+        }
+        
+        .text-danger {
+            color: #e74a3b !important;
+            font-weight: bold;
+        }
+        
+        .input-group-text {
+            background-color: #1cc88a;
+            color: white;
+            border-color: #1cc88a;
+        }
+        
+        .form-text {
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+        
+        .form-text i {
+            margin-right: 3px;
+        }
+        
+        /* 🎨 Enhanced Form Styling */
+        .form-control:focus {
+            border-color: #1cc88a;
+            box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25);
+        }
+        
+        .form-control.is-invalid {
+            border-color: #e74a3b;
+            box-shadow: 0 0 0 0.2rem rgba(231, 74, 59, 0.25);
+        }
+        
+        .form-control.is-valid {
+            border-color: #1cc88a;
+            box-shadow: 0 0 0 0.2rem rgba(28, 200, 138, 0.25);
+        }
+        
+        /* 🎯 Loading States */
+        .loading-state {
+            position: relative;
+            pointer-events: none;
+        }
+        
+        .loading-state::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 20px;
+            height: 20px;
+            margin: -10px 0 0 -10px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #1cc88a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
         }
     </style>
 }
@@ -104,20 +341,32 @@
     <div class="row">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2><i class="fas fa-calculator medical-icon"></i> محاسبه بیمه ترکیبی</h2>
+                <div>
+                    <h2 class="medical-title">
+                        <i class="fas fa-calculator medical-icon"></i> محاسبه بیمه ترکیبی
+                        <span class="security-indicator">
+                            <i class="fas fa-shield-alt" title="محاسبات امن و رمزنگاری شده"></i>
+                        </span>
+                    </h2>
+                    <p class="medical-subtitle mb-0">محاسبه دقیق سهم بیمه اصلی و تکمیلی با استانداردهای پزشکی ایران</p>
+                </div>
                 <div class="text-muted">
-                    <small>محاسبه دقیق سهم بیمه اصلی و تکمیلی</small>
+                    <small>
+                        <i class="fas fa-clock"></i> آخرین به‌روزرسانی: @DateTime.Now.ToString("yyyy/MM/dd HH:mm")
+                    </small>
                 </div>
             </div>
 
             <!-- فرم محاسبه -->
             <div class="row">
-                <div class="col-lg-8">
+                <div class="col-lg-9">
                     <div class="card calculation-card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">
                                 <i class="fas fa-user-md"></i> اطلاعات محاسبه
+                                <span class="badge badge-info ml-2">نسخه 2.0</span>
                             </h5>
+                            <small class="text-muted">تمام فیلدها الزامی هستند</small>
                         </div>
                         <div class="card-body">
                             <form id="calculationForm">
@@ -125,18 +374,29 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="patientId" class="form-label">بیمار</label>
-                                            <select id="patientId" name="patientId" class="form-control" required>
+                                            <label for="patientId" class="form-label">
+                                                <i class="fas fa-user"></i> بیمار
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <select id="patientId" name="patientId" class="form-control" required aria-describedby="patientIdHelp">
                                                 <option value="">انتخاب بیمار...</option>
                                             </select>
+                                            <small id="patientIdHelp" class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> بیمار مورد نظر را انتخاب کنید
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="serviceId" class="form-label">خدمت</label>
-                                            <select id="serviceId" name="serviceId" class="form-control" required>
-                                                <option value="">انتخاب خدمت...</option>
+                                            <label for="departmentId" class="form-label">
+                                                <i class="fas fa-building"></i> دپارتمان
+                                            </label>
+                                            <select id="departmentId" name="departmentId" class="form-control" aria-describedby="departmentIdHelp">
+                                                <option value="">انتخاب دپارتمان...</option>
                                             </select>
+                                            <small id="departmentIdHelp" class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> دپارتمان مورد نظر را انتخاب کنید
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
@@ -144,28 +404,71 @@
                                 <div class="row">
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="serviceAmount" class="form-label">مبلغ خدمت (تومان)</label>
-                                            <input type="number" id="serviceAmount" name="serviceAmount" class="form-control" 
-                                                   placeholder="مبلغ خدمت را وارد کنید" required min="0" step="1000">
+                                            <label for="serviceId" class="form-label">
+                                                <i class="fas fa-stethoscope"></i> خدمت
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <select id="serviceId" name="serviceId" class="form-control" required disabled aria-describedby="serviceIdHelp">
+                                                <option value="">ابتدا دپارتمان را انتخاب کنید...</option>
+                                            </select>
+                                            <small id="serviceIdHelp" class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> ابتدا دپارتمان را انتخاب کنید
+                                            </small>
                                         </div>
                                     </div>
                                     <div class="col-md-6">
                                         <div class="form-group">
-                                            <label for="calculationDate" class="form-label">تاریخ محاسبه</label>
-                                            <input type="date" id="calculationDate" name="calculationDate" class="form-control" 
-                                                   value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                                            <label for="serviceAmount" class="form-label">
+                                                <i class="fas fa-money-bill-wave"></i> مبلغ خدمت (تومان)
+                                                <span class="text-danger">*</span>
+                                            </label>
+                                            <div class="input-group">
+                                                <input type="number" id="serviceAmount" name="serviceAmount" class="form-control" 
+                                                       placeholder="مبلغ خدمت را وارد کنید" required min="0" step="1000" 
+                                                       aria-describedby="serviceAmountHelp">
+                                                <div class="input-group-append">
+                                                    <span class="input-group-text">تومان</span>
+                                                </div>
+                                            </div>
+                                            <small id="serviceAmountHelp" class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> مبلغ خدمت به صورت خودکار پر می‌شود
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label for="calculationDate" class="form-label">
+                                                <i class="fas fa-calendar-alt"></i> تاریخ محاسبه
+                                            </label>
+                                            <input type="text" id="calculationDate" name="calculationDate" class="form-control persian-datepicker" 
+                                                   value="@DateTime.Now.ToString("yyyy/MM/dd")" aria-describedby="calculationDateHelp">
+                                            <small id="calculationDateHelp" class="form-text text-muted">
+                                                <i class="fas fa-info-circle"></i> تاریخ محاسبه بیمه را انتخاب کنید
+                                            </small>
                                         </div>
                                     </div>
                                 </div>
                                 
                                 <div class="row">
                                     <div class="col-12">
-                                        <button type="submit" class="btn btn-primary btn-lg">
-                                            <i class="fas fa-calculator"></i> محاسبه بیمه ترکیبی
-                                        </button>
-                                        <button type="button" id="clearForm" class="btn btn-secondary btn-lg ml-2">
-                                            <i class="fas fa-eraser"></i> پاک کردن
-                                        </button>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <button type="submit" class="btn btn-primary btn-lg" id="calculateBtn">
+                                                    <i class="fas fa-calculator"></i> محاسبه بیمه ترکیبی
+                                                </button>
+                                                <button type="button" id="clearForm" class="btn btn-secondary btn-lg ml-2">
+                                                    <i class="fas fa-eraser"></i> پاک کردن
+                                                </button>
+                                            </div>
+                                            <div class="text-muted">
+                                                <small>
+                                                    <i class="fas fa-info-circle"></i> محاسبه بر اساس آخرین تعرفه‌های بیمه
+                                                </small>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </form>
@@ -173,7 +476,7 @@
                     </div>
                 </div>
                 
-                <div class="col-lg-4">
+                <div class="col-lg-3">
                     <div class="card calculation-card">
                         <div class="card-header">
                             <h5 class="card-title mb-0">
@@ -200,6 +503,11 @@
                                 <i class="fas fa-lightbulb"></i>
                                 <strong>نکته:</strong> محاسبه بر اساس استانداردهای پزشکی ایران انجام می‌شود.
                             </div>
+                            
+                            <div class="alert alert-warning mt-2">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>هشدار:</strong> در صورت عدم وجود بیمه تکمیلی، فقط بیمه اصلی محاسبه می‌شود.
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -217,28 +525,37 @@
                         <div class="card-body">
                             <div class="row">
                                 <div class="col-md-3">
-                                    <div class="text-center">
-                                        <h6 class="text-white-50">مبلغ کل خدمت</h6>
+                                    <div class="text-center result-item">
+                                        <h6 class="text-white-50">
+                                            <i class="fas fa-money-bill-wave"></i> مبلغ کل خدمت
+                                        </h6>
                                         <h4 class="text-white" id="totalServiceAmount">0 تومان</h4>
+                                        <small class="text-white-50">قبل از بیمه</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="text-center">
-                                        <h6 class="text-white-50">پوشش بیمه اصلی</h6>
+                                    <div class="text-center result-item">
+                                        <h6 class="text-white-50">
+                                            <i class="fas fa-shield-alt"></i> پوشش بیمه اصلی
+                                        </h6>
                                         <h4 class="text-white" id="primaryCoverage">0 تومان</h4>
                                         <small class="text-white-50" id="primaryCoveragePercent">0%</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="text-center">
-                                        <h6 class="text-white-50">پوشش بیمه تکمیلی</h6>
+                                    <div class="text-center result-item">
+                                        <h6 class="text-white-50">
+                                            <i class="fas fa-plus-circle"></i> پوشش بیمه تکمیلی
+                                        </h6>
                                         <h4 class="text-white" id="supplementaryCoverage">0 تومان</h4>
                                         <small class="text-white-50" id="supplementaryCoveragePercent">0%</small>
                                     </div>
                                 </div>
                                 <div class="col-md-3">
-                                    <div class="text-center">
-                                        <h6 class="text-white-50">سهم نهایی بیمار</h6>
+                                    <div class="text-center result-item">
+                                        <h6 class="text-white-50">
+                                            <i class="fas fa-user"></i> سهم نهایی بیمار
+                                        </h6>
                                         <h4 class="text-white" id="finalPatientShare">0 تومان</h4>
                                         <small class="text-white-50" id="patientSharePercent">0%</small>
                                     </div>
@@ -264,336 +581,11 @@
 </div>
 
 @section Scripts {
-    <script>
-        $(document).ready(function() {
-            console.log('🏥 MEDICAL: صفحه محاسبه بیمه ترکیبی بارگذاری شد');
-            
-            // بارگیری همزمان لیست بیماران و خدمات برای بهبود Performance
-            Promise.all([
-                loadPatients(),
-                loadServices()
-            ]).then(function() {
-                console.log('🏥 MEDICAL: تمام داده‌ها بارگذاری شد');
-            }).catch(function(error) {
-                console.error('🏥 MEDICAL: خطا در بارگذاری داده‌ها', error);
-                showError('خطا در بارگذاری داده‌های اولیه');
-            });
-            
-            // مدیریت فرم
-            $('#calculationForm').on('submit', function(e) {
-                e.preventDefault();
-                calculateCombinedInsurance();
-            });
-            
-            // پاک کردن فرم
-            $('#clearForm').on('click', function() {
-                $('#calculationForm')[0].reset();
-                $('#calculationResults').hide();
-            });
-        });
-        
-        function loadPatients() {
-            console.log('🏥 MEDICAL: بارگیری لیست بیماران...');
-            
-            // بررسی Cache
-            if (window.patientsCache && window.patientsCache.length > 0) {
-                console.log('🏥 MEDICAL: استفاده از Cache بیماران');
-                populatePatientSelect(window.patientsCache);
-                return Promise.resolve();
-            }
-            
-            return new Promise(function(resolve, reject) {
-                $.ajax({
-                url: '@Url.Action("GetPatients", "CombinedInsuranceCalculation")',
-                type: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        console.log('🏥 MEDICAL: لیست بیماران دریافت شد', response.data);
-                        
-                        // ذخیره در Cache
-                        window.patientsCache = response.data;
-                        
-                        populatePatientSelect(response.data);
-                        resolve();
-                    } else {
-                        console.error('🏥 MEDICAL: خطا در دریافت لیست بیماران', response.message);
-                        showError('خطا در دریافت لیست بیماران: ' + response.message);
-                        reject(response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('🏥 MEDICAL: خطای AJAX در دریافت بیماران', error);
-                    showError('خطا در ارتباط با سرور برای دریافت بیماران');
-                    reject(error);
-                }
-            });
-            });
-        }
-        
-        function populatePatientSelect(patients) {
-            var patientSelect = $('#patientId');
-            patientSelect.empty();
-            patientSelect.append('<option value="">انتخاب بیمار...</option>');
-            
-            patients.forEach(function(patient) {
-                patientSelect.append('<option value="' + patient.id + '">' + 
-                    patient.name + ' (' + patient.nationalId + ')</option>');
-            });
-            
-            // فعال کردن Select2 برای جستجو
-            patientSelect.select2({
-                placeholder: 'انتخاب بیمار...',
-                allowClear: true,
-                language: {
-                    noResults: function() {
-                        return 'بیماری یافت نشد';
-                    }
-                }
-            });
-        }
-        
-        function loadServices() {
-            console.log('🏥 MEDICAL: بارگیری لیست خدمات...');
-            
-            $.ajax({
-                url: '@Url.Action("GetServices", "CombinedInsuranceCalculation")',
-                type: 'GET',
-                success: function(response) {
-                    if (response.success) {
-                        console.log('🏥 MEDICAL: لیست خدمات دریافت شد', response.data);
-                        
-                        var serviceSelect = $('#serviceId');
-                        serviceSelect.empty();
-                        serviceSelect.append('<option value="">انتخاب خدمت...</option>');
-                        
-                        response.data.forEach(function(service) {
-                            serviceSelect.append('<option value="' + service.id + '" data-price="' + service.basePrice + '">' + 
-                                service.name + ' (' + service.category + ') - ' + service.basePrice.toLocaleString() + ' تومان</option>');
-                        });
-                        
-                        // فعال کردن Select2 برای جستجو
-                        serviceSelect.select2({
-                            placeholder: 'انتخاب خدمت...',
-                            allowClear: true,
-                            language: {
-                                noResults: function() {
-                                    return 'خدمتی یافت نشد';
-                                }
-                            }
-                        });
-                        
-                        // تنظیم مبلغ خودکار هنگام انتخاب خدمت
-                        serviceSelect.on('change', function() {
-                            var selectedOption = $(this).find('option:selected');
-                            var basePrice = selectedOption.data('price');
-                            if (basePrice) {
-                                $('#serviceAmount').val(basePrice);
-                            }
-                        });
-                    } else {
-                        console.error('🏥 MEDICAL: خطا در دریافت لیست خدمات', response.message);
-                        showError('خطا در دریافت لیست خدمات: ' + response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('🏥 MEDICAL: خطای AJAX در دریافت خدمات', error);
-                    showError('خطا در ارتباط با سرور برای دریافت خدمات');
-                }
-            });
-        }
-        
-        function calculateCombinedInsurance() {
-            // اعتبارسنجی ورودی‌ها
-            var patientId = $('#patientId').val();
-            var serviceId = $('#serviceId').val();
-            var serviceAmount = $('#serviceAmount').val();
-            var calculationDate = $('#calculationDate').val();
-            
-            if (!patientId || !serviceId || !serviceAmount) {
-                showError('لطفاً تمام فیلدها را پر کنید');
-                return;
-            }
-            
-            if (parseFloat(serviceAmount) <= 0) {
-                showError('مبلغ خدمت باید بیشتر از صفر باشد');
-                return;
-            }
-            
-            var formData = {
-                patientId: patientId,
-                serviceId: serviceId,
-                serviceAmount: serviceAmount,
-                calculationDate: calculationDate,
-                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-            };
-            
-            console.log('🏥 MEDICAL: شروع محاسبه بیمه ترکیبی', formData);
-            
-            // نمایش loading
-            showLoadingIndicator();
-            
-            $.ajax({
-                url: '@Url.Action("CalculateCombinedInsurance", "CombinedInsuranceCalculation")',
-                type: 'POST',
-                data: formData,
-                success: function(response) {
-                    hideLoadingIndicator();
-                    
-                    if (response.success) {
-                        console.log('🏥 MEDICAL: محاسبه موفق', response.data);
-                        displayCalculationResults(response.data);
-                    } else {
-                        console.error('🏥 MEDICAL: خطا در محاسبه', response.message);
-                        showError(response.message);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    hideLoadingIndicator();
-                    console.error('🏥 MEDICAL: خطای AJAX', error);
-                    
-                    // تشخیص نوع خطا
-                    var errorMessage = 'خطا در ارتباط با سرور';
-                    if (xhr.status === 401) {
-                        errorMessage = 'دسترسی غیرمجاز - لطفاً دوباره وارد شوید';
-                    } else if (xhr.status === 403) {
-                        errorMessage = 'دسترسی غیرمجاز - شما مجاز به انجام این عملیات نیستید';
-                    } else if (xhr.status === 500) {
-                        errorMessage = 'خطای سرور - لطفاً با مدیر سیستم تماس بگیرید';
-                    } else if (xhr.status === 0) {
-                        errorMessage = 'خطا در اتصال به سرور - لطفاً اتصال اینترنت خود را بررسی کنید';
-                    }
-                    
-                    showError(errorMessage);
-                }
-            });
-        }
-        
-        function displayCalculationResults(data) {
-            // نمایش نتایج
-            $('#totalServiceAmount').text(data.serviceAmount.toLocaleString() + ' تومان');
-            $('#primaryCoverage').text(data.primaryCoverage.toLocaleString() + ' تومان');
-            $('#primaryCoveragePercent').text(data.primaryCoveragePercent.toFixed(1) + '%');
-            $('#supplementaryCoverage').text(data.supplementaryCoverage.toLocaleString() + ' تومان');
-            $('#supplementaryCoveragePercent').text(data.supplementaryCoveragePercent.toFixed(1) + '%');
-            $('#finalPatientShare').text(data.finalPatientShare.toLocaleString() + ' تومان');
-            $('#patientSharePercent').text(data.patientSharePercent.toFixed(1) + '%');
-            
-            // جزئیات محاسبه
-            var details = `
-                <div class="row">
-                    <div class="col-md-6">
-                        <strong>وضعیت پوشش:</strong> <span class="badge badge-${data.coverageStatusColor}">${data.coverageStatus}</span>
-                    </div>
-                    <div class="col-md-6">
-                        <strong>کل پوشش بیمه:</strong> ${data.totalInsuranceCoverage.toLocaleString()} تومان (${data.totalCoveragePercent.toFixed(1)}%)
-                    </div>
-                </div>
-                <div class="row mt-2">
-                    <div class="col-md-6">
-                        <strong>صرفه‌جویی از بیمه تکمیلی:</strong> ${data.supplementarySavings.toLocaleString()} تومان
-                    </div>
-                    <div class="col-md-6">
-                        <strong>تاریخ محاسبه:</strong> ${new Date(data.calculationDate).toLocaleDateString('fa-IR')}
-                    </div>
-                </div>
-            `;
-            
-            if (data.notes) {
-                details += `<div class="row mt-2"><div class="col-12"><strong>توضیحات:</strong> ${data.notes}</div></div>`;
-            }
-            
-            $('#calculationDetails').html(details);
-            $('#calculationResults').show();
-            
-            console.log('🏥 MEDICAL: نتایج محاسبه نمایش داده شد');
-        }
-        
-        function showLoadingIndicator() {
-            console.log('🏥 MEDICAL: نمایش loading indicator');
-            
-            // نمایش loading overlay بهینه شده
-            if ($('#loadingOverlay').length === 0) {
-                $('body').append(`
-                    <div id="loadingOverlay" class="loading-overlay">
-                        <div class="loading-content">
-                            <i class="fas fa-spinner fa-spin fa-3x medical-primary"></i>
-                            <h5 class="mt-3 mb-2">در حال محاسبه بیمه ترکیبی...</h5>
-                            <p class="text-muted">لطفاً صبر کنید</p>
-                            <div class="progress mt-3" style="width: 200px;">
-                                <div class="progress-bar progress-bar-striped progress-bar-animated" 
-                                     role="progressbar" style="width: 100%"></div>
-                            </div>
-                        </div>
-                    </div>
-                `);
-            }
-            
-            // غیرفعال کردن دکمه محاسبه
-            $('button[type="submit"]').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال محاسبه...');
-            
-            // اضافه کردن security indicator
-            $('body').append('<div class="security-indicator"><i class="fas fa-shield-alt"></i></div>');
-        }
-        
-        function hideLoadingIndicator() {
-            console.log('🏥 MEDICAL: مخفی کردن loading indicator');
-            
-            // مخفی کردن loading overlay با animation
-            $('#loadingOverlay').fadeOut(300, function() {
-                $(this).remove();
-            });
-            
-            // حذف security indicator
-            $('.security-indicator').fadeOut(200, function() {
-                $(this).remove();
-            });
-            
-            // فعال کردن دکمه محاسبه
-            $('button[type="submit"]').prop('disabled', false).html('<i class="fas fa-calculator"></i> محاسبه بیمه ترکیبی');
-        }
-        
-        function showError(message) {
-            console.error('🏥 MEDICAL: خطا', message);
-            
-            // نمایش پیام خطا بهینه شده برای محیط درمانی
-            if (typeof toastr !== 'undefined') {
-                toastr.error(message, 'خطا در محاسبه بیمه', {
-                    timeOut: 8000,
-                    closeButton: true,
-                    progressBar: true,
-                    positionClass: 'toast-top-right',
-                    showMethod: 'slideDown',
-                    hideMethod: 'slideUp',
-                    showDuration: 300,
-                    hideDuration: 300
-                });
-            } else {
-                // Fallback برای محیط‌هایی که toastr ندارند
-                alert('🏥 خطا در محاسبه بیمه:\n' + message);
-            }
-            
-            // ثبت خطا در console برای debugging
-            console.error('🏥 MEDICAL ERROR:', {
-                message: message,
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent
-            });
-        }
-        
-        function showSuccess(message) {
-            console.log('🏥 MEDICAL: موفقیت', message);
-            
-            // نمایش پیام موفقیت
-            if (typeof toastr !== 'undefined') {
-                toastr.success(message, 'موفقیت', {
-                    timeOut: 3000,
-                    closeButton: true,
-                    progressBar: true,
-                    positionClass: 'toast-top-right'
-                });
-            } else {
-                alert('موفقیت: ' + message);
-            }
-        }
-    </script>
+    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    <script src="~/Scripts/app/medical-environment.js"></script>
+    <script src="~/Scripts/persian-datepicker.min.js"></script>
+    <link href="~/Content/persian-datepicker.min.css" rel="stylesheet" />
+    <script src="~/Scripts/app/combined-insurance-calculation.js?v=2.1&t=@DateTime.Now.Ticks"></script>
+    
 }

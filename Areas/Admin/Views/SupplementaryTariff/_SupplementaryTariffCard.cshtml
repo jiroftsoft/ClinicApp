@@ -1,0 +1,191 @@
+@model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexItemViewModel
+
+<div class="col-lg-4 col-md-6 mb-4">
+    <div class="card h-100 supplementary-tariff-card" data-tariff-id="@Model.InsuranceTariffId">
+        <div class="card-header @Model.StatusCssClass">
+            <div class="row align-items-center">
+                <div class="col-8">
+                    <h6 class="mb-0 text-white">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        @Model.ServiceTitle
+                    </h6>
+                </div>
+                <div class="col-4 text-end">
+                    <span class="badge @Model.StatusCssClass">
+                        @Model.StatusText
+                    </span>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <!-- Service Information -->
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">طرح بیمه:</small>
+                        <div class="fw-bold">@Model.InsurancePlanName</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">اولویت:</small>
+                        <div class="fw-bold">@(Model.Priority?.ToString() ?? "0")</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Financial Information -->
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">قیمت تعرفه:</small>
+                        <div class="fw-bold currency-format">@(Model.TariffPrice?.ToString("N0") ?? "0") تومان</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">سهم بیمار:</small>
+                        <div class="fw-bold currency-format">@(Model.PatientShare?.ToString("N0") ?? "0") تومان</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Supplementary Information -->
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">درصد پوشش تکمیلی:</small>
+                        <div class="fw-bold">@(Model.SupplementaryCoveragePercent?.ToString("F2") ?? "0")%</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">سقف پرداخت:</small>
+                        <div class="fw-bold currency-format">@(Model.SupplementaryMaxPayment?.ToString("N0") ?? "0") تومان</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Date Information -->
+            <div class="mb-3">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">تاریخ شروع:</small>
+                        <div class="fw-bold">@(Model.StartDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">تاریخ پایان:</small>
+                        <div class="fw-bold">@(Model.EndDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calculation Preview -->
+            <div class="calculation-preview">
+                <div class="row">
+                    <div class="col-6">
+                        <small class="text-muted">مبلغ باقی‌مانده:</small>
+                        <div class="fw-bold currency-format">@Model.RemainingAmountAfterPrimary.ToString("N0") تومان</div>
+                    </div>
+                    <div class="col-6">
+                        <small class="text-muted">پوشش تکمیلی:</small>
+                        <div class="fw-bold currency-format">@Model.SupplementaryCoverageAmount.ToString("N0") تومان</div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <small class="text-muted">سهم نهایی بیمار:</small>
+                        <div class="fw-bold currency-format text-primary">@Model.FinalPatientShare.ToString("N0") تومان</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="row">
+                <div class="col-4">
+                    <a href="@Url.Action("Details", new { id = Model.InsuranceTariffId })" 
+                       class="btn btn-sm btn-outline-primary w-100" title="مشاهده جزئیات">
+                        <i class="fas fa-eye"></i>
+                    </a>
+                </div>
+                <div class="col-4">
+                    <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" 
+                       class="btn btn-sm btn-outline-warning w-100" title="ویرایش">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                </div>
+                <div class="col-4">
+                    <a href="@Url.Action("Delete", new { id = Model.InsuranceTariffId })" 
+                       class="btn btn-sm btn-outline-danger w-100" title="حذف">
+                        <i class="fas fa-trash"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .supplementary-tariff-card {
+        transition: all 0.3s ease;
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .supplementary-tariff-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .supplementary-tariff-card .card-header {
+        border-radius: 15px 15px 0 0;
+        border: none;
+        padding: 15px;
+    }
+
+    .supplementary-tariff-card .card-body {
+        padding: 20px;
+    }
+
+    .supplementary-tariff-card .card-footer {
+        background: #f8f9fa;
+        border-top: 1px solid #e9ecef;
+        border-radius: 0 0 15px 15px;
+        padding: 15px;
+    }
+
+    .calculation-preview {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+
+    .currency-format {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: white;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .badge-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+    }
+</style>

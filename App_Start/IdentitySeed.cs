@@ -32,6 +32,7 @@ public static class IdentitySeed
         SeedDefaultClinic(context);
         SeedSpecializations(context);
         SeedNotificationTemplates(context);
+        SeedBusinessRules(context);
         Log.Information("فرآیند سیدینگ با موفقیت پایان یافت.");
     }
 
@@ -702,6 +703,273 @@ public static class IdentitySeed
         catch (Exception ex)
         {
             Log.Error(ex, "خطا در ایجاد تخصص‌های پیش‌فرض");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// ایجاد قوانین کسب‌وکار پیش‌فرض برای سیستم بیمه
+    /// این متد به صورت ایمن از کاربر ادمین استفاده می‌کند و از ایجاد تکراری جلوگیری می‌کند
+    /// </summary>
+    public static void SeedBusinessRules(ApplicationDbContext context)
+    {
+        try
+        {
+            // دریافت کاربر ادمین
+            var adminUser = context.Users.FirstOrDefault(u => u.UserName == "3020347998");
+            if (adminUser == null)
+            {
+                Log.Error("کاربر ادمین برای ایجاد قوانین کسب‌وکار یافت نشد.");
+                throw new Exception("کاربر ادمین برای ایجاد قوانین کسب‌وکار یافت نشد.");
+            }
+
+            // لیست قوانین کسب‌وکار پیش‌فرض
+            var businessRules = new List<BusinessRule>
+            {
+                // قانون درصد پوشش برای سالمندان
+                new BusinessRule
+                {
+                    RuleName = "درصد پوشش بالای 65 سال",
+                    Description = "افزایش درصد پوشش بیمه برای بیماران بالای 65 سال",
+                    RuleType = BusinessRuleType.CoveragePercent,
+                    Priority = 10,
+                    Conditions = @"{
+  ""field"": ""patient_age"",
+  ""operator"": ""greater_than"",
+  ""value"": ""65""
+}",
+                    Actions = @"{
+  ""type"": ""set_coverage_percent"",
+  ""value"": ""85""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون درصد پوشش برای زنان
+                new BusinessRule
+                {
+                    RuleName = "درصد پوشش زنان",
+                    Description = "افزایش درصد پوشش بیمه برای بیماران زن",
+                    RuleType = BusinessRuleType.CoveragePercent,
+                    Priority = 9,
+                    Conditions = @"{
+  ""field"": ""patient_gender"",
+  ""operator"": ""equals"",
+  ""value"": ""Female""
+}",
+                    Actions = @"{
+  ""type"": ""set_coverage_percent"",
+  ""value"": ""75""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون فرانشیز برای سالمندان
+                new BusinessRule
+                {
+                    RuleName = "فرانشیز سالمندان",
+                    Description = "کاهش فرانشیز برای بیماران بالای 60 سال",
+                    RuleType = BusinessRuleType.Deductible,
+                    Priority = 8,
+                    Conditions = @"{
+  ""field"": ""patient_age"",
+  ""operator"": ""greater_than"",
+  ""value"": ""60""
+}",
+                    Actions = @"{
+  ""type"": ""set_deductible"",
+  ""value"": ""50000""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون سقف پرداخت برای خدمات ضروری
+                new BusinessRule
+                {
+                    RuleName = "سقف پرداخت خدمات ضروری",
+                    Description = "افزایش سقف پرداخت برای خدمات ضروری و اورژانسی",
+                    RuleType = BusinessRuleType.PaymentLimit,
+                    Priority = 7,
+                    Conditions = @"{
+  ""field"": ""service_category"",
+  ""operator"": ""in"",
+  ""value"": ""1,2,3""
+}",
+                    Actions = @"{
+  ""type"": ""set_payment_limit"",
+  ""value"": ""5000000""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون تخفیف سنی
+                new BusinessRule
+                {
+                    RuleName = "تخفیف سنی 60-80 سال",
+                    Description = "تخفیف 10 درصدی برای بیماران 60 تا 80 سال",
+                    RuleType = BusinessRuleType.AgeBasedDiscount,
+                    Priority = 6,
+                    Conditions = @"{
+  ""field"": ""patient_age"",
+  ""operator"": ""between"",
+  ""value"": ""60,80""
+}",
+                    Actions = @"{
+  ""type"": ""apply_discount"",
+  ""value"": ""10""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون تخفیف جنسیتی
+                new BusinessRule
+                {
+                    RuleName = "تخفیف زنان",
+                    Description = "تخفیف 5 درصدی برای بیماران زن",
+                    RuleType = BusinessRuleType.GenderBasedDiscount,
+                    Priority = 5,
+                    Conditions = @"{
+  ""field"": ""patient_gender"",
+  ""operator"": ""equals"",
+  ""value"": ""Female""
+}",
+                    Actions = @"{
+  ""type"": ""apply_discount"",
+  ""value"": ""5""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون تخفیف خدمتی
+                new BusinessRule
+                {
+                    RuleName = "تخفیف خدمات گران",
+                    Description = "تخفیف 15 درصدی برای خدمات بالای 500 هزار تومان",
+                    RuleType = BusinessRuleType.ServiceBasedDiscount,
+                    Priority = 4,
+                    Conditions = @"{
+  ""field"": ""service_amount"",
+  ""operator"": ""greater_than"",
+  ""value"": ""500000""
+}",
+                    Actions = @"{
+  ""type"": ""apply_discount"",
+  ""value"": ""15""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون تخفیف بیمه‌ای
+                new BusinessRule
+                {
+                    RuleName = "تخفیف بیمه تکمیلی",
+                    Description = "تخفیف 20 درصدی برای بیمه‌های تکمیلی",
+                    RuleType = BusinessRuleType.InsuranceBasedDiscount,
+                    Priority = 3,
+                    Conditions = @"{
+  ""field"": ""insurance_plan"",
+  ""operator"": ""equals"",
+  ""value"": ""SUPPLEMENTARY_PLUS""
+}",
+                    Actions = @"{
+  ""type"": ""apply_discount"",
+  ""value"": ""20""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون سفارشی برای محاسبات پیچیده
+                new BusinessRule
+                {
+                    RuleName = "قانون ترکیبی سالمندان",
+                    Description = "قانون ترکیبی برای بیماران سالمند با بیمه تکمیلی",
+                    RuleType = BusinessRuleType.CustomRule,
+                    Priority = 2,
+                    Conditions = @"{
+  ""field"": ""patient_age"",
+  ""operator"": ""greater_than"",
+  ""value"": ""65"",
+  ""and"": {
+    ""field"": ""insurance_plan"",
+    ""operator"": ""equals"",
+    ""value"": ""SUPPLEMENTARY_PLUS""
+  }
+}",
+                    Actions = @"{
+  ""type"": ""custom_calculation"",
+  ""coverage_percent"": ""95"",
+  ""deductible"": ""25000"",
+  ""discount"": ""25""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                },
+
+                // قانون پیش‌فرض
+                new BusinessRule
+                {
+                    RuleName = "قانون پیش‌فرض",
+                    Description = "قانون پیش‌فرض برای محاسبات عادی",
+                    RuleType = BusinessRuleType.CoveragePercent,
+                    Priority = 1,
+                    Conditions = @"{
+  ""field"": ""service_amount"",
+  ""operator"": ""greater_than"",
+  ""value"": ""0""
+}",
+                    Actions = @"{
+  ""type"": ""set_coverage_percent"",
+  ""value"": ""70""
+}",
+                    IsActive = true,
+                    IsDeleted = false,
+                    CreatedAt = DateTime.UtcNow,
+                    CreatedByUserId = adminUser.Id
+                }
+            };
+
+            // افزودن قوانین جدید (در صورت عدم وجود)
+            foreach (var rule in businessRules)
+            {
+                if (!context.BusinessRules.Any(br => br.RuleName == rule.RuleName))
+                {
+                    context.BusinessRules.Add(rule);
+                    Log.Information("قانون کسب‌وکار '{RuleName}' ایجاد شد", rule.RuleName);
+                }
+            }
+
+            context.SaveChanges();
+            Log.Information("قوانین کسب‌وکار پیش‌فرض با موفقیت ایجاد شدند");
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "خطا در ایجاد قوانین کسب‌وکار پیش‌فرض");
             throw;
         }
     }

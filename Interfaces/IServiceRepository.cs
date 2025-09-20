@@ -130,6 +130,14 @@ namespace ClinicApp.Interfaces
         Task<bool> DoesServiceExistAsync(int serviceCategoryId, string serviceCode, int? excludeServiceId = null);
 
         /// <summary>
+        /// Checks if a service exists by ServiceId.
+        /// بررسی وجود خدمت بر اساس ServiceId
+        /// </summary>
+        /// <param name="serviceId">Service ID</param>
+        /// <returns>True if service exists and is not deleted</returns>
+        Task<bool> DoesServiceExistByIdAsync(int serviceId);
+
+        /// <summary>
         /// Checks if a service code exists globally across all categories.
         /// بررسی وجود کد خدمت در تمام دسته‌بندی‌ها
         /// </summary>

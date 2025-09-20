@@ -177,6 +177,22 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     [Range(0, double.MaxValue, ErrorMessage = "سقف پرداخت بیمه تکمیلی نمی‌تواند منفی باشد.")]
     public decimal? SupplementaryMaxPayment { get; set; }
 
+    /// <summary>
+    /// اولویت تعرفه
+    /// این فیلد برای تعیین اولویت تعرفه‌ها استفاده می‌شود
+    /// </summary>
+    public int? Priority { get; set; }
+
+    /// <summary>
+    /// تاریخ شروع اعتبار تعرفه
+    /// </summary>
+    public DateTime? StartDate { get; set; }
+
+    /// <summary>
+    /// تاریخ پایان اعتبار تعرفه
+    /// </summary>
+    public DateTime? EndDate { get; set; }
+
     #endregion
     #endregion
 }

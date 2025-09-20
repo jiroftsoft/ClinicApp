@@ -804,6 +804,42 @@ public class ServiceService : IServiceService
     }
 
     /// <summary>
+    /// دریافت قیمت خدمت
+    /// </summary>
+    public async Task<ServiceResult<decimal>> GetServicePriceAsync(int serviceId)
+    {
+        try
+        {
+            _log.Information("درخواست دریافت قیمت خدمت. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+            var service = await _context.Services
+                .Where(s => s.ServiceId == serviceId && !s.IsDeleted)
+                .Select(s => new { s.Price })
+                .FirstOrDefaultAsync();
+
+            if (service != null)
+            {
+                _log.Information("قیمت خدمت دریافت شد. ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
+                    serviceId, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<decimal>.Successful(service.Price);
+            }
+            else
+            {
+                _log.Warning("خدمت یافت نشد. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<decimal>.Failed("خدمت یافت نشد");
+            }
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "خطا در دریافت قیمت خدمت. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                serviceId, _currentUserService.UserName, _currentUserService.UserId);
+            return ServiceResult<decimal>.Failed("خطا در دریافت قیمت خدمت");
+        }
+    }
+
+    /// <summary>
     /// کمک‌کننده برای دریافت نام کاربر
     /// </summary>
     private string GetUserName(Dictionary<string, ApplicationUser> users, string userId)
@@ -1648,6 +1684,47 @@ public class ServiceService : IServiceService
                 _currentUserService.UserId);
 
             return new List<TopServiceItem>();
+        }
+    }
+
+    /// <summary>
+    /// دریافت همه خدمات یک دپارتمان برای Select2
+    /// </summary>
+    /// <param name="departmentId">شناسه دپارتمان</param>
+    /// <returns>لیست خدمات دپارتمان</returns>
+    public async Task<ServiceResult<List<ViewModels.Insurance.InsuranceCalculation.ServiceLookupViewModel>>> GetServicesByDepartmentAsync(int departmentId)
+    {
+        try
+        {
+            _log.Information(
+                "درخواست دریافت خدمات دپارتمان. DepartmentId: {DepartmentId}. User: {UserName} (Id: {UserId})",
+                departmentId, _currentUserService.UserName, _currentUserService.UserId);
+
+            // دریافت همه خدمات فعال دپارتمان از طریق ServiceCategory
+            var services = await _context.Services
+                .Where(s => s.ServiceCategory.DepartmentId == departmentId && s.IsActive && !s.IsDeleted)
+                .Select(s => new ViewModels.Insurance.InsuranceCalculation.ServiceLookupViewModel
+                {
+                    ServiceId = s.ServiceId,
+                    Title = s.Title,
+                    ServiceCode = s.ServiceCode
+                })
+                .OrderBy(s => s.Title)
+                .ToListAsync();
+
+            _log.Information(
+                "دریافت {Count} خدمت برای دپارتمان {DepartmentId} با موفقیت انجام شد. User: {UserName} (Id: {UserId})",
+                services.Count, departmentId, _currentUserService.UserName, _currentUserService.UserId);
+
+            return ServiceResult<List<ViewModels.Insurance.InsuranceCalculation.ServiceLookupViewModel>>.Successful(services);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex,
+                "خطا در دریافت خدمات دپارتمان. DepartmentId: {DepartmentId}. User: {UserName} (Id: {UserId})",
+                departmentId, _currentUserService.UserName, _currentUserService.UserId);
+
+            return ServiceResult<List<ViewModels.Insurance.InsuranceCalculation.ServiceLookupViewModel>>.Failed("خطا در دریافت خدمات دپارتمان");
         }
     }
 

@@ -50,6 +50,7 @@ namespace ClinicApp
                 }
             );
 
+
             // 🔄 AJAX API Routes for Combined Insurance Calculation
             routes.MapRoute(
                 name: "CombinedInsuranceCalculationAPI",

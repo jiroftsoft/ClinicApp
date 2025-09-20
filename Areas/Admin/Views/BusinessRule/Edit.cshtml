@@ -1,0 +1,416 @@
+@model ClinicApp.ViewModels.Insurance.BusinessRule.BusinessRuleCreateEditViewModel
+@{
+    ViewBag.Title = "ویرایش قانون کسب‌وکار";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .medical-form {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .form-header {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            padding: 20px 30px;
+            border-radius: 12px 12px 0 0;
+            margin: -30px -30px 30px -30px;
+        }
+        
+        .form-group label {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 8px;
+        }
+        
+        .form-control {
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            padding: 12px 15px;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: #ff9800;
+            box-shadow: 0 0 0 0.2rem rgba(255, 152, 0, 0.25);
+        }
+        
+        .json-editor {
+            min-height: 120px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .example-box {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .example-title {
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 10px;
+        }
+        
+        .example-code {
+            background: #2d3748;
+            color: #e2e8f0;
+            padding: 10px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+        
+        .btn-medical {
+            border-radius: 8px;
+            font-weight: 600;
+            padding: 12px 24px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-save {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background: linear-gradient(135deg, #20c997 0%, #17a2b8 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-cancel {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            border: none;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+            transform: translateY(-2px);
+        }
+        
+        .rule-type-info {
+            background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+            border: 1px solid #2196f3;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .validation-summary {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .current-values {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="medical-form">
+                <!-- Header -->
+                <div class="form-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="fas fa-edit"></i>
+                                ویرایش قانون کسب‌وکار
+                            </h4>
+                            <p class="mb-0 mt-1">ویرایش و به‌روزرسانی قوانین محاسباتی بیمه</p>
+                        </div>
+                        <a href="@Url.Action("Index")" class="btn btn-light">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Current Values Info -->
+                <div class="current-values">
+                    <h6 class="text-success mb-3">
+                        <i class="fas fa-info-circle"></i>
+                        اطلاعات فعلی قانون
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <strong>شناسه قانون:</strong> @Model.BusinessRuleId
+                        </div>
+                        <div class="col-md-6">
+                            <strong>نوع قانون:</strong> @GetRuleTypeDisplayName(Model.RuleType)
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Validation Summary -->
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="validation-summary">
+                        <h6 class="text-danger mb-2">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            خطاهای اعتبارسنجی
+                        </h6>
+                        @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+                    </div>
+                }
+
+                <!-- Form -->
+                @using (Html.BeginForm("Edit", "BusinessRule", FormMethod.Post, new { @class = "needs-validation", novalidate = "novalidate" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.HiddenFor(m => m.BusinessRuleId)
+
+                    <div class="row">
+                        <!-- Basic Information -->
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.RuleName, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.RuleName, new { @class = "form-control", placeholder = "نام قانون را وارد کنید" })
+                                @Html.ValidationMessageFor(m => m.RuleName, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.RuleType, new { @class = "form-label" })
+                                @Html.DropDownListFor(m => m.RuleType, 
+                                    new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.Insurance.BusinessRuleType))
+                                        .Cast<ClinicApp.Models.Entities.Insurance.BusinessRuleType>()
+                                        .Select(x => new { Value = x, Text = GetRuleTypeDisplayName(x) }), 
+                                        "Value", "Text"), 
+                                    "نوع قانون را انتخاب کنید", 
+                                    new { @class = "form-control" })
+                                @Html.ValidationMessageFor(m => m.RuleType, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                @Html.LabelFor(m => m.Priority, new { @class = "form-label" })
+                                @Html.TextBoxFor(m => m.Priority, new { @class = "form-control", type = "number", min = "1", max = "100" })
+                                @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <div class="form-check mt-4">
+                                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                    @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Description, new { @class = "form-label" })
+                        @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = "3", placeholder = "توضیحات قانون را وارد کنید" })
+                        @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                    </div>
+
+                    <!-- Rule Type Information -->
+                    <div class="rule-type-info" id="ruleTypeInfo">
+                        <h6 class="text-primary mb-3">
+                            <i class="fas fa-info-circle"></i>
+                            راهنمای نوع قانون انتخاب شده
+                        </h6>
+                        <div id="ruleTypeDescription"></div>
+                    </div>
+
+                    <!-- Condition -->
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Conditions, new { @class = "form-label" })
+                        @Html.TextAreaFor(m => m.Conditions, new { @class = "form-control json-editor", rows = "6", placeholder = "شرط قانون را به صورت JSON وارد کنید" })
+                        @Html.ValidationMessageFor(m => m.Conditions, "", new { @class = "text-danger" })
+                        
+                        <div class="example-box">
+                            <div class="example-title">
+                                <i class="fas fa-lightbulb"></i>
+                                نمونه شرط:
+                            </div>
+                            <div class="example-code" id="conditionExample">@Model.ConditionExample</div>
+                        </div>
+                    </div>
+
+                    <!-- Action -->
+                    <div class="form-group">
+                        @Html.LabelFor(m => m.Actions, new { @class = "form-label" })
+                        @Html.TextAreaFor(m => m.Actions, new { @class = "form-control json-editor", rows = "6", placeholder = "عمل قانون را به صورت JSON وارد کنید" })
+                        @Html.ValidationMessageFor(m => m.Actions, "", new { @class = "text-danger" })
+                        
+                        <div class="example-box">
+                            <div class="example-title">
+                                <i class="fas fa-lightbulb"></i>
+                                نمونه عمل:
+                            </div>
+                            <div class="example-code" id="actionExample">@Model.ActionExample</div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-between">
+                        <a href="@Url.Action("Index")" class="btn btn-cancel btn-medical">
+                            <i class="fas fa-times"></i>
+                            انصراف
+                        </a>
+                        
+                        <button type="submit" class="btn btn-save btn-medical">
+                            <i class="fas fa-save"></i>
+                            ذخیره تغییرات
+                        </button>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Rule Type Change Handler
+            $('#RuleType').change(function() {
+                updateRuleTypeInfo();
+            });
+            
+            // Initialize on page load
+            updateRuleTypeInfo();
+            
+            // JSON Validation
+            $('.json-editor').on('blur', function() {
+                validateJson($(this));
+            });
+        });
+        
+        function updateRuleTypeInfo() {
+            const ruleType = $('#RuleType').val();
+            const ruleTypeInfo = $('#ruleTypeInfo');
+            const ruleTypeDescription = $('#ruleTypeDescription');
+            const conditionExample = $('#conditionExample');
+            const actionExample = $('#actionExample');
+            
+            if (ruleType) {
+                ruleTypeInfo.show();
+                
+                // Update description based on rule type
+                const descriptions = {
+                    'CoveragePercent': 'قانون تعیین درصد پوشش بیمه بر اساس شرایط مختلف',
+                    'Deductible': 'قانون تعیین فرانشیز (مبلغ قابل کسر) برای بیمه',
+                    'PaymentLimit': 'قانون تعیین سقف پرداخت بیمه',
+                    'AgeBasedDiscount': 'قانون تخفیف بر اساس سن بیمار',
+                    'GenderBasedDiscount': 'قانون تخفیف بر اساس جنسیت بیمار',
+                    'ServiceBasedDiscount': 'قانون تخفیف بر اساس نوع خدمت',
+                    'InsuranceBasedDiscount': 'قانون تخفیف بر اساس نوع بیمه',
+                    'CustomRule': 'قانون سفارشی با شرایط و اعمال دلخواه'
+                };
+                
+                ruleTypeDescription.html(`
+                    <p><strong>توضیحات:</strong> ${descriptions[ruleType] || 'قانون سفارشی'}</p>
+                    <p><strong>کاربرد:</strong> این قانون در محاسبات بیمه اعمال می‌شود</p>
+                `);
+                
+                // Update examples
+                updateExamples(ruleType);
+            } else {
+                ruleTypeInfo.hide();
+            }
+        }
+        
+        function updateExamples(ruleType) {
+            const examples = {
+                'CoveragePercent': {
+                    condition: '{"field": "service_amount", "operator": "greater_than", "value": "1000000"}',
+                    action: '{"type": "set_coverage_percent", "value": "90"}'
+                },
+                'Deductible': {
+                    condition: '{"field": "patient_age", "operator": "less_than", "value": "65"}',
+                    action: '{"type": "set_deductible", "value": "50000"}'
+                },
+                'PaymentLimit': {
+                    condition: '{"field": "service_category", "operator": "equals", "value": "1"}',
+                    action: '{"type": "set_payment_limit", "value": "2000000"}'
+                },
+                'AgeBasedDiscount': {
+                    condition: '{"field": "patient_age", "operator": "between", "value": "60,80"}',
+                    action: '{"type": "apply_discount", "value": "10"}'
+                },
+                'GenderBasedDiscount': {
+                    condition: '{"field": "patient_gender", "operator": "equals", "value": "Female"}',
+                    action: '{"type": "apply_discount", "value": "5"}'
+                },
+                'ServiceBasedDiscount': {
+                    condition: '{"field": "service_amount", "operator": "greater_than", "value": "500000"}',
+                    action: '{"type": "apply_discount", "value": "15"}'
+                },
+                'InsuranceBasedDiscount': {
+                    condition: '{"field": "insurance_plan", "operator": "equals", "value": "1"}',
+                    action: '{"type": "apply_discount", "value": "20"}'
+                },
+                'CustomRule': {
+                    condition: '{"field": "custom_field", "operator": "custom_operator", "value": "custom_value"}',
+                    action: '{"type": "custom_action", "value": "custom_value"}'
+                }
+            };
+            
+            const example = examples[ruleType];
+            if (example) {
+                $('#conditionExample').text(example.condition);
+                $('#actionExample').text(example.action);
+            }
+        }
+        
+        function validateJson(element) {
+            const value = element.val().trim();
+            if (value) {
+                try {
+                    JSON.parse(value);
+                    element.removeClass('is-invalid').addClass('is-valid');
+                } catch (e) {
+                    element.removeClass('is-valid').addClass('is-invalid');
+                }
+            } else {
+                element.removeClass('is-valid is-invalid');
+            }
+        }
+    </script>
+}
+
+@functions {
+    public string GetRuleTypeDisplayName(ClinicApp.Models.Entities.Insurance.BusinessRuleType ruleType)
+    {
+        return ruleType switch
+        {
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.CoveragePercent => "درصد پوشش",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.Deductible => "فرانشیز",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.PaymentLimit => "سقف پرداخت",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.AgeBasedDiscount => "تخفیف سنی",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.GenderBasedDiscount => "تخفیف جنسیتی",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.ServiceBasedDiscount => "تخفیف خدمتی",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.InsuranceBasedDiscount => "تخفیف بیمه‌ای",
+            ClinicApp.Models.Entities.Insurance.BusinessRuleType.CustomRule => "قانون سفارشی",
+            _ => "نامشخص"
+        };
+    }
+}

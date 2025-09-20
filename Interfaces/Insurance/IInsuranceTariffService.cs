@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
@@ -168,7 +169,7 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <param name="planId">شناسه طرح بیمه</param>
         /// <returns>لیست تعرفه‌های بیمه تکمیلی</returns>
-        Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId);
+        Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId, DateTime? calculationDate = null);
 
         /// <summary>
         /// محاسبه تعرفه بیمه تکمیلی
@@ -177,7 +178,7 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="planId">شناسه طرح بیمه</param>
         /// <param name="baseAmount">مبلغ پایه</param>
         /// <returns>مبلغ محاسبه شده تعرفه بیمه تکمیلی</returns>
-        Task<ServiceResult<decimal>> CalculateSupplementaryTariffAsync(int serviceId, int planId, decimal baseAmount);
+        Task<ServiceResult<decimal>> CalculateSupplementaryTariffAsync(int serviceId, int planId, decimal baseAmount, DateTime? calculationDate = null);
 
         /// <summary>
         /// دریافت تنظیمات بیمه تکمیلی

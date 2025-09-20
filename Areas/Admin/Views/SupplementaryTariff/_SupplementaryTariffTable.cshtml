@@ -1,0 +1,161 @@
+@model IEnumerable<ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexItemViewModel>
+
+<div class="table-responsive">
+    <table class="table table-hover supplementary-tariff-table">
+        <thead class="table-dark">
+            <tr>
+                <th>شناسه</th>
+                <th>نام خدمت</th>
+                <th>طرح بیمه</th>
+                <th>قیمت تعرفه</th>
+                <th>سهم بیمار</th>
+                <th>درصد پوشش تکمیلی</th>
+                <th>سقف پرداخت</th>
+                <th>اولویت</th>
+                <th>تاریخ شروع</th>
+                <th>تاریخ پایان</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr data-tariff-id="@item.InsuranceTariffId">
+                    <td>
+                        <span class="badge badge-secondary">@item.InsuranceTariffId</span>
+                    </td>
+                    <td>
+                        <div class="fw-bold">@item.ServiceTitle</div>
+                        <small class="text-muted">@item.ServiceCode</small>
+                    </td>
+                    <td>
+                        <div class="fw-bold">@item.InsurancePlanName</div>
+                        <small class="text-muted">@item.InsuranceProviderName</small>
+                    </td>
+                    <td>
+                        <span class="currency-format">@(item.TariffPrice?.ToString("N0") ?? "0") تومان</span>
+                    </td>
+                    <td>
+                        <span class="currency-format">@(item.PatientShare?.ToString("N0") ?? "0") تومان</span>
+                    </td>
+                    <td>
+                        <span class="fw-bold">@(item.SupplementaryCoveragePercent?.ToString("F2") ?? "0")%</span>
+                    </td>
+                    <td>
+                        <span class="currency-format">@(item.SupplementaryMaxPayment?.ToString("N0") ?? "0") تومان</span>
+                    </td>
+                    <td>
+                        <span class="badge badge-info">@(item.Priority?.ToString() ?? "0")</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">@(item.StartDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</span>
+                    </td>
+                    <td>
+                        <span class="text-muted">@(item.EndDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</span>
+                    </td>
+                    <td>
+                        <span class="badge @item.StatusCssClass">@item.StatusText</span>
+                    </td>
+                    <td>
+                        <div class="btn-group" role="group">
+                            <a href="@Url.Action("Details", new { id = item.InsuranceTariffId })" 
+                               class="btn btn-sm btn-outline-primary" title="مشاهده جزئیات">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="@Url.Action("Edit", new { id = item.InsuranceTariffId })" 
+                               class="btn btn-sm btn-outline-warning" title="ویرایش">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            <a href="@Url.Action("Delete", new { id = item.InsuranceTariffId })" 
+                               class="btn btn-sm btn-outline-danger" title="حذف">
+                                <i class="fas fa-trash"></i>
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<style>
+    .supplementary-tariff-table {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+
+    .supplementary-tariff-table thead th {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        padding: 15px 10px;
+        font-weight: 600;
+        text-align: center;
+    }
+
+    .supplementary-tariff-table tbody tr {
+        transition: all 0.3s ease;
+    }
+
+    .supplementary-tariff-table tbody tr:hover {
+        background-color: #f8f9fa;
+        transform: scale(1.01);
+    }
+
+    .supplementary-tariff-table tbody td {
+        padding: 15px 10px;
+        vertical-align: middle;
+        text-align: center;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .currency-format {
+        font-family: 'Courier New', monospace;
+        font-weight: bold;
+    }
+
+    .badge {
+        padding: 5px 10px;
+        border-radius: 15px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        color: white;
+    }
+
+    .badge-danger {
+        background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+        color: white;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+    }
+
+    .badge-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        color: white;
+    }
+
+    .badge-info {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+    }
+
+    .btn-group .btn {
+        margin: 0 2px;
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+    .btn-group .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+</style>

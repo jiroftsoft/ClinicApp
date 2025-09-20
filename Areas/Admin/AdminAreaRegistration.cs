@@ -120,7 +120,7 @@ namespace ClinicApp.Areas.Admin
 
             context.MapRoute(
                 name: "Admin_CombinedInsuranceCalculation_Index",
-                url: "Admin/Insurance/CombinedCalculation/{action}/{id}",
+                url: "Admin/Insurance/CombinedInsuranceCalculation/{action}/{id}",
                 defaults: new { controller = "CombinedInsuranceCalculation", action = "Index", id = UrlParameter.Optional },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
@@ -128,21 +128,21 @@ namespace ClinicApp.Areas.Admin
             // Supplementary Insurance API Routes
             context.MapRoute(
                 name: "Admin_SupplementaryInsurance_Calculate",
-                url: "Admin/Insurance/CombinedCalculation/CalculateSupplementary",
+                url: "Admin/Insurance/CombinedInsuranceCalculation/CalculateSupplementary",
                 defaults: new { controller = "CombinedInsuranceCalculation", action = "CalculateSupplementary" },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
             context.MapRoute(
                 name: "Admin_SupplementaryInsurance_Tariffs",
-                url: "Admin/Insurance/CombinedCalculation/SupplementaryTariffs/{planId}",
+                url: "Admin/Insurance/CombinedInsuranceCalculation/SupplementaryTariffs/{planId}",
                 defaults: new { controller = "CombinedInsuranceCalculation", action = "GetSupplementaryTariffs" },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
             context.MapRoute(
                 name: "Admin_SupplementaryInsurance_Settings",
-                url: "Admin/Insurance/CombinedCalculation/SupplementarySettings/{planId}",
+                url: "Admin/Insurance/CombinedInsuranceCalculation/SupplementarySettings/{planId}",
                 defaults: new { controller = "CombinedInsuranceCalculation", action = "GetSupplementarySettings" },
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );

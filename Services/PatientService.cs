@@ -1183,38 +1183,58 @@ namespace ClinicApp.Services
                     .AsNoTracking() // بهینه‌سازی: عدم ردیابی تغییرات برای عملیات خواندن
                     .Where(p => !p.IsDeleted);
 
-                // اعمال فیلتر جستجو
+                // اعمال فیلتر جستجو - فقط کد ملی برای محیط درمانی
                 if (!string.IsNullOrWhiteSpace(query))
                 {
-                    queryBuilder = queryBuilder.Where(p =>
-                        p.FirstName.Contains(query) ||
-                        p.LastName.Contains(query) ||
-                        p.NationalCode.Contains(normalizedQuery) ||
-                        p.PhoneNumber.Contains(normalizedQuery) ||
-                        (p.FirstName + " " + p.LastName).Contains(query));
+                    // فقط جستجوی کد ملی - حرفه‌ای و دقیق
+                    bool isCompleteNationalCode = normalizedQuery.Length == 10 && normalizedQuery.All(char.IsDigit);
+                    bool isPartialNationalCode = normalizedQuery.Length >= 3 && normalizedQuery.Length < 10 && normalizedQuery.All(char.IsDigit);
+                    
+                    if (isCompleteNationalCode)
+                    {
+                        // جستجوی دقیق کد ملی - فقط یک نتیجه
+                        queryBuilder = queryBuilder.Where(p => p.NationalCode == normalizedQuery);
+                    }
+                    else if (isPartialNationalCode)
+                    {
+                        // جستجوی جزئی کد ملی - حداکثر 5 نتیجه
+                        queryBuilder = queryBuilder.Where(p => p.NationalCode.StartsWith(normalizedQuery));
+                    }
+                    else
+                    {
+                        // اگر کد ملی نیست، هیچ نتیجه‌ای نمایش نده
+                        queryBuilder = queryBuilder.Where(p => false);
+                    }
                 }
 
-                // محاسبه تعداد کل
+                // محاسبه تعداد کل - محدود شده برای محیط درمانی
                 int totalItems = await queryBuilder.CountAsync();
+                
+                // محدودیت سخت‌گیرانه: حداکثر 5 نتیجه برای محیط درمانی
+                if (totalItems > 5) totalItems = 5;
 
-                // اعمال صفحه‌بندی و مرتب‌سازی
+                // اعمال صفحه‌بندی و مرتب‌سازی - بهینه‌سازی برای کد ملی
+                // محدودیت سخت‌گیرانه برای محیط درمانی
+                var maxPageSize = Math.Min(pageSize, 5); // حداکثر 5 نتیجه
+                
                 var patients = await queryBuilder
-                    .OrderBy(p => p.FirstName)
-                    .ThenBy(p => p.LastName)
-                    .Skip((page - 1) * pageSize)
-                    .Take(pageSize)
+                    .OrderBy(p => p.NationalCode) // مرتب‌سازی بر اساس کد ملی
+                    .Skip((page - 1) * maxPageSize)
+                    .Take(maxPageSize)
+                    .Select(p => new PatientIndexViewModel
+                    {
+                        PatientId = p.PatientId,
+                        FullName = p.FirstName + " " + p.LastName,
+                        NationalCode = p.NationalCode,
+                        PhoneNumber = p.PhoneNumber,
+                        CreatedAt = p.CreatedAt
+                    })
                     .ToListAsync();
 
-                // تبدیل دستی به ViewModel
-                var items = new List<PatientIndexViewModel>();
-                foreach (var patient in patients)
-                {
-                    items.Add(ConvertToPatientIndexViewModel(patient));
-                }
-
+                // ایجاد نتیجه صفحه‌بندی شده
                 var pagedResult = new PagedResult<PatientIndexViewModel>
                 {
-                    Items = items,
+                    Items = patients,
                     PageNumber = page,
                     PageSize = pageSize,
                     TotalItems = totalItems

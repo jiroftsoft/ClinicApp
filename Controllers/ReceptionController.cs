@@ -19,6 +19,7 @@ using ClinicApp.Services;
 using ClinicApp.Models;
 using System.Data.Entity;
 using PatientInquiryViewModel = ClinicApp.ViewModels.Reception.PatientInquiryViewModel;
+using ClinicApp.Interfaces.Insurance;
 
 namespace ClinicApp.Controllers
 {
@@ -50,18 +51,24 @@ namespace ClinicApp.Controllers
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
         private readonly IServiceCalculationService _serviceCalculationService;
+        private readonly ICombinedInsuranceCalculationService _combinedInsuranceCalculationService;
+        private readonly IPatientInsuranceService _patientInsuranceService;
 
         public ReceptionController(
             IReceptionService receptionService,
             ICurrentUserService currentUserService,
             ApplicationDbContext context,
             ILogger logger,
-            IServiceCalculationService serviceCalculationService) : base(logger)
+            IServiceCalculationService serviceCalculationService,
+            ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
+            IPatientInsuranceService patientInsuranceService) : base(logger)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
+            _combinedInsuranceCalculationService = combinedInsuranceCalculationService ?? throw new ArgumentNullException(nameof(combinedInsuranceCalculationService));
+            _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
         }
 
         #endregion
@@ -1716,6 +1723,134 @@ namespace ClinicApp.Controllers
                 data = data,
                 message = message
             }, JsonRequestBehavior.AllowGet);
+        }
+
+        #endregion
+
+        #region Insurance Calculation Integration (یکپارچگی با محاسبه بیمه)
+
+        /// <summary>
+        /// محاسبه بیمه ترکیبی برای پذیرش بیمار
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> CalculatePatientInsuranceForReception(
+            int patientId, 
+            int serviceId, 
+            decimal serviceAmount, 
+            DateTime? calculationDate = null)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی برای پذیرش. PatientId: {PatientId}, ServiceId: {ServiceId}, Amount: {Amount}, Date: {Date}, User: {UserName} (Id: {UserId})", 
+                    patientId, serviceId, serviceAmount, calculationDate, _currentUserService.UserName, _currentUserService.UserId);
+
+                var effectiveDate = calculationDate ?? DateTime.Now;
+
+                // محاسبه بیمه ترکیبی
+                var insuranceResult = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
+                    patientId, serviceId, serviceAmount, effectiveDate);
+
+                if (insuranceResult.Success)
+                {
+                    var result = new
+                    {
+                        success = true,
+                        data = new
+                        {
+                            patientId = insuranceResult.Data.PatientId,
+                            serviceId = insuranceResult.Data.ServiceId,
+                            serviceAmount = insuranceResult.Data.ServiceAmount,
+                            primaryCoverage = insuranceResult.Data.PrimaryCoverage,
+                            primaryCoveragePercent = insuranceResult.Data.PrimaryCoveragePercent,
+                            supplementaryCoverage = insuranceResult.Data.SupplementaryCoverage,
+                            supplementaryCoveragePercent = insuranceResult.Data.SupplementaryCoveragePercent,
+                            finalPatientShare = insuranceResult.Data.FinalPatientShare,
+                            totalInsuranceCoverage = insuranceResult.Data.TotalInsuranceCoverage,
+                            hasSupplementaryInsurance = insuranceResult.Data.HasSupplementaryInsurance,
+                            notes = insuranceResult.Data.Notes,
+                            calculationDate = insuranceResult.Data.CalculationDate
+                        },
+                        message = "محاسبه بیمه ترکیبی برای پذیرش با موفقیت انجام شد"
+                    };
+
+                    _logger.Information("🏥 MEDICAL: محاسبه بیمه ترکیبی برای پذیرش موفق. PatientId: {PatientId}, ServiceId: {ServiceId}, PatientShare: {PatientShare}, TotalCoverage: {TotalCoverage}, User: {UserName} (Id: {UserId})", 
+                        patientId, serviceId, insuranceResult.Data.FinalPatientShare, insuranceResult.Data.TotalInsuranceCoverage, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(result, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("🏥 MEDICAL: خطا در محاسبه بیمه ترکیبی برای پذیرش. PatientId: {PatientId}, ServiceId: {ServiceId}, Error: {Error}, User: {UserName} (Id: {UserId})", 
+                        patientId, serviceId, insuranceResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = insuranceResult.Message
+                    }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطای سیستمی در محاسبه بیمه ترکیبی برای پذیرش. PatientId: {PatientId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
+                    patientId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در محاسبه بیمه ترکیبی برای پذیرش"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات بیمه‌های بیمار برای پذیرش
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetPatientInsurancesForReception(int patientId)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: درخواست اطلاعات بیمه‌های بیمار برای پذیرش. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _patientInsuranceService.GetPatientInsurancesByPatientAsync(patientId);
+
+                if (result.Success)
+                {
+                    _logger.Information("🏥 MEDICAL: اطلاعات بیمه‌های بیمار برای پذیرش دریافت شد. PatientId: {PatientId}, Count: {Count}, User: {UserName} (Id: {UserId})", 
+                        patientId, result.Data.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = $"اطلاعات بیمه‌های بیمار ({result.Data.Count} مورد) دریافت شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("🏥 MEDICAL: خطا در دریافت اطلاعات بیمه‌های بیمار برای پذیرش. PatientId: {PatientId}, Error: {Error}, User: {UserName} (Id: {UserId})", 
+                        patientId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = result.Message
+                    }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت اطلاعات بیمه‌های بیمار برای پذیرش. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در دریافت اطلاعات بیمه‌های بیمار"
+                }, JsonRequestBehavior.AllowGet);
+            }
         }
 
         #endregion

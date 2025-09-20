@@ -68,6 +68,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         public decimal? TariffPrice { get; set; }
         public decimal? PatientShare { get; set; }
         public decimal? InsurerShare { get; set; }
+        public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
         public string CreatedAtShamsi { get; set; }
         public string CreatedByUserName { get; set; }
@@ -94,6 +95,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 TariffPrice = entity.TariffPrice,
                 PatientShare = entity.PatientShare,
                 InsurerShare = entity.InsurerShare,
+                IsActive = entity.IsActive,
                 CreatedAt = entity.CreatedAt,
                 CreatedAtShamsi = entity.CreatedAt.ToString("yyyy/MM/dd"), // TODO: تبدیل به شمسی
                 CreatedByUserName = entity.CreatedByUser?.UserName,
@@ -176,6 +178,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 TariffPrice = entity.TariffPrice,
                 PatientShare = entity.PatientShare,
                 InsurerShare = entity.InsurerShare,
+                IsActive = entity.IsActive,
                 ServiceTitle = entity.Service?.Title,
                 InsurancePlanName = entity.InsurancePlan?.Name,
                 InsuranceProviderName = entity.InsurancePlan?.InsuranceProvider?.Name

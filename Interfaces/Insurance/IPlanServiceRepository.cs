@@ -91,6 +91,14 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>خدمات طرح بیمه مورد نظر</returns>
         Task<ServiceResult<PlanService>> GetByPlanAndServiceCategoryAsync(int planId, int serviceCategoryId);
 
+        /// <summary>
+        /// دریافت پیکربندی بیمه بر اساس ServiceId
+        /// </summary>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>پیکربندی بیمه برای خدمت</returns>
+        Task<ServiceResult<PlanService>> GetByPlanAndServiceAsync(int planId, int serviceId);
+
         #endregion
 
         #region Validation Operations

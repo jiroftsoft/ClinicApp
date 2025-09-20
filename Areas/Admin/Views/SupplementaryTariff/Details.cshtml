@@ -1,0 +1,518 @@
+@model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffDetailsViewModel
+@{
+    ViewBag.Title = "جزئیات تعرفه بیمه تکمیلی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <link href="~/Content/css/medical-environment-styles.css" rel="stylesheet" />
+    <style>
+        .details-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+
+        .details-card .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 15px 15px 0 0;
+            padding: 25px;
+        }
+
+        .details-card .card-body {
+            padding: 30px;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            border-bottom: 1px solid #f8f9fa;
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #495057;
+            font-size: 1rem;
+        }
+
+        .info-value {
+            color: #212529;
+            font-size: 1rem;
+        }
+
+        .status-badge {
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        .badge-success {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .badge-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            color: white;
+        }
+
+        .badge-warning {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .badge-secondary {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            color: white;
+        }
+
+        .calculation-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+
+        .calculation-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .calculation-item:last-child {
+            border-bottom: none;
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+
+        .btn-medical {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-medical:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-medical-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn-medical-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+        }
+
+        .back-button {
+            background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+            border: none;
+            border-radius: 25px;
+            color: white;
+            padding: 12px 30px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            color: white;
+            text-decoration: none;
+        }
+
+        .section-title {
+            color: #495057;
+            font-weight: 600;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e9ecef;
+        }
+
+        .value-highlight {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .currency-format {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="details-card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-8">
+                            <h2 class="mb-0">
+                                <i class="fas fa-info-circle me-2"></i>
+                                جزئیات تعرفه بیمه تکمیلی
+                            </h2>
+                            <p class="mb-0 mt-2 opacity-75">
+                                اطلاعات کامل تعرفه بیمه تکمیلی
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <span class="status-badge @Model.StatusCssClass">
+                                @Model.StatusText
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Basic Information Section -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="details-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-info me-2"></i>
+                        اطلاعات پایه
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">شناسه تعرفه:</span>
+                        <span class="info-value">@Model.InsuranceTariffId</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">نام خدمت:</span>
+                        <span class="info-value value-highlight">@Model.ServiceTitle</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">کد خدمت:</span>
+                        <span class="info-value">@Model.ServiceCode</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">دپارتمان:</span>
+                        <span class="info-value">@Model.DepartmentName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">سرفصل خدمت:</span>
+                        <span class="info-value">@Model.ServiceCategoryTitle</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">طرح بیمه:</span>
+                        <span class="info-value value-highlight">@Model.InsurancePlanName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">ارائه‌دهنده بیمه:</span>
+                        <span class="info-value">@Model.InsuranceProviderName</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">اولویت:</span>
+                        <span class="info-value">@(Model.Priority?.ToString() ?? "تعریف نشده")</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status and Dates Section -->
+        <div class="col-md-4">
+            <div class="details-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calendar me-2"></i>
+                        وضعیت و تاریخ‌ها
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">وضعیت:</span>
+                        <span class="status-badge @Model.StatusCssClass">
+                            @Model.StatusText
+                        </span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">تاریخ شروع:</span>
+                        <span class="info-value">@(Model.StartDate?.ToString("yyyy/MM/dd") ?? "تعریف نشده")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">تاریخ پایان:</span>
+                        <span class="info-value">@(Model.EndDate?.ToString("yyyy/MM/dd") ?? "تعریف نشده")</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">تاریخ ایجاد:</span>
+                        <span class="info-value">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</span>
+                    </div>
+                    @if (Model.UpdatedAt.HasValue)
+                    {
+                        <div class="info-row">
+                            <span class="info-label">آخرین به‌روزرسانی:</span>
+                            <span class="info-value">@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financial Information Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="details-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-calculator me-2"></i>
+                        اطلاعات مالی
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <span class="info-label">قیمت تعرفه:</span>
+                                <span class="info-value currency-format">@(Model.TariffPrice?.ToString("N0") ?? "تعریف نشده") تومان</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">سهم بیمار:</span>
+                                <span class="info-value currency-format">@(Model.PatientShare?.ToString("N0") ?? "تعریف نشده") تومان</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">سهم بیمه:</span>
+                                <span class="info-value currency-format">@(Model.InsurerShare?.ToString("N0") ?? "تعریف نشده") تومان</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-row">
+                                <span class="info-label">درصد پوشش تکمیلی:</span>
+                                <span class="info-value value-highlight">@(Model.SupplementaryCoveragePercent?.ToString("F2") ?? "تعریف نشده")%</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">سقف پرداخت تکمیلی:</span>
+                                <span class="info-value currency-format">@(Model.SupplementaryMaxPayment?.ToString("N0") ?? "تعریف نشده") تومان</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">درصد پوشش کل:</span>
+                                <span class="info-value value-highlight">@Model.TotalCoveragePercent.ToString("F2")%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calculation Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="calculation-card">
+                <h5 class="mb-4">
+                    <i class="fas fa-calculator me-2"></i>
+                    محاسبات بیمه تکمیلی
+                </h5>
+                <div class="calculation-item">
+                    <span>مبلغ کل خدمت:</span>
+                    <span class="currency-format">@(Model.TariffPrice?.ToString("N0") ?? "0") تومان</span>
+                </div>
+                <div class="calculation-item">
+                    <span>پوشش بیمه اصلی:</span>
+                    <span class="currency-format">@(Model.InsurerShare?.ToString("N0") ?? "0") تومان</span>
+                </div>
+                <div class="calculation-item">
+                    <span>مبلغ باقی‌مانده:</span>
+                    <span class="currency-format">@Model.RemainingAmountAfterPrimary.ToString("N0") تومان</span>
+                </div>
+                <div class="calculation-item">
+                    <span>پوشش بیمه تکمیلی:</span>
+                    <span class="currency-format">@(Model.SupplementaryCoveragePercent?.ToString("F2") ?? "0")%</span>
+                </div>
+                <div class="calculation-item">
+                    <span>سهم نهایی بیمار:</span>
+                    <span class="currency-format">@(Model.PatientShare?.ToString("N0") ?? "0") تومان</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Section -->
+    @if (!string.IsNullOrEmpty(Model.SupplementarySettings))
+    {
+        <div class="row">
+            <div class="col-12">
+                <div class="details-card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cog me-2"></i>
+                            تنظیمات خاص
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <pre class="bg-light p-3 rounded">@Model.SupplementarySettings</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- User Information Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="details-card">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        <i class="fas fa-user me-2"></i>
+                        اطلاعات کاربر
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="info-row">
+                        <span class="info-label">ایجادکننده:</span>
+                        <span class="info-value">@Model.CreatedByUserName</span>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                    {
+                        <div class="info-row">
+                            <span class="info-label">به‌روزرسانی‌کننده:</span>
+                            <span class="info-value">@Model.UpdatedByUserName</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Buttons Section -->
+    <div class="row">
+        <div class="col-12">
+            <div class="text-center">
+                <a href="@Url.Action("Index")" class="back-button">
+                    <i class="fas fa-arrow-right me-2"></i>
+                    بازگشت به لیست
+                </a>
+                <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="btn-medical">
+                    <i class="fas fa-edit me-2"></i>
+                    ویرایش
+                </a>
+                <button type="button" class="btn-danger" onclick="deleteTariff(@Model.InsuranceTariffId)">
+                    <i class="fas fa-trash me-2"></i>
+                    حذف
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-trash text-danger"></i>
+                    حذف تعرفه بیمه تکمیلی
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>هشدار:</strong> آیا مطمئن هستید که می‌خواهید این تعرفه بیمه تکمیلی را حذف کنید؟
+                </div>
+                <p>این عملیات قابل بازگشت نیست.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">
+                    <i class="fas fa-trash me-2"></i>
+                    حذف
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentTariffId = @Model.InsuranceTariffId;
+
+        function deleteTariff(tariffId) {
+            currentTariffId = tariffId;
+            $('#deleteModal').modal('show');
+        }
+
+        function confirmDelete() {
+            $.ajax({
+                url: '@Url.Action("DeleteTariff")',
+                type: 'POST',
+                data: {
+                    tariffId: currentTariffId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        setTimeout(function() {
+                            window.location.href = '@Url.Action("Index")';
+                        }, 1500);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('خطا در حذف تعرفه بیمه تکمیلی');
+                }
+            });
+        }
+    </script>
+}

@@ -1,0 +1,248 @@
+@model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexPageViewModel
+
+<div class="card supplementary-tariff-filters">
+    <div class="card-header">
+        <h6 class="mb-0">
+            <i class="fas fa-filter me-2"></i>
+            فیلترها و جستجو
+        </h6>
+    </div>
+    <div class="card-body">
+        <form id="filterForm" method="get">
+            <div class="row">
+                <!-- Service Filter -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="serviceId" class="form-label">خدمت:</label>
+                        <select class="form-control" id="serviceId" name="serviceId">
+                            <option value="">همه خدمات</option>
+                            @foreach (var service in Model.Services)
+                            {
+                                <option value="@service.ServiceId" @(ViewBag.SelectedServiceId == service.ServiceId ? "selected" : "")>
+                                    @service.ServiceTitle
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Insurance Plan Filter -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="insurancePlanId" class="form-label">طرح بیمه:</label>
+                        <select class="form-control" id="insurancePlanId" name="insurancePlanId">
+                            <option value="">همه طرح‌ها</option>
+                            @foreach (var plan in Model.InsurancePlans)
+                            {
+                                <option value="@plan.InsurancePlanId" @(ViewBag.SelectedInsurancePlanId == plan.InsurancePlanId ? "selected" : "")>
+                                    @plan.InsurancePlanName
+                                </option>
+                            }
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Status Filter -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="status" class="form-label">وضعیت:</label>
+                        <select class="form-control" id="status" name="status">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="active" @(ViewBag.SelectedStatus == "active" ? "selected" : "")>فعال</option>
+                            <option value="inactive" @(ViewBag.SelectedStatus == "inactive" ? "selected" : "")>غیرفعال</option>
+                            <option value="expired" @(ViewBag.SelectedStatus == "expired" ? "selected" : "")>منقضی شده</option>
+                            <option value="upcoming" @(ViewBag.SelectedStatus == "upcoming" ? "selected" : "")>آینده</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Priority Filter -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="priority" class="form-label">اولویت:</label>
+                        <select class="form-control" id="priority" name="priority">
+                            <option value="">همه اولویت‌ها</option>
+                            <option value="1" @(ViewBag.SelectedPriority == 1 ? "selected" : "")>اولویت 1</option>
+                            <option value="2" @(ViewBag.SelectedPriority == 2 ? "selected" : "")>اولویت 2</option>
+                            <option value="3" @(ViewBag.SelectedPriority == 3 ? "selected" : "")>اولویت 3</option>
+                            <option value="4" @(ViewBag.SelectedPriority == 4 ? "selected" : "")>اولویت 4</option>
+                            <option value="5" @(ViewBag.SelectedPriority == 5 ? "selected" : "")>اولویت 5</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Date Range Filter -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="startDate" class="form-label">تاریخ شروع از:</label>
+                        <input type="text" class="form-control persian-datepicker" id="startDate" name="startDate" 
+                               value="@ViewBag.SelectedStartDate" placeholder="تاریخ شروع">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="endDate" class="form-label">تاریخ شروع تا:</label>
+                        <input type="text" class="form-control persian-datepicker" id="endDate" name="endDate" 
+                               value="@ViewBag.SelectedEndDate" placeholder="تاریخ پایان">
+                    </div>
+                </div>
+
+                <!-- Amount Range Filter -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="minAmount" class="form-label">حداقل مبلغ:</label>
+                        <input type="number" class="form-control" id="minAmount" name="minAmount" 
+                               value="@ViewBag.SelectedMinAmount" placeholder="حداقل مبلغ">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="maxAmount" class="form-label">حداکثر مبلغ:</label>
+                        <input type="number" class="form-control" id="maxAmount" name="maxAmount" 
+                               value="@ViewBag.SelectedMaxAmount" placeholder="حداکثر مبلغ">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <!-- Search Term -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label for="searchTerm" class="form-label">جستجو:</label>
+                        <input type="text" class="form-control" id="searchTerm" name="searchTerm" 
+                               value="@ViewBag.SearchTerm" placeholder="جستجو در نام خدمت، طرح بیمه، کد خدمت...">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">&nbsp;</label>
+                        <div class="btn-group w-100">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search me-2"></i>
+                                اعمال فیلتر
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="clearFilters()">
+                                <i class="fas fa-times me-2"></i>
+                                پاک کردن
+                            </button>
+                            <button type="button" class="btn btn-info" onclick="exportResults()">
+                                <i class="fas fa-download me-2"></i>
+                                خروجی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+    .supplementary-tariff-filters {
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+
+    .supplementary-tariff-filters .card-header {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border: none;
+        border-radius: 15px 15px 0 0;
+        padding: 20px;
+    }
+
+    .supplementary-tariff-filters .card-body {
+        padding: 25px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
+    }
+
+    .form-control {
+        border-radius: 10px;
+        border: 2px solid #e9ecef;
+        padding: 10px 15px;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .btn {
+        border-radius: 25px;
+        padding: 10px 20px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #495057 100%);
+        border: none;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+        border: none;
+    }
+</style>
+
+<script>
+    $(document).ready(function() {
+        // Initialize Persian date picker
+        $('.persian-datepicker').persianDatepicker({
+            format: 'YYYY/MM/DD',
+            autoClose: true,
+            initialValue: false,
+            observer: true
+        });
+
+        // Auto-submit form on filter change
+        $('#serviceId, #insurancePlanId, #status, #priority').on('change', function() {
+            $('#filterForm').submit();
+        });
+
+        // Clear filters function
+        window.clearFilters = function() {
+            $('#filterForm')[0].reset();
+            $('#filterForm').submit();
+        };
+
+        // Export results function
+        window.exportResults = function() {
+            // Add export parameter to form
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'export',
+                value: 'true'
+            }).appendTo('#filterForm');
+            
+            $('#filterForm').submit();
+        };
+    });
+</script>

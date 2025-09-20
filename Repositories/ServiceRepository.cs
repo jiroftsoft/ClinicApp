@@ -65,6 +65,17 @@ namespace ClinicApp.Repositories
             return query.AnyAsync();
         }
 
+        /// <summary>
+        /// بررسی وجود خدمت بر اساس ServiceId
+        /// </summary>
+        public Task<bool> DoesServiceExistByIdAsync(int serviceId)
+        {
+            return _context.Services
+                .AsNoTracking() // ✅ Performance optimization for existence checks.
+                .Where(s => s.ServiceId == serviceId && !s.IsDeleted)
+                .AnyAsync();
+        }
+
         public Task<bool> DoesServiceCodeExistGloballyAsync(string serviceCode, int? excludeServiceId = null)
         {
             var query = _context.Services

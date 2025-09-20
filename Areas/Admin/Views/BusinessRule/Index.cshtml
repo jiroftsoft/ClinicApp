@@ -1,0 +1,393 @@
+@model ClinicApp.ViewModels.Insurance.BusinessRule.BusinessRuleIndexViewModel
+@{
+    ViewBag.Title = "مدیریت قوانین کسب‌وکار بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@section Styles {
+    <style>
+        .medical-card {
+            border: 1px solid #e3f2fd;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+        
+        .medical-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .rule-header {
+            background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px 8px 0 0;
+            margin: -1px -1px 0 -1px;
+        }
+        
+        .rule-body {
+            padding: 20px;
+        }
+        
+        .status-badge {
+            font-size: 0.85em;
+            padding: 4px 8px;
+            border-radius: 12px;
+        }
+        
+        .priority-badge {
+            background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .rule-type-badge {
+            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            color: white;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .btn-medical {
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-test {
+            background: linear-gradient(135deg, #9c27b0 0%, #7b1fa2 100%);
+            border: none;
+            color: white;
+        }
+        
+        .btn-test:hover {
+            background: linear-gradient(135deg, #7b1fa2 0%, #6a1b9a 100%);
+            transform: translateY(-1px);
+        }
+        
+        .stats-card {
+            background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+            border: 1px solid #4caf50;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        .stats-number {
+            font-size: 2em;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+        
+        .stats-label {
+            color: #388e3c;
+            font-weight: 500;
+        }
+    </style>
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="medical-card">
+                <div class="rule-header">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="fas fa-cogs"></i>
+                                مدیریت قوانین کسب‌وکار بیمه
+                            </h4>
+                            <p class="mb-0 mt-1">تعریف و مدیریت قوانین محاسباتی بیمه</p>
+                        </div>
+                        <a href="@Url.Action("Create")" class="btn btn-success btn-medical">
+                            <i class="fas fa-plus"></i>
+                            قانون جدید
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Section -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number">@Model.TotalCount</div>
+                <div class="stats-label">کل قوانین</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-success">@Model.ActiveCount</div>
+                <div class="stats-label">قوانین فعال</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-warning">@Model.InactiveCount</div>
+                <div class="stats-label">قوانین غیرفعال</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="stats-card">
+                <div class="stats-number text-info">@Model.BusinessRules.Count(r => r.Priority <= 5)</div>
+                <div class="stats-label">اولویت بالا</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rules List -->
+    <div class="row">
+        @if (Model.BusinessRules.Any())
+        {
+            foreach (var rule in Model.BusinessRules.OrderBy(r => r.Priority))
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="medical-card">
+                        <div class="rule-body">
+                            <!-- Rule Header -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="mb-1">@rule.BusinessRuleId</h5>
+                                    <span class="badge rule-type-badge status-badge">@rule.RuleTypeName</span>
+                                </div>
+                                <div class="text-right">
+                                    <span class="badge priority-badge status-badge">اولویت @rule.Priority</span>
+                                    <br>
+                                    <span class="badge @rule.StatusClass status-badge mt-1">@rule.StatusText</span>
+                                </div>
+                            </div>
+
+                            <!-- Rule Description -->
+                            @if (!string.IsNullOrEmpty(rule.Description))
+                            {
+                                <p class="text-muted mb-3">@rule.Description</p>
+                            }
+
+                            <!-- Rule Details -->
+                            <div class="row text-center mb-3">
+                                <div class="col-6">
+                                    <small class="text-muted">تاریخ ایجاد</small>
+                                    <br>
+                                    <strong>@rule.CreatedAt.ToString("yyyy/MM/dd")</strong>
+                                </div>
+                                <div class="col-6">
+                                    <small class="text-muted">آخرین به‌روزرسانی</small>
+                                    <br>
+                                    <strong>@(rule.UpdatedAt?.ToString("yyyy/MM/dd") ?? "-")</strong>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="action-buttons">
+                                <button type="button" class="btn btn-primary btn-sm btn-medical" 
+                                        onclick="editRule(@rule.BusinessRuleId)">
+                                    <i class="fas fa-edit"></i>
+                                    ویرایش
+                                </button>
+                                
+                                <button type="button" class="btn btn-test btn-sm btn-medical" 
+                                        onclick="testRule(@rule.BusinessRuleId)">
+                                    <i class="fas fa-flask"></i>
+                                    تست
+                                </button>
+                                
+                                <button type="button" class="btn btn-warning btn-sm btn-medical" 
+                                        onclick="toggleStatus(@rule.BusinessRuleId, @rule.IsActive.ToString().ToLower())">
+                                    <i class="fas fa-toggle-@(rule.IsActive ? "on" : "off")"></i>
+                                    @(rule.IsActive ? "غیرفعال" : "فعال")
+                                </button>
+                                
+                                <button type="button" class="btn btn-danger btn-sm btn-medical" 
+                                        onclick="deleteRule(@rule.BusinessRuleId, '@rule.BusinessRuleId')">
+                                    <i class="fas fa-trash"></i>
+                                    حذف
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12">
+                <div class="medical-card text-center py-5">
+                    <div class="rule-body">
+                        <i class="fas fa-cogs fa-3x text-muted mb-3"></i>
+                        <h5 class="text-muted">هیچ قانونی تعریف نشده است</h5>
+                        <p class="text-muted">برای شروع، اولین قانون کسب‌وکار را ایجاد کنید</p>
+                        <a href="@Url.Action("Create")" class="btn btn-success btn-medical">
+                            <i class="fas fa-plus"></i>
+                            ایجاد اولین قانون
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Test Rule Modal -->
+<div class="modal fade" id="testRuleModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-flask text-purple"></i>
+                    تست قانون
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="testRuleForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="testServiceAmount">مبلغ خدمت</label>
+                                <input type="number" class="form-control" id="testServiceAmount" 
+                                       placeholder="مبلغ خدمت را وارد کنید" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="testPatientId">شناسه بیمار</label>
+                                <input type="number" class="form-control" id="testPatientId" 
+                                       placeholder="شناسه بیمار را وارد کنید" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="testServiceId">شناسه خدمت</label>
+                                <input type="number" class="form-control" id="testServiceId" 
+                                       placeholder="شناسه خدمت را وارد کنید" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="testCalculationDate">تاریخ محاسبه</label>
+                                <input type="date" class="form-control" id="testCalculationDate" 
+                                       value="@DateTime.Now.ToString("yyyy-MM-dd")">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                <button type="button" class="btn btn-test" onclick="executeTest()">
+                    <i class="fas fa-play"></i>
+                    اجرای تست
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let currentRuleId = null;
+
+        // Edit Rule
+        function editRule(ruleId) {
+            window.location.href = '@Url.Action("Edit")/' + ruleId;
+        }
+
+        // Test Rule
+        function testRule(ruleId) {
+            currentRuleId = ruleId;
+            $('#testRuleModal').modal('show');
+        }
+
+        // Execute Test
+        function executeTest() {
+            if (!currentRuleId) return;
+
+            const serviceAmount = $('#testServiceAmount').val();
+            const patientId = $('#testPatientId').val();
+            const serviceId = $('#testServiceId').val();
+
+            if (!serviceAmount || !patientId || !serviceId) {
+                toastr.error('لطفاً تمام فیلدها را پر کنید');
+                return;
+            }
+
+            $.ajax({
+                url: '@Url.Action("TestRule")',
+                type: 'POST',
+                data: {
+                    id: currentRuleId,
+                    serviceAmount: serviceAmount,
+                    patientId: patientId,
+                    serviceId: serviceId
+                },
+                success: function(response) {
+                    if (response.success) {
+                        const message = response.result ? 
+                            '✅ قانون اعمال می‌شود' : '❌ قانون اعمال نمی‌شود';
+                        toastr.success(message);
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('خطا در اجرای تست');
+                }
+            });
+        }
+
+        // Toggle Status
+        function toggleStatus(ruleId, currentStatus) {
+            $.ajax({
+                url: '@Url.Action("ToggleStatus")',
+                type: 'POST',
+                data: { id: ruleId },
+                success: function(response) {
+                    if (response.success) {
+                        toastr.success(response.message);
+                        location.reload();
+                    } else {
+                        toastr.error(response.message);
+                    }
+                },
+                error: function() {
+                    toastr.error('خطا در تغییر وضعیت');
+                }
+            });
+        }
+
+        // Delete Rule
+        function deleteRule(ruleId, ruleName) {
+            if (confirm('آیا از حذف قانون "' + ruleName + '" اطمینان دارید؟')) {
+                $.ajax({
+                    url: '@Url.Action("Delete")',
+                    type: 'POST',
+                    data: { id: ruleId },
+                    success: function(response) {
+                        if (response.success) {
+                            toastr.success(response.message);
+                            location.reload();
+                        } else {
+                            toastr.error(response.message);
+                        }
+                    },
+                    error: function() {
+                        toastr.error('خطا در حذف قانون');
+                    }
+                });
+            }
+        }
+    </script>
+}

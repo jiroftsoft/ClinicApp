@@ -968,22 +968,30 @@ namespace ClinicApp.Services.Insurance
         #region Supplementary Insurance Methods
 
         /// <summary>
-        /// دریافت تعرفه‌های بیمه تکمیلی
+        /// دریافت تعرفه‌های بیمه تکمیلی با اعتبارسنجی تاریخ
         /// </summary>
-        public async Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId)
+        public async Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId, DateTime? calculationDate = null)
         {
             try
             {
-                _logger.Information("درخواست تعرفه‌های بیمه تکمیلی. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                    planId, _currentUserService.UserName, _currentUserService.UserId);
+                var effectiveDate = calculationDate ?? DateTime.Now;
+                
+                _logger.Information("درخواست تعرفه‌های بیمه تکمیلی. PlanId: {PlanId}, CalculationDate: {CalculationDate}. User: {UserName} (Id: {UserId})",
+                    planId, effectiveDate, _currentUserService.UserName, _currentUserService.UserId);
 
                 var tariffs = await _tariffRepository.GetByPlanIdAsync(planId);
-                var supplementaryTariffs = tariffs.Where(t => t.InsuranceType == InsuranceType.Supplementary).ToList();
+                
+                // اعتبارسنجی تعرفه‌ها بر اساس تاریخ
+                var validSupplementaryTariffs = tariffs
+                    .Where(t => t.InsuranceType == InsuranceType.Supplementary)
+                    .Where(t => IsTariffValidForDate(t, effectiveDate))
+                    .OrderBy(t => t.Priority ?? 0)
+                    .ToList();
 
-                _logger.Information("تعرفه‌های بیمه تکمیلی با موفقیت دریافت شد. PlanId: {PlanId}, Count: {Count}. User: {UserName} (Id: {UserId})",
-                    planId, supplementaryTariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Information("تعرفه‌های بیمه تکمیلی معتبر دریافت شد. PlanId: {PlanId}, ValidCount: {ValidCount}, TotalCount: {TotalCount}. User: {UserName} (Id: {UserId})",
+                    planId, validSupplementaryTariffs.Count, tariffs.Count(t => t.InsuranceType == InsuranceType.Supplementary), _currentUserService.UserName, _currentUserService.UserId);
 
-                return ServiceResult<List<InsuranceTariff>>.Successful(supplementaryTariffs);
+                return ServiceResult<List<InsuranceTariff>>.Successful(validSupplementaryTariffs);
             }
             catch (Exception ex)
             {
@@ -996,15 +1004,17 @@ namespace ClinicApp.Services.Insurance
         /// <summary>
         /// محاسبه تعرفه بیمه تکمیلی
         /// </summary>
-        public async Task<ServiceResult<decimal>> CalculateSupplementaryTariffAsync(int serviceId, int planId, decimal baseAmount)
+        public async Task<ServiceResult<decimal>> CalculateSupplementaryTariffAsync(int serviceId, int planId, decimal baseAmount, DateTime? calculationDate = null)
         {
             try
             {
-                _logger.Information("محاسبه تعرفه بیمه تکمیلی. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}. User: {UserName} (Id: {UserId})",
-                    serviceId, planId, baseAmount, _currentUserService.UserName, _currentUserService.UserId);
+                var effectiveDate = calculationDate ?? DateTime.Now;
+                
+                _logger.Information("محاسبه تعرفه بیمه تکمیلی. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}, CalculationDate: {CalculationDate}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, baseAmount, effectiveDate, _currentUserService.UserName, _currentUserService.UserId);
 
-                // دریافت تعرفه بیمه تکمیلی
-                var supplementaryTariffs = await GetSupplementaryTariffsAsync(planId);
+                // دریافت تعرفه‌های بیمه تکمیلی معتبر
+                var supplementaryTariffs = await GetSupplementaryTariffsAsync(planId, effectiveDate);
                 if (!supplementaryTariffs.Success)
                 {
                     return ServiceResult<decimal>.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
@@ -1013,9 +1023,17 @@ namespace ClinicApp.Services.Insurance
                 var tariff = supplementaryTariffs.Data.FirstOrDefault(t => t.ServiceId == serviceId);
                 if (tariff == null)
                 {
-                    _logger.Warning("تعرفه بیمه تکمیلی برای خدمت یافت نشد. ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                        serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
-                    return ServiceResult<decimal>.Failed("تعرفه بیمه تکمیلی برای این خدمت تعریف نشده است");
+                    _logger.Warning("تعرفه بیمه تکمیلی معتبر برای خدمت یافت نشد. ServiceId: {ServiceId}, PlanId: {PlanId}, CalculationDate: {CalculationDate}. User: {UserName} (Id: {UserId})",
+                        serviceId, planId, effectiveDate, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<decimal>.Failed("تعرفه بیمه تکمیلی معتبر برای این خدمت تعریف نشده است");
+                }
+
+                // اعتبارسنجی اضافی تعرفه
+                if (!IsTariffValidForDate(tariff, effectiveDate))
+                {
+                    _logger.Warning("تعرفه بیمه تکمیلی برای تاریخ محاسبه معتبر نیست. TariffId: {TariffId}, ServiceId: {ServiceId}, CalculationDate: {CalculationDate}. User: {UserName} (Id: {UserId})",
+                        tariff.InsuranceTariffId, serviceId, effectiveDate, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<decimal>.Failed("تعرفه بیمه تکمیلی برای تاریخ محاسبه معتبر نیست");
                 }
 
                 // محاسبه تعرفه بر اساس تنظیمات
@@ -1024,15 +1042,19 @@ namespace ClinicApp.Services.Insurance
                 if (tariff.SupplementaryCoveragePercent.HasValue)
                 {
                     calculatedAmount = baseAmount * (tariff.SupplementaryCoveragePercent.Value / 100);
+                    _logger.Debug("محاسبه بر اساس درصد پوشش. BaseAmount: {BaseAmount}, CoveragePercent: {CoveragePercent}, CalculatedAmount: {CalculatedAmount}",
+                        baseAmount, tariff.SupplementaryCoveragePercent.Value, calculatedAmount);
                 }
 
                 if (tariff.SupplementaryMaxPayment.HasValue && calculatedAmount > tariff.SupplementaryMaxPayment.Value)
                 {
+                    _logger.Debug("اعمال سقف پرداخت. CalculatedAmount: {CalculatedAmount}, MaxPayment: {MaxPayment}",
+                        calculatedAmount, tariff.SupplementaryMaxPayment.Value);
                     calculatedAmount = tariff.SupplementaryMaxPayment.Value;
                 }
 
-                _logger.Information("محاسبه تعرفه بیمه تکمیلی تکمیل شد. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}, CalculatedAmount: {CalculatedAmount}. User: {UserName} (Id: {UserId})",
-                    serviceId, planId, baseAmount, calculatedAmount, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Information("محاسبه تعرفه بیمه تکمیلی تکمیل شد. ServiceId: {ServiceId}, PlanId: {PlanId}, BaseAmount: {BaseAmount}, CalculatedAmount: {CalculatedAmount}, TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, baseAmount, calculatedAmount, tariff.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<decimal>.Successful(calculatedAmount);
             }
@@ -1200,6 +1222,55 @@ namespace ClinicApp.Services.Insurance
                 _logger.Error(ex, "خطا در حذف تعرفه بیمه. Id: {Id}. User: {UserName} (Id: {UserId})",
                     id, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult.Failed("خطا در حذف تعرفه بیمه");
+            }
+        }
+
+        /// <summary>
+        /// بررسی اعتبار تعرفه برای تاریخ مشخص
+        /// </summary>
+        private bool IsTariffValidForDate(InsuranceTariff tariff, DateTime calculationDate)
+        {
+            try
+            {
+                // بررسی تاریخ شروع
+                if (tariff.StartDate.HasValue && tariff.StartDate.Value > calculationDate)
+                {
+                    _logger.Debug("تعرفه هنوز فعال نشده. TariffId: {TariffId}, StartDate: {StartDate}, CalculationDate: {CalculationDate}",
+                        tariff.InsuranceTariffId, tariff.StartDate, calculationDate);
+                    return false;
+                }
+
+                // بررسی تاریخ پایان
+                if (tariff.EndDate.HasValue && tariff.EndDate.Value < calculationDate)
+                {
+                    _logger.Debug("تعرفه منقضی شده. TariffId: {TariffId}, EndDate: {EndDate}, CalculationDate: {CalculationDate}",
+                        tariff.InsuranceTariffId, tariff.EndDate, calculationDate);
+                    return false;
+                }
+
+                // بررسی وضعیت فعال بودن
+                if (!tariff.IsActive)
+                {
+                    _logger.Debug("تعرفه غیرفعال است. TariffId: {TariffId}",
+                        tariff.InsuranceTariffId);
+                    return false;
+                }
+
+                // بررسی حذف نرم
+                if (tariff.IsDeleted)
+                {
+                    _logger.Debug("تعرفه حذف شده است. TariffId: {TariffId}",
+                        tariff.InsuranceTariffId);
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی اعتبار تعرفه. TariffId: {TariffId}, CalculationDate: {CalculationDate}",
+                    tariff.InsuranceTariffId, calculationDate);
+                return false;
             }
         }
 

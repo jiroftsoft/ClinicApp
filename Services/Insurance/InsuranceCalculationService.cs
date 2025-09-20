@@ -36,6 +36,7 @@ namespace ClinicApp.Services.Insurance
         private readonly IPlanServiceRepository _planServiceRepository;
         private readonly IInsuranceCalculationRepository _insuranceCalculationRepository;
         private readonly IInsuranceTariffRepository _insuranceTariffRepository;
+        private readonly IBusinessRuleEngine _businessRuleEngine;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
@@ -45,6 +46,7 @@ namespace ClinicApp.Services.Insurance
             IPlanServiceRepository planServiceRepository,
             IInsuranceCalculationRepository insuranceCalculationRepository,
             IInsuranceTariffRepository insuranceTariffRepository,
+            IBusinessRuleEngine businessRuleEngine,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
@@ -52,6 +54,7 @@ namespace ClinicApp.Services.Insurance
             _planServiceRepository = planServiceRepository ?? throw new ArgumentNullException(nameof(planServiceRepository));
             _insuranceCalculationRepository = insuranceCalculationRepository ?? throw new ArgumentNullException(nameof(insuranceCalculationRepository));
             _insuranceTariffRepository = insuranceTariffRepository ?? throw new ArgumentNullException(nameof(insuranceTariffRepository));
+            _businessRuleEngine = businessRuleEngine ?? throw new ArgumentNullException(nameof(businessRuleEngine));
             _log = logger.ForContext<InsuranceCalculationService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
@@ -103,7 +106,7 @@ namespace ClinicApp.Services.Insurance
                 }
 
                 // دریافت پیکربندی خدمت در طرح بیمه
-                var planServiceResult = await _planServiceRepository.GetByPlanAndServiceCategoryAsync(patientInsurance.InsurancePlanId, serviceId);
+                var planServiceResult = await _planServiceRepository.GetByPlanAndServiceAsync(patientInsurance.InsurancePlanId, serviceId);
                 if (!planServiceResult.Success || planServiceResult.Data == null)
                 {
                     return ServiceResult<InsuranceCalculationResultViewModel>.Failed("پیکربندی بیمه برای این خدمت یافت نشد");
@@ -336,7 +339,7 @@ namespace ClinicApp.Services.Insurance
                     patientInsurance.InsurancePlanId, model.ServiceCategoryId);
 
                 // محاسبه پوشش
-                var result = CalculateInsuranceCoverage(
+                var result = await CalculateInsuranceCoverageAsync(
                     model.ServiceAmount,
                     patientInsurance.InsurancePlan,
                     planService.Data);
@@ -408,7 +411,7 @@ namespace ClinicApp.Services.Insurance
         /// محاسبه ضد گلوله پوشش بیمه بر اساس طرح بیمه و تنظیمات خدمت
         /// 🛡️ مقاوم در برابر تمام انواع خطاها - فرمول محاسباتی استاندارد سیستم‌های پزشکی ایران
         /// </summary>
-        public InsuranceCalculationResultViewModel CalculateInsuranceCoverage(
+        public async Task<InsuranceCalculationResultViewModel> CalculateInsuranceCoverageAsync(
             decimal serviceAmount,
             InsurancePlan insurancePlan,
             PlanService planService)
@@ -432,8 +435,21 @@ namespace ClinicApp.Services.Insurance
                 // 🛡️ محاسبه امن مبلغ قابل پوشش (بعد از کسر فرانشیز)
                 result.CoverableAmount = SafeCalculateCoverableAmount(serviceAmount, result.DeductibleAmount);
 
-                // 🛡️ تعیین امن درصد پوشش
-                decimal coveragePercent = SafeGetCoveragePercent(insurancePlan, planService);
+                // 🛡️ تعیین امن درصد پوشش با Rule Engine
+                var context = new InsuranceCalculationContext
+                {
+                    PatientId = 0, // باید از caller دریافت شود
+                    ServiceId = 0, // باید از caller دریافت شود
+                    InsurancePlanId = insurancePlan.InsurancePlanId,
+                    ServiceCategoryId = planService?.ServiceCategoryId,
+                    ServiceAmount = serviceAmount,
+                    CalculationDate = DateTime.Now,
+                    InsurancePlan = insurancePlan,
+                    PlanService = planService
+                };
+
+                var coverageResult = await _businessRuleEngine.CalculateCoveragePercentAsync(context);
+                decimal coveragePercent = coverageResult.Success ? coverageResult.Data : SafeGetCoveragePercent(insurancePlan, planService);
                 result.CoveragePercent = coveragePercent;
 
                 // 🛡️ محاسبه امن مبلغ پوشش بیمه
@@ -540,7 +556,7 @@ namespace ClinicApp.Services.Insurance
                         serviceId, insurancePlan.InsurancePlanId);
                     
                     // استفاده از محاسبه عادی
-                    return CalculateInsuranceCoverage(serviceAmount, insurancePlan, planService);
+                    return await CalculateInsuranceCoverageAsync(serviceAmount, insurancePlan, planService);
                 }
             }
             catch (Exception ex)
@@ -549,7 +565,7 @@ namespace ClinicApp.Services.Insurance
                     serviceId, insurancePlan.InsurancePlanId, serviceAmount);
                 
                 // در صورت خطا، از محاسبه عادی استفاده کن
-                return CalculateInsuranceCoverage(serviceAmount, insurancePlan, planService);
+                return await CalculateInsuranceCoverageAsync(serviceAmount, insurancePlan, planService);
             }
         }
 
