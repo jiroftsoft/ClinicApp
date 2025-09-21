@@ -454,6 +454,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\BusinessRuleController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationTestController.cs" />
+    <Compile Include="Areas\Admin\Controllers\DataFixController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
@@ -640,6 +641,10 @@
     <Compile Include="Migrations\202509191047233_MakeTableBussinesRule.Designer.cs">
       <DependentUpon>202509191047233_MakeTableBussinesRule.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509202056063_AddInsuranceTypeToIns.cs" />
+    <Compile Include="Migrations\202509202056063_AddInsuranceTypeToIns.Designer.cs">
+      <DependentUpon>202509202056063_AddInsuranceTypeToIns.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
@@ -798,6 +803,7 @@
     <Compile Include="Services\FactorSettingService.cs" />
     <Compile Include="Services\IMessageNotificationService.cs" />
     <Compile Include="Services\Insurance\AdvancedInsuranceCalculationService.cs" />
+    <Compile Include="Services\Insurance\BulkSupplementaryTariffService.cs" />
     <Compile Include="Services\Insurance\BusinessRuleEngine.cs" />
     <Compile Include="Services\Insurance\CombinedInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\CombinedInsuranceCalculationTestService.cs" />
@@ -903,6 +909,10 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
     <Compile Include="ViewModels\Insurance\SupplementaryInsuranceDetail.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\BulkSupplementaryTariffViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\DepartmentLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\ServiceCategoryLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\Supplementary\ServiceLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\Supplementary\SupplementaryCalculationResult.cs" />
     <Compile Include="ViewModels\Insurance\Supplementary\SupplementaryInsuranceCalculationResult.cs" />
     <Compile Include="ViewModels\Insurance\Supplementary\SupplementarySettings.cs" />
@@ -996,7 +1006,6 @@
     <Compile Include="ViewModels\Validators\ServiceCreateEditViewModelValidator.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Scripts\app\supplementary-tariff.js" />
     <Content Include="Content\aos.css" />
     <Content Include="Content\bootstrap-grid.css" />
     <Content Include="Content\bootstrap-grid.min.css" />
@@ -3367,9 +3376,14 @@
     <Content Include="Scripts\app\doctor-assignment-index.js" />
     <Content Include="Scripts\app\insurance-plan-form.js" />
     <Content Include="Scripts\app\insurance-plan-index.js" />
+    <Content Include="Scripts\app\modules\medical-api.js" />
+    <Content Include="Scripts\app\modules\medical-config.js" />
+    <Content Include="Scripts\app\modules\medical-ui.js" />
+    <Content Include="Scripts\app\modules\medical-validation.js" />
     <Content Include="Scripts\app\patient-insurance-form.js" />
     <Content Include="Scripts\app\patient-select2.js" />
     <Content Include="Scripts\app\service-calculation.js" />
+    <Content Include="Scripts\app\supplementary-tariff.js" />
     <Content Include="Scripts\app\utility.js" />
     <Content Include="Scripts\bootstrap.bundle.js" />
     <Content Include="Scripts\bootstrap.bundle.min.js" />
@@ -3808,6 +3822,9 @@
     <Content Include="Areas\Admin\Views\SupplementaryTariff\_SupplementaryTariffCard.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\_SupplementaryTariffFilters.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\_SupplementaryTariffTable.cshtml" />
+    <Content Include="Areas\Admin\Views\SupplementaryTariff\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\DataFix\Index.cshtml" />
+    <Content Include="Areas\Admin\Views\SupplementaryTariff\CreateBulk.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4010,6 +4027,10 @@
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
     <Content Include="Scripts\toastr.min.js" />
+    <Content Include="SQL\CheckCurrentData.sql" />
+    <Content Include="SQL\CurrentDataResults.txt" />
+    <Content Include="SQL\FixInsuranceData.sql" />
+    <Content Include="SQL\VerifyDataFix.sql" />
     <Content Include="TEMPLATES\ComplexFormCSS.css" />
     <Content Include="TEMPLATES\ComplexFormJavaScript.js" />
     <Content Include="Views\Shared\jqueryui.html" />
@@ -4165,6 +4186,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509191047233_MakeTableBussinesRule.resx">
       <DependentUpon>202509191047233_MakeTableBussinesRule.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509202056063_AddInsuranceTypeToIns.resx">
+      <DependentUpon>202509202056063_AddInsuranceTypeToIns.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
   <PropertyGroup>

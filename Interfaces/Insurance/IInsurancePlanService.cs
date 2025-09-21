@@ -86,6 +86,18 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetActivePlansForLookupAsync(int? providerId = null);
 
         /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی برای Lookup
+        /// </summary>
+        /// <returns>لیست طرح‌های بیمه تکمیلی</returns>
+        Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetSupplementaryInsurancePlansAsync();
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه پایه برای Lookup
+        /// </summary>
+        /// <returns>لیست طرح‌های بیمه پایه</returns>
+        Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetPrimaryInsurancePlansAsync();
+
+        /// <summary>
         /// دریافت لیست شرکت‌های بیمه برای SelectList
         /// </summary>
         /// <returns>لیست شرکت‌های بیمه فعال</returns>

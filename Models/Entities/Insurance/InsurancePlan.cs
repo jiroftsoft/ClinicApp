@@ -87,6 +87,13 @@ public class InsurancePlan : ISoftDelete, ITrackable
     public DateTime ValidTo { get; set; }
 
     /// <summary>
+    /// نوع بیمه (پایه یا تکمیلی)
+    /// این فیلد برای تشخیص نوع بیمه استفاده می‌شود
+    /// </summary>
+    [Required(ErrorMessage = "نوع بیمه الزامی است.")]
+    public InsuranceType InsuranceType { get; set; }
+
+    /// <summary>
     /// آیا طرح بیمه فعال است؟
     /// این فیلد برای غیرفعال کردن طرح‌های قدیمی یا منقضی شده استفاده می‌شود
     /// </summary>
@@ -226,6 +233,12 @@ public class InsurancePlanConfig : EntityTypeConfiguration<InsurancePlan>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_ValidTo")));
 
+        // نوع بیمه
+        Property(plan => plan.InsuranceType)
+            .IsRequired()
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_InsurancePlan_InsuranceType")));
+
         // وضعیت فعال بودن
         Property(plan => plan.IsActive)
             .IsRequired()
@@ -303,5 +316,8 @@ public class InsurancePlanConfig : EntityTypeConfiguration<InsurancePlan>
 
         HasIndex(plan => new { plan.ValidFrom, plan.ValidTo, plan.IsActive })
             .HasName("IX_InsurancePlan_Validity_IsActive");
+
+        HasIndex(plan => new { plan.InsuranceType, plan.IsActive, plan.IsDeleted })
+            .HasName("IX_InsurancePlan_Type_IsActive_IsDeleted");
     }
 }

@@ -1,0 +1,1397 @@
+@model ClinicApp.ViewModels.Insurance.Supplementary.BulkSupplementaryTariffViewModel
+@{
+    ViewBag.Title = "ایجاد تعرفه گروهی بیمه تکمیلی";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h4 class="mb-0">
+                                <i class="fas fa-layer-group me-2"></i>
+                                ایجاد تعرفه گروهی بیمه تکمیلی
+                            </h4>
+                            <p class="mb-0 mt-1">ایجاد تعرفه برای چندین خدمت به صورت همزمان</p>
+                        </div>
+                        <div>
+                            <a href="@Url.Action("Index", "SupplementaryTariff")" class="btn btn-outline-light">
+                                <i class="fas fa-arrow-right me-1"></i>
+                                بازگشت به لیست
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Form -->
+    <div class="row">
+        <div class="col-12">
+            <form id="bulkTariffForm" method="post" action="@Url.Action("CreateBulk", "SupplementaryTariff")" novalidate>
+                @Html.AntiForgeryToken()
+                @Html.ValidationSummary(true, "", new { @class = "alert alert-danger", @id = "validationSummary" })
+                
+                <!-- Progress Bar -->
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <div class="progress" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                                 role="progressbar" 
+                                 style="width: 25%" 
+                                 aria-valuenow="25" 
+                                 aria-valuemin="0" 
+                                 aria-valuemax="100"
+                                 id="progressBar">
+                                مرحله 1: انتخاب بیمه‌ها
+                            </div>
+                        </div>
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                پیشرفت: <span id="progressText">25%</span> - <span id="currentStep">انتخاب بیمه‌ها</span>
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 1: Insurance Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>
+                            مرحله 1: انتخاب بیمه‌ها
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="PrimaryInsurancePlanId" class="form-label">
+                                        <i class="fas fa-hospital me-1"></i>
+                                        بیمه پایه *
+                                    </label>
+                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, 
+                                        new SelectList(Model.PrimaryInsurancePlans, "InsurancePlanId", "Name"), 
+                                        "انتخاب بیمه پایه", 
+                                        new { @class = "form-select", @required = "required" })
+                                    @Html.ValidationMessageFor(m => m.PrimaryInsurancePlanId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="InsurancePlanId" class="form-label">
+                                        <i class="fas fa-plus-circle me-1"></i>
+                                        طرح بیمه تکمیلی *
+                                    </label>
+                                    @Html.DropDownListFor(m => m.InsurancePlanId, 
+                                        new SelectList(Model.SupplementaryInsurancePlans, "InsurancePlanId", "Name"), 
+                                        "انتخاب طرح بیمه تکمیلی", 
+                                        new { @class = "form-select", @required = "required" })
+                                    @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 2: Service Selection -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-list-check me-2"></i>
+                            مرحله 2: انتخاب خدمات
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Selection Type -->
+                        <div class="row mb-4">
+                            <div class="col-12">
+                                <label class="form-label">نوع انتخاب خدمات *</label>
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="SelectionType" value="1" id="allServices" checked>
+                                            <label class="form-check-label" for="allServices">
+                                                <i class="fas fa-globe me-1"></i>
+                                                همه خدمات
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="SelectionType" value="2" id="byDepartment">
+                                            <label class="form-check-label" for="byDepartment">
+                                                <i class="fas fa-building me-1"></i>
+                                                بر اساس دپارتمان
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="SelectionType" value="3" id="byCategory">
+                                            <label class="form-check-label" for="byCategory">
+                                                <i class="fas fa-tags me-1"></i>
+                                                بر اساس دسته‌بندی
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="SelectionType" value="4" id="byPriceRange">
+                                            <label class="form-check-label" for="byPriceRange">
+                                                <i class="fas fa-dollar-sign me-1"></i>
+                                                بر اساس محدوده قیمت
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="SelectionType" value="5" id="manualSelection">
+                                            <label class="form-check-label" for="manualSelection">
+                                                <i class="fas fa-hand-pointer me-1"></i>
+                                                انتخاب دستی
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Department Selection -->
+                        <div id="departmentSelection" class="selection-panel" style="display: none;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <label class="form-label">انتخاب دپارتمان‌ها</label>
+                                    <div class="row">
+                                        @foreach (var department in Model.Departments)
+                                        {
+                                            <div class="col-md-3 mb-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input department-checkbox" type="checkbox" 
+                                                           value="@department.DepartmentId" id="dept_@department.DepartmentId">
+                                                    <label class="form-check-label" for="dept_@department.DepartmentId">
+                                                        @department.Name
+                                                        <small class="text-muted d-block">(@department.ServiceCount خدمت)</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllDepartments">
+                                            <i class="fas fa-check-double me-1"></i>
+                                            انتخاب همه
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllDepartments">
+                                            <i class="fas fa-times me-1"></i>
+                                            لغو همه
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Category Selection -->
+                        <div id="categorySelection" class="selection-panel" style="display: none;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <label class="form-label">انتخاب دسته‌بندی‌ها</label>
+                                    <div class="row">
+                                        @foreach (var category in Model.ServiceCategories)
+                                        {
+                                            <div class="col-md-3 mb-2">
+                                                <div class="form-check">
+                                                    <input class="form-check-input category-checkbox" type="checkbox" 
+                                                           value="@category.ServiceCategoryId" id="cat_@category.ServiceCategoryId">
+                                                    <label class="form-check-label" for="cat_@category.ServiceCategoryId">
+                                                        @category.Name
+                                                        <small class="text-muted d-block">@category.DepartmentName - (@category.ServiceCount خدمت)</small>
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                    <div class="mt-2">
+                                        <button type="button" class="btn btn-sm btn-outline-primary" id="selectAllCategories">
+                                            <i class="fas fa-check-double me-1"></i>
+                                            انتخاب همه
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" id="deselectAllCategories">
+                                            <i class="fas fa-times me-1"></i>
+                                            لغو همه
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Range Selection -->
+                        <div id="priceRangeSelection" class="selection-panel" style="display: none;">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <label for="MinPrice" class="form-label">حداقل قیمت (تومان)</label>
+                                    <input type="number" class="form-control" id="MinPrice" name="MinPrice" 
+                                           placeholder="0" min="0" step="0.01">
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="MaxPrice" class="form-label">حداکثر قیمت (تومان)</label>
+                                    <input type="number" class="form-control" id="MaxPrice" name="MaxPrice" 
+                                           placeholder="999999999" min="0" step="0.01">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Manual Service Selection -->
+                        <div id="manualServiceSelection" class="selection-panel" style="display: none;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <label class="form-label">انتخاب خدمات</label>
+                                    <div class="table-responsive">
+                                        <table class="table table-striped table-hover">
+                                            <thead>
+                                                <tr>
+                                                    <th>
+                                                        <input type="checkbox" id="selectAllServices">
+                                                    </th>
+                                                    <th>نام خدمت</th>
+                                                    <th>کد خدمت</th>
+                                                    <th>دپارتمان</th>
+                                                    <th>قیمت (تومان)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var service in Model.Services)
+                                                {
+                                                    <tr>
+                                                        <td>
+                                                            <input class="form-check-input service-checkbox" type="checkbox" 
+                                                                   value="@service.ServiceId" id="service_@service.ServiceId">
+                                                        </td>
+                                                        <td>@service.Title</td>
+                                                        <td>@service.ServiceCode</td>
+                                                        <td>@service.DepartmentName</td>
+                                                        <td>@service.Price.ToString("N0")</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview Section -->
+                        <div id="servicePreview" class="mt-4" style="display: none;">
+                            <div class="alert alert-info">
+                                <h6><i class="fas fa-eye me-2"></i>پیش‌نمایش انتخاب</h6>
+                                <div id="previewContent"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 3: Tariff Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-cogs me-2"></i>
+                            مرحله 3: تنظیمات تعرفه
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="SupplementaryCoveragePercent" class="form-label">
+                                        <i class="fas fa-percentage me-1"></i>
+                                        درصد پوشش تکمیلی *
+                                    </label>
+                                    <input type="number" class="form-control" id="SupplementaryCoveragePercent" 
+                                           name="SupplementaryCoveragePercent" value="90" min="0" max="100" step="0.01" required>
+                                    <div class="form-text">درصد پوشش بیمه تکمیلی (0-100)</div>
+                                    @Html.ValidationMessageFor(m => m.SupplementaryCoveragePercent, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="Priority" class="form-label">
+                                        <i class="fas fa-sort-numeric-up me-1"></i>
+                                        اولویت
+                                    </label>
+                                    <input type="number" class="form-control" id="Priority" name="Priority" 
+                                           value="5" min="1" max="10" required>
+                                    <div class="form-text">اولویت تعرفه (1-10، 1 بالاترین اولویت)</div>
+                                    @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Calculation Type -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <label class="form-label">نوع محاسبه قیمت</label>
+                                <div class="row">
+                                    <div class="col-md-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="PriceCalculationType" value="1" id="autoPrice" checked>
+                                            <label class="form-check-label" for="autoPrice">
+                                                <i class="fas fa-magic me-1"></i>
+                                                خودکار (بر اساس قیمت خدمات)
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="PriceCalculationType" value="2" id="fixedPrice">
+                                            <label class="form-check-label" for="fixedPrice">
+                                                <i class="fas fa-lock me-1"></i>
+                                                ثابت
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="PriceCalculationType" value="3" id="multiplierPrice">
+                                            <label class="form-check-label" for="multiplierPrice">
+                                                <i class="fas fa-times me-1"></i>
+                                                ضریبی
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="PriceCalculationType" value="4" id="rangePrice">
+                                            <label class="form-check-label" for="rangePrice">
+                                                <i class="fas fa-sliders-h me-1"></i>
+                                                محدوده
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Price Settings -->
+                        <div id="priceSettings" class="mt-3">
+                            <div class="row">
+                                <div class="col-md-4" id="fixedPriceSetting" style="display: none;">
+                                    <label for="DefaultPrice" class="form-label">قیمت ثابت (تومان)</label>
+                                    <input type="number" class="form-control" id="DefaultPrice" name="DefaultPrice" 
+                                           min="0" step="0.01">
+                                </div>
+                                <div class="col-md-4" id="multiplierPriceSetting" style="display: none;">
+                                    <label for="PriceMultiplier" class="form-label">ضریب قیمت</label>
+                                    <input type="number" class="form-control" id="PriceMultiplier" name="PriceMultiplier" 
+                                           value="1.0" min="0.1" max="10" step="0.1">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Step 4: Advanced Settings -->
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sliders-h me-2"></i>
+                            مرحله 4: تنظیمات پیشرفته
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="ApplyToExistingTariffs" name="AdvancedSettings.ApplyToExistingTariffs">
+                                    <label class="form-check-label" for="ApplyToExistingTariffs">
+                                        اعمال به تعرفه‌های موجود
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="DeleteExistingTariffs" name="AdvancedSettings.DeleteExistingTariffs">
+                                    <label class="form-check-label" for="DeleteExistingTariffs">
+                                        حذف تعرفه‌های موجود قبل از ایجاد جدید
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="CreateBackup" name="AdvancedSettings.CreateBackup" checked>
+                                    <label class="form-check-label" for="CreateBackup">
+                                        ایجاد نسخه پشتیبان قبل از تغییرات
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="SendNotification" name="AdvancedSettings.SendNotification" checked>
+                                    <label class="form-check-label" for="SendNotification">
+                                        ارسال اعلان پس از تکمیل
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <label for="MaxServicesLimit" class="form-label">حداکثر تعداد خدمات</label>
+                                <input type="number" class="form-control" id="MaxServicesLimit" name="AdvancedSettings.MaxServicesLimit" 
+                                       value="100" min="1" max="1000">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="Description" class="form-label">توضیحات</label>
+                                <textarea class="form-control" id="Description" name="Description" rows="2" 
+                                          placeholder="توضیحات اضافی (اختیاری)"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <button type="button" class="btn btn-info" id="previewBtn">
+                                    <i class="fas fa-eye me-1"></i>
+                                    پیش‌نمایش
+                                </button>
+                                <button type="button" class="btn btn-warning" id="calculateBtn">
+                                    <i class="fas fa-calculator me-1"></i>
+                                    محاسبه
+                                </button>
+                            </div>
+                            <div>
+                                <button type="button" class="btn btn-secondary me-2" onclick="history.back()">
+                                    <i class="fas fa-arrow-right me-1"></i>
+                                    انصراف
+                                </button>
+                                <button type="submit" class="btn btn-success" id="submitBtn">
+                                    <i class="fas fa-save me-1"></i>
+                                    ایجاد تعرفه گروهی
+                                </button>
+                                
+                                <!-- Loading Overlay -->
+                                <div id="loadingOverlay" class="position-fixed top-0 start-0 w-100 h-100 d-none" 
+                                     style="background-color: rgba(0,0,0,0.5); z-index: 9999;">
+                                    <div class="d-flex justify-content-center align-items-center h-100">
+                                        <div class="text-center text-white">
+                                            <div class="spinner-border spinner-border-lg mb-3" role="status">
+                                                <span class="visually-hidden">در حال پردازش...</span>
+                                            </div>
+                                            <h5>در حال ایجاد تعرفه گروهی...</h5>
+                                            <p class="mb-0">لطفاً منتظر بمانید</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary mb-3" role="status">
+                    <span class="visually-hidden">در حال پردازش...</span>
+                </div>
+                <h5>در حال پردازش...</h5>
+                <p class="text-muted">لطفاً صبر کنید</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Results Modal -->
+<div class="modal fade" id="resultsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">نتایج ایجاد تعرفه گروهی</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="resultsContent">
+                <!-- Results will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        /* Professional Medical Theme */
+        .medical-bulk-form {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            min-height: 100vh;
+        }
+
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .card-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px 15px 0 0 !important;
+            border: none;
+        }
+
+        .progress {
+            border-radius: 15px;
+            overflow: hidden;
+            background-color: #e9ecef;
+        }
+
+        .progress-bar {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            transition: width 0.6s ease;
+        }
+
+        .form-control, .form-select {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+            padding: 12px 15px;
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+
+        .form-control.is-warning {
+            border-color: #ffc107;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
+        }
+
+        .btn {
+            border-radius: 10px;
+            padding: 12px 25px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            border: none;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+        }
+
+        .alert {
+            border-radius: 10px;
+            border: none;
+            padding: 15px 20px;
+        }
+
+        .alert-info {
+            background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+            color: #0c5460;
+        }
+
+        .alert-danger {
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            color: #721c24;
+        }
+
+        .alert-warning {
+            background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+            color: #856404;
+        }
+
+        /* Loading Overlay */
+        #loadingOverlay {
+            backdrop-filter: blur(5px);
+            background-color: rgba(0,0,0,0.7) !important;
+        }
+
+        .spinner-border-lg {
+            width: 3rem;
+            height: 3rem;
+        }
+
+        /* Smart Selection Styles */
+        .smart-selection-card {
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border: 2px dashed #dee2e6;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+
+        .smart-selection-card:hover {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f0f2ff 0%, #e6f3ff 100%);
+        }
+
+        .form-check-input:checked {
+            background-color: #667eea;
+            border-color: #667eea;
+        }
+
+        .form-check-label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        /* Select2 Customization */
+        .select2-container--default .select2-selection--multiple {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            min-height: 45px;
+        }
+
+        .select2-container--default .select2-selection--multiple:focus {
+            border-color: #667eea;
+        }
+
+        .select2-container--default .select2-selection--multiple .select2-selection__choice {
+            background-color: #667eea;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            padding: 5px 10px;
+            margin: 3px;
+        }
+
+        /* Animation Classes */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        .slide-in {
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        /* Responsive Design */
+        @@media (max-width: 768px) {
+            .card {
+                margin-bottom: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .form-control, .form-select {
+                font-size: 16px; /* Prevent zoom on iOS */
+            }
+        }
+
+        /* Dark Mode Support */
+        @@media (prefers-color-scheme: dark) {
+            .medical-bulk-form {
+                background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            }
+            
+            .card {
+                background-color: #3c4b5c;
+                color: #ecf0f1;
+            }
+            
+            .form-control, .form-select {
+                background-color: #4a5c6b;
+                border-color: #5a6c7b;
+                color: #ecf0f1;
+            }
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize form
+            initializeBulkTariffForm();
+        });
+
+        function initializeBulkTariffForm() {
+            // Selection type change handler
+            $('input[name="SelectionType"]').change(function() {
+                handleSelectionTypeChange($(this).val());
+            });
+
+            // Price calculation type change handler
+            $('input[name="PriceCalculationType"]').change(function() {
+                handlePriceCalculationTypeChange($(this).val());
+            });
+
+            // Department selection handlers
+            $('#selectAllDepartments').click(function() {
+                $('.department-checkbox').prop('checked', true);
+                updatePreview();
+            });
+
+            $('#deselectAllDepartments').click(function() {
+                $('.department-checkbox').prop('checked', false);
+                updatePreview();
+            });
+
+            // Category selection handlers
+            $('#selectAllCategories').click(function() {
+                $('.category-checkbox').prop('checked', true);
+                updatePreview();
+            });
+
+            $('#deselectAllCategories').click(function() {
+                $('.category-checkbox').prop('checked', false);
+                updatePreview();
+            });
+
+            // Service selection handlers
+            $('#selectAllServices').click(function() {
+                $('.service-checkbox').prop('checked', $(this).prop('checked'));
+            });
+
+            // Preview button
+            $('#previewBtn').click(function() {
+                showPreview();
+            });
+
+            // Calculate button
+            $('#calculateBtn').click(function() {
+                calculateBulkTariff();
+            });
+
+            // Form submission
+            $('#bulkTariffForm').submit(function(e) {
+                e.preventDefault();
+                submitBulkTariff();
+            });
+
+            // Initialize with default selection
+            handleSelectionTypeChange('1');
+        }
+
+        function handleSelectionTypeChange(selectionType) {
+            // Hide all selection panels
+            $('.selection-panel').hide();
+
+            // Show relevant panel
+            switch(selectionType) {
+                case '1': // All Services
+                    $('#servicePreview').show();
+                    updatePreview();
+                    break;
+                case '2': // By Department
+                    $('#departmentSelection').show();
+                    break;
+                case '3': // By Category
+                    $('#categorySelection').show();
+                    break;
+                case '4': // By Price Range
+                    $('#priceRangeSelection').show();
+                    break;
+                case '5': // Manual Selection
+                    $('#manualServiceSelection').show();
+                    break;
+            }
+        }
+
+        function handlePriceCalculationTypeChange(priceType) {
+            // Hide all price settings
+            $('#priceSettings > div').hide();
+
+            // Show relevant setting
+            switch(priceType) {
+                case '2': // Fixed
+                    $('#fixedPriceSetting').show();
+                    break;
+                case '3': // Multiplier
+                    $('#multiplierPriceSetting').show();
+                    break;
+            }
+        }
+
+        function updatePreview() {
+            var selectionType = $('input[name="SelectionType"]:checked').val();
+            var previewContent = '';
+
+            switch(selectionType) {
+                case '1': // All Services
+                    previewContent = '<p><i class="fas fa-globe me-1"></i>همه خدمات انتخاب شده‌اند</p>';
+                    break;
+                case '2': // By Department
+                    var selectedDepts = $('.department-checkbox:checked').length;
+                    previewContent = '<p><i class="fas fa-building me-1"></i>' + selectedDepts + ' دپارتمان انتخاب شده</p>';
+                    break;
+                case '3': // By Category
+                    var selectedCats = $('.category-checkbox:checked').length;
+                    previewContent = '<p><i class="fas fa-tags me-1"></i>' + selectedCats + ' دسته‌بندی انتخاب شده</p>';
+                    break;
+                case '4': // By Price Range
+                    var minPrice = $('#MinPrice').val() || '0';
+                    var maxPrice = $('#MaxPrice').val() || 'نامحدود';
+                    previewContent = '<p><i class="fas fa-dollar-sign me-1"></i>محدوده قیمت: ' + minPrice + ' تا ' + maxPrice + ' تومان</p>';
+                    break;
+                case '5': // Manual Selection
+                    var selectedServices = $('.service-checkbox:checked').length;
+                    previewContent = '<p><i class="fas fa-hand-pointer me-1"></i>' + selectedServices + ' خدمت انتخاب شده</p>';
+                    break;
+            }
+
+            $('#previewContent').html(previewContent);
+        }
+
+        function showPreview() {
+            var formData = getFormData();
+            
+            $.ajax({
+                url: '@Url.Action("PreviewBulkTariff", "SupplementaryTariff")',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    if (response.success) {
+                        var preview = response.data;
+                        var previewHtml = '<div class="alert alert-info">' +
+                            '<h6><i class="fas fa-eye me-2"></i>پیش‌نمایش تعرفه گروهی</h6>' +
+                            '<div class="row">' +
+                            '<div class="col-md-6">' +
+                            '<strong>تعداد کل خدمات:</strong> ' + preview.TotalServices + '<br>' +
+                            '<strong>تعداد تعرفه‌های تخمینی:</strong> ' + preview.EstimatedTariffs +
+                            '</div>' +
+                            '<div class="col-md-6">' +
+                            '<strong>مجموع قیمت‌ها:</strong> ' + formatCurrency(preview.TotalPrice) + ' تومان<br>' +
+                            '<strong>میانگین قیمت:</strong> ' + formatCurrency(preview.AveragePrice) + ' تومان' +
+                            '</div>' +
+                            '</div>' +
+                            '<div class="mt-2">' +
+                            '<strong>حداقل قیمت:</strong> ' + formatCurrency(preview.MinPrice) + ' تومان | ' +
+                            '<strong>حداکثر قیمت:</strong> ' + formatCurrency(preview.MaxPrice) + ' تومان' +
+                            '</div>' +
+                            '</div>';
+                        
+                        $('#previewContent').html(previewHtml);
+                        $('#servicePreview').show();
+                    } else {
+                        showError('خطا در پیش‌نمایش: ' + response.message);
+                    }
+                },
+                error: function() {
+                    showError('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        function calculateBulkTariff() {
+            var coveragePercent = parseFloat($('#SupplementaryCoveragePercent').val()) || 90;
+            var priority = parseInt($('#Priority').val()) || 5;
+            
+            var calculationHtml = '<div class="alert alert-success">' +
+                '<h6><i class="fas fa-calculator"></i> نتایج محاسبه:</h6>' +
+                '<div class="row">' +
+                '<div class="col-md-6">' +
+                '<strong>درصد پوشش:</strong> ' + coveragePercent + '%<br>' +
+                '<strong>اولویت:</strong> ' + priority +
+                '</div>' +
+                '<div class="col-md-6">' +
+                '<strong>نوع محاسبه:</strong> ' + getPriceCalculationTypeName() +
+                '</div>' +
+                '</div>' +
+                '</div>';
+            
+            $('#previewContent').html(calculationHtml);
+            $('#servicePreview').show();
+        }
+
+        function getPriceCalculationTypeName() {
+            var priceType = $('input[name="PriceCalculationType"]:checked').val();
+            switch(priceType) {
+                case '1': return 'خودکار';
+                case '2': return 'ثابت';
+                case '3': return 'ضریبی';
+                case '4': return 'محدوده';
+                default: return 'نامشخص';
+            }
+        }
+
+        function submitBulkTariff() {
+            $('#loadingModal').modal('show');
+            
+            var formData = getFormData();
+            
+            $.ajax({
+                url: '@Url.Action("CreateBulk", "SupplementaryTariff")',
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    $('#loadingModal').modal('hide');
+                    
+                    if (response.success) {
+                        showResults(response.data);
+                    } else {
+                        showError('خطا در ایجاد تعرفه گروهی: ' + response.message);
+                    }
+                },
+                error: function() {
+                    $('#loadingModal').modal('hide');
+                    showError('خطا در ارتباط با سرور');
+                }
+            });
+        }
+
+        function getFormData() {
+            var formData = {
+                PrimaryInsurancePlanId: $('#PrimaryInsurancePlanId').val(),
+                InsurancePlanId: $('#InsurancePlanId').val(),
+                SelectionType: $('input[name="SelectionType"]:checked').val(),
+                SupplementaryCoveragePercent: $('#SupplementaryCoveragePercent').val(),
+                Priority: $('#Priority').val(),
+                PriceCalculationType: $('input[name="PriceCalculationType"]:checked').val(),
+                DefaultPrice: $('#DefaultPrice').val(),
+                PriceMultiplier: $('#PriceMultiplier').val(),
+                MinPrice: $('#MinPrice').val(),
+                MaxPrice: $('#MaxPrice').val(),
+                SelectedDepartmentIds: $('.department-checkbox:checked').map(function() { return $(this).val(); }).get(),
+                SelectedServiceCategoryIds: $('.category-checkbox:checked').map(function() { return $(this).val(); }).get(),
+                SelectedServiceIds: $('.service-checkbox:checked').map(function() { return $(this).val(); }).get(),
+                'AdvancedSettings.ApplyToExistingTariffs': $('#ApplyToExistingTariffs').prop('checked'),
+                'AdvancedSettings.DeleteExistingTariffs': $('#DeleteExistingTariffs').prop('checked'),
+                'AdvancedSettings.CreateBackup': $('#CreateBackup').prop('checked'),
+                'AdvancedSettings.SendNotification': $('#SendNotification').prop('checked'),
+                'AdvancedSettings.MaxServicesLimit': $('#MaxServicesLimit').val(),
+                Description: $('#Description').val()
+            };
+            
+            return formData;
+        }
+
+        function showResults(data) {
+            var resultsHtml = '<div class="alert alert-success">' +
+                '<h6><i class="fas fa-check-circle me-2"></i>' + data.message + '</h6>' +
+                '<div class="row">' +
+                '<div class="col-md-3">' +
+                '<strong>تعداد کل خدمات:</strong> ' + data.totalServices +
+                '</div>' +
+                '<div class="col-md-3">' +
+                '<strong>تعرفه‌های ایجاد شده:</strong> ' + data.createdTariffs +
+                '</div>' +
+                '<div class="col-md-3">' +
+                '<strong>تعرفه‌های به‌روزرسانی شده:</strong> ' + data.updatedTariffs +
+                '</div>' +
+                '<div class="col-md-3">' +
+                '<strong>خطاها:</strong> ' + data.errors +
+                '</div>' +
+                '</div>' +
+                '<div class="mt-2">' +
+                '<strong>زمان پردازش:</strong> ' + data.processingTime + '<br>' +
+                '<strong>تاریخ:</strong> ' + new Date(data.processedAt).toLocaleString('fa-IR') +
+                '</div>';
+            
+            if (data.errorMessages && data.errorMessages.length > 0) {
+                resultsHtml += '<div class="mt-3">' +
+                    '<h6>پیام‌های خطا:</h6>' +
+                    '<ul class="list-unstyled">';
+                data.errorMessages.forEach(function(error) {
+                    resultsHtml += '<li class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i>' + error + '</li>';
+                });
+                resultsHtml += '</ul></div>';
+            }
+            
+            resultsHtml += '</div>';
+            
+            $('#resultsContent').html(resultsHtml);
+            $('#resultsModal').modal('show');
+        }
+
+        function showError(message) {
+            var errorHtml = '<div class="alert alert-danger">' +
+                '<i class="fas fa-exclamation-triangle me-2"></i>' + message +
+                '</div>';
+            
+            // Remove existing error messages
+            $('.alert-danger').remove();
+            
+            // Add new error message
+            $('#bulkTariffForm').prepend(errorHtml);
+        }
+
+        function formatCurrency(amount) {
+            return new Intl.NumberFormat('fa-IR').format(amount);
+        }
+
+        // Advanced Validation Functions
+        function validateBulkTariffForm() {
+            var isValid = true;
+            var errors = [];
+
+            // Validate Primary Insurance Plan
+            if (!$('#PrimaryInsurancePlanId').val()) {
+                errors.push('انتخاب بیمه پایه الزامی است.');
+                $('#PrimaryInsurancePlanId').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#PrimaryInsurancePlanId').removeClass('is-invalid');
+            }
+
+            // Validate Supplementary Insurance Plan
+            if (!$('#InsurancePlanId').val()) {
+                errors.push('انتخاب طرح بیمه تکمیلی الزامی است.');
+                $('#InsurancePlanId').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#InsurancePlanId').removeClass('is-invalid');
+            }
+
+            // Validate Selection Type
+            if (!$('#SelectionType').val()) {
+                errors.push('نوع انتخاب خدمات الزامی است.');
+                isValid = false;
+            }
+
+            // Validate Supplementary Coverage Percent
+            var coveragePercent = parseFloat($('#SupplementaryCoveragePercent').val());
+            if (isNaN(coveragePercent) || coveragePercent < 0 || coveragePercent > 100) {
+                errors.push('درصد پوشش تکمیلی باید بین 0 تا 100 باشد.');
+                $('#SupplementaryCoveragePercent').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#SupplementaryCoveragePercent').removeClass('is-invalid');
+            }
+
+            // Validate Priority
+            var priority = parseInt($('#Priority').val());
+            if (isNaN(priority) || priority < 1 || priority > 10) {
+                errors.push('اولویت باید بین 1 تا 10 باشد.');
+                $('#Priority').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#Priority').removeClass('is-invalid');
+            }
+
+            // Validate Max Services Limit
+            var maxLimit = parseInt($('#AdvancedSettings_MaxServicesLimit').val());
+            if (isNaN(maxLimit) || maxLimit < 1 || maxLimit > 10000) {
+                errors.push('حداکثر تعداد خدمات باید بین 1 تا 10000 باشد.');
+                $('#AdvancedSettings_MaxServicesLimit').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#AdvancedSettings_MaxServicesLimit').removeClass('is-invalid');
+            }
+
+            // Show errors if any
+            if (!isValid) {
+                showValidationErrors(errors);
+            }
+
+            return isValid;
+        }
+
+        function showValidationErrors(errors) {
+            var errorHtml = '<div class="alert alert-danger alert-dismissible fade show" role="alert">' +
+                '<h6><i class="fas fa-exclamation-triangle me-2"></i>خطاهای اعتبارسنجی:</h6>' +
+                '<ul class="mb-0">';
+            
+            errors.forEach(function(error) {
+                errorHtml += '<li>' + error + '</li>';
+            });
+            
+            errorHtml += '</ul>' +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                '</div>';
+
+            // Remove existing error messages
+            $('.alert-danger').remove();
+            
+            // Add new error messages
+            $('#validationSummary').html(errorHtml);
+        }
+
+        // Form submission with validation
+        $('#bulkTariffForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            if (validateBulkTariffForm()) {
+                // If validation passes, submit the form
+                this.submit();
+            }
+        });
+
+        // Real-time validation
+        $('input, select, textarea').on('blur', function() {
+            validateBulkTariffForm();
+        });
+
+        // Progress Bar Management
+        function updateProgressBar(step, percentage, stepName) {
+            $('#progressBar').css('width', percentage + '%').attr('aria-valuenow', percentage);
+            $('#progressBar').text(stepName);
+            $('#progressText').text(percentage + '%');
+            $('#currentStep').text(stepName);
+        }
+
+        // Step tracking
+        var currentStep = 1;
+        var totalSteps = 4;
+
+        function nextStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                var percentage = (currentStep / totalSteps) * 100;
+                var stepNames = [
+                    'انتخاب بیمه‌ها',
+                    'انتخاب خدمات',
+                    'تنظیمات تعرفه',
+                    'تأیید نهایی'
+                ];
+                updateProgressBar(currentStep, percentage, 'مرحله ' + currentStep + ': ' + stepNames[currentStep - 1]);
+            }
+        }
+
+        function previousStep() {
+            if (currentStep > 1) {
+                currentStep--;
+                var percentage = (currentStep / totalSteps) * 100;
+                var stepNames = [
+                    'انتخاب بیمه‌ها',
+                    'انتخاب خدمات',
+                    'تنظیمات تعرفه',
+                    'تأیید نهایی'
+                ];
+                updateProgressBar(currentStep, percentage, 'مرحله ' + currentStep + ': ' + stepNames[currentStep - 1]);
+            }
+        }
+
+        // Loading overlay management
+        function showLoading() {
+            $('#loadingOverlay').removeClass('d-none');
+            $('#submitBtn').prop('disabled', true);
+        }
+
+        function hideLoading() {
+            $('#loadingOverlay').addClass('d-none');
+            $('#submitBtn').prop('disabled', false);
+        }
+
+        // Enhanced form submission
+        $('#bulkTariffForm').on('submit', function(e) {
+            e.preventDefault();
+            
+            if (validateBulkTariffForm()) {
+                showLoading();
+                
+                // Simulate processing time
+                setTimeout(function() {
+                    hideLoading();
+                    // Submit the form
+                    this.submit();
+                }.bind(this), 2000);
+            }
+        });
+
+        // Smart Selection Logic
+        function initializeSmartSelection() {
+            // Auto-populate based on selection type
+            $('#SelectionType').on('change', function() {
+                var selectionType = $(this).val();
+                handleSelectionTypeChange(selectionType);
+            });
+
+            // Auto-calculate coverage
+            $('#SupplementaryCoveragePercent').on('input', function() {
+                var coverage = parseFloat($(this).val());
+                if (!isNaN(coverage)) {
+                    updateCoveragePreview(coverage);
+                }
+            });
+
+            // Auto-validate service limits
+            $('#AdvancedSettings_MaxServicesLimit').on('input', function() {
+                var limit = parseInt($(this).val());
+                if (!isNaN(limit)) {
+                    validateServiceLimit(limit);
+                }
+            });
+        }
+
+        function handleSelectionTypeChange(selectionType) {
+            switch(selectionType) {
+                case 'AllServices':
+                    showAllServicesInfo();
+                    break;
+                case 'ByDepartment':
+                    loadDepartments();
+                    break;
+                case 'ByServiceCategory':
+                    loadServiceCategories();
+                    break;
+                case 'ByPriceRange':
+                    showPriceRangeInputs();
+                    break;
+                case 'ManualSelection':
+                    loadAllServicesForSelection();
+                    break;
+            }
+        }
+
+        function showAllServicesInfo() {
+            var infoHtml = '<div class="alert alert-info">' +
+                '<i class="fas fa-info-circle me-2"></i>' +
+                'تمامی خدمات موجود در سیستم انتخاب خواهند شد.' +
+                '</div>';
+            $('#selectionDetails').html(infoHtml);
+        }
+
+        function loadDepartments() {
+            $.ajax({
+                url: '@Url.Action("GetDepartments", "SupplementaryTariff")',
+                type: 'GET',
+                success: function(data) {
+                    var html = '<h6>انتخاب دپارتمان‌ها:</h6><div class="row">';
+                    if (data && data.length > 0) {
+                        $.each(data, function(index, dept) {
+                            html += '<div class="col-md-4"><div class="form-check">' +
+                                '<input class="form-check-input department-checkbox" type="checkbox" value="' + dept.DepartmentId + '" id="dept_' + dept.DepartmentId + '">' +
+                                '<label class="form-check-label" for="dept_' + dept.DepartmentId + '">' + dept.Name + '</label>' +
+                                '</div></div>';
+                        });
+                    }
+                    html += '</div>';
+                    $('#selectionDetails').html(html);
+                }
+            });
+        }
+
+        function loadServiceCategories() {
+            $.ajax({
+                url: '@Url.Action("GetServiceCategories", "SupplementaryTariff")',
+                type: 'GET',
+                success: function(data) {
+                    var html = '<h6>انتخاب دسته‌بندی خدمات:</h6><div class="row">';
+                    if (data && data.length > 0) {
+                        $.each(data, function(index, category) {
+                            html += '<div class="col-md-4"><div class="form-check">' +
+                                '<input class="form-check-input category-checkbox" type="checkbox" value="' + category.ServiceCategoryId + '" id="cat_' + category.ServiceCategoryId + '">' +
+                                '<label class="form-check-label" for="cat_' + category.ServiceCategoryId + '">' + category.Name + '</label>' +
+                                '</div></div>';
+                        });
+                    }
+                    html += '</div>';
+                    $('#selectionDetails').html(html);
+                }
+            });
+        }
+
+        function showPriceRangeInputs() {
+            var html = '<h6>محدوده قیمت:</h6>' +
+                '<div class="row">' +
+                '<div class="col-md-6"><div class="form-group">' +
+                '<label for="minPrice">حداقل قیمت (تومان):</label>' +
+                '<input type="number" class="form-control" id="minPrice" name="MinPrice" placeholder="0" step="0.01">' +
+                '</div></div>' +
+                '<div class="col-md-6"><div class="form-group">' +
+                '<label for="maxPrice">حداکثر قیمت (تومان):</label>' +
+                '<input type="number" class="form-control" id="maxPrice" name="MaxPrice" placeholder="1000000" step="0.01">' +
+                '</div></div>' +
+                '</div>';
+            $('#selectionDetails').html(html);
+        }
+
+        function loadAllServicesForSelection() {
+            $.ajax({
+                url: '@Url.Action("GetAllServices", "SupplementaryTariff")',
+                type: 'GET',
+                success: function(data) {
+                    var html = '<h6>انتخاب دستی خدمات:</h6>' +
+                        '<div class="form-group">' +
+                        '<select class="form-control select2-multiple" id="manualServiceSelect" name="SelectedServiceIds" multiple="multiple" style="width: 100%;">';
+                    
+                    if (data && data.length > 0) {
+                        $.each(data, function(index, service) {
+                            html += '<option value="' + service.ServiceId + '">' + service.Title + ' (' + service.ServiceCode + ')</option>';
+                        });
+                    }
+                    
+                    html += '</select></div>';
+                    $('#selectionDetails').html(html);
+                    
+                    // Initialize Select2
+                    $('#manualServiceSelect').select2({
+                        placeholder: "جستجو و انتخاب خدمات...",
+                        allowClear: true
+                    });
+                }
+            });
+        }
+
+        function updateCoveragePreview(coverage) {
+            var previewHtml = '<div class="alert alert-info">' +
+                '<h6><i class="fas fa-calculator me-2"></i>پیش‌نمایش پوشش:</h6>' +
+                '<p>درصد پوشش تکمیلی: <strong>' + coverage + '%</strong></p>' +
+                '<p>سهم بیمه: <strong>' + coverage + '%</strong> از قیمت تعرفه</p>' +
+                '<p>سهم بیمار: <strong>' + (100 - coverage) + '%</strong> از قیمت تعرفه</p>' +
+                '</div>';
+            $('#coveragePreview').html(previewHtml);
+        }
+
+        function validateServiceLimit(limit) {
+            if (limit > 1000) {
+                $('#AdvancedSettings_MaxServicesLimit').addClass('is-warning');
+                $('#serviceLimitWarning').remove();
+                $('#AdvancedSettings_MaxServicesLimit').after('<div id="serviceLimitWarning" class="text-warning"><small><i class="fas fa-exclamation-triangle me-1"></i>تعداد زیاد خدمات ممکن است زمان پردازش را افزایش دهد.</small></div>');
+            } else {
+                $('#AdvancedSettings_MaxServicesLimit').removeClass('is-warning');
+                $('#serviceLimitWarning').remove();
+            }
+        }
+
+        // Initialize smart selection on page load
+        $(document).ready(function() {
+            initializeSmartSelection();
+        });
+    </script>
+}

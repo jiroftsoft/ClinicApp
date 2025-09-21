@@ -225,6 +225,14 @@ namespace ClinicApp.Interfaces
         /// <returns>List of active services for selection</returns>
         Task<ServiceResult<List<Service>>> GetActiveServicesForLookupAsync();
 
+        /// <summary>
+        /// Get services by department ID for cascade dropdown
+        /// دریافت خدمات بر اساس شناسه دپارتمان برای cascade dropdown
+        /// </summary>
+        /// <param name="departmentId">شناسه دپارتمان</param>
+        /// <returns>لیست خدمات دپارتمان</returns>
+        Task<List<Service>> GetServicesByDepartmentAsync(int departmentId);
+
         #endregion
     }
 }

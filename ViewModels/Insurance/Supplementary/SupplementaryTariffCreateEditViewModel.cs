@@ -42,10 +42,17 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public int InsuranceProviderId { get; set; }
 
         /// <summary>
-        /// شناسه طرح بیمه
+        /// شناسه بیمه پایه
         /// </summary>
-        [Required(ErrorMessage = "انتخاب طرح بیمه الزامی است.")]
-        [Display(Name = "طرح بیمه")]
+        [Required(ErrorMessage = "انتخاب بیمه پایه الزامی است.")]
+        [Display(Name = "بیمه پایه")]
+        public int PrimaryInsurancePlanId { get; set; }
+
+        /// <summary>
+        /// شناسه طرح بیمه تکمیلی
+        /// </summary>
+        [Required(ErrorMessage = "انتخاب طرح بیمه تکمیلی الزامی است.")]
+        [Display(Name = "طرح بیمه تکمیلی")]
         public int InsurancePlanId { get; set; }
 
         /// <summary>

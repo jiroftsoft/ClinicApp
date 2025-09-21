@@ -146,6 +146,18 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
 
+        // Fields for Supplementary Insurance
+        [Display(Name = "بیمه پایه")]
+        public int PrimaryInsurancePlanId { get; set; }
+
+        [Display(Name = "درصد پوشش تکمیلی")]
+        [Range(0, 100, ErrorMessage = "درصد پوشش باید بین 0 تا 100 باشد.")]
+        public decimal SupplementaryCoveragePercent { get; set; }
+
+        [Display(Name = "اولویت")]
+        [Range(1, 10, ErrorMessage = "اولویت باید بین 1 تا 10 باشد.")]
+        public int Priority { get; set; } = 5;
+
         // Fields for "All" selections
         [Display(Name = "همه سرفصل‌ها")]
         public bool IsAllServiceCategories { get; set; }

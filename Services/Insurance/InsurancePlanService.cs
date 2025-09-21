@@ -552,6 +552,106 @@ namespace ClinicApp.Services.Insurance
         }
 
         /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی برای Lookup
+        /// </summary>
+        public async Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetSupplementaryInsurancePlansAsync()
+        {
+            _log.Information(
+                "درخواست دریافت طرح‌های بیمه تکمیلی برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت تمام طرح‌های بیمه فعال
+                var plans = await _insurancePlanRepository.GetActiveAsync();
+                
+                // فیلتر کردن طرح‌های بیمه تکمیلی (Supplementary Insurance Plans)
+                // استفاده از فیلد InsuranceType برای تشخیص دقیق
+                var supplementaryPlans = plans
+                    .Where(p => p.InsuranceType == InsuranceType.Supplementary)
+                    .OrderBy(p => p.Name)
+                    .ToList();
+
+                var lookupItems = supplementaryPlans.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information(
+                    "طرح‌های بیمه تکمیلی برای Lookup با موفقیت دریافت شدند. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    lookupItems.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Successful(
+                    lookupItems,
+                    "طرح‌های بیمه تکمیلی با موفقیت دریافت شدند.",
+                    "GetSupplementaryInsurancePlans",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در دریافت طرح‌های بیمه تکمیلی برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Failed(
+                    "خطا در دریافت طرح‌های بیمه تکمیلی. لطفاً دوباره تلاش کنید.",
+                    "GET_SUPPLEMENTARY_INSURANCE_PLANS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه پایه برای Lookup
+        /// </summary>
+        public async Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetPrimaryInsurancePlansAsync()
+        {
+            _log.Information(
+                "درخواست دریافت طرح‌های بیمه پایه برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت تمام طرح‌های بیمه فعال
+                var plans = await _insurancePlanRepository.GetActiveAsync();
+                
+                // فیلتر کردن طرح‌های بیمه پایه (Primary Insurance Plans)
+                // استفاده از فیلد InsuranceType برای تشخیص دقیق
+                var primaryPlans = plans
+                    .Where(p => p.InsuranceType == InsuranceType.Primary)
+                    .OrderBy(p => p.Name)
+                    .ToList();
+
+                var lookupItems = primaryPlans.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information(
+                    "طرح‌های بیمه پایه برای Lookup با موفقیت دریافت شدند. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    lookupItems.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Successful(
+                    lookupItems,
+                    "طرح‌های بیمه پایه با موفقیت دریافت شدند.",
+                    "GetPrimaryInsurancePlans",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
+                    securityLevel: SecurityLevel.Low);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(
+                    ex,
+                    "خطای سیستمی در دریافت طرح‌های بیمه پایه برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Failed(
+                    "خطا در دریافت طرح‌های بیمه پایه. لطفاً دوباره تلاش کنید.",
+                    "GET_PRIMARY_INSURANCE_PLANS_ERROR",
+                    ErrorCategory.General,
+                    SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
         /// دریافت لیست شرکت‌های بیمه برای SelectList
         /// </summary>
         public async Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetActiveProvidersForLookupAsync()

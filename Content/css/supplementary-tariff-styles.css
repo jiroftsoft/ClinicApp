@@ -1,48 +1,50 @@
 /**
- * Supplementary Tariff Styles
- * استایل‌های مخصوص تعرفه‌های بیمه تکمیلی
+ * Supplementary Tariff Styles - Medical Environment
+ * استایل‌های تعرفه بیمه تکمیلی - محیط درمانی
  * 
- * @author ClinicApp Team
+ * @author ClinicApp Medical Team
  * @version 1.0.0
- * @description CSS styles specifically for supplementary tariff management
+ * @description CSS styles for supplementary tariff management in medical environment
  */
 
-/* ===== SUPPLEMENTARY TARIFF COLORS ===== */
+/* ===== MEDICAL THEME VARIABLES ===== */
 :root {
-    --supplementary-primary: #667eea;
-    --supplementary-secondary: #764ba2;
-    --supplementary-success: #4facfe;
-    --supplementary-warning: #f093fb;
-    --supplementary-danger: #ff6b6b;
-    --supplementary-info: #00f2fe;
-    --supplementary-light: #f8f9fa;
-    --supplementary-dark: #495057;
-    --supplementary-white: #ffffff;
-    --supplementary-gray: #6c757d;
-    --supplementary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    --medical-primary: #667eea;
+    --medical-secondary: #764ba2;
+    --medical-success: #4facfe;
+    --medical-warning: #f093fb;
+    --medical-danger: #ff6b6b;
+    --medical-info: #00f2fe;
+    --medical-light: #f8f9fa;
+    --medical-dark: #495057;
+    --medical-white: #ffffff;
+    --medical-gray: #6c757d;
+    --medical-border-radius: 15px;
+    --medical-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    --medical-transition: all 0.3s ease;
 }
 
 /* ===== SUPPLEMENTARY TARIFF CARDS ===== */
 .supplementary-tariff-card {
-    background: var(--supplementary-white);
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background: var(--medical-white);
+    border-radius: var(--medical-border-radius);
+    box-shadow: var(--medical-shadow);
     border: none;
-    transition: all 0.3s ease;
+    transition: var(--medical-transition);
     overflow: hidden;
     margin-bottom: 20px;
 }
 
 .supplementary-tariff-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.15);
 }
 
 .supplementary-tariff-card .card-header {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+    color: var(--medical-white);
     border: none;
-    border-radius: 15px 15px 0 0;
+    border-radius: var(--medical-border-radius) var(--medical-border-radius) 0 0;
     padding: 20px;
     position: relative;
     overflow: hidden;
@@ -61,598 +63,436 @@
 
 .supplementary-tariff-card .card-body {
     padding: 25px;
-    background: var(--supplementary-white);
+    background: var(--medical-white);
 }
 
 .supplementary-tariff-card .card-footer {
-    background: var(--supplementary-light);
+    background: var(--medical-light);
     border-top: 1px solid #e9ecef;
-    border-radius: 0 0 15px 15px;
-    padding: 20px 25px;
-}
-
-/* ===== SUPPLEMENTARY TARIFF TABLE ===== */
-.supplementary-tariff-table {
-    border-radius: 15px;
-    overflow: hidden;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    background: var(--supplementary-white);
-    margin-bottom: 20px;
-}
-
-.supplementary-tariff-table thead th {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
-    border: none;
-    padding: 15px 10px;
-    font-weight: 600;
-    text-align: center;
-    position: relative;
-}
-
-.supplementary-tariff-table thead th::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-.supplementary-tariff-table tbody tr {
-    transition: all 0.3s ease;
-}
-
-.supplementary-tariff-table tbody tr:hover {
-    background-color: var(--supplementary-light);
-    transform: scale(1.01);
-}
-
-.supplementary-tariff-table tbody td {
-    padding: 15px 10px;
-    vertical-align: middle;
-    text-align: center;
-    border-bottom: 1px solid #e9ecef;
-}
-
-/* ===== SUPPLEMENTARY TARIFF FILTERS ===== */
-.supplementary-tariff-filters {
-    background: var(--supplementary-white);
-    border-radius: 15px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
-    border: none;
-}
-
-.supplementary-tariff-filters .card-header {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
-    border: none;
-    border-radius: 15px 15px 0 0;
+    border-radius: 0 0 var(--medical-border-radius) var(--medical-border-radius);
     padding: 20px;
-    position: relative;
-    overflow: hidden;
 }
 
-.supplementary-tariff-filters .card-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-.supplementary-tariff-filters .card-body {
-    padding: 25px;
-    background: var(--supplementary-white);
-}
-
-.supplementary-tariff-filters .form-group {
-    margin-bottom: 20px;
-}
-
-.supplementary-tariff-filters .form-label {
-    font-weight: 600;
-    color: var(--supplementary-dark);
-    margin-bottom: 8px;
-    display: block;
-}
-
-.supplementary-tariff-filters .form-control {
-    border-radius: 10px;
-    border: 2px solid #e9ecef;
-    padding: 10px 15px;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}
-
-.supplementary-tariff-filters .form-control:focus {
-    border-color: var(--supplementary-primary);
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-    outline: none;
-}
-
-/* ===== SUPPLEMENTARY TARIFF CALCULATION PREVIEW ===== */
-.calculation-preview {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
-    border-radius: 15px;
-    padding: 25px;
-    margin-bottom: 20px;
-    position: relative;
-    overflow: hidden;
-}
-
-.calculation-preview::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-.calculation-preview .calculation-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.2);
-    position: relative;
-    z-index: 1;
-}
-
-.calculation-preview .calculation-item:last-child {
-    border-bottom: none;
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-.calculation-preview .calculation-item .currency-format {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-}
-
-/* ===== SUPPLEMENTARY TARIFF BADGES ===== */
-.supplementary-badge {
-    padding: 8px 20px;
-    border-radius: 25px;
-    font-weight: 500;
-    font-size: 0.9rem;
-    display: inline-block;
-    transition: all 0.3s ease;
-}
-
-.supplementary-badge:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.supplementary-badge-success {
-    background: linear-gradient(135deg, var(--supplementary-success) 0%, var(--supplementary-info) 100%);
-    color: var(--supplementary-white);
-}
-
-.supplementary-badge-danger {
-    background: linear-gradient(135deg, var(--supplementary-danger) 0%, #ee5a24 100%);
-    color: var(--supplementary-white);
-}
-
-.supplementary-badge-warning {
-    background: linear-gradient(135deg, var(--supplementary-warning) 0%, var(--supplementary-danger) 100%);
-    color: var(--supplementary-white);
-}
-
-.supplementary-badge-secondary {
-    background: linear-gradient(135deg, var(--supplementary-gray) 0%, var(--supplementary-dark) 100%);
-    color: var(--supplementary-white);
-}
-
-.supplementary-badge-info {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
-}
-
-/* ===== SUPPLEMENTARY TARIFF BUTTONS ===== */
-.btn-supplementary {
-    background: var(--supplementary-gradient);
-    border: none;
-    border-radius: 25px;
-    color: var(--supplementary-white);
-    padding: 12px 30px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.btn-supplementary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    color: var(--supplementary-white);
-    text-decoration: none;
-}
-
-.btn-supplementary:focus {
-    outline: none;
-    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-}
-
-.btn-supplementary-secondary {
-    background: linear-gradient(135deg, var(--supplementary-warning) 0%, var(--supplementary-danger) 100%);
-    border: none;
-    border-radius: 25px;
-    color: var(--supplementary-white);
-    padding: 12px 30px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.btn-supplementary-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    color: var(--supplementary-white);
-    text-decoration: none;
-}
-
-.btn-supplementary-success {
-    background: linear-gradient(135deg, var(--supplementary-success) 0%, var(--supplementary-info) 100%);
-    border: none;
-    border-radius: 25px;
-    color: var(--supplementary-white);
-    padding: 12px 30px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.btn-supplementary-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    color: var(--supplementary-white);
-    text-decoration: none;
-}
-
-.btn-supplementary-danger {
-    background: linear-gradient(135deg, var(--supplementary-danger) 0%, #ee5a24 100%);
-    border: none;
-    border-radius: 25px;
-    color: var(--supplementary-white);
-    padding: 12px 30px;
-    font-weight: 500;
-    transition: all 0.3s ease;
-    text-decoration: none;
-    display: inline-block;
-    cursor: pointer;
-}
-
-.btn-supplementary-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    color: var(--supplementary-white);
-    text-decoration: none;
-}
-
-/* ===== SUPPLEMENTARY TARIFF FORMS ===== */
-.supplementary-form {
-    background: var(--supplementary-white);
-    border-radius: 15px;
+/* ===== MEDICAL FORMS ===== */
+.medical-form {
+    background: var(--medical-white);
+    border-radius: var(--medical-border-radius);
+    box-shadow: var(--medical-shadow);
     padding: 30px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    margin-bottom: 20px;
+    margin-bottom: 30px;
 }
 
-.supplementary-form .form-group {
+.medical-form .form-header {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+    color: var(--medical-white);
+    padding: 25px;
+    border-radius: var(--medical-border-radius) var(--medical-border-radius) 0 0;
+    margin: -30px -30px 30px -30px;
+    position: relative;
+    overflow: hidden;
+}
+
+.medical-form .form-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
+    pointer-events: none;
+}
+
+.medical-form .form-header h2 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+.medical-form .form-group {
     margin-bottom: 25px;
 }
 
-.supplementary-form .form-label {
+.medical-form .form-group label {
     font-weight: 600;
-    color: var(--supplementary-dark);
+    color: var(--medical-dark);
     margin-bottom: 8px;
     display: block;
 }
 
-.supplementary-form .form-control {
+.medical-form .form-control {
     border-radius: 10px;
     border: 2px solid #e9ecef;
     padding: 12px 15px;
-    transition: all 0.3s ease;
+    transition: var(--medical-transition);
     font-size: 14px;
 }
 
-.supplementary-form .form-control:focus {
-    border-color: var(--supplementary-primary);
+.medical-form .form-control:focus {
+    border-color: var(--medical-primary);
     box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
     outline: none;
 }
 
-.supplementary-form .form-control.is-invalid {
-    border-color: var(--supplementary-danger);
+.medical-form .form-control.is-valid {
+    border-color: var(--medical-success);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 8 8'%3e%3cpath fill='%234facfe' d='m2.3 6.73.94-.94 1.44-1.44'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-.supplementary-form .form-control.is-valid {
-    border-color: var(--supplementary-success);
+.medical-form .form-control.is-invalid {
+    border-color: var(--medical-danger);
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12' width='12' height='12' fill='none' stroke='%23ff6b6b'%3e%3ccircle cx='6' cy='6' r='4.5'/%3e%3cpath d='m5.8 4.6 1.4 1.4 1.4-1.4'/%3e%3c/svg%3e");
+    background-repeat: no-repeat;
+    background-position: right calc(0.375em + 0.1875rem) center;
+    background-size: calc(0.75em + 0.375rem) calc(0.75em + 0.375rem);
 }
 
-.supplementary-form .invalid-feedback {
-    display: block;
-    color: var(--supplementary-danger);
-    font-size: 0.875rem;
-    margin-top: 5px;
-}
-
-.supplementary-form .valid-feedback {
-    display: block;
-    color: var(--supplementary-success);
-    font-size: 0.875rem;
-    margin-top: 5px;
-}
-
-/* ===== SUPPLEMENTARY TARIFF ALERTS ===== */
-.alert-supplementary {
-    border-radius: 15px;
+/* ===== MEDICAL BUTTONS ===== */
+.btn-medical-primary {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
     border: none;
+    color: var(--medical-white);
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: var(--medical-transition);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+.btn-medical-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    color: var(--medical-white);
+}
+
+.btn-medical-secondary {
+    background: linear-gradient(135deg, var(--medical-gray) 0%, var(--medical-dark) 100%);
+    border: none;
+    color: var(--medical-white);
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: var(--medical-transition);
+    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+}
+
+.btn-medical-secondary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
+    color: var(--medical-white);
+}
+
+.btn-medical-success {
+    background: linear-gradient(135deg, var(--medical-success) 0%, var(--medical-info) 100%);
+    border: none;
+    color: var(--medical-white);
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: var(--medical-transition);
+    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+}
+
+.btn-medical-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+    color: var(--medical-white);
+}
+
+.btn-medical-warning {
+    background: linear-gradient(135deg, var(--medical-warning) 0%, var(--medical-danger) 100%);
+    border: none;
+    color: var(--medical-white);
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: var(--medical-transition);
+    box-shadow: 0 4px 15px rgba(240, 147, 251, 0.3);
+}
+
+.btn-medical-warning:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(240, 147, 251, 0.4);
+    color: var(--medical-white);
+}
+
+.btn-medical-danger {
+    background: linear-gradient(135deg, var(--medical-danger) 0%, #ee5a24 100%);
+    border: none;
+    color: var(--medical-white);
+    padding: 12px 25px;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: var(--medical-transition);
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.btn-medical-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    color: var(--medical-white);
+}
+
+/* ===== MEDICAL ALERTS ===== */
+.alert-medical {
+    border: none;
+    border-radius: 10px;
     padding: 20px;
     margin-bottom: 20px;
-    position: relative;
+    font-weight: 500;
+}
+
+.alert-medical-success {
+    background: linear-gradient(135deg, var(--medical-success) 0%, var(--medical-info) 100%);
+    color: var(--medical-white);
+}
+
+.alert-medical-warning {
+    background: linear-gradient(135deg, var(--medical-warning) 0%, var(--medical-danger) 100%);
+    color: var(--medical-white);
+}
+
+.alert-medical-danger {
+    background: linear-gradient(135deg, var(--medical-danger) 0%, #ee5a24 100%);
+    color: var(--medical-white);
+}
+
+.alert-medical-info {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+    color: var(--medical-white);
+}
+
+/* ===== MEDICAL BADGES ===== */
+.badge-medical {
+    padding: 8px 15px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.badge-medical-success {
+    background: linear-gradient(135deg, var(--medical-success) 0%, var(--medical-info) 100%);
+    color: var(--medical-white);
+}
+
+.badge-medical-warning {
+    background: linear-gradient(135deg, var(--medical-warning) 0%, var(--medical-danger) 100%);
+    color: var(--medical-white);
+}
+
+.badge-medical-danger {
+    background: linear-gradient(135deg, var(--medical-danger) 0%, #ee5a24 100%);
+    color: var(--medical-white);
+}
+
+.badge-medical-info {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+    color: var(--medical-white);
+}
+
+/* ===== MEDICAL TABLES ===== */
+.medical-table {
+    background: var(--medical-white);
+    border-radius: var(--medical-border-radius);
+    box-shadow: var(--medical-shadow);
     overflow: hidden;
 }
 
-.alert-supplementary::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-.alert-supplementary-info {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
-}
-
-.alert-supplementary-success {
-    background: linear-gradient(135deg, var(--supplementary-success) 0%, var(--supplementary-info) 100%);
-    color: var(--supplementary-white);
-}
-
-.alert-supplementary-warning {
-    background: linear-gradient(135deg, var(--supplementary-warning) 0%, var(--supplementary-danger) 100%);
-    color: var(--supplementary-white);
-}
-
-.alert-supplementary-danger {
-    background: linear-gradient(135deg, var(--supplementary-danger) 0%, #ee5a24 100%);
-    color: var(--supplementary-white);
-}
-
-/* ===== SUPPLEMENTARY TARIFF MODALS ===== */
-.supplementary-modal .modal-content {
-    border-radius: 15px;
+.medical-table thead th {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+    color: var(--medical-white);
     border: none;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    padding: 20px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-.supplementary-modal .modal-header {
-    background: var(--supplementary-gradient);
-    color: var(--supplementary-white);
+.medical-table tbody td {
+    padding: 20px;
+    border-top: 1px solid #e9ecef;
+    vertical-align: middle;
+}
+
+.medical-table tbody tr:hover {
+    background-color: var(--medical-light);
+}
+
+/* ===== MEDICAL MODALS ===== */
+.medical-modal .modal-content {
     border: none;
-    border-radius: 15px 15px 0 0;
+    border-radius: var(--medical-border-radius);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+}
+
+.medical-modal .modal-header {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+    color: var(--medical-white);
+    border: none;
+    border-radius: var(--medical-border-radius) var(--medical-border-radius) 0 0;
     padding: 25px;
-    position: relative;
-    overflow: hidden;
 }
 
-.supplementary-modal .modal-header::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, rgba(255,255,255,0.1) 0%, transparent 100%);
-    pointer-events: none;
-}
-
-.supplementary-modal .modal-body {
+.medical-modal .modal-body {
     padding: 30px;
-    background: var(--supplementary-white);
 }
 
-.supplementary-modal .modal-footer {
-    background: var(--supplementary-light);
+.medical-modal .modal-footer {
+    background: var(--medical-light);
     border: none;
-    border-radius: 0 0 15px 15px;
+    border-radius: 0 0 var(--medical-border-radius) var(--medical-border-radius);
     padding: 20px 30px;
 }
 
-/* ===== SUPPLEMENTARY TARIFF LOADING ===== */
-.supplementary-loading {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(255, 255, 255, 0.9);
+/* ===== MEDICAL LOADING ===== */
+.medical-loading {
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999;
+    height: 200px;
+    background: var(--medical-white);
+    border-radius: var(--medical-border-radius);
+    box-shadow: var(--medical-shadow);
 }
 
-.supplementary-loading .spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid var(--supplementary-primary);
+.medical-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e9ecef;
+    border-top: 4px solid var(--medical-primary);
     border-radius: 50%;
-    animation: supplementary-spin 1s linear infinite;
+    animation: medical-spin 1s linear infinite;
 }
 
-@keyframes supplementary-spin {
+@keyframes medical-spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
 
-/* ===== SUPPLEMENTARY TARIFF UTILITIES ===== */
-.supplementary-currency-format {
-    font-family: 'Courier New', monospace;
-    font-weight: bold;
-    color: var(--supplementary-dark);
+/* ===== MEDICAL RESPONSIVE ===== */
+@media (max-width: 768px) {
+    .medical-form {
+        padding: 20px;
+        margin: 10px;
+    }
+    
+    .medical-form .form-header {
+        margin: -20px -20px 20px -20px;
+        padding: 20px;
+    }
+    
+    .supplementary-tariff-card {
+        margin-bottom: 15px;
+    }
+    
+    .supplementary-tariff-card .card-body {
+        padding: 20px;
+    }
+    
+    .btn-medical-primary,
+    .btn-medical-secondary,
+    .btn-medical-success,
+    .btn-medical-warning,
+    .btn-medical-danger {
+        padding: 10px 20px;
+        font-size: 14px;
+    }
 }
 
-.supplementary-gradient-text {
-    background: var(--supplementary-gradient);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    font-weight: bold;
-}
-
-.supplementary-shadow {
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-}
-
-.supplementary-shadow-lg {
-    box-shadow: 0 10px 30px rgba(0,0,0,0.15);
-}
-
-.supplementary-border-radius {
-    border-radius: 15px;
-}
-
-.supplementary-border-radius-lg {
-    border-radius: 25px;
-}
-
-/* ===== SUPPLEMENTARY TARIFF ANIMATIONS ===== */
-@keyframes supplementary-fadeIn {
+/* ===== MEDICAL ANIMATIONS ===== */
+@keyframes medical-fadeIn {
     from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes supplementary-slideIn {
+@keyframes medical-slideIn {
     from { transform: translateX(-100%); }
     to { transform: translateX(0); }
 }
 
-@keyframes supplementary-bounce {
-    0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
-    40% { transform: translateY(-10px); }
-    60% { transform: translateY(-5px); }
+.medical-fade-in {
+    animation: medical-fadeIn 0.5s ease-out;
 }
 
-.supplementary-fade-in {
-    animation: supplementary-fadeIn 0.5s ease-out;
+.medical-slide-in {
+    animation: medical-slideIn 0.5s ease-out;
 }
 
-.supplementary-slide-in {
-    animation: supplementary-slideIn 0.5s ease-out;
+/* ===== MEDICAL UTILITIES ===== */
+.medical-shadow {
+    box-shadow: var(--medical-shadow);
 }
 
-.supplementary-bounce {
-    animation: supplementary-bounce 1s ease-out;
+.medical-border-radius {
+    border-radius: var(--medical-border-radius);
 }
 
-/* ===== SUPPLEMENTARY TARIFF STATUS INDICATORS ===== */
-.supplementary-status-indicator {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
+.medical-transition {
+    transition: var(--medical-transition);
+}
+
+.medical-gradient-primary {
+    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
+}
+
+.medical-gradient-success {
+    background: linear-gradient(135deg, var(--medical-success) 0%, var(--medical-info) 100%);
+}
+
+.medical-gradient-warning {
+    background: linear-gradient(135deg, var(--medical-warning) 0%, var(--medical-danger) 100%);
+}
+
+.medical-gradient-danger {
+    background: linear-gradient(135deg, var(--medical-danger) 0%, #ee5a24 100%);
+}
+
+/* ===== MEDICAL TYPOGRAPHY ===== */
+.medical-title {
+    font-weight: 700;
+    color: var(--medical-dark);
+    margin-bottom: 20px;
+}
+
+.medical-subtitle {
+    font-weight: 600;
+    color: var(--medical-gray);
+    margin-bottom: 15px;
+}
+
+.medical-text {
+    color: var(--medical-dark);
+    line-height: 1.6;
+}
+
+.medical-text-muted {
+    color: var(--medical-gray);
+    font-size: 0.9rem;
+}
+
+/* ===== MEDICAL ICONS ===== */
+.medical-icon {
+    width: 20px;
+    height: 20px;
     margin-right: 8px;
+    vertical-align: middle;
 }
 
-.supplementary-status-indicator.active {
-    background: var(--supplementary-success);
-    box-shadow: 0 0 10px rgba(79, 172, 254, 0.5);
+.medical-icon-lg {
+    width: 30px;
+    height: 30px;
+    margin-right: 12px;
+    vertical-align: middle;
 }
 
-.supplementary-status-indicator.inactive {
-    background: var(--supplementary-gray);
-}
-
-.supplementary-status-indicator.warning {
-    background: var(--supplementary-warning);
-    box-shadow: 0 0 10px rgba(240, 147, 251, 0.5);
-}
-
-.supplementary-status-indicator.danger {
-    background: var(--supplementary-danger);
-    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
-}
-
-/* ===== RESPONSIVE DESIGN ===== */
-@media (max-width: 768px) {
-    .supplementary-tariff-card .card-header {
-        padding: 15px;
-    }
-    
-    .supplementary-tariff-card .card-body {
-        padding: 20px;
-    }
-    
-    .supplementary-form {
-        padding: 20px;
-    }
-    
-    .btn-supplementary,
-    .btn-supplementary-secondary,
-    .btn-supplementary-success,
-    .btn-supplementary-danger {
-        padding: 10px 20px;
-        font-size: 14px;
-    }
-    
-    .calculation-preview {
-        padding: 20px;
-    }
-}
-
-@media (max-width: 576px) {
-    .supplementary-tariff-card .card-header {
-        padding: 12px;
-    }
-    
-    .supplementary-tariff-card .card-body {
-        padding: 15px;
-    }
-    
-    .supplementary-form {
-        padding: 15px;
-    }
-    
-    .btn-supplementary,
-    .btn-supplementary-secondary,
-    .btn-supplementary-success,
-    .btn-supplementary-danger {
-        padding: 8px 15px;
-        font-size: 12px;
-    }
-    
-    .calculation-preview {
-        padding: 15px;
-    }
-    
-    .supplementary-tariff-table tbody td {
-        padding: 10px 5px;
-        font-size: 12px;
-    }
+.medical-icon-xl {
+    width: 40px;
+    height: 40px;
+    margin-right: 15px;
+    vertical-align: middle;
 }

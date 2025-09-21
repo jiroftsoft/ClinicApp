@@ -201,6 +201,7 @@ namespace ClinicApp.Repositories
             return await _context.Services
                 .Where(s => s.IsActive && !s.IsDeleted)
                 .Include(s => s.ServiceCategory)
+                .Include(s => s.ServiceCategory.Department)
                 .OrderBy(s => s.Title)
                 .ToListAsync();
         }
@@ -265,6 +266,20 @@ namespace ClinicApp.Repositories
             {
                 return ServiceResult<List<Service>>.Failed("خطا در دریافت لیست خدمات فعال");
             }
+        }
+
+        /// <summary>
+        /// Get services by department ID for cascade dropdown
+        /// دریافت خدمات بر اساس شناسه دپارتمان برای cascade dropdown
+        /// </summary>
+        public async Task<List<Service>> GetServicesByDepartmentAsync(int departmentId)
+        {
+            return await _context.Services
+                .AsNoTracking()
+                .Include(s => s.ServiceCategory)
+                .Where(s => s.ServiceCategory.DepartmentId == departmentId && !s.IsDeleted && s.IsActive)
+                .OrderBy(s => s.Title)
+                .ToListAsync();
         }
 
         #endregion

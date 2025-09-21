@@ -573,5 +573,132 @@ namespace ClinicApp.Repositories.Insurance
         }
 
         #endregion
+
+        #region Optimized Query Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه اصلی برای خدمت و طرح
+        /// </summary>
+        public async Task<List<InsuranceTariff>> GetPrimaryTariffsAsync(int serviceId, int planId)
+        {
+            try
+            {
+                _logger.Information("درخواست تعرفه‌های بیمه اصلی. ServiceId: {ServiceId}, PlanId: {PlanId}", serviceId, planId);
+
+                var tariffs = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => t.ServiceId == serviceId &&
+                                t.InsurancePlanId == planId &&
+                                t.InsuranceType == InsuranceType.Primary &&
+                                !t.IsDeleted && t.IsActive)
+                    .OrderBy(t => t.Priority ?? 0)
+                    .ToListAsync();
+
+                _logger.Information("تعرفه‌های بیمه اصلی دریافت شد. ServiceId: {ServiceId}, PlanId: {PlanId}, Count: {Count}", 
+                    serviceId, planId, tariffs.Count);
+
+                return tariffs;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های بیمه اصلی. ServiceId: {ServiceId}, PlanId: {PlanId}", serviceId, planId);
+                throw new InvalidOperationException($"خطا در دریافت تعرفه‌های بیمه اصلی", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی برای خدمت
+        /// </summary>
+        public async Task<List<InsuranceTariff>> GetSupplementaryTariffsAsync(int serviceId)
+        {
+            try
+            {
+                _logger.Information("درخواست تعرفه‌های بیمه تکمیلی. ServiceId: {ServiceId}", serviceId);
+
+                var tariffs = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => t.ServiceId == serviceId &&
+                                t.InsuranceType == InsuranceType.Supplementary &&
+                                !t.IsDeleted && t.IsActive)
+                    .OrderBy(t => t.Priority ?? 0)
+                    .ToListAsync();
+
+                _logger.Information("تعرفه‌های بیمه تکمیلی دریافت شد. ServiceId: {ServiceId}, Count: {Count}", 
+                    serviceId, tariffs.Count);
+
+                return tariffs;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های بیمه تکمیلی. ServiceId: {ServiceId}", serviceId);
+                throw new InvalidOperationException($"خطا در دریافت تعرفه‌های بیمه تکمیلی", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعرفه بیمه بر اساس نوع
+        /// </summary>
+        public async Task<InsuranceTariff> GetTariffByTypeAsync(int serviceId, int planId, InsuranceType insuranceType)
+        {
+            try
+            {
+                _logger.Information("درخواست تعرفه بیمه بر اساس نوع. ServiceId: {ServiceId}, PlanId: {PlanId}, Type: {Type}", 
+                    serviceId, planId, insuranceType);
+
+                var tariff = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(t => t.ServiceId == serviceId &&
+                                            t.InsurancePlanId == planId &&
+                                            t.InsuranceType == insuranceType &&
+                                            !t.IsDeleted && t.IsActive);
+
+                _logger.Information("تعرفه بیمه بر اساس نوع دریافت شد. ServiceId: {ServiceId}, PlanId: {PlanId}, Type: {Type}, Found: {Found}", 
+                    serviceId, planId, insuranceType, tariff != null);
+
+                return tariff;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه بیمه بر اساس نوع. ServiceId: {ServiceId}, PlanId: {PlanId}, Type: {Type}", 
+                    serviceId, planId, insuranceType);
+                throw new InvalidOperationException($"خطا در دریافت تعرفه بیمه بر اساس نوع", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعرفه‌های فعال بیمه برای خدمت
+        /// </summary>
+        public async Task<List<InsuranceTariff>> GetActiveTariffsForServiceAsync(int serviceId, System.DateTime? calculationDate = null)
+        {
+            try
+            {
+                var effectiveDate = calculationDate ?? DateTime.Now;
+                
+                _logger.Information("درخواست تعرفه‌های فعال بیمه. ServiceId: {ServiceId}, Date: {Date}", serviceId, effectiveDate);
+
+                var tariffs = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => t.ServiceId == serviceId &&
+                                !t.IsDeleted && t.IsActive &&
+                                (t.StartDate == null || t.StartDate <= effectiveDate) &&
+                                (t.EndDate == null || t.EndDate >= effectiveDate))
+                    .OrderBy(t => t.InsuranceType)
+                    .ThenBy(t => t.Priority ?? 0)
+                    .ToListAsync();
+
+                _logger.Information("تعرفه‌های فعال بیمه دریافت شد. ServiceId: {ServiceId}, Count: {Count}", 
+                    serviceId, tariffs.Count);
+
+                return tariffs;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های فعال بیمه. ServiceId: {ServiceId}, Date: {Date}", 
+                    serviceId, calculationDate);
+                throw new InvalidOperationException($"خطا در دریافت تعرفه‌های فعال بیمه", ex);
+            }
+        }
+
+        #endregion
     }
 }

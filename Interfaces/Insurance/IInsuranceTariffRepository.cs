@@ -150,7 +150,43 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <param name="serviceId">شناسه خدمت</param>
         /// <returns>نتیجه بررسی</returns>
-    
+        Task<bool> HasTariffsForServiceAsync(int serviceId);
+
+        #endregion
+
+        #region Optimized Query Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه اصلی برای خدمت و طرح
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <returns>لیست تعرفه‌های بیمه اصلی</returns>
+        Task<List<InsuranceTariff>> GetPrimaryTariffsAsync(int serviceId, int planId);
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی برای خدمت
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>لیست تعرفه‌های بیمه تکمیلی</returns>
+        Task<List<InsuranceTariff>> GetSupplementaryTariffsAsync(int serviceId);
+
+        /// <summary>
+        /// دریافت تعرفه بیمه بر اساس نوع
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <param name="insuranceType">نوع بیمه</param>
+        /// <returns>تعرفه بیمه مورد نظر</returns>
+        Task<InsuranceTariff> GetTariffByTypeAsync(int serviceId, int planId, InsuranceType insuranceType);
+
+        /// <summary>
+        /// دریافت تعرفه‌های فعال بیمه برای خدمت
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="calculationDate">تاریخ محاسبه</param>
+        /// <returns>لیست تعرفه‌های فعال</returns>
+        Task<List<InsuranceTariff>> GetActiveTariffsForServiceAsync(int serviceId, System.DateTime? calculationDate = null);
 
         #endregion
 

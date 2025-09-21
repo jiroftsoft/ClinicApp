@@ -164,8 +164,12 @@ namespace ClinicApp.Services.Insurance
                 var validationResult = await ValidateTariffAsync(model);
                 if (!validationResult.Success)
                 {
+                    var errorMessages = validationResult.Data?.Values != null 
+                        ? string.Join(", ", validationResult.Data.Values) 
+                        : "خطاهای نامشخص";
+                    
                     _logger.Warning("اعتبارسنجی تعرفه بیمه ناموفق. PlanId: {PlanId}, ServiceId: {ServiceId}, Errors: {Errors}. User: {UserName} (Id: {UserId})",
-                        model.InsurancePlanId, model.ServiceId, string.Join(", ", validationResult.Data.Values), _currentUserService.UserName, _currentUserService.UserId);
+                        model.InsurancePlanId, model.ServiceId, errorMessages, _currentUserService.UserName, _currentUserService.UserId);
                     return ServiceResult<int>.Failed("اطلاعات وارد شده معتبر نیست");
                 }
 
@@ -226,8 +230,12 @@ namespace ClinicApp.Services.Insurance
                 var validationResult = await ValidateTariffAsync(model);
                 if (!validationResult.Success)
                 {
+                    var errorMessages = validationResult.Data?.Values != null 
+                        ? string.Join(", ", validationResult.Data.Values) 
+                        : "خطاهای نامشخص";
+                    
                     _logger.Warning("اعتبارسنجی تعرفه بیمه ناموفق. Id: {Id}, Errors: {Errors}. User: {UserName} (Id: {UserId})",
-                        model.InsuranceTariffId, string.Join(", ", validationResult.Data.Values), _currentUserService.UserName, _currentUserService.UserId);
+                        model.InsuranceTariffId, errorMessages, _currentUserService.UserName, _currentUserService.UserId);
                     return ServiceResult.Failed("اطلاعات وارد شده معتبر نیست");
                 }
 

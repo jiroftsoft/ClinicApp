@@ -1,11 +1,21 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
+using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Entities.Clinic;
 
 namespace ClinicApp.ViewModels.Insurance.Supplementary
 {
     /// <summary>
-    /// ViewModel برای جزئیات تعرفه بیمه تکمیلی
+    /// ViewModel برای جزئیات تعرفه بیمه تکمیلی - Production Optimized
     /// طراحی شده برای محیط درمانی کلینیک شفا
+    /// 
+    /// ویژگی‌های بهینه‌سازی:
+    /// 1. Calculated Properties برای نمایش بهتر
+    /// 2. Validation Attributes
+    /// 3. Factory Methods برای تبدیل Entity
+    /// 4. Performance Optimized Properties
     /// </summary>
     public class SupplementaryTariffDetailsViewModel
     {
@@ -297,5 +307,116 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
                 return Math.Max(0, remainingAmount - supplementaryCoverage);
             }
         }
+
+        #region Factory Methods
+
+        /// <summary>
+        /// ایجاد ViewModel از Entity - Production Optimized
+        /// </summary>
+        public static SupplementaryTariffDetailsViewModel FromEntity(Models.Entities.Insurance.InsuranceTariff entity)
+        {
+            if (entity == null) return null;
+
+            return new SupplementaryTariffDetailsViewModel
+            {
+                InsuranceTariffId = entity.InsuranceTariffId,
+                ServiceId = entity.ServiceId,
+                ServiceTitle = entity.Service?.Title,
+                ServiceCode = entity.Service?.ServiceCode,
+                ServiceDescription = entity.Service?.Description,
+                ServiceCategoryId = entity.Service?.ServiceCategoryId ?? 0,
+                ServiceCategoryTitle = entity.Service?.ServiceCategory?.Title,
+                InsurancePlanId = entity.InsurancePlanId ?? 0,
+                InsurancePlanName = entity.InsurancePlan?.Name,
+                InsurancePlanCode = entity.InsurancePlan?.PlanCode,
+                InsuranceProviderId = entity.InsurancePlan?.InsuranceProviderId ?? 0,
+                InsuranceProviderName = entity.InsurancePlan?.InsuranceProvider?.Name,
+                TariffPrice = entity.TariffPrice,
+                PatientShare = entity.PatientShare,
+                InsurerShare = entity.InsurerShare,
+                SupplementaryCoveragePercent = entity.SupplementaryCoveragePercent,
+                SupplementaryMaxPayment = entity.SupplementaryMaxPayment,
+                Priority = entity.Priority,
+                StartDate = entity.StartDate,
+                EndDate = entity.EndDate,
+                IsActive = entity.IsActive,
+                CreatedAt = entity.CreatedAt,
+                CreatedByUserName = entity.CreatedByUser?.UserName,
+                UpdatedAt = entity.UpdatedAt,
+                UpdatedByUserName = entity.UpdatedByUser?.UserName
+            };
+        }
+
+        /// <summary>
+        /// ایجاد ViewModel از Entity با Service و Plan
+        /// </summary>
+        public static SupplementaryTariffDetailsViewModel FromEntityWithDetails(
+            Models.Entities.Insurance.InsuranceTariff entity, 
+            Models.Entities.Clinic.Service service, 
+            Models.Entities.Insurance.InsurancePlan plan)
+        {
+            if (entity == null) return null;
+
+            var viewModel = FromEntity(entity);
+            
+            if (service != null)
+            {
+                viewModel.ServiceTitle = service.Title;
+                viewModel.ServiceCode = service.ServiceCode;
+                viewModel.ServiceDescription = service.Description;
+                viewModel.ServiceCategoryId = service.ServiceCategoryId;
+                viewModel.ServiceCategoryTitle = service.ServiceCategory?.Title;
+            }
+
+            if (plan != null)
+            {
+                viewModel.InsurancePlanName = plan.Name;
+                viewModel.InsurancePlanCode = plan.PlanCode;
+                viewModel.InsuranceProviderId = plan.InsuranceProviderId;
+                viewModel.InsuranceProviderName = plan.InsuranceProvider?.Name;
+            }
+
+            return viewModel;
+        }
+
+        #endregion
+
+        #region Validation Methods
+
+        /// <summary>
+        /// اعتبارسنجی ViewModel
+        /// </summary>
+        public bool IsValid()
+        {
+            return InsuranceTariffId > 0 && 
+                   ServiceId > 0 && 
+                   !string.IsNullOrEmpty(ServiceTitle) &&
+                   TariffPrice.HasValue && 
+                   TariffPrice.Value > 0;
+        }
+
+        /// <summary>
+        /// دریافت پیام‌های خطا
+        /// </summary>
+        public List<string> GetValidationErrors()
+        {
+            var errors = new List<string>();
+
+            if (InsuranceTariffId <= 0)
+                errors.Add("شناسه تعرفه نامعتبر است");
+
+            if (ServiceId <= 0)
+                errors.Add("شناسه خدمت نامعتبر است");
+
+            if (string.IsNullOrEmpty(ServiceTitle))
+                errors.Add("نام خدمت الزامی است");
+
+            if (!TariffPrice.HasValue || TariffPrice.Value <= 0)
+                errors.Add("قیمت تعرفه باید بزرگتر از صفر باشد");
+
+            return errors;
+        }
+
+        #endregion
     }
 }

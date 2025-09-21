@@ -41,6 +41,7 @@ namespace ClinicApp.Services.Insurance
         private readonly IInsuranceCalculationService _insuranceCalculationService;
         private readonly ISupplementaryInsuranceService _supplementaryInsuranceService;
         private readonly IServiceRepository _serviceRepository;
+        private readonly IInsuranceTariffRepository _tariffRepository;
         private readonly IPatientService _patientService;
         private readonly ApplicationDbContext _context;
         // حذف مرجع دایره‌ای - PatientInsuranceService نباید در CombinedInsuranceCalculationService استفاده شود
@@ -52,6 +53,7 @@ namespace ClinicApp.Services.Insurance
             IInsuranceCalculationService insuranceCalculationService,
             ISupplementaryInsuranceService supplementaryInsuranceService,
             IServiceRepository serviceRepository,
+            IInsuranceTariffRepository tariffRepository,
             IPatientService patientService,
             ApplicationDbContext context,
             ILogger logger,
@@ -61,6 +63,7 @@ namespace ClinicApp.Services.Insurance
             _insuranceCalculationService = insuranceCalculationService ?? throw new ArgumentNullException(nameof(insuranceCalculationService));
             _supplementaryInsuranceService = supplementaryInsuranceService ?? throw new ArgumentNullException(nameof(supplementaryInsuranceService));
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
+            _tariffRepository = tariffRepository ?? throw new ArgumentNullException(nameof(tariffRepository));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _log = logger.ForContext<CombinedInsuranceCalculationService>();
@@ -617,13 +620,8 @@ namespace ClinicApp.Services.Insurance
                 var supplementaryDetails = new List<SupplementaryInsuranceDetail>();
                 var primaryInsuranceId = supplementaryInsurances.FirstOrDefault()?.PatientInsuranceId ?? 0; // استفاده از PatientInsuranceId صحیح
 
-                // دریافت تعرفه‌های بیمه تکمیلی برای این خدمت
-                var supplementaryTariffs = await _context.InsuranceTariffs
-                    .Where(t => t.ServiceId == serviceId && 
-                                t.InsuranceType == InsuranceType.Supplementary &&
-                                !t.IsDeleted && t.IsActive)
-                    .OrderBy(t => t.Priority ?? 0)
-                    .ToListAsync();
+                // دریافت تعرفه‌های بیمه تکمیلی برای این خدمت (بهینه‌سازی شده)
+                var supplementaryTariffs = await _tariffRepository.GetSupplementaryTariffsAsync(serviceId);
 
                 _log.Information("🏥 MEDICAL: تعرفه‌های بیمه تکمیلی یافت شد - ServiceId: {ServiceId}, Count: {Count}. User: {UserName} (Id: {UserId})",
                     serviceId, supplementaryTariffs.Count, _currentUserService.UserName, _currentUserService.UserId);

@@ -1,0 +1,181 @@
+@{
+    ViewBag.Title = "اصلاح داده‌های بیمه";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-database"></i>
+                        اصلاح داده‌های بیمه
+                    </h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <button id="checkCurrentData" class="btn btn-info btn-block">
+                                <i class="fas fa-search"></i>
+                                بررسی وضعیت فعلی
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="fixData" class="btn btn-warning btn-block">
+                                <i class="fas fa-tools"></i>
+                                اجرای اصلاح داده‌ها
+                            </button>
+                        </div>
+                        <div class="col-md-4">
+                            <button id="verifyFix" class="btn btn-success btn-block">
+                                <i class="fas fa-check"></i>
+                                بررسی نتایج اصلاح
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <div id="results" class="mt-4">
+                        <!-- نتایج در اینجا نمایش داده می‌شود -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+$(document).ready(function() {
+    // بررسی وضعیت فعلی
+    $('#checkCurrentData').click(function() {
+        showLoading('در حال بررسی وضعیت فعلی...');
+        
+        $.ajax({
+            url: '@Url.Action("CheckCurrentData", "DataFix")',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                hideLoading();
+                displayResults('وضعیت فعلی داده‌ها', data);
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                showError('خطا در بررسی وضعیت فعلی: ' + error);
+            }
+        });
+    });
+
+    // اجرای اصلاح داده‌ها
+    $('#fixData').click(function() {
+        if (!confirm('آیا مطمئن هستید که می‌خواهید داده‌ها را اصلاح کنید؟')) {
+            return;
+        }
+        
+        showLoading('در حال اصلاح داده‌ها...');
+        
+        $.ajax({
+            url: '@Url.Action("FixData", "DataFix")',
+            type: 'POST',
+            dataType: 'json',
+            success: function(data) {
+                hideLoading();
+                if (data.success) {
+                    displayResults('نتایج اصلاح داده‌ها', data);
+                    showSuccess('داده‌ها با موفقیت اصلاح شدند!');
+                } else {
+                    showError('خطا در اصلاح داده‌ها: ' + data.error);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                showError('خطا در اصلاح داده‌ها: ' + error);
+            }
+        });
+    });
+
+    // بررسی نتایج اصلاح
+    $('#verifyFix').click(function() {
+        showLoading('در حال بررسی نتایج اصلاح...');
+        
+        $.ajax({
+            url: '@Url.Action("VerifyFix", "DataFix")',
+            type: 'GET',
+            dataType: 'json',
+            success: function(data) {
+                hideLoading();
+                displayResults('نتایج نهایی اصلاح', data);
+            },
+            error: function(xhr, status, error) {
+                hideLoading();
+                showError('خطا در بررسی نتایج: ' + error);
+            }
+        });
+    });
+
+    function showLoading(message) {
+        $('#results').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> ' + message + '</div>');
+    }
+
+    function hideLoading() {
+        // Loading will be replaced by results
+    }
+
+    function displayResults(title, data) {
+        var html = '<div class="card"><div class="card-header"><h5>' + title + '</h5></div><div class="card-body">';
+        
+        if (data.InsuranceTypeStatus) {
+            html += '<h6>وضعیت InsuranceType:</h6>';
+            html += '<table class="table table-sm table-bordered">';
+            html += '<thead><tr><th>InsuranceType</th><th>Count</th></tr></thead><tbody>';
+            data.InsuranceTypeStatus.forEach(function(item) {
+                html += '<tr><td>' + item.InsuranceType + '</td><td>' + item.Count + '</td></tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        if (data.PlanStatus) {
+            html += '<h6>وضعیت بر اساس Plan:</h6>';
+            html += '<table class="table table-sm table-bordered">';
+            html += '<thead><tr><th>PlanId</th><th>Type</th><th>Count</th><th>AvgPatientShare</th><th>AvgInsurerShare</th></tr></thead><tbody>';
+            data.PlanStatus.forEach(function(item) {
+                html += '<tr><td>' + item.InsurancePlanId + '</td><td>' + item.InsuranceType + '</td><td>' + item.Count + '</td><td>' + item.AvgPatientShare.toFixed(2) + '</td><td>' + item.AvgInsurerShare.toFixed(2) + '</td></tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        if (data.ProblematicRecords) {
+            html += '<h6>رکوردهای مشکل‌دار (' + data.TotalProblematicRecords + '):</h6>';
+            html += '<table class="table table-sm table-bordered">';
+            html += '<thead><tr><th>TariffId</th><th>PlanId</th><th>Type</th><th>PatientShare</th><th>InsurerShare</th></tr></thead><tbody>';
+            data.ProblematicRecords.forEach(function(item) {
+                html += '<tr><td>' + item.InsuranceTariffId + '</td><td>' + item.InsurancePlanId + '</td><td>' + item.InsuranceType + '</td><td>' + item.PatientShare + '</td><td>' + item.InsurerShare + '</td></tr>';
+            });
+            html += '</tbody></table>';
+        }
+
+        if (data.results) {
+            html += '<h6>نتایج اصلاح:</h6>';
+            html += '<ul>';
+            data.results.forEach(function(result) {
+                html += '<li>' + result + '</li>';
+            });
+            html += '</ul>';
+        }
+
+        html += '</div></div>';
+        $('#results').html(html);
+    }
+
+    function showSuccess(message) {
+        $('#results').prepend('<div class="alert alert-success alert-dismissible fade show" role="alert">' + message + '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>');
+    }
+
+    function showError(message) {
+        $('#results').prepend('<div class="alert alert-danger alert-dismissible fade show" role="alert">' + message + '<button type="button" class="close" data-dismiss="alert"><span>&times;</span></button></div>');
+    }
+});
+</script>
+}
