@@ -113,10 +113,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// صفحه اصلی مدیریت تعرفه‌های بیمه تکمیلی - Production Optimized
+        /// صفحه اصلی مدیریت تعرفه‌های بیمه تکمیلی - Production Optimized with Enhanced Caching
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 180, VaryByParam = "none")] // Cache for 3 minutes (reduced for better data freshness)
+        [OutputCache(Duration = 300, VaryByParam = "none")] // Cache for 5 minutes (increased for better performance)
         public async Task<ActionResult> Index()
         {
             const string cacheKey = "SupplementaryTariff_Index_Stats";
@@ -342,10 +342,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// دریافت آمار تعرفه‌های بیمه تکمیلی - Production Optimized with Caching
+        /// دریافت آمار تعرفه‌های بیمه تکمیلی - Production Optimized with Enhanced Caching
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 180, VaryByParam = "none")] // Cache for 3 minutes
+        [OutputCache(Duration = 300, VaryByParam = "none")] // Cache for 5 minutes (increased for better performance)
         public async Task<JsonResult> GetStats()
         {
             var userId = _currentUserService.UserId;
@@ -1386,7 +1386,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// بارگذاری داده‌های مورد نیاز برای فیلترها
+        /// بارگذاری داده‌های مورد نیاز برای فیلترها - Performance Optimized
         /// </summary>
         private async Task<SupplementaryTariffFilterViewModel> LoadFilterData()
         {
@@ -1395,17 +1395,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Debug("🏥 MEDICAL: بارگذاری داده‌های فیلتر. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                // بارگذاری دپارتمان‌ها
-                var departments = await _departmentRepository.GetAllActiveDepartmentsAsync();
-                
-                // دریافت بیمه‌های پایه (Primary Insurance Plans)
-                var primaryInsurancePlans = await _planService.GetPrimaryInsurancePlansAsync();
-                
-                // دریافت بیمه‌های تکمیلی (Supplementary Insurance Plans)
-                var supplementaryInsurancePlans = await _planService.GetSupplementaryInsurancePlansAsync();
+                // اجرای همزمان Query های مستقل برای بهبود Performance
+                var departmentsTask = _departmentRepository.GetAllActiveDepartmentsAsync();
+                var primaryInsurancePlansTask = _planService.GetPrimaryInsurancePlansAsync();
+                var supplementaryInsurancePlansTask = _planService.GetSupplementaryInsurancePlansAsync();
+                var servicesTask = _serviceRepository.GetAllActiveServicesAsync();
 
-                // دریافت خدمات
-                var services = await _serviceRepository.GetAllActiveServicesAsync();
+                // انتظار برای تکمیل تمام Task ها
+                await Task.WhenAll(departmentsTask, primaryInsurancePlansTask, supplementaryInsurancePlansTask, servicesTask);
+
+                var departments = await departmentsTask;
+                var primaryInsurancePlans = await primaryInsurancePlansTask;
+                var supplementaryInsurancePlans = await supplementaryInsurancePlansTask;
+                var services = await servicesTask;
 
                 var filter = new SupplementaryTariffFilterViewModel
                 {
@@ -1575,7 +1577,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// بارگذاری داده‌های مورد نیاز برای فرم‌های Create و Edit
+        /// بارگذاری داده‌های مورد نیاز برای فرم‌های Create و Edit - Performance Optimized
         /// </summary>
         private async Task LoadCreateEditData()
         {
@@ -1584,14 +1586,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Debug("🏥 MEDICAL: بارگذاری داده‌های فرم Create/Edit. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                // بارگذاری دپارتمان‌ها
-                var departments = await _departmentRepository.GetAllActiveDepartmentsAsync();
-                
-                // دریافت بیمه‌های پایه (Primary Insurance Plans)
-                var primaryInsurancePlans = await _planService.GetPrimaryInsurancePlansAsync();
-                
-                // دریافت بیمه‌های تکمیلی (Supplementary Insurance Plans)
-                var supplementaryInsurancePlans = await _planService.GetSupplementaryInsurancePlansAsync();
+                // اجرای همزمان Query های مستقل برای بهبود Performance
+                var departmentsTask = _departmentRepository.GetAllActiveDepartmentsAsync();
+                var primaryInsurancePlansTask = _planService.GetPrimaryInsurancePlansAsync();
+                var supplementaryInsurancePlansTask = _planService.GetSupplementaryInsurancePlansAsync();
+
+                // انتظار برای تکمیل تمام Task ها
+                await Task.WhenAll(departmentsTask, primaryInsurancePlansTask, supplementaryInsurancePlansTask);
+
+                var departments = await departmentsTask;
+                var primaryInsurancePlans = await primaryInsurancePlansTask;
+                var supplementaryInsurancePlans = await supplementaryInsurancePlansTask;
 
                 ViewBag.Departments = departments ?? new List<Department>();
                 ViewBag.PrimaryInsurancePlans = CreateInsurancePlanSelectList(primaryInsurancePlans.Data);
