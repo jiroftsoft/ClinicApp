@@ -45,6 +45,32 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// </summary>
         public List<SupplementaryTariffServiceViewModel> Services { get; set; }
 
+        // Properties for backward compatibility with Index view
+        /// <summary>
+        /// تعداد کل خدمات (از Statistics)
+        /// </summary>
+        public int TotalServices => Statistics?.TotalServices ?? 0;
+
+        /// <summary>
+        /// تعداد کل تعرفه‌ها (از Statistics)
+        /// </summary>
+        public int TotalTariffs => Statistics?.TotalSupplementaryTariffs ?? 0;
+
+        /// <summary>
+        /// تعداد تعرفه‌های فعال (از Statistics)
+        /// </summary>
+        public int ActiveTariffs => Statistics?.ActiveSupplementaryTariffs ?? 0;
+
+        /// <summary>
+        /// تعداد تعرفه‌های منقضی (از Statistics)
+        /// </summary>
+        public int ExpiredTariffs => Statistics?.ExpiredSupplementaryTariffs ?? 0;
+
+        /// <summary>
+        /// فیلترها (از Filter)
+        /// </summary>
+        public SupplementaryTariffFilterViewModel Filters => Filter;
+
         /// <summary>
         /// سازنده پیش‌فرض
         /// </summary>
@@ -141,6 +167,26 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// اندازه صفحه
         /// </summary>
         public int PageSize { get; set; } = 20;
+
+        /// <summary>
+        /// لیست خدمات برای dropdown
+        /// </summary>
+        public List<SupplementaryTariffServiceViewModel> Services { get; set; } = new List<SupplementaryTariffServiceViewModel>();
+
+        /// <summary>
+        /// لیست طرح‌های بیمه برای dropdown
+        /// </summary>
+        public List<SupplementaryTariffInsurancePlanViewModel> InsurancePlans { get; set; } = new List<SupplementaryTariffInsurancePlanViewModel>();
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای dropdown
+        /// </summary>
+        public List<SupplementaryTariffDepartmentViewModel> Departments { get; set; } = new List<SupplementaryTariffDepartmentViewModel>();
+
+        /// <summary>
+        /// لیست ارائه‌دهندگان بیمه برای dropdown
+        /// </summary>
+        public List<SupplementaryTariffInsuranceProviderViewModel> InsuranceProviders { get; set; } = new List<SupplementaryTariffInsuranceProviderViewModel>();
     }
 
     /// <summary>

@@ -44,6 +44,7 @@ namespace ClinicApp.Services.Insurance
         private readonly IInsuranceTariffRepository _tariffRepository;
         private readonly IPatientService _patientService;
         private readonly ApplicationDbContext _context;
+        private readonly IFactorSettingService _factorSettingService;
         // حذف مرجع دایره‌ای - PatientInsuranceService نباید در CombinedInsuranceCalculationService استفاده شود
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
@@ -56,6 +57,7 @@ namespace ClinicApp.Services.Insurance
             IInsuranceTariffRepository tariffRepository,
             IPatientService patientService,
             ApplicationDbContext context,
+            IFactorSettingService factorSettingService,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
@@ -66,6 +68,7 @@ namespace ClinicApp.Services.Insurance
             _tariffRepository = tariffRepository ?? throw new ArgumentNullException(nameof(tariffRepository));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _factorSettingService = factorSettingService ?? throw new ArgumentNullException(nameof(factorSettingService));
             _log = logger.ForContext<CombinedInsuranceCalculationService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
@@ -549,7 +552,8 @@ namespace ClinicApp.Services.Insurance
                         return ServiceResult<InsuranceCalculationResultViewModel>.Failed("اطلاعات طرح بیمه یافت نشد");
                     }
 
-                    coveragePercent = insurancePlan.CoveragePercent;
+                    // استفاده از درصد پوشش طرح بیمه از جدول InsurancePlans
+                    coveragePercent = insurancePlan.CoveragePercent; // پویا از جدول
                     deductibleAmount = insurancePlan.Deductible;
                     
                     _log.Information("🏥 MEDICAL: استفاده از fallback طرح بیمه - CoveragePercent: {CoveragePercent}, Deductible: {Deductible}. User: {UserName} (Id: {UserId})",
@@ -568,11 +572,14 @@ namespace ClinicApp.Services.Insurance
                 // محاسبه مبلغ قابل پوشش (بعد از کسر فرانشیز)
                 var coverableAmount = Math.Max(0, serviceAmount - deductibleAmount);
 
-                // محاسبه مبلغ پوشش بیمه
-                var insuranceCoverage = coverableAmount * (coveragePercent / 100);
+                // محاسبه مبلغ پوشش بیمه با دقت مالی
+                var insuranceCoverage = Math.Round(coverableAmount * (coveragePercent / 100), 2, MidpointRounding.AwayFromZero);
 
-                // محاسبه مبلغ پرداخت بیمار
-                var patientPayment = serviceAmount - insuranceCoverage;
+                // محاسبه مبلغ باقی‌مانده بعد از بیمه پایه
+                var remainingAmount = Math.Max(0, coverableAmount - insuranceCoverage);
+
+                // محاسبه مبلغ پرداخت بیمار = فرانشیز + مبلغ باقی‌مانده
+                var patientPayment = Math.Round(deductibleAmount + remainingAmount, 2, MidpointRounding.AwayFromZero);
 
                 var result = new InsuranceCalculationResultViewModel
                 {
@@ -666,22 +673,14 @@ namespace ClinicApp.Services.Insurance
                         // محاسبه بر اساس تعرفه بیمه تکمیلی
                         var supplementaryCoverage = 0m;
                         
-                        if (supplementaryTariff.SupplementaryCoveragePercent.HasValue)
+                        // بیمه تکمیلی همیشه 100% است (طبق استانداردهای پزشکی ایران)
+                        supplementaryCoverage = remainingAmount; // 100% از مبلغ باقی‌مانده
+                        
+                        // اعمال سقف پرداخت اگر تعریف شده باشد
+                        if (supplementaryTariff.SupplementaryMaxPayment.HasValue && 
+                            supplementaryCoverage > supplementaryTariff.SupplementaryMaxPayment.Value)
                         {
-                            // محاسبه بر اساس درصد پوشش
-                            supplementaryCoverage = remainingAmount * (supplementaryTariff.SupplementaryCoveragePercent.Value / 100);
-                            
-                            // اعمال سقف پرداخت
-                            if (supplementaryTariff.SupplementaryMaxPayment.HasValue && 
-                                supplementaryCoverage > supplementaryTariff.SupplementaryMaxPayment.Value)
-                            {
-                                supplementaryCoverage = supplementaryTariff.SupplementaryMaxPayment.Value;
-                            }
-                        }
-                        else
-                        {
-                            // محاسبه بر اساس تعرفه ثابت
-                            supplementaryCoverage = Math.Min(remainingAmount, (decimal)supplementaryTariff.InsurerShare);
+                            supplementaryCoverage = supplementaryTariff.SupplementaryMaxPayment.Value;
                         }
 
                         totalSupplementaryCoverage += supplementaryCoverage;
@@ -1059,6 +1058,71 @@ namespace ClinicApp.Services.Insurance
                     _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<List<ServiceLookupItem>>.Failed("خطا در دریافت لیست خدمات فعال");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه قیمت خدمت با استفاده از FactorSetting
+        /// </summary>
+        private async Task<decimal> CalculateServicePriceWithFactorSettingAsync(ClinicApp.Models.Entities.Clinic.Service service, int currentFinancialYear)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: شروع محاسبه قیمت خدمت با FactorSetting - ServiceId: {ServiceId}, FinancialYear: {FinancialYear}. User: {UserName} (Id: {UserId})",
+                    service.ServiceId, currentFinancialYear, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت کای فنی
+                var technicalFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                    ClinicApp.Models.Enums.ServiceComponentType.Technical, service.IsHashtagged, currentFinancialYear);
+
+                // دریافت کای حرفه‌ای
+                var professionalFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
+                    ClinicApp.Models.Enums.ServiceComponentType.Professional, false, currentFinancialYear); // حرفه‌ای همیشه false
+
+                if (technicalFactor == null || professionalFactor == null)
+                {
+                    _log.Warning("🏥 MEDICAL: کای‌های مورد نیاز یافت نشد - TechnicalFactor: {TechnicalFactor}, ProfessionalFactor: {ProfessionalFactor}. User: {UserName} (Id: {UserId})",
+                        technicalFactor != null, professionalFactor != null, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    // Fallback به قیمت ثابت
+                    return service.Price;
+                }
+
+                // محاسبه قیمت بر اساس اجزای خدمت
+                decimal calculatedPrice = 0m;
+
+                if (service.ServiceComponents != null && service.ServiceComponents.Any())
+                {
+                    foreach (var component in service.ServiceComponents)
+                    {
+                        if (component.ComponentType == ClinicApp.Models.Enums.ServiceComponentType.Technical)
+                        {
+                            calculatedPrice += component.Coefficient * technicalFactor.Value;
+                        }
+                        else if (component.ComponentType == ClinicApp.Models.Enums.ServiceComponentType.Professional)
+                        {
+                            calculatedPrice += component.Coefficient * professionalFactor.Value;
+                        }
+                    }
+                }
+                else
+                {
+                    // اگر اجزای خدمت وجود نداشت، از قیمت ثابت استفاده کن
+                    calculatedPrice = service.Price;
+                }
+
+                _log.Information("🏥 MEDICAL: محاسبه قیمت خدمت با FactorSetting تکمیل شد - ServiceId: {ServiceId}, CalculatedPrice: {CalculatedPrice}. User: {UserName} (Id: {UserId})",
+                    service.ServiceId, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+
+                return calculatedPrice;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه قیمت خدمت با FactorSetting - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                    service.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                // Fallback به قیمت ثابت
+                return service.Price;
             }
         }
 

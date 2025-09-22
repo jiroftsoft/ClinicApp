@@ -9,19 +9,53 @@
 
 /* ===== MEDICAL THEME VARIABLES ===== */
 :root {
-    --medical-primary: #667eea;
-    --medical-secondary: #764ba2;
-    --medical-success: #4facfe;
-    --medical-warning: #f093fb;
-    --medical-danger: #ff6b6b;
-    --medical-info: #00f2fe;
-    --medical-light: #f8f9fa;
-    --medical-dark: #495057;
-    --medical-white: #ffffff;
-    --medical-gray: #6c757d;
-    --medical-border-radius: 15px;
-    --medical-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    --medical-transition: all 0.3s ease;
+    /* رنگ‌های رسمی و اداری برای محیط درمانی */
+    --medical-primary: #1e3a8a;        /* آبی تیره رسمی */
+    --medical-secondary: #1e40af;      /* آبی متوسط */
+    --medical-success: #059669;        /* سبز تیره رسمی */
+    --medical-warning: #d97706;        /* نارنجی تیره */
+    --medical-danger: #dc2626;         /* قرمز تیره رسمی */
+    --medical-info: #0891b2;           /* آبی روشن */
+    --medical-light: #f8fafc;          /* خاکستری روشن */
+    --medical-dark: #0f172a;           /* مشکی تیره */
+    --medical-white: #ffffff;          /* سفید */
+    --medical-gray: #64748b;           /* خاکستری متوسط */
+    --medical-gray-light: #e2e8f0;    /* خاکستری روشن */
+    --medical-gray-dark: #334155;     /* خاکستری تیره */
+    
+    /* رنگ‌های اضافی برای محیط درمانی */
+    --medical-blue-50: #eff6ff;
+    --medical-blue-100: #dbeafe;
+    --medical-blue-500: #3b82f6;
+    --medical-blue-600: #2563eb;
+    --medical-blue-700: #1d4ed8;
+    --medical-blue-800: #1e40af;
+    --medical-blue-900: #1e3a8a;
+    
+    --medical-green-50: #f0fdf4;
+    --medical-green-100: #dcfce7;
+    --medical-green-500: #22c55e;
+    --medical-green-600: #16a34a;
+    --medical-green-700: #15803d;
+    --medical-green-800: #166534;
+    --medical-green-900: #14532d;
+    
+    --medical-red-50: #fef2f2;
+    --medical-red-100: #fee2e2;
+    --medical-red-500: #ef4444;
+    --medical-red-600: #dc2626;
+    --medical-red-700: #b91c1c;
+    --medical-red-800: #991b1b;
+    --medical-red-900: #7f1d1d;
+    
+    /* تنظیمات طراحی */
+    --medical-border-radius: 8px;
+    --medical-shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --medical-shadow-lg: 0 10px 15px rgba(0,0,0,0.1), 0 4px 6px rgba(0,0,0,0.05);
+    --medical-transition: all 0.2s ease-in-out;
+    --medical-font-family: 'Segoe UI', 'Tahoma', 'Arial', sans-serif;
+    --medical-font-size: 14px;
+    --medical-line-height: 1.5;
 }
 
 /* ===== SUPPLEMENTARY TARIFF CARDS ===== */
@@ -152,54 +186,84 @@
 
 /* ===== MEDICAL BUTTONS ===== */
 .btn-medical-primary {
-    background: linear-gradient(135deg, var(--medical-primary) 0%, var(--medical-secondary) 100%);
-    border: none;
+    background: var(--medical-primary);
+    border: 1px solid var(--medical-primary);
     color: var(--medical-white);
-    padding: 12px 25px;
-    border-radius: 10px;
+    padding: 10px 20px;
+    border-radius: var(--medical-border-radius);
     font-weight: 600;
+    font-size: 0.9rem;
     transition: var(--medical-transition);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    box-shadow: var(--medical-shadow);
 }
 
 .btn-medical-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: var(--medical-blue-800);
+    border-color: var(--medical-blue-800);
     color: var(--medical-white);
+    transform: translateY(-1px);
+    box-shadow: var(--medical-shadow-lg);
+}
+
+.btn-medical-primary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(30, 58, 138, 0.25);
 }
 
 .btn-medical-secondary {
-    background: linear-gradient(135deg, var(--medical-gray) 0%, var(--medical-dark) 100%);
-    border: none;
-    color: var(--medical-white);
-    padding: 12px 25px;
-    border-radius: 10px;
+    background: var(--medical-white);
+    border: 1px solid var(--medical-gray-light);
+    color: var(--medical-gray-dark);
+    padding: 10px 20px;
+    border-radius: var(--medical-border-radius);
     font-weight: 600;
+    font-size: 0.9rem;
     transition: var(--medical-transition);
-    box-shadow: 0 4px 15px rgba(108, 117, 125, 0.3);
+    text-decoration: none;
+    display: inline-block;
+    text-align: center;
+    box-shadow: var(--medical-shadow);
 }
 
 .btn-medical-secondary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-    color: var(--medical-white);
+    background: var(--medical-gray-light);
+    border-color: var(--medical-gray);
+    color: var(--medical-dark);
+    transform: translateY(-1px);
+    box-shadow: var(--medical-shadow-lg);
+}
+
+.btn-medical-secondary:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.25);
 }
 
 .btn-medical-success {
-    background: linear-gradient(135deg, var(--medical-success) 0%, var(--medical-info) 100%);
-    border: none;
+    background: var(--medical-success);
+    border: 1px solid var(--medical-success);
     color: var(--medical-white);
-    padding: 12px 25px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: var(--medical-border-radius);
     font-weight: 600;
+    font-size: 0.85rem;
     transition: var(--medical-transition);
-    box-shadow: 0 4px 15px rgba(79, 172, 254, 0.3);
+    box-shadow: var(--medical-shadow);
 }
 
 .btn-medical-success:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+    background: var(--medical-green-700);
+    border-color: var(--medical-green-700);
     color: var(--medical-white);
+    transform: translateY(-1px);
+    box-shadow: var(--medical-shadow-lg);
+}
+
+.btn-medical-success:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.25);
 }
 
 .btn-medical-warning {
@@ -220,20 +284,28 @@
 }
 
 .btn-medical-danger {
-    background: linear-gradient(135deg, var(--medical-danger) 0%, #ee5a24 100%);
-    border: none;
+    background: var(--medical-danger);
+    border: 1px solid var(--medical-danger);
     color: var(--medical-white);
-    padding: 12px 25px;
-    border-radius: 10px;
+    padding: 8px 16px;
+    border-radius: var(--medical-border-radius);
     font-weight: 600;
+    font-size: 0.85rem;
     transition: var(--medical-transition);
-    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+    box-shadow: var(--medical-shadow);
 }
 
 .btn-medical-danger:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+    background: var(--medical-red-700);
+    border-color: var(--medical-red-700);
     color: var(--medical-white);
+    transform: translateY(-1px);
+    box-shadow: var(--medical-shadow-lg);
+}
+
+.btn-medical-danger:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
 }
 
 /* ===== MEDICAL ALERTS ===== */
@@ -453,26 +525,66 @@
 }
 
 /* ===== MEDICAL TYPOGRAPHY ===== */
+body {
+    font-family: var(--medical-font-family);
+    font-size: var(--medical-font-size);
+    line-height: var(--medical-line-height);
+    color: var(--medical-dark);
+}
+
 .medical-title {
     font-weight: 700;
     color: var(--medical-dark);
     margin-bottom: 20px;
+    font-size: 1.5rem;
+    line-height: 1.4;
 }
 
 .medical-subtitle {
     font-weight: 600;
     color: var(--medical-gray);
     margin-bottom: 15px;
+    font-size: 1.1rem;
+    line-height: 1.4;
 }
 
 .medical-text {
     color: var(--medical-dark);
     line-height: 1.6;
+    font-size: var(--medical-font-size);
 }
 
 .medical-text-muted {
     color: var(--medical-gray);
     font-size: 0.9rem;
+    line-height: 1.4;
+}
+
+/* ===== ENHANCED READABILITY ===== */
+.table th {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--medical-white);
+    text-align: center;
+    padding: 12px 8px;
+}
+
+.table td {
+    font-size: 0.85rem;
+    color: var(--medical-dark);
+    text-align: center;
+    padding: 10px 8px;
+    vertical-align: middle;
+}
+
+.table td .fw-bold {
+    font-weight: 600;
+    color: var(--medical-dark);
+}
+
+.table td .text-muted {
+    color: var(--medical-gray);
+    font-size: 0.8rem;
 }
 
 /* ===== MEDICAL ICONS ===== */

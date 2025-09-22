@@ -8,6 +8,7 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.ViewModels.Insurance.InsuranceTariff;
+using ClinicApp.Models;
 using Serilog;
 
 namespace ClinicApp.Services.Insurance
@@ -23,6 +24,7 @@ namespace ClinicApp.Services.Insurance
         private readonly IServiceRepository _serviceRepository;
         private readonly IServiceCalculationService _serviceCalculationService;
         private readonly ICurrentUserService _currentUserService;
+        private readonly ApplicationDbContext _context;
         private readonly ILogger _logger;
 
         public InsuranceTariffService(
@@ -31,6 +33,7 @@ namespace ClinicApp.Services.Insurance
             IServiceRepository serviceRepository,
             IServiceCalculationService serviceCalculationService,
             ICurrentUserService currentUserService,
+            ApplicationDbContext context,
             ILogger logger)
         {
             _tariffRepository = tariffRepository ?? throw new ArgumentNullException(nameof(tariffRepository));
@@ -38,6 +41,7 @@ namespace ClinicApp.Services.Insurance
             _serviceRepository = serviceRepository ?? throw new ArgumentNullException(nameof(serviceRepository));
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -151,13 +155,13 @@ namespace ClinicApp.Services.Insurance
         }
 
         /// <summary>
-        /// ایجاد تعرفه بیمه جدید
+        /// ایجاد تعرفه بیمه جدید - با پشتیبانی Transaction
         /// </summary>
         public async Task<ServiceResult<int>> CreateTariffAsync(InsuranceTariffCreateEditViewModel model)
         {
             try
             {
-                _logger.Information("درخواست ایجاد تعرفه بیمه جدید. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                _logger.Information("🏥 MEDICAL: درخواست ایجاد تعرفه بیمه جدید. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
                     model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
                 // اعتبارسنجی
@@ -168,7 +172,7 @@ namespace ClinicApp.Services.Insurance
                         ? string.Join(", ", validationResult.Data.Values) 
                         : "خطاهای نامشخص";
                     
-                    _logger.Warning("اعتبارسنجی تعرفه بیمه ناموفق. PlanId: {PlanId}, ServiceId: {ServiceId}, Errors: {Errors}. User: {UserName} (Id: {UserId})",
+                    _logger.Warning("🏥 MEDICAL: اعتبارسنجی تعرفه بیمه ناموفق. PlanId: {PlanId}, ServiceId: {ServiceId}, Errors: {Errors}. User: {UserName} (Id: {UserId})",
                         model.InsurancePlanId, model.ServiceId, errorMessages, _currentUserService.UserName, _currentUserService.UserId);
                     return ServiceResult<int>.Failed("اطلاعات وارد شده معتبر نیست");
                 }
@@ -179,7 +183,7 @@ namespace ClinicApp.Services.Insurance
                     var exists = await _tariffRepository.DoesTariffExistAsync(model.InsurancePlanId, model.ServiceId.Value);
                     if (exists)
                     {
-                        _logger.Warning("تعرفه بیمه مشابه وجود دارد. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                        _logger.Warning("🏥 MEDICAL: تعرفه بیمه مشابه وجود دارد. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
                             model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
                         return ServiceResult<int>.Failed("تعرفه بیمه برای این طرح و خدمت قبلاً تعریف شده است");
                     }
@@ -188,11 +192,19 @@ namespace ClinicApp.Services.Insurance
                 // محاسبات داینامیک
                 var calculatedValues = await CalculateTariffValuesAsync(model);
                 
+                // دریافت نوع بیمه از طرح بیمه
+                var insurancePlan = await _planRepository.GetByIdAsync(model.InsurancePlanId);
+                var insuranceType = insurancePlan?.InsuranceType ?? (InsuranceType)1; // پیش‌فرض بیمه پایه
+                
+                _logger.Information("🏥 MEDICAL: نوع بیمه تعیین شد - PlanId: {PlanId}, InsuranceType: {InsuranceType}. User: {UserName} (Id: {UserId})",
+                    model.InsurancePlanId, insuranceType, _currentUserService.UserName, _currentUserService.UserId);
+                
                 // ایجاد entity
                 var tariff = new InsuranceTariff
                 {
                     ServiceId = model.ServiceId ?? 0, // 0 برای "همه خدمات"
                     InsurancePlanId = model.InsurancePlanId,
+                    InsuranceType = insuranceType, // ✅ تنظیم نوع بیمه از طرح بیمه
                     TariffPrice = calculatedValues.TariffPrice,
                     PatientShare = calculatedValues.PatientShare,
                     InsurerShare = calculatedValues.InsurerShare,
@@ -201,16 +213,37 @@ namespace ClinicApp.Services.Insurance
                     IsDeleted = false
                 };
 
-                var result = await _tariffRepository.AddAsync(tariff);
+                // استفاده از Transaction برای تضمین یکپارچگی (Entity Framework 6)
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        _logger.Information("🏥 MEDICAL: شروع Transaction برای ایجاد تعرفه. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                _logger.Information("تعرفه بیمه جدید با موفقیت ایجاد شد. Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
-                    result.InsuranceTariffId, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                        var result = await _tariffRepository.AddAsync(tariff);
+                        
+                        // Commit Transaction
+                        transaction.Commit();
+                        
+                        _logger.Information("🏥 MEDICAL: تعرفه بیمه جدید با موفقیت ایجاد شد. Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                            result.InsuranceTariffId, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
-                return ServiceResult<int>.Successful(result.InsuranceTariffId, "تعرفه بیمه جدید با موفقیت ایجاد شد");
+                        return ServiceResult<int>.Successful(result.InsuranceTariffId, "تعرفه بیمه جدید با موفقیت ایجاد شد");
+                    }
+                    catch (Exception ex)
+                    {
+                        // Rollback Transaction در صورت خطا
+                        transaction.Rollback();
+                        _logger.Error(ex, "🏥 MEDICAL: خطا در Transaction - Rollback انجام شد. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                        throw;
+                    }
+                }
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در ایجاد تعرفه بیمه جدید. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                _logger.Error(ex, "🏥 MEDICAL: خطا در ایجاد تعرفه بیمه جدید. PlanId: {PlanId}, ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
                     model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<int>.Failed("خطا در ایجاد تعرفه بیمه جدید");
             }
@@ -416,6 +449,9 @@ namespace ClinicApp.Services.Insurance
 
             try
             {
+                _logger.Information("🏥 MEDICAL: شروع اعتبارسنجی تعرفه - PlanId: {PlanId}, ServiceId: {ServiceId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
+                    model.InsurancePlanId, model.ServiceId, model.TariffPrice, model.PatientShare, model.InsurerShare, _currentUserService.UserName, _currentUserService.UserId);
+
                 // بررسی وجود طرح بیمه
                 var planExists = await _planRepository.DoesExistAsync(model.InsurancePlanId);
                 if (!planExists)
@@ -433,33 +469,52 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
-                // اعتبارسنجی سهم بیمار
-                if (model.PatientShare.HasValue && (model.PatientShare < 0 || model.PatientShare > 100))
-                {
-                    errors.Add("PatientShare", "سهم بیمار باید بین 0 تا 100 درصد باشد");
-                }
-
-                // اعتبارسنجی سهم بیمه
-                if (model.InsurerShare.HasValue && (model.InsurerShare < 0 || model.InsurerShare > 100))
-                {
-                    errors.Add("InsurerShare", "سهم بیمه باید بین 0 تا 100 درصد باشد");
-                }
-
-                // اعتبارسنجی مجموع سهم‌ها
-                if (model.PatientShare.HasValue && model.InsurerShare.HasValue)
-                {
-                    var totalShare = model.PatientShare.Value + model.InsurerShare.Value;
-                    if (totalShare > 100)
-                    {
-                        errors.Add("TotalShare", "مجموع سهم بیمار و بیمه نمی‌تواند بیش از 100 درصد باشد");
-                    }
-                }
-
                 // اعتبارسنجی قیمت تعرفه
                 if (model.TariffPrice.HasValue && model.TariffPrice < 0)
                 {
                     errors.Add("TariffPrice", "قیمت تعرفه نمی‌تواند منفی باشد");
                 }
+
+                // اعتبارسنجی سهم بیمار (مبلغ به تومان)
+                if (model.PatientShare.HasValue && model.PatientShare < 0)
+                {
+                    errors.Add("PatientShare", "سهم بیمار نمی‌تواند منفی باشد");
+                }
+
+                // اعتبارسنجی سهم بیمه (مبلغ به تومان)
+                if (model.InsurerShare.HasValue && model.InsurerShare < 0)
+                {
+                    errors.Add("InsurerShare", "سهم بیمه نمی‌تواند منفی باشد");
+                }
+
+                // اعتبارسنجی منطقی بودن مبالغ
+                if (model.TariffPrice.HasValue && model.TariffPrice > 0)
+                {
+                    // بررسی سهم بیمه
+                    if (model.InsurerShare.HasValue && model.InsurerShare > model.TariffPrice)
+                    {
+                        errors.Add("InsurerShare", "سهم بیمه نمی‌تواند بیشتر از قیمت تعرفه باشد");
+                    }
+
+                    // بررسی سهم بیمار
+                    if (model.PatientShare.HasValue && model.PatientShare > model.TariffPrice)
+                    {
+                        errors.Add("PatientShare", "سهم بیمار نمی‌تواند بیشتر از قیمت تعرفه باشد");
+                    }
+
+                    // بررسی مجموع سهم‌ها
+                    if (model.PatientShare.HasValue && model.InsurerShare.HasValue)
+                    {
+                        var totalShare = model.PatientShare.Value + model.InsurerShare.Value;
+                        if (totalShare > model.TariffPrice)
+                        {
+                            errors.Add("TotalShare", "مجموع سهم بیمار و بیمه نمی‌تواند بیشتر از قیمت تعرفه باشد");
+                        }
+                    }
+                }
+
+                _logger.Information("🏥 MEDICAL: اعتبارسنجی تکمیل شد - تعداد خطاها: {ErrorCount}. User: {UserName} (Id: {UserId})",
+                    errors.Count, _currentUserService.UserName, _currentUserService.UserId);
 
                 return errors.Count > 0 
                     ? ServiceResult<Dictionary<string, string>>.Failed("اعتبارسنجی ناموفق")
@@ -467,7 +522,8 @@ namespace ClinicApp.Services.Insurance
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در اعتبارسنجی تعرفه بیمه");
+                _logger.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی تعرفه بیمه. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<Dictionary<string, string>>.Failed("خطا در اعتبارسنجی تعرفه بیمه");
             }
         }
@@ -974,6 +1030,66 @@ namespace ClinicApp.Services.Insurance
         #endregion
 
         #region Supplementary Insurance Methods
+
+        /// <summary>
+        /// دریافت همه تعرفه‌های بیمه تکمیلی
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceTariff>>> GetAllSupplementaryTariffsAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست همه تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var tariffs = await _tariffRepository.GetAllActiveAsync();
+                var supplementaryTariffs = tariffs
+                    .Where(t => t.InsuranceType == InsuranceType.Supplementary && !t.IsDeleted)
+                    .OrderBy(t => t.Service?.Title)
+                    .ToList();
+
+                _logger.Information("همه تعرفه‌های بیمه تکمیلی با موفقیت دریافت شد. Count: {Count}. User: {UserName} (Id: {UserId})",
+                    supplementaryTariffs.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceTariff>>.Successful(supplementaryTariffs);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت همه تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<List<InsuranceTariff>>.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی با فیلترهای بهینه‌سازی شده
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceTariff>>> GetFilteredSupplementaryTariffsAsync(
+            string searchTerm = "", 
+            int? departmentId = null, 
+            bool? isActive = null)
+        {
+            try
+            {
+                _logger.Information("درخواست تعرفه‌های بیمه تکمیلی با فیلترها - SearchTerm: {SearchTerm}, DeptId: {DeptId}, IsActive: {IsActive}. User: {UserName} (Id: {UserId})",
+                    searchTerm, departmentId, isActive, _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _tariffRepository.GetFilteredSupplementaryTariffsAsync(
+                    searchTerm: searchTerm,
+                    departmentId: departmentId,
+                    isActive: isActive);
+
+                _logger.Information("تعرفه‌های بیمه تکمیلی با فیلترها با موفقیت دریافت شد - Count: {Count}. User: {UserName} (Id: {UserId})",
+                    result.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceTariff>>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های بیمه تکمیلی با فیلترها. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<List<InsuranceTariff>>.Failed("خطا در دریافت تعرفه‌های بیمه تکمیلی");
+            }
+        }
 
         /// <summary>
         /// دریافت تعرفه‌های بیمه تکمیلی با اعتبارسنجی تاریخ

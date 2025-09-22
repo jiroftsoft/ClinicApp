@@ -31,6 +31,9 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         [Display(Name = "درصد پوشش")]
         public decimal CoveragePercent { get; set; }
 
+        [Display(Name = "فرانشیز")]
+        public decimal Deductible { get; set; }
+
         /// <summary>
         /// Value برای SelectList (شناسه طرح)
         /// </summary>
@@ -54,7 +57,8 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
                 Name = entity.Name,
                 PlanCode = entity.PlanCode,
                 InsuranceProviderName = entity.InsuranceProvider?.Name,
-                CoveragePercent = entity.CoveragePercent
+                CoveragePercent = entity.CoveragePercent,
+                Deductible = entity.Deductible
             };
         }
     }

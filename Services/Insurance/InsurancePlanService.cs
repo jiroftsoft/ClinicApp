@@ -979,7 +979,8 @@ namespace ClinicApp.Services.Insurance
                 Name = plan.Name,
                 PlanCode = plan.PlanCode,
                 InsuranceProviderName = plan.InsuranceProvider?.Name,
-                CoveragePercent = plan.CoveragePercent
+                CoveragePercent = plan.CoveragePercent,
+                Deductible = plan.Deductible
             };
         }
 

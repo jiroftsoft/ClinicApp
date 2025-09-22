@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexPageViewModel
+@model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffFilterViewModel
 
 <div class="card supplementary-tariff-filters">
     <div class="card-header">
@@ -18,7 +18,7 @@
                             <option value="">همه خدمات</option>
                             @foreach (var service in Model.Services)
                             {
-                                <option value="@service.ServiceId" @(ViewBag.SelectedServiceId == service.ServiceId ? "selected" : "")>
+                                <option value="@service.ServiceId" @(Model.ServiceId == service.ServiceId ? "selected" : "")>
                                     @service.ServiceTitle
                                 </option>
                             }
@@ -34,7 +34,7 @@
                             <option value="">همه طرح‌ها</option>
                             @foreach (var plan in Model.InsurancePlans)
                             {
-                                <option value="@plan.InsurancePlanId" @(ViewBag.SelectedInsurancePlanId == plan.InsurancePlanId ? "selected" : "")>
+                                <option value="@plan.InsurancePlanId" @(Model.InsurancePlanId == plan.InsurancePlanId ? "selected" : "")>
                                     @plan.InsurancePlanName
                                 </option>
                             }
@@ -213,36 +213,99 @@
 </style>
 
 <script>
-    $(document).ready(function() {
-        // Initialize Persian date picker
-        $('.persian-datepicker').persianDatepicker({
-            format: 'YYYY/MM/DD',
-            autoClose: true,
-            initialValue: false,
-            observer: true
-        });
+    // Wait for jQuery to be available
+    function initializeFilters() {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            $(document).ready(function() {
+                // Initialize Persian date picker
+                $('.persian-datepicker').persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    autoClose: true,
+                    initialValue: false,
+                    observer: true
+                });
 
-        // Auto-submit form on filter change
-        $('#serviceId, #insurancePlanId, #status, #priority').on('change', function() {
-            $('#filterForm').submit();
-        });
+                // Auto-apply filters without page refresh
+                $('#serviceId, #insurancePlanId, #status, #priority').on('change', function() {
+                    applyFiltersWithoutRefresh();
+                });
 
-        // Clear filters function
-        window.clearFilters = function() {
-            $('#filterForm')[0].reset();
-            $('#filterForm').submit();
-        };
+                // Clear filters function
+                window.clearFilters = function() {
+                    $('#filterForm')[0].reset();
+                    applyFiltersWithoutRefresh();
+                };
 
-        // Export results function
-        window.exportResults = function() {
-            // Add export parameter to form
-            $('<input>').attr({
-                type: 'hidden',
-                name: 'export',
-                value: 'true'
-            }).appendTo('#filterForm');
-            
-            $('#filterForm').submit();
-        };
-    });
+                // Apply filters without page refresh
+                window.applyFiltersWithoutRefresh = function() {
+                    console.log('🏥 MEDICAL: Applying filters without refresh');
+                    
+                    try {
+                        // Show loading
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.showLoading();
+                        }
+                        
+                        // Get form data
+                        var formData = $('#filterForm').serialize();
+                        
+                        // Make AJAX request
+                        $.ajax({
+                            url: '/Admin/SupplementaryTariff/GetTariffsTable',
+                            type: 'GET',
+                            data: formData,
+                            success: function(response) {
+                                console.log('🏥 MEDICAL: Filters applied successfully');
+                                
+                                // Update table content
+                                $('#tariffsTableContainer').html(response);
+                                
+                                // Hide loading
+                                if (typeof window.MedicalUI !== 'undefined') {
+                                    window.MedicalUI.hideLoading();
+                                    window.MedicalUI.showSuccess('فیلترها اعمال شد');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('🏥 MEDICAL: Error applying filters:', error);
+                                
+                                // Hide loading
+                                if (typeof window.MedicalUI !== 'undefined') {
+                                    window.MedicalUI.hideLoading();
+                                    window.MedicalUI.showError('خطا در اعمال فیلترها: ' + error);
+                                }
+                            }
+                        });
+                        
+                    } catch (error) {
+                        console.error('🏥 MEDICAL: Error in applyFiltersWithoutRefresh:', error);
+                        
+                        // Hide loading
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.hideLoading();
+                            window.MedicalUI.showError('خطا در اعمال فیلترها: ' + error.message);
+                        }
+                    }
+                };
+
+                // Export results function
+                window.exportResults = function() {
+                    // Add export parameter to form
+                    $('<input>').attr({
+                        type: 'hidden',
+                        name: 'export',
+                        value: 'true'
+                    }).appendTo('#filterForm');
+                    
+                    $('#filterForm').submit();
+                };
+            });
+        } else {
+            // Retry after a short delay
+            setTimeout(initializeFilters, 100);
+        }
+    }
+    
+    // Start initialization
+    initializeFilters();
 </script>

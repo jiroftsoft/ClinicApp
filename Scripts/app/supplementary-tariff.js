@@ -19,6 +19,102 @@
 (function() {
     'use strict';
     
+    // CSRF Token Setup for Medical Environment
+    // تنظیم CSRF Token برای محیط درمانی
+    var csrfToken = $('input[name="__RequestVerificationToken"]').val();
+    
+    // Configure AJAX defaults for CSRF protection
+    // تنظیم پیش‌فرض‌های AJAX برای محافظت CSRF
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (settings.type === 'POST' && csrfToken) {
+                xhr.setRequestHeader('RequestVerificationToken', csrfToken);
+            }
+        }
+    });
+    
+    // Helper Functions for Code Reusability
+    // توابع کمکی برای کاهش تکرار کد
+    var MedicalHelpers = {
+        /**
+         * Safe UI call with error handling
+         * فراخوانی امن UI با مدیریت خطا
+         */
+        safeUICall: function(method, ...args) {
+            try {
+                if (typeof window.MedicalUI !== 'undefined' && typeof window.MedicalUI[method] === 'function') {
+                    return window.MedicalUI[method](...args);
+                } else {
+                    console.warn('🏥 MEDICAL: MedicalUI.' + method + ' not available');
+                    return false;
+                }
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error in safeUICall:', error);
+                return false;
+            }
+        },
+
+        /**
+         * Safe API call with error handling
+         * فراخوانی امن API با مدیریت خطا
+         */
+        safeAPICall: function(method, ...args) {
+            try {
+                if (typeof window.MedicalAPI !== 'undefined' && typeof window.MedicalAPI[method] === 'function') {
+                    return window.MedicalAPI[method](...args);
+                } else {
+                    console.warn('🏥 MEDICAL: MedicalAPI.' + method + ' not available');
+                    return Promise.reject(new Error('MedicalAPI.' + method + ' not available'));
+                }
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error in safeAPICall:', error);
+                return Promise.reject(error);
+            }
+        },
+
+        /**
+         * Safe validation call with error handling
+         * فراخوانی امن validation با مدیریت خطا
+         */
+        safeValidationCall: function(method, ...args) {
+            try {
+                if (typeof window.MedicalValidation !== 'undefined' && typeof window.MedicalValidation[method] === 'function') {
+                    return window.MedicalValidation[method](...args);
+                } else {
+                    console.warn('🏥 MEDICAL: MedicalValidation.' + method + ' not available');
+                    return { isValid: false, errorMessage: 'Validation not available' };
+                }
+            } catch (error) {
+                console.error('🏥 MEDICAL: Error in safeValidationCall:', error);
+                return { isValid: false, errorMessage: 'Validation error: ' + error.message };
+            }
+        },
+
+        /**
+         * Show error message safely
+         * نمایش پیام خطا به صورت امن
+         */
+        showError: function(message) {
+            this.safeUICall('showError', message);
+        },
+
+        /**
+         * Show loading indicator safely
+         * نمایش نشانگر بارگذاری به صورت امن
+         */
+        showLoading: function() {
+            this.safeUICall('showLoading');
+        },
+
+        /**
+         * Hide loading indicator safely
+         * مخفی کردن نشانگر بارگذاری به صورت امن
+         */
+        hideLoading: function() {
+            this.safeUICall('hideLoading');
+        }
+    };
+
     // Main Medical Supplementary Tariff Module
     window.MedicalSupplementaryTariff = {
     
@@ -31,9 +127,7 @@
         
         try {
             // Initialize UI components
-            if (typeof window.MedicalUI !== 'undefined') {
-                window.MedicalUI.init();
-            }
+            MedicalHelpers.safeUICall('init');
             
             // Load initial data
             this.loadInitialData();
@@ -42,9 +136,7 @@
             
         } catch (error) {
             console.error('🏥 MEDICAL: Error initializing module:', error);
-            if (typeof window.MedicalUI !== 'undefined') {
-                window.MedicalUI.showError('خطا در راه‌اندازی سیستم: ' + error.message);
-            }
+            MedicalHelpers.showError('خطا در راه‌اندازی سیستم: ' + error.message);
         }
     },
 
@@ -69,9 +161,147 @@
             
         } catch (error) {
             console.error('🏥 MEDICAL: Error loading initial data:', error);
-            if (typeof window.MedicalUI !== 'undefined') {
-                window.MedicalUI.showError('خطا در بارگذاری داده‌ها: ' + error.message);
+            MedicalHelpers.showError('خطا در بارگذاری داده‌ها: ' + error.message);
+        }
+    },
+
+    /**
+     * Load tariffs with pagination
+     * بارگذاری تعرفه‌ها با صفحه‌بندی
+     */
+    loadTariffs: function(page = 1) {
+        console.log('🏥 MEDICAL: Loading tariffs for page:', page);
+        
+        try {
+            // Get current filters
+            const searchTerm = $('#searchTerm').val() || '';
+            const insurancePlanId = $('#insurancePlanId').val() || '';
+            const departmentId = $('#departmentId').val() || '';
+            const isActive = $('#isActive').val() || '';
+            
+            // Build query parameters
+            const params = new URLSearchParams({
+                searchTerm: searchTerm,
+                insurancePlanId: insurancePlanId,
+                departmentId: departmentId,
+                isActive: isActive,
+                page: page,
+                pageSize: 10
+            });
+            
+            // Make API call
+            if (typeof window.MedicalAPI !== 'undefined') {
+                window.MedicalAPI.getTariffs(params.toString())
+                    .then(response => {
+                        if (response.success) {
+                            // Update tariffs display
+                            if (typeof window.MedicalUI !== 'undefined') {
+                                window.MedicalUI.updateTariffsDisplay(response.data);
+                            }
+                            
+                            // Update pagination
+                            this.updatePagination(response);
+                            
+                        } else {
+                            console.error('🏥 MEDICAL: Error loading tariffs:', response.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('🏥 MEDICAL: Error loading tariffs:', error);
+                    });
             }
+            
+        } catch (error) {
+            console.error('🏥 MEDICAL: Error in loadTariffs:', error);
+        }
+    },
+
+    /**
+     * Update pagination
+     * به‌روزرسانی صفحه‌بندی
+     */
+    updatePagination: function(response) {
+        console.log('🏥 MEDICAL: Updating pagination', response);
+        
+        try {
+            const paginationContainer = $('#pagination');
+            if (!paginationContainer.length) {
+                console.error('🏥 MEDICAL: Pagination container not found');
+                return;
+            }
+            
+            // Clear existing pagination
+            paginationContainer.empty();
+            
+            const currentPage = response.currentPage || 1;
+            const totalPages = response.totalPages || 1;
+            const hasNextPage = response.hasNextPage || false;
+            const hasPreviousPage = response.hasPreviousPage || false;
+            
+            // Previous button
+            if (hasPreviousPage) {
+                paginationContainer.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="window.MedicalSupplementaryTariff.loadTariffs(${currentPage - 1}); return false;">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                `);
+            } else {
+                paginationContainer.append(`
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-right"></i>
+                        </span>
+                    </li>
+                `);
+            }
+            
+            // Page numbers
+            const startPage = Math.max(1, currentPage - 2);
+            const endPage = Math.min(totalPages, currentPage + 2);
+            
+            for (let i = startPage; i <= endPage; i++) {
+                const isActive = i === currentPage ? 'active' : '';
+                paginationContainer.append(`
+                    <li class="page-item ${isActive}">
+                        <a class="page-link" href="#" onclick="window.MedicalSupplementaryTariff.loadTariffs(${i}); return false;">
+                            ${i}
+                        </a>
+                    </li>
+                `);
+            }
+            
+            // Next button
+            if (hasNextPage) {
+                paginationContainer.append(`
+                    <li class="page-item">
+                        <a class="page-link" href="#" onclick="window.MedicalSupplementaryTariff.loadTariffs(${currentPage + 1}); return false;">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                `);
+            } else {
+                paginationContainer.append(`
+                    <li class="page-item disabled">
+                        <span class="page-link">
+                            <i class="fas fa-chevron-left"></i>
+                        </span>
+                    </li>
+                `);
+            }
+            
+            // Page info
+            paginationContainer.append(`
+                <li class="page-item disabled">
+                    <span class="page-link">
+                        صفحه ${currentPage} از ${totalPages}
+                    </span>
+                </li>
+            `);
+            
+        } catch (error) {
+            console.error('🏥 MEDICAL: Error updating pagination:', error);
         }
     },
 
@@ -256,15 +486,142 @@
                 window.MedicalUI.showError('خطا در پاک کردن فیلترها: ' + error.message);
             }
         }
+    },
+
+    /**
+     * Edit tariff
+     * ویرایش تعرفه
+     */
+    editTariff: function(tariffId) {
+        console.log('🏥 MEDICAL: Editing tariff', tariffId);
+        
+        try {
+            if (!tariffId) {
+                if (typeof window.MedicalUI !== 'undefined') {
+                    window.MedicalUI.showError('شناسه تعرفه نامعتبر است');
+                }
+                return;
+            }
+
+            // Redirect to edit page
+            window.location.href = '/Admin/SupplementaryTariff/Edit/' + tariffId;
+            
+        } catch (error) {
+            console.error('🏥 MEDICAL: Error in editTariff:', error);
+            if (typeof window.MedicalUI !== 'undefined') {
+                window.MedicalUI.showError('خطا در ویرایش تعرفه: ' + error.message);
+            }
+        }
+    },
+
+    /**
+     * Delete tariff
+     * حذف تعرفه
+     */
+    deleteTariff: function(tariffId) {
+        console.log('🏥 MEDICAL: Deleting tariff', tariffId);
+        
+        try {
+            if (!tariffId) {
+                if (typeof window.MedicalUI !== 'undefined') {
+                    window.MedicalUI.showError('شناسه تعرفه نامعتبر است');
+                }
+                return;
+            }
+
+            // Show confirmation dialog
+            if (confirm('آیا از حذف این تعرفه اطمینان دارید؟')) {
+                // Show loading
+                if (typeof window.MedicalUI !== 'undefined') {
+                    window.MedicalUI.showLoading();
+                }
+
+                // Make API call
+                if (typeof window.MedicalAPI !== 'undefined') {
+                    window.MedicalAPI.deleteTariff(tariffId)
+                        .then(response => {
+                            if (typeof window.MedicalUI !== 'undefined') {
+                                window.MedicalUI.hideLoading();
+                                
+                                if (response.success) {
+                                    window.MedicalUI.showSuccess('تعرفه با موفقیت حذف شد');
+                                    // Reload data
+                                    this.loadInitialData();
+                                } else {
+                                    window.MedicalUI.showError('خطا در حذف تعرفه: ' + response.message);
+                                }
+                            }
+                        })
+                        .catch(error => {
+                            if (typeof window.MedicalUI !== 'undefined') {
+                                window.MedicalUI.hideLoading();
+                                window.MedicalUI.showError('خطا در حذف تعرفه: ' + error.message);
+                            }
+                        });
+                }
+            }
+            
+        } catch (error) {
+            console.error('🏥 MEDICAL: Error in deleteTariff:', error);
+            if (typeof window.MedicalUI !== 'undefined') {
+                window.MedicalUI.showError('خطا در حذف تعرفه: ' + error.message);
+            }
+        }
+    },
+
+    /**
+     * Refresh data
+     * بروزرسانی داده‌ها
+     */
+    refreshData: function() {
+        console.log('🏥 MEDICAL: Refreshing data');
+        
+        try {
+            // Show loading
+            if (typeof window.MedicalUI !== 'undefined') {
+                window.MedicalUI.showLoading();
+            }
+            
+            // Get current filter values
+            var formData = $('#filterForm').serialize();
+            
+            // Make AJAX request to refresh table
+            $.ajax({
+                url: '/Admin/SupplementaryTariff/GetTariffsTable',
+                type: 'GET',
+                data: formData,
+                success: function(response) {
+                    console.log('🏥 MEDICAL: Data refreshed successfully');
+                    
+                    // Update table content
+                    $('#tariffsTableContainer').html(response);
+                    
+                    // Hide loading
+                    if (typeof window.MedicalUI !== 'undefined') {
+                        window.MedicalUI.hideLoading();
+                        window.MedicalUI.showSuccess('داده‌ها با موفقیت بروزرسانی شد');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('🏥 MEDICAL: Error refreshing data:', error);
+                    
+                    // Hide loading
+                    if (typeof window.MedicalUI !== 'undefined') {
+                        window.MedicalUI.hideLoading();
+                        window.MedicalUI.showError('خطا در بروزرسانی داده‌ها: ' + error);
+                    }
+                }
+            });
+            
+        } catch (error) {
+            console.error('🏥 MEDICAL: Error refreshing data:', error);
+            if (typeof window.MedicalUI !== 'undefined') {
+                window.MedicalUI.hideLoading();
+                window.MedicalUI.showError('خطا در بروزرسانی داده‌ها: ' + error.message);
+            }
+        }
     }
 };
-
-    // Global function aliases for HTML onclick events
-    window.createNewPlan = window.MedicalSupplementaryTariff.createNewPlan.bind(window.MedicalSupplementaryTariff);
-    window.createNewTariff = window.MedicalSupplementaryTariff.createNewTariff.bind(window.MedicalSupplementaryTariff);
-    window.saveNewTariff = window.MedicalSupplementaryTariff.saveNewTariff.bind(window.MedicalSupplementaryTariff);
-    window.applyFilters = window.MedicalSupplementaryTariff.applyFilters.bind(window.MedicalSupplementaryTariff);
-    window.clearFilters = window.MedicalSupplementaryTariff.clearFilters.bind(window.MedicalSupplementaryTariff);
 
     // Initialize when document is ready
     $(document).ready(function() {
@@ -274,9 +631,354 @@
             // Initialize the module
             window.MedicalSupplementaryTariff.init();
             
+            // Debug: Check if global functions are available
+            console.log('🏥 MEDICAL: Global functions check:');
+            console.log('- editTariff available:', typeof window.editTariff === 'function');
+            console.log('- deleteTariff available:', typeof window.deleteTariff === 'function');
+            console.log('- MedicalSupplementaryTariff available:', typeof window.MedicalSupplementaryTariff === 'object');
+            console.log('- MedicalSupplementaryTariff.editTariff available:', typeof window.MedicalSupplementaryTariff.editTariff === 'function');
+            
         } catch (error) {
             console.error('🏥 MEDICAL: Error in document ready:', error);
         }
     });
 
 })();
+
+// Global function aliases for HTML onclick events - OUTSIDE IIFE
+window.createNewPlan = function() {
+    if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+        typeof window.MedicalSupplementaryTariff.createNewPlan === 'function') {
+        window.MedicalSupplementaryTariff.createNewPlan();
+    }
+};
+
+window.createNewTariff = function() {
+    if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+        typeof window.MedicalSupplementaryTariff.createNewTariff === 'function') {
+        window.MedicalSupplementaryTariff.createNewTariff();
+    }
+};
+
+window.saveNewTariff = function() {
+    if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+        typeof window.MedicalSupplementaryTariff.saveNewTariff === 'function') {
+        window.MedicalSupplementaryTariff.saveNewTariff();
+    }
+};
+
+window.applyFilters = function() {
+    if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+        typeof window.MedicalSupplementaryTariff.applyFilters === 'function') {
+        window.MedicalSupplementaryTariff.applyFilters();
+    }
+};
+
+window.clearFilters = function() {
+    if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+        typeof window.MedicalSupplementaryTariff.clearFilters === 'function') {
+        window.MedicalSupplementaryTariff.clearFilters();
+    }
+};
+
+// Global functions for edit and delete operations - OUTSIDE IIFE
+window.editTariff = function(tariffId) {
+    console.log('🏥 MEDICAL: Global editTariff called with ID:', tariffId);
+    try {
+        if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+            typeof window.MedicalSupplementaryTariff.editTariff === 'function') {
+            window.MedicalSupplementaryTariff.editTariff(tariffId);
+        } else {
+            console.error('🏥 MEDICAL: MedicalSupplementaryTariff.editTariff not available');
+            // Fallback: direct redirect
+            window.location.href = '/Admin/SupplementaryTariff/Edit/' + tariffId;
+        }
+    } catch (error) {
+        console.error('🏥 MEDICAL: Error in global editTariff:', error);
+        // Fallback: direct redirect
+        window.location.href = '/Admin/SupplementaryTariff/Edit/' + tariffId;
+    }
+};
+
+window.deleteTariff = function(tariffId) {
+    console.log('🏥 MEDICAL: Global deleteTariff called with ID:', tariffId);
+    try {
+        if (typeof window.MedicalSupplementaryTariff !== 'undefined' && 
+            typeof window.MedicalSupplementaryTariff.deleteTariff === 'function') {
+            window.MedicalSupplementaryTariff.deleteTariff(tariffId);
+        } else {
+            console.error('🏥 MEDICAL: MedicalSupplementaryTariff.deleteTariff not available');
+            // Fallback: show error
+            alert('خطا در حذف تعرفه. لطفاً صفحه را مجدداً بارگذاری کنید.');
+        }
+    } catch (error) {
+        console.error('🏥 MEDICAL: Error in global deleteTariff:', error);
+        alert('خطا در حذف تعرفه. لطفاً صفحه را مجدداً بارگذاری کنید.');
+    }
+};
+
+// Initialize Real-time Validation when DOM is ready
+// راه‌اندازی اعتبارسنجی لحظه‌ای هنگام آماده بودن DOM
+$(document).ready(function() {
+    console.log('🏥 MEDICAL: Initializing Real-time Validation...');
+    
+    // Load Real-time Validation module
+    if (typeof window.MedicalRealTimeValidation !== 'undefined') {
+        window.MedicalRealTimeValidation.init();
+        console.log('🏥 MEDICAL: Real-time Validation initialized successfully');
+    } else {
+        console.warn('🏥 MEDICAL: MedicalRealTimeValidation module not loaded');
+    }
+    
+    // Load Message Manager module
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        window.MedicalMessageManager.init();
+        console.log('🏥 MEDICAL: Message Manager initialized successfully');
+    } else {
+        console.warn('🏥 MEDICAL: MedicalMessageManager module not loaded');
+    }
+    
+    // Load UX Enhancer module
+    if (typeof window.MedicalUXEnhancer !== 'undefined') {
+        window.MedicalUXEnhancer.init();
+        console.log('🏥 MEDICAL: UX Enhancer initialized successfully');
+    } else {
+        console.warn('🏥 MEDICAL: MedicalUXEnhancer module not loaded');
+    }
+    
+    // Setup form-specific real-time validation
+    setupFormRealTimeValidation();
+});
+
+/**
+ * Setup form-specific real-time validation
+ * تنظیم اعتبارسنجی لحظه‌ای مخصوص فرم
+ */
+function setupFormRealTimeValidation() {
+    // Enhanced calculation preview updates
+    $(document).on('input', '#createTariffPrice, #createPatientShare, #createInsurerShare, #createCoveragePercent', function() {
+        updateCalculationPreview();
+    });
+    
+    // Form submission validation
+    $(document).on('submit', '#createTariffForm, #editTariffForm', function(e) {
+        if (!validateFormSubmission($(this))) {
+            e.preventDefault();
+            return false;
+        }
+    });
+}
+
+/**
+ * Update calculation preview in real-time
+ * به‌روزرسانی پیش‌نمایش محاسبات به صورت لحظه‌ای
+ */
+function updateCalculationPreview() {
+    try {
+        const tariffPrice = parseFloat($('#createTariffPrice').val() || 0);
+        const patientShare = parseFloat($('#createPatientShare').val() || 0);
+        const insurerShare = parseFloat($('#createInsurerShare').val() || 0);
+        const coveragePercent = parseFloat($('#createCoveragePercent').val() || 0);
+        
+        if (tariffPrice > 0) {
+            const remainingAmount = tariffPrice - insurerShare;
+            const finalPatientShare = Math.max(0, remainingAmount - (remainingAmount * coveragePercent / 100));
+            
+            // Update preview with formatted numbers
+            $('.calculation-preview .total-service-price').text(formatCurrency(tariffPrice));
+            $('.calculation-preview .primary-insurance-share').text(formatCurrency(insurerShare));
+            $('.calculation-preview .remaining-amount').text(formatCurrency(remainingAmount));
+            $('.calculation-preview .supplementary-coverage').text(coveragePercent + '%');
+            $('.calculation-preview .final-patient-share').text(formatCurrency(finalPatientShare));
+            
+            // Validate consistency
+            validateCalculationConsistency(tariffPrice, patientShare, insurerShare);
+        }
+    } catch (error) {
+        console.error('🏥 MEDICAL: Error updating calculation preview:', error);
+    }
+}
+
+/**
+ * Validate calculation consistency
+ * اعتبارسنجی سازگاری محاسبات
+ */
+function validateCalculationConsistency(tariffPrice, patientShare, insurerShare) {
+    const calculatedPatientShare = tariffPrice - insurerShare;
+    const difference = Math.abs(patientShare - calculatedPatientShare);
+    
+    if (difference > 0.01) {
+        showCalculationWarning('⚠️ محاسبات با مقادیر وارد شده سازگار نیستند');
+    } else {
+        hideCalculationWarning();
+    }
+}
+
+/**
+ * Show calculation warning
+ * نمایش هشدار محاسبات
+ */
+function showCalculationWarning(message) {
+    let $warning = $('.calculation-warning');
+    if ($warning.length === 0) {
+        $('.calculation-preview').append('<div class="calculation-warning alert alert-warning" style="display: none;"></div>');
+        $warning = $('.calculation-warning');
+    }
+    $warning.html(message).slideDown();
+}
+
+/**
+ * Hide calculation warning
+ * مخفی کردن هشدار محاسبات
+ */
+function hideCalculationWarning() {
+    $('.calculation-warning').slideUp();
+}
+
+/**
+ * Format currency for display
+ * فرمت کردن ارز برای نمایش
+ */
+function formatCurrency(amount) {
+    return new Intl.NumberFormat('fa-IR').format(amount) + ' تومان';
+}
+
+/**
+ * Validate form submission
+ * اعتبارسنجی ارسال فرم
+ */
+function validateFormSubmission($form) {
+    let isValid = true;
+    const errors = [];
+    
+    // Check required fields
+    $form.find('[required]').each(function() {
+        if (!$(this).val() || $(this).val().trim() === '') {
+            isValid = false;
+            const fieldName = $(this).attr('name') || $(this).attr('id');
+            errors.push(`فیلد ${fieldName} الزامی است`);
+        }
+    });
+    
+    // Check numeric fields
+    $form.find('input[type="number"]').each(function() {
+        const value = parseFloat($(this).val());
+        const min = parseFloat($(this).attr('min'));
+        const max = parseFloat($(this).attr('max'));
+        
+        if (!isNaN(value)) {
+            if (!isNaN(min) && value < min) {
+                isValid = false;
+                errors.push(`مقدار ${$(this).attr('name')} باید حداقل ${min} باشد`);
+            }
+            if (!isNaN(max) && value > max) {
+                isValid = false;
+                errors.push(`مقدار ${$(this).attr('name')} باید حداکثر ${max} باشد`);
+            }
+        }
+    });
+    
+    // Show errors if any
+    if (!isValid) {
+        showFormErrors(errors);
+    }
+    
+    return isValid;
+}
+
+/**
+ * Show form errors
+ * نمایش خطاهای فرم
+ */
+function showFormErrors(errors) {
+    // Use Message Manager if available
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        window.MedicalMessageManager.showValidationErrors(errors);
+        return;
+    }
+    
+    // Fallback to traditional method
+    const errorHtml = errors.map(error => `<li>${error}</li>`).join('');
+    const $errorContainer = $('.form-error-container');
+    
+    if ($errorContainer.length === 0) {
+        $('.medical-form').prepend('<div class="form-error-container alert alert-danger" style="display: none;"></div>');
+    }
+    
+    $('.form-error-container')
+        .html(`<ul class="mb-0">${errorHtml}</ul>`)
+        .slideDown();
+}
+
+/**
+ * Show success message
+ * نمایش پیام موفقیت
+ */
+function showSuccessMessage(message) {
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        window.MedicalMessageManager.showFormSuccess(message);
+    } else {
+        // Fallback to alert
+        alert(message || 'عملیات با موفقیت انجام شد.');
+    }
+}
+
+/**
+ * Show error message
+ * نمایش پیام خطا
+ */
+function showErrorMessage(message) {
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        window.MedicalMessageManager.showFormError(message);
+    } else {
+        // Fallback to alert
+        alert(message || 'خطا در انجام عملیات.');
+    }
+}
+
+/**
+ * Show warning message
+ * نمایش پیام هشدار
+ */
+function showWarningMessage(message) {
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        window.MedicalMessageManager.warning(message);
+    } else {
+        // Fallback to alert
+        alert(message || 'هشدار!');
+    }
+}
+
+/**
+ * Show info message
+ * نمایش پیام اطلاعات
+ */
+function showInfoMessage(message) {
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        window.MedicalMessageManager.info(message);
+    } else {
+        // Fallback to alert
+        alert(message || 'اطلاعات');
+    }
+}
+
+/**
+ * Show loading message
+ * نمایش پیام بارگذاری
+ */
+function showLoadingMessage(message) {
+    if (typeof window.MedicalMessageManager !== 'undefined') {
+        return window.MedicalMessageManager.loading(message || 'در حال پردازش...');
+    }
+    return null;
+}
+
+/**
+ * Hide loading message
+ * مخفی کردن پیام بارگذاری
+ */
+function hideLoadingMessage(messageId) {
+    if (typeof window.MedicalMessageManager !== 'undefined' && messageId) {
+        window.MedicalMessageManager.hideLoading(messageId);
+    }
+}

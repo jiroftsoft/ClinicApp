@@ -12,520 +12,129 @@
 @section Styles {
     <link href="~/Content/css/medical-environment-styles.css" rel="stylesheet" />
     <link href="~/Content/css/supplementary-tariff-styles.css" rel="stylesheet" />
-    <style>
-        .medical-card {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .medical-card .card-header {
-            background: rgba(255,255,255,0.1);
-            border: none;
-            border-radius: 15px 15px 0 0;
-            padding: 20px;
-        }
-
-        .medical-card .card-body {
-            padding: 25px;
-        }
-
-        .stats-card {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border: none;
-            border-radius: 15px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            color: white;
-            margin-bottom: 20px;
-        }
-
-        .stats-card .card-body {
-            padding: 20px;
-            text-align: center;
-        }
-
-        .stats-number {
-            font-size: 2.5rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-        }
-
-        .stats-label {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
-
-        .tariff-table {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-
-        .tariff-table .table {
-            margin-bottom: 0;
-        }
-
-        .tariff-table .table thead th {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px;
-            font-weight: 600;
-        }
-
-        .tariff-table .table tbody td {
-            padding: 15px;
-            border-top: 1px solid #f8f9fa;
-            vertical-align: middle;
-        }
-
-        .tariff-table .table tbody tr:hover {
-            background-color: #f8f9fa;
-        }
-
-        .badge-status {
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: 500;
-            font-size: 0.85rem;
-        }
-
-        .btn-medical {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 25px;
-            color: white;
-            padding: 10px 25px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-medical:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            color: white;
-        }
-
-        .btn-medical-secondary {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            border: none;
-            border-radius: 25px;
-            color: white;
-            padding: 10px 25px;
-            font-weight: 500;
-            transition: all 0.3s ease;
-        }
-
-        .btn-medical-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            color: white;
-        }
-
-        .filter-card {
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-
-        .filter-card .card-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 15px 15px 0 0;
-            padding: 20px;
-        }
-
-        .form-control {
-            border-radius: 10px;
-            border: 2px solid #e9ecef;
-            padding: 12px 15px;
-            transition: all 0.3s ease;
-        }
-
-        .form-control:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
-        }
-
-        .loading-spinner {
-            display: none;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .loading-spinner.show {
-            display: block;
-        }
-
-        .alert-medical {
-            border-radius: 15px;
-            border: none;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-
-        .alert-medical-info {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .alert-medical-success {
-            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-            color: white;
-        }
-
-        .alert-medical-warning {
-            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-            color: white;
-        }
-
-        .alert-medical-danger {
-            background: linear-gradient(135deg, #ff6b6b 0%, #ee5a24 100%);
-            color: white;
-        }
-
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9999;
-        }
-
-        .loading-spinner {
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .loading-spinner i {
-            font-size: 2rem;
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .loading-spinner p {
-            margin: 0;
-            color: #333;
-            font-weight: 500;
-        }
-    </style>
+    <link href="~/Content/css/insurance/supplementary-tariff-views.css" rel="stylesheet" />
 }
 
 <div class="container-fluid">
     <!-- Header Section -->
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12">
             <div class="medical-card">
                 <div class="card-header">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <h2 class="mb-0">
-                                <i class="fas fa-shield-alt me-2"></i>
-                                مدیریت تعرفه‌های بیمه تکمیلی
-                            </h2>
-                            <p class="mb-0 mt-2 opacity-75">
-                                مدیریت کامل تعرفه‌های بیمه تکمیلی برای محیط درمانی
-                            </p>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="btn-group" role="group">
-                                <a href="/Admin/InsurancePlan/Index" class="btn btn-medical">
-                                    <i class="fas fa-cog me-2"></i>
-                                    مدیریت طرح‌های بیمه
-                                </a>
-                                <button type="button" class="btn btn-medical-secondary" onclick="createNewPlan()">
-                                    <i class="fas fa-plus me-2"></i>
-                                    ایجاد طرح جدید
-                                </button>
-                                <a href="/Admin/SupplementaryTariff/Create" class="btn btn-medical-secondary">
-                                    <i class="fas fa-plus-circle me-2"></i>
-                                    ایجاد تعرفه جدید
-                                </a>
-                            </div>
-                        </div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>
+                        مدیریت تعرفه‌های بیمه تکمیلی
+                    </h2>
+                    <p class="mb-0 mt-2 opacity-75">
+                        مدیریت کامل تعرفه‌های بیمه تکمیلی برای محیط درمانی
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-list-alt fa-2x text-primary"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-0">@Model.TotalServices</h5>
+                        <p class="text-muted mb-0">کل خدمات</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-shield-alt fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-0">@Model.TotalTariffs</h5>
+                        <p class="text-muted mb-0">کل تعرفه‌ها</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-check-circle fa-2x text-success"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-0">@Model.ActiveTariffs</h5>
+                        <p class="text-muted mb-0">تعرفه‌های فعال</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="stats-card">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-clock fa-2x text-warning"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h5 class="mb-0">@Model.ExpiredTariffs</h5>
+                        <p class="text-muted mb-0">تعرفه‌های منقضی</p>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Statistics Section -->
-    <div class="row" id="statisticsSection">
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="card-body">
-                    <div class="stats-number" id="totalServices">0</div>
-                    <div class="stats-label">کل خدمات</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="card-body">
-                    <div class="stats-number" id="totalTariffs">0</div>
-                    <div class="stats-label">کل تعرفه‌ها</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="card-body">
-                    <div class="stats-number" id="activeTariffs">0</div>
-                    <div class="stats-label">تعرفه‌های فعال</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stats-card">
-                <div class="card-body">
-                    <div class="stats-number" id="expiredTariffs">0</div>
-                    <div class="stats-label">تعرفه‌های منقضی</div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Filter Section -->
-    <div class="row">
+    <!-- Action Buttons -->
+    <div class="row mb-4">
         <div class="col-12">
-            <div class="filter-card">
-                <div class="card-header">
-                    <h5 class="mb-0">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <a href="@Url.Action("Create", "SupplementaryTariff")" class="btn btn-medical-primary me-2">
+                        <i class="fas fa-plus me-2"></i>
+                        ایجاد تعرفه جدید
+                    </a>
+                    <a href="@Url.Action("CreateBulk", "SupplementaryTariff")" class="btn btn-medical-secondary me-2">
+                        <i class="fas fa-layer-group me-2"></i>
+                        ایجاد گروهی
+                    </a>
+                    <button type="button" class="btn btn-medical-success" onclick="refreshData()">
+                        <i class="fas fa-sync-alt me-2"></i>
+                        بروزرسانی
+                    </button>
+                </div>
+                <div>
+                    <button type="button" class="btn btn-medical-danger" onclick="clearAllFilters()">
                         <i class="fas fa-filter me-2"></i>
-                        فیلتر و جستجو
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <form id="filterForm">
-                        <div class="row">
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="searchTerm">جستجو</label>
-                                    <input type="text" class="form-control" id="searchTerm" name="SearchTerm" placeholder="جستجو در نام خدمت یا کد...">
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="insurancePlanId">طرح بیمه</label>
-                                    <select class="form-control" id="insurancePlanId" name="InsurancePlanId">
-                                        <option value="">همه طرح‌ها</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="departmentId">دپارتمان</label>
-                                    <select class="form-control" id="departmentId" name="DepartmentId">
-                                        <option value="">همه دپارتمان‌ها</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="col-md-3">
-                                <div class="form-group">
-                                    <label for="isActive">وضعیت</label>
-                                    <select class="form-control" id="isActive" name="IsActive">
-                                        <option value="">همه وضعیت‌ها</option>
-                                        <option value="true">فعال</option>
-                                        <option value="false">غیرفعال</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="row mt-3">
-                            <div class="col-12 text-end">
-                                <button type="button" class="btn btn-medical" onclick="applyFilters()">
-                                    <i class="fas fa-search me-2"></i>
-                                    اعمال فیلتر
-                                </button>
-                                <button type="button" class="btn btn-medical-secondary" onclick="clearFilters()">
-                                    <i class="fas fa-times me-2"></i>
-                                    پاک کردن
-                                </button>
-                            </div>
-                        </div>
-                    </form>
+                        پاک کردن فیلترها
+                    </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Tariffs Table Section -->
+    <!-- Filters Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            @Html.Partial("_SupplementaryTariffFilters", Model.Filters)
+        </div>
+    </div>
+
+    <!-- Tariffs Table -->
     <div class="row">
         <div class="col-12">
-            <div class="tariff-table">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>نام خدمت</th>
-                                <th>طرح بیمه</th>
-                                <th>قیمت تعرفه</th>
-                                <th>سهم بیمار</th>
-                                <th>سهم بیمه</th>
-                                <th>درصد تکمیلی</th>
-                                <th>اولویت</th>
-                                <th>وضعیت</th>
-                                <th>تاریخ ایجاد</th>
-                                <th>عملیات</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tariffsTableBody">
-                            <tr>
-                                <td colspan="10" class="text-center">
-                                    <div class="loading-spinner">
-                                        <i class="fas fa-spinner fa-spin fa-2x"></i>
-                                        <p class="mt-2">در حال بارگذاری...</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Pagination Section -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <nav aria-label="صفحه‌بندی">
-                <ul class="pagination justify-content-center" id="pagination">
-                    <!-- Pagination will be generated by JavaScript -->
-                </ul>
-            </nav>
-        </div>
-    </div>
-</div>
-
-
-<!-- Create All Modal -->
-<div class="modal fade" id="createAllModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-plus-circle text-primary"></i>
-                    ایجاد تعرفه‌های بیمه تکمیلی برای همه خدمات
-                </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-medical alert-medical-info">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>توجه:</strong> این عملیات تعرفه‌های بیمه تکمیلی را برای همه خدمات موجود ایجاد می‌کند.
-                </div>
-                <p>آیا مطمئن هستید که می‌خواهید تعرفه‌های بیمه تکمیلی را برای همه خدمات ایجاد کنید؟</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-medical" onclick="createAllTariffs()">
-                    <i class="fas fa-check me-2"></i>
-                    تایید و ایجاد
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Details Modal -->
-<div class="modal fade" id="detailsModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-info-circle text-primary"></i>
-                    جزئیات تعرفه بیمه تکمیلی
-                </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="detailsModalBody">
-                <!-- Details will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Edit Modal -->
-<div class="modal fade" id="editModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog modal-lg" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-edit text-primary"></i>
-                    ویرایش تعرفه بیمه تکمیلی
-                </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="editModalBody">
-                <!-- Edit form will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-medical" onclick="saveTariff()">
-                    <i class="fas fa-save me-2"></i>
-                    ذخیره تغییرات
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Delete Modal -->
-<div class="modal fade" id="deleteModal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">
-                    <i class="fas fa-trash text-danger"></i>
-                    حذف تعرفه بیمه تکمیلی
-                </h5>
-                <button type="button" class="close" data-dismiss="modal">
-                    <span>&times;</span>
-                </button>
-            </div>
-            <div class="modal-body">
-                <div class="alert alert-medical alert-medical-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <strong>هشدار:</strong> آیا مطمئن هستید که می‌خواهید این تعرفه بیمه تکمیلی را حذف کنید؟
-                </div>
-                <p>این عملیات قابل بازگشت نیست.</p>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
-                <button type="button" class="btn btn-danger" onclick="deleteTariff()">
-                    <i class="fas fa-trash me-2"></i>
-                    حذف
-                </button>
+            <div id="tariffsTableContainer">
+                @Html.Partial("_SupplementaryTariffTable", Model.Tariffs)
             </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
-    <!-- Medical Environment Modules -->
     <script src="~/Scripts/app/modules/medical-config.js"></script>
     <script src="~/Scripts/app/modules/medical-ui.js"></script>
     <script src="~/Scripts/app/modules/medical-api.js"></script>
@@ -533,51 +142,44 @@
     <script src="~/Scripts/app/supplementary-tariff.js"></script>
     
     <script>
-        // Medical Environment Configuration
-        window.MedicalEnvironment = {
-            isProduction: true,
-            enableLogging: true,
-            enableValidation: true,
-            enableCaching: true,
-            apiBaseUrl: '@Url.Content("~/")',
-            currentUser: {
-                id: '@ViewBag.CurrentUserId',
-                name: '@ViewBag.CurrentUserName'
+        // Wait for jQuery to be available
+        function initializeSupplementaryTariff() {
+            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+                $(document).ready(function() {
+                    // Initialize MedicalConfig first
+                    if (typeof window.MedicalConfig !== 'undefined') {
+                        window.MedicalConfig.init();
+                    }
+                    
+                    // Initialize the module
+                    if (typeof window.MedicalSupplementaryTariff !== 'undefined') {
+                        window.MedicalSupplementaryTariff.init();
+                    }
+                    
+                    // Initialize UI components
+                    if (typeof window.MedicalUI !== 'undefined') {
+                        window.MedicalUI.init();
+                    }
+                });
+            } else {
+                // Retry after a short delay
+                setTimeout(initializeSupplementaryTariff, 100);
             }
-        };
+        }
         
-        // Pass ViewBag data to JavaScript
-        var ViewBag = {
-            Stats: @Html.Raw(Json.Encode(ViewBag.Stats)),
-            CurrentUserId: '@ViewBag.CurrentUserId',
-            CurrentUserName: '@ViewBag.CurrentUserName'
-        };
-        
-        // Initialize medical environment
-        $(document).ready(function() {
-            console.log('🏥 MEDICAL: Initializing Supplementary Tariff Management Environment');
-            
-            // Initialize medical modules
-            if (typeof MedicalConfig !== 'undefined') {
-                MedicalConfig.init();
+        // Start initialization
+        initializeSupplementaryTariff();
+
+        function refreshData() {
+            if (typeof window.MedicalSupplementaryTariff !== 'undefined') {
+                window.MedicalSupplementaryTariff.refreshData();
             }
-            
-            if (typeof MedicalUI !== 'undefined') {
-                MedicalUI.init();
+        }
+
+        function clearAllFilters() {
+            if (typeof window.MedicalUI !== 'undefined') {
+                window.MedicalUI.clearAllFilters();
             }
-            
-            if (typeof MedicalAPI !== 'undefined') {
-                MedicalAPI.init();
-            }
-            
-            if (typeof MedicalValidation !== 'undefined') {
-                MedicalValidation.init();
-            }
-            
-            // Initialize the supplementary tariff management
-            if (typeof SupplementaryTariffManager !== 'undefined') {
-                SupplementaryTariffManager.init();
-            }
-        });
+        }
     </script>
 }

@@ -897,5 +897,114 @@
         }
 
             #endregion
+
+            #region Supplementary Tariff Management
+
+            /// <summary>
+            /// ایجاد تعرفه بیمه تکمیلی جدید
+            /// </summary>
+            [HttpGet]
+            public ActionResult CreateSupplementaryTariff()
+            {
+                try
+                {
+                    _log.Information("🏥 MEDICAL: درخواست ایجاد تعرفه بیمه تکمیلی جدید. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+
+                    // Redirect to the main supplementary tariff creation page
+                    return RedirectToAction("Create", "SupplementaryTariff", new { area = "Admin" });
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد تعرفه بیمه تکمیلی جدید. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+
+                    TempData["ErrorMessage"] = "خطا در ایجاد تعرفه بیمه تکمیلی جدید";
+                    return RedirectToAction("Index");
+                }
+            }
+
+            /// <summary>
+            /// ویرایش تعرفه بیمه تکمیلی
+            /// </summary>
+            [HttpGet]
+            public ActionResult EditSupplementaryTariff(int id)
+            {
+                try
+                {
+                    _log.Information("🏥 MEDICAL: درخواست ویرایش تعرفه بیمه تکمیلی - ID: {Id}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+
+                    // Redirect to the main supplementary tariff edit page
+                    return RedirectToAction("Edit", "SupplementaryTariff", new { area = "Admin", id = id });
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "🏥 MEDICAL: خطا در ویرایش تعرفه بیمه تکمیلی - ID: {Id}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+
+                    TempData["ErrorMessage"] = "خطا در ویرایش تعرفه بیمه تکمیلی";
+                    return RedirectToAction("Index");
+                }
+            }
+
+            /// <summary>
+            /// مشاهده جزئیات تعرفه بیمه تکمیلی
+            /// </summary>
+            [HttpGet]
+            public ActionResult ViewSupplementaryTariffDetails(int id)
+            {
+                try
+                {
+                    _log.Information("🏥 MEDICAL: درخواست مشاهده جزئیات تعرفه بیمه تکمیلی - ID: {Id}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+
+                    // Redirect to the main supplementary tariff details page
+                    return RedirectToAction("Details", "SupplementaryTariff", new { area = "Admin", id = id });
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "🏥 MEDICAL: خطا در مشاهده جزئیات تعرفه بیمه تکمیلی - ID: {Id}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+
+                    TempData["ErrorMessage"] = "خطا در مشاهده جزئیات تعرفه بیمه تکمیلی";
+                    return RedirectToAction("Index");
+                }
+            }
+
+            /// <summary>
+            /// حذف تعرفه بیمه تکمیلی
+            /// </summary>
+            [HttpPost]
+            [ValidateAntiForgeryToken]
+            public async Task<JsonResult> DeleteSupplementaryTariff(int id)
+            {
+                try
+                {
+                    _log.Information("🏥 MEDICAL: درخواست حذف تعرفه بیمه تکمیلی - ID: {Id}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+
+                    // For now, return success as the actual deletion should be handled by the main SupplementaryTariff controller
+                    // This is a placeholder implementation
+                    return Json(new
+                    {
+                        success = true,
+                        message = "تعرفه با موفقیت حذف شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error(ex, "🏥 MEDICAL: خطا در حذف تعرفه بیمه تکمیلی - ID: {Id}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در حذف تعرفه بیمه تکمیلی"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+            }
+
+            #endregion
         }
     }

@@ -1,4 +1,4 @@
-@model IEnumerable<ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexItemViewModel>
+@model ClinicApp.Interfaces.PagedResult<ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexViewModel>
 
 <div class="table-responsive">
     <table class="table table-hover supplementary-tariff-table">
@@ -19,7 +19,7 @@
             </tr>
         </thead>
         <tbody>
-            @foreach (var item in Model)
+            @foreach (var item in Model.Items)
             {
                 <tr data-tariff-id="@item.InsuranceTariffId">
                     <td>

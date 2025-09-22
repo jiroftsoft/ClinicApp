@@ -188,6 +188,18 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>لیست تعرفه‌های فعال</returns>
         Task<List<InsuranceTariff>> GetActiveTariffsForServiceAsync(int serviceId, System.DateTime? calculationDate = null);
 
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی با فیلترهای بهینه‌سازی شده
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="departmentId">شناسه دپارتمان</param>
+        /// <param name="isActive">وضعیت فعال</param>
+        /// <returns>لیست تعرفه‌های بیمه تکمیلی</returns>
+        Task<List<InsuranceTariff>> GetFilteredSupplementaryTariffsAsync(
+            string searchTerm = "", 
+            int? departmentId = null, 
+            bool? isActive = null);
+
         #endregion
 
         #region Statistics Operations

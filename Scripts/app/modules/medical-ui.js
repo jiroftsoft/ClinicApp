@@ -191,8 +191,81 @@
         console.log(MedicalConfig.logPrefix + ' Updating tariffs display', tariffs);
         
         try {
-            // This would update the tariffs table/list
-            // For now, just log the data
+            const tableBody = $('#tariffsTableBody');
+            if (!tableBody.length) {
+                console.error(MedicalConfig.logPrefix + ' Table body not found');
+                return;
+            }
+
+            if (!tariffs || tariffs.length === 0) {
+                tableBody.html(`
+                    <tr>
+                        <td colspan="10" class="text-center text-muted">
+                            <i class="fas fa-info-circle me-2"></i>
+                            هیچ تعرفه‌ای یافت نشد
+                        </td>
+                    </tr>
+                `);
+                console.log(MedicalConfig.logPrefix + ' No tariffs to display');
+                return;
+            }
+
+            // Clear existing content
+            tableBody.empty();
+
+            // Generate table rows
+            tariffs.forEach(function(tariff) {
+                const row = `
+                    <tr data-tariff-id="${tariff.tariffId}">
+                        <td>
+                            <div class="fw-bold">${tariff.serviceName || 'نامشخص'}</div>
+                            <small class="text-muted">${tariff.serviceCode || ''}</small>
+                        </td>
+                        <td>
+                            <div class="fw-bold">${tariff.planName || 'نامشخص'}</div>
+                        </td>
+                        <td>
+                            <span class="currency-format">${(tariff.tariffPrice || 0).toLocaleString()} تومان</span>
+                        </td>
+                        <td>
+                            <span class="currency-format">${(tariff.patientShare || 0).toLocaleString()} تومان</span>
+                        </td>
+                        <td>
+                            <span class="currency-format">${(tariff.insurerShare || 0).toLocaleString()} تومان</span>
+                        </td>
+                        <td>
+                            <span class="fw-bold">${(tariff.supplementaryCoveragePercent || 0).toFixed(2)}%</span>
+                        </td>
+                        <td>
+                            <span class="badge badge-info">${tariff.priority || 0}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${tariff.isActive ? 'badge-success' : 'badge-secondary'}">
+                                ${tariff.isActive ? 'فعال' : 'غیرفعال'}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="text-muted">${tariff.createdAt || 'نامشخص'}</span>
+                        </td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <button type="button" class="btn btn-sm btn-outline-primary" 
+                                        onclick="editTariff(${tariff.tariffId})"
+                                        title="ویرایش">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" 
+                                        onclick="deleteTariff(${tariff.tariffId})"
+                                        title="حذف">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tableBody.append(row);
+            });
+
             console.log(MedicalConfig.logPrefix + ' Tariffs display updated');
         } catch (error) {
             console.error(MedicalConfig.logPrefix + ' Error updating tariffs display:', error);

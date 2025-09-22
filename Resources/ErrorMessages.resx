@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Supplementary Tariff Error Messages -->
+  <data name="SupplementaryTariff_SystemError" xml:space="preserve">
+    <value>خطا در سیستم. لطفاً دوباره تلاش کنید.</value>
+    <comment>General system error message for supplementary tariff operations</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_ValidationError" xml:space="preserve">
+    <value>لطفاً تمام فیلدهای مورد نیاز را پر کنید.</value>
+    <comment>Validation error message for required fields</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_InvalidTariffId" xml:space="preserve">
+    <value>شناسه تعرفه نامعتبر است.</value>
+    <comment>Error message for invalid tariff ID</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_CreateError" xml:space="preserve">
+    <value>خطا در ایجاد تعرفه جدید.</value>
+    <comment>Error message for tariff creation failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_EditError" xml:space="preserve">
+    <value>خطا در ویرایش تعرفه.</value>
+    <comment>Error message for tariff editing failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_DeleteError" xml:space="preserve">
+    <value>خطا در حذف تعرفه.</value>
+    <comment>Error message for tariff deletion failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_LoadDataError" xml:space="preserve">
+    <value>خطا در بارگذاری داده‌ها.</value>
+    <comment>Error message for data loading failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_FilterError" xml:space="preserve">
+    <value>خطا در اعمال فیلترها.</value>
+    <comment>Error message for filter application failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_InitError" xml:space="preserve">
+    <value>خطا در راه‌اندازی سیستم.</value>
+    <comment>Error message for system initialization failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_SaveError" xml:space="preserve">
+    <value>خطا در ذخیره تعرفه.</value>
+    <comment>Error message for tariff saving failure</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_NetworkError" xml:space="preserve">
+    <value>خطا در ارتباط با سرور. لطفاً اتصال اینترنت خود را بررسی کنید.</value>
+    <comment>Error message for network connectivity issues</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_PermissionError" xml:space="preserve">
+    <value>شما مجوز انجام این عملیات را ندارید.</value>
+    <comment>Error message for permission denied</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_TimeoutError" xml:space="preserve">
+    <value>زمان درخواست به پایان رسید. لطفاً دوباره تلاش کنید.</value>
+    <comment>Error message for request timeout</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_DataNotFound" xml:space="preserve">
+    <value>داده مورد نظر یافت نشد.</value>
+    <comment>Error message for data not found</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_InvalidData" xml:space="preserve">
+    <value>داده وارد شده نامعتبر است.</value>
+    <comment>Error message for invalid data</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_DuplicateData" xml:space="preserve">
+    <value>این تعرفه قبلاً وجود دارد.</value>
+    <comment>Error message for duplicate data</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_CalculationError" xml:space="preserve">
+    <value>خطا در محاسبات تعرفه.</value>
+    <comment>Error message for calculation errors</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_ValidationNotAvailable" xml:space="preserve">
+    <value>سیستم اعتبارسنجی در دسترس نیست.</value>
+    <comment>Error message when validation system is not available</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_APINotAvailable" xml:space="preserve">
+    <value>سیستم API در دسترس نیست.</value>
+    <comment>Error message when API system is not available</comment>
+  </data>
+  
+  <data name="SupplementaryTariff_UINotAvailable" xml:space="preserve">
+    <value>سیستم رابط کاربری در دسترس نیست.</value>
+    <comment>Error message when UI system is not available</comment>
+  </data>
+</root>

@@ -666,6 +666,65 @@ namespace ClinicApp.Repositories.Insurance
         }
 
         /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی با فیلترهای بهینه‌سازی شده
+        /// </summary>
+        public async Task<List<InsuranceTariff>> GetFilteredSupplementaryTariffsAsync(
+            string searchTerm = "", 
+            int? departmentId = null, 
+            bool? isActive = null)
+        {
+            try
+            {
+                _logger.Information("🔍 REPOSITORY: شروع GetFilteredSupplementaryTariffsAsync - SearchTerm: {SearchTerm}, DeptId: {DeptId}, IsActive: {IsActive}", 
+                    searchTerm, departmentId, isActive);
+
+                var query = _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Include(t => t.Service)
+                    .Include(t => t.InsurancePlan)
+                    .Include(t => t.InsurancePlan.InsuranceProvider)
+                    .Where(t => !t.IsDeleted && t.InsuranceType == InsuranceType.Supplementary);
+
+                // فیلتر بر اساس جستجو
+                if (!string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    query = query.Where(t => 
+                        t.Service.Title.Contains(searchTerm) ||
+                        t.Service.ServiceCode.Contains(searchTerm) ||
+                        t.InsurancePlan.Name.Contains(searchTerm) ||
+                        t.InsurancePlan.InsuranceProvider.Name.Contains(searchTerm));
+                }
+
+                // فیلتر بر اساس دپارتمان (فعلاً غیرفعال - نیاز به بررسی ساختار Service)
+                // if (departmentId.HasValue)
+                // {
+                //     query = query.Where(t => t.Service.DepartmentId == departmentId.Value);
+                // }
+
+                // فیلتر بر اساس وضعیت فعال
+                if (isActive.HasValue)
+                {
+                    query = query.Where(t => t.IsActive == isActive.Value);
+                }
+
+                var result = await query
+                    .OrderBy(t => t.InsurancePlan.InsuranceProvider.Name)
+                    .ThenBy(t => t.InsurancePlan.Name)
+                    .ThenBy(t => t.Service.Title)
+                    .ToListAsync();
+
+                _logger.Information("🔍 REPOSITORY: نتایج GetFilteredSupplementaryTariffsAsync - Count: {Count}", result.Count);
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌های بیمه تکمیلی با فیلترها");
+                throw new InvalidOperationException("خطا در دریافت تعرفه‌های بیمه تکمیلی با فیلترها", ex);
+            }
+        }
+
+        /// <summary>
         /// دریافت تعرفه‌های فعال بیمه برای خدمت
         /// </summary>
         public async Task<List<InsuranceTariff>> GetActiveTariffsForServiceAsync(int serviceId, System.DateTime? calculationDate = null)

@@ -491,6 +491,7 @@
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\EnumExtensions.cs" />
+    <Compile Include="Helpers\ErrorMessageHelper.cs" />
     <Compile Include="Helpers\InsurancePriorityHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
@@ -645,6 +646,7 @@
     <Compile Include="Migrations\202509202056063_AddInsuranceTypeToIns.Designer.cs">
       <DependentUpon>202509202056063_AddInsuranceTypeToIns.cs</DependentUpon>
     </Compile>
+    <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
@@ -1031,6 +1033,7 @@
     <Content Include="Content\css\forms-medical.css" />
     <Content Include="Content\css\insurance-plan-index.css" />
     <Content Include="Content\css\insurance-plan.css" />
+    <Content Include="Content\css\insurance\supplementary-tariff-views.css" />
     <Content Include="Content\css\local-fonts.css" />
     <Content Include="Content\css\medical-environment-styles.css" />
     <Content Include="Content\css\medical-environment.css" />
@@ -3378,7 +3381,10 @@
     <Content Include="Scripts\app\insurance-plan-index.js" />
     <Content Include="Scripts\app\modules\medical-api.js" />
     <Content Include="Scripts\app\modules\medical-config.js" />
+    <Content Include="Scripts\app\modules\medical-message-manager.js" />
+    <Content Include="Scripts\app\modules\medical-realtime-validation.js" />
     <Content Include="Scripts\app\modules\medical-ui.js" />
+    <Content Include="Scripts\app\modules\medical-ux-enhancer.js" />
     <Content Include="Scripts\app\modules\medical-validation.js" />
     <Content Include="Scripts\app\patient-insurance-form.js" />
     <Content Include="Scripts\app\patient-select2.js" />
@@ -3825,6 +3831,7 @@
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Create.cshtml" />
     <Content Include="Areas\Admin\Views\DataFix\Index.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\CreateBulk.cshtml" />
+    <Content Include="Docs\Database-Connection-Guide.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4190,6 +4197,7 @@
     <EmbeddedResource Include="Migrations\202509202056063_AddInsuranceTypeToIns.resx">
       <DependentUpon>202509202056063_AddInsuranceTypeToIns.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

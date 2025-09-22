@@ -35,6 +35,10 @@ namespace ClinicApp
             // ثبت Model Binder سفارشی برای InsuranceTariffCreateEditViewModel
             ModelBinders.Binders.Add(typeof(InsuranceTariffCreateEditViewModel), new InsuranceTariffModelBinder());
             
+            // ثبت Model Binder برای Decimal - حل مشکل Culture
+            ModelBinders.Binders.Add(typeof(decimal), new DecimalModelBinder());
+            ModelBinders.Binders.Add(typeof(decimal?), new DecimalModelBinder());
+            
             // اگر UnityConfig دارید اینجا هم اضافه کنید:
             DependencyResolver.SetResolver(new UnityDependencyResolver(UnityConfig.Container));
 

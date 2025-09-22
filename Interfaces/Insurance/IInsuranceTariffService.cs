@@ -169,6 +169,20 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <param name="planId">شناسه طرح بیمه</param>
         /// <returns>لیست تعرفه‌های بیمه تکمیلی</returns>
+        Task<ServiceResult<List<InsuranceTariff>>> GetAllSupplementaryTariffsAsync();
+
+        /// <summary>
+        /// دریافت تعرفه‌های بیمه تکمیلی با فیلترهای بهینه‌سازی شده
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="departmentId">شناسه دپارتمان</param>
+        /// <param name="isActive">وضعیت فعال</param>
+        /// <returns>لیست تعرفه‌های بیمه تکمیلی</returns>
+        Task<ServiceResult<List<InsuranceTariff>>> GetFilteredSupplementaryTariffsAsync(
+            string searchTerm = "", 
+            int? departmentId = null, 
+            bool? isActive = null);
+
         Task<ServiceResult<List<InsuranceTariff>>> GetSupplementaryTariffsAsync(int planId, DateTime? calculationDate = null);
 
         /// <summary>
