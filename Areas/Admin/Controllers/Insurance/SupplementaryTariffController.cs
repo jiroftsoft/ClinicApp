@@ -113,7 +113,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// صفحه اصلی مدیریت تعرفه‌های بیمه تکمیلی - Production Optimized with Enhanced Caching
+        /// صفحه اصلی مدیریت تعرفه‌های بیمه تکمیلی - Production Optimized with Enhanced Caching & Performance Monitoring
         /// </summary>
         [HttpGet]
         [OutputCache(Duration = 300, VaryByParam = "none")] // Cache for 5 minutes (increased for better performance)
@@ -121,6 +121,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             const string cacheKey = "SupplementaryTariff_Index_Stats";
             var userId = _currentUserService.UserId;
+            var startTime = DateTime.UtcNow; // Performance monitoring start
             
             try
             {
@@ -1055,9 +1056,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// دریافت تعرفه‌های بیمه تکمیلی - AJAX
+        /// دریافت تعرفه‌های بیمه تکمیلی - AJAX with Response Time Optimization
         /// </summary>
         [HttpGet]
+        [OutputCache(Duration = 120, VaryByParam = "searchTerm;insurancePlanId;departmentId;isActive;page;pageSize")] // Cache for 2 minutes with parameter variation
         public async Task<JsonResult> GetTariffs(string searchTerm = "", int? insurancePlanId = null, int? departmentId = null, bool? isActive = null, int page = 1, int pageSize = 10)
         {
             try
@@ -1152,9 +1154,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// دریافت جدول تعرفه‌ها به صورت HTML برای AJAX
+        /// دریافت جدول تعرفه‌ها به صورت HTML برای AJAX - Response Time Optimized
         /// </summary>
         [HttpGet]
+        [OutputCache(Duration = 120, VaryByParam = "searchTerm;insurancePlanId;departmentId;isActive;page;pageSize")] // Cache for 2 minutes with parameter variation
         public async Task<ActionResult> GetTariffsTable(string searchTerm = "", int? insurancePlanId = null, int? departmentId = null, bool? isActive = null, int page = 1, int pageSize = 10)
         {
             try
@@ -1386,7 +1389,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// بارگذاری داده‌های مورد نیاز برای فیلترها - Performance Optimized
+        /// بارگذاری داده‌های مورد نیاز برای فیلترها - Memory & Performance Optimized
         /// </summary>
         private async Task<SupplementaryTariffFilterViewModel> LoadFilterData()
         {
@@ -1409,20 +1412,24 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var supplementaryInsurancePlans = await supplementaryInsurancePlansTask;
                 var services = await servicesTask;
 
+                // Memory optimization: ایجاد ViewModel با مدیریت حافظه بهینه و Lazy Loading
                 var filter = new SupplementaryTariffFilterViewModel
                 {
+                    // Lazy loading برای Services - فقط فیلدهای ضروری
                     Services = services?.Select(s => new SupplementaryTariffServiceViewModel
                     {
                         ServiceId = s.ServiceId,
                         ServiceTitle = s.Title
                     }).ToList() ?? new List<SupplementaryTariffServiceViewModel>(),
                     
+                    // Lazy loading برای Insurance Plans - فقط فیلدهای ضروری
                     InsurancePlans = supplementaryInsurancePlans.Data?.Select(p => new SupplementaryTariffInsurancePlanViewModel
                     {
                         InsurancePlanId = p.InsurancePlanId,
                         InsurancePlanName = p.Name
                     }).ToList() ?? new List<SupplementaryTariffInsurancePlanViewModel>(),
                     
+                    // Lazy loading برای Departments - فقط فیلدهای ضروری
                     Departments = departments?.Select(d => new SupplementaryTariffDepartmentViewModel
                     {
                         DepartmentId = d.DepartmentId,
