@@ -1304,12 +1304,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Information("🏥 MEDICAL: ویرایش تعرفه بیمه تکمیلی - TariffId: {TariffId}, ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
                     model.InsuranceTariffId, model.ServiceId, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
-                if (!ModelState.IsValid)
+                if (!ValidateModelWithLogging(model, "ویرایش تعرفه بیمه تکمیلی"))
                 {
-                    _log.Warning("🏥 MEDICAL: ModelState نامعتبر در ویرایش تعرفه - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                        model.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    // بارگذاری داده‌های مورد نیاز برای فرم
                     await LoadCreateEditData();
                     return View(model);
                 }
@@ -1331,31 +1327,23 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 // به‌روزرسانی تعرفه
                 var updateResult = await _tariffService.UpdateTariffAsync(insuranceTariffModel);
+                
                 if (updateResult.Success)
                 {
-                    _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی با موفقیت ویرایش شد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                        model.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    TempData["SuccessMessage"] = "تعرفه بیمه تکمیلی با موفقیت ویرایش شد";
+                    SetResponseMessage("ویرایش تعرفه بیمه تکمیلی", true, "تعرفه بیمه تکمیلی با موفقیت ویرایش شد");
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    _log.Warning("🏥 MEDICAL: خطا در ویرایش تعرفه بیمه تکمیلی - {Error}. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                        updateResult.Message, model.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    ModelState.AddModelError("", updateResult.Message);
+                    LogUserOperation($"خطا در ویرایش تعرفه: {updateResult.Message}", "ویرایش تعرفه بیمه تکمیلی");
+                    TempData["ErrorMessage"] = updateResult.Message;
                     await LoadCreateEditData();
                     return View(model);
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "🏥 MEDICAL: خطا در ویرایش تعرفه بیمه تکمیلی - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                    model.InsuranceTariffId, _currentUserService.UserName, _currentUserService.UserId);
-                
-                TempData["ErrorMessage"] = "خطا در سیستم. لطفاً دوباره تلاش کنید.";
-                return RedirectToAction("Index");
+                return HandleStandardError(ex, "ویرایش تعرفه بیمه تکمیلی", "Index");
             }
         }
 
@@ -1373,25 +1361,21 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 // حذف تعرفه
                 var deleteResult = await _tariffService.DeleteTariffAsync(id);
+                
                 if (deleteResult.Success)
                 {
-                    _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی با موفقیت حذف شد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                        id, _currentUserService.UserName, _currentUserService.UserId);
-                    
+                    LogUserOperation("تعرفه بیمه تکمیلی با موفقیت حذف شد", "حذف تعرفه بیمه تکمیلی");
                     return Json(new { success = true, message = "تعرفه با موفقیت حذف شد" }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
-                    _log.Warning("🏥 MEDICAL: خطا در حذف تعرفه بیمه تکمیلی - {Error}. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                        deleteResult.Message, id, _currentUserService.UserName, _currentUserService.UserId);
-                    
+                    LogUserOperation($"خطا در حذف تعرفه: {deleteResult.Message}", "حذف تعرفه بیمه تکمیلی");
                     return Json(new { success = false, message = deleteResult.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "🏥 MEDICAL: خطا در حذف تعرفه بیمه تکمیلی - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
-                    id, _currentUserService.UserName, _currentUserService.UserId);
+                LogUserOperation($"خطا در حذف تعرفه: {ex.Message}", "حذف تعرفه بیمه تکمیلی", ex);
                 return Json(new { success = false, message = "خطا در سیستم" }, JsonRequestBehavior.AllowGet);
             }
         }
