@@ -1542,6 +1542,62 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
+        /// تنظیم پیام‌های پاسخ استاندارد برای عملیات
+        /// </summary>
+        /// <param name="operation">نام عملیات</param>
+        /// <param name="isSuccess">نتیجه عملیات</param>
+        /// <param name="customMessage">پیام سفارشی (اختیاری)</param>
+        private void SetResponseMessage(string operation, bool isSuccess, string customMessage = null)
+        {
+            var message = customMessage ?? (isSuccess 
+                ? $"عملیات {operation} با موفقیت انجام شد" 
+                : $"خطا در انجام عملیات {operation}");
+            
+            TempData[isSuccess ? "SuccessMessage" : "ErrorMessage"] = message;
+            
+            LogUserOperation(message, operation);
+        }
+
+        /// <summary>
+        /// مدیریت خطاهای استاندارد با لاگ و پیام کاربر
+        /// </summary>
+        /// <param name="ex">استثنا</param>
+        /// <param name="operation">نام عملیات</param>
+        /// <param name="redirectAction">اکشن بازگشت (اختیاری)</param>
+        /// <returns>ActionResult مناسب</returns>
+        private ActionResult HandleStandardError(Exception ex, string operation, string redirectAction = "Index")
+        {
+            LogUserOperation($"خطا در {operation}: {ex.Message}", operation, ex);
+            
+            TempData["ErrorMessage"] = $"خطا در انجام عملیات {operation}. لطفاً دوباره تلاش کنید.";
+            
+            return RedirectToAction(redirectAction);
+        }
+
+        /// <summary>
+        /// بررسی نتیجه Service و تنظیم پیام مناسب
+        /// </summary>
+        /// <typeparam name="T">نوع داده</typeparam>
+        /// <param name="result">نتیجه Service</param>
+        /// <param name="operation">نام عملیات</param>
+        /// <param name="successMessage">پیام موفقیت (اختیاری)</param>
+        /// <returns>نتیجه بررسی</returns>
+        private bool HandleServiceResult<T>(ServiceResult<T> result, string operation, string successMessage = null)
+        {
+            if (result.Success)
+            {
+                SetResponseMessage(operation, true, successMessage);
+                return true;
+            }
+            else
+            {
+                LogUserOperation($"خطا در {operation}: {result.Message}", operation);
+                TempData["ErrorMessage"] = result.Message;
+                return false;
+            }
+        }
+
+        /// <summary>
         /// بارگذاری داده‌های مورد نیاز برای فرم‌های Create و Edit
         /// </summary>
         private async Task LoadCreateEditData()
