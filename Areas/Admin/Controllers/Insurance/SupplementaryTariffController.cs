@@ -173,9 +173,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 
                 if (statsResult.Success)
                 {
-                    // Cache the result using cache service (for now, just log)
-                    _log.Debug("🏥 MEDICAL: آمار دریافت شد و آماده کش شدن. User: {UserName} (Id: {UserId})",
-                        _currentUserService.UserName, userId);
+                    LogUserOperation("آمار با موفقیت دریافت شد", "دریافت آمار تعرفه‌های بیمه تکمیلی");
                     
                     ViewBag.Stats = statsResult.Data;
                     
@@ -199,15 +197,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         }
                     };
                     
-                    _log.Information("🏥 MEDICAL: آمار با موفقیت دریافت و کش شد. User: {UserName} (Id: {UserId})",
-                        _currentUserService.UserName, userId);
-                    
                     return View(viewModel);
                 }
                 else
                 {
-                    _log.Warning("🏥 MEDICAL: خطا در دریافت آمار - {Error}. User: {UserName} (Id: {UserId})",
-                        statsResult.Message, _currentUserService.UserName, userId);
+                    LogUserOperation($"خطا در دریافت آمار: {statsResult.Message}", "دریافت آمار تعرفه‌های بیمه تکمیلی");
                     
                     // Create empty ViewModel
                     var emptyViewModel = CreateEmptyViewModel(filterData);
@@ -217,8 +211,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "🏥 MEDICAL: خطا در دسترسی به صفحه مدیریت تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, userId);
+                LogUserOperation($"خطا در دسترسی به صفحه مدیریت: {ex.Message}", "دسترسی به صفحه مدیریت تعرفه‌های بیمه تکمیلی", ex);
                 
                 // Return cached data if available, otherwise empty view
                 var fallbackStats = await _cacheService.GetCachedSupplementaryTariffsAsync(0);
