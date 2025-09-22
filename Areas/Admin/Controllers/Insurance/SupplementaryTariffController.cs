@@ -1676,41 +1676,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Information("🏥 MEDICAL: ایجاد تعرفه بیمه تکمیلی جدید - ServiceId: {ServiceId}, PlanId: {PlanId}, TariffPrice: {TariffPrice}. User: {UserName} (Id: {UserId})",
                     model.ServiceId, model.InsurancePlanId, model.TariffPrice, _currentUserService.UserName, _currentUserService.UserId);
 
-                if (!ModelState.IsValid)
+                if (!ValidateModelWithLogging(model, "ایجاد تعرفه بیمه تکمیلی"))
                 {
-                    // 🏥 MEDICAL: ثبت خطاهای ModelState برای تشخیص دقیق مشکل
-                    var modelStateErrors = new List<string>();
-                    foreach (var key in ModelState.Keys)
-                    {
-                        var errors = ModelState[key].Errors;
-                        if (errors.Any())
-                        {
-                            foreach (var error in errors)
-                            {
-                                modelStateErrors.Add($"Field: {key} - Error: {error.ErrorMessage}");
-                            }
-                        }
-                    }
-                    
-                    _log.Warning("🏥 MEDICAL: ModelState نامعتبر - تعداد خطاها: {ErrorCount}. User: {UserName} (Id: {UserId})", 
-                        modelStateErrors.Count, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    foreach (var error in modelStateErrors)
-                    {
-                        _log.Warning("🏥 MEDICAL: ModelState Error - {Error}", error);
-                    }
-                    
-                    // 🏥 MEDICAL: ثبت مقادیر دریافتی برای تشخیص مشکل
-                    _log.Warning("🏥 MEDICAL: مقادیر دریافتی - TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
-                        model.TariffPrice, model.PatientShare, model.InsurerShare, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    // بارگذاری مجدد داده‌های مورد نیاز
-                    var services = await _serviceRepository.GetAllActiveServicesAsync();
-                    var insurancePlans = await _planService.GetActivePlansForLookupAsync();
-
-                    ViewBag.Services = services ?? new List<Service>();
-                    ViewBag.InsurancePlans = insurancePlans.Data ?? new List<InsurancePlanLookupViewModel>();
-
+                    await LoadCreateEditData();
                     return View(model);
                 }
 
@@ -1730,24 +1698,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 var result = await _tariffService.CreateTariffAsync(insuranceTariffModel);
 
-                if (result.Success)
+                if (HandleServiceResult(result, "ایجاد تعرفه بیمه تکمیلی", "تعرفه بیمه تکمیلی با موفقیت ایجاد شد"))
                 {
                     // پاک کردن کش
                     await InvalidateSupplementaryTariffCacheAsync();
-
-                    _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی با موفقیت ایجاد شد - ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                        model.ServiceId, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
-
-                    TempData["SuccessMessage"] = "تعرفه بیمه تکمیلی با موفقیت ایجاد شد";
                     return RedirectToAction("Index");
                 }
                 else
                 {
-                    _log.Warning("🏥 MEDICAL: خطا در ایجاد تعرفه بیمه تکمیلی - {Error}. User: {UserName} (Id: {UserId})",
-                        result.Message, _currentUserService.UserName, _currentUserService.UserId);
-
-                    ModelState.AddModelError("", "خطا در ایجاد تعرفه: " + result.Message);
-
                     // بارگذاری مجدد داده‌های مورد نیاز
                     var services = await _serviceRepository.GetAllActiveServicesAsync();
                     var insurancePlans = await _planService.GetActivePlansForLookupAsync();
@@ -1760,11 +1718,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد تعرفه جدید. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
-
-                ModelState.AddModelError("", "خطا در سیستم");
-                return View(model);
+                return HandleStandardError(ex, "ایجاد تعرفه بیمه تکمیلی", "Create");
             }
         }
 
