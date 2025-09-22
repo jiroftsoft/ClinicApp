@@ -210,18 +210,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         statsResult.Message, _currentUserService.UserName, userId);
                     
                     // Create empty ViewModel
-                    var emptyViewModel = new SupplementaryTariffIndexPageViewModel
-                    {
-                        Statistics = new SupplementaryTariffStatisticsViewModel(),
-                        Filter = filterData,
-                        Tariffs = new PagedResult<SupplementaryTariffIndexViewModel>
-                        {
-                            Items = new List<SupplementaryTariffIndexViewModel>(),
-                            TotalItems = 0,
-                            PageNumber = 1,
-                            PageSize = 10
-                        }
-                    };
+                    var emptyViewModel = CreateEmptyViewModel(filterData);
                     
                     return View(emptyViewModel);
                 }
@@ -1478,6 +1467,81 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
+        /// ایجاد SelectList از لیست InsurancePlanLookupViewModel
+        /// </summary>
+        /// <param name="plans">لیست طرح‌های بیمه</param>
+        /// <returns>SelectList آماده برای استفاده در View</returns>
+        private SelectList CreateInsurancePlanSelectList(List<InsurancePlanLookupViewModel> plans)
+        {
+            return new SelectList(plans ?? new List<InsurancePlanLookupViewModel>(), "InsurancePlanId", "Name");
+        }
+
+        /// <summary>
+        /// ایجاد ViewModel خالی برای حالت خطا
+        /// </summary>
+        /// <param name="filterData">داده‌های فیلتر</param>
+        /// <returns>ViewModel خالی با ساختار صحیح</returns>
+        private SupplementaryTariffIndexPageViewModel CreateEmptyViewModel(SupplementaryTariffFilterViewModel filterData)
+        {
+            return new SupplementaryTariffIndexPageViewModel
+            {
+                Statistics = new SupplementaryTariffStatisticsViewModel(),
+                Filter = filterData,
+                Tariffs = new PagedResult<SupplementaryTariffIndexViewModel>
+                {
+                    Items = new List<SupplementaryTariffIndexViewModel>(),
+                    TotalItems = 0,
+                    PageNumber = 1,
+                    PageSize = 10
+                }
+            };
+        }
+
+        /// <summary>
+        /// لاگ کردن عملیات کاربر با فرمت استاندارد
+        /// </summary>
+        /// <param name="message">پیام</param>
+        /// <param name="operation">نام عملیات</param>
+        /// <param name="ex">استثنا (اختیاری)</param>
+        private void LogUserOperation(string message, string operation, Exception ex = null)
+        {
+            var logMessage = $"🏥 MEDICAL: {message}. User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})";
+            
+            if (ex != null)
+                _log.Error(ex, logMessage);
+            else
+                _log.Information(logMessage);
+        }
+
+        /// <summary>
+        /// اعتبارسنجی ViewModel با لاگ کردن جزئیات
+        /// </summary>
+        /// <param name="model">مدل برای اعتبارسنجی</param>
+        /// <param name="operation">نام عملیات</param>
+        /// <returns>نتیجه اعتبارسنجی</returns>
+        private bool ValidateModelWithLogging(object model, string operation)
+        {
+            if (model == null)
+            {
+                LogUserOperation($"مدل {operation} null است", operation);
+                return false;
+            }
+
+            if (!ModelState.IsValid)
+            {
+                var errors = string.Join(", ", ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Select(e => e.ErrorMessage));
+                
+                LogUserOperation($"اعتبارسنجی {operation} ناموفق - خطاها: {errors}", operation);
+                return false;
+            }
+
+            _log.Debug($"🏥 MEDICAL: اعتبارسنجی {operation} موفق. User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
+            return true;
+        }
+
+        /// <summary>
         /// بارگذاری داده‌های مورد نیاز برای فرم‌های Create و Edit
         /// </summary>
         private async Task LoadCreateEditData()
@@ -1497,8 +1561,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var supplementaryInsurancePlans = await _planService.GetSupplementaryInsurancePlansAsync();
 
                 ViewBag.Departments = departments ?? new List<Department>();
-                ViewBag.PrimaryInsurancePlans = new SelectList(primaryInsurancePlans.Data ?? new List<InsurancePlanLookupViewModel>(), "InsurancePlanId", "Name");
-                ViewBag.InsurancePlans = new SelectList(supplementaryInsurancePlans.Data ?? new List<InsurancePlanLookupViewModel>(), "InsurancePlanId", "Name");
+                ViewBag.PrimaryInsurancePlans = CreateInsurancePlanSelectList(primaryInsurancePlans.Data);
+                ViewBag.InsurancePlans = CreateInsurancePlanSelectList(supplementaryInsurancePlans.Data);
 
                 _log.Debug("🏥 MEDICAL: داده‌های فرم با موفقیت بارگذاری شد - Departments: {DeptCount}, PrimaryPlans: {PrimaryCount}, SupplementaryPlans: {SuppCount}. User: {UserName} (Id: {UserId})",
                     departments?.Count ?? 0, primaryInsurancePlans.Data?.Count ?? 0, supplementaryInsurancePlans.Data?.Count ?? 0, _currentUserService.UserName, _currentUserService.UserId);
@@ -1510,8 +1574,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 
                 // تنظیم مقادیر پیش‌فرض در صورت خطا
                 ViewBag.Departments = new List<Department>();
-                ViewBag.PrimaryInsurancePlans = new SelectList(new List<InsurancePlanLookupViewModel>(), "InsurancePlanId", "Name");
-                ViewBag.InsurancePlans = new SelectList(new List<InsurancePlanLookupViewModel>(), "InsurancePlanId", "Name");
+                ViewBag.PrimaryInsurancePlans = CreateInsurancePlanSelectList(new List<InsurancePlanLookupViewModel>());
+                ViewBag.InsurancePlans = CreateInsurancePlanSelectList(new List<InsurancePlanLookupViewModel>());
             }
         }
 
