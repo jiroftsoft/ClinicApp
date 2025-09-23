@@ -821,13 +821,13 @@ namespace ClinicApp.Repositories.Insurance
                         Id = t.InsuranceTariffId,
                         ServiceId = t.ServiceId,
                         ServiceName = t.Service.Title,
-                        InsurancePlanId = t.InsurancePlanId,
+                        InsurancePlanId = t.InsurancePlanId ?? 0,
                         InsurancePlanName = t.InsurancePlan.Name,
                         InsuranceProviderId = t.InsurancePlan.InsuranceProviderId,
                         InsuranceProviderName = t.InsurancePlan.InsuranceProvider.Name,
-                        TariffPrice = t.TariffPrice,
-                        PatientShare = t.PatientShare,
-                        InsurerShare = t.InsurerShare,
+                        TariffPrice = t.TariffPrice ?? 0,
+                        PatientShare = t.PatientShare ?? 0,
+                        InsurerShare = t.InsurerShare ?? 0,
                         IsActive = t.IsActive,
                         CreatedAt = t.CreatedAt,
                         UpdatedAt = t.UpdatedAt
@@ -847,8 +847,7 @@ namespace ClinicApp.Repositories.Insurance
                     Items = items,
                     TotalItems = totalCount,
                     PageNumber = pageNumber,
-                    PageSize = pageSize,
-                    TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                    PageSize = pageSize
                 };
             }
             catch (Exception ex)
@@ -877,8 +876,8 @@ namespace ClinicApp.Repositories.Insurance
                         TotalTariffs = g.Count(),
                         ActiveTariffs = g.Count(t => t.IsActive),
                         InactiveTariffs = g.Count(t => !t.IsActive),
-                        AverageTariffPrice = g.Average(t => t.TariffPrice),
-                        TotalTariffValue = g.Sum(t => t.TariffPrice),
+                        AverageTariffPrice = g.Average(t => t.TariffPrice ?? 0),
+                        TotalTariffValue = g.Sum(t => t.TariffPrice ?? 0),
                         PlansWithTariffs = g.Select(t => t.InsurancePlanId).Distinct().Count(),
                         ServicesWithTariffs = g.Select(t => t.ServiceId).Distinct().Count()
                     })
@@ -914,19 +913,19 @@ namespace ClinicApp.Repositories.Insurance
                         Id = t.InsuranceTariffId,
                         ServiceId = t.ServiceId,
                         ServiceName = t.Service.Title,
-                        ServiceCode = t.Service.Code,
-                        InsurancePlanId = t.InsurancePlanId,
+                        ServiceCode = t.Service.ServiceCode ?? "",
+                        InsurancePlanId = t.InsurancePlanId ?? 0,
                         InsurancePlanName = t.InsurancePlan.Name,
                         InsuranceProviderId = t.InsurancePlan.InsuranceProviderId,
                         InsuranceProviderName = t.InsurancePlan.InsuranceProvider.Name,
-                        TariffPrice = t.TariffPrice,
-                        PatientShare = t.PatientShare,
-                        InsurerShare = t.InsurerShare,
+                        TariffPrice = t.TariffPrice ?? 0,
+                        PatientShare = t.PatientShare ?? 0,
+                        InsurerShare = t.InsurerShare ?? 0,
                         IsActive = t.IsActive,
                         CreatedAt = t.CreatedAt,
                         UpdatedAt = t.UpdatedAt,
-                        CreatedBy = t.CreatedBy,
-                        UpdatedBy = t.UpdatedBy
+                        CreatedBy = "",
+                        UpdatedBy = ""
                     })
                     .FirstOrDefaultAsync();
 

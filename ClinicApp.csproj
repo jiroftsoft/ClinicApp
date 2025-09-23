@@ -902,6 +902,7 @@
     <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderIndexViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceProvider\InsuranceProviderLookupViewModel.cs" />
     <Compile Include="ViewModels\Insurance\InsuranceTariff\InsuranceTariffViewModels.cs" />
+    <Compile Include="ViewModels\Insurance\InsuranceTariff\TariffIndexDto.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceCreateEditViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceDetailsViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexItemViewModel.cs" />
