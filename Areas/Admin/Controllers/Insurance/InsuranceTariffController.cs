@@ -49,6 +49,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly IServiceManagementService _serviceManagementService;
         private readonly IServiceService _serviceService;
         private readonly IDepartmentManagementService _departmentManagementService;
+        private readonly ITariffCacheInvalidator _tariffCacheInvalidator;
         private readonly ILogger _logger;
         private readonly ICurrentUserService _currentUserService;
         private readonly IAppSettings _appSettings;
@@ -62,6 +63,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             IServiceManagementService serviceManagementService,
             IServiceService serviceService,
             IDepartmentManagementService departmentManagementService,
+            ITariffCacheInvalidator tariffCacheInvalidator,
             ILogger logger,
             ICurrentUserService currentUserService,
             IAppSettings appSettings,
@@ -75,6 +77,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _serviceManagementService = serviceManagementService ?? throw new ArgumentNullException(nameof(serviceManagementService));
             _serviceService = serviceService ?? throw new ArgumentNullException(nameof(serviceService));
             _departmentManagementService = departmentManagementService ?? throw new ArgumentNullException(nameof(departmentManagementService));
+            _tariffCacheInvalidator = tariffCacheInvalidator ?? throw new ArgumentNullException(nameof(tariffCacheInvalidator));
             _logger = logger.ForContext<InsuranceTariffController>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _appSettings = appSettings ?? throw new ArgumentNullException(nameof(appSettings));
@@ -518,6 +521,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         correlationId, result.Data, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
                     _messageNotificationService.AddSuccessMessage($"تعرفه برای {result.Data} خدمت با موفقیت ایجاد شد");
+                    
+                    // Cache invalidation for bulk operation
+                    _tariffCacheInvalidator.InvalidateByPlan(model.InsurancePlanId);
+                    _logger.Information("🏥 MEDICAL: Cache invalidated for plan after bulk operation - CorrelationId: {CorrelationId}, PlanId: {PlanId}", 
+                        correlationId, model.InsurancePlanId);
                 }
                 else
                 {
@@ -525,6 +533,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         correlationId, result.Data, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
                     _messageNotificationService.AddSuccessMessage("تعرفه بیمه با موفقیت ایجاد شد");
+                    
+                    // Cache invalidation for single tariff
+                    _tariffCacheInvalidator.InvalidateTariff(result.Data);
+                    _logger.Information("🏥 MEDICAL: Cache invalidated for tariff after creation - CorrelationId: {CorrelationId}, TariffId: {TariffId}", 
+                        correlationId, result.Data);
                 }
                 return RedirectToAction("Details", new { id = result.Data });
             }
@@ -729,6 +742,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     correlationId, model.InsuranceTariffId, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
                 _messageNotificationService.AddSuccessMessage("تعرفه بیمه با موفقیت ویرایش شد");
+                
+                // Cache invalidation for edited tariff
+                _tariffCacheInvalidator.InvalidateTariff(model.InsuranceTariffId);
+                _logger.Information("🏥 MEDICAL: Cache invalidated for tariff after edit - CorrelationId: {CorrelationId}, TariffId: {TariffId}", 
+                    correlationId, model.InsuranceTariffId);
+                
                 return RedirectToAction("Details", new { id = model.InsuranceTariffId });
             }
             catch (Exception ex)
@@ -834,6 +853,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     correlationId, id, _currentUserService.UserName, _currentUserService.UserId);
 
                 _messageNotificationService.AddSuccessMessage("تعرفه بیمه با موفقیت حذف شد");
+                
+                // Cache invalidation for deleted tariff
+                _tariffCacheInvalidator.InvalidateTariff(id);
+                _logger.Information("🏥 MEDICAL: Cache invalidated for tariff after deletion - CorrelationId: {CorrelationId}, TariffId: {TariffId}", 
+                    correlationId, id);
+                
                 return RedirectToAction("Index");
             }
             catch (Exception ex)
@@ -1084,6 +1109,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _logger.Information("🏥 MEDICAL: تغییر وضعیت گروهی با موفقیت انجام شد - CorrelationId: {CorrelationId}, Count: {Count}, IsActive: {IsActive}, User: {UserName} (Id: {UserId})",
                         correlationId, tariffIds.Count, isActive, _currentUserService.UserName, _currentUserService.UserId);
+
+                    // Cache invalidation for bulk operation
+                    _tariffCacheInvalidator.InvalidateAll();
+                    _logger.Information("🏥 MEDICAL: Cache invalidated for bulk status change - CorrelationId: {CorrelationId}, Count: {Count}", 
+                        correlationId, tariffIds.Count);
 
                     return Json(new { success = true, message = $"وضعیت {tariffIds.Count} تعرفه با موفقیت تغییر یافت" });
                 }

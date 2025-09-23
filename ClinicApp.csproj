@@ -558,6 +558,7 @@
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\IServiceCalculationService.cs" />
     <Compile Include="Interfaces\IServiceRepository.cs" />
+    <Compile Include="Interfaces\ITariffCacheInvalidator.cs" />
     <Compile Include="Interfaces\OTP\OTPSystem.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayRepository.cs" />
     <Compile Include="Interfaces\Payment\Gateway\IPaymentGatewayService.cs" />
@@ -838,6 +839,7 @@
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="Services\ServiceTemplateService.cs" />
     <Compile Include="Services\SharedServiceManagementService.cs" />
+    <Compile Include="Services\TariffCacheInvalidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementarySettingsValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryTariffViewModelValidator.cs" />
@@ -3811,7 +3813,6 @@
     <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\SupplementaryTariffs.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\SupplementaryInsurances.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryCalculationForm.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryTariffList.cshtml" />
@@ -4114,7 +4115,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Controllers\Base\" />
-    <Folder Include="Areas\Admin\Controllers\Insurance\SupplementaryTariff\" />
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Constants\" />
     <Folder Include="Interfaces\Medical\" />
