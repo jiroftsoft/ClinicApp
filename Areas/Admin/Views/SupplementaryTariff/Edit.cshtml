@@ -2,11 +2,16 @@
 @{
     ViewBag.Title = "ویرایش تعرفه بیمه تکمیلی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+    
+    // تنظیم Culture برای فرمت اعداد
+    System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("fa-IR");
+    System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("fa-IR");
 }
 
 @section Styles {
-    <link href="~/Content/css/medical-environment-styles.css" rel="stylesheet" />
-    <link href="~/Content/css/insurance/supplementary-tariff-views.css" rel="stylesheet" />
+    @* FIX: مطابق با VIEW_OPTIMIZATION_CONTRACT - استفاده از Bundle optimization *@
+    @Styles.Render("~/Content/css/medical-environment")
+    @Styles.Render("~/Content/css/insurance/supplementary-tariff")
 }
 
 <div class="container-fluid">
@@ -50,7 +55,7 @@
                                 <div class="form-group">
                                     <label class="form-label">نام خدمت</label>
                                     <div class="form-control-plaintext">
-                                        <strong>@ViewBag.ServiceName</strong>
+                                        <strong>@Model.ServiceName</strong>
                                     </div>
                                 </div>
                             </div>
@@ -58,7 +63,7 @@
                                 <div class="form-group">
                                     <label class="form-label">کد خدمت</label>
                                     <div class="form-control-plaintext">
-                                        <strong>@ViewBag.ServiceCode</strong>
+                                        <strong>@Model.ServiceCode</strong>
                                     </div>
                                 </div>
                             </div>
@@ -69,14 +74,14 @@
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(m => m.InsurancePlanId, new { @class = "form-label" })
-                                    @Html.DropDownListFor(m => m.InsurancePlanId, ViewBag.InsurancePlans as SelectList, "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required" })
+                                    @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(Model.InsurancePlans, "Value", "Text", Model.InsurancePlanId), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required" })
                                     @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
                                     @Html.LabelFor(m => m.PrimaryInsurancePlanId, new { @class = "form-label" })
-                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, ViewBag.PrimaryInsurancePlans as SelectList, "انتخاب بیمه پایه", new { @class = "form-control", @required = "required" })
+                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(Model.PrimaryInsurancePlans, "Value", "Text", Model.PrimaryInsurancePlanId), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required" })
                                     @Html.ValidationMessageFor(m => m.PrimaryInsurancePlanId, "", new { @class = "text-danger" })
                                 </div>
                             </div>
@@ -140,11 +145,18 @@
 
                         <!-- Action Buttons -->
                         <div class="form-group text-center mt-4">
-                            <button type="submit" class="btn btn-medical me-3">
+                            <button type="submit" class="btn btn-medical me-3" 
+                                    data-toggle="tooltip" 
+                                    data-placement="top" 
+                                    title="ذخیره تغییرات تعرفه بیمه تکمیلی">
                                 <i class="fas fa-save me-2"></i>
                                 ذخیره تغییرات
                             </button>
-                            <a href="@Url.Action("Index", "SupplementaryTariff")" class="back-button">
+                            <a href="@Url.Action("Index", "SupplementaryTariff")" 
+                               class="btn btn-outline-secondary" 
+                               data-toggle="tooltip" 
+                               data-placement="top" 
+                               title="بازگشت به لیست تعرفه‌های بیمه تکمیلی">
                                 <i class="fas fa-arrow-right me-2"></i>
                                 بازگشت به لیست
                             </a>
@@ -189,12 +201,65 @@
 </div>
 
 @section Scripts {
+    <script src="~/Scripts/app/modules/medical-config.js"></script>
     <script src="~/Scripts/app/modules/medical-ui.js"></script>
     <script src="~/Scripts/app/modules/medical-validation.js"></script>
+    <script src="~/Scripts/app/modules/medical-realtime-validation.js"></script>
+    <script src="~/Scripts/app/modules/medical-message-manager.js"></script>
+    <script src="~/Scripts/app/modules/medical-ux-enhancer.js"></script>
     <script src="~/Scripts/app/supplementary-tariff.js"></script>
     
     <script>
         $(document).ready(function() {
+            // Debug: نمایش اطلاعات Model
+            console.log('🏥 MEDICAL DEBUG: Model Data:', {
+                InsuranceTariffId: @(Model.InsuranceTariffId ?? 0),
+                ServiceId: @Model.ServiceId,
+                InsurancePlanId: @Model.InsurancePlanId,
+                TariffPrice: @(Model.TariffPrice?.ToString("F2") ?? "null"),
+                PatientShare: @(Model.PatientShare?.ToString("F2") ?? "null"),
+                InsurerShare: @(Model.InsurerShare?.ToString("F2") ?? "null"),
+                SupplementaryCoveragePercent: @(Model.SupplementaryCoveragePercent?.ToString("F2") ?? "null"),
+                Priority: @Model.Priority,
+                PrimaryInsurancePlanId: @Model.PrimaryInsurancePlanId,
+                IsActive: @Model.IsActive.ToString().ToLower()
+            });
+            
+            // Debug: نمایش اطلاعات Model
+            console.log('🏥 MEDICAL DEBUG: Model Data:', {
+                ServiceName: '@Model.ServiceName',
+                ServiceCode: '@Model.ServiceCode',
+                PrimaryInsurancePlansCount: @Model.PrimaryInsurancePlans.Count,
+                InsurancePlansCount: @Model.InsurancePlans.Count,
+                DepartmentsCount: @Model.Departments.Count
+            });
+            
+            // تنظیم مقادیر فیلدها به صورت دستی
+            @if (Model.TariffPrice.HasValue)
+            {
+                <text>
+                $('#TariffPrice').val('@Model.TariffPrice.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
+                </text>
+            }
+            @if (Model.PatientShare.HasValue)
+            {
+                <text>
+                $('#PatientShare').val('@Model.PatientShare.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
+                </text>
+            }
+            @if (Model.InsurerShare.HasValue)
+            {
+                <text>
+                $('#InsurerShare').val('@Model.InsurerShare.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
+                </text>
+            }
+            @if (Model.SupplementaryCoveragePercent.HasValue)
+            {
+                <text>
+                $('#SupplementaryCoveragePercent').val('@Model.SupplementaryCoveragePercent.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
+                </text>
+            }
+            
             // Initialize real-time calculation
             initializeRealTimeCalculation();
             

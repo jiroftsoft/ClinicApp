@@ -3832,6 +3832,8 @@
     <Content Include="Areas\Admin\Views\DataFix\Index.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\CreateBulk.cshtml" />
     <Content Include="Docs\Database-Connection-Guide.md" />
+    <Content Include="CONTRACTS\PROJECT_RULES_SUMMARY.md" />
+    <Content Include="CONTRACTS\AJAX_RESPONSE_CHECKLIST.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4112,6 +4114,7 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Controllers\Base\" />
+    <Folder Include="Areas\Admin\Controllers\Insurance\SupplementaryTariff\" />
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Constants\" />
     <Folder Include="Interfaces\Medical\" />

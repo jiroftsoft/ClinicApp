@@ -593,13 +593,38 @@
                 success: function(response) {
                     console.log('🏥 MEDICAL: Data refreshed successfully');
                     
-                    // Update table content
-                    $('#tariffsTableContainer').html(response);
+                    // FIX: مطابق با AJAX_RESPONSE_CHECKLIST_CONTRACT - بررسی نوع پاسخ
+                    let parsedResponse;
+                    try {
+                        if (typeof response === 'string') {
+                            parsedResponse = JSON.parse(response);
+                        } else {
+                            parsedResponse = response;
+                        }
+                    } catch (e) {
+                        console.error('🏥 MEDICAL: Error parsing response:', e);
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.showError('خطا در پردازش پاسخ سرور');
+                        }
+                        return;
+                    }
                     
-                    // Hide loading
-                    if (typeof window.MedicalUI !== 'undefined') {
-                        window.MedicalUI.hideLoading();
-                        window.MedicalUI.showSuccess('داده‌ها با موفقیت بروزرسانی شد');
+                    // بررسی موفقیت پاسخ
+                    if (parsedResponse && parsedResponse.success) {
+                        // Update table content
+                        $('#tariffsTableContainer').html(parsedResponse.data || response);
+                        
+                        // Hide loading
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.hideLoading();
+                            window.MedicalUI.showSuccess(parsedResponse.message || 'داده‌ها با موفقیت بروزرسانی شد');
+                        }
+                    } else {
+                        // نمایش خطا در صورت عدم موفقیت
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.hideLoading();
+                            window.MedicalUI.showError(parsedResponse.message || 'خطا در دریافت داده‌ها');
+                        }
                     }
                 },
                 error: function(xhr, status, error) {
@@ -756,8 +781,8 @@ $(document).ready(function() {
  */
 function setupFormRealTimeValidation() {
     // Enhanced calculation preview updates
-    $(document).on('input', '#createTariffPrice, #createPatientShare, #createInsurerShare, #createCoveragePercent', function() {
-        updateCalculationPreview();
+    $(document).on('input', '#TariffPrice, #PatientShare, #InsurerShare, #SupplementaryCoveragePercent', function() {
+        invokeCalculationPreview();
     });
     
     // Form submission validation
@@ -773,42 +798,94 @@ function setupFormRealTimeValidation() {
  * Update calculation preview in real-time
  * به‌روزرسانی پیش‌نمایش محاسبات به صورت لحظه‌ای
  */
-function updateCalculationPreview() {
+function defaultUpdateCalculationPreview() {
     try {
-        const tariffPrice = parseFloat($('#createTariffPrice').val() || 0);
-        const patientShare = parseFloat($('#createPatientShare').val() || 0);
-        const insurerShare = parseFloat($('#createInsurerShare').val() || 0);
-        const coveragePercent = parseFloat($('#createCoveragePercent').val() || 0);
+        const tariffPrice = parseFloat($('#TariffPrice').val() || 0);
+        const patientShare = parseFloat($('#PatientShare').val() || 0);
+        const insurerShare = parseFloat($('#InsurerShare').val() || 0);
+        const coveragePercent = parseFloat($('#SupplementaryCoveragePercent').val() || 0);
         
         if (tariffPrice > 0) {
-            const remainingAmount = tariffPrice - insurerShare;
-            const finalPatientShare = Math.max(0, remainingAmount - (remainingAmount * coveragePercent / 100));
+            // دریافت اطلاعات بیمه پایه از ViewBag
+            const primaryPlans = window.primaryInsurancePlans || [];
+            const selectedPrimaryPlanId = $('#primaryInsurancePlanId').val();
+            const selectedPrimaryPlan = primaryPlans.find(plan => plan.InsurancePlanId == selectedPrimaryPlanId);
+            
+            // دریافت درصد پوشش بیمه پایه (داینامیک)
+            const primaryCoveragePercent = selectedPrimaryPlan ? 
+                (selectedPrimaryPlan.CoveragePercent || 70) : 70;
+            
+            // دریافت فرانشیز بیمه پایه (داینامیک)
+            const primaryDeductible = selectedPrimaryPlan ? 
+                (selectedPrimaryPlan.Deductible || 0) : 0;
+            
+            // محاسبه مبلغ قابل پوشش (بعد از کسر فرانشیز)
+            const coverableAmount = Math.max(0, tariffPrice - primaryDeductible);
+            
+            // محاسبه بیمه پایه (درصد داینامیک)
+            const primaryInsuranceCoverage = coverableAmount * (primaryCoveragePercent / 100);
+            
+            // محاسبه مبلغ باقی‌مانده بعد از بیمه پایه
+            const remainingAfterPrimary = Math.max(0, coverableAmount - primaryInsuranceCoverage);
+            
+            // محاسبه بیمه تکمیلی (درصد داینامیک از مبلغ باقی‌مانده)
+            const supplementaryCoverage = remainingAfterPrimary * (coveragePercent / 100);
+            
+            // سهم نهایی بیمار = فرانشیز + (مبلغ باقی‌مانده - بیمه تکمیلی)
+            const finalPatientShare = primaryDeductible + Math.max(0, remainingAfterPrimary - supplementaryCoverage);
             
             // Update preview with formatted numbers
-            $('.calculation-preview .total-service-price').text(formatCurrency(tariffPrice));
-            $('.calculation-preview .primary-insurance-share').text(formatCurrency(insurerShare));
-            $('.calculation-preview .remaining-amount').text(formatCurrency(remainingAmount));
-            $('.calculation-preview .supplementary-coverage').text(coveragePercent + '%');
-            $('.calculation-preview .final-patient-share').text(formatCurrency(finalPatientShare));
+            $('#previewServiceAmount').text(formatCurrency(tariffPrice));
+            $('#previewPrimaryCoverage').text(formatCurrency(primaryInsuranceCoverage));
+            $('#previewRemainingAmount').text(formatCurrency(remainingAfterPrimary));
+            $('#previewSupplementaryPercent').text(coveragePercent + '%');
+            $('#previewFinalPatientShare').text(formatCurrency(finalPatientShare));
+            
+            // به‌روزرسانی فیلدهای فرم
+            $('#InsurerShare').val(primaryInsuranceCoverage.toFixed(2));
+            $('#PatientShare').val(finalPatientShare.toFixed(2));
+            
+            // Log for debugging
+            console.log('🏥 MEDICAL: محاسبات داینامیک - PrimaryCoveragePercent:', primaryCoveragePercent, 
+                'PrimaryDeductible:', primaryDeductible, 'CoverableAmount:', coverableAmount,
+                'PrimaryCoverage:', primaryInsuranceCoverage, 'Remaining:', remainingAfterPrimary,
+                'SupplementaryCoverage:', supplementaryCoverage, 'FinalPatientShare:', finalPatientShare);
             
             // Validate consistency
-            validateCalculationConsistency(tariffPrice, patientShare, insurerShare);
+            validateCalculationConsistency(tariffPrice, finalPatientShare, primaryInsuranceCoverage, primaryCoveragePercent);
         }
     } catch (error) {
         console.error('🏥 MEDICAL: Error updating calculation preview:', error);
     }
 }
+function invokeCalculationPreview() {
+    const previewFn = typeof window.updateCalculationPreview === 'function'
+        ? window.updateCalculationPreview
+        : defaultUpdateCalculationPreview;
+
+    previewFn();
+}
+
+if (typeof window.updateCalculationPreview !== 'function') {
+    window.updateCalculationPreview = defaultUpdateCalculationPreview;
+}
+
 
 /**
  * Validate calculation consistency
  * اعتبارسنجی سازگاری محاسبات
  */
-function validateCalculationConsistency(tariffPrice, patientShare, insurerShare) {
-    const calculatedPatientShare = tariffPrice - insurerShare;
-    const difference = Math.abs(patientShare - calculatedPatientShare);
+function validateCalculationConsistency(tariffPrice, patientShare, primaryInsuranceCoverage, primaryCoveragePercent) {
+    // محاسبه صحیح با درصد داینامیک
+    const expectedPrimaryCoverage = tariffPrice * (primaryCoveragePercent / 100);
+    const remainingAfterPrimary = tariffPrice - expectedPrimaryCoverage;
+    const expectedPatientShare = remainingAfterPrimary; // 100% بیمه تکمیلی = 0 سهم بیمار
     
-    if (difference > 0.01) {
-        showCalculationWarning('⚠️ محاسبات با مقادیر وارد شده سازگار نیستند');
+    const primaryDifference = Math.abs(primaryInsuranceCoverage - expectedPrimaryCoverage);
+    const patientDifference = Math.abs(patientShare - expectedPatientShare);
+    
+    if (primaryDifference > 0.01 || patientDifference > 0.01) {
+        showCalculationWarning(`⚠️ محاسبات بیمه پایه (${primaryCoveragePercent}%) و تکمیلی سازگار نیستند`);
     } else {
         hideCalculationWarning();
     }

@@ -228,7 +228,16 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 @Html.LabelFor(m => m.PrimaryInsurancePlanId, "بیمه پایه *", new { @class = "required-field" })
-                                @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(ViewBag.PrimaryInsurancePlans ?? new List<object>(), "InsurancePlanId", "Name"), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required", @id = "primaryInsurancePlanId" })
+                                @if (Model.PrimaryInsurancePlans != null && Model.PrimaryInsurancePlans.Any())
+                                {
+                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(Model.PrimaryInsurancePlans, "Value", "Text"), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required", @id = "primaryInsurancePlanId" })
+                                }
+                                else
+                                {
+                                    <select id="primaryInsurancePlanId" name="PrimaryInsurancePlanId" class="form-control" required>
+                                        <option value="">در حال بارگذاری...</option>
+                                    </select>
+                                }
                                 @Html.ValidationMessageFor(m => m.PrimaryInsurancePlanId, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">بیمه پایه بیمار (تامین، نیروهای مسلح، و...)</div>
                                 
@@ -248,7 +257,16 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 @Html.LabelFor(m => m.InsurancePlanId, "طرح بیمه تکمیلی *", new { @class = "required-field" })
-                                @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(ViewBag.InsurancePlans ?? new List<object>(), "InsurancePlanId", "Name"), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required", @id = "InsurancePlanId" })
+                                @if (Model.InsurancePlans != null && Model.InsurancePlans.Any())
+                                {
+                                    @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(Model.InsurancePlans, "Value", "Text"), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required", @id = "InsurancePlanId" })
+                                }
+                                else
+                                {
+                                    <select id="InsurancePlanId" name="InsurancePlanId" class="form-control" required>
+                                        <option value="">در حال بارگذاری...</option>
+                                    </select>
+                                }
                                 @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">طرح بیمه تکمیلی (VIP ملت، دانا، پارسیان تکمیلی)</div>
                                 
@@ -272,7 +290,16 @@
                         <div class="col-md-6">
                             <div class="form-group">
                                 @Html.LabelFor(m => m.DepartmentId, "دپارتمان *", new { @class = "required-field" })
-                                @Html.DropDownListFor(m => m.DepartmentId, new SelectList(ViewBag.Departments ?? new List<object>(), "DepartmentId", "Name"), "انتخاب دپارتمان", new { @class = "form-control", @required = "required", @id = "departmentId" })
+                                @if (Model.Departments != null && Model.Departments.Any())
+                                {
+                                    @Html.DropDownListFor(m => m.DepartmentId, new SelectList(Model.Departments, "Value", "Text"), "انتخاب دپارتمان", new { @class = "form-control", @required = "required", @id = "departmentId" })
+                                }
+                                else
+                                {
+                                    <select id="departmentId" name="DepartmentId" class="form-control" required>
+                                        <option value="">در حال بارگذاری...</option>
+                                    </select>
+                                }
                                 @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">انتخاب دپارتمان</div>
                             </div>
@@ -444,6 +471,9 @@
             // Initialize smart form
             SmartForm.init();
             
+            // FIX: بارگذاری داده‌های dropdown در صورت عدم وجود
+            loadMissingDropdownData();
+            
             // Initialize insurance plan info display
             initializeInsurancePlanInfo();
             
@@ -489,6 +519,9 @@
             // برای جلوگیری از تداخل، این تابع خالی است
         }
 
+        // اضافه کردن داده‌های بیمه پایه به JavaScript
+        window.primaryInsurancePlans = @Html.Raw(Json.Encode(ViewBag.PrimaryInsurancePlans ?? new List<object>()));
+
         function initializeInsurancePlanInfo() {
             // نمایش اطلاعات بیمه پایه
             $('#primaryInsurancePlanId').on('change', function() {
@@ -497,7 +530,7 @@
                 
                 if (planId && planId !== '') {
                     // دریافت اطلاعات از ViewBag
-                    var primaryPlans = @Html.Raw(Json.Encode(ViewBag.PrimaryInsurancePlans ?? new List<object>()));
+                    var primaryPlans = window.primaryInsurancePlans || [];
                     var selectedPlan = primaryPlans.find(function(plan) {
                         return plan.InsurancePlanId == planId;
                     });
@@ -702,6 +735,91 @@
             $('#createTariffForm').prepend(errorHtml);
         }
         
+        function loadMissingDropdownData() {
+            console.log('🏥 MEDICAL: بررسی و بارگذاری داده‌های dropdown');
+            
+            // بررسی دپارتمان‌ها
+            if ($('#departmentId option').length <= 1) {
+                console.log('🏥 MEDICAL: بارگذاری دپارتمان‌ها');
+                loadDepartments();
+            }
+            
+            // بررسی بیمه‌های پایه
+            if ($('#primaryInsurancePlanId option').length <= 1) {
+                console.log('🏥 MEDICAL: بارگذاری بیمه‌های پایه');
+                loadPrimaryInsurancePlans();
+            }
+            
+            // بررسی بیمه‌های تکمیلی
+            if ($('#InsurancePlanId option').length <= 1) {
+                console.log('🏥 MEDICAL: بارگذاری بیمه‌های تکمیلی');
+                loadSupplementaryInsurancePlans();
+            }
+        }
+        
+        function loadDepartments() {
+            $.ajax({
+                url: '@Url.Action("GetDepartments", "SupplementaryTariff", new { area = "Admin" })',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log('🏥 MEDICAL: دپارتمان‌ها بارگذاری شد - Count:', data ? data.length : 0);
+                    if (data && data.length > 0) {
+                        var dropdown = $('#departmentId');
+                        dropdown.empty().append('<option value="">انتخاب دپارتمان</option>');
+                        data.forEach(function(dept) {
+                            dropdown.append('<option value="' + dept.DepartmentId + '">' + dept.Name + '</option>');
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('🏥 MEDICAL: خطا در بارگذاری دپارتمان‌ها:', error);
+                }
+            });
+        }
+        
+        function loadPrimaryInsurancePlans() {
+            $.ajax({
+                url: '@Url.Action("GetPrimaryInsurancePlans", "SupplementaryTariff", new { area = "Admin" })',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log('🏥 MEDICAL: بیمه‌های پایه بارگذاری شد - Count:', data ? data.length : 0);
+                    if (data && data.length > 0) {
+                        var dropdown = $('#primaryInsurancePlanId');
+                        dropdown.empty().append('<option value="">انتخاب بیمه پایه</option>');
+                        data.forEach(function(plan) {
+                            dropdown.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('🏥 MEDICAL: خطا در بارگذاری بیمه‌های پایه:', error);
+                }
+            });
+        }
+        
+        function loadSupplementaryInsurancePlans() {
+            $.ajax({
+                url: '@Url.Action("GetSupplementaryInsurancePlans", "SupplementaryTariff", new { area = "Admin" })',
+                type: 'GET',
+                dataType: 'json',
+                success: function(data) {
+                    console.log('🏥 MEDICAL: بیمه‌های تکمیلی بارگذاری شد - Count:', data ? data.length : 0);
+                    if (data && data.length > 0) {
+                        var dropdown = $('#InsurancePlanId');
+                        dropdown.empty().append('<option value="">انتخاب طرح بیمه تکمیلی</option>');
+                        data.forEach(function(plan) {
+                            dropdown.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
+                        });
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('🏥 MEDICAL: خطا در بارگذاری بیمه‌های تکمیلی:', error);
+                }
+            });
+        }
+
         function initializeCascadeDropdown() {
             // Cascade Dropdown Logic: Department -> Services
             $('#departmentId').on('change', function() {
@@ -714,7 +832,7 @@
                 if (departmentId) {
                     // Load services for selected department
                     $.ajax({
-                        url: '@Url.Action("GetServicesByDepartment", "SupplementaryTariff")',
+                        url: '@Url.Action("GetServicesByDepartment", "SupplementaryTariff", new { area = "Admin" })',
                         type: 'GET',
                         data: { departmentId: departmentId },
                         dataType: 'json',
@@ -764,7 +882,8 @@
                                 serviceDropdown.append('<option value="">خطا در پردازش خدمات</option>');
                             }
                         },
-                        error: function() {
+                        error: function(xhr, status, error) {
+                            console.error('🏥 MEDICAL: خطا در AJAX - Status:', status, 'Error:', error, 'Response:', xhr.responseText);
                             serviceDropdown.empty().append('<option value="">خطا در بارگذاری خدمات</option>').prop('disabled', false);
                         }
                     });

@@ -200,7 +200,7 @@
             if (!tariffs || tariffs.length === 0) {
                 tableBody.html(`
                     <tr>
-                        <td colspan="10" class="text-center text-muted">
+                        <td colspan="12" class="text-center text-muted">
                             <i class="fas fa-info-circle me-2"></i>
                             هیچ تعرفه‌ای یافت نشد
                         </td>
@@ -216,49 +216,58 @@
             // Generate table rows
             tariffs.forEach(function(tariff) {
                 const row = `
-                    <tr data-tariff-id="${tariff.tariffId}">
+                    <tr data-tariff-id="${tariff.InsuranceTariffId || tariff.tariffId}">
                         <td>
-                            <div class="fw-bold">${tariff.serviceName || 'نامشخص'}</div>
-                            <small class="text-muted">${tariff.serviceCode || ''}</small>
+                            <span class="badge badge-secondary">${tariff.InsuranceTariffId || tariff.tariffId}</span>
                         </td>
                         <td>
-                            <div class="fw-bold">${tariff.planName || 'نامشخص'}</div>
+                            <div class="fw-bold">${tariff.ServiceTitle || tariff.serviceName || 'نامشخص'}</div>
+                            <small class="text-muted">${tariff.ServiceCode || tariff.serviceCode || ''}</small>
                         </td>
                         <td>
-                            <span class="currency-format">${(tariff.tariffPrice || 0).toLocaleString()} تومان</span>
+                            <div class="fw-bold">${tariff.InsurancePlanName || tariff.planName || 'نامشخص'}</div>
+                            <small class="text-muted">${tariff.InsuranceProviderName || ''}</small>
                         </td>
                         <td>
-                            <span class="currency-format">${(tariff.patientShare || 0).toLocaleString()} تومان</span>
+                            <span class="currency-format">${(tariff.TariffPrice || tariff.tariffPrice || 0).toLocaleString()} تومان</span>
                         </td>
                         <td>
-                            <span class="currency-format">${(tariff.insurerShare || 0).toLocaleString()} تومان</span>
+                            <span class="currency-format">${(tariff.PatientShare || tariff.patientShare || 0).toLocaleString()} تومان</span>
                         </td>
                         <td>
-                            <span class="fw-bold">${(tariff.supplementaryCoveragePercent || 0).toFixed(2)}%</span>
+                            <span class="fw-bold">${(tariff.SupplementaryCoveragePercent || tariff.supplementaryCoveragePercent || 0).toFixed(2)}%</span>
                         </td>
                         <td>
-                            <span class="badge badge-info">${tariff.priority || 0}</span>
+                            <span class="currency-format">${(tariff.SupplementaryMaxPayment || tariff.supplementaryMaxPayment || 0).toLocaleString()} تومان</span>
                         </td>
                         <td>
-                            <span class="badge ${tariff.isActive ? 'badge-success' : 'badge-secondary'}">
-                                ${tariff.isActive ? 'فعال' : 'غیرفعال'}
+                            <span class="badge badge-info">${tariff.Priority || tariff.priority || 0}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted">${tariff.StartDate || tariff.startDate || 'نامشخص'}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted">${tariff.EndDate || tariff.endDate || 'نامشخص'}</span>
+                        </td>
+                        <td>
+                            <span class="badge ${tariff.IsActive || tariff.isActive ? 'badge-success' : 'badge-secondary'}">
+                                ${tariff.IsActive || tariff.isActive ? 'فعال' : 'غیرفعال'}
                             </span>
                         </td>
                         <td>
-                            <span class="text-muted">${tariff.createdAt || 'نامشخص'}</span>
-                        </td>
-                        <td>
                             <div class="btn-group" role="group">
-                                <button type="button" class="btn btn-sm btn-outline-primary" 
-                                        onclick="editTariff(${tariff.tariffId})"
-                                        title="ویرایش">
+                                <a href="/Admin/SupplementaryTariff/Details/${tariff.InsuranceTariffId || tariff.tariffId}" 
+                                   class="btn btn-sm btn-outline-primary" title="مشاهده جزئیات">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                <a href="/Admin/SupplementaryTariff/Edit/${tariff.InsuranceTariffId || tariff.tariffId}" 
+                                   class="btn btn-sm btn-outline-warning" title="ویرایش">
                                     <i class="fas fa-edit"></i>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                        onclick="deleteTariff(${tariff.tariffId})"
-                                        title="حذف">
+                                </a>
+                                <a href="/Admin/SupplementaryTariff/Delete/${tariff.InsuranceTariffId || tariff.tariffId}" 
+                                   class="btn btn-sm btn-outline-danger" title="حذف">
                                     <i class="fas fa-trash"></i>
-                                </button>
+                                </a>
                             </div>
                         </td>
                     </tr>

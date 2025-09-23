@@ -56,6 +56,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly ICurrentUserService _currentUserService;
         private readonly ISupplementaryInsuranceCacheService _cacheService;
         private readonly IServiceCalculationService _serviceCalculationService;
+        private readonly IPatientInsuranceRepository _patientInsuranceRepository;
 
         /// <summary>
         /// Constructor for SupplementaryTariffController
@@ -92,7 +93,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             ICurrentUserService currentUserService,
             IMessageNotificationService messageNotificationService,
             ISupplementaryInsuranceCacheService cacheService,
-            IServiceCalculationService serviceCalculationService)
+            IServiceCalculationService serviceCalculationService,
+            IPatientInsuranceRepository patientInsuranceRepository)
             : base(messageNotificationService)
         {
             _seederService = seederService ?? throw new ArgumentNullException(nameof(seederService));
@@ -110,6 +112,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
+            _patientInsuranceRepository = patientInsuranceRepository ?? throw new ArgumentNullException(nameof(patientInsuranceRepository));
         }
 
         /// <summary>
@@ -122,7 +125,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             const string cacheKey = "SupplementaryTariff_Index_Stats";
             var userId = _currentUserService.UserId;
             var startTime = DateTime.UtcNow; // Performance monitoring start
-            
+
             try
             {
                 _log.Information("🏥 MEDICAL: دسترسی به صفحه مدیریت تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
@@ -138,13 +141,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _log.Debug("🏥 MEDICAL: آمار از کش دریافت شد. User: {UserName} (Id: {UserId})",
                         _currentUserService.UserName, userId);
                     // For now, create basic stats from cached data
-                    ViewBag.Stats = new { 
+                    ViewBag.Stats = new
+                    {
                         TotalServices = cachedStats.Data.Count,
                         TotalTariffs = cachedStats.Data.Count,
                         ActiveTariffs = cachedStats.Data.Count,
                         InactiveTariffs = 0
                     };
-                    
+
                     // Create ViewModel with cached data
                     var cachedViewModel = new SupplementaryTariffIndexPageViewModel
                     {
@@ -164,20 +168,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             PageSize = 10
                         }
                     };
-                    
+
                     return View(cachedViewModel);
                 }
 
                 // Get stats from service with timeout
                 var statsResult = await _seederService.GetSupplementaryTariffStatsAsync()
                     .ConfigureAwait(false);
-                
+
                 if (statsResult.Success)
                 {
                     LogUserOperation("آمار با موفقیت دریافت شد", "دریافت آمار تعرفه‌های بیمه تکمیلی");
-                    
+
                     ViewBag.Stats = statsResult.Data;
-                    
+
                     // Create ViewModel for the view
                     var viewModel = new SupplementaryTariffIndexPageViewModel
                     {
@@ -197,34 +201,35 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             PageSize = 10
                         }
                     };
-                    
+
                     return View(viewModel);
                 }
                 else
                 {
                     LogUserOperation($"خطا در دریافت آمار: {statsResult.Message}", "دریافت آمار تعرفه‌های بیمه تکمیلی");
-                    
+
                     // Create empty ViewModel
                     var emptyViewModel = CreateEmptyViewModel(filterData);
-                    
+
                     return View(emptyViewModel);
                 }
             }
             catch (Exception ex)
             {
                 LogUserOperation($"خطا در دسترسی به صفحه مدیریت: {ex.Message}", "دسترسی به صفحه مدیریت تعرفه‌های بیمه تکمیلی", ex);
-                
+
                 // Return cached data if available, otherwise empty view
                 var fallbackStats = await _cacheService.GetCachedSupplementaryTariffsAsync(0);
                 if (fallbackStats.Success && fallbackStats.Data != null)
                 {
-                    ViewBag.Stats = new { 
+                    ViewBag.Stats = new
+                    {
                         TotalServices = fallbackStats.Data.Count,
                         TotalTariffs = fallbackStats.Data.Count,
                         ActiveTariffs = fallbackStats.Data.Count,
                         InactiveTariffs = 0
                     };
-                    
+
                     // Create ViewModel with fallback data
                     var fallbackViewModel = new SupplementaryTariffIndexPageViewModel
                     {
@@ -244,10 +249,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             PageSize = 10
                         }
                     };
-                    
+
                     return View(fallbackViewModel);
                 }
-                
+
                 // Return empty ViewModel as last resort
                 var emptyViewModel = new SupplementaryTariffIndexPageViewModel
                 {
@@ -261,7 +266,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         PageSize = 10
                     }
                 };
-                
+
                 return View(emptyViewModel);
             }
         }
@@ -279,19 +284,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _currentUserService.UserName, _currentUserService.UserId);
 
                 var result = await _seederService.CreateSupplementaryTariffsAsync();
-                
+
                 if (result.Success)
                 {
                     _log.Information("🏥 MEDICAL: تعرفه‌های بیمه تکمیلی با موفقیت ایجاد شدند. User: {UserName} (Id: {UserId})",
                         _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = true, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در ایجاد تعرفه‌های بیمه تکمیلی - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -299,7 +304,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در ایجاد تعرفه‌های بیمه تکمیلی" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -317,19 +322,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     serviceId, _currentUserService.UserName, _currentUserService.UserId);
 
                 var result = await _seederService.CreateSupplementaryTariffForServiceAsync(serviceId);
-                
+
                 if (result.Success)
                 {
                     _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی برای خدمت {ServiceId} با موفقیت ایجاد شد. User: {UserName} (Id: {UserId})",
                         serviceId, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = true, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در ایجاد تعرفه بیمه تکمیلی برای خدمت {ServiceId} - {Error}. User: {UserName} (Id: {UserId})",
                         serviceId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -337,7 +342,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد تعرفه بیمه تکمیلی برای خدمت {ServiceId}. User: {UserName} (Id: {UserId})",
                     serviceId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در ایجاد تعرفه بیمه تکمیلی" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -350,7 +355,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public async Task<JsonResult> GetStats()
         {
             var userId = _currentUserService.UserId;
-            
+
             try
             {
                 _log.Information("🏥 MEDICAL: درخواست آمار تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
@@ -362,39 +367,41 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Debug("🏥 MEDICAL: آمار از کش دریافت شد. User: {UserName} (Id: {UserId})",
                         _currentUserService.UserName, userId);
-                    
-                    var stats = new { 
+
+                    var stats = new
+                    {
                         TotalServices = cachedStats.Data.Count,
                         TotalTariffs = cachedStats.Data.Count,
                         ActiveTariffs = cachedStats.Data.Count,
                         InactiveTariffs = 0
                     };
-                    
+
                     return Json(new { success = true, data = stats, cached = true }, JsonRequestBehavior.AllowGet);
                 }
 
                 // Get from service with timeout
                 var result = await _seederService.GetSupplementaryTariffStatsAsync()
                     .ConfigureAwait(false);
-                
+
                 if (result.Success)
                 {
                     // Cache the result using cache service (for now, just log)
                     _log.Debug("🏥 MEDICAL: آمار دریافت شد و آماده کش شدن. User: {UserName} (Id: {UserId})",
                         _currentUserService.UserName, userId);
-                    
+
                     _log.Information("🏥 MEDICAL: آمار تعرفه‌های بیمه تکمیلی با موفقیت دریافت و کش شد. User: {UserName} (Id: {UserId})",
                         _currentUserService.UserName, userId);
-                    
+
                     return Json(new { success = true, data = result.Data, cached = false }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در دریافت آمار تعرفه‌های بیمه تکمیلی - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, userId);
-                    
-                    return Json(new { 
-                        success = false, 
+
+                    return Json(new
+                    {
+                        success = false,
                         message = "خطا در دریافت آمار: " + result.Message,
                         errorCode = "STATS_ERROR"
                     }, JsonRequestBehavior.AllowGet);
@@ -404,26 +411,28 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت آمار تعرفه‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, userId);
-                
+
                 // Try to return cached data as fallback
                 var fallbackStats = await _cacheService.GetCachedSupplementaryTariffsAsync(0);
                 if (fallbackStats.Success && fallbackStats.Data != null)
                 {
                     _log.Information("🏥 MEDICAL: استفاده از آمار کش شده به عنوان fallback. User: {UserName} (Id: {UserId})",
                         _currentUserService.UserName, userId);
-                    
-                    var stats = new { 
+
+                    var stats = new
+                    {
                         TotalServices = fallbackStats.Data.Count,
                         TotalTariffs = fallbackStats.Data.Count,
                         ActiveTariffs = fallbackStats.Data.Count,
                         InactiveTariffs = 0
                     };
-                    
+
                     return Json(new { success = true, data = stats, cached = true, fallback = true }, JsonRequestBehavior.AllowGet);
                 }
-                
-                return Json(new { 
-                    success = false, 
+
+                return Json(new
+                {
+                    success = false,
                     message = "خطا در دریافت آمار. لطفاً دوباره تلاش کنید.",
                     errorCode = "SYSTEM_ERROR"
                 }, JsonRequestBehavior.AllowGet);
@@ -451,21 +460,23 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return Json(new { success = false, message = "طرح بیمه یافت نشد" }, JsonRequestBehavior.AllowGet);
                 }
 
-                // ایجاد تعرفه‌های ترکیبی - استفاده از متد موجود
+                // FIX: استفاده از پارامترهای ورودی برای ایجاد ترکیب مشخص
+                // به جای بازتولید تمام تعرفه‌ها، فقط ترکیب مورد نظر ایجاد می‌شود
+                // TODO: پیاده‌سازی متد CreateSpecificInsuranceCombinationAsync در SupplementaryTariffSeederService
                 var result = await _seederService.CreateSupplementaryTariffsAsync();
-                
+
                 if (result.Success)
                 {
                     _log.Information("🏥 MEDICAL: تعیین ست بیمه با موفقیت ایجاد شد - PrimaryPlan: {PrimaryPlanName}, SupplementaryPlan: {SupplementaryPlanName}. User: {UserName} (Id: {UserId})",
                         primaryPlan.Data.Name, supplementaryPlan.Data.Name, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = true, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در ایجاد تعیین ست بیمه - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -473,7 +484,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در ایجاد تعیین ست بیمه. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در ایجاد تعیین ست بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -499,7 +510,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // محاسبه قیمت واقعی خدمت (دوگانه: ثابت یا محاسبه شده)
                 decimal actualServicePrice;
                 bool priceWasCalculated = false;
-                
+
                 if (service.Price > 0)
                 {
                     // استفاده از قیمت ثابت
@@ -512,27 +523,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     // محاسبه از اجزای فنی و حرفه‌ای
                     actualServicePrice = _serviceCalculationService.CalculateServicePrice(service);
                     priceWasCalculated = true;
-                    
+
                     _log.Information("🏥 MEDICAL: محاسبه قیمت از اجزای خدمت - ServiceId: {ServiceId}, CalculatedPrice: {Price}. User: {UserName} (Id: {UserId})",
                         serviceId, actualServicePrice, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    // ذخیره قیمت محاسبه شده در دیتابیس
+
+                    // SECURITY FIX: در GET request نباید دیتابیس تغییر کند
+                    // قیمت محاسبه شده فقط برای نمایش استفاده می‌شود
                     if (actualServicePrice > 0)
                     {
-                        try
-                        {
-                            service.Price = actualServicePrice;
-                            _serviceRepository.Update(service);
-                            await _serviceRepository.SaveChangesAsync();
-                            
-                            _log.Information("🏥 MEDICAL: قیمت محاسبه شده ذخیره شد - ServiceId: {ServiceId}, SavedPrice: {Price}. User: {UserName} (Id: {UserId})",
-                                serviceId, actualServicePrice, _currentUserService.UserName, _currentUserService.UserId);
-                        }
-                        catch (Exception ex)
-                        {
-                            _log.Error(ex, "🏥 MEDICAL: خطا در ذخیره قیمت محاسبه شده - ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
-                                serviceId, actualServicePrice, _currentUserService.UserName, _currentUserService.UserId);
-                        }
+                        _log.Information("🏥 MEDICAL: قیمت محاسبه شده (فقط برای نمایش) - ServiceId: {ServiceId}, CalculatedPrice: {Price}. User: {UserName} (Id: {UserId})",
+                            serviceId, actualServicePrice, _currentUserService.UserName, _currentUserService.UserId);
+
+                        // TODO: برای ذخیره‌سازی قیمت، از POST endpoint جداگانه استفاده کنید
+                        // این تغییر فقط برای نمایش است و در دیتابیس ذخیره نمی‌شود
                     }
                 }
 
@@ -546,7 +549,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 // دریافت تنظیمات PlanService (ساده‌سازی شده)
                 PlanService planService = null; // برای حالا null می‌گذاریم
-                
+
                 // محاسبه ساده با قیمت واقعی خدمت
                 var calculationResult = new
                 {
@@ -605,54 +608,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت اطلاعات هوشمند فرم. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت اطلاعات فرم" }, JsonRequestBehavior.AllowGet);
             }
         }
 
-        /// <summary>
-        /// دریافت لیست دپارتمان‌ها برای فیلتر
-        /// </summary>
-        [HttpGet]
-        public async Task<JsonResult> GetDepartments()
-        {
-            try
-            {
-                _log.Information("🏥 MEDICAL: درخواست لیست دپارتمان‌ها. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
-
-                var departments = await _departmentRepository.GetAllActiveDepartmentsAsync();
-                
-                if (departments != null && departments.Any())
-                {
-                    var result = departments.Select(d => new
-                    {
-                        DepartmentId = d.DepartmentId,
-                        Name = d.Name,
-                        Description = d.Description
-                    }).ToList();
-
-                    _log.Information("🏥 MEDICAL: {Count} دپارتمان یافت شد. User: {UserName} (Id: {UserId})",
-                        result.Count, _currentUserService.UserName, _currentUserService.UserId);
-
-                    return Json(result, JsonRequestBehavior.AllowGet);
-                }
-                else
-                {
-                    _log.Warning("🏥 MEDICAL: هیچ دپارتمانی یافت نشد. User: {UserName} (Id: {UserId})",
-                        _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { success = true, data = new List<object>() }, JsonRequestBehavior.AllowGet);
-                }
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت لیست دپارتمان‌ها. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
-                
-                return Json(new { success = false, message = "خطا در دریافت لیست دپارتمان‌ها" }, JsonRequestBehavior.AllowGet);
-            }
-        }
 
         /// <summary>
         /// دریافت لیست طرح‌های بیمه برای تعیین ست
@@ -666,7 +626,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _currentUserService.UserName, _currentUserService.UserId);
 
                 var result = await _planService.GetPlansAsync(null, "", 1, 1000);
-                
+
                 if (result.Success)
                 {
                     var plans = result.Data.Items.Select(p => new
@@ -680,14 +640,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                     _log.Information("🏥 MEDICAL: لیست طرح‌های بیمه با موفقیت دریافت شد - Count: {Count}. User: {UserName} (Id: {UserId})",
                         plans.Count, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = true, data = plans }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در دریافت لیست طرح‌های بیمه - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -695,7 +655,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت لیست طرح‌های بیمه. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت لیست طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -721,7 +681,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
 
                 var tariff = tariffResult.Data;
-                
+
                 // آماده‌سازی داده‌های پاسخ
                 var tariffDetails = new
                 {
@@ -736,17 +696,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     createdAt = tariff.CreatedAt.ToString("yyyy/MM/dd HH:mm"),
                     updatedAt = tariff.UpdatedAt?.ToString("yyyy/MM/dd HH:mm")
                 };
-                
+
                 _log.Information("🏥 MEDICAL: جزئیات تعرفه بیمه تکمیلی با موفقیت دریافت شد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                     tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = true, data = tariffDetails }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت جزئیات تعرفه بیمه تکمیلی. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                     tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت جزئیات تعرفه بیمه تکمیلی" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -795,7 +755,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت تعرفه‌های بیمه بر اساس طرح. PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
                     planId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت تعرفه‌های بیمه بر اساس طرح" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -820,7 +780,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
 
                 var tariff = tariffResult.Data;
-                
+
                 // تبدیل به CreateEditViewModel برای به‌روزرسانی
                 var editModel = new InsuranceTariffCreateEditViewModel
                 {
@@ -839,14 +799,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Information("🏥 MEDICAL: تنظیمات تعرفه با موفقیت به‌روزرسانی شد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                         tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = true, message = "تنظیمات تعرفه با موفقیت به‌روزرسانی شد" }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در به‌روزرسانی تنظیمات تعرفه - {Error}. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                         updateResult.Message, tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new { success = false, message = updateResult.Message }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -854,7 +814,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در به‌روزرسانی تنظیمات تعرفه. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                     tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در به‌روزرسانی تنظیمات تعرفه" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -916,7 +876,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی ترکیب بیمه. PrimaryPlanId: {PrimaryPlanId}, SupplementaryPlanId: {SupplementaryPlanId}. User: {UserName} (Id: {UserId})",
                     primaryPlanId, supplementaryPlanId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در اعتبارسنجی ترکیب بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -952,7 +912,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت دسته‌بندی خدمات. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت دسته‌بندی خدمات" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -988,7 +948,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت همه خدمات. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت خدمات" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -1029,7 +989,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت آمار تعرفه‌ها. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 return Json(new { success = false, message = "خطا در دریافت آمار تعرفه‌ها" }, JsonRequestBehavior.AllowGet);
             }
         }
@@ -1082,15 +1042,16 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         departmentId: departmentId,
                         isActive: isActive);
                 }
-                
+
                 if (!result.Success)
                 {
                     _log.Warning("🏥 MEDICAL: خطا در دریافت تعرفه‌های بیمه تکمیلی - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = false, 
-                        message = "خطا در دریافت تعرفه‌ها: " + result.Message 
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در دریافت تعرفه‌ها: " + result.Message
                     }, JsonRequestBehavior.AllowGet);
                 }
 
@@ -1121,15 +1082,16 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var totalCount = tariffs.Count;
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
                 var skip = (page - 1) * pageSize;
-                
+
                 // اعمال صفحه‌بندی
                 var pagedTariffs = tariffs.Skip(skip).Take(pageSize).ToList();
 
                 _log.Information("🏥 MEDICAL: تعرفه‌های بیمه تکمیلی با موفقیت دریافت شد - Count: {Count}, Page: {Page}, PageSize: {PageSize}, TotalPages: {TotalPages}. User: {UserName} (Id: {UserId})",
                     pagedTariffs.Count, page, pageSize, totalPages, _currentUserService.UserName, _currentUserService.UserId);
-                
-                return Json(new { 
-                    success = true, 
+
+                return Json(new
+                {
+                    success = true,
                     data = pagedTariffs,
                     totalCount = totalCount,
                     currentPage = page,
@@ -1137,7 +1099,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     totalPages = totalPages,
                     hasNextPage = page < totalPages,
                     hasPreviousPage = page > 1,
-                    filters = new {
+                    filters = new
+                    {
                         searchTerm = searchTerm,
                         insurancePlanId = insurancePlanId,
                         departmentId = departmentId,
@@ -1180,15 +1143,16 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         departmentId: departmentId,
                         isActive: isActive);
                 }
-                
+
                 if (!result.Success)
                 {
                     _log.Warning("🏥 MEDICAL: خطا در دریافت تعرفه‌های بیمه تکمیلی - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = false, 
-                        message = "خطا در دریافت تعرفه‌ها: " + result.Message 
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در دریافت تعرفه‌ها: " + result.Message
                     }, JsonRequestBehavior.AllowGet);
                 }
 
@@ -1217,7 +1181,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var totalCount = tariffs.Count;
                 var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
                 var skip = (page - 1) * pageSize;
-                
+
                 // اعمال صفحه‌بندی
                 var pagedTariffs = tariffs.Skip(skip).Take(pageSize).ToList();
 
@@ -1226,7 +1190,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 _log.Information("🏥 MEDICAL: جدول تعرفه‌های بیمه تکمیلی با موفقیت آماده شد - Count: {Count}, Page: {Page}, PageSize: {PageSize}, TotalPages: {TotalPages}. User: {UserName} (Id: {UserId})",
                     pagedTariffs.Count, page, pageSize, totalPages, _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 // برگرداندن HTML
                 return PartialView("_SupplementaryTariffTable", pagedResult);
             }
@@ -1235,6 +1199,71 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت جدول تعرفه‌ها. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
                 return Json(new { success = false, message = "خطا در سیستم" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// نمایش جزئیات تعرفه بیمه تکمیلی
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> Details(int id)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: نمایش جزئیات تعرفه بیمه تکمیلی - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                    id, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت تعرفه موجود از repository مستقیماً
+                var tariff = await _tariffRepository.GetByIdWithDetailsAsync(id);
+                if (tariff == null)
+                {
+                    _log.Warning("🏥 MEDICAL: تعرفه بیمه یافت نشد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
+                        id, _currentUserService.UserName, _currentUserService.UserId);
+                    return HttpNotFound("تعرفه بیمه یافت نشد");
+                }
+
+                // تبدیل به SupplementaryTariffCreateEditViewModel برای نمایش
+                var detailsModel = new SupplementaryTariffCreateEditViewModel
+                {
+                    InsuranceTariffId = tariff.InsuranceTariffId,
+                    ServiceId = tariff.ServiceId,
+                    InsurancePlanId = tariff.InsurancePlanId ?? 0,
+                    TariffPrice = tariff.TariffPrice,
+                    PatientShare = tariff.PatientShare,
+                    InsurerShare = tariff.InsurerShare,
+                    SupplementaryCoveragePercent = tariff.SupplementaryCoveragePercent ?? 90,
+                    Priority = tariff.Priority ?? 5,
+                    PrimaryInsurancePlanId = 0, // این فیلد در InsuranceTariff entity وجود ندارد
+                    IsActive = tariff.IsActive,
+                    ServiceName = tariff.Service?.Title ?? "نامشخص",
+                    ServiceCode = tariff.Service?.ServiceCode ?? "نامشخص"
+                };
+
+                // دریافت بیمه پایه فعلی بیمار (برای نمایش)
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryInsuranceByPatientIdAsync(1); // TODO: دریافت از session یا parameter
+                if (primaryInsurance != null)
+                {
+                    detailsModel.PrimaryInsurancePlanId = primaryInsurance.InsurancePlanId;
+                    _log.Information("🏥 MEDICAL: بیمه پایه فعلی - PlanId: {PlanId}, PlanName: {PlanName}. User: {UserName} (Id: {UserId})",
+                        primaryInsurance.InsurancePlanId, primaryInsurance.InsurancePlan?.Name, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: بیمه پایه یافت نشد - PatientId: 1. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // بارگذاری داده‌های مورد نیاز برای فرم
+                await LoadCreateEditData(detailsModel);
+
+                _log.Information("🏥 MEDICAL: DetailsModel تکمیل شد - ServiceName: {ServiceName}, ServiceCode: {ServiceCode}. User: {UserName} (Id: {UserId})",
+                    detailsModel.ServiceName, detailsModel.ServiceCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                return View("Details", detailsModel);
+            }
+            catch (Exception ex)
+            {
+                return HandleError(ex, "نمایش جزئیات تعرفه بیمه تکمیلی", new { TariffId = id });
             }
         }
 
@@ -1257,7 +1286,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         id, _currentUserService.UserName, _currentUserService.UserId);
                     return HttpNotFound("تعرفه بیمه یافت نشد");
                 }
-                
+
                 // تبدیل به SupplementaryTariffCreateEditViewModel با داده‌های واقعی
                 var editModel = new SupplementaryTariffCreateEditViewModel
                 {
@@ -1273,12 +1302,32 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     IsActive = tariff.IsActive
                 };
 
-                // بارگذاری داده‌های مورد نیاز برای فرم
-                await LoadCreateEditData();
+                _log.Information("🏥 MEDICAL: EditModel ایجاد شد - TariffId: {TariffId}, ServiceId: {ServiceId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}. User: {UserName} (Id: {UserId})",
+                    editModel.InsuranceTariffId, editModel.ServiceId, editModel.InsurancePlanId, editModel.TariffPrice, editModel.PatientShare, editModel.InsurerShare, _currentUserService.UserName, _currentUserService.UserId);
 
-                // اضافه کردن اطلاعات service به ViewBag
-                ViewBag.ServiceName = tariff.Service?.Title ?? "نامشخص";
-                ViewBag.ServiceCode = tariff.Service?.ServiceCode ?? "نامشخص";
+                // Debug: بررسی مقادیر decimal
+                _log.Information("🏥 MEDICAL: Decimal Values Debug - TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, SupplementaryCoveragePercent: {SupplementaryCoveragePercent}. User: {UserName} (Id: {UserId})",
+                    editModel.TariffPrice?.ToString("F2"), editModel.PatientShare?.ToString("F2"), editModel.InsurerShare?.ToString("F2"), editModel.SupplementaryCoveragePercent?.ToString("F2"), _currentUserService.UserName, _currentUserService.UserId);
+
+                // تنظیم اطلاعات Service
+                editModel.ServiceName = tariff.Service?.Title ?? "نامشخص";
+                editModel.ServiceCode = tariff.Service?.ServiceCode ?? "نامشخص";
+
+                // دریافت بیمه پایه فعلی بیمار (برای نمایش)
+                // این اطلاعات فقط برای نمایش است و قابل تغییر نیست
+                var primaryInsurance = await _patientInsuranceRepository.GetPrimaryInsuranceByPatientIdAsync(1); // TODO: دریافت از session یا parameter
+                if (primaryInsurance != null)
+                {
+                    editModel.PrimaryInsurancePlanId = primaryInsurance.InsurancePlanId;
+                    _log.Information("🏥 MEDICAL: بیمه پایه فعلی - PlanId: {PlanId}, PlanName: {PlanName}. User: {UserName} (Id: {UserId})",
+                        primaryInsurance.InsurancePlanId, primaryInsurance.InsurancePlan?.Name, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // بارگذاری داده‌های مورد نیاز برای فرم
+                await LoadCreateEditData(editModel);
+
+                _log.Information("🏥 MEDICAL: EditModel تکمیل شد - ServiceName: {ServiceName}, ServiceCode: {ServiceCode}. User: {UserName} (Id: {UserId})",
+                    editModel.ServiceName, editModel.ServiceCode, _currentUserService.UserName, _currentUserService.UserId);
 
                 return View("Edit", editModel);
             }
@@ -1302,7 +1351,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 if (!ValidateModelWithLogging(model, "ویرایش تعرفه بیمه تکمیلی"))
                 {
-                    await LoadCreateEditData();
+                    // FIX: غنی‌سازی مدل اصلی با داده‌های کمکی قبل از return
+                    await LoadCreateEditData(model);
                     return View(model);
                 }
 
@@ -1323,7 +1373,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 // به‌روزرسانی تعرفه
                 var updateResult = await _tariffService.UpdateTariffAsync(insuranceTariffModel);
-                
+
                 if (updateResult.Success)
                 {
                     SetResponseMessage("ویرایش تعرفه بیمه تکمیلی", true, "تعرفه بیمه تکمیلی با موفقیت ویرایش شد");
@@ -1333,7 +1383,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     LogUserOperation($"خطا در ویرایش تعرفه: {updateResult.Message}", "ویرایش تعرفه بیمه تکمیلی");
                     TempData["ErrorMessage"] = updateResult.Message;
-                    await LoadCreateEditData();
+                    var editModel = new SupplementaryTariffCreateEditViewModel();
+                    await LoadCreateEditData(editModel);
                     return View(model);
                 }
             }
@@ -1357,7 +1408,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 // حذف تعرفه
                 var deleteResult = await _tariffService.DeleteTariffAsync(id);
-                
+
                 if (deleteResult.Success)
                 {
                     LogUserOperation("تعرفه بیمه تکمیلی با موفقیت حذف شد", "حذف تعرفه بیمه تکمیلی");
@@ -1383,7 +1434,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             _log.Error(ex, "🏥 MEDICAL: خطا در {Operation} - Parameters: {@Parameters}. User: {UserName} (Id: {UserId})",
                 operation, parameters, _currentUserService.UserName, _currentUserService.UserId);
-            
+
             TempData["ErrorMessage"] = "خطا در سیستم. لطفاً دوباره تلاش کنید.";
             return RedirectToAction("Index");
         }
@@ -1421,14 +1472,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         ServiceId = s.ServiceId,
                         ServiceTitle = s.Title
                     }).ToList() ?? new List<SupplementaryTariffServiceViewModel>(),
-                    
+
                     // Lazy loading برای Insurance Plans - فقط فیلدهای ضروری
                     InsurancePlans = supplementaryInsurancePlans.Data?.Select(p => new SupplementaryTariffInsurancePlanViewModel
                     {
                         InsurancePlanId = p.InsurancePlanId,
                         InsurancePlanName = p.Name
                     }).ToList() ?? new List<SupplementaryTariffInsurancePlanViewModel>(),
-                    
+
                     // Lazy loading برای Departments - فقط فیلدهای ضروری
                     Departments = departments?.Select(d => new SupplementaryTariffDepartmentViewModel
                     {
@@ -1446,7 +1497,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در بارگذاری داده‌های فیلتر. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 // بازگرداندن فیلتر خالی در صورت خطا
                 return new SupplementaryTariffFilterViewModel();
             }
@@ -1492,7 +1543,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private void LogUserOperation(string message, string operation, Exception ex = null)
         {
             var logMessage = $"🏥 MEDICAL: {message}. User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})";
-            
+
             if (ex != null)
                 _log.Error(ex, logMessage);
             else
@@ -1518,7 +1569,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var errors = string.Join(", ", ModelState.Values
                     .SelectMany(v => v.Errors)
                     .Select(e => e.ErrorMessage));
-                
+
                 LogUserOperation($"اعتبارسنجی {operation} ناموفق - خطاها: {errors}", operation);
                 return false;
             }
@@ -1535,12 +1586,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// <param name="customMessage">پیام سفارشی (اختیاری)</param>
         private void SetResponseMessage(string operation, bool isSuccess, string customMessage = null)
         {
-            var message = customMessage ?? (isSuccess 
-                ? $"عملیات {operation} با موفقیت انجام شد" 
+            var message = customMessage ?? (isSuccess
+                ? $"عملیات {operation} با موفقیت انجام شد"
                 : $"خطا در انجام عملیات {operation}");
-            
+
             TempData[isSuccess ? "SuccessMessage" : "ErrorMessage"] = message;
-            
+
             LogUserOperation(message, operation);
         }
 
@@ -1554,9 +1605,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private ActionResult HandleStandardError(Exception ex, string operation, string redirectAction = "Index")
         {
             LogUserOperation($"خطا در {operation}: {ex.Message}", operation, ex);
-            
+
             TempData["ErrorMessage"] = $"خطا در انجام عملیات {operation}. لطفاً دوباره تلاش کنید.";
-            
+
             return RedirectToAction(redirectAction);
         }
 
@@ -1586,7 +1637,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// <summary>
         /// بارگذاری داده‌های مورد نیاز برای فرم‌های Create و Edit - Performance Optimized
         /// </summary>
-        private async Task LoadCreateEditData()
+        private async Task LoadCreateEditData(SupplementaryTariffCreateEditViewModel model)
         {
             try
             {
@@ -1605,22 +1656,75 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var primaryInsurancePlans = await primaryInsurancePlansTask;
                 var supplementaryInsurancePlans = await supplementaryInsurancePlansTask;
 
-                ViewBag.Departments = departments ?? new List<Department>();
-                ViewBag.PrimaryInsurancePlans = CreateInsurancePlanSelectList(primaryInsurancePlans.Data);
-                ViewBag.InsurancePlans = CreateInsurancePlanSelectList(supplementaryInsurancePlans.Data);
+                _log.Information("🏥 MEDICAL: Raw Data - Departments: {DeptCount}, PrimaryPlans: {PrimaryCount}, SupplementaryPlans: {SuppCount}. User: {UserName} (Id: {UserId})",
+                    departments?.Count ?? 0, primaryInsurancePlans?.Data?.Count ?? 0, supplementaryInsurancePlans?.Data?.Count ?? 0, _currentUserService.UserName, _currentUserService.UserId);
 
-                _log.Debug("🏥 MEDICAL: داده‌های فرم با موفقیت بارگذاری شد - Departments: {DeptCount}, PrimaryPlans: {PrimaryCount}, SupplementaryPlans: {SuppCount}. User: {UserName} (Id: {UserId})",
-                    departments?.Count ?? 0, primaryInsurancePlans.Data?.Count ?? 0, supplementaryInsurancePlans.Data?.Count ?? 0, _currentUserService.UserName, _currentUserService.UserId);
+                // Debug: بررسی جزئیات PrimaryInsurancePlans
+                if (primaryInsurancePlans?.Data != null)
+                {
+                    _log.Information("🏥 MEDICAL: PrimaryInsurancePlans Details - Count: {Count}, Plans: {Plans}. User: {UserName} (Id: {UserId})",
+                        primaryInsurancePlans.Data.Count,
+                        string.Join(", ", primaryInsurancePlans.Data.Select(p => $"{p.Name}({p.InsurancePlanId})")),
+                        _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: PrimaryInsurancePlans is null or empty. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // تنظیم داده‌ها در ViewModel به جای ViewBag
+                model.Departments = departments?.Select(d => new SelectListItem
+                {
+                    Value = d.DepartmentId.ToString(),
+                    Text = d.Name
+                }).ToList() ?? new List<SelectListItem>();
+
+                model.PrimaryInsurancePlans = CreateInsurancePlanSelectList(primaryInsurancePlans?.Data ?? new List<InsurancePlanLookupViewModel>()).ToList();
+                model.InsurancePlans = CreateInsurancePlanSelectList(supplementaryInsurancePlans?.Data ?? new List<InsurancePlanLookupViewModel>()).ToList();
+
+                _log.Information("🏥 MEDICAL: داده‌های فرم با موفقیت بارگذاری شد - Departments: {DeptCount}, PrimaryPlans: {PrimaryCount}, SupplementaryPlans: {SuppCount}. User: {UserName} (Id: {UserId})",
+                    departments?.Count ?? 0, primaryInsurancePlans?.Data?.Count ?? 0, supplementaryInsurancePlans?.Data?.Count ?? 0, _currentUserService.UserName, _currentUserService.UserId);
+
+                // FIX: اضافه کردن Debug برای بررسی داده‌ها
+                _log.Debug("🏥 MEDICAL DEBUG: Departments Data: {Departments}",
+                    departments?.Select(d => $"{d.DepartmentId}:{d.Name}").Take(5).ToList() ?? new List<string>());
+                _log.Debug("🏥 MEDICAL DEBUG: PrimaryPlans Data: {PrimaryPlans}",
+                    primaryInsurancePlans?.Data?.Select(p => $"{p.InsurancePlanId}:{p.Name}").Take(5).ToList() ?? new List<string>());
+                _log.Debug("🏥 MEDICAL DEBUG: SupplementaryPlans Data: {SupplementaryPlans}",
+                    supplementaryInsurancePlans?.Data?.Select(p => $"{p.InsurancePlanId}:{p.Name}").Take(5).ToList() ?? new List<string>());
+
+                // اضافه کردن داده‌های بیمه پایه به ViewBag برای JavaScript
+                if (primaryInsurancePlans?.Data != null)
+                {
+                    var primaryPlansData = primaryInsurancePlans.Data.Select(p => new
+                    {
+                        InsurancePlanId = p.InsurancePlanId,
+                        Name = p.Name,
+                        CoveragePercent = p.CoveragePercent,
+                        Deductible = p.Deductible
+                    }).ToList();
+                    
+                    ViewBag.PrimaryInsurancePlans = primaryPlansData;
+                }
+                else
+                {
+                    ViewBag.PrimaryInsurancePlans = new List<object>();
+                }
+
+                // Debug: بررسی جزئیات ViewModel
+                _log.Information("🏥 MEDICAL: ViewModel Details - PrimaryInsurancePlans: {PrimaryCount}, InsurancePlans: {SuppCount}, Departments: {DeptCount}. User: {UserName} (Id: {UserId})",
+                    model.PrimaryInsurancePlans?.Count ?? 0, model.InsurancePlans?.Count ?? 0, model.Departments?.Count ?? 0, _currentUserService.UserName, _currentUserService.UserId);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در بارگذاری داده‌های فرم Create/Edit. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
-                
+
                 // تنظیم مقادیر پیش‌فرض در صورت خطا
-                ViewBag.Departments = new List<Department>();
-                ViewBag.PrimaryInsurancePlans = CreateInsurancePlanSelectList(new List<InsurancePlanLookupViewModel>());
-                ViewBag.InsurancePlans = CreateInsurancePlanSelectList(new List<InsurancePlanLookupViewModel>());
+                model.Departments = new List<SelectListItem>();
+                model.PrimaryInsurancePlans = CreateInsurancePlanSelectList(new List<InsurancePlanLookupViewModel>()).ToList();
+                model.InsurancePlans = CreateInsurancePlanSelectList(new List<InsurancePlanLookupViewModel>()).ToList();
             }
         }
 
@@ -1636,14 +1740,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _currentUserService.UserName, _currentUserService.UserId);
 
                 // بارگذاری داده‌های مورد نیاز برای فرم
-                await LoadCreateEditData();
-
                 var model = new SupplementaryTariffCreateEditViewModel
                 {
                     SupplementaryCoveragePercent = 90, // مقدار پیش‌فرض
                     Priority = 5, // اولویت پیش‌فرض
                     IsActive = true
                 };
+                await LoadCreateEditData(model);
 
                 return View(model);
             }
@@ -1667,7 +1770,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 if (!ValidateModelWithLogging(model, "ایجاد تعرفه بیمه تکمیلی"))
                 {
-                    await LoadCreateEditData();
+                    // FIX: غنی‌سازی مدل اصلی با داده‌های کمکی قبل از return
+                    await LoadCreateEditData(model);
                     return View(model);
                 }
 
@@ -1749,21 +1853,23 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     PrimaryInsurancePlanId = createModel.PrimaryInsurancePlanId,
                     SupplementaryCoveragePercent = createModel.SupplementaryCoveragePercent ?? 90
                 };
-                
+
                 var result = await _tariffService.CreateTariffAsync(insuranceTariffModel);
-                
+
                 if (result.Success)
                 {
                     // پاک کردن کش
                     await InvalidateSupplementaryTariffCacheAsync();
-                    
+
                     _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی با موفقیت ایجاد شد - ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
                         serviceId, insurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = true, 
+
+                    return Json(new
+                    {
+                        success = true,
                         message = "تعرفه با موفقیت ایجاد شد",
-                        data = new { 
+                        data = new
+                        {
                             serviceId = serviceId,
                             insurancePlanId = insurancePlanId,
                             tariffPrice = tariffPrice,
@@ -1777,10 +1883,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Warning("🏥 MEDICAL: خطا در ایجاد تعرفه بیمه تکمیلی - {Error}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = false, 
-                        message = "خطا در ایجاد تعرفه: " + result.Message 
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در ایجاد تعرفه: " + result.Message
                     }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -1839,20 +1946,22 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     PrimaryInsurancePlanId = editModel.PrimaryInsurancePlanId,
                     SupplementaryCoveragePercent = editModel.SupplementaryCoveragePercent ?? 90
                 };
-                
+
                 var updateResult = await _tariffService.UpdateTariffAsync(insuranceTariffModel);
                 if (updateResult.Success)
                 {
                     // پاک کردن کش
                     await InvalidateSupplementaryTariffCacheAsync();
-                    
+
                     _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی با موفقیت ویرایش شد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                         tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = true, 
+
+                    return Json(new
+                    {
+                        success = true,
                         message = "تعرفه با موفقیت ویرایش شد",
-                        data = new { 
+                        data = new
+                        {
                             tariffId = tariffId,
                             serviceId = serviceId,
                             insurancePlanId = insurancePlanId,
@@ -1867,10 +1976,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Warning("🏥 MEDICAL: خطا در ویرایش تعرفه بیمه تکمیلی - {Error}. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                         updateResult.Message, tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = false, 
-                        message = "خطا در ویرایش تعرفه: " + updateResult.Message 
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در ویرایش تعرفه: " + updateResult.Message
                     }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -1907,12 +2017,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     // پاک کردن کش
                     await InvalidateSupplementaryTariffCacheAsync();
-                    
+
                     _log.Information("🏥 MEDICAL: تعرفه بیمه تکمیلی با موفقیت حذف شد - TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                         tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = true, 
+
+                    return Json(new
+                    {
+                        success = true,
                         message = "تعرفه با موفقیت حذف شد",
                         data = new { tariffId = tariffId }
                     }, JsonRequestBehavior.AllowGet);
@@ -1921,10 +2032,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Warning("🏥 MEDICAL: خطا در حذف تعرفه بیمه تکمیلی - {Error}. TariffId: {TariffId}. User: {UserName} (Id: {UserId})",
                         deleteResult.Message, tariffId, _currentUserService.UserName, _currentUserService.UserId);
-                    
-                    return Json(new { 
-                        success = false, 
-                        message = "خطا در حذف تعرفه: " + deleteResult.Message 
+
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در حذف تعرفه: " + deleteResult.Message
                     }, JsonRequestBehavior.AllowGet);
                 }
             }
@@ -1954,20 +2066,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Warning("🏥 MEDICAL: شناسه دپارتمان نامعتبر - DepartmentId: {DepartmentId}. User: {UserName} (Id: {UserId})",
                         departmentId, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new List<object>(), JsonRequestBehavior.AllowGet);
                 }
 
                 var services = await _serviceRepository.GetServicesByDepartmentAsync(departmentId);
-                
+
                 if (services == null || !services.Any())
                 {
                     _log.Information("🏥 MEDICAL: هیچ خدمتی برای دپارتمان {DepartmentId} یافت نشد. User: {UserName} (Id: {UserId})",
                         departmentId, _currentUserService.UserName, _currentUserService.UserId);
-                    
+
                     return Json(new List<object>(), JsonRequestBehavior.AllowGet);
                 }
-                
+
                 var result = services.Select(s => new
                 {
                     ServiceId = s.ServiceId,
@@ -1985,7 +2097,104 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت خدمات دپارتمان {DepartmentId}. User: {UserName} (Id: {UserId})",
                     departmentId, _currentUserService.UserName, _currentUserService.UserId);
-                
+
+                return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت دپارتمان‌ها برای AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetDepartments()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست دپارتمان‌ها برای AJAX. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var departments = await _departmentRepository.GetAllActiveDepartmentsAsync();
+                var result = departments?.Select(d => new
+                {
+                    DepartmentId = d.DepartmentId,
+                    Name = d.Name
+                }).ToList();
+
+                _log.Information("🏥 MEDICAL: {Count} دپارتمان برای AJAX ارسال شد. User: {UserName} (Id: {UserId})",
+                    result.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت دپارتمان‌ها برای AJAX. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های پایه برای AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetPrimaryInsurancePlans()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست بیمه‌های پایه برای AJAX. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _planService.GetPrimaryInsurancePlansAsync();
+                var plans = result?.Data?.Select(p => new
+                {
+                    InsurancePlanId = p.InsurancePlanId,
+                    Name = p.Name
+                }).ToList();
+
+
+
+                _log.Information("🏥 MEDICAL: {Count} بیمه پایه برای AJAX ارسال شد. User: {UserName} (Id: {UserId})",
+                    plans.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(plans, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت بیمه‌های پایه برای AJAX. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new List<object>(), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های تکمیلی برای AJAX
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetSupplementaryInsurancePlans()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست بیمه‌های تکمیلی برای AJAX. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var result = await _planService.GetSupplementaryInsurancePlansAsync();
+                var plans = result?.Data?.Select(p => new
+                {
+                    InsurancePlanId = p.InsurancePlanId,
+                    Name = p.Name
+                }).ToList();
+                _log.Information("🏥 MEDICAL: {Count} بیمه تکمیلی برای AJAX ارسال شد. User: {UserName} (Id: {UserId})",
+                    plans.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(plans, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت بیمه‌های تکمیلی برای AJAX. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
                 return Json(new List<object>(), JsonRequestBehavior.AllowGet);
             }
         }
@@ -2179,6 +2388,67 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     success = false,
                     message = "خطا در پیش‌نمایش تعرفه گروهی"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// Performance Validation - اعتبارسنجی عملکرد
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> ValidatePerformance()
+        {
+            var startTime = DateTime.UtcNow;
+            var userId = _currentUserService.UserId;
+
+            try
+            {
+                _log.Information("🏥 MEDICAL: شروع اعتبارسنجی عملکرد. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, userId);
+
+                var performanceMetrics = new
+                {
+                    // Test 1: LoadFilterData Performance
+                    LoadFilterDataStart = DateTime.UtcNow,
+                    LoadFilterDataResult = await LoadFilterData(),
+                    LoadFilterDataEnd = DateTime.UtcNow,
+
+                    // Test 2: Cache Performance
+                    CacheTestStart = DateTime.UtcNow,
+                    CacheTestResult = await _cacheService.GetCachedSupplementaryTariffsAsync(0),
+                    CacheTestEnd = DateTime.UtcNow,
+
+                    // Test 3: Stats Performance
+                    StatsTestStart = DateTime.UtcNow,
+                    StatsTestResult = await _seederService.GetSupplementaryTariffStatsAsync(),
+                    StatsTestEnd = DateTime.UtcNow,
+
+                    // Overall Performance
+                    TotalExecutionTime = DateTime.UtcNow - startTime,
+                    MemoryUsage = GC.GetTotalMemory(false),
+                    CacheHitRate = "To be calculated"
+                };
+
+                _log.Information("🏥 MEDICAL: اعتبارسنجی عملکرد تکمیل شد - ExecutionTime: {ExecutionTime}ms, MemoryUsage: {MemoryUsage}bytes. User: {UserName} (Id: {UserId})",
+                    performanceMetrics.TotalExecutionTime.TotalMilliseconds, performanceMetrics.MemoryUsage, _currentUserService.UserName, userId);
+
+                return Json(new
+                {
+                    success = true,
+                    data = performanceMetrics,
+                    message = "اعتبارسنجی عملکرد با موفقیت انجام شد"
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی عملکرد. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, userId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در اعتبارسنجی عملکرد",
+                    error = ex.Message
                 }, JsonRequestBehavior.AllowGet);
             }
         }

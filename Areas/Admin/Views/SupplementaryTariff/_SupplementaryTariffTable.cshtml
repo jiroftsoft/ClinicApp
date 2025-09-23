@@ -18,7 +18,7 @@
                 <th>عملیات</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody id="tariffsTableBody">
             @foreach (var item in Model.Items)
             {
                 <tr data-tariff-id="@item.InsuranceTariffId">
@@ -60,7 +60,7 @@
                     <td>
                         <div class="btn-group" role="group">
                             <a href="@Url.Action("Details", new { id = item.InsuranceTariffId })" 
-                               class="btn btn-sm btn-outline-primary" title="مشاهده جزئیات">
+                               class="btn btn-sm btn-outline-info" title="مشاهده جزئیات">
                                 <i class="fas fa-eye"></i>
                             </a>
                             <a href="@Url.Action("Edit", new { id = item.InsuranceTariffId })" 
@@ -152,10 +152,30 @@
         margin: 0 2px;
         border-radius: 20px;
         transition: all 0.3s ease;
+        min-width: 35px;
+        height: 35px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
     }
 
     .btn-group .btn:hover {
         transform: translateY(-2px);
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+
+    .btn-group .btn i {
+        font-size: 14px;
+    }
+
+    .btn-outline-info {
+        color: #17a2b8;
+        border-color: #17a2b8;
+    }
+
+    .btn-outline-info:hover {
+        background-color: #17a2b8;
+        border-color: #17a2b8;
+        color: white;
     }
 </style>

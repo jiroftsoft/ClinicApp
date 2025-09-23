@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Web.Mvc;
 
 namespace ClinicApp.ViewModels.Insurance.Supplementary
 {
@@ -96,6 +98,31 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         [Display(Name = "تنظیمات خاص")]
         [StringLength(2000, ErrorMessage = "تنظیمات نمی‌تواند بیش از 2000 کاراکتر باشد.")]
         public string SupplementarySettings { get; set; }
+
+        /// <summary>
+        /// لیست دپارتمان‌ها برای DropDown
+        /// </summary>
+        public List<SelectListItem> Departments { get; set; } = new List<SelectListItem>();
+
+        /// <summary>
+        /// لیست بیمه‌های پایه برای DropDown
+        /// </summary>
+        public List<SelectListItem> PrimaryInsurancePlans { get; set; } = new List<SelectListItem>();
+
+        /// <summary>
+        /// لیست بیمه‌های تکمیلی برای DropDown
+        /// </summary>
+        public List<SelectListItem> InsurancePlans { get; set; } = new List<SelectListItem>();
+
+        /// <summary>
+        /// نام خدمت (فقط برای نمایش)
+        /// </summary>
+        public string ServiceName { get; set; }
+
+        /// <summary>
+        /// کد خدمت (فقط برای نمایش)
+        /// </summary>
+        public string ServiceCode { get; set; }
 
         /// <summary>
         /// اولویت تعرفه
