@@ -38,7 +38,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// 
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
-    //[Authorize(Roles = "Admin,InsuranceManager")]
+    [Authorize(Roles = "Admin,InsuranceManager")]
     [MedicalEnvironmentFilter]
     public class InsuranceTariffController : BaseController
     {
@@ -192,36 +192,24 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Information("🏥 MEDICAL: درخواست AJAX بارگیری تعرفه‌ها - CorrelationId: {CorrelationId}, Filter: {@Filter}, User: {UserName} (Id: {UserId})",
                 correlationId, filter, _currentUserService.UserName, _currentUserService.UserId);
 
-            // 🔍 CONSOLE LOGGING - تمام مقادیر Form
-            System.Console.WriteLine("🔍 ===== LOAD TARIFFS DEBUG START =====");
-            System.Console.WriteLine($"🔍 CorrelationId: {correlationId}");
-            System.Console.WriteLine($"🔍 User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
-            System.Console.WriteLine($"🔍 Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}");
+            // 🔍 STRUCTURED LOGGING - تمام مقادیر Form
+            _logger.Debug("🏥 MEDICAL: LoadTariffs debug - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})", 
+                correlationId, _currentUserService.UserName, _currentUserService.UserId);
             
             // Logging Request.Form برای debug
-            System.Console.WriteLine("🔍 Request.Form Keys and Values:");
-            foreach (string key in Request.Form.AllKeys)
-            {
-                System.Console.WriteLine($"🔍   {key}: '{Request.Form[key]}'");
-            }
+            var formData = Request.Form.AllKeys.ToDictionary(k => k, k => Request.Form[k]);
+            _logger.Debug("🏥 MEDICAL: Request.Form data: {@FormData}", formData);
             
             // Logging مدل دریافتی
             if (filter != null)
             {
-                System.Console.WriteLine("🔍 Filter Properties:");
-                System.Console.WriteLine($"🔍   SearchTerm: '{filter.SearchTerm}'");
-                System.Console.WriteLine($"🔍   InsuranceProviderId: {filter.InsuranceProviderId}");
-                System.Console.WriteLine($"🔍   InsurancePlanId: {filter.InsurancePlanId}");
-                System.Console.WriteLine($"🔍   ServiceId: {filter.ServiceId}");
-                System.Console.WriteLine($"🔍   PageNumber: {filter.PageNumber}");
-                System.Console.WriteLine($"🔍   PageSize: {filter.PageSize}");
+                _logger.Debug("🏥 MEDICAL: Filter properties - SearchTerm: {SearchTerm}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, ServiceId: {ServiceId}, PageNumber: {PageNumber}, PageSize: {PageSize}", 
+                    filter.SearchTerm, filter.InsuranceProviderId, filter.InsurancePlanId, filter.ServiceId, filter.PageNumber, filter.PageSize);
             }
             else
             {
-                System.Console.WriteLine("🔍 ❌ Filter is NULL!");
+                _logger.Warning("🏥 MEDICAL: Filter is NULL in LoadTariffs");
             }
-            
-            System.Console.WriteLine("🔍 ===== LOAD TARIFFS DEBUG END =====");
 
             try
             {
@@ -375,35 +363,21 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Information("🏥 MEDICAL: شروع درخواست ایجاد تعرفه بیمه - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
                 correlationId, _currentUserService.UserName, _currentUserService.UserId);
 
-            // 🔍 CONSOLE LOGGING - تمام مقادیر Form
-            System.Console.WriteLine("🔍 ===== CREATE ACTION DEBUG START =====");
-            System.Console.WriteLine($"🔍 CorrelationId: {correlationId}");
-            System.Console.WriteLine($"🔍 User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
-            System.Console.WriteLine($"🔍 Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}");
+            // 🔍 STRUCTURED LOGGING - تمام مقادیر Form
+            _logger.Debug("🏥 MEDICAL: Create action debug - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})", 
+                correlationId, _currentUserService.UserName, _currentUserService.UserId);
             
             // Logging Request.Form برای debug
-            System.Console.WriteLine("🔍 Request.Form Keys and Values:");
-            foreach (string key in Request.Form.AllKeys)
-            {
-                System.Console.WriteLine($"🔍   {key}: '{Request.Form[key]}'");
-            }
+            var formData = Request.Form.AllKeys.ToDictionary(k => k, k => Request.Form[k]);
+            _logger.Debug("🏥 MEDICAL: Request.Form data: {@FormData}", formData);
             
             // Logging مدل دریافتی
             if (model != null)
             {
-                System.Console.WriteLine("🔍 Model Properties:");
-                System.Console.WriteLine($"🔍   InsuranceTariffId: {model.InsuranceTariffId}");
-                System.Console.WriteLine($"🔍   DepartmentId: {model.DepartmentId}");
-                System.Console.WriteLine($"🔍   ServiceCategoryId: {model.ServiceCategoryId}");
-                System.Console.WriteLine($"🔍   ServiceId: {model.ServiceId}");
-                System.Console.WriteLine($"🔍   InsuranceProviderId: {model.InsuranceProviderId}");
-                System.Console.WriteLine($"🔍   InsurancePlanId: {model.InsurancePlanId}");
-                System.Console.WriteLine($"🔍   TariffPrice: {model.TariffPrice}");
-                System.Console.WriteLine($"🔍   PatientShare: {model.PatientShare}");
-                System.Console.WriteLine($"🔍   InsurerShare: {model.InsurerShare}");
-                System.Console.WriteLine($"🔍   IsActive: {model.IsActive}");
-                System.Console.WriteLine($"🔍   IsAllServices: {model.IsAllServices}");
-                System.Console.WriteLine($"🔍   IsAllServiceCategories: {model.IsAllServiceCategories}");
+                _logger.Debug("🏥 MEDICAL: Model properties - InsuranceTariffId: {InsuranceTariffId}, DepartmentId: {DepartmentId}, ServiceCategoryId: {ServiceCategoryId}, ServiceId: {ServiceId}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, IsActive: {IsActive}, IsAllServices: {IsAllServices}, IsAllServiceCategories: {IsAllServiceCategories}", 
+                    model.InsuranceTariffId, model.DepartmentId, model.ServiceCategoryId, model.ServiceId, 
+                    model.InsuranceProviderId, model.InsurancePlanId, model.TariffPrice, model.PatientShare, 
+                    model.InsurerShare, model.IsActive, model.IsAllServices, model.IsAllServiceCategories);
                 
                 _logger.Information("🏥 MEDICAL: مدل دریافتی - CorrelationId: {CorrelationId}, " +
                     "InsurancePlanId: {InsurancePlanId}, InsuranceProviderId: {InsuranceProviderId}, " +
@@ -416,11 +390,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
             else
             {
-                System.Console.WriteLine("🔍 ❌ Model is NULL!");
                 _logger.Warning("🏥 MEDICAL: مدل null است - CorrelationId: {CorrelationId}", correlationId);
             }
-            
-            System.Console.WriteLine("🔍 ===== CREATE ACTION DEBUG END =====");
 
             try
             {
@@ -610,42 +581,26 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Information("🏥 MEDICAL: درخواست ویرایش تعرفه بیمه - CorrelationId: {CorrelationId}, Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
                 correlationId, model?.InsuranceTariffId, model?.InsurancePlanId, model?.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
-            // 🔍 CONSOLE LOGGING - تمام مقادیر Form
-            System.Console.WriteLine("🔍 ===== EDIT ACTION DEBUG START =====");
-            System.Console.WriteLine($"🔍 CorrelationId: {correlationId}");
-            System.Console.WriteLine($"🔍 User: {_currentUserService.UserName} (Id: {_currentUserService.UserId})");
-            System.Console.WriteLine($"🔍 Timestamp: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss.fff}");
+            // 🔍 STRUCTURED LOGGING - تمام مقادیر Form
+            _logger.Debug("🏥 MEDICAL: Edit action debug - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})", 
+                correlationId, _currentUserService.UserName, _currentUserService.UserId);
             
             // Logging Request.Form برای debug
-            System.Console.WriteLine("🔍 Request.Form Keys and Values:");
-            foreach (string key in Request.Form.AllKeys)
-            {
-                System.Console.WriteLine($"🔍   {key}: '{Request.Form[key]}'");
-            }
+            var formData = Request.Form.AllKeys.ToDictionary(k => k, k => Request.Form[k]);
+            _logger.Debug("🏥 MEDICAL: Request.Form data: {@FormData}", formData);
             
             // Logging مدل دریافتی
             if (model != null)
             {
-                System.Console.WriteLine("🔍 Model Properties:");
-                System.Console.WriteLine($"🔍   InsuranceTariffId: {model.InsuranceTariffId}");
-                System.Console.WriteLine($"🔍   DepartmentId: {model.DepartmentId}");
-                System.Console.WriteLine($"🔍   ServiceCategoryId: {model.ServiceCategoryId}");
-                System.Console.WriteLine($"🔍   ServiceId: {model.ServiceId}");
-                System.Console.WriteLine($"🔍   InsuranceProviderId: {model.InsuranceProviderId}");
-                System.Console.WriteLine($"🔍   InsurancePlanId: {model.InsurancePlanId}");
-                System.Console.WriteLine($"🔍   TariffPrice: {model.TariffPrice}");
-                System.Console.WriteLine($"🔍   PatientShare: {model.PatientShare}");
-                System.Console.WriteLine($"🔍   InsurerShare: {model.InsurerShare}");
-                System.Console.WriteLine($"🔍   IsActive: {model.IsActive}");
-                System.Console.WriteLine($"🔍   IsAllServices: {model.IsAllServices}");
-                System.Console.WriteLine($"🔍   IsAllServiceCategories: {model.IsAllServiceCategories}");
+                _logger.Debug("🏥 MEDICAL: Model properties - InsuranceTariffId: {InsuranceTariffId}, DepartmentId: {DepartmentId}, ServiceCategoryId: {ServiceCategoryId}, ServiceId: {ServiceId}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, IsActive: {IsActive}, IsAllServices: {IsAllServices}, IsAllServiceCategories: {IsAllServiceCategories}", 
+                    model.InsuranceTariffId, model.DepartmentId, model.ServiceCategoryId, model.ServiceId, 
+                    model.InsuranceProviderId, model.InsurancePlanId, model.TariffPrice, model.PatientShare, 
+                    model.InsurerShare, model.IsActive, model.IsAllServices, model.IsAllServiceCategories);
             }
             else
             {
-                System.Console.WriteLine("🔍 ❌ Model is NULL!");
+                _logger.Warning("🏥 MEDICAL: Model is NULL in Edit action");
             }
-            
-            System.Console.WriteLine("🔍 ===== EDIT ACTION DEBUG END =====");
 
             try
             {
@@ -803,6 +758,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,InsuranceManager")]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
             var correlationId = Guid.NewGuid().ToString();
@@ -892,6 +848,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,InsuranceManager")]
         [Route("CheckTariffExists")]
         public async Task<JsonResult> CheckTariffExists(int planId, int serviceId, int? excludeId = null)
         {
@@ -1061,6 +1018,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
+        [Authorize(Roles = "Admin,InsuranceManager")]
         public async Task<ActionResult> BulkToggleStatus(List<int> tariffIds, bool isActive)
         {
             var correlationId = Guid.NewGuid().ToString();
@@ -1108,6 +1066,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت آمار سریع برای dashboard
         /// </summary>
         [HttpGet]
+        [Authorize(Roles = "Admin,InsuranceManager")]
         [OutputCache(Duration = 60, Location = OutputCacheLocation.Server)]
         public async Task<ActionResult> GetQuickStats()
         {
