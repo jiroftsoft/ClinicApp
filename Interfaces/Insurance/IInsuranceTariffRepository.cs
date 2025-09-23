@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.ViewModels.Insurance.InsuranceTariff;
 
 namespace ClinicApp.Interfaces.Insurance
 {
@@ -215,6 +216,31 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <returns>آمار تعرفه‌های بیمه</returns>
         Task<Dictionary<string, int>> GetStatisticsAsync();
+
+        #endregion
+
+        #region Optimized Projection Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌ها با Projection - بهینه‌سازی شده برای performance
+        /// </summary>
+        Task<PagedResult<TariffIndexDto>> GetTariffsProjectionAsync(
+            int? planId = null,
+            int? serviceId = null,
+            int? providerId = null,
+            string searchTerm = "",
+            int pageNumber = 1,
+            int pageSize = 10);
+
+        /// <summary>
+        /// دریافت آمار تعرفه‌ها با Projection - بهینه‌سازی شده
+        /// </summary>
+        Task<TariffStatisticsDto> GetStatisticsProjectionAsync();
+
+        /// <summary>
+        /// دریافت جزئیات تعرفه با Projection - بهینه‌سازی شده
+        /// </summary>
+        Task<TariffDetailsDto> GetTariffDetailsProjectionAsync(int id);
 
         #endregion
     }

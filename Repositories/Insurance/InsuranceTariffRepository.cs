@@ -8,6 +8,7 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.ViewModels.Insurance.InsuranceTariff;
 using Serilog;
 
 namespace ClinicApp.Repositories.Insurance
@@ -123,7 +124,7 @@ namespace ClinicApp.Repositories.Insurance
         }
 
         /// <summary>
-        /// دریافت تعرفه‌های بیمه با صفحه‌بندی - بهینه‌سازی شده
+        /// دریافت تعرفه‌های بیمه با صفحه‌بندی - بهینه‌سازی شده با Projection
         /// </summary>
         public async Task<PagedResult<InsuranceTariff>> GetPagedAsync(
             int? planId = null,
@@ -755,6 +756,188 @@ namespace ClinicApp.Repositories.Insurance
                 _logger.Error(ex, "خطا در دریافت تعرفه‌های فعال بیمه. ServiceId: {ServiceId}, Date: {Date}", 
                     serviceId, calculationDate);
                 throw new InvalidOperationException($"خطا در دریافت تعرفه‌های فعال بیمه", ex);
+            }
+        }
+
+        #endregion
+
+        #region Optimized Projection Methods
+
+        /// <summary>
+        /// دریافت تعرفه‌ها با Projection - بهینه‌سازی شده برای performance
+        /// </summary>
+        public async Task<PagedResult<TariffIndexDto>> GetTariffsProjectionAsync(
+            int? planId = null,
+            int? serviceId = null,
+            int? providerId = null,
+            string searchTerm = "",
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            try
+            {
+                _logger.Information("🔍 REPOSITORY: شروع GetTariffsProjectionAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}", 
+                    planId, serviceId, providerId, searchTerm);
+
+                // بهینه‌سازی: Projection + AsNoTracking برای read-only operations
+                var query = _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => !t.IsDeleted);
+
+                // فیلتر بر اساس طرح بیمه
+                if (planId.HasValue)
+                {
+                    query = query.Where(t => t.InsurancePlanId == planId.Value);
+                }
+
+                // فیلتر بر اساس خدمت
+                if (serviceId.HasValue)
+                {
+                    query = query.Where(t => t.ServiceId == serviceId.Value);
+                }
+
+                // فیلتر بر اساس ارائه‌دهنده بیمه
+                if (providerId.HasValue)
+                {
+                    query = query.Where(t => t.InsurancePlan.InsuranceProviderId == providerId.Value);
+                }
+
+                // جستجو در نام خدمت و طرح بیمه
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    query = query.Where(t => 
+                        t.Service.Title.Contains(searchTerm) ||
+                        t.InsurancePlan.Name.Contains(searchTerm) ||
+                        t.InsurancePlan.InsuranceProvider.Name.Contains(searchTerm));
+                }
+
+                // شمارش کل
+                var totalCount = await query.CountAsync();
+
+                // Projection به DTO
+                var items = await query
+                    .Select(t => new TariffIndexDto
+                    {
+                        Id = t.InsuranceTariffId,
+                        ServiceId = t.ServiceId,
+                        ServiceName = t.Service.Title,
+                        InsurancePlanId = t.InsurancePlanId,
+                        InsurancePlanName = t.InsurancePlan.Name,
+                        InsuranceProviderId = t.InsurancePlan.InsuranceProviderId,
+                        InsuranceProviderName = t.InsurancePlan.InsuranceProvider.Name,
+                        TariffPrice = t.TariffPrice,
+                        PatientShare = t.PatientShare,
+                        InsurerShare = t.InsurerShare,
+                        IsActive = t.IsActive,
+                        CreatedAt = t.CreatedAt,
+                        UpdatedAt = t.UpdatedAt
+                    })
+                    .OrderBy(t => t.InsuranceProviderName)
+                    .ThenBy(t => t.InsurancePlanName)
+                    .ThenBy(t => t.ServiceName)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                _logger.Information("🔍 REPOSITORY: GetTariffsProjectionAsync تکمیل شد - TotalCount: {TotalCount}, ItemsCount: {ItemsCount}", 
+                    totalCount, items.Count);
+
+                return new PagedResult<TariffIndexDto>
+                {
+                    Items = items,
+                    TotalItems = totalCount,
+                    PageNumber = pageNumber,
+                    PageSize = pageSize,
+                    TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعرفه‌ها با Projection");
+                throw new InvalidOperationException("خطا در دریافت تعرفه‌ها با Projection", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت آمار تعرفه‌ها با Projection - بهینه‌سازی شده
+        /// </summary>
+        public async Task<TariffStatisticsDto> GetStatisticsProjectionAsync()
+        {
+            try
+            {
+                _logger.Information("🔍 REPOSITORY: شروع GetStatisticsProjectionAsync");
+
+                // بهینه‌سازی: Projection + AsNoTracking برای آمار
+                var statistics = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => !t.IsDeleted)
+                    .GroupBy(t => 1)
+                    .Select(g => new TariffStatisticsDto
+                    {
+                        TotalTariffs = g.Count(),
+                        ActiveTariffs = g.Count(t => t.IsActive),
+                        InactiveTariffs = g.Count(t => !t.IsActive),
+                        AverageTariffPrice = g.Average(t => t.TariffPrice),
+                        TotalTariffValue = g.Sum(t => t.TariffPrice),
+                        PlansWithTariffs = g.Select(t => t.InsurancePlanId).Distinct().Count(),
+                        ServicesWithTariffs = g.Select(t => t.ServiceId).Distinct().Count()
+                    })
+                    .FirstOrDefaultAsync();
+
+                _logger.Information("🔍 REPOSITORY: GetStatisticsProjectionAsync تکمیل شد - TotalTariffs: {TotalTariffs}", 
+                    statistics?.TotalTariffs ?? 0);
+
+                return statistics ?? new TariffStatisticsDto();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت آمار تعرفه‌ها با Projection");
+                throw new InvalidOperationException("خطا در دریافت آمار تعرفه‌ها با Projection", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات تعرفه با Projection - بهینه‌سازی شده
+        /// </summary>
+        public async Task<TariffDetailsDto> GetTariffDetailsProjectionAsync(int id)
+        {
+            try
+            {
+                _logger.Information("🔍 REPOSITORY: شروع GetTariffDetailsProjectionAsync - Id: {Id}", id);
+
+                // بهینه‌سازی: Projection + AsNoTracking برای جزئیات
+                var tariff = await _context.InsuranceTariffs
+                    .AsNoTracking()
+                    .Where(t => t.InsuranceTariffId == id && !t.IsDeleted)
+                    .Select(t => new TariffDetailsDto
+                    {
+                        Id = t.InsuranceTariffId,
+                        ServiceId = t.ServiceId,
+                        ServiceName = t.Service.Title,
+                        ServiceCode = t.Service.Code,
+                        InsurancePlanId = t.InsurancePlanId,
+                        InsurancePlanName = t.InsurancePlan.Name,
+                        InsuranceProviderId = t.InsurancePlan.InsuranceProviderId,
+                        InsuranceProviderName = t.InsurancePlan.InsuranceProvider.Name,
+                        TariffPrice = t.TariffPrice,
+                        PatientShare = t.PatientShare,
+                        InsurerShare = t.InsurerShare,
+                        IsActive = t.IsActive,
+                        CreatedAt = t.CreatedAt,
+                        UpdatedAt = t.UpdatedAt,
+                        CreatedBy = t.CreatedBy,
+                        UpdatedBy = t.UpdatedBy
+                    })
+                    .FirstOrDefaultAsync();
+
+                _logger.Information("🔍 REPOSITORY: GetTariffDetailsProjectionAsync تکمیل شد - Found: {Found}", tariff != null);
+
+                return tariff;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت جزئیات تعرفه با Projection - Id: {Id}", id);
+                throw new InvalidOperationException($"خطا در دریافت جزئیات تعرفه {id} با Projection", ex);
             }
         }
 
