@@ -35,9 +35,12 @@ using ClinicApp.Models.Core;
 using ClinicApp.Repositories.Insurance;
 using ClinicApp.Repositories.Payment;
 using ClinicApp.Services.Insurance;
+using ClinicApp.Interfaces;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.Services.DataSeeding;
+using ClinicApp.Services.UserContext;
+using ClinicApp.Services.SystemSettings;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -415,6 +418,7 @@ namespace ClinicApp
                 container.RegisterType<IInsuranceValidationService, InsuranceValidationService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsurancePlanDependencyService, InsurancePlanDependencyService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceTariffService, InsuranceTariffService>(new PerRequestLifetimeManager());
+                container.RegisterType<ITariffDomainValidationService, TariffDomainValidationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceService, SupplementaryInsuranceService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceCacheService, SupplementaryInsuranceCacheService>(new PerRequestLifetimeManager());
                 
@@ -431,6 +435,12 @@ namespace ClinicApp
 
                 // Register Message Notification Service
                 container.RegisterType<IMessageNotificationService, MessageNotificationService>(new PerRequestLifetimeManager());
+
+                // Register User Context Service
+                container.RegisterType<IUserContextService, UserContextService>(new PerRequestLifetimeManager());
+
+                // Register System Settings Service
+                container.RegisterType<ISystemSettingService, SystemSettingService>(new PerRequestLifetimeManager());
 
                 // Register Shared Service Management Service
                 container.RegisterType<ISharedServiceManagementService, SharedServiceManagementService>(new PerRequestLifetimeManager());

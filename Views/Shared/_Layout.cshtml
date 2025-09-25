@@ -5,6 +5,10 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
     <title>@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title + " - کلینیک شفا جیرفت")</title>
+    
+    <!-- Meta Tags Section -->
+    @RenderSection("MetaTags", required: false)
+    
     <meta name="description" content="کلینیک شفا جیرفت با ارائه خدمات درمانی تخصصی، پزشکان باتجربه و تجهیزات پیشرفته. رزرو آنلاین نوبت، مشاوره پزشکی و خدمات درمانی با کیفیت در شهر جیرفت." />
     <meta name="keywords" content="کلینیک شفا جیرفت, کلینیک درمانی جیرفت, رزرو نوبت جیرفت, پزشکان جیرفت, خدمات درمانی جیرفت, کلینیک شفا, پزشک متخصص جیرفت, درمان در جیرفت" />
     <meta name="author" content="کلینیک شفا جیرفت" />

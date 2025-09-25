@@ -515,12 +515,16 @@ namespace ClinicApp.Services.Insurance
                 List<InsurancePlan> plans;
                 if (providerId.HasValue)
                 {
+                    _log.Information("دریافت طرح‌های بیمه برای ارائه‌دهنده: {ProviderId}", providerId.Value);
                     plans = await _insurancePlanRepository.GetActiveByProviderIdAsync(providerId.Value);
                 }
                 else
                 {
+                    _log.Information("دریافت تمام طرح‌های بیمه فعال");
                     plans = await _insurancePlanRepository.GetActiveAsync();
                 }
+
+                _log.Information("تعداد طرح‌های بیمه دریافت شده: {Count}", plans?.Count ?? 0);
 
                 var lookupItems = plans.Select(ConvertToLookupViewModel).ToList();
 
@@ -531,9 +535,9 @@ namespace ClinicApp.Services.Insurance
                 return ServiceResult<List<InsurancePlanLookupViewModel>>.Successful(
                     lookupItems,
                     "طرح‌های بیمه فعال با موفقیت دریافت شدند.",
- "GetActivePlansForLookup",
- _currentUserService.UserId,
- _currentUserService.UserName,
+                    "GetActivePlansForLookup",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
                     securityLevel: SecurityLevel.Low);
             }
             catch (Exception ex)
@@ -971,17 +975,34 @@ namespace ClinicApp.Services.Insurance
         /// </summary>
         private InsurancePlanLookupViewModel ConvertToLookupViewModel(InsurancePlan plan)
         {
-            if (plan == null) return null;
-
-            return new InsurancePlanLookupViewModel
+            if (plan == null) 
             {
-                InsurancePlanId = plan.InsurancePlanId,
-                Name = plan.Name,
-                PlanCode = plan.PlanCode,
-                InsuranceProviderName = plan.InsuranceProvider?.Name,
-                CoveragePercent = plan.CoveragePercent,
-                Deductible = plan.Deductible
-            };
+                _log.Warning("طرح بیمه null در ConvertToLookupViewModel");
+                return null;
+            }
+
+            try
+            {
+                var result = new InsurancePlanLookupViewModel
+                {
+                    InsurancePlanId = plan.InsurancePlanId,
+                    Name = plan.Name,
+                    PlanCode = plan.PlanCode,
+                    InsuranceProviderName = plan.InsuranceProvider?.Name,
+                    CoveragePercent = plan.CoveragePercent,
+                    Deductible = plan.Deductible
+                };
+
+                _log.Debug("طرح بیمه تبدیل شد: {InsurancePlanId}, {Name}, Provider: {ProviderName}", 
+                    plan.InsurancePlanId, plan.Name, plan.InsuranceProvider?.Name);
+                
+                return result;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تبدیل طرح بیمه به LookupViewModel. InsurancePlanId: {InsurancePlanId}", plan.InsurancePlanId);
+                throw;
+            }
         }
 
         #endregion

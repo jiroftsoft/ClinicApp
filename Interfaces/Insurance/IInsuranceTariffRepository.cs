@@ -242,6 +242,7 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         Task<TariffDetailsDto> GetTariffDetailsProjectionAsync(int id);
 
+
         #endregion
     }
 }

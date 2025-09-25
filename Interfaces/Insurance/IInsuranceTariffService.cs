@@ -137,6 +137,14 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>نتیجه حذف</returns>
         Task<ServiceResult> DeleteTariffAsync(int id);
 
+        /// <summary>
+        /// بررسی وجود تعرفه برای خدمت و طرح بیمه مشخص
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <returns>نتیجه بررسی وجود تعرفه</returns>
+        Task<ServiceResult<bool>> CheckTariffExistsAsync(int serviceId, int planId);
+
         #endregion
 
         #region Bulk Operations

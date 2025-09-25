@@ -1,0 +1,9 @@
+@section Scripts {
+    <script src="~/Scripts/app/medical-debug.js"></script>
+    <script src="~/Scripts/app/medical-environment.js"></script>
+    <script src="~/Scripts/app/modules/medical-config.js"></script>
+    <script src="~/Scripts/app/modules/medical-api.js"></script>
+    <script src="~/Scripts/app/service-calculation.js"></script>
+    <script src="~/Scripts/app/combined-insurance-calculation.js"></script>
+    <script src="~/Scripts/app/insurance-tariff-create.js"></script>
+}

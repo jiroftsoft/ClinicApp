@@ -202,7 +202,7 @@ namespace ClinicApp.Controllers
         /// <returns>اطلاعات بیمار</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [OutputCache(Duration = 300, VaryByParam = "nationalCode")] // Cache for 5 minutes
+        // 🏥 MEDICAL: Real-time data - no cache for clinical safety
         // Rate limiting will be implemented with custom middleware
         public async Task<JsonResult> LookupPatientByNationalCode(string nationalCode)
         {

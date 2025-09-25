@@ -64,28 +64,43 @@ namespace ClinicApp.ViewModels.Validators
                 .WithMessage("خدمت انتخاب شده معتبر نیست یا حذف شده است")
                 .When(x => !x.IsAllServices && x.ServiceId.HasValue);
 
-            // اعتبارسنجی قیمت تعرفه
+            // 🚀 FINANCIAL PRECISION: اعتبارسنجی دقیق قیمت تعرفه بر اساس ریال
             RuleFor(x => x.TariffPrice)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("قیمت تعرفه نمی‌تواند منفی باشد")
                 .WithErrorCode("INVALID_TARIFF_PRICE")
                 .LessThan(999999999.99m)
-                .WithMessage("قیمت تعرفه بیش از حد مجاز است")
+                .WithMessage("قیمت تعرفه بیش از حد مجاز است (حداکثر 999,999,999.99 ریال)")
                 .WithErrorCode("TARIFF_PRICE_TOO_HIGH")
+                .Must(BeValidRialAmount)
+                .WithMessage("قیمت تعرفه باید بر اساس ریال باشد (بدون اعشار)")
+                .WithErrorCode("INVALID_RIAL_AMOUNT")
                 .When(x => x.TariffPrice.HasValue);
 
-            // اعتبارسنجی مبلغ سهم بیمه‌گر
+            // 🚀 FINANCIAL PRECISION: اعتبارسنجی دقیق سهم بیمه‌گر بر اساس ریال
             RuleFor(x => x.InsurerShare)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("مبلغ سهم بیمه‌گر نمی‌تواند منفی باشد")
                 .WithErrorCode("INVALID_INSURER_SHARE")
+                .LessThan(999999999.99m)
+                .WithMessage("مبلغ سهم بیمه‌گر بیش از حد مجاز است (حداکثر 999,999,999.99 ریال)")
+                .WithErrorCode("INSURER_SHARE_TOO_HIGH")
+                .Must(BeValidRialAmount)
+                .WithMessage("مبلغ سهم بیمه‌گر باید بر اساس ریال باشد (بدون اعشار)")
+                .WithErrorCode("INVALID_RIAL_AMOUNT")
                 .When(x => x.InsurerShare.HasValue);
 
-            // اعتبارسنجی مبلغ سهم بیمار
+            // 🚀 FINANCIAL PRECISION: اعتبارسنجی دقیق سهم بیمار بر اساس ریال
             RuleFor(x => x.PatientShare)
                 .GreaterThanOrEqualTo(0)
                 .WithMessage("مبلغ سهم بیمار نمی‌تواند منفی باشد")
                 .WithErrorCode("INVALID_PATIENT_SHARE")
+                .LessThan(999999999.99m)
+                .WithMessage("مبلغ سهم بیمار بیش از حد مجاز است (حداکثر 999,999,999.99 ریال)")
+                .WithErrorCode("PATIENT_SHARE_TOO_HIGH")
+                .Must(BeValidRialAmount)
+                .WithMessage("مبلغ سهم بیمار باید بر اساس ریال باشد (بدون اعشار)")
+                .WithErrorCode("INVALID_RIAL_AMOUNT")
                 .When(x => x.PatientShare.HasValue);
 
             // اعتبارسنجی فعال بودن
@@ -189,6 +204,17 @@ namespace ClinicApp.ViewModels.Validators
         {
             // این validation برای فیلدهای موجود در ViewModel اعمال نمی‌شود
             return true;
+        }
+
+        /// <summary>
+        /// 🚀 FINANCIAL PRECISION: بررسی صحت مبلغ بر اساس ریال
+        /// </summary>
+        private bool BeValidRialAmount(decimal? amount)
+        {
+            if (!amount.HasValue) return true;
+            
+            // بررسی اینکه مبلغ بر اساس ریال باشد (بدون اعشار)
+            return amount.Value == Math.Round(amount.Value, 0, MidpointRounding.AwayFromZero);
         }
     }
 

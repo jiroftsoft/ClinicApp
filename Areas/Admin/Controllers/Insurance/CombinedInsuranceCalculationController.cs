@@ -57,7 +57,7 @@
             /// صفحه اصلی محاسبه بیمه ترکیبی
             /// </summary>
             [HttpGet]
-            [OutputCache(Duration = 300)] // Cache برای 5 دقیقه
+            // 🏥 MEDICAL: Real-time data - no cache for clinical safety
             public ActionResult Index()
             {
                 _log.Information("🏥 MEDICAL: بازدید از صفحه محاسبه بیمه ترکیبی. User: {UserName} (Id: {UserId})",

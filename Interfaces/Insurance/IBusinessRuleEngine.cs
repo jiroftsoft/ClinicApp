@@ -58,7 +58,7 @@ namespace ClinicApp.Interfaces.Insurance
     public class InsuranceCalculationContext
     {
         public int PatientId { get; set; }
-        public int ServiceId { get; set; }
+        public int? ServiceId { get; set; }
         public int InsurancePlanId { get; set; }
         public int? ServiceCategoryId { get; set; }
         public decimal ServiceAmount { get; set; }

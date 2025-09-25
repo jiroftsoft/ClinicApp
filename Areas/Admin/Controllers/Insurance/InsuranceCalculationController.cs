@@ -35,7 +35,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     /// 
     /// نکته حیاتی: این کنترلر بر اساس استانداردهای سیستم‌های پزشکی ایران پیاده‌سازی شده است
     /// </summary>
-    //[Authorize(Roles = "Admin,Receptionist,Doctor")]
 
     public class InsuranceCalculationController : Controller
     {

@@ -247,6 +247,43 @@ namespace ClinicApp.Areas.Admin.Controllers
             }
         }
 
+        #region AJAX Actions
+        
+        /// <summary>
+        /// 🚀 PERFORMANCE: AJAX endpoint for loading departments
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetDepartments(int? clinicId = null)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: Loading departments for AJAX - ClinicId: {ClinicId}", clinicId);
+                
+                // Use default clinic if not specified
+                var targetClinicId = clinicId ?? 1; // Default clinic
+                
+                var result = await _departmentService.GetActiveDepartmentsForLookupAsync(targetClinicId);
+                
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: Departments loaded successfully - Count: {Count}", result.Data?.Count ?? 0);
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: Failed to load departments - Error: {Error}", result.Message);
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: Error loading departments for AJAX");
+                return Json(new { success = false, message = "خطا در بارگذاری دپارتمان‌ها" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+        
+        #endregion
+
         #region Private Helpers
         private void AddServiceErrorsToModelState(ServiceResult result)
         {

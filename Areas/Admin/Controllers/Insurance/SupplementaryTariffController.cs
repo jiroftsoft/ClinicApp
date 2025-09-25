@@ -116,13 +116,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// صفحه اصلی مدیریت تعرفه‌های بیمه تکمیلی - Production Optimized with Enhanced Caching & Performance Monitoring
+        /// صفحه اصلی مدیریت تعرفه‌های بیمه تکمیلی - Real-time برای محیط درمانی
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 300, VaryByParam = "none")] // Cache for 5 minutes (increased for better performance)
         public async Task<ActionResult> Index()
         {
-            const string cacheKey = "SupplementaryTariff_Index_Stats";
+            // 🏥 MEDICAL: Real-time data - no cache needed
             var userId = _currentUserService.UserId;
             var startTime = DateTime.UtcNow; // Performance monitoring start
 
@@ -351,7 +350,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت آمار تعرفه‌های بیمه تکمیلی - Production Optimized with Enhanced Caching
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 300, VaryByParam = "none")] // Cache for 5 minutes (increased for better performance)
+        // 🏥 MEDICAL: Real-time data - no cache for clinical safety
         public async Task<JsonResult> GetStats()
         {
             var userId = _currentUserService.UserId;
@@ -1019,7 +1018,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت تعرفه‌های بیمه تکمیلی - AJAX with Response Time Optimization
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 120, VaryByParam = "searchTerm;insurancePlanId;departmentId;isActive;page;pageSize")] // Cache for 2 minutes with parameter variation
+        // 🏥 MEDICAL: Real-time data - no cache for clinical safety
         public async Task<JsonResult> GetTariffs(string searchTerm = "", int? insurancePlanId = null, int? departmentId = null, bool? isActive = null, int page = 1, int pageSize = 10)
         {
             try
@@ -1120,7 +1119,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت جدول تعرفه‌ها به صورت HTML برای AJAX - Response Time Optimized
         /// </summary>
         [HttpGet]
-        [OutputCache(Duration = 120, VaryByParam = "searchTerm;insurancePlanId;departmentId;isActive;page;pageSize")] // Cache for 2 minutes with parameter variation
+        // 🏥 MEDICAL: Real-time data - no cache for clinical safety
         public async Task<ActionResult> GetTariffsTable(string searchTerm = "", int? insurancePlanId = null, int? departmentId = null, bool? isActive = null, int page = 1, int pageSize = 10)
         {
             try

@@ -351,6 +351,48 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// بررسی وجود تعرفه برای خدمت و طرح بیمه مشخص
+        /// </summary>
+        public async Task<ServiceResult<bool>> CheckTariffExistsAsync(int serviceId, int planId)
+        {
+            try
+            {
+                _logger.Information("🏥 MEDICAL: بررسی وجود تعرفه - ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // اعتبارسنجی ورودی برای محیط درمانی
+                if (serviceId <= 0)
+                {
+                    _logger.Warning("🏥 MEDICAL: شناسه خدمت نامعتبر - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                        serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("شناسه خدمت نامعتبر است");
+                }
+
+                if (planId <= 0)
+                {
+                    _logger.Warning("🏥 MEDICAL: شناسه طرح بیمه نامعتبر - PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                        planId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("شناسه طرح بیمه نامعتبر است");
+                }
+
+                var existingTariff = await _tariffRepository.GetByPlanAndServiceAsync(planId, serviceId);
+                var exists = existingTariff != null;
+
+                _logger.Information("🏥 MEDICAL: بررسی وجود تعرفه تکمیل شد - Exists: {Exists}, ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    exists, serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(exists);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در بررسی وجود تعرفه - ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
+                    serviceId, planId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Failed("خطا در بررسی وجود تعرفه");
+            }
+        }
+
         #endregion
 
         #region Business Logic Operations

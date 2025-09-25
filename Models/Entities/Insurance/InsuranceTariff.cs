@@ -193,6 +193,12 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     /// </summary>
     public DateTime? EndDate { get; set; }
 
+    /// <summary>
+    /// یادداشت‌های اضافی در مورد تعرفه
+    /// </summary>
+    [MaxLength(500, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از 500 کاراکتر باشد.")]
+    public string Notes { get; set; }
+
     #endregion
     #endregion
 }
@@ -296,6 +302,10 @@ public class InsuranceTariffConfig : EntityTypeConfiguration<InsuranceTariff>
             .HasPrecision(18, 2)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_SupplementaryMaxPayment")));
+
+        Property(t => t.Notes)
+            .IsOptional()
+            .HasMaxLength(500);
 
         // روابط
         // رابطه با مدل قدیمی Insurance حذف شد

@@ -25,6 +25,9 @@
 
     <title>@title - @appName</title>
 
+    <!-- Meta Tags Section -->
+    @RenderSection("MetaTags", required: false)
+
     <!-- Preload Critical Resources -->
     <link rel="preload" href="~/Content/css/admin-layout.css" as="style">
     <link rel="preload" href="~/Content/js/admin-layout.js" as="script">

@@ -13,6 +13,9 @@ namespace ClinicApp
             // فیلتر Culture برای پشتیبانی صحیح از زبان فارسی
             filters.Add(new CultureFilter());
             
+            // 🏥 MEDICAL: فیلتر ضد کش برای مسیرهای درمانی - Real-time data for clinical safety
+            filters.Add(new NoCacheFilter());
+            
             // عدم اضافه کردن Global Anti-Forgery Filter
             // چون این کار باعث مشکل در GET requests می‌شود
         }

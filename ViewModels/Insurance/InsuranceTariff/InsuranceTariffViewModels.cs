@@ -113,6 +113,12 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
     {
         public int InsuranceTariffId { get; set; }
 
+        /// <summary>
+        /// کلید امنیتی برای جلوگیری از ارسال تکراری فرم
+        /// </summary>
+        [Required(ErrorMessage = "کلید امنیتی موجود نیست")]
+        public string IdempotencyKey { get; set; }
+
         [Required(ErrorMessage = "انتخاب دپارتمان الزامی است.")]
         [Display(Name = "دپارتمان")]
         public int DepartmentId { get; set; }
@@ -145,6 +151,16 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
 
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
+
+        [Display(Name = "تاریخ شروع اعتبار")]
+        public string StartDate { get; set; }
+
+        [Display(Name = "تاریخ پایان اعتبار")]
+        public string EndDate { get; set; }
+
+        [Display(Name = "یادداشت‌های اضافی")]
+        [StringLength(500, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از 500 کاراکتر باشد.")]
+        public string Notes { get; set; }
 
         // Fields for Supplementary Insurance
         [Display(Name = "بیمه پایه")]
@@ -191,6 +207,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 PatientShare = entity.PatientShare,
                 InsurerShare = entity.InsurerShare,
                 IsActive = entity.IsActive,
+                StartDate = entity.StartDate?.ToString("yyyy/MM/dd"),
+                EndDate = entity.EndDate?.ToString("yyyy/MM/dd"),
+                Notes = entity.Notes,
                 ServiceTitle = entity.Service?.Title,
                 InsurancePlanName = entity.InsurancePlan?.Name,
                 InsuranceProviderName = entity.InsurancePlan?.InsuranceProvider?.Name

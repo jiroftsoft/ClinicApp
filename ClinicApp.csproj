@@ -453,7 +453,6 @@
     <Compile Include="Areas\Admin\Controllers\FactorSettingController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\BusinessRuleController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationController.cs" />
-    <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationTestController.cs" />
     <Compile Include="Areas\Admin\Controllers\DataFixController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
@@ -486,6 +485,7 @@
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
+    <Compile Include="Filters\NoCacheFilter.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
@@ -554,6 +554,7 @@
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceCalculationService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceMonitoringService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceService.cs" />
+    <Compile Include="Interfaces\Insurance\ITariffDomainValidationService.cs" />
     <Compile Include="Interfaces\IReceptionRepository.cs" />
     <Compile Include="Interfaces\ISecurityTokenService.cs" />
     <Compile Include="Interfaces\IServiceCalculationService.cs" />
@@ -645,6 +646,10 @@
     <Compile Include="Migrations\202509202056063_AddInsuranceTypeToIns.cs" />
     <Compile Include="Migrations\202509202056063_AddInsuranceTypeToIns.Designer.cs">
       <DependentUpon>202509202056063_AddInsuranceTypeToIns.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202509231625123_AddNewPropertyToTariffe.cs" />
+    <Compile Include="Migrations\202509231625123_AddNewPropertyToTariffe.Designer.cs">
+      <DependentUpon>202509231625123_AddNewPropertyToTariffe.cs</DependentUpon>
     </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
@@ -751,6 +756,7 @@
     <Compile Include="Models\Statistics\PaymentSearchFilters.cs" />
     <Compile Include="Models\Statistics\PaymentStatistics.cs" />
     <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
+    <Compile Include="Models\SystemSettings\SystemSetting.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
@@ -821,6 +827,7 @@
     <Compile Include="Services\Insurance\SupplementaryInsuranceMonitoringService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceService.cs" />
     <Compile Include="Services\Insurance\SupplementaryTariffSeederService.cs" />
+    <Compile Include="Services\Insurance\TariffDomainValidationService.cs" />
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
@@ -838,6 +845,10 @@
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="Services\ServiceTemplateService.cs" />
     <Compile Include="Services\SharedServiceManagementService.cs" />
+    <Compile Include="Services\SystemSettings\ISystemSettingService.cs" />
+    <Compile Include="Services\SystemSettings\SystemSettingService.cs" />
+    <Compile Include="Services\UserContext\IUserContextService.cs" />
+    <Compile Include="Services\UserContext\UserContextService.cs" />
     <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementarySettingsValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryTariffViewModelValidator.cs" />
@@ -1038,6 +1049,8 @@
     <Content Include="Content\css\local-fonts.css" />
     <Content Include="Content\css\medical-environment-styles.css" />
     <Content Include="Content\css\medical-environment.css" />
+    <Content Include="Content\css\medical-forms.css" />
+    <Content Include="Content\css\medical-select2.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
     <Content Include="Content\css\patient-insurance.css" />
@@ -3805,14 +3818,11 @@
     <Content Include="Areas\Admin\Views\SharedService\Details.cshtml" />
     <Content Include="Areas\Admin\Views\SharedService\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\SharedService\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\Create.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Details.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Index.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\SupplementaryTariffs.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\SupplementaryInsurances.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryCalculationForm.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryTariffList.cshtml" />
@@ -3835,6 +3845,7 @@
     <Content Include="Docs\Database-Connection-Guide.md" />
     <Content Include="CONTRACTS\PROJECT_RULES_SUMMARY.md" />
     <Content Include="CONTRACTS\AJAX_RESPONSE_CHECKLIST.md" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Create.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4020,7 +4031,6 @@
     <Content Include="Scripts\jquery.validate.min.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.js" />
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
-    <Content Include="Scripts\app\medical-environment.js" />
     <Content Include="Scripts\medical-environment.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
     <Content Include="Scripts\persian-date.min.js" />
@@ -4115,7 +4125,6 @@
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Controllers\Base\" />
-    <Folder Include="Areas\Admin\Controllers\Insurance\SupplementaryTariff\" />
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Constants\" />
     <Folder Include="Interfaces\Medical\" />
@@ -4200,6 +4209,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509202056063_AddInsuranceTypeToIns.resx">
       <DependentUpon>202509202056063_AddInsuranceTypeToIns.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509231625123_AddNewPropertyToTariffe.resx">
+      <DependentUpon>202509231625123_AddNewPropertyToTariffe.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

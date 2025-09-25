@@ -333,19 +333,25 @@ namespace ClinicApp.Repositories.Insurance
         {
             try
             {
-                return await _context.InsuranceTariffs
-                    .Include(t => t.Service)
-                    .Include(t => t.InsurancePlan)
-                    .Include(t => t.InsurancePlan.InsuranceProvider)
-                    .FirstOrDefaultAsync(t => 
-                        t.InsurancePlanId == planId && 
-                        t.ServiceId == serviceId && 
-                        !t.IsDeleted);
+                _logger.Debug("🏥 MEDICAL: شروع GetByPlanAndServiceAsync - PlanId: {PlanId}, ServiceId: {ServiceId}", planId, serviceId);
+
+                var tariff = await _context.InsuranceTariffs
+                    .AsNoTracking() // بهینه‌سازی عملکرد برای محیط درمانی
+                    .Where(t => t.InsurancePlanId == planId &&
+                               t.ServiceId == serviceId &&
+                               !t.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                _logger.Information("🏥 MEDICAL: GetByPlanAndServiceAsync تکمیل شد - Found: {Found}, PlanId: {PlanId}, ServiceId: {ServiceId}", 
+                    tariff != null, planId, serviceId);
+
+                return tariff;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت تعرفه بیمه. PlanId: {PlanId}, ServiceId: {ServiceId}", planId, serviceId);
-                throw new InvalidOperationException($"خطا در دریافت تعرفه بیمه {planId} برای خدمت {serviceId}", ex);
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت تعرفه بر اساس طرح بیمه و خدمت - PlanId: {PlanId}, ServiceId: {ServiceId}", 
+                    planId, serviceId);
+                throw new InvalidOperationException("خطا در دریافت تعرفه بر اساس طرح بیمه و خدمت", ex);
             }
         }
 
@@ -939,6 +945,7 @@ namespace ClinicApp.Repositories.Insurance
                 throw new InvalidOperationException($"خطا در دریافت جزئیات تعرفه {id} با Projection", ex);
             }
         }
+
 
         #endregion
     }
