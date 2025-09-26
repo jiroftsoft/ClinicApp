@@ -1425,12 +1425,13 @@
                     },
                     success: function(response) {
                         updateProgress(100);
-                        if (response.success) {
-                            displayCalculationResults(response.data);
-                            logCalculationSuccess(correlationId, response.data);
+                        // 🔍 FIX: Check both 'success' and 'Success' properties
+                        if (response.success || response.Success) {
+                            displayCalculationResults(response.data || response.Data);
+                            logCalculationSuccess(correlationId, response.data || response.Data);
                         } else {
-                            displayCalculationError(response.message);
-                            logCalculationError(correlationId, 'Server Error', response.message);
+                            displayCalculationError(response.message || response.Message);
+                            logCalculationError(correlationId, 'Server Error', response.message || response.Message);
                         }
                         isCalculating = false;
                     },
@@ -1446,9 +1447,17 @@
             function displayCalculationResults(data) {
                 // 🔍 MEDICAL: Bind server-calculated values to form fields (raw numbers for input fields)
                 // Server provides authoritative calculations with proper rounding
-                var tariffPrice = parseFloat(data.tariffPrice) || 0;
-                var patientShare = parseFloat(data.patientShare) || 0;
-                var insurerShare = parseFloat(data.insurerShare) || 0;
+                // 🔍 FIX: Check both lowercase and uppercase property names
+                var tariffPrice = parseFloat(data.tariffPrice || data.TariffPrice) || 0;
+                var patientShare = parseFloat(data.patientShare || data.PatientShare) || 0;
+                var insurerShare = parseFloat(data.insurerShare || data.InsurerShare) || 0;
+                
+                console.log('🔍 DEBUG - displayCalculationResults:', {
+                    tariffPrice: tariffPrice,
+                    patientShare: patientShare,
+                    insurerShare: insurerShare,
+                    rawData: data
+                });
                 
                 // Use server values directly (already properly formatted)
                 $('#TariffPrice').val(tariffPrice);
@@ -1461,13 +1470,16 @@
                 $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' تومان');
                 
                 // نمایش درصدها از سرور (authoritative) - DEBUG LOGGING
-                if (data.patientSharePercent !== undefined && data.insurerSharePercent !== undefined) {
+                var patientSharePercent = data.patientSharePercent || data.PatientSharePercent;
+                var insurerSharePercent = data.insurerSharePercent || data.InsurerSharePercent;
+                
+                if (patientSharePercent !== undefined && insurerSharePercent !== undefined) {
                     console.log('🔍 JavaScript - Setting percentages from server:', {
-                        patientSharePercent: data.patientSharePercent,
-                        insurerSharePercent: data.insurerSharePercent
+                        patientSharePercent: patientSharePercent,
+                        insurerSharePercent: insurerSharePercent
                     });
-                    $('#PatientSharePercent').val(data.patientSharePercent.toFixed(2));
-                    $('#InsurerSharePercent').val(data.insurerSharePercent.toFixed(2));
+                    $('#PatientSharePercent').val(patientSharePercent.toFixed(2));
+                    $('#InsurerSharePercent').val(insurerSharePercent.toFixed(2));
                 }
                 
                 $('#calculationResults').show();
