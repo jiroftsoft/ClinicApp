@@ -512,10 +512,11 @@ namespace ClinicApp.Services.Insurance
 
                     // استفاده از درصدهای تعرفه اگر تعریف شده باشند
                     decimal coveragePercent;
-                    if (tariff.InsurerShare.HasValue)
+                    if (tariff.InsurerShare.HasValue && tariff.TariffPrice.HasValue && tariff.TariffPrice.Value > 0)
                     {
-                        coveragePercent = tariff.InsurerShare.Value;
-                        _log.Information("Using tariff insurer share: {InsurerShare}%", coveragePercent);
+                        // 🔍 FIX: InsurerShare در دیتابیس به عنوان مبلغ ذخیره می‌شود، باید به درصد تبدیل شود
+                        coveragePercent = (tariff.InsurerShare.Value / tariff.TariffPrice.Value) * 100m;
+                        _log.Information("Using tariff insurer share calculated from amount: {InsurerShareAmount} -> {CoveragePercent}%", tariff.InsurerShare.Value, coveragePercent);
                     }
                     else
                     {
@@ -529,12 +530,12 @@ namespace ClinicApp.Services.Insurance
                     result.InsuranceCoverage = SafeCalculateInsuranceCoverage(result.CoverableAmount, coveragePercent);
 
                     // محاسبه مبلغ پرداخت بیمار
-                    if (tariff.PatientShare.HasValue)
+                    if (tariff.PatientShare.HasValue && tariff.TariffPrice.HasValue && tariff.TariffPrice.Value > 0)
                     {
-                        // استفاده از درصد سهم بیمار تعرفه
-                        var patientSharePercent = tariff.PatientShare.Value;
+                        // 🔍 FIX: PatientShare در دیتابیس به عنوان مبلغ ذخیره می‌شود، باید به درصد تبدیل شود
+                        var patientSharePercent = (tariff.PatientShare.Value / tariff.TariffPrice.Value) * 100m;
                         result.PatientPayment = SafeCalculatePatientPaymentWithPercent(effectiveServiceAmount, patientSharePercent);
-                        _log.Information("Using tariff patient share: {PatientShare}%", patientSharePercent);
+                        _log.Information("Using tariff patient share calculated from amount: {PatientShareAmount} -> {PatientSharePercent}%", tariff.PatientShare.Value, patientSharePercent);
                     }
                     else
                     {

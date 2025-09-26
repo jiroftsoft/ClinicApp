@@ -1925,10 +1925,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var tariffPrice = await _tariffCalculationService.CalculateTariffPriceWithFactorSettingAsync(service.ServiceId, currentTariffPrice, correlationId);
                 
                 // 🔍 محاسبه سهم بیمه با استفاده از PlanService
-                var insurerShare = await CalculateInsurerShareWithPlanServiceAsync(service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, currentInsurerShare, correlationId);
+                // اگر درصدها ارائه شده باشند، از آن‌ها استفاده کن و currentInsurerShare را نادیده بگیر
+                var insurerShare = await CalculateInsurerShareWithPlanServiceAsync(service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, 
+                    (patientSharePercent.HasValue && insurerSharePercent.HasValue) ? null : currentInsurerShare, correlationId);
                 
                 // 🔍 محاسبه سهم بیمار
-                var patientShare = await CalculatePatientShareAsync(service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, insurerShare, currentPatientShare, correlationId);
+                // اگر درصدها ارائه شده باشند، از آن‌ها استفاده کن و currentPatientShare را نادیده بگیر
+                var patientShare = await CalculatePatientShareAsync(service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, insurerShare, 
+                    (patientSharePercent.HasValue && insurerSharePercent.HasValue) ? null : currentPatientShare, correlationId);
                 
                 // 🔍 محاسبه پوشش تکمیلی
                 var supplementaryCoverage = await CalculateSupplementaryCoverageAsync(
@@ -1963,6 +1967,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     // محاسبه مجدد سهم‌ها بر اساس درصدهای ورودی
                     patientShare = Math.Round(tariffPrice * (patientSharePercent.Value / 100m), 0, MidpointRounding.AwayFromZero);
                     insurerShare = Math.Round(tariffPrice * (insurerSharePercent.Value / 100m), 0, MidpointRounding.AwayFromZero);
+                    
+                    // 🔍 FIX: استفاده از درصدهای ورودی کاربر به جای محاسبه شده
+                    calculatedPatientSharePercent = patientSharePercent.Value;
+                    calculatedInsurerSharePercent = insurerSharePercent.Value;
                     
                     _logger.Information("🏥 MEDICAL: محاسبه مجدد سهم‌ها بر اساس درصدهای ورودی - PatientPercent: {PatientPercent}%, InsurerPercent: {InsurerPercent}%, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, CorrelationId: {CorrelationId}",
                         patientSharePercent.Value, insurerSharePercent.Value, patientShare, insurerShare, correlationId);

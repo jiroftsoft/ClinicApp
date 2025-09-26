@@ -245,10 +245,14 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 InsuranceProviderId = entity.InsurancePlan?.InsuranceProviderId ?? 0,
                 InsurancePlanId = entity.InsurancePlanId ?? 0,
                 TariffPrice = entity.TariffPrice ?? 0,
+                // 🔍 FIX: PatientShare و InsurerShare در دیتابیس به عنوان مبلغ ذخیره می‌شوند
                 PatientShare = entity.PatientShare ?? 0,
                 InsurerShare = entity.InsurerShare ?? 0,
-                PatientSharePercent = entity.TariffPrice > 0 ? ClinicApp.Services.Calculation.TariffCalculator.CalculatePatientSharePercent(entity.TariffPrice.Value, entity.PatientShare ?? 0) : 0,
-                InsurerSharePercent = entity.TariffPrice > 0 ? ClinicApp.Services.Calculation.TariffCalculator.CalculateInsurerSharePercent(entity.TariffPrice.Value, entity.InsurerShare ?? 0) : 0,
+                // درصدها از مبلغ‌ها محاسبه می‌شوند
+                PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
+                    Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
+                InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 
+                    Math.Round((entity.InsurerShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
                 IsActive = entity.IsActive,
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
