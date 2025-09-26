@@ -10,6 +10,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Repositories;
 using ClinicApp.Repositories.Payment;
 using ClinicApp.Services;
+using ClinicApp.Services.Idempotency;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Validators;
@@ -418,6 +419,7 @@ namespace ClinicApp
                 container.RegisterType<IInsuranceValidationService, InsuranceValidationService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsurancePlanDependencyService, InsurancePlanDependencyService>(new PerRequestLifetimeManager());
                 container.RegisterType<IInsuranceTariffService, InsuranceTariffService>(new PerRequestLifetimeManager());
+                container.RegisterType<IInsuranceTariffCalculationService, InsuranceTariffCalculationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ITariffDomainValidationService, TariffDomainValidationService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceService, SupplementaryInsuranceService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceCacheService, SupplementaryInsuranceCacheService>(new PerRequestLifetimeManager());
@@ -501,6 +503,9 @@ namespace ClinicApp
                 //container.RegisterType<INotificationService, NotificationService>(new HierarchicalLifetimeManager());
                 //container.RegisterType<IAppointmentService, AppointmentService>(new HierarchicalLifetimeManager());
                 //container.RegisterType<ICashSessionService, CashSessionService>(new HierarchicalLifetimeManager());
+                
+                // 🚀 P0 FIX: ثبت سرویس Idempotency
+                container.RegisterType<IIdempotencyService, InMemoryIdempotencyService>(new PerRequestLifetimeManager());
 
                 _log.Information("سایر کامپوننت‌ها با موفقیت ثبت شدند");
             }

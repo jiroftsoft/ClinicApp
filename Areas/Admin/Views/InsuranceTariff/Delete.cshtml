@@ -1,317 +1,476 @@
 @model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffDetailsViewModel
+
 @{
     ViewBag.Title = "حذف تعرفه بیمه";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="container-fluid">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0">
-                        <i class="fas fa-trash text-danger"></i>
-                        حذف تعرفه بیمه
-                    </h1>
-                    <p class="text-muted mb-0">تأیید حذف تعرفه بیمه</p>
-                </div>
-                <div>
-                    <a href="@Url.Action("Details", new { id = Model.InsuranceTariffId })" class="btn btn-info">
-                        <i class="fas fa-eye"></i>
-                        مشاهده جزئیات
-                    </a>
-                    <a href="@Url.Action("Index")" class="btn btn-secondary">
-                        <i class="fas fa-arrow-right"></i>
-                        بازگشت به لیست
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+<!-- 🚀 SEO: Meta Tags -->
+@section MetaTags {
+    <meta name="description" content="حذف تعرفه بیمه - سیستم کلینیک شفا" />
+    <meta name="keywords" content="حذف تعرفه, تعرفه بیمه, کلینیک, بیمه" />
+    <meta name="robots" content="noindex, nofollow" />
+}
 
-    <!-- Warning Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="alert alert-danger">
-                <h4 class="alert-heading">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    هشدار حذف
-                </h4>
-                <p>آیا مطمئن هستید که می‌خواهید این تعرفه بیمه را حذف کنید؟</p>
-                <hr>
-                <p class="mb-0">
-                    <strong>توجه:</strong> این عمل قابل بازگشت نیست و ممکن است بر روی محاسبات بیمه تأثیر بگذارد.
+@section Styles {
+    <style>
+        /* 🏥 MEDICAL: استایل‌های درمانی */
+        .medical-delete-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 24px;
+            font-family: 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif;
+            direction: rtl;
+            text-align: right;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        .medical-delete-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #ffebee;
+            overflow: hidden;
+        }
+
+        .medical-delete-header {
+            background: linear-gradient(135deg, #dc3545 0%, #f56565 100%);
+            color: white;
+            padding: 24px;
+            border-bottom: none;
+        }
+
+        .medical-delete-body {
+            padding: 30px;
+        }
+
+        .medical-delete-warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .medical-delete-warning-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .medical-delete-warning-icon {
+            font-size: 1.5rem;
+            color: #856404;
+        }
+
+        .medical-delete-warning-title {
+            font-weight: 600;
+            color: #856404;
+            margin: 0;
+        }
+
+        .medical-delete-warning-text {
+            color: #856404;
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .medical-delete-section {
+            margin-bottom: 24px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .medical-delete-section h6 {
+            color: #dc3545;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .medical-delete-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .medical-delete-field:last-child {
+            border-bottom: none;
+        }
+
+        .medical-delete-label {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .medical-delete-value {
+            color: #666;
+            flex: 2;
+            text-align: left;
+        }
+
+        .medical-delete-value.currency {
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        .medical-delete-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 24px;
+            padding-top: 24px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .medical-btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .medical-btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .medical-btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+        }
+
+        .medical-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .medical-btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .medical-delete-confirmation {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 20px;
+        }
+
+        .medical-delete-confirmation-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .medical-delete-confirmation-icon {
+            color: #721c24;
+            font-size: 1.2rem;
+        }
+
+        .medical-delete-confirmation-title {
+            color: #721c24;
+            font-weight: 600;
+            margin: 0;
+        }
+
+        .medical-delete-confirmation-text {
+            color: #721c24;
+            margin: 0;
+            font-size: 0.9rem;
+        }
+
+        .medical-delete-form {
+            margin-top: 20px;
+        }
+
+        .medical-delete-form-group {
+            margin-bottom: 16px;
+        }
+
+        .medical-delete-form-label {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .medical-delete-form-control {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        .medical-delete-form-control:focus {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+            outline: none;
+        }
+
+        .medical-delete-form-control.is-invalid {
+            border-color: #dc3545;
+        }
+
+        .medical-delete-form-error {
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* 🏥 MEDICAL: Responsive Design */
+        @media (max-width: 768px) {
+            .medical-delete-container {
+                padding: 16px;
+            }
+            
+            .medical-delete-body {
+                padding: 20px;
+            }
+            
+            .medical-delete-field {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .medical-delete-value {
+                text-align: right;
+            }
+            
+            .medical-delete-actions {
+                flex-direction: column;
+            }
+            
+            .medical-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* 🏥 MEDICAL: Print Styles */
+        @media print {
+            .medical-delete-container {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .medical-delete-actions {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="medical-delete-container">
+    <div class="medical-delete-card">
+        <!-- Header -->
+        <div class="medical-delete-header">
+            <h2 class="mb-2">
+                <i class="fas fa-trash-alt"></i>
+                حذف تعرفه بیمه
+            </h2>
+            <p class="mb-0 opacity-75">حذف دائمی تعرفه بیمه از سیستم</p>
+        </div>
+
+        <!-- Body -->
+        <div class="medical-delete-body">
+            <!-- Warning -->
+            <div class="medical-delete-warning">
+                <div class="medical-delete-warning-header">
+                    <i class="fas fa-exclamation-triangle medical-delete-warning-icon"></i>
+                    <h5 class="medical-delete-warning-title">هشدار مهم</h5>
+                </div>
+                <p class="medical-delete-warning-text">
+                    شما در حال حذف تعرفه بیمه هستید. این عمل غیرقابل بازگشت است و تمام اطلاعات مربوط به این تعرفه از سیستم حذف خواهد شد. لطفاً قبل از ادامه، از صحت اطلاعات اطمینان حاصل کنید.
                 </p>
             </div>
-        </div>
-    </div>
 
-    <!-- Details Section -->
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle"></i>
-                        اطلاعات تعرفه بیمه
-                    </h5>
+            <!-- Service Information -->
+            <div class="medical-delete-section">
+                <h6>
+                    <i class="fas fa-stethoscope"></i>
+                    اطلاعات خدمت
+                </h6>
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">نام خدمت:</span>
+                    <span class="medical-delete-value">@Model.ServiceName</span>
                 </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Service Information -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">خدمت:</label>
-                                <div class="info-value">
-                                    <strong>@Model.ServiceTitle</strong>
-                                    @if (!string.IsNullOrEmpty(Model.ServiceCode))
-                                    {
-                                        <br><small class="text-muted">کد: @Model.ServiceCode</small>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Insurance Plan Information -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">طرح بیمه:</label>
-                                <div class="info-value">
-                                    <strong>@Model.InsurancePlanName</strong>
-                                    @if (!string.IsNullOrEmpty(Model.InsurancePlanCode))
-                                    {
-                                        <br><small class="text-muted">کد: @Model.InsurancePlanCode</small>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+                @if (!string.IsNullOrEmpty(Model.ServiceCategoryName))
+                {
+                    <div class="medical-delete-field">
+                        <span class="medical-delete-label">دسته‌بندی خدمت:</span>
+                        <span class="medical-delete-value">@Model.ServiceCategoryName</span>
                     </div>
-
-                    <div class="row">
-                        <!-- Insurance Provider -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">ارائه‌دهنده بیمه:</label>
-                                <div class="info-value">
-                                    <span class="badge badge-info">@Model.InsuranceProviderName</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Service Category -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">دسته‌بندی خدمت:</label>
-                                <div class="info-value">
-                                    @if (!string.IsNullOrEmpty(Model.ServiceCategoryTitle))
-                                    {
-                                        <span class="badge badge-secondary">@Model.ServiceCategoryTitle</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">تعریف نشده</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.DepartmentName))
+                {
+                    <div class="medical-delete-field">
+                        <span class="medical-delete-label">دپارتمان:</span>
+                        <span class="medical-delete-value">@Model.DepartmentName</span>
                     </div>
-
-                    <hr>
-
-                    <!-- Tariff Information -->
-                    <div class="row">
-                        <div class="col-12">
-                            <h6 class="text-primary mb-3">
-                                <i class="fas fa-money-bill-wave"></i>
-                                اطلاعات تعرفه
-                            </h6>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Tariff Price -->
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">قیمت تعرفه:</label>
-                                <div class="info-value">
-                                    @if (Model.TariffPrice.HasValue)
-                                    {
-                                        <span class="text-success font-weight-bold h5">
-                                            @Model.TariffPrice.Value.ToString("N0") تومان
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">استفاده از قیمت پایه خدمت</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Patient Share -->
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">سهم بیمار:</label>
-                                <div class="info-value">
-                                    @if (Model.PatientShare.HasValue)
-                                    {
-                                        <span class="text-warning font-weight-bold h5">
-                                            @Model.PatientShare.Value.ToString("F1")%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">استفاده از تنظیمات طرح بیمه</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Insurer Share -->
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">سهم بیمه:</label>
-                                <div class="info-value">
-                                    @if (Model.InsurerShare.HasValue)
-                                    {
-                                        <span class="text-info font-weight-bold h5">
-                                            @Model.InsurerShare.Value.ToString("F1")%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">استفاده از تنظیمات طرح بیمه</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    @if (!string.IsNullOrEmpty(Model.ServiceDescription))
-                    {
-                        <hr>
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="info-group">
-                                    <label class="info-label">توضیحات خدمت:</label>
-                                    <div class="info-value">
-                                        <p class="text-muted">@Model.ServiceDescription</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    }
-                </div>
+                }
             </div>
-        </div>
 
-        <!-- Sidebar -->
-        <div class="col-lg-4">
-            <!-- Delete Confirmation -->
-            <div class="card border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="fas fa-trash"></i>
-                        تأیید حذف
-                    </h5>
+            <!-- Insurance Information -->
+            <div class="medical-delete-section">
+                <h6>
+                    <i class="fas fa-shield-alt"></i>
+                    اطلاعات بیمه
+                </h6>
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">ارائه‌دهنده بیمه:</span>
+                    <span class="medical-delete-value">@Model.InsuranceProviderName</span>
                 </div>
-                <div class="card-body">
-                    <p class="text-muted">برای حذف این تعرفه بیمه، دکمه زیر را کلیک کنید:</p>
-                    
-                    @using (Html.BeginForm("Delete", "InsuranceTariff", FormMethod.Post, new { @class = "d-inline" }))
-                    {
-                        @Html.AntiForgeryToken()
-                        @Html.Hidden("id", Model.InsuranceTariffId)
-                        
-                        <button type="submit" class="btn btn-danger btn-block" onclick="return confirm('آیا مطمئن هستید؟')">
-                            <i class="fas fa-trash"></i>
-                            حذف تعرفه بیمه
-                        </button>
-                    }
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">طرح بیمه:</span>
+                    <span class="medical-delete-value">@Model.InsurancePlanName</span>
                 </div>
             </div>
 
-            <!-- Audit Information -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history"></i>
-                        اطلاعات ثبت
-                    </h5>
+            <!-- Tariff Information -->
+            <div class="medical-delete-section">
+                <h6>
+                    <i class="fas fa-calculator"></i>
+                    اطلاعات تعرفه
+                </h6>
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">قیمت تعرفه:</span>
+                    <span class="medical-delete-value currency">@Model.TariffPrice.ToString("N0") تومان</span>
                 </div>
-                <div class="card-body">
-                    <div class="info-group">
-                        <label class="info-label">تاریخ ایجاد:</label>
-                        <div class="info-value">
-                            @Model.CreatedAtShamsi
-                            @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
-                            {
-                                <br><small class="text-muted">توسط: @Model.CreatedByUserName</small>
-                            }
-                        </div>
-                    </div>
-
-                    @if (Model.UpdatedAt.HasValue)
-                    {
-                        <div class="info-group">
-                            <label class="info-label">آخرین ویرایش:</label>
-                            <div class="info-value">
-                                @Model.UpdatedAtShamsi
-                                @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
-                                {
-                                    <br><small class="text-muted">توسط: @Model.UpdatedByUserName</small>
-                                }
-                            </div>
-                        </div>
-                    }
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">سهم بیمار:</span>
+                    <span class="medical-delete-value currency">@Model.PatientShare.ToString("N0") تومان</span>
+                </div>
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">سهم بیمه:</span>
+                    <span class="medical-delete-value currency">@Model.InsurerShare.ToString("N0") تومان</span>
+                </div>
+                <div class="medical-delete-field">
+                    <span class="medical-delete-label">وضعیت:</span>
+                    <span class="medical-delete-value @(Model.IsActive ? "text-success" : "text-danger")">
+                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                    </span>
                 </div>
             </div>
 
-            <!-- Alternative Actions -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-undo"></i>
-                        عملیات جایگزین
-                    </h5>
+            <!-- Confirmation -->
+            <div class="medical-delete-confirmation">
+                <div class="medical-delete-confirmation-header">
+                    <i class="fas fa-info-circle medical-delete-confirmation-icon"></i>
+                    <h6 class="medical-delete-confirmation-title">تأیید حذف</h6>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="btn btn-warning">
-                            <i class="fas fa-edit"></i>
-                            ویرایش به جای حذف
-                        </a>
-                        <a href="@Url.Action("Details", new { id = Model.InsuranceTariffId })" class="btn btn-info">
-                            <i class="fas fa-eye"></i>
-                            مشاهده جزئیات
-                        </a>
-                        <a href="@Url.Action("Index")" class="btn btn-secondary">
-                            <i class="fas fa-arrow-right"></i>
-                            بازگشت به لیست
-                        </a>
-                    </div>
-                </div>
+                <p class="medical-delete-confirmation-text">
+                    برای حذف این تعرفه، لطفاً کلمه "حذف" را در کادر زیر تایپ کنید.
+                </p>
             </div>
+
+            <!-- Delete Form -->
+            @using (Html.BeginForm("Delete", "InsuranceTariff", FormMethod.Post, new { @class = "medical-delete-form", @id = "deleteForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.InsuranceTariffId)
+
+                <div class="medical-delete-form-group">
+                    <label class="medical-delete-form-label" for="confirmationText">
+                        تایید حذف <span class="text-danger">*</span>
+                    </label>
+                    <input type="text" class="medical-delete-form-control" id="confirmationText" name="confirmationText" placeholder="کلمه 'حذف' را تایپ کنید" required />
+                    <div class="medical-delete-form-error" id="confirmationError"></div>
+                </div>
+
+                <!-- Actions -->
+                <div class="medical-delete-actions">
+                    <a href="@Url.Action("Details", new { id = Model.InsuranceTariffId })" class="medical-btn medical-btn-secondary">
+                        <i class="fas fa-arrow-right"></i>
+                        بازگشت
+                    </a>
+                    <button type="submit" class="medical-btn medical-btn-danger" id="deleteBtn" disabled>
+                        <i class="fas fa-trash-alt"></i>
+                        حذف تعرفه
+                    </button>
+                </div>
+            }
         </div>
     </div>
 </div>
 
-<style>
-    .info-group {
-        margin-bottom: 1rem;
-    }
-
-    .info-label {
-        font-weight: 600;
-        color: #6c757d;
-        font-size: 0.9rem;
-        margin-bottom: 0.25rem;
-        display: block;
-    }
-
-    .info-value {
-        font-size: 1rem;
-        line-height: 1.4;
-    }
-</style>
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('🏥 MEDICAL: Insurance Tariff Delete page loaded');
+            
+            // 🚀 PERFORMANCE: Animate elements on load
+            $('.medical-delete-section').each(function(index) {
+                $(this).css('opacity', '0');
+                $(this).animate({ opacity: 1 }, 300 + (index * 100));
+            });
+            
+            // 🚀 UX: Enhanced interactions
+            $('.medical-btn').hover(
+                function() { $(this).addClass('shadow-sm'); },
+                function() { $(this).removeClass('shadow-sm'); }
+            );
+            
+            // 🚀 MEDICAL: Confirmation validation
+            $('#confirmationText').on('input', function() {
+                var value = $(this).val();
+                var deleteBtn = $('#deleteBtn');
+                var errorDiv = $('#confirmationError');
+                
+                if (value === 'حذف') {
+                    $(this).removeClass('is-invalid');
+                    errorDiv.text('');
+                    deleteBtn.prop('disabled', false);
+                } else {
+                    $(this).addClass('is-invalid');
+                    errorDiv.text('لطفاً کلمه "حذف" را دقیقاً تایپ کنید');
+                    deleteBtn.prop('disabled', true);
+                }
+            });
+            
+            // 🚀 MEDICAL: Form submission
+            $('#deleteForm').on('submit', function(e) {
+                var confirmationText = $('#confirmationText').val();
+                
+                if (confirmationText !== 'حذف') {
+                    e.preventDefault();
+                    alert('لطفاً کلمه "حذف" را دقیقاً تایپ کنید');
+                    return false;
+                }
+                
+                if (!confirm('آیا مطمئن هستید که می‌خواهید این تعرفه را حذف کنید؟ این عمل غیرقابل بازگشت است.')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Show loading state
+                $('#deleteBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال حذف...');
+            });
+            
+            // 🚀 MEDICAL: Prevent accidental submission
+            $(window).on('beforeunload', function() {
+                if ($('#confirmationText').val() === 'حذف') {
+                    return 'تغییرات ذخیره نشده‌ای وجود دارد. آیا مطمئن هستید؟';
+                }
+            });
+        });
+    </script>
+}

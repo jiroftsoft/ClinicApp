@@ -26,6 +26,12 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     /// </summary>
     public int InsuranceTariffId { get; set; }
 
+    /// <summary>
+    /// RowVersion برای مدیریت همزمانی (Concurrency Control)
+    /// </summary>
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
+
     // InsuranceId حذف شد - از PlanService استفاده کنید
 
     /// <summary>

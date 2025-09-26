@@ -19,6 +19,11 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         [Display(Name = "شناسه")]
         public int InsuranceProviderId { get; set; }
 
+        /// <summary>
+        /// Id property for consistency with other lookup ViewModels
+        /// </summary>
+        public int Id => InsuranceProviderId;
+
         [Display(Name = "نام")]
         public string Name { get; set; }
 

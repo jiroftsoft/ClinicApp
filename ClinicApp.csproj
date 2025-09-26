@@ -530,6 +530,7 @@
     <Compile Include="Interfaces\IAppSettings.cs" />
     <Compile Include="Interfaces\IExternalInquiryService.cs" />
     <Compile Include="Interfaces\IFactorSettingService.cs" />
+    <Compile Include="Interfaces\IInsuranceTariffCalculationService.cs" />
     <Compile Include="Interfaces\INotificationChannel.cs" />
     <Compile Include="Interfaces\INotificationHistoryService.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
@@ -651,6 +652,10 @@
     <Compile Include="Migrations\202509231625123_AddNewPropertyToTariffe.Designer.cs">
       <DependentUpon>202509231625123_AddNewPropertyToTariffe.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509260343282_AddRowVersionToInsuranceTarrif.cs" />
+    <Compile Include="Migrations\202509260343282_AddRowVersionToInsuranceTarrif.Designer.cs">
+      <DependentUpon>202509260343282_AddRowVersionToInsuranceTarrif.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -662,6 +667,10 @@
     <Compile Include="Models\Core\ITrackable.cs" />
     <Compile Include="Models\Core\OtpRequest.cs" />
     <Compile Include="Models\DoctorDependencyInfo.cs" />
+    <Compile Include="Models\DTOs\ApiResponse.cs" />
+    <Compile Include="Models\DTOs\Calculation\CalculationPlanDto.cs" />
+    <Compile Include="Models\DTOs\Calculation\CalculationResultDto.cs" />
+    <Compile Include="Models\DTOs\Calculation\CalculationServiceDto.cs" />
     <Compile Include="Models\Entities\Appointment\Appointment.cs" />
     <Compile Include="Models\Entities\Appointment\AppointmentSlot.cs" />
     <Compile Include="Models\Entities\Appointment\Class1.cs" />
@@ -787,6 +796,7 @@
     <Compile Include="Services\AsanakSmsService.cs" />
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\BackgroundCurrentUserService.cs" />
+    <Compile Include="Services\Calculation\TariffCalculator.cs" />
     <Compile Include="Services\Class1.cs" />
     <Compile Include="Services\ClinicAdmin\AppointmentAvailabilityService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentHistoryService.cs" />
@@ -809,6 +819,8 @@
     <Compile Include="Services\DepartmentManagementService.cs" />
     <Compile Include="Services\ExternalInquiryService.cs" />
     <Compile Include="Services\FactorSettingService.cs" />
+    <Compile Include="Services\Idempotency\IIdempotencyService.cs" />
+    <Compile Include="Services\Idempotency\InMemoryIdempotencyService.cs" />
     <Compile Include="Services\IMessageNotificationService.cs" />
     <Compile Include="Services\Insurance\AdvancedInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\BulkSupplementaryTariffService.cs" />
@@ -819,6 +831,7 @@
     <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanService.cs" />
     <Compile Include="Services\Insurance\InsuranceProviderService.cs" />
+    <Compile Include="Services\Insurance\InsuranceTariffCalculationService.cs" />
     <Compile Include="Services\Insurance\InsuranceTariffService.cs" />
     <Compile Include="Services\Insurance\InsuranceValidationService.cs" />
     <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
@@ -849,6 +862,7 @@
     <Compile Include="Services\SystemSettings\SystemSettingService.cs" />
     <Compile Include="Services\UserContext\IUserContextService.cs" />
     <Compile Include="Services\UserContext\UserContextService.cs" />
+    <Compile Include="Validators\InsuranceTariffValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementarySettingsValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryTariffViewModelValidator.cs" />
@@ -3818,10 +3832,6 @@
     <Content Include="Areas\Admin\Views\SharedService\Details.cshtml" />
     <Content Include="Areas\Admin\Views\SharedService\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\SharedService\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\Index.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
-    <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\Index.cshtml" />
     <Content Include="Areas\Admin\Views\PatientInsurance\SupplementaryInsurances.cshtml" />
     <Content Include="Areas\Admin\Views\CombinedInsuranceCalculation\_SupplementaryCalculationForm.cshtml" />
@@ -3845,7 +3855,12 @@
     <Content Include="Docs\Database-Connection-Guide.md" />
     <Content Include="CONTRACTS\PROJECT_RULES_SUMMARY.md" />
     <Content Include="CONTRACTS\AJAX_RESPONSE_CHECKLIST.md" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Index.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Create.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Delete.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Details.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
+    <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4212,6 +4227,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509231625123_AddNewPropertyToTariffe.resx">
       <DependentUpon>202509231625123_AddNewPropertyToTariffe.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509260343282_AddRowVersionToInsuranceTarrif.resx">
+      <DependentUpon>202509260343282_AddRowVersionToInsuranceTarrif.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

@@ -26,6 +26,21 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         public DateTime CreatedAt { get; set; }
         public string CreatedAtShamsi { get; set; }
         public string CreatedByUserName { get; set; }
+        
+        /// <summary>
+        /// نام خدمت (برای سازگاری با View)
+        /// </summary>
+        public string ServiceName => ServiceTitle;
+        
+        /// <summary>
+        /// نام دسته‌بندی خدمت
+        /// </summary>
+        public string ServiceCategoryName { get; set; }
+        
+        /// <summary>
+        /// وضعیت فعال/غیرفعال
+        /// </summary>
+        public bool IsActive { get; set; } = true;
 
         public static InsuranceTariffIndexViewModel FromEntity(Models.Entities.Insurance.InsuranceTariff entity)
         {
@@ -43,7 +58,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 InsurerShare = entity.InsurerShare,
                 CreatedAt = entity.CreatedAt,
                 CreatedAtShamsi = entity.CreatedAt.ToString("yyyy/MM/dd"), // TODO: تبدیل به شمسی
-                CreatedByUserName = entity.CreatedByUser?.UserName
+                CreatedByUserName = entity.CreatedByUser?.UserName,
+                ServiceCategoryName = entity.Service?.ServiceCategory?.Title,
+                IsActive = !entity.IsDeleted // فرض: اگر حذف نشده باشد، فعال است
             };
         }
     }
@@ -114,6 +131,12 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         public int InsuranceTariffId { get; set; }
 
         /// <summary>
+        /// RowVersion برای مدیریت همزمانی (Concurrency Control)
+        /// </summary>
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
+
+        /// <summary>
         /// کلید امنیتی برای جلوگیری از ارسال تکراری فرم
         /// </summary>
         [Required(ErrorMessage = "کلید امنیتی موجود نیست")]
@@ -149,14 +172,24 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
         public decimal? InsurerShare { get; set; }
 
+        [Display(Name = "درصد سهم بیمار")]
+        [Range(0, 100, ErrorMessage = "درصد سهم بیمار باید بین 0 تا 100 باشد.")]
+        public decimal? PatientSharePercent { get; set; }
+
+        [Display(Name = "درصد سهم بیمه")]
+        [Range(0, 100, ErrorMessage = "درصد سهم بیمه باید بین 0 تا 100 باشد.")]
+        public decimal? InsurerSharePercent { get; set; }
+
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
 
         [Display(Name = "تاریخ شروع اعتبار")]
-        public string StartDate { get; set; }
+        [DisplayFormat(DataFormatString = "{0:yyyy/MM/dd}")]
+        public DateTime? StartDate { get; set; }
 
         [Display(Name = "تاریخ پایان اعتبار")]
-        public string EndDate { get; set; }
+        [DisplayFormat(DataFormatString = "{0:yyyy/MM/dd}")]
+        public DateTime? EndDate { get; set; }
 
         [Display(Name = "یادداشت‌های اضافی")]
         [StringLength(500, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از 500 کاراکتر باشد.")]
@@ -186,7 +219,14 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         public string InsurancePlanName { get; set; }
         public string InsuranceProviderName { get; set; }
 
-        // SelectLists
+        // SelectLists - برای سازگاری با Viewها
+        public System.Web.Mvc.SelectList Departments { get; set; }
+        public System.Web.Mvc.SelectList ServiceCategories { get; set; }
+        public System.Web.Mvc.SelectList Services { get; set; }
+        public System.Web.Mvc.SelectList InsuranceProviders { get; set; }
+        public System.Web.Mvc.SelectList InsurancePlans { get; set; }
+
+        // Legacy SelectLists - برای سازگاری با کد قدیمی
         public System.Web.Mvc.SelectList DepartmentSelectList { get; set; }
         public System.Web.Mvc.SelectList ServiceCategorySelectList { get; set; }
         public System.Web.Mvc.SelectList ServiceSelectList { get; set; }
@@ -198,17 +238,20 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
             return new InsuranceTariffCreateEditViewModel
             {
                 InsuranceTariffId = entity.InsuranceTariffId,
+                RowVersion = entity.RowVersion,
                 DepartmentId = entity.Service?.ServiceCategory?.DepartmentId ?? 0,
-                ServiceCategoryId = entity.Service?.ServiceCategoryId,
+                ServiceCategoryId = entity.Service?.ServiceCategoryId ?? 0,
                 ServiceId = entity.ServiceId,
                 InsuranceProviderId = entity.InsurancePlan?.InsuranceProviderId ?? 0,
                 InsurancePlanId = entity.InsurancePlanId ?? 0,
-                TariffPrice = entity.TariffPrice,
-                PatientShare = entity.PatientShare,
-                InsurerShare = entity.InsurerShare,
+                TariffPrice = entity.TariffPrice ?? 0,
+                PatientShare = entity.PatientShare ?? 0,
+                InsurerShare = entity.InsurerShare ?? 0,
+                PatientSharePercent = entity.TariffPrice > 0 ? ClinicApp.Services.Calculation.TariffCalculator.CalculatePatientSharePercent(entity.TariffPrice.Value, entity.PatientShare ?? 0) : 0,
+                InsurerSharePercent = entity.TariffPrice > 0 ? ClinicApp.Services.Calculation.TariffCalculator.CalculateInsurerSharePercent(entity.TariffPrice.Value, entity.InsurerShare ?? 0) : 0,
                 IsActive = entity.IsActive,
-                StartDate = entity.StartDate?.ToString("yyyy/MM/dd"),
-                EndDate = entity.EndDate?.ToString("yyyy/MM/dd"),
+                StartDate = entity.StartDate,
+                EndDate = entity.EndDate,
                 Notes = entity.Notes,
                 ServiceTitle = entity.Service?.Title,
                 InsurancePlanName = entity.InsurancePlan?.Name,
@@ -225,6 +268,11 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         public PagedResult<InsuranceTariffIndexViewModel> Tariffs { get; set; }
         public InsuranceTariffFilterViewModel Filter { get; set; }
         public InsuranceTariffStatisticsViewModel Statistics { get; set; }
+        
+        /// <summary>
+        /// اطلاعات صفحه‌بندی برای دسترسی آسان در View
+        /// </summary>
+        public PagedResult<InsuranceTariffIndexViewModel> Pagination => Tariffs;
 
         public InsuranceTariffIndexPageViewModel()
         {
@@ -252,6 +300,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Display(Name = "جستجو")]
         public string SearchTerm { get; set; }
 
+        [Display(Name = "دپارتمان")]
+        public int? DepartmentId { get; set; }
+
         [Display(Name = "طرح بیمه")]
         public int? InsurancePlanId { get; set; }
 
@@ -261,15 +312,20 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Display(Name = "ارائه‌دهنده بیمه")]
         public int? InsuranceProviderId { get; set; }
 
+        [Display(Name = "وضعیت")]
+        public bool? IsActive { get; set; }
+
         [Display(Name = "شماره صفحه")]
         public int PageNumber { get; set; } = 1;
 
         [Display(Name = "اندازه صفحه")]
         public int PageSize { get; set; } = 10;
 
-        // SelectLists
+        // 🚀 P0 FIX: SelectLists برای فیلترهای کامل
+        public System.Web.Mvc.SelectList Departments { get; set; }
         public System.Web.Mvc.SelectList InsurancePlanSelectList { get; set; }
         public System.Web.Mvc.SelectList ServiceSelectList { get; set; }
+        public System.Web.Mvc.SelectList InsuranceProviders { get; set; }
         public System.Web.Mvc.SelectList InsuranceProviderSelectList { get; set; }
     }
 
@@ -280,6 +336,15 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
     {
         [Display(Name = "تعداد کل تعرفه‌های بیمه")]
         public int TotalTariffs { get; set; }
+
+        [Display(Name = "تعرفه‌های فعال")]
+        public int ActiveTariffs { get; set; }
+
+        [Display(Name = "تعرفه‌های غیرفعال")]
+        public int InactiveTariffs { get; set; }
+
+        [Display(Name = "خدمات تحت پوشش")]
+        public int TotalServices { get; set; }
 
         [Display(Name = "تعرفه‌های با قیمت خاص")]
         public int TariffsWithCustomPrice { get; set; }

@@ -512,8 +512,31 @@ namespace ClinicApp.Repositories.Insurance
         {
             try
             {
+                _logger.Debug("🏥 MEDICAL: شروع محاسبه آمار تعرفه‌ها");
+                
+                // 🚀 P0 FIX: محاسبه آمار کامل برای محیط درمانی
                 var totalTariffs = await _context.InsuranceTariffs
                     .Where(t => !t.IsDeleted)
+                    .CountAsync();
+                    
+                _logger.Debug("🏥 MEDICAL: تعداد کل تعرفه‌ها: {TotalTariffs}", totalTariffs);
+                
+                // تست: بررسی وجود تعرفه‌ها بدون فیلتر IsDeleted
+                var allTariffsCount = await _context.InsuranceTariffs.CountAsync();
+                _logger.Debug("🏥 MEDICAL: تعداد کل تعرفه‌ها (بدون فیلتر): {AllTariffsCount}", allTariffsCount);
+
+                var activeTariffs = await _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted && t.CreatedAt >= DateTime.UtcNow.AddDays(-30))
+                    .CountAsync();
+
+                var inactiveTariffs = await _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted && t.CreatedAt < DateTime.UtcNow.AddDays(-30))
+                    .CountAsync();
+
+                var totalServices = await _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted)
+                    .Select(t => t.ServiceId)
+                    .Distinct()
                     .CountAsync();
 
                 var tariffsWithCustomPrice = await _context.InsuranceTariffs
@@ -531,6 +554,9 @@ namespace ClinicApp.Repositories.Insurance
                 return new Dictionary<string, int>
                 {
                     { "TotalTariffs", totalTariffs },
+                    { "ActiveTariffs", activeTariffs },
+                    { "InactiveTariffs", inactiveTariffs },
+                    { "TotalServices", totalServices },
                     { "TariffsWithCustomPrice", tariffsWithCustomPrice },
                     { "TariffsWithCustomPatientShare", tariffsWithCustomPatientShare },
                     { "TariffsWithCustomInsurerShare", tariffsWithCustomInsurerShare }

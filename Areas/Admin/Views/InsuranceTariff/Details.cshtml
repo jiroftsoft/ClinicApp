@@ -1,302 +1,473 @@
 @model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffDetailsViewModel
+
 @{
-    ViewBag.Title = "جزئیات تعرفه بیمه";
+    ViewBag.Title = "مشاهده تعرفه بیمه";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-<div class="container-fluid">
-    <!-- Header Section -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <h1 class="h3 mb-0">
-                        <i class="fas fa-eye text-info"></i>
-                        جزئیات تعرفه بیمه
-                    </h1>
-                    <p class="text-muted mb-0">مشاهده اطلاعات کامل تعرفه بیمه</p>
-                </div>
-                <div>
-                    <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="btn btn-warning">
-                        <i class="fas fa-edit"></i>
-                        ویرایش
-                    </a>
-                    <a href="@Url.Action("Index")" class="btn btn-secondary">
-                        <i class="fas fa-arrow-right"></i>
-                        بازگشت به لیست
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
+@functions {
+    string FormatCurrency(decimal? value)
+    {
+        return value.HasValue ? value.Value.ToString("N0") : "0";
+    }
+}
 
-    <!-- Details Section -->
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-info-circle"></i>
-                        اطلاعات تعرفه بیمه
-                    </h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <!-- Service Information -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">خدمت:</label>
-                                <div class="info-value">
-                                    <strong>@Model.ServiceTitle</strong>
-                                    @if (!string.IsNullOrEmpty(Model.ServiceCode))
-                                    {
-                                        <br><small class="text-muted">کد: @Model.ServiceCode</small>
-                                    }
-                                </div>
-                            </div>
-                        </div>
+<!-- 🚀 SEO: Meta Tags -->
+@section MetaTags {
+    <meta name="description" content="مشاهده جزئیات تعرفه بیمه - سیستم کلینیک شفا" />
+    <meta name="keywords" content="تعرفه بیمه, جزئیات تعرفه, کلینیک, بیمه" />
+    <meta name="robots" content="noindex, nofollow" />
+}
 
-                        <!-- Insurance Plan Information -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">طرح بیمه:</label>
-                                <div class="info-value">
-                                    <strong>@Model.InsurancePlanName</strong>
-                                    @if (!string.IsNullOrEmpty(Model.InsurancePlanCode))
-                                    {
-                                        <br><small class="text-muted">کد: @Model.InsurancePlanCode</small>
-                                    }
+@section Styles {
+    <style>
+        /* 🏥 MEDICAL: استایل‌های درمانی */
+        .medical-details-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 24px;
+            font-family: 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif;
+            direction: rtl;
+            text-align: right;
+            background: #ffffff;
+            min-height: 100vh;
+        }
+
+        .medical-details-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e3f2fd;
+            overflow: hidden;
+        }
+
+        .medical-details-header {
+            background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
+            color: white;
+            padding: 24px;
+            border-bottom: none;
+        }
+
+        .medical-details-body {
+            padding: 30px;
+        }
+
+        .medical-details-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e9ecef;
+        }
+
+        .medical-details-section h5 {
+            color: #1976d2;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .medical-details-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .medical-details-field:last-child {
+            border-bottom: none;
+        }
+
+        .medical-details-label {
+            font-weight: 600;
+            color: #333;
+            flex: 1;
+        }
+
+        .medical-details-value {
+            color: #666;
+            flex: 2;
+            text-align: left;
+        }
+
+        .medical-details-value.currency {
+            color: #1976d2;
+            font-weight: 600;
+        }
+
+        .medical-details-value.status-active {
+            color: #28a745;
+            font-weight: 600;
+        }
+
+        .medical-details-value.status-inactive {
+            color: #dc3545;
+            font-weight: 600;
+        }
+
+        .medical-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .medical-btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.2s ease;
+            border: none;
+            cursor: pointer;
+        }
+
+        .medical-btn-primary {
+            background: #1976d2;
+            color: white;
+        }
+
+        .medical-btn-primary:hover {
+            background: #1565c0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+        }
+
+        .medical-btn-secondary {
+            background: #6c757d;
+            color: white;
+        }
+
+        .medical-btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+
+        .medical-btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .medical-btn-warning:hover {
+            background: #e0a800;
+            transform: translateY(-1px);
+        }
+
+        .medical-btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .medical-btn-danger:hover {
+            background: #c82333;
+            transform: translateY(-1px);
+        }
+
+        .medical-calculation-card {
+            background: #e3f2fd;
+            border: 1px solid #bbdefb;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .medical-calculation-header {
+            background: #1976d2;
+            color: white;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .medical-calculation-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+
+        .medical-calculation-item {
+            background: white;
+            border-radius: 6px;
+            padding: 16px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .medical-calculation-label {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .medical-calculation-value {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #1976d2;
+        }
+
+        .medical-timeline {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .medical-timeline-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .medical-timeline-item:last-child {
+            border-bottom: none;
+        }
+
+        .medical-timeline-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e3f2fd;
+            color: #1976d2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 16px;
+            font-size: 1.2rem;
+        }
+
+        .medical-timeline-content {
+            flex: 1;
+        }
+
+        .medical-timeline-title {
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 4px;
+        }
+
+        .medical-timeline-date {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        /* 🏥 MEDICAL: Responsive Design */
+        @@media (max-width: 768px) {
+            .medical-details-container {
+                padding: 16px;
+            }
+            
+            .medical-details-body {
+                padding: 20px;
+            }
+            
+            .medical-details-field {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .medical-details-value {
+                text-align: right;
+            }
+            
+            .medical-actions {
+                flex-direction: column;
+            }
+            
+            .medical-btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+
+        /* 🏥 MEDICAL: Print Styles */
+        @@media print {
+            .medical-details-container {
+                box-shadow: none;
+                border: 1px solid #ccc;
+            }
+            
+            .medical-actions {
+                display: none;
+            }
+        }
+    </style>
+}
+
+<div class="medical-details-container">
+    <div class="medical-details-card">
+        <!-- Header -->
+        <div class="medical-details-header">
+            <h2 class="mb-2">
+                <i class="fas fa-money-bill-wave"></i>
+                جزئیات تعرفه بیمه
+            </h2>
+            <p class="mb-0 opacity-75">مشاهده اطلاعات کامل تعرفه بیمه</p>
                                 </div>
+
+        <!-- Body -->
+        <div class="medical-details-body">
+            <!-- Service Information -->
+            <div class="medical-details-section">
+                <h5>
+                    <i class="fas fa-stethoscope"></i>
+                    اطلاعات خدمت
+                </h5>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">نام خدمت:</span>
+                    <span class="medical-details-value">@Model.ServiceTitle</span>
                             </div>
-                        </div>
+                @if (!string.IsNullOrEmpty(Model.ServiceCategoryTitle))
+                {
+                    <div class="medical-details-field">
+                        <span class="medical-details-label">دسته‌بندی خدمت:</span>
+                        <span class="medical-details-value">@Model.ServiceCategoryTitle</span>
                     </div>
-
-                    <div class="row">
-                        <!-- Insurance Provider -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">ارائه‌دهنده بیمه:</label>
-                                <div class="info-value">
-                                    <span class="badge badge-info">@Model.InsuranceProviderName</span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Service Category -->
-                        <div class="col-md-6">
-                            <div class="info-group">
-                                <label class="info-label">دسته‌بندی خدمت:</label>
-                                <div class="info-value">
-                                    @if (!string.IsNullOrEmpty(Model.ServiceCategoryTitle))
-                                    {
-                                        <span class="badge badge-secondary">@Model.ServiceCategoryTitle</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">تعریف نشده</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <hr>
-
-                    <!-- Tariff Information -->
-                    <div class="row">
-                        <div class="col-12">
-                            <h6 class="text-primary mb-3">
-                                <i class="fas fa-money-bill-wave"></i>
-                                اطلاعات تعرفه
-                            </h6>
-                        </div>
-                    </div>
-
-                    <div class="row">
-                        <!-- Tariff Price -->
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">قیمت تعرفه:</label>
-                                <div class="info-value">
-                                    @if (Model.TariffPrice.HasValue)
-                                    {
-                                        <span class="text-success font-weight-bold h5">
-                                            @Model.TariffPrice.Value.ToString("N0") تومان
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">استفاده از قیمت پایه خدمت</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Patient Share -->
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">سهم بیمار:</label>
-                                <div class="info-value">
-                                    @if (Model.PatientShare.HasValue)
-                                    {
-                                        <span class="text-warning font-weight-bold h5">
-                                            @Model.PatientShare.Value.ToString("F1")%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">استفاده از تنظیمات طرح بیمه</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Insurer Share -->
-                        <div class="col-md-4">
-                            <div class="info-group">
-                                <label class="info-label">سهم بیمه:</label>
-                                <div class="info-value">
-                                    @if (Model.InsurerShare.HasValue)
-                                    {
-                                        <span class="text-info font-weight-bold h5">
-                                            @Model.InsurerShare.Value.ToString("F1")%
-                                        </span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted">استفاده از تنظیمات طرح بیمه</span>
-                                    }
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
+                }
+                @* Department information removed as it's not available in the ViewModel *@
                     @if (!string.IsNullOrEmpty(Model.ServiceDescription))
                     {
-                        <hr>
-                        <div class="row">
-                            <div class="col-12">
-                                <div class="info-group">
-                                    <label class="info-label">توضیحات خدمت:</label>
-                                    <div class="info-value">
-                                        <p class="text-muted">@Model.ServiceDescription</p>
-                                    </div>
-                                </div>
-                            </div>
+                    <div class="medical-details-field">
+                        <span class="medical-details-label">توضیحات خدمت:</span>
+                        <span class="medical-details-value">@Model.ServiceDescription</span>
                         </div>
                     }
-                </div>
-            </div>
         </div>
 
-        <!-- Sidebar -->
-        <div class="col-lg-4">
-            <!-- Audit Information -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-history"></i>
-                        اطلاعات ثبت
+            <!-- Insurance Information -->
+            <div class="medical-details-section">
+                <h5>
+                    <i class="fas fa-shield-alt"></i>
+                    اطلاعات بیمه
                     </h5>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">ارائه‌دهنده بیمه:</span>
+                    <span class="medical-details-value">@Model.InsuranceProviderName</span>
                 </div>
-                <div class="card-body">
-                    <div class="info-group">
-                        <label class="info-label">تاریخ ایجاد:</label>
-                        <div class="info-value">
-                            @Model.CreatedAtShamsi
-                            @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
-                            {
-                                <br><small class="text-muted">توسط: @Model.CreatedByUserName</small>
-                            }
-                        </div>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">طرح بیمه:</span>
+                    <span class="medical-details-value">@Model.InsurancePlanName</span>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.InsurancePlanCode))
+                {
+                    <div class="medical-details-field">
+                        <span class="medical-details-label">کد طرح بیمه:</span>
+                        <span class="medical-details-value">@Model.InsurancePlanCode</span>
                     </div>
-
-                    @if (Model.UpdatedAt.HasValue)
-                    {
-                        <div class="info-group">
-                            <label class="info-label">آخرین ویرایش:</label>
-                            <div class="info-value">
-                                @Model.UpdatedAtShamsi
-                                @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
-                                {
-                                    <br><small class="text-muted">توسط: @Model.UpdatedByUserName</small>
-                                }
-                            </div>
-                        </div>
-                    }
-                </div>
+                }
+                @* Coverage percentage information removed as InsurancePlanCoveragePercent property is not available in the ViewModel *@
             </div>
 
-            <!-- Quick Actions -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-bolt"></i>
-                        عملیات سریع
+            <!-- Tariff Information -->
+            <div class="medical-details-section">
+                <h5>
+                    <i class="fas fa-calculator"></i>
+                    اطلاعات تعرفه
                     </h5>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">قیمت تعرفه:</span>
+                    <span class="medical-details-value currency">@FormatCurrency(Model.TariffPrice) تومان</span>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="btn btn-warning">
-                            <i class="fas fa-edit"></i>
-                            ویرایش تعرفه
-                        </a>
-                        <a href="@Url.Action("Delete", new { id = Model.InsuranceTariffId })" class="btn btn-danger">
-                            <i class="fas fa-trash"></i>
-                            حذف تعرفه
-                        </a>
-                        <a href="@Url.Action("Create", new { planId = Model.InsurancePlanId })" class="btn btn-success">
-                            <i class="fas fa-plus"></i>
-                            تعرفه جدید برای این طرح
-                        </a>
-                        <a href="@Url.Action("Create", new { serviceId = Model.ServiceId })" class="btn btn-info">
-                            <i class="fas fa-plus"></i>
-                            تعرفه جدید برای این خدمت
-                        </a>
-                    </div>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">سهم بیمار:</span>
+                    <span class="medical-details-value currency">@FormatCurrency(Model.PatientShare) تومان</span>
                 </div>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">سهم بیمه:</span>
+                    <span class="medical-details-value currency">@FormatCurrency(Model.InsurerShare) تومان</span>
+                </div>
+                @* Supplementary coverage information removed as it's not available in the ViewModel *@
+                @* Primary coverage information removed as it's not available in the ViewModel *@
             </div>
 
-            <!-- Related Information -->
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">
-                        <i class="fas fa-link"></i>
-                        اطلاعات مرتبط
+            @* Calculation Details section removed as CalculationDetails property is not available in the ViewModel *@
+
+            <!-- Status Information -->
+            <div class="medical-details-section">
+                <h5>
+                    <i class="fas fa-info-circle"></i>
+                    وضعیت و اطلاعات سیستم
                     </h5>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">وضعیت:</span>
+                    <span class="medical-details-value @(Model.IsActive ? "status-active" : "status-inactive")">
+                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                    </span>
                 </div>
-                <div class="card-body">
-                    <div class="d-grid gap-2">
-                        <a href="@Url.Action("Details", "Service", new { area = "Admin", id = Model.ServiceId })" class="btn btn-outline-primary">
-                            <i class="fas fa-stethoscope"></i>
-                            جزئیات خدمت
-                        </a>
-                        <a href="@Url.Action("Details", "InsurancePlan", new { area = "Admin", id = Model.InsurancePlanId })" class="btn btn-outline-info">
-                            <i class="fas fa-shield-alt"></i>
-                            جزئیات طرح بیمه
-                        </a>
+                <div class="medical-details-field">
+                    <span class="medical-details-label">تاریخ ایجاد:</span>
+                    <span class="medical-details-value">@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</span>
+                </div>
+                @if (Model.UpdatedAt.HasValue)
+                {
+                    <div class="medical-details-field">
+                        <span class="medical-details-label">تاریخ آخرین ویرایش:</span>
+                        <span class="medical-details-value">@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</span>
                     </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.CreatedByUserName))
+                {
+                    <div class="medical-details-field">
+                        <span class="medical-details-label">ایجاد شده توسط:</span>
+                        <span class="medical-details-value">@Model.CreatedByUserName</span>
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(Model.UpdatedByUserName))
+                {
+                    <div class="medical-details-field">
+                        <span class="medical-details-label">ویرایش شده توسط:</span>
+                        <span class="medical-details-value">@Model.UpdatedByUserName</span>
+                    </div>
+                }
                 </div>
+
+            @* Timeline section removed as Timeline property is not available in the ViewModel *@
+
+            <!-- Actions -->
+            <div class="medical-actions">
+                <a href="@Url.Action("Index")" class="medical-btn medical-btn-secondary">
+                    <i class="fas fa-arrow-right"></i>
+                    بازگشت به لیست
+                </a>
+                <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="medical-btn medical-btn-warning">
+                    <i class="fas fa-edit"></i>
+                    ویرایش
+                </a>
+                <a href="@Url.Action("Delete", new { id = Model.InsuranceTariffId })" class="medical-btn medical-btn-danger">
+                    <i class="fas fa-trash"></i>
+                    حذف
+                </a>
             </div>
         </div>
     </div>
 </div>
 
-<style>
-    .info-group {
-        margin-bottom: 1rem;
-    }
-
-    .info-label {
-        font-weight: 600;
-        color: #6c757d;
-        font-size: 0.9rem;
-        margin-bottom: 0.25rem;
-        display: block;
-    }
-
-    .info-value {
-        font-size: 1rem;
-        line-height: 1.4;
-    }
-</style>
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            console.log('🏥 MEDICAL: Insurance Tariff Details page loaded');
+            
+            // 🚀 PERFORMANCE: Animate elements on load
+            $('.medical-details-section').each(function(index) {
+                $(this).css('opacity', '0');
+                $(this).animate({ opacity: 1 }, 300 + (index * 100));
+            });
+            
+            // 🚀 UX: Enhanced interactions
+            $('.medical-btn').hover(
+                function() { $(this).addClass('shadow-sm'); },
+                function() { $(this).removeClass('shadow-sm'); }
+            );
+            
+            // 🚀 MEDICAL: Print functionality
+            window.print = function() {
+                window.print();
+            };
+        });
+    </script>
+}

@@ -25,7 +25,7 @@ namespace ClinicApp.Interfaces
     /// 
     /// نکته حیاتی: این کلاس برای سیستم‌های پزشکی طراحی شده و تمام نیازهای خاص را پوشش می‌دهد
     /// </summary>
-    public class PagedResult<T>
+    public class PagedResult<T> : IEnumerable<T>
     {
         #region Properties
 
@@ -166,6 +166,74 @@ namespace ClinicApp.Interfaces
             {
                 Serilog.Log.Error(ex, "خطا در لاگ‌گیری ایجاد نتیجه صفحه‌بندی شده");
             }
+        }
+
+        #endregion
+
+        #region LINQ Support Methods
+
+        /// <summary>
+        /// بررسی وجود آیتم در نتیجه صفحه‌بندی شده
+        /// </summary>
+        public bool Any()
+        {
+            return Items != null && Items.Count > 0;
+        }
+
+        /// <summary>
+        /// بررسی وجود آیتم با شرط خاص
+        /// </summary>
+        public bool Any(Func<T, bool> predicate)
+        {
+            return Items != null && Items.Any(predicate);
+        }
+
+        /// <summary>
+        /// تعداد آیتم‌های موجود
+        /// </summary>
+        public int Count()
+        {
+            return Items?.Count ?? 0;
+        }
+
+        /// <summary>
+        /// دریافت آیتم اول
+        /// </summary>
+        public T FirstOrDefault()
+        {
+            if (Items == null || Items.Count == 0)
+                return default(T);
+            return Items.FirstOrDefault();
+        }
+
+        /// <summary>
+        /// دریافت آیتم اول با شرط
+        /// </summary>
+        public T FirstOrDefault(Func<T, bool> predicate)
+        {
+            if (Items == null || Items.Count == 0)
+                return default(T);
+            return Items.FirstOrDefault(predicate);
+        }
+
+        #endregion
+
+        #region IEnumerable Implementation
+
+        /// <summary>
+        /// پیاده‌سازی IEnumerable برای پشتیبانی از LINQ
+        /// </summary>
+        public IEnumerator<T> GetEnumerator()
+        {
+            return Items?.GetEnumerator() ?? new List<T>().GetEnumerator();
+        }
+
+        /// <summary>
+        /// پیاده‌سازی IEnumerable غیر عمومی
+        /// </summary>
+        System.Collections.IEnumerator System.Collections.IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
         }
 
         #endregion

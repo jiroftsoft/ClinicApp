@@ -6,6 +6,7 @@ using System.Web.Mvc;
 using System.Web.UI;
 using ClinicApp.Interfaces;
 using ClinicApp.Helpers;
+using ClinicApp.Extensions;
 using ClinicApp.Interfaces.ClinicAdmin;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.Entities.Insurance;
@@ -13,18 +14,20 @@ using ClinicApp.Services;
 using ClinicApp.ViewModels.Insurance.InsuranceTariff;
 using ClinicApp.ViewModels.Validators;
 using Serilog;
-using ClinicApp.Helpers;
 using ClinicApp.Core;
 using ClinicApp.Filters;
 using System.ComponentModel.DataAnnotations;
 using FluentValidation;
-using ClinicApp.Helpers;
+using ClinicApp.Validators;
+using ClinicApp.Models.DTOs.Calculation;
 using ClinicApp.Models;
 using System.Data.Entity;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services.UserContext;
 using ClinicApp.Services.SystemSettings;
 using ClinicApp.Services.Insurance;
+using ClinicApp.Services.Idempotency;
+using ClinicApp.Models.DTOs;
 
 namespace ClinicApp.Areas.Admin.Controllers.Insurance
 {
@@ -64,11 +67,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly IValidator<InsuranceTariffFilterViewModel> _filterValidator;
         private readonly ITariffDomainValidationService _domainValidationService;
         private readonly ApplicationDbContext _context;
+        private readonly IInsuranceTariffCalculationService _tariffCalculationService;
         private readonly IFactorSettingService _factorSettingService;
         private readonly IPlanServiceRepository _planServiceRepository;
         private readonly IUserContextService _userContextService;
         private readonly ISystemSettingService _systemSettingService;
         private readonly IBusinessRuleEngine _businessRuleEngine;
+        private readonly IIdempotencyService _idempotencyService;
 
         /// <summary>
         /// 🚀 بهینه‌سازی: Constructor با Dependency Injection بهینه
@@ -88,11 +93,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             IValidator<InsuranceTariffFilterViewModel> filterValidator,
             ITariffDomainValidationService domainValidationService,
             ApplicationDbContext context,
+            IInsuranceTariffCalculationService tariffCalculationService,
             IFactorSettingService factorSettingService,
             IPlanServiceRepository planServiceRepository,
             IUserContextService userContextService,
             ISystemSettingService systemSettingService,
-            IBusinessRuleEngine businessRuleEngine)
+            IBusinessRuleEngine businessRuleEngine,
+            IIdempotencyService idempotencyService)
             : base(messageNotificationService)
         {
             _insuranceTariffService = insuranceTariffService ?? throw new ArgumentNullException(nameof(insuranceTariffService));
@@ -109,11 +116,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _filterValidator = filterValidator ?? throw new ArgumentNullException(nameof(filterValidator));
             _domainValidationService = domainValidationService ?? throw new ArgumentNullException(nameof(domainValidationService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
+            _tariffCalculationService = tariffCalculationService ?? throw new ArgumentNullException(nameof(tariffCalculationService));
             _factorSettingService = factorSettingService ?? throw new ArgumentNullException(nameof(factorSettingService));
             _planServiceRepository = planServiceRepository ?? throw new ArgumentNullException(nameof(planServiceRepository));
             _userContextService = userContextService ?? throw new ArgumentNullException(nameof(userContextService));
             _systemSettingService = systemSettingService ?? throw new ArgumentNullException(nameof(systemSettingService));
             _businessRuleEngine = businessRuleEngine ?? throw new ArgumentNullException(nameof(businessRuleEngine));
+            _idempotencyService = idempotencyService ?? throw new ArgumentNullException(nameof(idempotencyService));
         }
 
         #endregion
@@ -212,7 +221,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// بارگیری تعرفه‌ها به صورت AJAX برای فیلتر و جستجو
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<ActionResult> LoadTariffs(InsuranceTariffFilterViewModel filter)
         {
             var correlationId = Guid.NewGuid().ToString();
@@ -224,11 +232,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Debug("🔍 LOAD TARIFFS DEBUG START - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId}), Timestamp: {Timestamp}",
                 correlationId, _currentUserService.UserName, _currentUserService.UserId, DateTime.UtcNow);
             
-            // Logging Request.Form برای debug
+            // Logging Request.Form برای debug (with sensitive data masking)
             _logger.Debug("🔍 Request.Form Keys and Values - CorrelationId: {CorrelationId}", correlationId);
             foreach (string key in Request.Form.AllKeys)
             {
-                _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, Request.Form[key], correlationId);
+                var value = MaskSensitiveData(key, Request.Form[key]);
+                _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, value, correlationId);
             }
             
             // Logging مدل دریافتی
@@ -361,12 +370,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             try
             {
                 // 🚀 REAL-TIME: Set No-Cache headers
+                // 🚀 P0 FIX: یکنواخت‌سازی هدرهای Cache
                 Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
                 Response.Cache.SetNoStore();
+                Response.Cache.SetExpires(DateTime.UtcNow.AddSeconds(-1));
                 Response.Cache.SetRevalidation(System.Web.HttpCacheRevalidation.AllCaches);
-                Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
-                Response.Headers.Add("Pragma", "no-cache");
-                Response.Headers.Add("Expires", "0");
 
                 // 🚀 بهینه‌سازی: ایجاد مدل با مقادیر پیش‌فرض بهینه
                 var model = new InsuranceTariffCreateEditViewModel
@@ -375,8 +383,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     InsuranceProviderId = providerId ?? 0,
                     ServiceId = serviceId,
                     IsActive = true,
-                    StartDate = DateTime.Now.ToString("yyyy/MM/dd"),
-                    EndDate = DateTime.Now.AddYears(1).ToString("yyyy/MM/dd")
+                    StartDate = DateTime.UtcNow,
+                    EndDate = DateTime.UtcNow.AddYears(1)
                 };
 
                 // 🚀 بهینه‌سازی: بارگیری موازی SelectLists
@@ -420,11 +428,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Debug("🔍 CREATE ACTION DEBUG START - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId}), Timestamp: {Timestamp}",
                 correlationId, _currentUserService.UserName, _currentUserService.UserId, DateTime.UtcNow);
             
-            // Logging Request.Form برای debug
+            // 🚀 P0 FIX: بررسی Raw Form Data برای IsAllServices
+            var rawIsAllServices = Request.Form["IsAllServices"];
+            _logger.Information("🏥 MEDICAL: Raw IsAllServices from Request.Form: '{RawValue}' - CorrelationId: {CorrelationId}",
+                rawIsAllServices, correlationId);
+            
+            // Logging Request.Form برای debug (with sensitive data masking)
             _logger.Debug("🔍 Request.Form Keys and Values - CorrelationId: {CorrelationId}", correlationId);
             foreach (string key in Request.Form.AllKeys)
             {
-                _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, Request.Form[key], correlationId);
+                var value = MaskSensitiveData(key, Request.Form[key]);
+                _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, value, correlationId);
             }
             
             // Logging مدل دریافتی
@@ -465,58 +479,88 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _logger.Warning("🏥 MEDICAL: IdempotencyKey موجود نیست - CorrelationId: {CorrelationId}", correlationId);
                     _messageNotificationService.AddErrorMessage("کلید امنیتی موجود نیست");
+                    
+                    // 🚀 P0 FIX: بارگیری SelectLists قبل از return View
+                    await LoadSelectListsForCreateEditAsync(model);
+                    return View(model);
+                }
+
+                // 🔒 اعتبارسنجی Idempotency واقعی با سرویس جدید
+                var isIdempotencyValid = await _idempotencyService.TryUseKeyAsync(model.IdempotencyKey, 30, "InsuranceTariff");
+                if (!isIdempotencyValid)
+                {
+                    _logger.Warning("🏥 MEDICAL: IdempotencyKey تکراری یا نامعتبر - Key: {Key}, CorrelationId: {CorrelationId}", 
+                        model.IdempotencyKey, correlationId);
+                    _messageNotificationService.AddErrorMessage("درخواست تکراری یا نامعتبر است");
+                    
+                    // 🚀 P0 FIX: بارگیری SelectLists قبل از return View
+                    await LoadSelectListsForCreateEditAsync(model);
                     return View(model);
                 }
 
                 // 🚀 بهینه‌سازی: بررسی duplicate تعرفه با Performance Enhancement
                 var duplicateCheckStartTime = DateTime.UtcNow;
-                var existingTariff = await _context.InsuranceTariffs
-                    .AsNoTracking() // بهینه‌سازی: فقط خواندن
-                    .FirstOrDefaultAsync(t => t.InsurancePlanId == model.InsurancePlanId 
-                                           && t.ServiceId == model.ServiceId 
-                                           && !t.IsDeleted);
+                
+                // بررسی duplicate فقط برای تعرفه‌های تکی (نه همه خدمات)
+                var isDuplicate = await _tariffCalculationService.IsTariffDuplicateAsync(
+                    model.InsurancePlanId, model.ServiceId, model.IsAllServices);
                 
                 var duplicateCheckDuration = DateTime.UtcNow - duplicateCheckStartTime;
                 
-                if (existingTariff != null)
+                if (isDuplicate)
                 {
                     _logger.Warning("🏥 MEDICAL: تعرفه تکراری شناسایی شد - PlanId: {PlanId}, ServiceId: {ServiceId}, Duration: {Duration}ms, CorrelationId: {CorrelationId}", 
                         model.InsurancePlanId, model.ServiceId, duplicateCheckDuration.TotalMilliseconds, correlationId);
                     _messageNotificationService.AddErrorMessage("تعرفه برای این خدمت و طرح بیمه قبلاً تعریف شده است");
+                    
+                    // 🚀 P0 FIX: بارگیری SelectLists قبل از return View
+                    await LoadSelectListsForCreateEditAsync(model);
                     return View(model);
                 }
                 
                 _logger.Debug("🏥 MEDICAL: بررسی duplicate تکمیل شد - Duration: {Duration}ms, CorrelationId: {CorrelationId}", 
                     duplicateCheckDuration.TotalMilliseconds, correlationId);
 
-                // اصلاح ModelState برای "همه خدمات" - قبل از بررسی ModelState.IsValid
-                if (model.IsAllServices)
+                // 🚀 P0 FIX: Manual Override برای IsAllServices
+                if (rawIsAllServices == "true" || rawIsAllServices == "True")
                 {
-                    if (ModelState.ContainsKey("ServiceId"))
-                    {
-                        ModelState["ServiceId"].Errors.Clear();
-                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
-                    }
-                    // حذف validation error برای ServiceId
-                    ModelState.Remove("ServiceId");
+                    model.IsAllServices = true;
+                    _logger.Information("🏥 MEDICAL: Manual override - IsAllServices set to true from raw value: '{RawValue}' - CorrelationId: {CorrelationId}",
+                        rawIsAllServices, correlationId);
                 }
-
-                // اصلاح ModelState برای "همه سرفصل‌ها"
-                if (model.IsAllServiceCategories)
-                {
-                    if (ModelState.ContainsKey("ServiceCategoryId"))
-                    {
-                        ModelState["ServiceCategoryId"].Errors.Clear();
-                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceCategoryId پاک شد (همه سرفصل‌ها) - CorrelationId: {CorrelationId}", correlationId);
-                    }
-                    // حذف validation error برای ServiceCategoryId
-                    ModelState.Remove("ServiceCategoryId");
-                }
+                
+                // 🚀 P1 FIX: استفاده از helper method متمرکز
+                _logger.Information("🏥 MEDICAL: Model received - IsAllServices: {IsAllServices}, IsAllServiceCategories: {IsAllServiceCategories}, ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}, PlanId: {PlanId}",
+                    model.IsAllServices, model.IsAllServiceCategories, model.ServiceId, model.ServiceCategoryId, model.InsurancePlanId);
+                
+                _logger.Debug("🏥 MEDICAL: Before normalization - IsAllServices: {IsAllServices}, IsAllServiceCategories: {IsAllServiceCategories}, ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}",
+                    model.IsAllServices, model.IsAllServiceCategories, model.ServiceId, model.ServiceCategoryId);
+                
+                NormalizeModelStateForAllFlags(ModelState, model);
+                
+                _logger.Debug("🏥 MEDICAL: After normalization - ModelState.IsValid: {IsValid}, ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}",
+                    ModelState.IsValid, model.ServiceId, model.ServiceCategoryId);
 
                 if (!ModelState.IsValid)
                 {
                     _logger.Warning("🏥 MEDICAL: مدل تعرفه بیمه معتبر نیست - CorrelationId: {CorrelationId}, Errors: {@Errors}, User: {UserName} (Id: {UserId})",
                         correlationId, ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage), _currentUserService.UserName, _currentUserService.UserId);
+
+                    // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
+                    if (Request.IsAjaxRequest())
+                    {
+                        var errors = ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)
+                            .ToList();
+                        
+                        return Json(new { 
+                            success = false, 
+                            message = "خطا در اعتبارسنجی فرم",
+                            errors = errors,
+                            correlationId = correlationId
+                        });
+                    }
 
                     // بارگیری مجدد SelectLists
                     await LoadSelectListsForCreateEditAsync(model);
@@ -590,6 +634,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                     _messageNotificationService.AddErrorMessage(result.Message);
 
+                    // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
+                    if (Request.IsAjaxRequest())
+                    {
+                        return Json(new { 
+                            success = false, 
+                            message = result.Message, 
+                            correlationId = correlationId,
+                            isBulkOperation = model.IsAllServices,
+                            planId = model.InsurancePlanId,
+                            serviceId = model.ServiceId
+                        });
+                    }
+
                     // بارگیری مجدد SelectLists
                     await LoadSelectListsForCreateEditAsync(model);
 
@@ -602,6 +659,21 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         correlationId, result.Data, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
                     _messageNotificationService.AddSuccessMessage($"تعرفه برای {result.Data} خدمت با موفقیت ایجاد شد");
+                    
+                    // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
+                    if (Request.IsAjaxRequest())
+                    {
+                        return Json(new { 
+                            success = true, 
+                            message = $"تعرفه برای {result.Data} خدمت با موفقیت ایجاد شد",
+                            createdCount = result.Data,
+                            correlationId = correlationId,
+                            redirectUrl = Url.Action("Index", "InsuranceTariff")
+                        });
+                    }
+                    
+                    // 🚀 P0 FIX: برای Bulk Create به Index ریدایرکت کن، نه Details
+                    return RedirectToAction("Index");
                 }
                 else
                 {
@@ -609,6 +681,18 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         correlationId, result.Data, model.InsurancePlanId, model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
                     _messageNotificationService.AddSuccessMessage("تعرفه بیمه با موفقیت ایجاد شد");
+                    
+                    // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
+                    if (Request.IsAjaxRequest())
+                    {
+                        return Json(new { 
+                            success = true, 
+                            message = "تعرفه بیمه با موفقیت ایجاد شد",
+                            tariffId = result.Data,
+                            correlationId = correlationId,
+                            redirectUrl = Url.Action("Details", "InsuranceTariff", new { id = result.Data })
+                        });
+                    }
                 }
 
                 // 🏥 MEDICAL: Real-time data - no cache invalidation needed
@@ -622,6 +706,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     correlationId, model, _currentUserService.UserName, _currentUserService.UserId);
 
                 _messageNotificationService.AddErrorMessage("خطا در ایجاد تعرفه بیمه");
+
+                // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
+                if (Request.IsAjaxRequest())
+                {
+                    return Json(new { 
+                        success = false, 
+                        message = "خطای سیستمی در ایجاد تعرفه بیمه",
+                        correlationId = correlationId,
+                        error = ex.Message
+                    });
+                }
 
                 if (model != null)
                 {
@@ -644,6 +739,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public async Task<ActionResult> Edit(int id)
         {
             var correlationId = Guid.NewGuid().ToString();
+
+            // 🚀 P0 FIX: Set no-cache headers for medical/financial data
+            Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+            Response.Headers.Add("Pragma", "no-cache");
+            Response.Headers.Add("Expires", "0");
 
             _logger.Information("🏥 MEDICAL: درخواست فرم ویرایش تعرفه بیمه - CorrelationId: {CorrelationId}, Id: {Id}, User: {UserName} (Id: {UserId})",
                 correlationId, id, _currentUserService.UserName, _currentUserService.UserId);
@@ -695,6 +795,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             var correlationId = Guid.NewGuid().ToString();
 
+            // 🚀 P0 FIX: Set no-cache headers for medical/financial data
+            Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
+            Response.Headers.Add("Pragma", "no-cache");
+            Response.Headers.Add("Expires", "0");
+
             _logger.Information("🏥 MEDICAL: درخواست ویرایش تعرفه بیمه - CorrelationId: {CorrelationId}, Id: {Id}, PlanId: {PlanId}, ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})",
                 correlationId, model?.InsuranceTariffId, model?.InsurancePlanId, model?.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
 
@@ -702,18 +807,38 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _logger.Debug("🔍 EDIT ACTION DEBUG START - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId}), Timestamp: {Timestamp}",
                 correlationId, _currentUserService.UserName, _currentUserService.UserId, DateTime.UtcNow);
             
-            // Logging Request.Form برای debug
+            // Logging Request.Form برای debug (with sensitive data masking)
             _logger.Debug("🔍 Request.Form Keys and Values - CorrelationId: {CorrelationId}", correlationId);
             foreach (string key in Request.Form.AllKeys)
             {
-                _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, Request.Form[key], correlationId);
+                var value = MaskSensitiveData(key, Request.Form[key]);
+                _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, value, correlationId);
             }
             
             // Logging مدل دریافتی
             if (model != null)
             {
-                _logger.Debug("🔍 Model Properties - CorrelationId: {CorrelationId}, InsuranceTariffId: {InsuranceTariffId}, DepartmentId: {DepartmentId}, ServiceCategoryId: {ServiceCategoryId}, ServiceId: {ServiceId}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, IsActive: {IsActive}, IsAllServices: {IsAllServices}, IsAllServiceCategories: {IsAllServiceCategories}",
-                    correlationId, model.InsuranceTariffId, model.DepartmentId, model.ServiceCategoryId, model.ServiceId, model.InsuranceProviderId, model.InsurancePlanId, model.TariffPrice, model.PatientShare, model.InsurerShare, model.IsActive, model.IsAllServices, model.IsAllServiceCategories);
+                _logger.Debug("🔍 Model Properties - CorrelationId: {CorrelationId}, InsuranceTariffId: {InsuranceTariffId}, DepartmentId: {DepartmentId}, ServiceCategoryId: {ServiceCategoryId}, ServiceId: {ServiceId}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, IsActive: {IsActive}",
+                    correlationId, model.InsuranceTariffId, model.DepartmentId, model.ServiceCategoryId, model.ServiceId, model.InsuranceProviderId, model.InsurancePlanId, model.TariffPrice, model.PatientShare, model.InsurerShare, model.IsActive);
+            }
+
+            // 🔍 MEDICAL: اعتبارسنجی سرور با FluentValidation
+            var validator = new InsuranceTariffValidator();
+            var fluentValidationResult = await validator.ValidateAsync(model);
+            
+            if (!fluentValidationResult.IsValid)
+            {
+                _logger.Warning("🏥 MEDICAL: اعتبارسنجی سرور ناموفق - CorrelationId: {CorrelationId}, Errors: {@Errors}",
+                    correlationId, fluentValidationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+                
+                foreach (var error in fluentValidationResult.Errors)
+                {
+                    ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                }
+                
+                // بارگذاری مجدد SelectList ها
+                await LoadSelectListsForCreateEditAsync(model);
+                return View(model);
             }
             else
             {
@@ -732,34 +857,33 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return RedirectToAction("Index");
                 }
 
-                // اصلاح ModelState برای "همه خدمات" - قبل از بررسی ModelState.IsValid
-                if (model.IsAllServices)
-                {
-                    if (ModelState.ContainsKey("ServiceId"))
-                    {
-                        ModelState["ServiceId"].Errors.Clear();
-                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceId پاک شد (همه خدمات) - CorrelationId: {CorrelationId}", correlationId);
-                    }
-                    // حذف validation error برای ServiceId
-                    ModelState.Remove("ServiceId");
-                }
-
-                // اصلاح ModelState برای "همه سرفصل‌ها"
-                if (model.IsAllServiceCategories)
-                {
-                    if (ModelState.ContainsKey("ServiceCategoryId"))
-                    {
-                        ModelState["ServiceCategoryId"].Errors.Clear();
-                        _logger.Information("🏥 MEDICAL: ModelState برای ServiceCategoryId پاک شد (همه سرفصل‌ها) - CorrelationId: {CorrelationId}", correlationId);
-                    }
-                    // حذف validation error برای ServiceCategoryId
-                    ModelState.Remove("ServiceCategoryId");
-                }
+                // 🚀 P1 FIX: Edit mode - no need for All Services logic
+                _logger.Information("🏥 MEDICAL: Edit Model received - ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}, PlanId: {PlanId}",
+                    model.ServiceId, model.ServiceCategoryId, model.InsurancePlanId);
+                
+                _logger.Debug("🏥 MEDICAL: Edit mode - ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}",
+                    model.ServiceId, model.ServiceCategoryId);
 
                 if (!ModelState.IsValid)
                 {
                     _logger.Warning("🏥 MEDICAL: مدل تعرفه بیمه معتبر نیست - CorrelationId: {CorrelationId}, Errors: {@Errors}, User: {UserName} (Id: {UserId})",
                         correlationId, ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage), _currentUserService.UserName, _currentUserService.UserId);
+
+                    // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
+                    if (Request.IsAjaxRequest())
+                    {
+                        var errors = ModelState.Values
+                            .SelectMany(v => v.Errors)
+                            .Select(e => e.ErrorMessage)
+                            .ToList();
+                        
+                        return Json(new { 
+                            success = false, 
+                            message = "خطا در اعتبارسنجی فرم",
+                            errors = errors,
+                            correlationId = correlationId
+                        });
+                    }
 
                     // بارگیری مجدد SelectLists
                     await LoadSelectListsForCreateEditAsync(model);
@@ -944,7 +1068,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _logger.Warning("🏥 MEDICAL: خطا در دریافت آمار تعرفه‌ها - CorrelationId: {CorrelationId}, Error: {Error}, User: {UserName} (Id: {UserId})",
                         correlationId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                    return Json(new { success = false, message = result.Message, correlationId = correlationId }, JsonRequestBehavior.AllowGet);
                 }
 
                 _logger.Debug("🏥 MEDICAL: آمار تعرفه‌ها با موفقیت دریافت شد - CorrelationId: {CorrelationId}, Statistics: {@Statistics}",
@@ -957,7 +1082,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Error(ex, "🏥 MEDICAL: خطای سیستمی در دریافت آمار تعرفه‌ها - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
                     correlationId, _currentUserService.UserName, _currentUserService.UserId);
 
-                return Json(new { success = false, message = "خطا در دریافت آمار تعرفه‌ها" }, JsonRequestBehavior.AllowGet);
+                // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                return Json(new { success = false, message = "خطا در دریافت آمار تعرفه‌ها", correlationId = correlationId }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -967,32 +1093,112 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         #region Helper Methods
 
         /// <summary>
-        /// بارگیری SelectLists برای فیلتر
+        /// متمرکزسازی تغییر ModelState برای "همه خدمات/سرفصل‌ها"
+        /// </summary>
+        private void NormalizeModelStateForAllFlags(ModelStateDictionary modelState, InsuranceTariffCreateEditViewModel model)
+        {
+            // 🚀 P1 FIX: متمرکزسازی منطق ModelState برای All Services/Categories
+            if (model.IsAllServices)
+            {
+                // حذف خطاهای مربوط به ServiceId و ServiceCategoryId
+                modelState.Remove("ServiceId");
+                modelState.Remove("ServiceCategoryId");
+                
+                // تنظیم ServiceId به null
+                model.ServiceId = null;
+                model.ServiceCategoryId = null;
+                
+                _logger.Debug("🏥 MEDICAL: ModelState normalized for IsAllServices - ServiceId and ServiceCategoryId cleared");
+            }
+            else if (model.IsAllServiceCategories)
+            {
+                // حذف خطای مربوط به ServiceId
+                modelState.Remove("ServiceId");
+                
+                // تنظیم ServiceId به null
+                model.ServiceId = null;
+                
+                _logger.Debug("🏥 MEDICAL: ModelState normalized for IsAllServiceCategories - ServiceId cleared");
+            }
+        }
+
+        /// <summary>
+        /// بارگیری SelectLists برای فیلتر - بهینه‌سازی شده برای محیط درمانی
         /// </summary>
         private async Task LoadSelectListsForFilterAsync(InsuranceTariffFilterViewModel filter)
         {
             try
             {
-                // بارگیری موازی SelectLists
+                // 🚀 P0 FIX: بارگیری موازی SelectLists با بهینه‌سازی
+                var clinicId = await GetCurrentClinicIdAsync();
+                
+                _logger.Debug("🏥 MEDICAL: شروع بارگیری SelectLists - ClinicId: {ClinicId}, User: {UserName} (Id: {UserId})",
+                    clinicId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                var departmentsTask = _departmentManagementService.GetActiveDepartmentsForLookupAsync(clinicId);
                 var plansTask = _insurancePlanService.GetActivePlansForLookupAsync();
                 var servicesTask = _serviceManagementService.GetActiveServicesForLookupAsync(0);
                 var providersTask = _insuranceProviderService.GetActiveProvidersForLookupAsync();
 
-                await Task.WhenAll(plansTask, servicesTask, providersTask);
+                await Task.WhenAll(departmentsTask, plansTask, servicesTask, providersTask);
+                
+                _logger.Debug("🏥 MEDICAL: نتایج SelectLists - Departments: {DeptSuccess}, Plans: {PlanSuccess}, Services: {ServiceSuccess}, Providers: {ProviderSuccess}",
+                    departmentsTask.Result?.Success, plansTask.Result?.Success, servicesTask.Result?.Success, providersTask.Result?.Success);
 
-                filter.InsurancePlanSelectList = new SelectList(plansTask.Result.Data, "Value", "Text", filter.InsurancePlanId);
-                filter.ServiceSelectList = new SelectList(servicesTask.Result.Data, "Value", "Text", filter.ServiceId);
-                filter.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Value", "Text", filter.InsuranceProviderId);
+                // 🚀 P0 FIX: تنظیم SelectLists جدید برای سازگاری با Viewها
+                if (departmentsTask.Result?.Success == true && departmentsTask.Result.Data?.Any() == true)
+                {
+                    filter.Departments = new SelectList(departmentsTask.Result.Data, "Id", "Name", filter.DepartmentId);
+                }
+                else
+                {
+                    filter.Departments = new SelectList(new List<object>(), "Id", "Name");
+                }
+
+                if (plansTask.Result?.Success == true && plansTask.Result.Data?.Any() == true)
+                {
+                    filter.InsurancePlanSelectList = new SelectList(plansTask.Result.Data, "Id", "Name", filter.InsurancePlanId);
+                }
+                else
+                {
+                    filter.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
+                }
+
+                if (servicesTask.Result?.Success == true && servicesTask.Result.Data?.Any() == true)
+                {
+                    filter.ServiceSelectList = new SelectList(servicesTask.Result.Data, "Id", "Name", filter.ServiceId);
+                }
+                else
+                {
+                    filter.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
+                }
+
+                if (providersTask.Result?.Success == true && providersTask.Result.Data?.Any() == true)
+                {
+                    filter.InsuranceProviders = new SelectList(providersTask.Result.Data, "Id", "Name", filter.InsuranceProviderId);
+                    filter.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Id", "Name", filter.InsuranceProviderId);
+                }
+                else
+                {
+                    filter.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+                    filter.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+                }
+
+                _logger.Debug("🏥 MEDICAL: SelectLists برای فیلتر با موفقیت بارگیری شدند - Departments: {DeptCount}, Plans: {PlanCount}, Services: {ServiceCount}, Providers: {ProviderCount}",
+                    filter.Departments?.Count() ?? 0, filter.InsurancePlanSelectList?.Count() ?? 0, 
+                    filter.ServiceSelectList?.Count() ?? 0, filter.InsuranceProviders?.Count() ?? 0);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "🏥 MEDICAL: خطا در بارگیری SelectLists برای فیلتر - User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                // تنظیم SelectLists خالی در صورت خطا
-                filter.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
-                filter.ServiceSelectList = new SelectList(new List<object>(), "Value", "Text");
-                filter.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
+                // 🚀 P0 FIX: تنظیم SelectLists خالی در صورت خطا
+                filter.Departments = new SelectList(new List<object>(), "Id", "Name");
+                filter.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
+                filter.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
+                filter.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+                filter.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
             }
         }
 
@@ -1023,40 +1229,98 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 // انتظار با Timeout برای جلوگیری از Hang
                 var timeout = TimeSpan.FromSeconds(10);
-                await Task.WhenAll(departmentsTask, providersTask).ConfigureAwait(false);
+                await Task.WhenAll(departmentsTask, providersTask);
 
                 // ✅ تنظیم SelectLists اصلی با Error Handling
                 if (departmentsTask.Result?.Success == true && departmentsTask.Result.Data?.Any() == true)
                 {
+                    // تنظیم SelectLists جدید برای سازگاری با Viewها
+                    model.Departments = new SelectList(departmentsTask.Result.Data, "Id", "Name", model.DepartmentId);
                 model.DepartmentSelectList = new SelectList(departmentsTask.Result.Data, "Id", "Name", model.DepartmentId);
                     _logger.Debug("🏥 MEDICAL: Departments loaded - Count: {Count}, CorrelationId: {CorrelationId}",
                         departmentsTask.Result.Data.Count, correlationId);
                 }
                 else
                 {
+                    model.Departments = new SelectList(new List<object>(), "Id", "Name");
                     model.DepartmentSelectList = new SelectList(new List<object>(), "Id", "Name");
                     _logger.Warning("🏥 MEDICAL: No departments found - CorrelationId: {CorrelationId}", correlationId);
                 }
 
                 if (providersTask.Result?.Success == true && providersTask.Result.Data?.Any() == true)
                 {
-                model.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Value", "Text", model.InsuranceProviderId);
-                    _logger.Debug("🏥 MEDICAL: Insurance Providers loaded - Count: {Count}, CorrelationId: {CorrelationId}",
-                        providersTask.Result.Data.Count, correlationId);
+                    // تنظیم SelectLists جدید برای سازگاری با Viewها
+                    model.InsuranceProviders = new SelectList(providersTask.Result.Data, "Id", "Name", model.InsuranceProviderId);
+                    model.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Id", "Name", model.InsuranceProviderId);
+                    _logger.Debug("🏥 MEDICAL: Insurance Providers loaded - Count: {Count}, SelectedId: {SelectedId}, CorrelationId: {CorrelationId}",
+                        providersTask.Result.Data.Count, model.InsuranceProviderId, correlationId);
                 }
                 else
                 {
-                    model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
+                    model.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+                    model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
                     _logger.Warning("🏥 MEDICAL: No insurance providers found - CorrelationId: {CorrelationId}", correlationId);
                 }
 
                 // 🚀 FIX: طرح‌های بیمه باید خالی باشند تا بعد از انتخاب ارائه‌دهنده لود شوند
-                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
+                model.InsurancePlans = new SelectList(new List<object>(), "Id", "Name");
+                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
                 _logger.Debug("🏥 MEDICAL: Insurance Plans initialized as empty - will load after provider selection, CorrelationId: {CorrelationId}", correlationId);
 
-                // 🔄 تنظیم SelectLists خالی برای Cascading Dropdowns
-                model.ServiceSelectList = new SelectList(new List<object>(), "Value", "Text");
-                model.ServiceCategorySelectList = new SelectList(new List<object>(), "Value", "Text");
+                // 🔄 تنظیم SelectLists برای حالت ویرایش
+                if (model.InsuranceTariffId > 0) // حالت ویرایش
+                {
+                    // بارگیری Service Categories برای دپارتمان انتخاب شده
+                    if (model.DepartmentId > 0)
+                    {
+                        var categoriesResult = await _serviceManagementService.GetActiveServiceCategoriesForLookupAsync(model.DepartmentId);
+                        if (categoriesResult.Success && categoriesResult.Data?.Any() == true)
+                        {
+                            model.ServiceCategories = new SelectList(categoriesResult.Data, "Id", "Name", model.ServiceCategoryId);
+                            model.ServiceCategorySelectList = new SelectList(categoriesResult.Data, "Id", "Name", model.ServiceCategoryId);
+                        }
+                    }
+
+                    // بارگیری Services برای دسته‌بندی انتخاب شده
+                    if (model.ServiceCategoryId.HasValue && model.ServiceCategoryId > 0)
+                    {
+                        var servicesResult = await _serviceManagementService.GetActiveServicesForLookupAsync(model.ServiceCategoryId.Value);
+                        if (servicesResult.Success && servicesResult.Data?.Any() == true)
+                        {
+                            // Fix: Use ServiceId only if it's greater than 0
+                            var selectedServiceId = model.ServiceId > 0 ? model.ServiceId : (int?)null;
+                            model.Services = new SelectList(servicesResult.Data, "Id", "Name", selectedServiceId);
+                            model.ServiceSelectList = new SelectList(servicesResult.Data, "Id", "Name", selectedServiceId);
+                        }
+                    }
+                    else
+                    {
+                        // اگر ServiceCategoryId null است، Services را خالی تنظیم کن
+                        model.Services = new SelectList(new List<object>(), "Id", "Name");
+                        model.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
+                    }
+
+                    // بارگیری Insurance Plans برای ارائه‌دهنده انتخاب شده
+                    if (model.InsuranceProviderId > 0)
+                    {
+                        var plansResult = await _insurancePlanService.GetActivePlansForLookupAsync(model.InsuranceProviderId);
+                        if (plansResult.Success && plansResult.Data?.Any() == true)
+                        {
+                            // Fix: Use InsurancePlanId only if it's greater than 0
+                            var selectedPlanId = model.InsurancePlanId > 0 ? model.InsurancePlanId : (int?)null;
+                            model.InsurancePlans = new SelectList(plansResult.Data, "InsurancePlanId", "Name", selectedPlanId);
+                            model.InsurancePlanSelectList = new SelectList(plansResult.Data, "InsurancePlanId", "Name", selectedPlanId);
+                        }
+                    }
+                }
+                else // حالت ایجاد
+                {
+                    // تنظیم SelectLists خالی برای Cascading Dropdowns
+                    model.Services = new SelectList(new List<object>(), "Id", "Name");
+                    model.ServiceCategories = new SelectList(new List<object>(), "Id", "Name");
+                    model.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
+                    model.ServiceCategorySelectList = new SelectList(new List<object>(), "Id", "Name");
+                }
 
                 var duration = DateTime.UtcNow - startTime;
                 _logger.Information("🏥 MEDICAL: SelectLists loaded successfully - Duration: {Duration}ms, CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
@@ -1078,11 +1342,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         private void SetEmptySelectLists(InsuranceTariffCreateEditViewModel model)
         {
+            // تنظیم SelectLists جدید برای سازگاری با Viewها
+            model.Departments = new SelectList(new List<object>(), "Id", "Name");
+            model.ServiceCategories = new SelectList(new List<object>(), "Id", "Name");
+            model.Services = new SelectList(new List<object>(), "Id", "Name");
+            model.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+            model.InsurancePlans = new SelectList(new List<object>(), "Id", "Name");
+
+            // Legacy SelectLists برای سازگاری با کد قدیمی
                 model.DepartmentSelectList = new SelectList(new List<object>(), "Id", "Name");
-                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
-                model.ServiceSelectList = new SelectList(new List<object>(), "Value", "Text");
-                model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
-            model.ServiceCategorySelectList = new SelectList(new List<object>(), "Value", "Text");
+            model.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
+            model.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
+            model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+            model.ServiceCategorySelectList = new SelectList(new List<object>(), "Id", "Name");
         }
 
         /// <summary>
@@ -1241,14 +1513,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
 
                 // بررسی منطقی بودن تاریخ‌ها
-                if (!string.IsNullOrEmpty(model.StartDate) && !string.IsNullOrEmpty(model.EndDate))
+                if (model.StartDate.HasValue && model.EndDate.HasValue)
                 {
-                    if (DateTime.TryParse(model.StartDate, out var startDate) && DateTime.TryParse(model.EndDate, out var endDate))
+                    if (model.StartDate.Value >= model.EndDate.Value)
                     {
-                        if (startDate >= endDate)
-                        {
-                            return ServiceResult.Failed("تاریخ شروع باید قبل از تاریخ پایان باشد", "INVALID_DATE_RANGE", ErrorCategory.Validation);
-                        }
+                        return ServiceResult.Failed("تاریخ شروع باید قبل از تاریخ پایان باشد", "INVALID_DATE_RANGE", ErrorCategory.Validation);
                     }
                 }
 
@@ -1281,7 +1550,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     InsurancePlanId = model.InsurancePlanId,
                     ServiceCategoryId = model.ServiceCategoryId ?? 0,
                     ServiceAmount = model.TariffPrice ?? 0,
-                    CalculationDate = DateTime.Now,
+                    CalculationDate = DateTime.UtcNow,
                     PatientId = 0, // برای اعتبارسنجی تعرفه، PatientId لازم نیست
                     AdditionalData = new Dictionary<string, object>
                     {
@@ -1322,43 +1591,43 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // 🔍 بررسی وجود Service
                 if (model.ServiceId > 0)
                 {
-                    // TODO: پیاده‌سازی بررسی وجود Service
-                    // var serviceResult = await _serviceManagementService.GetServiceByIdAsync(model.ServiceId);
-                    // if (serviceResult?.Success != true || serviceResult.Data == null)
-                    // {
-                    //     _logger.Warning("🏥 MEDICAL: Service یافت نشد - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}",
-                    //         model.ServiceId, correlationId);
-                    //     
-                    //     return ServiceResult.Failed("خدمت انتخاب شده یافت نشد", "SERVICE_NOT_FOUND", ErrorCategory.Validation);
-                    // }
+                    // 🚀 P0 FIX: پیاده‌سازی بررسی وجود Service
+                    var serviceResult = await _serviceManagementService.GetServiceDetailsAsync(model.ServiceId.Value);
+                    if (serviceResult?.Success != true || serviceResult.Data == null)
+                    {
+                        _logger.Warning("🏥 MEDICAL: Service یافت نشد - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}",
+                            model.ServiceId, correlationId);
+                        
+                        return ServiceResult.Failed("خدمت انتخاب شده یافت نشد", "SERVICE_NOT_FOUND", ErrorCategory.Validation);
+                    }
                 }
 
                 // 🔍 بررسی وجود InsurancePlan
                 if (model.InsurancePlanId > 0)
                 {
-                    // TODO: پیاده‌سازی بررسی وجود InsurancePlan
-                    // var planResult = await _insurancePlanService.GetPlanByIdAsync(model.InsurancePlanId);
-                    // if (planResult?.Success != true || planResult.Data == null)
-                    // {
-                    //     _logger.Warning("🏥 MEDICAL: Insurance Plan یافت نشد - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}",
-                    //         model.InsurancePlanId, correlationId);
-                    //     
-                    //     return ServiceResult.Failed("طرح بیمه انتخاب شده یافت نشد", "INSURANCE_PLAN_NOT_FOUND", ErrorCategory.Validation);
-                    // }
+                    // 🚀 P0 FIX: پیاده‌سازی بررسی وجود InsurancePlan
+                    var planResult = await _insurancePlanService.GetPlanDetailsAsync(model.InsurancePlanId);
+                    if (planResult?.Success != true || planResult.Data == null)
+                    {
+                        _logger.Warning("🏥 MEDICAL: Insurance Plan یافت نشد - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}",
+                            model.InsurancePlanId, correlationId);
+                        
+                        return ServiceResult.Failed("طرح بیمه انتخاب شده یافت نشد", "INSURANCE_PLAN_NOT_FOUND", ErrorCategory.Validation);
+                    }
                 }
 
                 // 🔍 بررسی وجود Department
                 if (model.DepartmentId > 0)
                 {
-                    // TODO: پیاده‌سازی بررسی وجود Department
-                    // var departmentResult = await _departmentManagementService.GetDepartmentByIdAsync(model.DepartmentId);
-                    // if (departmentResult?.Success != true || departmentResult.Data == null)
-                    // {
-                    //     _logger.Warning("🏥 MEDICAL: Department یافت نشد - DepartmentId: {DepartmentId}, CorrelationId: {CorrelationId}",
-                    //         model.DepartmentId, correlationId);
-                    //     
-                    //     return ServiceResult.Failed("دپارتمان انتخاب شده یافت نشد", "DEPARTMENT_NOT_FOUND", ErrorCategory.Validation);
-                    // }
+                    // 🚀 P0 FIX: پیاده‌سازی بررسی وجود Department
+                    var departmentResult = await _departmentManagementService.GetDepartmentDetailsAsync(model.DepartmentId);
+                    if (departmentResult?.Success != true || departmentResult.Data == null)
+                    {
+                        _logger.Warning("🏥 MEDICAL: Department یافت نشد - DepartmentId: {DepartmentId}, CorrelationId: {CorrelationId}",
+                            model.DepartmentId, correlationId);
+                        
+                        return ServiceResult.Failed("دپارتمان انتخاب شده یافت نشد", "DEPARTMENT_NOT_FOUND", ErrorCategory.Validation);
+                    }
                 }
 
                 _logger.Debug("🏥 MEDICAL: Cross-Reference validation successful - CorrelationId: {CorrelationId}", correlationId);
@@ -1403,13 +1672,54 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
         #endregion
 
+        #region Security Helpers
+
+        /// <summary>
+        /// 🔒 ماسک کردن داده‌های حساس در لاگ‌ها
+        /// </summary>
+        private string MaskSensitiveData(string key, string value)
+        {
+            if (string.IsNullOrEmpty(value))
+                return value;
+
+            // فیلدهای غیرحساس که مجاز به لاگ کردن هستند (Whitelist approach - محدودتر)
+            var safeKeys = new[]
+            {
+                "DepartmentId",
+                "ServiceCategoryId", 
+                "ServiceId",
+                "InsuranceProviderId",
+                "InsurancePlanId",
+                "TariffPrice",
+                "PatientShare",
+                "InsurerShare",
+                "IsActive",
+                "IsAllServices",
+                "IsAllServiceCategories",
+                "PageNumber",
+                "PageSize"
+                // SearchTerm حذف شد - ممکن است حاوی PII باشد
+            };
+
+            // فقط فیلدهای مجاز را لاگ کن
+            if (safeKeys.Contains(key))
+            {
+                return value;
+            }
+
+            return "***MASKED***";
+        }
+
+        // 🚀 P0 FIX: متدهای قدیمی Idempotency حذف شدند - حالا از IIdempotencyService استفاده می‌شود
+
+        #endregion
+
         #region Advanced Calculation
 
         /// <summary>
         /// محاسبه پیشرفته تعرفه بیمه با پشتیبانی از Real-time Calculation
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         [NoCacheFilter]
         public async Task<JsonResult> CalculateAdvancedTariff(
             int serviceId, 
@@ -1419,6 +1729,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             decimal? currentPatientShare = null,
             decimal? currentInsurerShare = null,
             decimal? supplementaryCoveragePercent = null,
+            decimal? patientSharePercent = null,
+            decimal? insurerSharePercent = null,
             string calculationType = "comprehensive")
         {
             var correlationId = Guid.NewGuid().ToString();
@@ -1436,140 +1748,241 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _logger.Warning("🏥 MEDICAL: اعتبارسنجی ورودی‌ها ناموفق - {Errors}, CorrelationId: {CorrelationId}",
                         string.Join(", ", validationResult.Errors), correlationId);
                     
-                    return Json(new { success = false, message = validationResult.Errors.FirstOrDefault() ?? "ورودی‌های نامعتبر" });
+                    // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                    return Json(new { success = false, message = validationResult.Errors.FirstOrDefault() ?? "ورودی‌های نامعتبر", correlationId = correlationId });
                 }
 
-                // 🔍 بهینه‌سازی Performance: بارگیری موازی اطلاعات
-                var serviceTask = _serviceManagementService.GetActiveServicesForLookupAsync(0);
-                // 🚀 FIX: دریافت طرح‌های بیمه بر اساس providerId (اگر موجود باشد)
-                var planTask = _insurancePlanService.GetActivePlansForLookupAsync(providerId);
+                // 🔍 مرحله 1: دریافت اطلاعات خدمت با لاگ‌گذاری دقیق
+                _logger.Information("🏥 MEDICAL: مرحله 1 - شروع دریافت اطلاعات خدمت - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}",
+                    serviceId, correlationId);
                 
-                // 🔍 Debug logging برای بررسی providerId
-                _logger.Information("🏥 MEDICAL: ProviderId در CalculateAdvancedTariff - ProviderId: {ProviderId}, Type: {Type}, CorrelationId: {CorrelationId}",
-                    providerId, providerId?.GetType().Name, correlationId);
+                var serviceTask = _serviceManagementService.GetServiceDetailsAsync(serviceId);
+                var serviceResult = await serviceTask;
                 
-                await Task.WhenAll(serviceTask, planTask);
+                if (serviceResult?.Success != true || serviceResult.Data == null)
+                {
+                    _logger.Error("🏥 MEDICAL: خطا در دریافت اطلاعات خدمت - ServiceId: {ServiceId}, Success: {Success}, Message: {Message}, CorrelationId: {CorrelationId}",
+                        serviceId, serviceResult?.Success, serviceResult?.Message, correlationId);
+                    
+                    return Json(new { 
+                        success = false, 
+                        message = "خطا در دریافت اطلاعات خدمت: " + (serviceResult?.Message ?? "خدمت یافت نشد"), 
+                        correlationId = correlationId 
+                    });
+                }
                 
-                var serviceResult = serviceTask.Result;
-                var planResult = planTask.Result;
+                _logger.Information("🏥 MEDICAL: مرحله 1 - اطلاعات خدمت با موفقیت دریافت شد - ServiceId: {ServiceId}, ServiceName: {ServiceName}, CorrelationId: {CorrelationId}",
+                    serviceId, serviceResult.Data.Title, correlationId);
+
+                // 🔍 مرحله 2: دریافت اطلاعات طرح بیمه با لاگ‌گذاری دقیق
+                _logger.Information("🏥 MEDICAL: مرحله 2 - شروع دریافت اطلاعات طرح بیمه - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}",
+                    insurancePlanId, correlationId);
+                
+                var planTask = _insurancePlanService.GetPlanDetailsAsync(insurancePlanId);
+                var planResult = await planTask;
+                
+                if (planResult?.Success != true || planResult.Data == null)
+                {
+                    _logger.Error("🏥 MEDICAL: خطا در دریافت اطلاعات طرح بیمه - InsurancePlanId: {InsurancePlanId}, Success: {Success}, Message: {Message}, CorrelationId: {CorrelationId}",
+                        insurancePlanId, planResult?.Success, planResult?.Message, correlationId);
+                    
+                    return Json(new { 
+                        success = false, 
+                        message = "خطا در دریافت طرح بیمه: " + (planResult?.Message ?? "طرح بیمه یافت نشد"), 
+                        correlationId = correlationId 
+                    });
+                }
+                
+                _logger.Information("🏥 MEDICAL: مرحله 2 - اطلاعات طرح بیمه با موفقیت دریافت شد - InsurancePlanId: {InsurancePlanId}, PlanName: {PlanName}, CorrelationId: {CorrelationId}",
+                    insurancePlanId, planResult.Data.Name, correlationId);
 
                 // 🛡️ اعتبارسنجی جامع نتایج سرویس‌ها - ضد گلوله
-                var serviceValidationResult = ValidateServiceResults(serviceResult, planResult, serviceId, insurancePlanId, correlationId);
-                if (!serviceValidationResult.IsValid)
+                _logger.Information("🏥 MEDICAL: مرحله 3 - شروع اعتبارسنجی نتایج سرویس‌ها - CorrelationId: {CorrelationId}",
+                    correlationId);
+                
+                if (serviceResult?.Data == null)
                 {
-                    _logger.Warning("🏥 MEDICAL: اعتبارسنجی نتایج سرویس‌ها ناموفق - {Error}, CorrelationId: {CorrelationId}",
-                        serviceValidationResult.ErrorMessage, correlationId);
-                    
-                    return Json(new { success = false, message = serviceValidationResult.ErrorMessage });
+                    _logger.Error("🏥 MEDICAL: داده‌های خدمت null است - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}",
+                        serviceId, correlationId);
+                    return Json(new { 
+                        success = false, 
+                        message = "داده‌های خدمت یافت نشد", 
+                        correlationId = correlationId 
+                    });
                 }
+                
+                if (planResult?.Data == null)
+                {
+                    _logger.Error("🏥 MEDICAL: داده‌های طرح بیمه null است - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}",
+                        insurancePlanId, correlationId);
+                    return Json(new { 
+                        success = false, 
+                        message = "داده‌های طرح بیمه یافت نشد", 
+                        correlationId = correlationId 
+                    });
+                }
+                
+                _logger.Information("🏥 MEDICAL: مرحله 3 - اعتبارسنجی نتایج سرویس‌ها موفق - CorrelationId: {CorrelationId}",
+                    correlationId);
 
-                // 🔍 بهینه‌سازی جستجو: استفاده از Dictionary برای O(1) lookup
-                var service = serviceResult.Data.FirstOrDefault(s => s.Id == serviceId);
-                
-                // 🚀 FIX: جستجوی صحیح طرح بیمه بر اساس InsurancePlanId
-                // 🔍 Debug: بررسی تمام طرح‌های بیمه موجود
-                _logger.Information("🏥 MEDICAL: Available plans - Count: {Count}, Plans: {@Plans}", 
-                    planResult.Data.Count, 
-                    planResult.Data.Select(p => new { 
-                        p.InsurancePlanId, 
-                        p.Name, 
-                        Value = p.Value, 
-                        Text = p.Text,
-                        Type = p.InsurancePlanId.GetType().Name 
-                    }).ToList());
-                
-                // 🔍 Debug: بررسی نوع داده‌ها
-                _logger.Information("🏥 MEDICAL: Debug - insurancePlanId type: {Type}, value: {Value}, planResult.Data.Count: {Count}", 
-                    insurancePlanId.GetType().Name, insurancePlanId, planResult.Data.Count);
-                
-                // 🚀 FIX: جستجوی صحیح با بررسی نوع داده
-                var insurancePlan = planResult.Data.FirstOrDefault(p => p.InsurancePlanId == insurancePlanId);
-                
-                // 🔍 Debug: بررسی نتیجه جستجو
-                if (insurancePlan == null)
-                {
-                    _logger.Warning("🏥 MEDICAL: طرح بیمه یافت نشد - InsurancePlanId: {InsurancePlanId}, AvailablePlans: {@AvailablePlans}", 
-                        insurancePlanId, 
-                        planResult.Data.Select(p => new { p.InsurancePlanId, p.Name, p.Value, p.Text }).ToList());
-                }
-                
-                // 🔍 Debug logging برای بررسی مشکل
-                _logger.Information("🏥 MEDICAL: جستجوی طرح بیمه - InsurancePlanId: {InsurancePlanId}, TotalPlans: {TotalPlans}, FoundPlan: {FoundPlan}, CorrelationId: {CorrelationId}",
-                    insurancePlanId, planResult.Data.Count, insurancePlan != null, correlationId);
-                
-                // 🔍 Debug logging برای بررسی تمام طرح‌های بیمه
-                _logger.Information("🏥 MEDICAL: تمام طرح‌های بیمه موجود - Plans: {@Plans}, CorrelationId: {CorrelationId}",
-                    planResult.Data.Select(p => new { p.InsurancePlanId, p.Name, p.Value, p.Text }).ToList(), correlationId);
-                
-                if (insurancePlan == null)
-                {
-                    _logger.Warning("🏥 MEDICAL: طرح بیمه یافت نشد - InsurancePlanId: {InsurancePlanId}, AvailablePlans: {@AvailablePlans}, CorrelationId: {CorrelationId}",
-                        insurancePlanId, planResult.Data.Select(p => new { p.Value, p.Text }).ToList(), correlationId);
-                    
-                    return Json(new { success = false, message = "طرح بیمه انتخاب شده یافت نشد" });
-                }
+                // 🚀 PERFORMANCE: Direct access to service and plan data (no more searching through lists)
+                _logger.Information("🏥 MEDICAL: Direct access to service and plan data - ServiceId: {ServiceId}, InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}",
+                    serviceId, insurancePlanId, correlationId);
 
-                // 🔍 محاسبه تعرفه بر اساس نوع محاسبه
+                // 🔍 تبدیل به DTO برای Strongly Typed محاسبه
+                var serviceDto = new CalculationServiceDto
+                {
+                    ServiceId = serviceResult.Data.ServiceId,
+                    ServiceCategoryId = serviceResult.Data.ServiceCategoryId,
+                    Price = serviceResult.Data.Price,
+                    Name = serviceResult.Data.Title,
+                    Code = serviceResult.Data.ServiceCode ?? "",
+                    Description = serviceResult.Data.Description ?? "",
+                    IsActive = !serviceResult.Data.IsDeleted,
+                    CreatedAt = serviceResult.Data.CreatedAt,
+                    UpdatedAt = serviceResult.Data.UpdatedAt
+                };
+
+                var planDto = new CalculationPlanDto
+                {
+                    InsurancePlanId = planResult.Data.InsurancePlanId,
+                    CoveragePercent = planResult.Data.CoveragePercent,
+                    Name = planResult.Data.Name,
+                    PlanCode = planResult.Data.PlanCode ?? "",
+                    Description = planResult.Data.Description ?? "",
+                    InsuranceProviderId = planResult.Data.InsuranceProviderId,
+                    ProviderName = "", // باید از دیتابیس دریافت شود
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = null
+                };
+
+                // 🔍 مرحله 4: محاسبه تعرفه با لاگ‌گذاری دقیق
+                _logger.Information("🏥 MEDICAL: مرحله 4 - شروع محاسبه تعرفه - ServiceId: {ServiceId}, InsurancePlanId: {InsurancePlanId}, CalculationType: {CalculationType}, CorrelationId: {CorrelationId}",
+                    serviceId, insurancePlanId, calculationType, correlationId);
+                
                 var calculationResult = await PerformAdvancedCalculationAsync(
-                    service, insurancePlan, currentTariffPrice, currentPatientShare, 
-                    currentInsurerShare, supplementaryCoveragePercent, calculationType, correlationId);
+                    serviceDto, planDto, currentTariffPrice, currentPatientShare, 
+                    currentInsurerShare, supplementaryCoveragePercent, patientSharePercent, insurerSharePercent,
+                    calculationType, correlationId);
 
                 var duration = DateTime.UtcNow - startTime;
-                _logger.Information("🏥 MEDICAL: محاسبه پیشرفته تکمیل شد - CorrelationId: {CorrelationId}, Duration: {Duration}ms, User: {UserName} (Id: {UserId})",
+                _logger.Information("🏥 MEDICAL: مرحله 4 - محاسبه تعرفه تکمیل شد - CorrelationId: {CorrelationId}, Duration: {Duration}ms, User: {UserName} (Id: {UserId})",
                     correlationId, duration.TotalMilliseconds, _currentUserService.UserName, _currentUserService.UserId);
 
-                return Json(new { success = true, data = calculationResult });
+                // 🔍 مرحله 5: آماده‌سازی پاسخ با لاگ‌گذاری دقیق
+                _logger.Information("🏥 MEDICAL: مرحله 5 - آماده‌سازی پاسخ - CorrelationId: {CorrelationId}",
+                    correlationId);
+                
+                // 🚀 P1 FIX: استفاده از ApiResponse استاندارد
+                var response = ApiResponse<object>.CreateSuccess(
+                    calculationResult, 
+                    "محاسبه با موفقیت انجام شد", 
+                    correlationId, 
+                    (long)duration.TotalMilliseconds);
+                
+                _logger.Information("🏥 MEDICAL: مرحله 5 - پاسخ آماده شد - CorrelationId: {CorrelationId}, Success: {Success}",
+                    correlationId, response.Success);
+                
+                return Json(response);
             }
             catch (Exception ex)
             {
                 var duration = DateTime.UtcNow - startTime;
-                _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه پیشرفته - CorrelationId: {CorrelationId}, Duration: {Duration}ms, User: {UserName} (Id: {UserId})",
-                    correlationId, duration.TotalMilliseconds, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Error(ex, "🏥 MEDICAL: خطای سیستمی در محاسبه پیشرفته - CorrelationId: {CorrelationId}, Duration: {Duration}ms, ServiceId: {ServiceId}, InsurancePlanId: {InsurancePlanId}, User: {UserName} (Id: {UserId})",
+                    correlationId, duration.TotalMilliseconds, serviceId, insurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
                 
-                return Json(new { success = false, message = "خطا در محاسبه تعرفه" });
+                // 🔍 لاگ‌گذاری دقیق خطا برای تشخیص مشکل
+                _logger.Error("🏥 MEDICAL: جزئیات خطا - ExceptionType: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}, CorrelationId: {CorrelationId}",
+                    ex.GetType().Name, ex.Message, ex.StackTrace, correlationId);
+                
+                // 🚀 P1 FIX: استفاده از ApiResponse استاندارد
+                var response = ApiResponse.CreateError(
+                    "خطا در محاسبه تعرفه. لطفاً دوباره تلاش کنید.", 
+                    correlationId, 
+                    null, 
+                    (long)duration.TotalMilliseconds);
+                
+                return Json(response);
             }
         }
 
         /// <summary>
-        /// انجام محاسبه پیشرفته تعرفه
+        /// انجام محاسبه پیشرفته تعرفه - Strongly Typed
         /// </summary>
-        private async Task<object> PerformAdvancedCalculationAsync(
-            dynamic service, dynamic insurancePlan, decimal? currentTariffPrice,
+        private async Task<CalculationResultDto> PerformAdvancedCalculationAsync(
+            CalculationServiceDto service, CalculationPlanDto insurancePlan, decimal? currentTariffPrice,
             decimal? currentPatientShare, decimal? currentInsurerShare,
-            decimal? supplementaryCoveragePercent, string calculationType, string correlationId)
+            decimal? supplementaryCoveragePercent, decimal? patientSharePercent, decimal? insurerSharePercent,
+            string calculationType, string correlationId)
         {
             try
             {
                 _logger.Debug("🏥 MEDICAL: شروع محاسبه پیشرفته - ServiceId: {ServiceId}, PlanId: {PlanId}, Type: {Type}, CorrelationId: {CorrelationId}",
-                    service.Id, insurancePlan.Value, calculationType, correlationId);
+                    service.ServiceId, insurancePlan.InsurancePlanId, calculationType, correlationId);
 
                 // 🔍 محاسبه قیمت تعرفه با استفاده از FactorSetting
-                var tariffPrice = await CalculateTariffPriceWithFactorSettingAsync(service.Id, currentTariffPrice, correlationId);
+                var tariffPrice = await _tariffCalculationService.CalculateTariffPriceWithFactorSettingAsync(service.ServiceId, currentTariffPrice, correlationId);
                 
                 // 🔍 محاسبه سهم بیمه با استفاده از PlanService
-                var insurerShare = await CalculateInsurerShareWithPlanServiceAsync(service.Id, insurancePlan.InsurancePlanId, tariffPrice, currentInsurerShare, correlationId);
+                var insurerShare = await CalculateInsurerShareWithPlanServiceAsync(service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, currentInsurerShare, correlationId);
                 
                 // 🔍 محاسبه سهم بیمار
-                var patientShare = await CalculatePatientShareAsync(service.Id, insurancePlan.InsurancePlanId, tariffPrice, insurerShare, currentPatientShare, correlationId);
+                var patientShare = await CalculatePatientShareAsync(service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, insurerShare, currentPatientShare, correlationId);
                 
                 // 🔍 محاسبه پوشش تکمیلی
                 var supplementaryCoverage = await CalculateSupplementaryCoverageAsync(
-                    service.Id, insurancePlan.InsurancePlanId, tariffPrice, insurerShare, supplementaryCoveragePercent, correlationId);
+                    service.ServiceId, insurancePlan.InsurancePlanId, tariffPrice, insurerShare, supplementaryCoveragePercent, correlationId);
                 
                 // 🔍 محاسبه پوشش کل
                 var totalCoveragePercent = await CalculateTotalCoverageAsync(
                     tariffPrice, insurerShare, supplementaryCoverage, correlationId);
 
-                var result = new
+                // 🔍 محاسبه درصدها بر اساس مقادیر محاسبه شده
+                var calculatedPatientSharePercent = tariffPrice > 0 ? (patientShare / tariffPrice) * 100m : 0m;
+                var calculatedInsurerSharePercent = tariffPrice > 0 ? (insurerShare / tariffPrice) * 100m : 0m;
+
+                // 🔍 اعمال درصدهای ورودی کاربر (اگر ارائه شده باشند)
+                if (patientSharePercent.HasValue && insurerSharePercent.HasValue)
                 {
-                    tariffPrice = tariffPrice,
-                    patientShare = patientShare,
-                    insurerShare = insurerShare,
-                    supplementaryCoveragePercent = supplementaryCoverage,
-                    totalCoveragePercent = totalCoveragePercent,
-                    calculationType = calculationType,
-                    calculatedAt = DateTime.UtcNow,
-                    correlationId = correlationId
+                    // اعتبارسنجی: مجموع درصدها نباید بیش از 100 باشد
+                    if (patientSharePercent.Value + insurerSharePercent.Value > 100m)
+                    {
+                        _logger.Warning("🏥 MEDICAL: مجموع درصدهای ورودی بیش از 100 است - PatientPercent: {PatientPercent}%, InsurerPercent: {InsurerPercent}%, Sum: {Sum}%, CorrelationId: {CorrelationId}",
+                            patientSharePercent.Value, insurerSharePercent.Value, patientSharePercent.Value + insurerSharePercent.Value, correlationId);
+                        
+                        return new CalculationResultDto
+                        {
+                            IsSuccess = false,
+                            ErrorMessage = "مجموع درصدها نمی‌تواند بیش از 100 باشد",
+                            CorrelationId = correlationId,
+                            CalculatedAt = DateTime.UtcNow
+                        };
+                    }
+
+                    // محاسبه مجدد سهم‌ها بر اساس درصدهای ورودی
+                    patientShare = Math.Round(tariffPrice * (patientSharePercent.Value / 100m), 0, MidpointRounding.AwayFromZero);
+                    insurerShare = Math.Round(tariffPrice * (insurerSharePercent.Value / 100m), 0, MidpointRounding.AwayFromZero);
+                    
+                    _logger.Information("🏥 MEDICAL: محاسبه مجدد سهم‌ها بر اساس درصدهای ورودی - PatientPercent: {PatientPercent}%, InsurerPercent: {InsurerPercent}%, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, CorrelationId: {CorrelationId}",
+                        patientSharePercent.Value, insurerSharePercent.Value, patientShare, insurerShare, correlationId);
+                }
+
+                var result = new CalculationResultDto
+                {
+                    TariffPrice = tariffPrice,
+                    PatientShare = patientShare,
+                    InsurerShare = insurerShare,
+                    SupplementaryCoveragePercent = supplementaryCoverage,
+                    PrimaryCoveragePercent = totalCoveragePercent,
+                    PatientSharePercent = calculatedPatientSharePercent,
+                    InsurerSharePercent = calculatedInsurerSharePercent,
+                    CalculationType = calculationType,
+                    CalculatedAt = DateTime.UtcNow,
+                    CorrelationId = correlationId,
+                    IsSuccess = true,
+                    Service = service,
+                    InsurancePlan = insurancePlan
                 };
 
                 _logger.Debug("🏥 MEDICAL: محاسبه پیشرفته تکمیل شد - CorrelationId: {CorrelationId}, Result: {@Result}",
@@ -1580,90 +1993,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             catch (Exception ex)
             {
                 _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه پیشرفته - CorrelationId: {CorrelationId}", correlationId);
-                throw;
+                
+                return new CalculationResultDto
+                {
+                    IsSuccess = false,
+                    ErrorMessage = ex.Message,
+                    CorrelationId = correlationId,
+                    CalculatedAt = DateTime.UtcNow,
+                    Service = service,
+                    InsurancePlan = insurancePlan
+                };
             }
         }
 
-        /// <summary>
-        /// محاسبه قیمت تعرفه با استفاده از FactorSetting
-        /// </summary>
-        private async Task<decimal> CalculateTariffPriceWithFactorSettingAsync(int serviceId, decimal? currentTariffPrice, string correlationId)
-        {
-            try
-            {
-                // اگر قیمت فعلی موجود است، از آن استفاده کن
-                if (currentTariffPrice.HasValue && currentTariffPrice.Value > 0)
-                {
-                    _logger.Debug("🏥 MEDICAL: استفاده از قیمت تعرفه موجود - Price: {Price}, CorrelationId: {CorrelationId}",
-                        currentTariffPrice.Value, correlationId);
-                    return currentTariffPrice.Value;
-                }
-
-                // دریافت سال مالی فعلی
-                var currentFinancialYear = await GetCurrentFinancialYearAsync(DateTime.Now);
-                
-                // دریافت خدمت از دیتابیس
-                var service = await _context.Services
-                    .Where(s => s.ServiceId == serviceId && !s.IsDeleted)
-                    .FirstOrDefaultAsync();
-
-                if (service == null)
-                {
-                    _logger.Warning("🏥 MEDICAL: خدمت یافت نشد - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}", 
-                        serviceId, correlationId);
-                    return 0m;
-                }
-
-                // دریافت کای فنی
-                var technicalFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
-                    ServiceComponentType.Technical, service.IsHashtagged, currentFinancialYear);
-
-                // دریافت کای حرفه‌ای
-                var professionalFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
-                    ServiceComponentType.Professional, false, currentFinancialYear);
-
-                if (technicalFactor == null || professionalFactor == null)
-                {
-                    _logger.Warning("🏥 MEDICAL: کای‌های مورد نیاز یافت نشد - TechnicalFactor: {TechnicalFactor}, ProfessionalFactor: {ProfessionalFactor}, CorrelationId: {CorrelationId}",
-                        technicalFactor != null, professionalFactor != null, correlationId);
-                    
-                    // Fallback به قیمت پایه خدمت
-                    return service.Price;
-                }
-
-                // 🚀 FINANCIAL PRECISION: محاسبه دقیق قیمت تعرفه بر اساس ریال
-                var basePrice = service.Price;
-                var calculatedPrice = basePrice * technicalFactor.Value * professionalFactor.Value;
-
-                _logger.Debug("🏥 MEDICAL: محاسبه قیمت تعرفه با FactorSetting - BasePrice: {BasePrice}, TechnicalFactor: {TechnicalFactor}, ProfessionalFactor: {ProfessionalFactor}, Result: {Result}, CorrelationId: {CorrelationId}",
-                    basePrice, technicalFactor.Value, professionalFactor.Value, calculatedPrice, correlationId);
-
-                // 🚀 FINANCIAL PRECISION: گرد کردن به ریال (بدون اعشار)
-                return Math.Round(calculatedPrice, 0, MidpointRounding.AwayFromZero);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه قیمت تعرفه با FactorSetting - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}", 
-                    serviceId, correlationId);
-                
-                // Fallback: دریافت قیمت پایه از دیتابیس
-                try
-                {
-                    var fallbackService = await _context.Services
-                        .Where(s => s.ServiceId == serviceId && !s.IsDeleted)
-                        .Select(s => s.Price)
-                        .FirstOrDefaultAsync();
-                    
-                    return fallbackService;
-                }
-                catch (Exception fallbackEx)
-                {
-                    _logger.Error(fallbackEx, "🏥 MEDICAL: خطا در دریافت قیمت پایه خدمت - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}", 
-                        serviceId, correlationId);
-                    return 0m;
-                }
-            }
-        }
 
 
         /// <summary>
@@ -1790,13 +2132,13 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // محاسبه بر اساس نوع خدمت و طرح بیمه
                 var calculatedPercent = 0m;
                 
-                // TODO: پیاده‌سازی منطق محاسبه پوشش تکمیلی بر اساس قوانین کسب‌وکار
-                // اینجا می‌توانید قوانین خاص بیمه تکمیلی را پیاده‌سازی کنید
+                // 🚀 P0 FIX: منطق پوشش تکمیلی در کنترلر جداگانه (SupplementaryTariffController) پیاده‌سازی شده است
+                // این متد فقط برای سازگاری با API موجود باقی مانده و مقدار 0 برمی‌گرداند
 
                 _logger.Debug("🏥 MEDICAL: محاسبه پوشش تکمیلی - Result: {Result}, CorrelationId: {CorrelationId}",
                     calculatedPercent, correlationId);
 
-                return Math.Round(calculatedPercent, 2);
+                return Math.Round(calculatedPercent, 0, MidpointRounding.AwayFromZero);
             }
             catch (Exception ex)
             {
@@ -1820,7 +2162,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Debug("🏥 MEDICAL: محاسبه پوشش کل - Primary: {Primary}%, Supplementary: {Supplementary}%, Total: {Total}%, CorrelationId: {CorrelationId}",
                     primaryCoveragePercent, supplementaryCoveragePercent, totalCoverage, correlationId);
 
-                return Math.Round(totalCoverage, 2);
+                return Math.Round(totalCoverage, 0, MidpointRounding.AwayFromZero);
             }
             catch (Exception ex)
             {
@@ -1901,14 +2243,15 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     _logger.Information("🏥 MEDICAL: آمار سریع با موفقیت دریافت شد - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
                         correlationId, _currentUserService.UserName, _currentUserService.UserId);
 
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _logger.Warning("🏥 MEDICAL: خطا در دریافت آمار سریع - CorrelationId: {CorrelationId}, Error: {Error}, User: {UserName} (Id: {UserId})",
                         correlationId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
-                    return Json(new { success = false, message = result.Message });
+                    // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                    return Json(new { success = false, message = result.Message, correlationId = correlationId }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
@@ -1916,7 +2259,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت آمار سریع - CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
                     correlationId, _currentUserService.UserName, _currentUserService.UserId);
 
-                return Json(new { success = false, message = "خطا در دریافت آمار" });
+                return Json(new { success = false, message = "خطا در دریافت آمار" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -1929,11 +2272,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public async Task<JsonResult> GetDepartments()
         {
             // 🚀 REAL-TIME: Set No-Cache headers
+            // 🚀 P0 FIX: یکنواخت‌سازی هدرهای Cache
             Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
             Response.Cache.SetNoStore();
-            Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate");
-            Response.Headers.Add("Pragma", "no-cache");
-            Response.Headers.Add("Expires", "0");
+            Response.Cache.SetExpires(DateTime.UtcNow.AddSeconds(-1));
+            Response.Cache.SetRevalidation(System.Web.HttpCacheRevalidation.AllCaches);
 
             var correlationId = Guid.NewGuid().ToString();
             var startTime = DateTime.UtcNow;
@@ -2110,19 +2453,46 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 
                 if (result?.Success == true && result.Data?.Any() == true)
                 {
-                    var services = result.Data.Select(s => new { 
-                        id = s.Id, 
-                        name = s.Name,
-                        code = s.Code ?? "",
-                        description = s.Description ?? ""
-                    }).ToList();
+                    // 🚀 PERFORMANCE: Server-side filtering and paging
+                    var allServices = result.Data.AsQueryable();
                     
-                    _logger.Information("🏥 MEDICAL: خدمات با موفقیت دریافت شدند - Count: {Count}, ServiceCategoryId: {ServiceCategoryId}, Duration: {Duration}ms, CorrelationId: {CorrelationId}",
-                        services.Count, serviceCategoryId, duration.TotalMilliseconds, correlationId);
+                    // 🔍 اعمال فیلتر جستجو
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        var searchLower = search.ToLower();
+                        allServices = allServices.Where(s => 
+                            (s.Name ?? "").ToLower().Contains(searchLower) ||
+                            (s.Code ?? "").ToLower().Contains(searchLower) ||
+                            (s.Description ?? "").ToLower().Contains(searchLower)
+                        );
+                    }
+                    
+                    // 📊 محاسبه آمار
+                    var totalCount = allServices.Count();
+                    var hasMore = (page * pageSize) < totalCount;
+                    
+                    // 🔄 اعمال paging
+                    var services = allServices
+                        .OrderBy(s => s.Name)
+                        .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
+                        .Select(s => new { 
+                            id = s.Id, 
+                            name = s.Name,
+                            code = s.Code ?? "",
+                            description = s.Description ?? ""
+                        }).ToList();
+                    
+                    _logger.Information("🏥 MEDICAL: خدمات با موفقیت دریافت شدند - Count: {Count}, Total: {Total}, Page: {Page}, PageSize: {PageSize}, HasMore: {HasMore}, ServiceCategoryId: {ServiceCategoryId}, Duration: {Duration}ms, CorrelationId: {CorrelationId}",
+                        services.Count, totalCount, page, pageSize, hasMore, serviceCategoryId, duration.TotalMilliseconds, correlationId);
                     
                     return Json(new { 
                         success = true, 
                         data = services,
+                        hasMore = hasMore,
+                        totalCount = totalCount,
+                        page = page,
+                        pageSize = pageSize,
                         serviceCategoryId = serviceCategoryId,
                         correlationId = correlationId,
                         duration = duration.TotalMilliseconds
@@ -2162,10 +2532,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         [HttpGet]
         public async Task<JsonResult> SearchServices(string searchTerm = "", int page = 1, int pageSize = 20)
         {
+            var correlationId = "search_services_" + DateTime.Now.Ticks + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            
             try
             {
-                _logger.Information("🔍 MEDICAL: درخواست جستجوی خدمات - SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}, User: {UserName} (Id: {UserId})",
-                    searchTerm, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Information("🔍 MEDICAL: درخواست جستجوی خدمات - SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}, User: {UserName} (Id: {UserId}), CorrelationId: {CorrelationId}",
+                    searchTerm, page, pageSize, _currentUserService.UserName, _currentUserService.UserId, correlationId);
 
                 var result = await _serviceService.SearchServicesForSelect2Async(searchTerm, page, pageSize);
                 
@@ -2185,7 +2557,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _logger.Warning("🔍 MEDICAL: خطا در جستجوی خدمات - SearchTerm: {SearchTerm}, Error: {Error}, User: {UserName} (Id: {UserId})",
                         searchTerm, result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                    return Json(new { success = false, message = result.Message, correlationId = correlationId }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
@@ -2204,10 +2577,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         [NoCacheFilter]
         public async Task<JsonResult> GetInsuranceProviders(string search = "", int page = 1, int pageSize = 10)
         {
+            var correlationId = "get_providers_" + DateTime.Now.Ticks + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            
             try
             {
-                _logger.Information("🏥 MEDICAL: درخواست دریافت ارائه‌دهندگان بیمه - Search: {Search}, Page: {Page}, PageSize: {PageSize}, User: {UserName} (Id: {UserId})",
-                    search, page, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Information("🏥 MEDICAL: درخواست دریافت ارائه‌دهندگان بیمه - Search: {Search}, Page: {Page}, PageSize: {PageSize}, User: {UserName} (Id: {UserId}), CorrelationId: {CorrelationId}",
+                    search, page, pageSize, _currentUserService.UserName, _currentUserService.UserId, correlationId);
 
                 var result = await _insuranceProviderService.GetActiveProvidersForLookupAsync();
                 
@@ -2217,9 +2592,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (result.Success)
                 {
                     var allProviders = result.Data.Select(p => new { 
-                        id = p.Value, 
-                        name = p.Text,
-                        description = p.Text // می‌تواند از دیتابیس دریافت شود
+                        id = p.Id, 
+                        name = p.Name,
+                        description = p.Name // می‌تواند از دیتابیس دریافت شود
                     }).ToList();
 
                     // 🚀 PERFORMANCE: Server-side filtering
@@ -2254,7 +2629,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _logger.Warning("🏥 MEDICAL: خطا در دریافت ارائه‌دهندگان بیمه - Error: {Error}, User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                    return Json(new { success = false, message = result.Message, correlationId = correlationId }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
@@ -2273,10 +2649,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         [NoCacheFilter]
         public async Task<JsonResult> GetInsurancePlans(int? providerId = null, string search = "", int page = 1, int pageSize = 15)
         {
+            var correlationId = "get_plans_" + DateTime.Now.Ticks + "_" + Guid.NewGuid().ToString("N").Substring(0, 8);
+            
             try
             {
-                _logger.Information("🏥 MEDICAL: درخواست دریافت طرح‌های بیمه - ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
-                    providerId, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Information("🏥 MEDICAL: درخواست دریافت طرح‌های بیمه - ProviderId: {ProviderId}, User: {UserName} (Id: {UserId}), CorrelationId: {CorrelationId}",
+                    providerId, _currentUserService.UserName, _currentUserService.UserId, correlationId);
 
                 var result = await _insurancePlanService.GetActivePlansForLookupAsync(providerId);
                 
@@ -2285,26 +2663,59 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 
                 if (result.Success)
                 {
-                    // 🚀 FIX: استفاده از format یکسان با CalculateAdvancedTariff
-                    var plans = result.Data.Select(p => new { 
-                        id = p.InsurancePlanId, 
-                        name = p.Name,
-                        InsurancePlanId = p.InsurancePlanId,  // 🚀 FIX: اضافه کردن InsurancePlanId
-                        Value = p.InsurancePlanId,  // اضافه کردن Value برای سازگاری
-                        Text = p.Name               // اضافه کردن Text برای سازگاری
-                    }).ToList();
+                    // 🚀 PERFORMANCE: Server-side filtering and paging
+                    var allPlans = result.Data.AsQueryable();
+                    
+                    // 🔍 اعمال فیلتر جستجو
+                    if (!string.IsNullOrWhiteSpace(search))
+                    {
+                        var searchLower = search.ToLower();
+                        allPlans = allPlans.Where(p => 
+                            (p.Name ?? "").ToLower().Contains(searchLower) ||
+                            (p.PlanCode ?? "").ToLower().Contains(searchLower) ||
+                            (p.InsuranceProviderName ?? "").ToLower().Contains(searchLower)
+                        );
+                    }
+                    
+                    // 📊 محاسبه آمار
+                    var totalCount = allPlans.Count();
+                    var hasMore = (page * pageSize) < totalCount;
+                    
+                    // 🔄 اعمال paging
+                    var plans = allPlans
+                        .OrderBy(p => p.Name)
+                        .Skip((page - 1) * pageSize)
+                        .Take(pageSize)
+                        .Select(p => new { 
+                            id = p.InsurancePlanId, 
+                            name = p.Name,
+                            planCode = p.PlanCode ?? "",
+                            coveragePercent = p.CoveragePercent,
+                            providerName = p.InsuranceProviderName ?? "",
+                            InsurancePlanId = p.InsurancePlanId,  // 🚀 FIX: اضافه کردن InsurancePlanId
+                            Value = p.InsurancePlanId,  // اضافه کردن Value برای سازگاری
+                            Text = p.Name               // اضافه کردن Text برای سازگاری
+                        }).ToList();
                     
                     // 🔍 Debug logging برای بررسی plans
-                    _logger.Information("🏥 MEDICAL: طرح‌های بیمه با موفقیت دریافت شدند - Count: {Count}, ProviderId: {ProviderId}, Plans: {@Plans}, User: {UserName} (Id: {UserId})",
-                        plans.Count, providerId, plans.Select(p => new { p.id, p.name, p.Value, p.Text }).ToList(), _currentUserService.UserName, _currentUserService.UserId);
+                    _logger.Information("🏥 MEDICAL: طرح‌های بیمه با موفقیت دریافت شدند - Count: {Count}, Total: {Total}, Page: {Page}, PageSize: {PageSize}, HasMore: {HasMore}, ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
+                        plans.Count, totalCount, page, pageSize, hasMore, providerId, _currentUserService.UserName, _currentUserService.UserId);
                     
-                    return Json(new { success = true, data = plans }, JsonRequestBehavior.AllowGet);
+                    return Json(new { 
+                        success = true, 
+                        data = plans,
+                        hasMore = hasMore,
+                        totalCount = totalCount,
+                        page = page,
+                        pageSize = pageSize
+                    }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _logger.Warning("🏥 MEDICAL: خطا در دریافت طرح‌های بیمه - ProviderId: {ProviderId}, Error: {Error}, User: {UserName} (Id: {UserId})",
                         providerId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    // 🚀 P1 FIX: انتشار CorrelationId در پاسخ JSON
+                    return Json(new { success = false, message = result.Message, correlationId = correlationId }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
@@ -2384,7 +2795,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// محاسبه تعرفه بیمه اصلی - JSON endpoint برای محاسبه سهم‌ها بر اساس تنظیمات داینامیک
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
         public async Task<JsonResult> CalculatePrimaryTariff(int serviceId, int planId, decimal? baseAmount = null)
         {
             try
@@ -2417,7 +2827,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 else
                 {
                 // محاسبه مبلغ پایه بر اساس ServiceComponents
-                calculatedBaseAmount = await CalculateServiceBasePriceAsync(service.ServiceId);
+                calculatedBaseAmount = await _tariffCalculationService.CalculateServiceBasePriceAsync(service.ServiceId);
                     _logger.Information("🏥 MEDICAL: محاسبه مبلغ پایه خدمت. ServiceId: {ServiceId}, CalculatedAmount: {CalculatedAmount}", 
                         serviceId, calculatedBaseAmount);
                 }
@@ -2449,11 +2859,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 return Json(new { 
                     success = true, 
                     data = new { 
-                        calculatedAmount = Math.Round(calculatedBaseAmount, 2),
-                        patientShare = Math.Round(patientShare, 2),
-                        insurerShare = Math.Round(insurerShare, 2),
+                        calculatedAmount = Math.Round(calculatedBaseAmount, 0, MidpointRounding.AwayFromZero),
+                        patientShare = Math.Round(patientShare, 0, MidpointRounding.AwayFromZero),
+                        insurerShare = Math.Round(insurerShare, 0, MidpointRounding.AwayFromZero),
                         coveragePercent = plan.CoveragePercent,
-                        patientPercent = Math.Round(patientPercent * 100, 2),
+                        patientPercent = Math.Round(patientPercent * 100, 0, MidpointRounding.AwayFromZero),
                         planName = plan.Name,
                         planCode = plan.PlanCode,
                         serviceName = service.Title,
@@ -2474,130 +2884,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
         }
 
-        /// <summary>
-        /// محاسبه مبلغ پایه خدمت بر اساس ServiceComponents و FactorSettings
-        /// </summary>
-        private async Task<decimal> CalculateServiceBasePriceAsync(int serviceId)
-        {
-            try
-            {
-                _logger.Debug("🏥 MEDICAL: شروع محاسبه مبلغ پایه خدمت. ServiceId: {ServiceId}", serviceId);
-
-                // دریافت اطلاعات خدمت از دیتابیس
-                var service = await _context.Services
-                    .Include(s => s.ServiceComponents)
-                    .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
-
-                if (service == null)
-                {
-                    _logger.Warning("🏥 MEDICAL: خدمت یافت نشد. ServiceId: {ServiceId}", serviceId);
-                    return 0m;
-                }
-
-                // استفاده از ServiceCalculationService برای محاسبه دقیق
-                try
-                {
-                    // ابتدا سعی کنیم از FactorSettings استفاده کنیم
-                    var serviceCalculationService = DependencyResolver.Current.GetService<IServiceCalculationService>();
-                    if (serviceCalculationService != null)
-                    {
-                        var calculatedPrice = serviceCalculationService.CalculateServicePriceWithFactorSettings(
-                            service, _context, DateTime.Now);
-
-                        _logger.Information("🏥 MEDICAL: محاسبه مبلغ پایه با FactorSettings موفق. ServiceId: {ServiceId}, CalculatedPrice: {CalculatedPrice}", 
-                            serviceId, calculatedPrice);
-
-                        return calculatedPrice;
-                    }
-                }
-                catch (Exception factorEx)
-                {
-                    _logger.Warning(factorEx, "🏥 MEDICAL: خطا در محاسبه با FactorSettings، استفاده از روش پایه. ServiceId: {ServiceId}", serviceId);
-                }
-
-                // اگر FactorSettings موجود نباشد، از دیتابیس ضرایب را بخوان
-                if (service.ServiceComponents != null && service.ServiceComponents.Any())
-                {
-                    var technicalComponent = service.ServiceComponents
-                        .FirstOrDefault(sc => sc.ComponentType == Models.Enums.ServiceComponentType.Technical && sc.IsActive && !sc.IsDeleted);
-                    var professionalComponent = service.ServiceComponents
-                        .FirstOrDefault(sc => sc.ComponentType == Models.Enums.ServiceComponentType.Professional && sc.IsActive && !sc.IsDeleted);
-
-                    if (technicalComponent != null && professionalComponent != null)
-                    {
-                        // دریافت ضرایب از دیتابیس - بدون هاردکد
-                        var currentFinancialYear = await GetCurrentFinancialYearAsync(DateTime.Now);
-                        
-                        // دریافت ضریب فنی از دیتابیس
-                        var technicalFactor = await _context.FactorSettings
-                            .Where(fs => fs.FactorType == Models.Enums.ServiceComponentType.Technical &&
-                                        fs.IsHashtagged == service.IsHashtagged &&
-                                        fs.FinancialYear == currentFinancialYear &&
-                                        fs.IsActive && !fs.IsDeleted &&
-                                        !fs.IsFrozen &&
-                                        fs.EffectiveFrom <= DateTime.Now &&
-                                        (fs.EffectiveTo == null || fs.EffectiveTo >= DateTime.Now))
-                            .OrderByDescending(fs => fs.EffectiveFrom)
-                            .Select(fs => fs.Value)
-                            .FirstOrDefaultAsync();
-
-                        // دریافت ضریب حرفه‌ای از دیتابیس
-                        var professionalFactor = await _context.FactorSettings
-                            .Where(fs => fs.FactorType == Models.Enums.ServiceComponentType.Professional &&
-                                        fs.IsHashtagged == false && // کای حرفه‌ای همیشه false است
-                                        fs.FinancialYear == currentFinancialYear &&
-                                        fs.IsActive && !fs.IsDeleted &&
-                                        !fs.IsFrozen &&
-                                        fs.EffectiveFrom <= DateTime.Now &&
-                                        (fs.EffectiveTo == null || fs.EffectiveTo >= DateTime.Now))
-                            .OrderByDescending(fs => fs.EffectiveFrom)
-                            .Select(fs => fs.Value)
-                            .FirstOrDefaultAsync();
-
-                        if (technicalFactor > 0 && professionalFactor > 0)
-                        {
-                            var calculatedPrice = (technicalComponent.Coefficient * technicalFactor) + 
-                                                 (professionalComponent.Coefficient * professionalFactor);
-
-                            _logger.Information("🏥 MEDICAL: محاسبه مبلغ پایه با ضرایب دیتابیس. ServiceId: {ServiceId}, TechnicalCoeff: {TechnicalCoeff}, ProfessionalCoeff: {ProfessionalCoeff}, TechnicalFactor: {TechnicalFactor}, ProfessionalFactor: {ProfessionalFactor}, CalculatedPrice: {CalculatedPrice}", 
-                                serviceId, technicalComponent.Coefficient, professionalComponent.Coefficient, technicalFactor, professionalFactor, calculatedPrice);
-
-                            return calculatedPrice;
-                        }
-                        else
-                        {
-                            _logger.Warning("🏥 MEDICAL: ضرایب فنی یا حرفه‌ای در دیتابیس یافت نشد. ServiceId: {ServiceId}, TechnicalFactor: {TechnicalFactor}, ProfessionalFactor: {ProfessionalFactor}", 
-                                serviceId, technicalFactor, professionalFactor);
-                        }
-                    }
-                }
-
-                // اگر اجزای خدمت تعریف نشده‌اند، از قیمت پایه استفاده کن
-                _logger.Information("🏥 MEDICAL: استفاده از قیمت پایه خدمت. ServiceId: {ServiceId}, BasePrice: {BasePrice}", 
-                    serviceId, service.Price);
-
-                return service.Price;
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه مبلغ پایه خدمت. ServiceId: {ServiceId}", serviceId);
-                
-                // Fallback به قیمت پایه - دریافت از دیتابیس
-                try
-                {
-                    var fallbackService = await _context.Services
-                        .Where(s => s.ServiceId == serviceId && !s.IsDeleted)
-                        .Select(s => s.Price)
-                        .FirstOrDefaultAsync();
-                    
-                    return fallbackService;
-                }
-                catch
-                {
-                    return 0m;
-                }
-            }
-        }
 
         /// <summary>
         /// دریافت سال مالی جاری از تنظیمات سیستم
@@ -2708,57 +2994,55 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// <summary>
         /// 🛡️ اعتبارسنجی امن نتایج سرویس‌ها
         /// </summary>
-        private (bool IsValid, string ErrorMessage) ValidateServiceResults(ServiceResult<List<ViewModels.LookupItemViewModel>> serviceResult, ServiceResult<List<ViewModels.Insurance.InsurancePlan.InsurancePlanLookupViewModel>> planResult, int serviceId, int insurancePlanId, string correlationId)
+        private (bool IsValid, string ErrorMessage) ValidateServiceResults(ServiceResult<ViewModels.ServiceDetailsViewModel> serviceResult, ServiceResult<ViewModels.Insurance.InsurancePlan.InsurancePlanDetailsViewModel> planResult, int serviceId, int insurancePlanId, string correlationId)
         {
             try
             {
                 // 🔍 اعتبارسنجی ServiceResult
                 if (serviceResult?.Success != true)
                 {
-                    var errorMsg = $"خطا در دریافت خدمات: {serviceResult?.Message ?? "نامشخص"}";
+                    var errorMsg = $"خطا در دریافت خدمت: {serviceResult?.Message ?? "نامشخص"}";
                     _logger.Warning("🏥 MEDICAL: ServiceResult ناموفق - {Error}, CorrelationId: {CorrelationId}", errorMsg, correlationId);
                     return (false, errorMsg);
                 }
 
-                if (serviceResult.Data == null || !serviceResult.Data.Any())
+                if (serviceResult.Data == null)
                 {
-                    var errorMsg = "هیچ خدمتی یافت نشد";
-                    _logger.Warning("🏥 MEDICAL: هیچ خدمتی یافت نشد - CorrelationId: {CorrelationId}", correlationId);
+                    var errorMsg = "خدمت مورد نظر یافت نشد";
+                    _logger.Warning("🏥 MEDICAL: خدمت مورد نظر یافت نشد - ServiceId: {ServiceId}, CorrelationId: {CorrelationId}", serviceId, correlationId);
                     return (false, errorMsg);
                 }
 
                 // 🔍 اعتبارسنجی PlanResult
                 if (planResult?.Success != true)
                 {
-                    var errorMsg = $"خطا در دریافت طرح‌های بیمه: {planResult?.Message ?? "نامشخص"}";
+                    var errorMsg = $"خطا در دریافت طرح بیمه: {planResult?.Message ?? "نامشخص"}";
                     _logger.Warning("🏥 MEDICAL: PlanResult ناموفق - {Error}, CorrelationId: {CorrelationId}", errorMsg, correlationId);
                     return (false, errorMsg);
                 }
 
-                if (planResult.Data == null || !planResult.Data.Any())
+                if (planResult.Data == null)
                 {
-                    var errorMsg = "هیچ طرح بیمه‌ای یافت نشد";
-                    _logger.Warning("🏥 MEDICAL: هیچ طرح بیمه‌ای یافت نشد - CorrelationId: {CorrelationId}", correlationId);
+                    var errorMsg = "طرح بیمه مورد نظر یافت نشد";
+                    _logger.Warning("🏥 MEDICAL: طرح بیمه مورد نظر یافت نشد - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}", insurancePlanId, correlationId);
                     return (false, errorMsg);
                 }
 
-                // 🔍 اعتبارسنجی وجود ServiceId در نتایج
-                var serviceExists = serviceResult.Data.Any(s => s.Value == serviceId);
-                if (!serviceExists)
+                // 🔍 اعتبارسنجی تطابق ServiceId
+                if (serviceResult.Data.ServiceId != serviceId)
                 {
-                    var errorMsg = $"خدمت با شناسه {serviceId} یافت نشد";
-                    _logger.Warning("🏥 MEDICAL: ServiceId در نتایج یافت نشد - ServiceId: {ServiceId}, AvailableServices: {AvailableServices}, CorrelationId: {CorrelationId}", 
-                        serviceId.ToString(), string.Join(", ", serviceResult.Data.Select(s => s.Value)), correlationId);
+                    var errorMsg = $"خدمت با شناسه {serviceId} یافت نشد (دریافت شده: {serviceResult.Data.ServiceId})";
+                    _logger.Warning("🏥 MEDICAL: ServiceId تطابق ندارد - درخواست: {RequestedServiceId}, دریافت شده: {ReceivedServiceId}, CorrelationId: {CorrelationId}", 
+                        serviceId, serviceResult.Data.ServiceId, correlationId);
                     return (false, errorMsg);
                 }
 
-                // 🔍 اعتبارسنجی وجود InsurancePlanId در نتایج
-                var planExists = planResult.Data.Any(p => p.InsurancePlanId == insurancePlanId);
-                if (!planExists)
+                // 🔍 اعتبارسنجی تطابق InsurancePlanId
+                if (planResult.Data.InsurancePlanId != insurancePlanId)
                 {
-                    var errorMsg = $"طرح بیمه با شناسه {insurancePlanId} یافت نشد";
-                    _logger.Warning("🏥 MEDICAL: InsurancePlanId در نتایج یافت نشد - InsurancePlanId: {InsurancePlanId}, AvailablePlans: {AvailablePlans}, CorrelationId: {CorrelationId}", 
-                        insurancePlanId, string.Join(", ", planResult.Data.Select(p => p.InsurancePlanId)), correlationId);
+                    var errorMsg = $"طرح بیمه با شناسه {insurancePlanId} یافت نشد (دریافت شده: {planResult.Data.InsurancePlanId})";
+                    _logger.Warning("🏥 MEDICAL: InsurancePlanId تطابق ندارد - درخواست: {RequestedPlanId}, دریافت شده: {ReceivedPlanId}, CorrelationId: {CorrelationId}", 
+                        insurancePlanId, planResult.Data.InsurancePlanId, correlationId);
                     return (false, errorMsg);
                 }
 

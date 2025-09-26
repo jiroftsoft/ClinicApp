@@ -7,7 +7,7 @@
     ViewBag.Keywords = "تعرفه بیمه, خدمات درمانی, کلینیک, بیمه, تعرفه";
 }
 
-<!-- 🚀 SEO: Meta Tags برای بهبود SEO -->
+<!-- 🚀 SEO: Meta Tags -->
 @section MetaTags {
     <meta name="description" content="@ViewBag.Description" />
     <meta name="keywords" content="@ViewBag.Keywords" />
@@ -31,658 +31,325 @@
             z-index: 1;
         }
 
-        /* 🚀 FIX: Override main-content background */
-        .main-content {
+        /* 🚀 FIX: Override backgrounds */
+        .main-content, body, html {
             background: #ffffff !important;
         }
-
-        /* 🚀 FIX: Override body background */
-        body {
-            background: #ffffff !important;
-        }
-
-        /* 🚀 FIX: Override html background */
-        html {
-            background: #ffffff !important;
-        }
-
 
         /* 🚀 PERFORMANCE: Select2 Remote Styling */
-        .select2-container--default .select2-results__option {
-            padding: 8px 12px;
-            border-bottom: 1px solid #f0f0f0;
-        }
-
-        .select2-container--default .select2-results__option--highlighted[aria-selected] {
-            background-color: #007bff;
-            color: white;
-        }
-
         .select2-container--default .select2-selection--single {
             height: 38px;
             border: 1px solid #ced4da;
             border-radius: 6px;
+            padding: 0 8px;
+        }
+
+        /* 🏥 MEDICAL: Bulk Operation Styling */
+        .bulk-operation-disabled {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .bulk-operation-disabled .select2-container {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .bulk-operation-disabled .form-control {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+
+        #bulkOperationIndicator {
+            border-left: 4px solid #17a2b8;
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+        }
+
+        #bulkProgressModal .modal-content {
+            border-radius: 10px;
+        }
+
+        #bulkProgressModal .progress {
+            height: 25px;
+            border-radius: 12px;
+        }
+
+        #bulkProgressModal .progress-bar {
+            border-radius: 12px;
         }
 
         .select2-container--default .select2-selection--single .select2-selection__rendered {
             line-height: 36px;
-            padding-left: 12px;
+            padding-right: 20px;
         }
 
         .select2-container--default .select2-selection--single .select2-selection__arrow {
             height: 36px;
+            right: 8px;
         }
 
-        /* 🚀 UX: Enhanced option display */
-        .service-option, .plan-option, .provider-option {
-            padding: 4px 0;
-        }
-
-        .service-name, .plan-name, .provider-name {
-            font-weight: 600;
-            color: #333;
-            margin-bottom: 2px;
-        }
-
-        .service-description, .plan-code, .plan-coverage, .provider-description {
-            font-size: 12px;
-            color: #666;
-            margin-top: 2px;
-        }
-
-        .plan-coverage {
-            color: #28a745;
-            font-weight: 500;
-        }
-
-        /* 🚀 PERFORMANCE: Loading states */
-        .select2-container--default .select2-results__option[aria-disabled=true] {
-            color: #999;
-            background-color: #f8f9fa;
-        }
-
-        .select2-container--default .select2-results__option[data-select2-id] {
-            cursor: pointer;
-        }
-
-        /* 🚀 UX: Form Field Animations */
-        .medical-form-input, .medical-form-select, .medical-form-textarea {
-            transition: all 0.3s ease;
-        }
-
-            .medical-form-input:focus, .medical-form-select:focus, .medical-form-textarea:focus {
-                transform: translateY(-2px);
-                box-shadow: 0 8px 25px rgba(59, 130, 246, 0.15);
-            }
-
-        /* 🚀 UX: Button Animations */
-        .btn {
-            transition: all 0.3s ease;
-        }
-
-            .btn:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-            }
-
-        /* 🚀 UX: Success/Error States */
-        .form-success {
-            background: #10b981;
-            color: white;
-            padding: 12px;
+        .select2-dropdown {
+            border: 1px solid #ced4da;
             border-radius: 6px;
-            margin-bottom: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
-        .form-error {
-            background: #ef4444;
-            color: white;
-            padding: 12px;
-            border-radius: 6px;
-            margin-bottom: 12px;
+        .select2-results__option {
+            padding: 8px 12px;
+            font-size: 14px;
         }
 
-        /* 🚀 UX: Progress Indicator */
-        .progress-indicator {
-            display: flex;
-            justify-content: center;
-            margin: 24px 0;
+        .select2-results__option--highlighted {
+            background: #e3f2fd;
+            color: #1976d2;
         }
 
-        /* 🚀 ACCESSIBILITY: Basic Accessibility */
-        .sr-only {
-            position: absolute;
-            width: 1px;
-            height: 1px;
-            padding: 0;
-            margin: -1px;
+        /* 🏥 MEDICAL: Form Styling */
+        .medical-form-card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e3f2fd;
             overflow: hidden;
-            clip: rect(0, 0, 0, 0);
-            white-space: nowrap;
-            border: 0;
         }
-
-        .progress-step {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: #e5e7eb;
-            color: #6b7280;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            margin: 0 8px;
-            transition: all 0.3s ease;
-        }
-
-            .progress-step.active {
-                background: #3b82f6;
-                color: white;
-                transform: scale(1.1);
-            }
-
-            .progress-step.completed {
-                background: #10b981;
-                color: white;
-            }
-
-        .progress-line {
-            height: 2px;
-            background: #e5e7eb;
-            flex: 1;
-            margin: 0 8px;
-            align-self: center;
-        }
-
-            .progress-line.completed {
-                background: #10b981;
-            }
 
         .medical-form-header {
-            background: #3b82f6;
+            background: linear-gradient(135deg, #1976d2 0%, #42a5f5 100%);
             color: white;
-            padding: 32px;
-            border-radius: 16px;
-            margin-bottom: 32px;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
-            position: relative;
-            z-index: 2;
+            padding: 20px;
+            border-bottom: none;
         }
 
-
-        .medical-form-title {
-            font-size: 32px;
-            font-weight: 800;
-            margin: 0 0 12px 0;
+        .medical-form-body {
+            padding: 30px;
         }
-
-        .medical-form-subtitle {
-            font-size: 18px;
-            margin: 0;
-            opacity: 0.95;
-        }
-
-        .medical-form-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 24px;
-        }
-
-        @@media (min-width: 768px) {
-            .medical-form-grid {
-                grid-template-columns: 1fr 1fr;
-            }
-        }
-
-        @@media (min-width: 1200px) {
-            .medical-form-grid {
-                grid-template-columns: 1fr 1fr 1fr;
-            }
-        }
-
-        .medical-fieldset {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 28px;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
-            position: relative;
-        }
-
-            .medical-fieldset:hover {
-                box-shadow: 0 8px 24px rgba(0,0,0,0.1);
-                transform: translateY(-2px);
-            }
-
-        .medical-fieldset-legend {
-            font-size: 20px;
-            font-weight: 700;
-            color: #1e40af;
-            margin-bottom: 24px;
-            padding-bottom: 12px;
-            border-bottom: 3px solid #3b82f6;
-            width: 100%;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-            .medical-fieldset-legend::before {
-                content: '🏥';
-                font-size: 24px;
-            }
 
         .medical-form-group {
             margin-bottom: 24px;
         }
 
-            /* 🚀 UX: Enhanced dropdown styling for grouped services */
-            .medical-form-group select optgroup {
-                font-weight: 700;
-                font-size: 14px;
-                color: #1e40af;
-                background-color: #f8fafc;
-                padding: 8px 12px;
-                border-bottom: 1px solid #e2e8f0;
-            }
-
-            .medical-form-group select option {
-                padding: 8px 12px;
-                font-size: 13px;
-                line-height: 1.4;
-                color: #374151;
-                background-color: #ffffff;
-            }
-
-                .medical-form-group select option:hover {
-                    background-color: #f1f5f9;
-                    color: #1e40af;
-                }
-
-                .medical-form-group select option:checked {
-                    background-color: #3b82f6;
-                    color: #ffffff;
-                }
-
         .medical-form-label {
-            display: block;
-            font-size: 15px;
-            font-weight: 700;
-            color: #374151;
+            font-weight: 600;
+            color: #333;
             margin-bottom: 8px;
-            line-height: 1.4;
+            display: block;
         }
 
-            .medical-form-label.required::after {
-                content: " (اجباری)";
-                color: #dc2626;
-                font-weight: 600;
-                font-size: 13px;
-            }
-
-        .medical-form-input,
-        .medical-form-select,
-        .medical-form-textarea {
+        .medical-form-control {
+            border: 1px solid #ced4da;
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-size: 14px;
+            transition: all 0.2s ease;
             width: 100%;
-            padding: 16px 20px;
-            border: 2px solid #d1d5db;
-            border-radius: 12px;
-            font-size: 15px;
-            font-family: 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif;
-            transition: all 0.3s ease;
-            background: #ffffff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
         }
 
-            .medical-form-input:focus,
-            .medical-form-select:focus,
-            .medical-form-textarea:focus {
-                outline: none;
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
-                transform: translateY(-1px);
-            }
+        .medical-form-control:focus {
+            border-color: #1976d2;
+            box-shadow: 0 0 0 0.2rem rgba(25, 118, 210, 0.25);
+            outline: none;
+        }
 
-            .medical-form-input.currency {
-                text-align: left;
-                direction: ltr;
-                font-family: 'Courier New', monospace;
-                font-weight: 600;
-            }
+        .medical-form-control.is-invalid {
+            border-color: #dc3545;
+        }
 
-            .medical-form-input.persian-date {
-                text-align: center;
-                font-family: 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif;
-            }
+        .medical-form-control.is-valid {
+            border-color: #28a745;
+        }
 
         .medical-form-help {
-            font-size: 13px;
-            color: #6b7280;
-            margin-top: 6px;
-            line-height: 1.5;
-            font-style: italic;
+            font-size: 12px;
+            color: #666;
+            margin-top: 4px;
         }
 
         .medical-form-error {
-            font-size: 13px;
-            color: #dc2626;
-            margin-top: 6px;
-            display: block;
+            color: #dc3545;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        .medical-form-success {
+            color: #28a745;
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* 🏥 MEDICAL: Calculation Section */
+        .medical-calculation-card {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .medical-calculation-header {
+            background: #e3f2fd;
+            color: #1976d2;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 16px;
             font-weight: 600;
         }
 
-        .medical-toggle {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 24px;
+        .medical-calculation-result {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 6px;
             padding: 16px;
-            background: #f8fafc;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
+            margin-bottom: 12px;
         }
 
-        .medical-toggle-input {
-            width: 24px;
-            height: 24px;
-            accent-color: #3b82f6;
-            cursor: pointer;
+        .medical-calculation-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
         }
 
-        .medical-card {
-            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
-            border: 2px solid #0ea5e9;
-            border-radius: 12px;
-            padding: 20px;
-            margin: 20px 0;
-            position: relative;
-            overflow: hidden;
+        .medical-calculation-field:last-child {
+            border-bottom: none;
+            font-weight: 600;
+            color: #1976d2;
         }
 
-            .medical-card::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: 0;
-                right: 0;
-                height: 4px;
-                background: linear-gradient(90deg, #0ea5e9, #3b82f6, #1d4ed8);
-            }
+        .medical-calculation-label {
+            font-weight: 500;
+            color: #333;
+        }
 
-            .medical-card h4 {
-                margin: 0 0 16px 0;
-                font-size: 18px;
-                color: #0c4a6e;
-                font-weight: 700;
-            }
+        .medical-calculation-value {
+            font-weight: 600;
+            color: #1976d2;
+        }
 
+        /* 🏥 MEDICAL: Button Styling */
         .medical-btn {
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            text-decoration: none;
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            padding: 16px 28px;
+            gap: 8px;
+            transition: all 0.2s ease;
             border: none;
-            border-radius: 12px;
-            font-size: 15px;
-            font-weight: 700;
-            font-family: 'Vazirmatn', 'Vazir', 'Tahoma', sans-serif;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            position: relative;
-            overflow: hidden;
         }
-
-            .medical-btn::before {
-                content: '';
-                position: absolute;
-                top: 0;
-                left: -100%;
-                width: 100%;
-                height: 100%;
-                background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-                transition: left 0.5s;
-            }
-
-            .medical-btn:hover::before {
-                left: 100%;
-            }
 
         .medical-btn-primary {
-            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+            background: #1976d2;
             color: white;
-            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
         }
 
-            .medical-btn-primary:hover {
-                background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 24px rgba(59, 130, 246, 0.4);
-            }
+        .medical-btn-primary:hover {
+            background: #1565c0;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(25, 118, 210, 0.3);
+        }
 
         .medical-btn-secondary {
-            background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+            background: #6c757d;
             color: white;
-            box-shadow: 0 4px 16px rgba(107, 114, 128, 0.3);
         }
 
-            .medical-btn-secondary:hover {
-                background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
-                transform: translateY(-2px);
-                box-shadow: 0 8px 24px rgba(107, 114, 128, 0.4);
-            }
-
-        .medical-btn-group {
-            display: flex;
-            gap: 20px;
-            justify-content: flex-end;
-            margin-top: 40px;
-            padding-top: 32px;
-            border-top: 2px solid #e5e7eb;
+        .medical-btn-secondary:hover {
+            background: #5a6268;
+            transform: translateY(-1px);
         }
 
-        .alert {
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 24px;
-            border: 2px solid;
+        .medical-btn-success {
+            background: #28a745;
+            color: white;
         }
 
-        .alert-danger {
-            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
-            border-color: #fecaca;
-            color: #dc2626;
-        }
-
-        .alert-success {
-            background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
-            border-color: #bbf7d0;
-            color: #166534;
-        }
-
-        /* 🏥 MEDICAL: RTL Support */
-        .medical-form-container * {
-            direction: rtl;
-        }
-
-        .medical-form-input.currency,
-        .medical-form-input.persian-date {
-            direction: ltr;
-            text-align: left;
-        }
-
-        /* 🏥 MEDICAL: Accessibility */
-        .medical-form-input:focus,
-        .medical-form-select:focus,
-        .medical-form-textarea:focus {
-            outline: 3px solid #3b82f6;
-            outline-offset: 2px;
+        .medical-btn-success:hover {
+            background: #218838;
+            transform: translateY(-1px);
         }
 
         /* 🏥 MEDICAL: Loading States */
-        .medical-btn.loading {
-            opacity: 0.7;
-            cursor: not-allowed;
+        .medical-loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
         }
 
-            .medical-btn.loading::after {
-                content: '';
-                width: 16px;
-                height: 16px;
-                border: 2px solid transparent;
-                border-top: 2px solid currentColor;
-                border-radius: 50%;
-                animation: spin 1s linear infinite;
-                margin-left: 8px;
-            }
+        .medical-loading.show {
+            display: block;
+        }
+
+        .medical-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #1976d2;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
 
         @@keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
-            100% {
-                transform: rotate(360deg);
+        /* 🏥 MEDICAL: Progress Indicator */
+        .medical-progress {
+            background: #e9ecef;
+            border-radius: 10px;
+            height: 6px;
+            margin: 16px 0;
+            overflow: hidden;
+        }
+
+        .medical-progress-bar {
+            background: linear-gradient(90deg, #1976d2, #42a5f5);
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        /* 🏥 MEDICAL: Responsive Design */
+        @@media (max-width: 768px) {
+            .medical-form-container {
+                padding: 16px;
             }
+            
+            .medical-form-body {
+                padding: 20px;
+            }
+            
+            .medical-calculation-card {
+                padding: 16px;
+            }
+        }
+
+        /* 🏥 MEDICAL: Accessibility */
+        .medical-form-control:focus {
+            outline: 2px solid #1976d2;
+            outline-offset: 2px;
+        }
+
+        .medical-btn:focus {
+            outline: 2px solid #1976d2;
+            outline-offset: 2px;
         }
 
         /* 🏥 MEDICAL: Print Styles */
         @@media print {
-            .medical-btn-group,
-            .medical-card {
-                display: none;
-            }
-
             .medical-form-container {
-                max-width: none;
-                padding: 0;
-                background: white;
-            }
-
-            .medical-fieldset {
-                break-inside: avoid;
-                margin-bottom: 20px;
                 box-shadow: none;
-                border: 1px solid #000;
+                border: 1px solid #ccc;
             }
-        }
-
-        /* 🏥 MEDICAL: Mobile Responsive */
-        @@media (max-width: 768px) {
-            .medical-form-container {
-                padding: 16px;
-                margin: 0;
-            }
-
-            .medical-form-header {
-                padding: 24px;
-            }
-
-            .medical-form-title {
-                font-size: 24px;
-            }
-
-            .medical-form-subtitle {
-                font-size: 16px;
-            }
-
-            .progress-indicator {
-                flex-direction: column;
-                gap: 8px;
-            }
-
-            .progress-step {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .medical-form-grid {
-                grid-template-columns: 1fr;
-                gap: 16px;
-            }
-
-            .medical-form-input,
-            .medical-form-select,
-            .medical-form-textarea {
-                padding: 12px 16px;
-                font-size: 16px; /* Prevent zoom on iOS */
-            }
-
+            
             .medical-btn {
-                width: 100%;
-                margin-bottom: 8px;
-                padding: 16px;
-                font-size: 16px;
-            }
-
-            .medical-fieldset {
-                padding: 20px;
-            }
-
-            .medical-btn-group {
-                flex-direction: column;
-                gap: 12px;
-            }
-        }
-
-        /* 🏥 MEDICAL: Tablet Responsive */
-        @@media (min-width: 769px) and (max-width: 1024px) {
-            .medical-form-container {
-                padding: 20px;
-            }
-
-            .medical-form-grid {
-                grid-template-columns: 1fr 1fr;
-                gap: 20px;
-            }
-
-            .medical-form-header {
-                padding: 28px;
-            }
-        }
-
-        /* 🏥 MEDICAL: Desktop Responsive */
-        @@media (min-width: 1025px) {
-            .medical-form-container {
-                padding: 24px;
-            }
-
-            .medical-form-grid {
-                grid-template-columns: 1fr 1fr 1fr;
-                gap: 24px;
-            }
-        }
-
-        /* 🏥 MEDICAL: High DPI displays */
-        @@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
-            .medical-form-input,
-            .medical-form-select,
-            .medical-form-textarea {
-                border-width: 0.5px;
-            }
-        }
-
-        /* 🏥 MEDICAL: Print styles */
-        @@media print {
-            .medical-form-container {
-                max-width: none;
-                padding: 0;
-                background: white;
-            }
-
-            .medical-form-header {
-                background: white !important;
-                color: black !important;
-                border-bottom: 2px solid #000;
-            }
-
-            .medical-btn {
-                display: none;
-            }
-
-            .progress-indicator {
                 display: none;
             }
         }
@@ -690,1523 +357,1416 @@
 }
 
 <div class="medical-form-container">
-    <!-- 🏥 MEDICAL: Header -->
-    <header class="medical-form-header" role="banner">
-        <h1 class="medical-form-title" id="page-title">ایجاد تعرفه بیمه</h1>
-        <p class="medical-form-subtitle" id="page-description">تعریف تعرفه جدید برای خدمات درمانی و بیمه‌ای - سیستم کلینیک شفا</p>
-
-        <!-- 🚀 UX: Progress Indicator -->
-        <nav class="progress-indicator" role="progressbar" aria-label="مراحل تکمیل فرم" aria-valuenow="2" aria-valuemin="1" aria-valuemax="4">
-            <div class="progress-step completed" data-step="1" aria-label="مرحله 1: انتخاب دپارتمان - تکمیل شده">
-                <i class="fas fa-check" aria-hidden="true"></i>
-                <span class="sr-only">مرحله 1 تکمیل شده</span>
-                </div>
-            <div class="progress-line completed" aria-hidden="true"></div>
-            <div class="progress-step active" data-step="2" aria-label="مرحله 2: انتخاب خدمت - در حال انجام">
-                <span>2</span>
-                <span class="sr-only">مرحله 2 در حال انجام</span>
-                </div>
-            <div class="progress-line" aria-hidden="true"></div>
-            <div class="progress-step" data-step="3" aria-label="مرحله 3: تنظیم تعرفه - در انتظار">
-                <span>3</span>
-                <span class="sr-only">مرحله 3 در انتظار</span>
-            </div>
-            <div class="progress-line" aria-hidden="true"></div>
-            <div class="progress-step" data-step="4" aria-label="مرحله 4: تایید و ذخیره - در انتظار">
-                <span>4</span>
-                <span class="sr-only">مرحله 4 در انتظار</span>
-        </div>
-        </nav>
-    </header>
-
-    @using (Html.BeginForm("Create", "InsuranceTariff", FormMethod.Post, new { @class = "medical-form", id = "insuranceTariffForm", role = "form", @aria_labelledby = "page-title" }))
-                    {
-                        @Html.AntiForgeryToken()
-        @Html.HiddenFor(m => m.IdempotencyKey)
-
-        <!-- 🏥 MEDICAL: Error Summary -->
-        <div id="errorSummary" role="alert" aria-live="polite">
-                        @Html.ValidationSummary(true, "", new { @class = "alert alert-danger" })
+    <div class="medical-form-card">
+        <!-- Header -->
+        <div class="medical-form-header">
+            <h2 class="mb-2">
+                <i class="fas fa-money-bill-wave"></i>
+                ایجاد تعرفه بیمه جدید
+            </h2>
+            <p class="mb-0 opacity-75">تعریف تعرفه جدید برای خدمات درمانی و بیمه‌ای</p>
         </div>
 
-        <div class="medical-form-grid">
-            <!-- 🏥 MEDICAL: اطلاعات پایه -->
-            <fieldset class="medical-fieldset">
-                <legend class="medical-fieldset-legend">اطلاعات پایه</legend>
+        <!-- Form Body -->
+        <div class="medical-form-body">
+            @using (Html.BeginForm("Create", "InsuranceTariff", FormMethod.Post, new { @class = "medical-form", @id = "insuranceTariffForm" }))
+            {
+                @Html.AntiForgeryToken()
+                @Html.HiddenFor(m => m.IdempotencyKey, new { @id = "idempotencyKey" })
 
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.DepartmentId, new { @class = "medical-form-label required", @for = "DepartmentId" })
-                    @Html.DropDownListFor(m => m.DepartmentId, Model.DepartmentSelectList, "انتخاب دپارتمان", new
-                    {
-                        @class = "medical-form-select",
-                        id = "DepartmentId",
-                        @aria_required = "true",
-                        @aria_describedby = "DepartmentId-help DepartmentId-error"
-                    })
-                    @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "medical-form-error", id = "DepartmentId-error" })
-                    <div class="medical-form-help" id="DepartmentId-help">دپارتمان مربوط به خدمت را انتخاب کنید</div>
-                            </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.ServiceCategoryId, new { @class = "medical-form-label", @for = "ServiceCategoryId" })
-                    @Html.DropDownListFor(m => m.ServiceCategoryId, Model.ServiceCategorySelectList, "انتخاب دسته‌بندی خدمت", new
-                    {
-                        @class = "medical-form-select",
-                        id = "ServiceCategoryId",
-                        @aria_describedby = "ServiceCategoryId-help ServiceCategoryId-error"
-                    })
-                    @Html.ValidationMessageFor(m => m.ServiceCategoryId, "", new { @class = "medical-form-error", id = "ServiceCategoryId-error" })
-                    <div class="medical-form-help" id="ServiceCategoryId-help">دسته‌بندی خدمت را انتخاب کنید</div>
-                            </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.ServiceId, new { @class = "medical-form-label required", @for = "ServiceId" })
-                    @Html.DropDownListFor(m => m.ServiceId, Model.ServiceSelectList, "انتخاب خدمت", new
-                    {
-                        @class = "medical-form-select",
-                        id = "ServiceId",
-                        @aria_required = "true",
-                        @aria_describedby = "ServiceId-help ServiceId-error"
-                    })
-                    @Html.ValidationMessageFor(m => m.ServiceId, "", new { @class = "medical-form-error", id = "ServiceId-error" })
-                    <div class="medical-form-help" id="ServiceId-help">خدمت مورد نظر را انتخاب کنید</div>
-                                    </div>
-            </fieldset>
-
-            <!-- 🏥 MEDICAL: اطلاعات بیمه -->
-            <fieldset class="medical-fieldset">
-                <legend class="medical-fieldset-legend">اطلاعات بیمه</legend>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.InsuranceProviderId, new { @class = "medical-form-label required", @for = "InsuranceProviderId" })
-                    @Html.DropDownListFor(m => m.InsuranceProviderId, Model.InsuranceProviderSelectList, "انتخاب ارائه‌دهنده بیمه", new
-                    {
-                        @class = "medical-form-select",
-                        id = "InsuranceProviderId",
-                        @aria_required = "true",
-                        @aria_describedby = "InsuranceProviderId-help InsuranceProviderId-error"
-                    })
-                    @Html.ValidationMessageFor(m => m.InsuranceProviderId, "", new { @class = "medical-form-error", id = "InsuranceProviderId-error" })
-                    <div class="medical-form-help" id="InsuranceProviderId-help">ارائه‌دهنده بیمه را انتخاب کنید</div>
-                        </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.InsurancePlanId, new { @class = "medical-form-label required", @for = "InsurancePlanId" })
-                    @Html.DropDownListFor(m => m.InsurancePlanId, Model.InsurancePlanSelectList, "انتخاب طرح بیمه", new
-                    {
-                        @class = "medical-form-select",
-                        id = "InsurancePlanId",
-                        @aria_required = "true",
-                        @aria_describedby = "InsurancePlanId-help InsurancePlanId-error"
-                    })
-                    @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "medical-form-error", id = "InsurancePlanId-error" })
-                    <div class="medical-form-help" id="InsurancePlanId-help">طرح بیمه مورد نظر را انتخاب کنید</div>
-                                </div>
-            </fieldset>
-
-            <!-- 🏥 MEDICAL: قواعد محاسبه -->
-            <fieldset class="medical-fieldset">
-                <legend class="medical-fieldset-legend">قواعد محاسبه</legend>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.TariffPrice, new { @class = "medical-form-label" })
-                    @Html.TextBoxFor(m => m.TariffPrice, new { @class = "medical-form-input currency", id = "TariffPrice", placeholder = "0", data_persian_numbers = "true" })
-                    @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "medical-form-error" })
-                    <div class="medical-form-help">مبلغ تعرفه (تومان) - در صورت عدم ورود از قیمت پایه خدمت استفاده می‌شود</div>
-                            </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.PatientShare, new { @class = "medical-form-label" })
-                    @Html.TextBoxFor(m => m.PatientShare, new { @class = "medical-form-input currency", id = "PatientShare", placeholder = "0", data_persian_numbers = "true" })
-                    @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "medical-form-error" })
-                    <div class="medical-form-help">سهم بیمار (تومان)</div>
-                        </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.InsurerShare, new { @class = "medical-form-label" })
-                    @Html.TextBoxFor(m => m.InsurerShare, new { @class = "medical-form-input currency", id = "InsurerShare", placeholder = "0", data_persian_numbers = "true" })
-                    @Html.ValidationMessageFor(m => m.InsurerShare, "", new { @class = "medical-form-error" })
-                    <div class="medical-form-help">سهم بیمه (تومان)</div>
-                        </div>
-
-                <!-- 🏥 MEDICAL: محاسبه خودکار -->
-                <div class="medical-card">
-                    <h4>محاسبه خودکار</h4>
-                    <div class="medical-form-group">
-                        <button type="button" id="calculateButton" class="medical-btn medical-btn-primary">
-                            <i class="fa fa-calculator"></i> محاسبه خودکار
-                                    </button>
-                        <div id="calculationResult" class="medical-form-help">
-                            <div id="calculationTimestamp"></div>
-                        </div>
-                        <!-- 🚀 FIX: Add calculation summary div -->
-                        <div id="calculationSummary" class="medical-form-help"></div>
+                <!-- Service Selection Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-stethoscope"></i>
+                            انتخاب خدمت
+                        </h5>
                     </div>
                 </div>
-            </fieldset>
 
-            <!-- 🏥 MEDICAL: تاریخ اثر -->
-            <fieldset class="medical-fieldset">
-                <legend class="medical-fieldset-legend">تاریخ اثر</legend>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.StartDate, new { @class = "medical-form-label" })
-                    @Html.TextBoxFor(m => m.StartDate, new { @class = "medical-form-input persian-date", placeholder = "1403/01/01", id = "StartDate" })
-                    @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "medical-form-error" })
-                    <div class="medical-form-help">تاریخ شروع اعتبار تعرفه (فرمت: 1403/01/01)</div>
-                </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.EndDate, new { @class = "medical-form-label" })
-                    @Html.TextBoxFor(m => m.EndDate, new { @class = "medical-form-input persian-date", placeholder = "1403/12/29", id = "EndDate" })
-                    @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "medical-form-error" })
-                    <div class="medical-form-help">تاریخ پایان اعتبار تعرفه (فرمت: 1403/12/29)</div>
-            </div>
-            </fieldset>
-
-            <!-- 🏥 MEDICAL: وضعیت -->
-            <fieldset class="medical-fieldset">
-                <legend class="medical-fieldset-legend">وضعیت</legend>
-
-                <div class="medical-toggle">
-                    @Html.CheckBoxFor(m => m.IsActive, new { @class = "medical-toggle-input", id = "IsActive" })
-                    @Html.LabelFor(m => m.IsActive, new { @class = "medical-form-label" })
-                    <div class="medical-form-help">تعرفه فعال باشد</div>
-        </div>
-
-                <div class="medical-form-group">
-                    @Html.LabelFor(m => m.Notes, new { @class = "medical-form-label" })
-                    @Html.TextAreaFor(m => m.Notes, new { @class = "medical-form-textarea", rows = 4, placeholder = "یادداشت‌های اضافی...", id = "Notes" })
-                    @Html.ValidationMessageFor(m => m.Notes, "", new { @class = "medical-form-error" })
-                    <div class="medical-form-help">یادداشت‌های اضافی در مورد تعرفه</div>
-                </div>
-            </fieldset>
-
-            <!-- 🏥 MEDICAL: عملیات گروهی -->
-            <fieldset class="medical-fieldset">
-                <legend class="medical-fieldset-legend">عملیات گروهی</legend>
-
-                <div class="medical-toggle">
-                    @Html.CheckBoxFor(m => m.IsAllServiceCategories, new { @class = "medical-toggle-input", id = "IsAllServiceCategories" })
-                    @Html.LabelFor(m => m.IsAllServiceCategories, new { @class = "medical-form-label" })
-                    <div class="medical-form-help">اعمال برای همه دسته‌بندی‌های خدمت</div>
+                <div class="row">
+                    <!-- Department -->
+                    <div class="col-md-6 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="DepartmentId">
+                                دپارتمان <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.DepartmentId, Model.Departments, "دپارتمان مربوط به خدمت را انتخاب کنید", new { @class = "medical-form-control", @id = "DepartmentId", @required = "required" })
+                            <div class="medical-form-help">دپارتمان مربوط به خدمت را انتخاب کنید</div>
+                            @Html.ValidationMessageFor(m => m.DepartmentId, "", new { @class = "medical-form-error" })
+                        </div>
                     </div>
 
-                <div class="medical-toggle">
-                    @Html.CheckBoxFor(m => m.IsAllServices, new { @class = "medical-toggle-input", id = "IsAllServices" })
-                    @Html.LabelFor(m => m.IsAllServices, new { @class = "medical-form-label" })
-                    <div class="medical-form-help">اعمال برای همه خدمات</div>
+                    <!-- Service Category -->
+                    <div class="col-md-6 mb-3 service-selection-group">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="ServiceCategoryId">
+                                سرفصل خدمت
+                            </label>
+                            @Html.DropDownListFor(m => m.ServiceCategoryId, Model.ServiceCategories, "دسته‌بندی خدمت را انتخاب کنید", new { @class = "medical-form-control", @id = "ServiceCategoryId" })
+                            <div class="medical-form-help">دسته‌بندی خدمت را انتخاب کنید</div>
+                            @Html.ValidationMessageFor(m => m.ServiceCategoryId, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
                 </div>
-            </fieldset>
-            </div>
 
-        <!-- 🏥 MEDICAL: Action Buttons -->
-        <div class="medical-btn-group">
-            <button type="button" class="medical-btn medical-btn-secondary" onclick="history.back()">
-                <i class="fa fa-arrow-right"></i> انصراف
-            </button>
-            <button type="submit" class="medical-btn medical-btn-primary" id="submitButton">
-                <i class="fa fa-save"></i> ثبت تعرفه
-            </button>
+                <div class="row">
+                    <!-- Service -->
+                    <div class="col-md-6 mb-3 service-selection-group">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="ServiceId">
+                                خدمت <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.ServiceId, Model.Services, "خدمت مورد نظر را انتخاب کنید", new { @class = "medical-form-control", @id = "ServiceId" })
+                            <div class="medical-form-help">خدمت مورد نظر را انتخاب کنید</div>
+                            @Html.ValidationMessageFor(m => m.ServiceId, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
+
+                    <!-- All Services Checkbox -->
+                    <div class="col-md-6 mb-3">
+                        <div class="medical-form-group">
+                            <div class="form-check">
+                                <input type="checkbox" name="IsAllServices" id="IsAllServices" class="form-check-input" value="true" />
+                                <label class="form-check-label" for="IsAllServices">
+                                    ایجاد تعرفه برای همه خدمات
+                                </label>
+                            </div>
+                            <div class="medical-form-help">در صورت انتخاب، تعرفه برای همه خدمات ایجاد می‌شود</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Insurance Information Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-shield-alt"></i>
+                            اطلاعات بیمه
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Insurance Provider -->
+                    <div class="col-md-6 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="InsuranceProviderId">
+                                ارائه‌دهنده بیمه <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.InsuranceProviderId, Model.InsuranceProviders, "ارائه‌دهنده بیمه را انتخاب کنید", new { @class = "medical-form-control", @id = "InsuranceProviderId", @required = "required" })
+                            <div class="medical-form-help">ارائه‌دهنده بیمه را انتخاب کنید</div>
+                            @Html.ValidationMessageFor(m => m.InsuranceProviderId, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
+
+                    <!-- Insurance Plan -->
+                    <div class="col-md-6 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="InsurancePlanId">
+                                طرح بیمه <span class="text-danger">*</span>
+                            </label>
+                            @Html.DropDownListFor(m => m.InsurancePlanId, Model.InsurancePlans, "طرح بیمه مورد نظر را انتخاب کنید", new { @class = "medical-form-control", @id = "InsurancePlanId", @required = "required" })
+                            <div class="medical-form-help">طرح بیمه مورد نظر را انتخاب کنید</div>
+                            @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tariff Calculation Section -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h5 class="text-primary mb-3">
+                            <i class="fas fa-calculator"></i>
+                            قواعد محاسبه
+                        </h5>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <!-- Tariff Price -->
+                    <div class="col-md-4 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="TariffPrice">
+                                قیمت تعرفه (تومان)
+                            </label>
+                            @Html.TextBoxFor(m => m.TariffPrice, new { @class = "medical-form-control", @id = "TariffPrice", @type = "number", @min = "0" })
+                            <div class="medical-form-help">مبلغ تعرفه (تومان) - در صورت عدم ورود از قیمت پایه خدمت استفاده می‌شود</div>
+                            @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
+
+                    <!-- Patient Share -->
+                    <div class="col-md-4 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="PatientShare">
+                                سهم بیمار (تومان)
+                            </label>
+                            @Html.TextBoxFor(m => m.PatientShare, new { @class = "medical-form-control", @id = "PatientShare", @type = "number", @min = "0" })
+                            <div class="medical-form-help">سهم بیمار (تومان)</div>
+                            @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
+
+                    <!-- Insurer Share -->
+                    <div class="col-md-4 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="InsurerShare">
+                                سهم بیمه (تومان)
+                            </label>
+                            @Html.TextBoxFor(m => m.InsurerShare, new { @class = "medical-form-control", @id = "InsurerShare", @type = "number", @min = "0" })
+                            <div class="medical-form-help">سهم بیمه (تومان)</div>
+                            @Html.ValidationMessageFor(m => m.InsurerShare, "", new { @class = "medical-form-error" })
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Auto Calculation Section -->
+                <div class="medical-calculation-card">
+                    <div class="medical-calculation-header">
+                        <i class="fas fa-calculator"></i>
+                        محاسبه خودکار
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <button type="button" class="medical-btn medical-btn-primary" id="calculateBtn">
+                                <i class="fas fa-calculator"></i>
+                                محاسبه خودکار
+                            </button>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="medical-progress">
+                                <div class="medical-progress-bar" id="progressBar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculation Results -->
+                    <div id="calculationResults" style="display: none;">
+                        <div class="medical-calculation-result">
+                            <div class="medical-calculation-field">
+                                <span class="medical-calculation-label">قیمت تعرفه:</span>
+                                <span class="medical-calculation-value" id="calculatedTariffPrice">0 تومان</span>
+                            </div>
+                            <div class="medical-calculation-field">
+                                <span class="medical-calculation-label">سهم بیمار:</span>
+                                <span class="medical-calculation-value" id="calculatedPatientShare">0 تومان</span>
+                            </div>
+                            <div class="medical-calculation-field">
+                                <span class="medical-calculation-label">سهم بیمه:</span>
+                                <span class="medical-calculation-value" id="calculatedInsurerShare">0 تومان</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Calculation Summary -->
+                    <div id="calculationSummary" class="medical-form-help"></div>
+                </div>
+
+                <!-- Form Actions -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between">
+                            <a href="@Url.Action("Index")" class="medical-btn medical-btn-secondary">
+                                <i class="fas fa-arrow-right"></i>
+                                بازگشت
+                            </a>
+                            <button type="submit" class="medical-btn medical-btn-success">
+                                <i class="fas fa-save"></i>
+                                ایجاد تعرفه
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div class="medical-loading" id="loadingOverlay">
+                    <div class="medical-spinner"></div>
+                    <p>در حال پردازش...</p>
+                </div>
+            }
         </div>
-    }
+    </div>
 </div>
 
 @section Scripts {
     <script src="~/Scripts/jquery.validate.min.js"></script>
     <script src="~/Scripts/jquery.validate.unobtrusive.min.js"></script>
+    <script src="~/Scripts/select2.min.js"></script>
+    <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
 
     <script>
-        $(document).ready(function() {
-            // 🏥 MEDICAL: Initialize form
-            console.log('🏥 MEDICAL: Insurance Tariff Create form initialized');
+        (function () {
+            // ---------- Utils ----------
+            function convertPersianToEnglish(str) {
+                if (!str) return str;
+                return str.toString()
+                    .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+                    .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d))
+                    .replace(/[,\s]/g, '');
+            }
 
-            // Load insurance providers initially
-            loadInsuranceProviders();
+            function formatCurrency(value) {
+                if (value === null || value === undefined || value === '') return '';
+                var num = parseFloat(convertPersianToEnglish(value));
+                if (isNaN(num)) return '';
+                return num.toLocaleString('fa-IR');
+            }
 
-            // Setup cascading dropdowns
-            setupCascadingDropdowns();
+            function parseCurrency(value) {
+                if (!value) return 0;
+                var clean = convertPersianToEnglish(value.toString().replace(/[,\s]/g, ''));
+                return parseFloat(clean) || 0;
+            }
 
-            // Setup form validation
-            setupFormValidation();
+            // ---------- Global State ----------
+            var calculationTimeout, lastCalculationData = null, isCalculating = false;
 
-            // Setup currency formatting
-            setupCurrencyFormatting();
+            // ---------- Initialize ----------
+            $(document).ready(function () {
+                console.log('🏥 MEDICAL: Insurance Tariff Create form initialized');
 
-            // Setup date validation
-            setupDateValidation();
+                // Generate idempotency key
+                $('#idempotencyKey').val('create_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9));
 
-            // Setup form protection
-            setupFormProtection();
-
-            // Setup accessibility
-            setupAccessibility();
-
-            // Setup auto-calculation
-            setupAutoCalculation();
-
-            // Setup Persian number conversion
-            setupPersianNumberConversion();
-
-            // Setup number input handling
-            setupNumberInputHandling();
-        });
-
-        // 🏥 MEDICAL: Cascading Dropdowns
-        function setupCascadingDropdowns() {
-            console.log('🏥 MEDICAL: Setting up cascading dropdowns');
-
-            // Department -> Service Categories
-            $('#DepartmentId').on('change', function() {
-                var departmentId = $(this).val();
-                console.log('🏥 MEDICAL: Department changed to:', departmentId);
-
-                if (departmentId) {
-                    loadServiceCategories(departmentId);
-                } else {
-                    clearServiceCategories();
-                }
-                clearServices();
+                loadInitialDataParallel();
+                setupFormProtection();
+                setupCurrencyFormatting();
+                setupDateValidation();
+                setupPersianNumberConversion();
+                setupNumberInputHandling();
+                setupFormValidation();
+                setupAccessibility();
+                setupAutoCalculation();
             });
-            
-            // Service Category -> Services
-            $('#ServiceCategoryId').on('change', function() {
-                var categoryId = $(this).val();
-                console.log('🏥 MEDICAL: Service Category changed to:', categoryId);
 
-                if (categoryId) {
-                    loadServices(categoryId);
-                } else {
+            // ---------- Cascading Dropdowns ----------
+            function setupCascadingDropdowns() {
+                $('#DepartmentId').off('change').on('change', function () {
+                    var departmentId = $(this).val();
+                    if (departmentId) loadServiceCategories(departmentId); else clearServiceCategories();
                     clearServices();
-                }
-            });
-            
-            // Insurance Provider -> Insurance Plans
-            $('#InsuranceProviderId').on('change', function() {
-                var providerId = $(this).val();
-                console.log('🏥 MEDICAL: Insurance Provider changed to:', providerId);
+                });
 
-                if (providerId) {
-                    loadInsurancePlans(providerId);
-                } else {
-                    clearInsurancePlans();
-                }
-            });
-        }
+                $('#ServiceCategoryId').off('change').on('change', function () {
+                    var categoryId = $(this).val();
+                    if (categoryId) loadServices(categoryId); else clearServices();
+                });
 
-        // 🏥 MEDICAL: Load Service Categories
-        function loadServiceCategories(departmentId) {
-            console.log('🏥 MEDICAL: Loading service categories for department:', departmentId);
+                $('#InsuranceProviderId').off('change').on('change', function () {
+                    var providerId = $(this).val();
+                    if (providerId) loadInsurancePlans(providerId); else clearInsurancePlans();
+                });
+            }
 
-            $('#ServiceCategoryId').prop('disabled', true).html('<option value="">در حال بارگذاری...</option>');
-                
+            function loadServiceCategories(departmentId) {
+                $('#ServiceCategoryId').prop('disabled', true).html('<option value="">در حال بارگذاری...</option>');
                 $.ajax({
-                url: '@Url.Action("GetServiceCategories", "InsuranceTariff")',
-                type: 'GET',
-                dataType: 'json',
-                cache: false,
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                },
-                data: { departmentId: departmentId },
-                    success: function(response) {
-                    console.log('🏥 MEDICAL: Service categories response:', response);
-                    console.log('🏥 MEDICAL: Response data type:', typeof response.data);
-                    console.log('🏥 MEDICAL: Response data length:', response.data ? response.data.length : 'undefined');
-                    console.log('🏥 MEDICAL: Is array:', Array.isArray(response.data));
-
-                    if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
-                        console.log('🏥 MEDICAL: Processing service categories data:', response.data);
-                        var options = '<option value="">انتخاب دسته‌بندی خدمت</option>';
-                        $.each(response.data, function(index, item) {
-                            console.log('🏥 MEDICAL: Processing item:', item);
-                            options += '<option value="' + item.id + '">' + item.name + '</option>';
-                        });
-                        $('#ServiceCategoryId').html(options).prop('disabled', false);
-                        console.log('🏥 MEDICAL: Service categories loaded successfully');
-                    } else {
-                        $('#ServiceCategoryId').html('<option value="">هیچ دسته‌بندی یافت نشد</option>').prop('disabled', false);
-                        console.log('🏥 MEDICAL: No service categories found for department:', departmentId);
-                    }
-                },
-                error: function(xhr, status, error) {
-                    console.error('🏥 MEDICAL: AJAX error loading service categories:', error);
-                    $('#ServiceCategoryId').html('<option value="">خطا در بارگذاری</option>').prop('disabled', false);
-                    }
-                });
-            }
-
-        // 🚀 PERFORMANCE: Load Services with Select2 Remote + Debounce
-        function loadServices(categoryId) {
-            console.log('🏥 MEDICAL: Loading services for category:', categoryId);
-
-            // 🚀 FIX: Destroy existing Select2 before re-initializing
-            if ($('#ServiceId').hasClass('select2-hidden-accessible')) {
-                $('#ServiceId').select2('destroy');
-            }
-
-            // 🚀 PERFORMANCE: Initialize Select2 with Remote Data + Debounce
-            $('#ServiceId').select2({
-                placeholder: 'خدمت مورد نظر را انتخاب کنید',
-                allowClear: true,
-                minimumInputLength: 2,
-                delay: 300, // 🚀 DEBOUNCE: 300ms delay for better performance
-                ajax: {
-                    url: '@Url.Action("GetServices", "InsuranceTariff")',
-                    dataType: 'json',
-                    cache: false,
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    },
-                    data: function(params) {
-                        return {
-                            serviceCategoryId: categoryId,
-                            search: params.term,
-                            page: params.page || 1,
-                            pageSize: 20 // 🚀 PAGING: Server-side paging for performance
-                        };
-                    },
-                    processResults: function(data, params) {
-                        console.log('🏥 MEDICAL: Services response:', data);
-                        
-                        if (data.success && data.data && Array.isArray(data.data)) {
-                            console.log('🏥 MEDICAL: Processing services data:', data.data.length, 'services');
-                            
-                            // 🚀 PERFORMANCE: Process results for Select2
-                            var results = data.data.map(function(item) {
-                                return {
-                                    id: item.id,
-                                    text: item.name,
-                                    description: item.description || ''
-                                };
-                            });
-
-                            return {
-                                results: results,
-                                pagination: {
-                                    more: data.hasMore || false
-                                }
-                            };
-                        } else {
-                            return { results: [] };
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('🏥 MEDICAL: Error loading services:', error);
-                        $('#ServiceId').html('<option value="">خطا در بارگذاری خدمات</option>');
-                    }
-                },
-                templateResult: function(service) {
-                    if (service.loading) {
-                        return service.text;
-                    }
-                    
-                    // 🚀 UX: Enhanced display with description
-                    var $result = $(
-                        '<div class="service-option">' +
-                        '<div class="service-name">' + service.text + '</div>' +
-                        (service.description ? '<div class="service-description">' + service.description + '</div>' : '') +
-                        '</div>'
-                    );
-                    
-                    return $result;
-                },
-                templateSelection: function(service) {
-                    return service.text || service.text;
-                }
-            });
-
-            // 🚀 PERFORMANCE: Load initial data if categoryId is provided
-            if (categoryId) {
-                $('#ServiceId').trigger('change');
-            }
-
-        // 🚀 PERFORMANCE: Load Insurance Providers with Select2 Remote + Debounce
-        function loadInsuranceProviders() {
-            return new Promise(function(resolve, reject) {
-                console.log('🏥 MEDICAL: Loading insurance providers...');
-
-                // 🚀 PERFORMANCE: Initialize Select2 with Remote Data + Debounce
-                $('#InsuranceProviderId').select2({
-                    placeholder: 'ارائه‌دهنده بیمه را انتخاب کنید',
-                    allowClear: true,
-                    minimumInputLength: 1,
-                    delay: 300, // 🚀 DEBOUNCE: 300ms delay for better performance
-                    ajax: {
-                        url: '@Url.Action("GetInsuranceProviders", "InsuranceTariff")',
-                        dataType: 'json',
-                    cache: false,
-                        headers: {
-                            'Cache-Control': 'no-cache, no-store, must-revalidate',
-                            'Pragma': 'no-cache',
-                            'Expires': '0'
-                        },
-                        data: function(params) {
-                            return {
-                                search: params.term,
-                                page: params.page || 1,
-                                pageSize: 10 // 🚀 PAGING: Server-side paging for performance
-                            };
-                        },
-                        processResults: function(data, params) {
-                            console.log('🏥 MEDICAL: Insurance providers response:', data);
-                            
-                            if (data.success && data.data && Array.isArray(data.data)) {
-                                console.log('🏥 MEDICAL: Processing insurance providers data:', data.data.length, 'providers');
-                                
-                                // 🚀 PERFORMANCE: Process results for Select2
-                                var results = data.data.map(function(item) {
-                                    return {
-                                        id: item.id,
-                                        text: item.name,
-                                        description: item.description || ''
-                                    };
-                                });
-
-                                return {
-                                    results: results,
-                                    pagination: {
-                                        more: data.hasMore || false
-                                    }
-                                };
-                            } else {
-                                return { results: [] };
-                            }
-                        },
-                        error: function(xhr, status, error) {
-                            console.error('🏥 MEDICAL: Error loading insurance providers:', error);
-                            reject(error);
-                        }
-                    },
-                    templateResult: function(provider) {
-                        if (provider.loading) {
-                            return provider.text;
-                        }
-                        
-                        // 🚀 UX: Enhanced display with description
-                        var $result = $(
-                            '<div class="provider-option">' +
-                            '<div class="provider-name">' + provider.text + '</div>' +
-                            (provider.description ? '<div class="provider-description">' + provider.description + '</div>' : '') +
-                            '</div>'
-                        );
-                        
-                        return $result;
-                    },
-                    templateSelection: function(provider) {
-                        return provider.text || provider.text;
-                    }
-                });
-
-                // 🚀 PERFORMANCE: Resolve immediately for Select2 initialization
-                resolve([]);
-            });
-        }
-
-        // 🚀 PERFORMANCE: Load Insurance Plans with Select2 Remote + Debounce
-        function loadInsurancePlans(providerId) {
-            console.log('🏥 MEDICAL: Loading insurance plans for provider:', providerId);
-
-            // 🚀 PERFORMANCE: Initialize Select2 with Remote Data + Debounce
-            $('#InsurancePlanId').select2({
-                placeholder: 'طرح بیمه مورد نظر را انتخاب کنید',
-                                allowClear: true,
-                minimumInputLength: 1,
-                delay: 300, // 🚀 DEBOUNCE: 300ms delay for better performance
-                ajax: {
-                    url: '@Url.Action("GetInsurancePlans", "InsuranceTariff")',
-                    dataType: 'json',
-                    cache: false,
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache',
-                        'Expires': '0'
-                    },
-                    data: function(params) {
-                        return {
-                            providerId: providerId,
-                            search: params.term,
-                            page: params.page || 1,
-                            pageSize: 15 // 🚀 PAGING: Server-side paging for performance
-                        };
-                    },
-                    processResults: function(data, params) {
-                        console.log('🏥 MEDICAL: Insurance plans response:', data);
-                        
-                        if (data.success && data.data && Array.isArray(data.data)) {
-                            console.log('🏥 MEDICAL: Processing insurance plans data:', data.data.length, 'plans');
-                            
-                            // 🚀 PERFORMANCE: Process results for Select2
-                            var results = data.data.map(function(item) {
-                                return {
-                                    id: item.id,
-                                    text: item.name,
-                                    planCode: item.planCode || '',
-                                    coveragePercent: item.coveragePercent || 0
-                                };
-                            });
-
-                            return {
-                                results: results,
-                                pagination: {
-                                    more: data.hasMore || false
-                                }
-                            };
-                        } else {
-                            return { results: [] };
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                        console.error('🏥 MEDICAL: Error loading insurance plans:', error);
-                        $('#InsurancePlanId').html('<option value="">خطا در بارگذاری طرح‌های بیمه</option>');
-                    }
-                },
-                templateResult: function(plan) {
-                    if (plan.loading) {
-                        return plan.text;
-                    }
-                    
-                    // 🚀 UX: Enhanced display with plan details
-                    var $result = $(
-                        '<div class="plan-option">' +
-                        '<div class="plan-name">' + plan.text + '</div>' +
-                        (plan.planCode ? '<div class="plan-code">کد: ' + plan.planCode + '</div>' : '') +
-                        (plan.coveragePercent ? '<div class="plan-coverage">پوشش: ' + plan.coveragePercent + '%</div>' : '') +
-                        '</div>'
-                    );
-                    
-                    return $result;
-                },
-                templateSelection: function(plan) {
-                    return plan.text || plan.text;
-                }
-            });
-
-            // 🚀 PERFORMANCE: Load initial data if providerId is provided
-            if (providerId) {
-                $('#InsurancePlanId').trigger('change');
-            }
-            
-        // 🏥 MEDICAL: Clear Functions
-        function clearServiceCategories() {
-            $('#ServiceCategoryId').html('<option value="">انتخاب دسته‌بندی خدمت</option>').prop('disabled', false);
-        }
-
-        function clearServices() {
-            $('#ServiceId').html('<option value="">انتخاب خدمت</option>').prop('disabled', false);
-        }
-
-        function clearInsurancePlans() {
-            $('#InsurancePlanId').html('<option value="">انتخاب طرح بیمه</option>').prop('disabled', false);
-        }
-
-        // 🏥 MEDICAL: Form Validation
-        function setupFormValidation() {
-            $('#insuranceTariffForm').on('submit', function(e) {
-                var isValid = true;
-                var errors = [];
-
-                // Required field validation
-                if (!$('#DepartmentId').val()) {
-                    errors.push('دپارتمان الزامی است');
-                    isValid = false;
-                }
-
-                if (!$('#ServiceId').val()) {
-                    errors.push('خدمت الزامی است');
-                    isValid = false;
-                }
-
-                if (!$('#InsuranceProviderId').val()) {
-                    errors.push('ارائه‌دهنده بیمه الزامی است');
-                    isValid = false;
-                }
-
-                if (!$('#InsurancePlanId').val()) {
-                    errors.push('طرح بیمه الزامی است');
-                    isValid = false;
-                }
-
-                if (!isValid) {
-                    e.preventDefault();
-                    alert('لطفاً فیلدهای اجباری را پر کنید:\n' + errors.join('\n'));
-                }
-            });
-        }
-
-        // 🏥 MEDICAL: Currency Formatting
-        function setupCurrencyFormatting() {
-            $('.currency').on('input', function() {
-                var value = $(this).val().replace(/[^\d]/g, '');
-                if (value) {
-                    var formatted = parseInt(value).toLocaleString('fa-IR');
-                    $(this).val(formatted);
-                }
-            });
-        }
-
-        // 🏥 MEDICAL: Date Validation
-        function setupDateValidation() {
-            $('.persian-date').on('blur', function() {
-                var date = $(this).val();
-                if (date && !isValidPersianDate(date)) {
-                    $(this).addClass('error');
-                    alert('فرمت تاریخ صحیح نیست. مثال: 1403/01/01');
-                        } else {
-                    $(this).removeClass('error');
-                    }
-                });
-            }
-            
-        function isValidPersianDate(dateString) {
-            var pattern = /^\d{4}\/\d{2}\/\d{2}$/;
-            return pattern.test(dateString);
-        }
-
-        // 🏥 MEDICAL: Form Protection
-        function setupFormProtection() {
-            var formChanged = false;
-
-            $('input, select, textarea').on('change', function() {
-                formChanged = true;
-            });
-
-            window.addEventListener('beforeunload', function(e) {
-                if (formChanged) {
-                    e.preventDefault();
-                    e.returnValue = 'تغییرات ذخیره نشده است. آیا مطمئن هستید؟';
-                }
-            });
-
-            $('#insuranceTariffForm').on('submit', function() {
-                formChanged = false;
-            });
-        }
-
-        // 🏥 MEDICAL: Accessibility
-        function setupAccessibility() {
-            // Add ARIA labels
-            $('.medical-form-input, .medical-form-select, .medical-form-textarea').attr('aria-describedby', function() {
-                return $(this).attr('id') + '-help';
-            });
-
-            // Setup keyboard navigation
-            $('.medical-form-input, .medical-form-select, .medical-form-textarea').on('keydown', function(e) {
-                if (e.key === 'Enter' && $(this).is('input, select')) {
-                    e.preventDefault();
-                    var next = $(this).closest('.medical-form-group').next().find('input, select, textarea').first();
-                    if (next.length) {
-                        next.focus();
-                    }
-                    }
-                });
-            }
-
-
-        // 🚀 UX: Progress Indicator Management
-        function updateProgress(step) {
-            $('.progress-step').each(function() {
-                var stepNumber = parseInt($(this).data('step'));
-                $(this).removeClass('active completed');
-
-                if (stepNumber < step) {
-                    $(this).addClass('completed');
-                } else if (stepNumber === step) {
-                    $(this).addClass('active');
-                }
-            });
-        }
-
-        // 🚀 UX: Form Validation Feedback
-        function showFormFeedback(type, message) {
-            var feedbackClass = type === 'success' ? 'form-success' : 'form-error';
-            var feedbackHtml = '<div class="' + feedbackClass + '">' + message + '</div>';
-
-            // Remove existing feedback
-            $('.form-success, .form-error').remove();
-
-            // Add new feedback
-            $('.medical-form').prepend(feedbackHtml);
-
-            // Auto-hide after 5 seconds
-            setTimeout(function() {
-                $('.form-success, .form-error').fadeOut(500, function() {
-                    $(this).remove();
-                });
-            }, 5000);
-        }
-
-        // 🏥 MEDICAL: Advanced Auto-calculation System
-        function setupAutoCalculation() {
-            console.log('🏥 MEDICAL: Setting up advanced auto-calculation system');
-
-            // Real-time calculation triggers - only when both ServiceId and PlanId are available
-            $('#ServiceId, #InsurancePlanId, #TariffPrice, #PatientShare, #InsurerShare, #SupplementaryCoveragePercent').on('change input', function() {
-                // 🚀 UX: Only trigger calculation if both required fields are filled
-                var serviceId = $('#ServiceId').val();
-                var planId = $('#InsurancePlanId').val();
-
-                // 🔍 Debug logging برای بررسی تغییرات
-                console.log('🏥 MEDICAL: Field changed - ServiceId:', serviceId, 'PlanId:', planId);
-
-                if (serviceId && planId) {
-                    debounceCalculation();
-                    updateProgress(2); // Update progress when user interacts
-                        } else {
-                    console.log('🏥 MEDICAL: Skipping calculation - missing required fields. ServiceId:', serviceId, 'PlanId:', planId);
-
-                    // 🚀 UX: Show helpful message to user
-                    if (!serviceId && planId) {
-                        showCalculationResult('info', 'لطفاً ابتدا خدمت را انتخاب کنید');
-                    } else if (serviceId && !planId) {
-                        showCalculationResult('info', 'لطفاً طرح بیمه را انتخاب کنید');
-                    } else if (!serviceId && !planId) {
-                        showCalculationResult('info', 'لطفاً خدمت و طرح بیمه را انتخاب کنید');
-                    }
-                }
-            });
-
-            // Manual calculation button
-            $('#calculateButton').on('click', function() {
-                performCalculation(true);
-            });
-
-            // Auto-calculation on form load if data exists
-            if ($('#ServiceId').val() && $('#InsurancePlanId').val()) {
-                console.log('🏥 MEDICAL: Auto-calculation triggered on form load');
-                setTimeout(function() {
-                    performCalculation(false);
-                }, 1000);
-            }
-        }
-
-        // 🚀 بهینه‌سازی Performance: Debounced calculation با تنظیمات پیشرفته
-        var calculationTimeout;
-        var lastCalculationData = null;
-        var isCalculating = false;
-
-        function debounceCalculation() {
-            clearTimeout(calculationTimeout);
-            calculationTimeout = setTimeout(function() {
-                // بررسی تغییرات واقعی برای جلوگیری از محاسبات غیرضروری
-                var currentData = getCurrentFormData();
-                if (!isDataChanged(lastCalculationData, currentData)) {
-                    console.log('🏥 MEDICAL: No data changes detected, skipping calculation');
-                                return;
-                            }
-
-                console.log('🏥 MEDICAL: Data changes detected, performing calculation');
-                performCalculation(false);
-                lastCalculationData = currentData;
-            }, 300); // کاهش تاخیر برای پاسخگویی بهتر
-        }
-
-        // 🚀 Helper Functions: Utility Functions برای JavaScript
-        function generateCorrelationId() {
-            return 'calc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-        }
-
-        function logCalculationError(correlationId, errorType, errorMessage) {
-            console.error(`🏥 MEDICAL: Calculation Error - CorrelationId: ${correlationId}, Type: ${errorType}, Message: ${errorMessage}`);
-        }
-
-        function logCalculationSuccess(correlationId, duration, data) {
-            console.log(`🏥 MEDICAL: Calculation Success - CorrelationId: ${correlationId}, Duration: ${duration}ms`, data);
-        }
-
-        // 🚀 Performance: Memory Usage Monitoring
-        function getMemoryUsage() {
-            if (performance.memory) {
-                return {
-                    used: Math.round(performance.memory.usedJSHeapSize / 1048576 * 100) / 100,
-                    total: Math.round(performance.memory.totalJSHeapSize / 1048576 * 100) / 100,
-                    limit: Math.round(performance.memory.jsHeapSizeLimit / 1048576 * 100) / 100
-                };
-            }
-            return null;
-        }
-
-        // 🚀 بهینه‌سازی: دریافت داده‌های فرم با Cache و Validation
-        function getCurrentFormData() {
-            const formData = {
-                serviceId: $('#ServiceId').val(),
-                planId: $('#InsurancePlanId').val(),
-                tariffPrice: convertPersianToEnglish($('#TariffPrice').val()),
-                patientShare: convertPersianToEnglish($('#PatientShare').val()),
-                insurerShare: convertPersianToEnglish($('#InsurerShare').val()),
-                supplementaryPercent: $('#SupplementaryCoveragePercent').val(),
-                departmentId: $('#DepartmentId').val(),
-                serviceCategoryId: $('#ServiceCategoryId').val()
-            };
-
-            // 🔍 Debug logging برای بررسی داده‌های فرم
-            console.log('🏥 MEDICAL: Raw form data:', {
-                serviceId: $('#ServiceId').val(),
-                planId: $('#InsurancePlanId').val(),
-                tariffPrice: $('#TariffPrice').val(),
-                patientShare: $('#PatientShare').val(),
-                insurerShare: $('#InsurerShare').val(),
-                supplementaryPercent: $('#SupplementaryCoveragePercent').val(),
-                departmentId: $('#DepartmentId').val(),
-                serviceCategoryId: $('#ServiceCategoryId').val()
-            });
-
-            // 🚀 Validation: بررسی صحت داده‌ها
-            if (!formData.serviceId || formData.serviceId === '') {
-                console.warn('🏥 MEDICAL: ServiceId is empty');
-            }
-            if (!formData.planId || formData.planId === '') {
-                console.warn('🏥 MEDICAL: PlanId is empty');
-            }
-
-            return formData;
-        }
-
-        // 🚀 بهینه‌سازی: بررسی تغییرات داده‌ها با Deep Comparison
-        function isDataChanged(oldData, newData) {
-            if (!oldData) return true;
-
-            // 🔍 Debug logging برای بررسی تغییرات
-            console.log('🏥 MEDICAL: Data comparison - Old:', oldData, 'New:', newData);
-
-            // 🚀 Performance: بررسی فیلدهای کلیدی اول
-            const keyFields = ['serviceId', 'planId'];
-            for (const field of keyFields) {
-                if (oldData[field] !== newData[field]) {
-                    console.log(`🏥 MEDICAL: Key field changed - ${field}: ${oldData[field]} -> ${newData[field]}`);
-                    return true;
-                }
-            }
-
-            // 🚀 Performance: بررسی فیلدهای محاسباتی
-            const calculationFields = ['tariffPrice', 'patientShare', 'insurerShare', 'supplementaryPercent'];
-            for (const field of calculationFields) {
-                const oldValue = parseFloat(oldData[field]) || 0;
-                const newValue = parseFloat(newData[field]) || 0;
-                if (Math.abs(oldValue - newValue) > 0.01) { // tolerance for floating point
-                    console.log(`🏥 MEDICAL: Calculation field changed - ${field}: ${oldValue} -> ${newValue}`);
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        // 🚀 بهینه‌سازی: Main calculation function با Performance Monitoring و Error Handling
-        function performCalculation(showLoading = true) {
-            // 🚀 Performance: جلوگیری از محاسبات همزمان
-            if (isCalculating) {
-                console.log('🏥 MEDICAL: Calculation already in progress, skipping');
-                return;
-            }
-
-            isCalculating = true;
-            const calculationStartTime = performance.now();
-            const correlationId = generateCorrelationId();
-
-            // 🚀 Performance: دریافت داده‌ها با Validation
-            const formData = getCurrentFormData();
-            const serviceId = formData.serviceId;
-            const planId = formData.planId;
-            const currentTariffPrice = parseFloat(formData.tariffPrice) || 0;
-            const currentPatientShare = parseFloat(formData.patientShare) || 0;
-            const currentInsurerShare = parseFloat(formData.insurerShare) || 0;
-            const supplementaryPercent = parseFloat(formData.supplementaryPercent) || 0;
-
-            // 🔍 Debug logging برای بررسی داده‌های فرم
-            console.log('🏥 MEDICAL: Form data extracted:', {
-                serviceId: serviceId,
-                planId: planId,
-                currentTariffPrice: currentTariffPrice,
-                currentPatientShare: currentPatientShare,
-                currentInsurerShare: currentInsurerShare,
-                supplementaryPercent: supplementaryPercent
-            });
-
-            console.log(`🏥 MEDICAL: Performing calculation - CorrelationId: ${correlationId}, ServiceId: ${serviceId}, PlanId: ${planId}`);
-
-            // 🚀 Validation: بررسی داده‌های ورودی
-            if (!serviceId || !planId) {
-                const errorMsg = serviceId ? 'لطفاً طرح بیمه را انتخاب کنید' : 'لطفاً خدمت را انتخاب کنید';
-                console.log('🏥 MEDICAL: Validation failed - ServiceId:', serviceId, 'PlanId:', planId);
-                if (showLoading) {
-                    showCalculationResult('warning', errorMsg);
-                }
-                logCalculationError(correlationId, 'Validation Error', errorMsg);
-                isCalculating = false;
-                return;
-            }
-
-            // 🚀 UX: Show loading state با Animation
-            if (showLoading) {
-                $('#calculateButton').addClass('loading').prop('disabled', true);
-                showCalculationResult('info', 'در حال محاسبه...');
-            }
-
-            // Prepare calculation data
-            var calculationData = {
-                serviceId: serviceId,
-                insurancePlanId: planId,
-                providerId: $('#InsuranceProviderId').val(), // 🚀 FIX: اضافه کردن providerId
-                currentTariffPrice: currentTariffPrice,
-                currentPatientShare: currentPatientShare,
-                currentInsurerShare: currentInsurerShare,
-                supplementaryCoveragePercent: supplementaryPercent,
-                calculationType: 'comprehensive'
-            };
-
-            // 🔍 Debug logging برای بررسی داده‌های محاسبه
-            console.log('🏥 MEDICAL: Calculation data prepared:', calculationData);
-
-            // 🔍 Debug logging برای بررسی فیلدهای فرم
-            console.log('🏥 MEDICAL: Form field values:', {
-                serviceId: $('#ServiceId').val(),
-                planId: $('#InsurancePlanId').val(),
-                providerId: $('#InsuranceProviderId').val(),
-                tariffPrice: $('#TariffPrice').val(),
-                patientShare: $('#PatientShare').val(),
-                insurerShare: $('#InsurerShare').val(),
-                supplementaryPercent: $('#SupplementaryCoveragePercent').val()
-            });
-
-            // 🚀 بهینه‌سازی: AJAX Call با Performance Monitoring و Enhanced Error Handling
-            $.ajax({
-                url: '@Url.Action("CalculateAdvancedTariff", "InsuranceTariff")',
-                type: 'POST',
-                dataType: 'json',
-                cache: false,
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache',
-                    'Expires': '0'
-                },
-                timeout: 15000, // 15 ثانیه timeout
-                data: {
-                    serviceId: serviceId,
-                    insurancePlanId: planId,
-                    providerId: $('#InsuranceProviderId').val(),
-                    currentTariffPrice: currentTariffPrice,
-                    currentPatientShare: currentPatientShare,
-                    currentInsurerShare: currentInsurerShare,
-                    supplementaryCoveragePercent: supplementaryPercent,
-                    calculationType: 'comprehensive',
-                    correlationId: correlationId,
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                beforeSend: function(xhr) {
-                    // 🚀 Performance: اضافه کردن correlation ID به header
-                    xhr.setRequestHeader('X-Correlation-ID', correlationId);
-                    xhr.setRequestHeader('X-Request-Type', 'TariffCalculation');
-                },
-                success: function(response) {
-                    const calculationDuration = performance.now() - calculationStartTime;
-                    const memoryUsage = getMemoryUsage();
-
-                    console.log(`🏥 MEDICAL: Advanced calculation response - CorrelationId: ${correlationId}, Duration: ${calculationDuration.toFixed(2)}ms`, response);
-
-                    if (response.success && response.data) {
-                        updateFormWithCalculatedValues(response.data);
-                        showCalculationResult('success', `محاسبه انجام شد - ${new Date().toLocaleTimeString('fa-IR')} (${calculationDuration.toFixed(0)}ms)`);
-                        showFormFeedback('success', 'محاسبه تعرفه با موفقیت انجام شد');
-                        updateProgress(3); // Move to next step
-
-                        // 🚀 Performance: Log calculation details with enhanced metrics
-                        logCalculationDetails(response.data, calculationDuration, memoryUsage);
-                        logCalculationSuccess(correlationId, calculationDuration, response.data);
-                        } else {
-                        const errorMsg = `خطا در محاسبه: ${response.message || 'خطای نامشخص'}`;
-                        showCalculationResult('danger', errorMsg);
-                        showFormFeedback('error', errorMsg);
-                        logCalculationError(correlationId, 'Server Error', response.message || 'خطای نامشخص');
-                        }
-                    },
-                    error: function(xhr, status, error) {
-                    const calculationDuration = performance.now() - calculationStartTime;
-                    const memoryUsage = getMemoryUsage();
-
-                    console.error(`🏥 MEDICAL: Calculation error - CorrelationId: ${correlationId}, Status: ${status}, Error: ${error}, Duration: ${calculationDuration.toFixed(2)}ms`);
-
-                    let errorMessage = 'خطا در محاسبه';
-                    let errorType = 'Network Error';
-
-                    if (status === 'timeout') {
-                        errorMessage = 'زمان محاسبه به پایان رسید';
-                        errorType = 'Timeout Error';
-                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
-                        errorMessage += ': ' + xhr.responseJSON.message;
-                        errorType = 'Server Error';
-                    } else if (xhr.status === 500) {
-                        errorMessage = 'خطا در سرور';
-                        errorType = 'Server Error';
-                    } else if (xhr.status === 404) {
-                        errorMessage = 'سرویس یافت نشد';
-                        errorType = 'Not Found Error';
-                    } else if (xhr.status === 0) {
-                        errorMessage = 'خطا در اتصال به سرور';
-                        errorType = 'Connection Error';
-                    }
-
-                    showCalculationResult('danger', errorMessage);
-                    showFormFeedback('error', errorMessage);
-                    logCalculationError(correlationId, errorType, errorMessage);
-                },
-                complete: function() {
-                    isCalculating = false;
-                    if (showLoading) {
-                        $('#calculateButton').removeClass('loading').prop('disabled', false);
-                    }
-                    }
-                });
-            }
-            
-        // Update form fields with calculated values
-        function updateFormWithCalculatedValues(data) {
-            console.log('🏥 MEDICAL: Updating form with calculated values:', data);
-
-            // Update tariff price if calculated
-            if (data.tariffPrice !== undefined && data.tariffPrice !== null) {
-                $('#TariffPrice').val(formatCurrency(data.tariffPrice));
-                $('#TariffPrice').trigger('change');
-            }
-
-            // Update patient share if calculated
-            if (data.patientShare !== undefined && data.patientShare !== null) {
-                $('#PatientShare').val(formatCurrency(data.patientShare));
-                $('#PatientShare').trigger('change');
-            }
-
-            // Update insurer share if calculated
-            if (data.insurerShare !== undefined && data.insurerShare !== null) {
-                $('#InsurerShare').val(formatCurrency(data.insurerShare));
-                $('#InsurerShare').trigger('change');
-            }
-
-            // Update supplementary coverage if calculated
-            if (data.supplementaryCoveragePercent !== undefined && data.supplementaryCoveragePercent !== null) {
-                $('#SupplementaryCoveragePercent').val(data.supplementaryCoveragePercent);
-                $('#SupplementaryCoveragePercent').trigger('change');
-            }
-
-            // Update calculation summary
-            updateCalculationSummary(data);
-        }
-
-        // Update calculation summary display
-        function updateCalculationSummary(data) {
-            var summaryHtml = '<div class="calculation-summary">';
-            summaryHtml += '<h6>خلاصه محاسبه:</h6>';
-            summaryHtml += '<ul class="list-unstyled">';
-
-            if (data.tariffPrice) {
-                summaryHtml += '<li><strong>قیمت تعرفه:</strong> ' + formatCurrency(data.tariffPrice) + ' تومان</li>';
-            }
-            if (data.patientShare) {
-                summaryHtml += '<li><strong>سهم بیمار:</strong> ' + formatCurrency(data.patientShare) + ' تومان</li>';
-            }
-            if (data.insurerShare) {
-                summaryHtml += '<li><strong>سهم بیمه:</strong> ' + formatCurrency(data.insurerShare) + ' تومان</li>';
-            }
-            if (data.supplementaryCoveragePercent) {
-                summaryHtml += '<li><strong>پوشش تکمیلی:</strong> ' + data.supplementaryCoveragePercent + '%</li>';
-            }
-            if (data.totalCoveragePercent) {
-                summaryHtml += '<li><strong>پوشش کل:</strong> ' + data.totalCoveragePercent + '%</li>';
-            }
-
-            summaryHtml += '</ul>';
-            summaryHtml += '</div>';
-
-            $('#calculationSummary').html(summaryHtml);
-        }
-
-        // Show calculation result
-        function showCalculationResult(type, message) {
-            var alertClass = 'alert-' + type;
-            var icon = type === 'success' ? '✅' : type === 'warning' ? '⚠️' : type === 'danger' ? '❌' : 'ℹ️';
-
-            $('#calculationResult').html('<div class="alert ' + alertClass + '">' + icon + ' ' + message + '</div>');
-        }
-
-        // 🚀 بهینه‌سازی: Log calculation details با Performance Metrics
-        // 🚀 Performance: Log calculation details with enhanced metrics
-        function logCalculationDetails(data, duration, memoryUsage) {
-            const performanceMetrics = {
-                timestamp: new Date().toISOString(),
-                serviceId: $('#ServiceId').val(),
-                insurancePlanId: $('#InsurancePlanId').val(),
-                calculatedValues: data,
-                user: '@User.Identity.Name',
-                performance: {
-                    duration: duration ? duration.toFixed(2) + 'ms' : 'N/A',
-                    memoryUsage: memoryUsage || (performance.memory ? {
-                        used: Math.round(performance.memory.usedJSHeapSize / 1024 / 1024) + 'MB',
-                        total: Math.round(performance.memory.totalJSHeapSize / 1024 / 1024) + 'MB'
-                    } : 'N/A'),
-                    connectionType: navigator.connection ? navigator.connection.effectiveType : 'unknown',
-                    userAgent: navigator.userAgent,
-                    formData: getCurrentFormData()
-                }
-            };
-
-            console.log('🏥 MEDICAL: Calculation Details:', performanceMetrics);
-
-            // 🚀 REAL-TIME: No localStorage caching - always fresh data
-
-            // 🚀 Performance: ارسال Performance Metrics به Server (اختیاری)
-            if (duration && duration > 1000) { // فقط برای محاسبات کند
-                sendPerformanceMetrics(performanceMetrics);
-            }
-        }
-
-        // 🚀 بهینه‌سازی: ارسال Performance Metrics
-        function sendPerformanceMetrics(metrics) {
-            $.ajax({
-                url: '@Url.Action("LogPerformanceMetrics", "InsuranceTariff")',
-                type: 'POST',
-                data: {
-                    metrics: JSON.stringify(metrics),
-                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                },
-                timeout: 5000,
-                success: function() {
-                    console.log('🏥 MEDICAL: Performance metrics logged successfully');
-                },
-                error: function() {
-                    console.warn('🏥 MEDICAL: Failed to log performance metrics');
-                }
-            });
-        }
-
-        // 🚀 FIX: Safe Select2 initialization
-        function safeSelect2Init(selector, options) {
-            try {
-                // Destroy existing Select2 if present
-                if ($(selector).hasClass('select2-hidden-accessible')) {
-                    $(selector).select2('destroy');
-                }
-                
-                // Initialize Select2 with error handling
-                $(selector).select2(options);
-                console.log('🚀 FIX: Select2 initialized successfully for:', selector);
-            } catch (error) {
-                console.error('🚀 FIX: Error initializing Select2 for', selector, ':', error);
-                // Fallback to regular select
-                $(selector).removeClass('select2-hidden-accessible');
-            }
-        }
-
-        // 🚀 FIX: Single formatCurrency function (removed duplicate)
-        // Note: formatCurrency is already defined above, this duplicate is removed
-
-        // 🚀 TESTING: Form Testing Functions
-        function runFormTests() {
-            console.log('🧪 TESTING: Starting form tests...');
-
-            // Test 1: Form Initialization
-            testFormInitialization();
-
-            // Test 2: Cascading Dropdowns
-            testCascadingDropdowns();
-
-            // Test 3: Auto-calculation
-            testAutoCalculation();
-
-            // Test 4: Form Validation
-            testFormValidation();
-
-            // Test 5: UX Features
-            testUXFeatures();
-
-            console.log('🧪 TESTING: All tests completed');
-        }
-
-        function testFormInitialization() {
-            console.log('🧪 TESTING: Form Initialization');
-
-            // Check if all required elements exist
-            var requiredElements = [
-                '#DepartmentId', '#ServiceCategoryId', '#ServiceId',
-                '#InsuranceProviderId', '#InsurancePlanId',
-                '#TariffPrice', '#PatientShare', '#InsurerShare'
-            ];
-
-            requiredElements.forEach(function(selector) {
-                if ($(selector).length === 0) {
-                    console.error('❌ TEST FAILED: Element not found:', selector);
-                } else {
-                    console.log('✅ TEST PASSED: Element found:', selector);
-                }
-            });
-        }
-
-        function testCascadingDropdowns() {
-            console.log('🧪 TESTING: Cascading Dropdowns');
-
-            // Test department selection
-            if ($('#DepartmentId').length > 0) {
-                console.log('✅ TEST PASSED: Department dropdown exists');
-                        } else {
-                console.error('❌ TEST FAILED: Department dropdown not found');
-            }
-        }
-
-        function testAutoCalculation() {
-            console.log('🧪 TESTING: Auto-calculation');
-
-            // Test calculation button
-            if ($('#calculateButton').length > 0) {
-                console.log('✅ TEST PASSED: Calculate button exists');
-            } else {
-                console.error('❌ TEST FAILED: Calculate button not found');
-            }
-        }
-
-        function testFormValidation() {
-            console.log('🧪 TESTING: Form Validation');
-
-            // Test required fields
-            var requiredFields = ['#DepartmentId', '#ServiceId', '#InsuranceProviderId', '#InsurancePlanId'];
-
-            requiredFields.forEach(function(selector) {
-                var field = $(selector);
-                if (field.length > 0) {
-                    console.log('✅ TEST PASSED: Required field exists:', selector);
-                } else {
-                    console.error('❌ TEST FAILED: Required field not found:', selector);
-                }
-            });
-        }
-
-        function testUXFeatures() {
-            console.log('🧪 TESTING: UX Features');
-
-            // Test loading overlay (removed - no longer needed)
-            console.log('✅ TEST PASSED: Loading overlay test skipped (feature removed)');
-
-            // Test progress indicator
-            if ($('.progress-indicator').length > 0) {
-                console.log('✅ TEST PASSED: Progress indicator exists');
-            } else {
-                console.error('❌ TEST FAILED: Progress indicator not found');
-            }
-        }
-
-        // 🚀 Performance: Parallel loading of initial data
-        function loadInitialDataParallel() {
-            console.log('🚀 PERFORMANCE: Starting parallel data loading...');
-            const startTime = performance.now();
-
-            // Load all initial data in parallel
-            const promises = [
-                loadInsuranceProviders(),
-                loadDepartments()
-            ];
-
-            Promise.all(promises)
-                .then(function(results) {
-                    const duration = performance.now() - startTime;
-                    console.log(`🚀 PERFORMANCE: Parallel loading completed in ${duration.toFixed(2)}ms`);
-
-                    // 🚀 CACHING: Populate dropdowns with loaded data
-                    if (results[0]) { // Insurance Providers
-                        populateDropdown('#InsuranceProviderId', results[0], 'انتخاب ارائه‌دهنده بیمه');
-                    }
-                    if (results[1]) { // Departments
-                        populateDropdown('#DepartmentId', results[1], 'انتخاب دپارتمان');
-                    }
-
-                    // Initialize other components after data is loaded
-                    setupCascadingDropdowns();
-                    setupAutoCalculation();
-                    setupFormValidation();
-                    setupAccessibility();
-
-                    // 🚀 TESTING: Run tests in development mode
-                    if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-                        setTimeout(function() {
-                            runFormTests();
-                        }, 1000);
-                    }
-                })
-                .catch(function(error) {
-                    console.error('🚀 PERFORMANCE: Error in parallel loading:', error);
-                    // Fallback to sequential loading
-                    loadInsuranceProviders();
-                    loadDepartments();
-                });
-        }
-
-        // 🚀 Performance: Load departments in parallel with caching
-        function loadDepartments() {
-            return new Promise(function(resolve, reject) {
-                // 🚀 REAL-TIME: No cache - always fetch fresh data
-
-                // 🚀 PERFORMANCE: Fetch fresh data
-                $.ajax({
-                    url: '@Url.Action("GetDepartments", "Department")',
+                    url: '@Url.Action("GetServiceCategories", "InsuranceTariff")',
                     type: 'GET',
                     dataType: 'json',
                     cache: false,
+                    headers: {'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'},
+                    data: { departmentId: departmentId },
+                    success: function (response) {
+                        if (response.success && Array.isArray(response.data) && response.data.length) {
+                            var opts = '<option value="">انتخاب دسته‌بندی خدمت</option>';
+                            $.each(response.data, function (_, item) { 
+                                opts += '<option value="' + item.id + '">' + item.name + '</option>'; 
+                            });
+                            $('#ServiceCategoryId').html(opts).prop('disabled', false);
+                        } else {
+                            $('#ServiceCategoryId').html('<option value="">هیچ دسته‌بندی یافت نشد</option>').prop('disabled', false);
+                        }
+                    },
+                    error: function () {
+                        $('#ServiceCategoryId').html('<option value="">خطا در بارگذاری</option>').prop('disabled', false);
+                    }
+                });
+            }
+
+            function loadServices(categoryId) {
+                if ($.fn.select2 && $('#ServiceId').data('select2')) {
+                    $('#ServiceId').select2('destroy');
+                }
+                $('#ServiceId').empty();
+
+                $('#ServiceId').select2({
+                    placeholder: 'خدمت مورد نظر را انتخاب کنید',
+                    allowClear: true,
+                    minimumInputLength: 2,
+                    ajax: {
+                        url: '@Url.Action("GetServices", "InsuranceTariff")',
+                        dataType: 'json',
+                        cache: false,
+                        delay: 300,
+                        headers: {'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'},
+                        data: function (params) {
+                            return { serviceCategoryId: categoryId, search: params.term, page: params.page || 1, pageSize: 20 };
+                        },
+                        processResults: function (data) {
+                            if (data.success && Array.isArray(data.data)) {
+                                var results = data.data.map(function (x) { 
+                                    return { id: x.id, text: x.name, description: x.description || '' }; 
+                                });
+                                return { results: results, pagination: { more: !!data.hasMore } };
+                            }
+                            return { results: [] };
+                        }
+                    },
+                    templateResult: function (s) {
+                        if (s.loading) return s.text;
+                        return $('<div class="service-option"><div class="service-name">' + s.text + '</div>' + (s.description ? '<div class="service-description">' + s.description + '</div>' : '') + '</div>');
+                    },
+                    templateSelection: function (s) { return s.text || ''; }
+                });
+                if (categoryId) $('#ServiceId').trigger('change');
+            }
+
+            function loadInsuranceProviders() {
+                return new Promise(function (resolve, reject) {
+                    if ($.fn.select2 && $('#InsuranceProviderId').data('select2')) {
+                        $('#InsuranceProviderId').select2('destroy');
+                    }
+                    $('#InsuranceProviderId').empty();
+
+                    $('#InsuranceProviderId').select2({
+                        placeholder: 'ارائه‌دهنده بیمه را انتخاب کنید',
+                        allowClear: true,
+                        minimumInputLength: 1,
+                        ajax: {
+                            url: '@Url.Action("GetInsuranceProviders", "InsuranceTariff")',
+                            dataType: 'json',
+                            cache: false,
+                            delay: 300,
+                            headers: {'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'},
+                            data: function (p) { return { search: p.term, page: p.page || 1, pageSize: 10 }; },
+                            processResults: function (data) {
+                                if (data.success && Array.isArray(data.data)) {
+                                    var results = data.data.map(function (x) { 
+                                        return { id: x.id, text: x.name, description: x.description || '' }; 
+                                    });
+                                    return { results: results, pagination: { more: !!data.hasMore } };
+                                }
+                                return { results: [] };
+                            },
+                            error: function (xhr, s, e) { reject(e); }
+                        },
+                        templateResult: function (p) {
+                            if (p.loading) return p.text;
+                            return $('<div class="provider-option"><div class="provider-name">' + p.text + '</div>' + (p.description ? '<div class="provider-description">' + p.description + '</div>' : '') + '</div>');
+                        },
+                        templateSelection: function (p) { return p.text || ''; }
+                    });
+                    resolve([]);
+                });
+            }
+
+            function loadInsurancePlans(providerId) {
+                if ($.fn.select2 && $('#InsurancePlanId').data('select2')) {
+                    $('#InsurancePlanId').select2('destroy');
+                }
+                $('#InsurancePlanId').empty();
+
+                $('#InsurancePlanId').select2({
+                    placeholder: 'طرح بیمه مورد نظر را انتخاب کنید',
+                    allowClear: true,
+                    minimumInputLength: 1,
+                    ajax: {
+                        url: '@Url.Action("GetInsurancePlans", "InsuranceTariff")',
+                        dataType: 'json',
+                        cache: false,
+                        delay: 300,
+                        headers: {'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'},
+                        data: function (p) { return { providerId: providerId, search: p.term, page: p.page || 1, pageSize: 15 }; },
+                        processResults: function (data) {
+                            if (data.success && Array.isArray(data.data)) {
+                                var results = data.data.map(function (x) { 
+                                    return { id: x.id, text: x.name, planCode: x.planCode || '', coveragePercent: x.coveragePercent || 0 }; 
+                                });
+                                return { results: results, pagination: { more: !!data.hasMore } };
+                            }
+                            return { results: [] };
+                        }
+                    },
+                    templateResult: function (plan) {
+                        if (plan.loading) return plan.text;
+                        var h = '<div class="plan-option"><div class="plan-name">' + plan.text + '</div>';
+                        if (plan.planCode) h += '<div class="plan-code">کد: ' + plan.planCode + '</div>';
+                        if (plan.coveragePercent) h += '<div class="plan-coverage">پوشش: ' + plan.coveragePercent + '%</div>';
+                        h += '</div>';
+                        return $(h);
+                    },
+                    templateSelection: function (plan) { return plan.text || ''; }
+                });
+                if (providerId) $('#InsurancePlanId').trigger('change');
+            }
+
+            // ---------- Clear Helpers ----------
+            function clearServiceCategories() { 
+                $('#ServiceCategoryId').html('<option value="">انتخاب دسته‌بندی خدمت</option>').prop('disabled', false); 
+            }
+            function clearServices() { 
+                if ($.fn.select2 && $('#ServiceId').data('select2')) {
+                    $('#ServiceId').select2('destroy');
+                }
+                $('#ServiceId').empty(); 
+            }
+            function clearInsurancePlans() { 
+                if ($.fn.select2 && $('#InsurancePlanId').data('select2')) {
+                    $('#InsurancePlanId').select2('destroy');
+                }
+                $('#InsurancePlanId').empty(); 
+            }
+
+            // ---------- Parallel Data Loading ----------
+            function loadInitialDataParallel() {
+                console.log('🚀 PERFORMANCE: Starting parallel data loading...');
+                var startTime = performance.now();
+                
+                Promise.all([
+                    loadInsuranceProviders(),
+                    loadDepartments()
+                ]).then(function() {
+                    var duration = performance.now() - startTime;
+                    console.log('🚀 PERFORMANCE: Parallel loading completed in ' + duration.toFixed(2) + 'ms');
+                }).catch(function(error) {
+                    console.error('🚀 PERFORMANCE: Parallel loading failed:', error);
+                });
+            }
+
+            function loadDepartments() {
+                return new Promise(function (resolve, reject) {
+                    $.ajax({
+                        url: '@Url.Action("GetDepartments", "InsuranceTariff")',
+                        type: 'GET',
+                        dataType: 'json',
+                        cache: false,
+                        headers: {'Cache-Control':'no-cache, no-store, must-revalidate','Pragma':'no-cache','Expires':'0'},
+                        success: function (response) {
+                            if (response.success && Array.isArray(response.data)) {
+                                console.log('🚀 PERFORMANCE: Departments loaded successfully');
+                                resolve(response.data);
+                            } else {
+                                reject('No departments found');
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error('🚀 PERFORMANCE: Failed to load departments:', error);
+                            reject(error);
+                        }
+                    });
+                });
+            }
+
+            // ---------- Form Protection ----------
+            function setupFormProtection() {
+                // Prevent double submission
+                $('#insuranceTariffForm').on('submit', function() {
+                    var submitBtn = $(this).find('button[type="submit"]');
+                    if (submitBtn.prop('disabled')) {
+                        return false;
+                    }
+                    submitBtn.prop('disabled', true);
+                    setTimeout(function() {
+                        submitBtn.prop('disabled', false);
+                    }, 3000);
+                });
+
+                // 🛡️ P0 FIX: Setup custom validation
+                setupCustomValidation();
+                
+                // 🏥 MEDICAL: Setup bulk operation handling
+                setupBulkOperationHandling();
+                
+                // Warn before leaving with unsaved changes
+                var formChanged = false;
+                $('.medical-form-control').on('change input', function() {
+                    formChanged = true;
+                });
+
+                $(window).on('beforeunload', function() {
+                    if (formChanged) {
+                        return 'تغییرات ذخیره نشده‌ای وجود دارد. آیا مطمئن هستید؟';
+                    }
+                });
+
+                $('#insuranceTariffForm').on('submit', function() {
+                    formChanged = false;
+                });
+            }
+
+            // ---------- Bulk Operation Handling ----------
+            function setupBulkOperationHandling() {
+                console.log('🏥 MEDICAL: Setting up bulk operation handling');
+                
+                // Handle IsAllServices checkbox change
+                $('#IsAllServices').on('change', function() {
+                    var isChecked = $(this).is(':checked');
+                    console.log('🏥 MEDICAL: IsAllServices changed:', isChecked);
+                    
+                    if (isChecked) {
+                        // Show confirmation dialog
+                        showBulkOperationConfirmation();
+                        
+                        // Disable service-related dropdowns
+                        disableServiceDropdowns();
+                        
+                        // Clear service selections
+                        clearServiceSelections();
+                        
+                        // Update form labels and help text
+                        updateFormForBulkOperation();
+                    } else {
+                        // Enable service-related dropdowns
+                        enableServiceDropdowns();
+                        
+                        // Restore form labels and help text
+                        restoreFormForSingleOperation();
+                    }
+                });
+                
+                // Handle form submission for bulk operation
+                $('#insuranceTariffForm').on('submit', function(e) {
+                    if ($('#IsAllServices').is(':checked')) {
+                        e.preventDefault();
+                        showBulkOperationProgress();
+                        submitBulkOperation();
+                    }
+                });
+            }
+            
+            function showBulkOperationConfirmation() {
+                var confirmationMessage = `
+                    <div class="alert alert-warning">
+                        <h5><i class="fas fa-exclamation-triangle"></i> تایید عملیات انبوه</h5>
+                        <p>آیا مطمئن هستید که می‌خواهید تعرفه را برای <strong>همه خدمات</strong> ایجاد کنید؟</p>
+                        <p class="mb-0"><small>این عملیات ممکن است زمان‌بر باشد و تعرفه‌های موجود را بررسی می‌کند.</small></p>
+                    </div>
+                `;
+                
+                // Show confirmation in a modal or alert
+                if (typeof Swal !== 'undefined') {
+                    Swal.fire({
+                        title: 'تایید عملیات انبوه',
+                        html: confirmationMessage,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'بله، ادامه بده',
+                        cancelButtonText: 'لغو',
+                        confirmButtonColor: '#d33',
+                        cancelButtonColor: '#3085d6'
+                    }).then((result) => {
+                        if (!result.isConfirmed) {
+                            $('#IsAllServices').prop('checked', false);
+                            enableServiceDropdowns();
+                            restoreFormForSingleOperation();
+                        }
+                    });
+                } else {
+                    // Fallback to browser confirm
+                    if (!confirm('آیا مطمئن هستید که می‌خواهید تعرفه را برای همه خدمات ایجاد کنید؟')) {
+                        $('#IsAllServices').prop('checked', false);
+                        enableServiceDropdowns();
+                        restoreFormForSingleOperation();
+                    }
+                }
+            }
+            
+            function disableServiceDropdowns() {
+                console.log('🏥 MEDICAL: Disabling service dropdowns for bulk operation');
+                
+                // Disable service category dropdown
+                $('#ServiceCategoryId').prop('disabled', true).addClass('disabled');
+                
+                // Disable service dropdown
+                $('#ServiceId').prop('disabled', true).addClass('disabled');
+                
+                // 🚀 P0 FIX: حذف required attribute برای bulk operation
+                $('#ServiceId').removeAttr('required');
+                $('#ServiceCategoryId').removeAttr('required');
+                
+                // Add visual indicators
+                $('.service-selection-group').addClass('bulk-operation-disabled');
+            }
+            
+            function enableServiceDropdowns() {
+                console.log('🏥 MEDICAL: Enabling service dropdowns for single operation');
+                
+                // Enable service category dropdown
+                $('#ServiceCategoryId').prop('disabled', false).removeClass('disabled');
+                
+                // Enable service dropdown
+                $('#ServiceId').prop('disabled', false).removeClass('disabled');
+                
+                // 🚀 P0 FIX: اضافه کردن required attribute برای single operation
+                $('#ServiceId').attr('required', 'required');
+                
+                // Remove visual indicators
+                $('.service-selection-group').removeClass('bulk-operation-disabled');
+            }
+            
+            function clearServiceSelections() {
+                console.log('🏥 MEDICAL: Clearing service selections for bulk operation');
+                
+                // Clear service category selection
+                $('#ServiceCategoryId').val(null).trigger('change');
+                
+                // Clear service selection
+                $('#ServiceId').val(null).trigger('change');
+            }
+            
+            function updateFormForBulkOperation() {
+                console.log('🏥 MEDICAL: Updating form for bulk operation');
+                
+                // Update help text
+                $('.medical-form-help').text('تعرفه برای همه خدمات فعال ایجاد خواهد شد');
+                
+                // Add bulk operation indicator
+                if (!$('#bulkOperationIndicator').length) {
+                    $('<div id="bulkOperationIndicator" class="alert alert-info mt-2">' +
+                        '<i class="fas fa-info-circle"></i> ' +
+                        'حالت عملیات انبوه فعال است - تعرفه برای همه خدمات ایجاد خواهد شد' +
+                        '</div>').insertAfter('#IsAllServices').parent();
+                }
+            }
+            
+            function restoreFormForSingleOperation() {
+                console.log('🏥 MEDICAL: Restoring form for single operation');
+                
+                // Restore help text
+                $('.medical-form-help').text('در صورت انتخاب، تعرفه برای همه خدمات ایجاد می‌شود');
+                
+                // Remove bulk operation indicator
+                $('#bulkOperationIndicator').remove();
+            }
+            
+            function showBulkOperationProgress() {
+                console.log('🏥 MEDICAL: Showing bulk operation progress');
+                
+                // Create progress modal
+                var progressHtml = `
+                    <div id="bulkProgressModal" class="modal fade" tabindex="-1" role="dialog">
+                        <div class="modal-dialog modal-lg" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title">
+                                        <i class="fas fa-cogs"></i> ایجاد تعرفه برای همه خدمات
+                                    </h5>
+                                </div>
+                                <div class="modal-body">
+                                    <div class="progress mb-3">
+                                        <div id="bulkProgressBar" class="progress-bar progress-bar-striped progress-bar-animated" 
+                                             role="progressbar" style="width: 0%"></div>
+                                    </div>
+                                    <div id="bulkProgressText" class="text-center">
+                                        در حال آماده‌سازی عملیات...
+                                    </div>
+                                    <div id="bulkProgressDetails" class="mt-3">
+                                        <small class="text-muted">لطفاً صبر کنید، این عملیات ممکن است چند دقیقه طول بکشد.</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                $('body').append(progressHtml);
+                $('#bulkProgressModal').modal({
+                    backdrop: 'static',
+                    keyboard: false
+                });
+            }
+            
+            function submitBulkOperation() {
+                console.log('🏥 MEDICAL: Submitting bulk operation');
+                
+                // 🚀 P0 FIX: بررسی IsAllServices قبل از ارسال
+                var isAllServices = $('#IsAllServices').is(':checked');
+                console.log('🏥 MEDICAL: IsAllServices checkbox state:', isAllServices);
+                
+                // Update progress
+                updateBulkProgress(10, 'در حال ارسال درخواست...');
+                
+                // Get form data
+                var formData = $('#insuranceTariffForm').serialize();
+                console.log('🏥 MEDICAL: Form data:', formData);
+                
+                // 🚀 P0 FIX: تضمین ارسال IsAllServices
+                if (isAllServices && !formData.includes('IsAllServices=true')) {
+                    console.log('🚀 P0 FIX: Adding IsAllServices=true to form data');
+                    formData += '&IsAllServices=true';
+                }
+                
+                // بررسی وجود IsAllServices در formData
+                if (formData.includes('IsAllServices=true')) {
+                    console.log('✅ IsAllServices=true found in form data');
+                } else if (formData.includes('IsAllServices=false')) {
+                    console.log('❌ IsAllServices=false found in form data');
+                } else {
+                    console.log('⚠️ IsAllServices not found in form data');
+                }
+                
+                // Submit via AJAX
+                $.ajax({
+                    url: '@Url.Action("Create", "InsuranceTariff")',
+                    type: 'POST',
+                    data: formData,
+                    dataType: 'json',
+                    cache: false,
                     headers: {
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache',
                         'Expires': '0'
                     },
                     success: function(response) {
-                        if (response && response.success && response.data) {
-                            console.log('🚀 PERFORMANCE: Departments loaded successfully');
-
-                            // 🚀 REAL-TIME: No caching - data is always fresh
-
-                            resolve(response.data);
+                        console.log('🏥 MEDICAL: Bulk operation response:', response);
+                        
+                        if (response.success) {
+                            updateBulkProgress(100, 'عملیات با موفقیت تکمیل شد!');
+                            
+                            setTimeout(function() {
+                                $('#bulkProgressModal').modal('hide');
+                                if (response.redirectUrl) {
+                                    window.location.href = response.redirectUrl;
+                                } else {
+                                    window.location.href = '@Url.Action("Index", "InsuranceTariff")';
+                                }
+                            }, 2000);
                         } else {
-                            console.warn('🚀 PERFORMANCE: No departments data received');
-                            resolve([]);
+                            var errorMessage = 'خطا در عملیات: ' + (response.message || 'خطای نامشخص');
+                            
+                            // نمایش جزئیات خطا
+                            if (response.isBulkOperation) {
+                                errorMessage += ' (عملیات انبوه)';
+                            }
+                            if (response.planId) {
+                                errorMessage += ' - PlanId: ' + response.planId;
+                            }
+                            if (response.serviceId) {
+                                errorMessage += ' - ServiceId: ' + response.serviceId;
+                            }
+                            
+                            updateBulkProgress(0, errorMessage);
+                            
+                            // نمایش جزئیات خطا
+                            if (response.errors && response.errors.length > 0) {
+                                console.error('🏥 MEDICAL: Validation errors:', response.errors);
+                            }
+                            
+                            console.error('🏥 MEDICAL: Bulk operation failed:', response);
                         }
                     },
                     error: function(xhr, status, error) {
-                        console.error('🚀 PERFORMANCE: Error loading departments:', error);
-                        reject(error);
+                        console.error('🏥 MEDICAL: Bulk operation error:', error);
+                        
+                        // بررسی نوع خطا
+                        var errorMessage = 'خطا در عملیات: ' + error;
+                        
+                        if (xhr.responseText) {
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                if (errorResponse.message) {
+                                    errorMessage = errorResponse.message;
+                                }
+                            } catch (e) {
+                                // اگر JSON نیست، احتمالاً HTML error page است
+                                errorMessage = 'خطا در سرور - لطفاً صفحه را refresh کنید';
+                            }
+                        }
+                        
+                        updateBulkProgress(0, errorMessage);
                     }
                 });
-            });
-        }
-
-        // 🚀 REAL-TIME: Helper function to populate dropdown with fresh data
-        function populateDropdown(selector, data, defaultText) {
-            if (data && Array.isArray(data) && data.length > 0) {
-                var options = '<option value="">' + defaultText + '</option>';
-                data.forEach(function(item) {
-                    options += '<option value="' + item.Value + '">' + item.Text + '</option>';
-                });
-                $(selector).html(options).prop('disabled', false);
-                console.log('🚀 REAL-TIME: Dropdown populated with fresh data:', selector);
-            } else {
-                $(selector).html('<option value="">هیچ داده‌ای یافت نشد</option>').prop('disabled', false);
             }
-        }
-
-        // 🚀 FIX: Setup Persian number conversion for currency fields
-        function setupPersianNumberConversion() {
-            $('[data_persian_numbers="true"]').on('input keyup paste', function() {
-                var $this = $(this);
-                var value = $this.val();
-                if (value) {
-                    // Convert Persian numbers to English in real-time
-                    var englishValue = convertPersianToEnglish(value);
-                    // Only update if the value actually changed
-                    if (englishValue !== value) {
-                        $this.val(englishValue);
-                    }
-                    $this.data('english-value', englishValue);
-                }
-            });
-
-            // Convert to English before form submission
-            $('form').on('submit', function() {
-                $('[data_persian_numbers="true"]').each(function() {
-                    var $this = $(this);
-                    var persianValue = $this.val();
-                    if (persianValue) {
-                        var englishValue = convertPersianToEnglish(persianValue);
-                        $this.val(englishValue);
-                    }
-                });
-            });
-        }
-
-        // 🚀 FIX: Allow all number input including Persian numbers
-        function setupNumberInputHandling() {
-            // Remove any existing keypress handlers to avoid conflicts
-            $('[data_persian_numbers="true"]').off('keypress');
-
-            // Allow all input and let the conversion handle it
-            $('[data_persian_numbers="true"]').on('keypress', function(e) {
-                // Allow all keys - let the conversion function handle the rest
-                return true;
-            });
-        }
-
-
-        // 🚀 FIX: Convert Persian numbers to English for validation
-        function convertPersianToEnglish(str) {
-            if (!str) return str;
-            return str.toString()
-                .replace(/[۰-۹]/g, function(d) { return '۰۱۲۳۴۵۶۷۸۹'.indexOf(d); })
-                .replace(/[٠-٩]/g, function(d) { return '٠١٢٣٤٥٦٧٨٩'.indexOf(d); })
-                .replace(/[,\s]/g, ''); // Remove commas and spaces
-        }
-
-        // 🚀 FIX: Format currency for display
-        function formatCurrency(value) {
-            if (!value || isNaN(value)) return '';
-            var num = parseFloat(value);
-            return num.toLocaleString('fa-IR');
-        }
-
-        // 🚀 FIX: Parse currency from display format
-        function parseCurrency(value) {
-            if (!value) return 0;
-            var cleanValue = convertPersianToEnglish(value.toString().replace(/[,\s]/g, ''));
-            return parseFloat(cleanValue) || 0;
-        }
-
-        // 🚀 LAZY LOADING: Virtual scrolling for large lists
-        function setupVirtualScrolling(selector, data, pageSize = 50) {
-            let currentPage = 0;
-            const totalPages = Math.ceil(data.length / pageSize);
-
-            function renderPage(page) {
-                const start = page * pageSize;
-                const end = Math.min(start + pageSize, data.length);
-                const pageData = data.slice(start, end);
-
-                let options = '<option value="">انتخاب خدمت</option>';
-                pageData.forEach(function(item) {
-                    options += '<option value="' + item.Value + '">' + item.Text + '</option>';
-                });
-
-                $(selector).html(options);
-
-                // Add "Load More" option if not last page
-                if (page < totalPages - 1) {
-                    $(selector).append('<option value="load_more" disabled>--- بارگذاری بیشتر ---</option>');
-                }
+            
+            function updateBulkProgress(percent, text) {
+                $('#bulkProgressBar').css('width', percent + '%');
+                $('#bulkProgressText').text(text);
             }
 
-            // Initial render
-            renderPage(0);
+            // ---------- Currency Formatting ----------
+            function setupCurrencyFormatting() {
+                $('.medical-form-control[type="number"]').on('input', function() {
+                    var value = $(this).val();
+                    if (value) {
+                        var formatted = formatCurrency(value);
+                        $(this).attr('data-formatted', formatted);
+                    }
+                });
+            }
 
-            // Handle "Load More" click
-            $(selector).on('change', function() {
-                if ($(this).val() === 'load_more') {
-                    currentPage++;
-                    if (currentPage < totalPages) {
-                        renderPage(currentPage);
+            // ---------- Date Validation ----------
+            function setupDateValidation() {
+                $('.medical-form-control[type="date"]').on('change', function() {
+                    var value = $(this).val();
+                    if (value) {
+                        var date = new Date(value);
+                        var today = new Date();
+                        if (date < today) {
+                            $(this).addClass('is-invalid');
+                            $(this).next('.medical-form-error').text('تاریخ نمی‌تواند در گذشته باشد');
+                        } else {
+                            $(this).removeClass('is-invalid');
+                            $(this).next('.medical-form-error').text('');
+                        }
+                    }
+                });
+            }
+
+            // ---------- Persian Number Conversion ----------
+            function setupPersianNumberConversion() {
+                $('.medical-form-control').on('input', function() {
+                    var value = $(this).val();
+                    if (value) {
+                        var englishValue = convertPersianToEnglish(value);
+                        if (englishValue !== value) {
+                            $(this).val(englishValue);
+                        }
+                    }
+                });
+            }
+
+            // ---------- Number Input Handling ----------
+            function setupNumberInputHandling() {
+                $('.medical-form-control[type="number"]').on('keypress', function(e) {
+                    var char = String.fromCharCode(e.which);
+                    if (!/[0-9]/.test(char) && e.which !== 8 && e.which !== 0) {
+                        e.preventDefault();
+                    }
+                });
+            }
+
+            // ---------- Form Validation ----------
+            function setupFormValidation() {
+                // Real-time validation
+                $('.medical-form-control').on('blur', function() {
+                    validateField($(this));
+                });
+
+                // Form submission validation
+                $('#insuranceTariffForm').on('submit', function(e) {
+                    var isValid = true;
+                    $('.medical-form-control[required]').each(function() {
+                        if (!validateField($(this))) {
+                            isValid = false;
+                        }
+                    });
+
+                    if (!isValid) {
+                        e.preventDefault();
+                        alert('لطفاً تمام فیلدهای الزامی را پر کنید');
+                    }
+                });
+            }
+
+            function validateField(field) {
+                var value = field.val();
+                var isValid = true;
+
+                if (field.prop('required') && (!value || value.trim() === '')) {
+                    field.addClass('is-invalid');
+                    field.next('.medical-form-error').text('این فیلد الزامی است');
+                    isValid = false;
+                } else if (field.attr('type') === 'number' && value) {
+                    var num = parseFloat(value);
+                    if (isNaN(num) || num < 0) {
+                        field.addClass('is-invalid');
+                        field.next('.medical-form-error').text('عدد معتبر وارد کنید');
+                        isValid = false;
+                    } else {
+                        field.removeClass('is-invalid');
+                        field.next('.medical-form-error').text('');
+                    }
+                } else {
+                    field.removeClass('is-invalid');
+                    field.next('.medical-form-error').text('');
+                }
+
+                return isValid;
+            }
+
+            // ---------- Accessibility ----------
+            function setupAccessibility() {
+                // Keyboard navigation
+                $('.medical-form-control').on('keydown', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        var nextField = $(this).closest('.medical-form-group').next().find('.medical-form-control');
+                        if (nextField.length) {
+                            nextField.focus();
+                        }
+                    }
+                });
+
+                // ARIA labels
+                $('.medical-form-control').each(function() {
+                    var field = $(this);
+                    var label = field.closest('.medical-form-group').find('.medical-form-label').text();
+                    field.attr('aria-label', label);
+                });
+            }
+
+            // ---------- Auto Calculation ----------
+            function setupAutoCalculation() {
+                setupCascadingDropdowns();
+
+                // Field change detection
+                $('#ServiceId, #InsurancePlanId, #TariffPrice, #PatientShare, #InsurerShare').on('change input', function() {
+                    debounceCalculation();
+                });
+
+                // Manual calculation button
+                $('#calculateBtn').on('click', function() {
+                    performCalculation();
+                });
+            }
+
+            function debounceCalculation() {
+                clearTimeout(calculationTimeout);
+                calculationTimeout = setTimeout(function() {
+                    if (!isCalculating) {
+                        performCalculation();
+                    }
+                }, 500);
+            }
+
+            function performCalculation() {
+                var serviceId = $('#ServiceId').val();
+                var planId = $('#InsurancePlanId').val();
+                
+                if (!serviceId || !planId) {
+                    console.log('🏥 MEDICAL: Skipping calculation - missing required fields. ServiceId:', serviceId, 'PlanId:', planId);
+                    return;
+                }
+
+                // 🛡️ P0 FIX: جلوگیری از infinite loop
+                if (isCalculating) {
+                    console.log('🏥 MEDICAL: Calculation already in progress, skipping...');
+                    return;
+                }
+
+                isCalculating = true;
+                updateProgress(0);
+
+                var correlationId = 'calc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                console.log('🏥 MEDICAL: Performing calculation - CorrelationId:', correlationId, 'ServiceId:', serviceId, 'PlanId:', planId);
+
+                var formData = {
+                    serviceId: serviceId,
+                    insurancePlanId: planId,
+                    providerId: $('#InsuranceProviderId').val(),
+                    currentTariffPrice: parseCurrency($('#TariffPrice').val()) || 0,
+                    currentPatientShare: parseCurrency($('#PatientShare').val()) || 0,
+                    currentInsurerShare: parseCurrency($('#InsurerShare').val()) || 0,
+                    correlationId: correlationId
+                };
+
+                updateProgress(30);
+
+                $.ajax({
+                    url: '@Url.Action("CalculateAdvancedTariff", "InsuranceTariff")',
+                    type: 'POST',
+                    dataType: 'json',
+                    data: formData,
+                    success: function(response) {
+                        updateProgress(100);
+                        console.log('🏥 MEDICAL: Calculation Response Received:', response);
+                        
+                        // 🔍 بررسی دقیق response structure
+                        if (response && (response.success === true || response.Success === true)) {
+                            console.log('🏥 MEDICAL: Success response detected, calling displayCalculationResults');
+                            displayCalculationResults(response.data || response.Data);
+                            logCalculationSuccess(correlationId, response.data || response.Data);
+                        } else {
+                            var errorMessage = response?.message || response?.Message || 'خطای نامشخص در محاسبه';
+                            console.log('🏥 MEDICAL: Error response detected:', errorMessage);
+                            displayCalculationError(errorMessage);
+                            logCalculationError(correlationId, 'Server Error', errorMessage);
+                        }
+                        isCalculating = false;
+                    },
+                    error: function(xhr, status, error) {
+                        updateProgress(100);
+                        console.error('🏥 MEDICAL: AJAX Error Details:', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+                        
+                        var errorMessage = 'خطا در محاسبه';
+                        if (xhr.responseText) {
+                            try {
+                                var errorResponse = JSON.parse(xhr.responseText);
+                                errorMessage = errorResponse.message || errorResponse.Message || errorMessage;
+                            } catch (e) {
+                                errorMessage = 'خطا در محاسبه: ' + (error || xhr.statusText);
+                            }
+                        }
+                        
+                        displayCalculationError(errorMessage);
+                        logCalculationError(correlationId, 'Network Error', errorMessage);
+                        isCalculating = false;
+                    }
+                });
+            }
+
+            function displayCalculationResults(data) {
+                // 🔍 بررسی وجود داده‌ها
+                if (!data) {
+                    console.error('🏥 MEDICAL: No calculation data received');
+                    displayCalculationError('داده‌های محاسبه دریافت نشد');
+                    return;
+                }
+
+                console.log('🏥 MEDICAL: Binding calculation results to form fields - Data:', data);
+                
+                // 🔍 تحلیل ساختار response
+                if (window.analyzeResponse) {
+                    window.analyzeResponse({ data: data });
+                }
+                
+                // 🔍 بررسی ساختار داده‌ها و تطبیق با نام‌های مختلف
+                var tariffPrice = data.tariffPrice || data.TariffPrice;
+                var patientShare = data.patientShare || data.PatientShare;
+                var insurerShare = data.insurerShare || data.InsurerShare;
+                
+                console.log('🏥 MEDICAL: Extracted values:', {
+                    tariffPrice: tariffPrice,
+                    patientShare: patientShare,
+                    insurerShare: insurerShare
+                });
+
+                // 🔍 Debug: بررسی element ها
+                debugFormElements();
+                debugHTMLStructure();
+
+                // 🚀 P0 FIX: Bind داده‌ها به textbox های اصلی فرم
+                try {
+                    // 🔍 بررسی وجود element ها
+                    var tariffPriceElement = $('#TariffPrice');
+                    var patientShareElement = $('#PatientShare');
+                    var insurerShareElement = $('#InsurerShare');
+                    
+                    console.log('🏥 MEDICAL: Element Check:', {
+                        tariffPriceExists: tariffPriceElement.length > 0,
+                        patientShareExists: patientShareElement.length > 0,
+                        insurerShareExists: insurerShareElement.length > 0
+                    });
+
+                    // قیمت تعرفه
+                    if (tariffPrice !== undefined && tariffPrice !== null && tariffPriceElement.length > 0) {
+                        // 🛡️ P0 FIX: استفاده از اعداد انگلیسی برای input type="number"
+                        tariffPriceElement.val(tariffPrice);
+                        console.log('🏥 MEDICAL: TariffPrice bound:', tariffPrice);
+                    }
+
+                    // سهم بیمار
+                    if (patientShare !== undefined && patientShare !== null && patientShareElement.length > 0) {
+                        // 🛡️ P0 FIX: استفاده از اعداد انگلیسی برای input type="number"
+                        patientShareElement.val(patientShare);
+                        console.log('🏥 MEDICAL: PatientShare bound:', patientShare);
+                    }
+
+                    // سهم بیمه
+                    if (insurerShare !== undefined && insurerShare !== null && insurerShareElement.length > 0) {
+                        // 🛡️ P0 FIX: استفاده از اعداد انگلیسی برای input type="number"
+                        insurerShareElement.val(insurerShare);
+                        console.log('🏥 MEDICAL: InsurerShare bound:', insurerShare);
+                    }
+
+                    // نمایش نتایج محاسبه شده
+                    $('#calculatedTariffPrice').text(formatCurrency(tariffPrice) + ' تومان');
+                    $('#calculatedPatientShare').text(formatCurrency(patientShare) + ' تومان');
+                    $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' تومان');
+                    
+                    $('#calculationResults').show();
+                    $('#calculationSummary').html('<div class="alert alert-success">✅ محاسبه با موفقیت انجام شد</div>');
+
+                    console.log('🏥 MEDICAL: All calculation results bound successfully');
+                    
+                    // 🔍 بررسی مقادیر فیلدها بعد از binding
+                    if (window.checkFieldValues) {
+                        window.checkFieldValues();
+                    }
+                } catch (error) {
+                    console.error('🏥 MEDICAL: Error binding calculation results:', error);
+                    
+                    // 🔄 Fallback: تلاش برای bind با نام‌های مختلف
+                    try {
+                        console.log('🏥 MEDICAL: Attempting fallback binding...');
+                        fallbackBinding(data);
+                        
+                        // 🔍 بررسی مقادیر فیلدها بعد از fallback
+                        if (window.checkFieldValues) {
+                            window.checkFieldValues();
+                        }
+                    } catch (fallbackError) {
+                        console.error('🏥 MEDICAL: Fallback binding also failed:', fallbackError);
+                        displayCalculationError('خطا در نمایش نتایج محاسبه');
                     }
                 }
-            });
-
-            console.log('🚀 LAZY LOADING: Virtual scrolling setup for', selector, 'with', data.length, 'items');
-        }
-
-        // 🏥 MEDICAL: Initialize form with testing
-        $(document).ready(function() {
-            console.log('🏥 MEDICAL: Initializing Insurance Tariff Create Form');
-
-            // 🚀 FIX: Prevent multiple initializations
-            if (window.tariffFormInitialized) {
-                console.log('🏥 MEDICAL: Form already initialized, skipping...');
-                return;
             }
-            window.tariffFormInitialized = true;
 
-            // 🚀 Performance: Use parallel loading instead of sequential
-            loadInitialDataParallel();
-        });
+            function displayCalculationError(message) {
+                console.error('🏥 MEDICAL: Calculation Error Display:', message);
+                
+                // پاک کردن textbox ها در صورت خطا
+                $('#TariffPrice').val('');
+                $('#PatientShare').val('');
+                $('#InsurerShare').val('');
+                
+                $('#calculationResults').hide();
+                
+                // نمایش پیام خطا با جزئیات بیشتر
+                var errorMessage = message || 'خطای نامشخص در محاسبه';
+                $('#calculationSummary').html('<div class="alert alert-danger">❌ ' + errorMessage + '</div>');
+            }
+
+            function updateProgress(percent) {
+                $('#progressBar').css('width', percent + '%');
+            }
+
+            function logCalculationSuccess(correlationId, data) {
+                console.log('🏥 MEDICAL: Calculation Success - CorrelationId:', correlationId, 'Data:', data);
+                
+                // 🔍 Debug: بررسی ساختار داده‌ها
+                if (data) {
+                    console.log('🏥 MEDICAL: Data Structure Analysis:', {
+                        hasTariffPrice: 'tariffPrice' in data,
+                        hasPatientShare: 'patientShare' in data,
+                        hasInsurerShare: 'insurerShare' in data,
+                        tariffPriceValue: data.tariffPrice,
+                        patientShareValue: data.patientShare,
+                        insurerShareValue: data.insurerShare
+                    });
+                }
+            }
+
+            function logCalculationError(correlationId, type, message) {
+                console.log('🏥 MEDICAL: Calculation Error - CorrelationId:', correlationId, 'Type:', type, 'Message:', message);
+            }
+
+            // 🔍 Debug Helper: بررسی وجود element ها
+            function debugFormElements() {
+                console.log('🏥 MEDICAL: Form Elements Debug:', {
+                    'TariffPrice': $('#TariffPrice').length,
+                    'PatientShare': $('#PatientShare').length,
+                    'InsurerShare': $('#InsurerShare').length,
+                    'ServiceId': $('#ServiceId').length,
+                    'InsurancePlanId': $('#InsurancePlanId').length,
+                    'InsuranceProviderId': $('#InsuranceProviderId').length
+                });
+
+                // 🔍 بررسی نام‌های فیلدها
+                $('input[name*="Tariff"], input[name*="Share"]').each(function() {
+                    console.log('🏥 MEDICAL: Found field:', {
+                        name: $(this).attr('name'),
+                        id: $(this).attr('id'),
+                        type: $(this).attr('type')
+                    });
+                });
+            }
+
+            // 🔄 Fallback Binding: تلاش برای bind با نام‌های مختلف
+            function fallbackBinding(data) {
+                console.log('🏥 MEDICAL: Fallback binding started with data:', data);
+
+                // تلاش برای پیدا کردن فیلدها با نام‌های مختلف
+                var tariffSelectors = [
+                    '#TariffPrice', 'input[name="TariffPrice"]', 'input[name="tariffPrice"]',
+                    'input[name="Tariff"]', 'input[name="tariff"]'
+                ];
+
+                var patientSelectors = [
+                    '#PatientShare', 'input[name="PatientShare"]', 'input[name="patientShare"]',
+                    'input[name="Patient"]', 'input[name="patient"]'
+                ];
+
+                var insurerSelectors = [
+                    '#InsurerShare', 'input[name="InsurerShare"]', 'input[name="insurerShare"]',
+                    'input[name="Insurer"]', 'input[name="insurer"]'
+                ];
+
+                // استخراج مقادیر با نام‌های مختلف
+                var tariffPrice = data.tariffPrice || data.TariffPrice;
+                var patientShare = data.patientShare || data.PatientShare;
+                var insurerShare = data.insurerShare || data.InsurerShare;
+
+                // Bind قیمت تعرفه
+                if (tariffPrice !== undefined && tariffPrice !== null) {
+                    for (var i = 0; i < tariffSelectors.length; i++) {
+                        var element = $(tariffSelectors[i]);
+                        if (element.length > 0) {
+                            // 🛡️ P0 FIX: استفاده از اعداد انگلیسی برای input type="number"
+                            element.val(tariffPrice);
+                            console.log('🏥 MEDICAL: Fallback TariffPrice bound using selector:', tariffSelectors[i]);
+                            break;
+                        }
+                    }
+                }
+
+                // Bind سهم بیمار
+                if (patientShare !== undefined && patientShare !== null) {
+                    for (var i = 0; i < patientSelectors.length; i++) {
+                        var element = $(patientSelectors[i]);
+                        if (element.length > 0) {
+                            // 🛡️ P0 FIX: استفاده از اعداد انگلیسی برای input type="number"
+                            element.val(patientShare);
+                            console.log('🏥 MEDICAL: Fallback PatientShare bound using selector:', patientSelectors[i]);
+                            break;
+                        }
+                    }
+                }
+
+                // Bind سهم بیمه
+                if (insurerShare !== undefined && insurerShare !== null) {
+                    for (var i = 0; i < insurerSelectors.length; i++) {
+                        var element = $(insurerSelectors[i]);
+                        if (element.length > 0) {
+                            // 🛡️ P0 FIX: استفاده از اعداد انگلیسی برای input type="number"
+                            element.val(insurerShare);
+                            console.log('🏥 MEDICAL: Fallback InsurerShare bound using selector:', insurerSelectors[i]);
+                            break;
+                        }
+                    }
+                }
+
+                console.log('🏥 MEDICAL: Fallback binding completed');
+            }
+
+            // 🔍 HTML Structure Debug: بررسی ساختار HTML
+            function debugHTMLStructure() {
+                console.log('🏥 MEDICAL: HTML Structure Debug:');
+                console.log('🏥 MEDICAL: All input fields:', $('input').map(function() {
+                    return {
+                        id: $(this).attr('id'),
+                        name: $(this).attr('name'),
+                        type: $(this).attr('type'),
+                        class: $(this).attr('class')
+                    };
+                }).get());
+            }
+
+            // 🌐 Global Debug Helper: برای استفاده در console
+            window.debugInsuranceTariff = function() {
+                console.log('🏥 MEDICAL: Global Debug Helper Activated');
+                debugFormElements();
+                debugHTMLStructure();
+                console.log('🏥 MEDICAL: Current form values:', {
+                    TariffPrice: $('#TariffPrice').val(),
+                    PatientShare: $('#PatientShare').val(),
+                    InsurerShare: $('#InsurerShare').val(),
+                    ServiceId: $('#ServiceId').val(),
+                    InsurancePlanId: $('#InsurancePlanId').val()
+                });
+            };
+
+            // 🧪 Test Binding Helper: برای تست binding
+            window.testBinding = function() {
+                console.log('🏥 MEDICAL: Test Binding Helper Activated');
+                var testData = {
+                    tariffPrice: 119300,
+                    patientShare: 47720,
+                    insurerShare: 71580
+                };
+                console.log('🏥 MEDICAL: Testing with data:', testData);
+                displayCalculationResults(testData);
+            };
+
+            // 🔍 Response Structure Analyzer: برای تحلیل ساختار response
+            window.analyzeResponse = function(response) {
+                console.log('🏥 MEDICAL: Response Structure Analysis:');
+                console.log('🏥 MEDICAL: Response type:', typeof response);
+                console.log('🏥 MEDICAL: Response keys:', Object.keys(response || {}));
+                console.log('🏥 MEDICAL: Success check:', {
+                    'response.success': response?.success,
+                    'response.Success': response?.Success,
+                    'response.data': response?.data,
+                    'response.Data': response?.Data
+                });
+                
+                if (response?.data || response?.Data) {
+                    var data = response.data || response.Data;
+                    console.log('🏥 MEDICAL: Data structure:', {
+                        'data.tariffPrice': data?.tariffPrice,
+                        'data.TariffPrice': data?.TariffPrice,
+                        'data.patientShare': data?.patientShare,
+                        'data.PatientShare': data?.PatientShare,
+                        'data.insurerShare': data?.insurerShare,
+                        'data.InsurerShare': data?.InsurerShare
+                    });
+                }
+            };
+
+            // 🔍 Field Values Checker: برای بررسی مقادیر فیلدها
+            window.checkFieldValues = function() {
+                console.log('🏥 MEDICAL: Field Values Check:');
+                console.log('🏥 MEDICAL: TariffPrice value:', $('#TariffPrice').val());
+                console.log('🏥 MEDICAL: PatientShare value:', $('#PatientShare').val());
+                console.log('🏥 MEDICAL: InsurerShare value:', $('#InsurerShare').val());
+                console.log('🏥 MEDICAL: TariffPrice element exists:', $('#TariffPrice').length > 0);
+                console.log('🏥 MEDICAL: PatientShare element exists:', $('#PatientShare').length > 0);
+                console.log('🏥 MEDICAL: InsurerShare element exists:', $('#InsurerShare').length > 0);
+            };
+
+            // 🛡️ Loop Prevention Helper: برای جلوگیری از infinite loop
+            window.stopInfiniteLoop = function() {
+                console.log('🏥 MEDICAL: Stopping infinite loop...');
+                isCalculating = false;
+                clearTimeout(calculationTimeout);
+                console.log('🏥 MEDICAL: Infinite loop stopped');
+            };
+
+            // 🔄 System Reset Helper: برای reset کردن سیستم
+            window.resetCalculationSystem = function() {
+                console.log('🏥 MEDICAL: Resetting calculation system...');
+                isCalculating = false;
+                clearTimeout(calculationTimeout);
+                $('#TariffPrice').val('');
+                $('#PatientShare').val('');
+                $('#InsurerShare').val('');
+                $('#calculationResults').hide();
+                $('#calculationSummary').html('');
+                console.log('🏥 MEDICAL: Calculation system reset');
+            };
+
+            // 🔍 Event Listeners Checker: برای بررسی event listeners
+            window.checkEventListeners = function() {
+                console.log('🏥 MEDICAL: Event Listeners Check:');
+                console.log('🏥 MEDICAL: TariffPrice change listeners:', $._data($('#TariffPrice')[0], 'events'));
+                console.log('🏥 MEDICAL: PatientShare change listeners:', $._data($('#PatientShare')[0], 'events'));
+                console.log('🏥 MEDICAL: InsurerShare change listeners:', $._data($('#InsurerShare')[0], 'events'));
+                console.log('🏥 MEDICAL: ServiceId change listeners:', $._data($('#ServiceId')[0], 'events'));
+                console.log('🏥 MEDICAL: InsurancePlanId change listeners:', $._data($('#InsurancePlanId')[0], 'events'));
+            };
+
+            // 🛡️ Custom Validation: برای validation سفارشی
+            function setupCustomValidation() {
+                // حذف HTML5 validation
+                $('input[type="number"]').removeAttr('step');
+                
+                // اضافه کردن validation سفارشی
+                $('#TariffPrice, #PatientShare, #InsurerShare').on('input', function() {
+                    var value = parseFloat($(this).val());
+                    if (value && value < 0) {
+                        $(this).val(0);
+                    }
+                });
+                
+                console.log('🏥 MEDICAL: Custom validation setup completed');
+            }
+
+            // 🔍 Validation Helper: برای بررسی validation
+            window.checkValidation = function() {
+                console.log('🏥 MEDICAL: Validation Check:');
+                console.log('🏥 MEDICAL: TariffPrice step attribute:', $('#TariffPrice').attr('step'));
+                console.log('🏥 MEDICAL: PatientShare step attribute:', $('#PatientShare').attr('step'));
+                console.log('🏥 MEDICAL: InsurerShare step attribute:', $('#InsurerShare').attr('step'));
+                console.log('🏥 MEDICAL: All number inputs:', $('input[type="number"]').length);
+            };
+        })();
     </script>
 }

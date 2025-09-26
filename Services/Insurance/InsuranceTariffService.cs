@@ -672,8 +672,13 @@ namespace ClinicApp.Services.Insurance
                 var createdCount = 0;
                 var errors = new List<string>();
 
-                // ایجاد تعرفه برای هر خدمت
-                foreach (var service in allServices)
+                // 🚀 P1 FIX: استفاده از تراکنش برای Bulk Operation
+                using (var transaction = _context.Database.BeginTransaction())
+                {
+                    try
+                    {
+                        // ایجاد تعرفه برای هر خدمت
+                        foreach (var service in allServices)
                 {
                     try
                     {
@@ -717,15 +722,29 @@ namespace ClinicApp.Services.Insurance
                     }
                 }
 
-                _logger.Information("🏥 MEDICAL: Bulk Operation تکمیل شد - Created: {CreatedCount}, Errors: {ErrorCount}, User: {UserName} (Id: {UserId})",
-                    createdCount, errors.Count, _currentUserService.UserName, _currentUserService.UserId);
+                        _logger.Information("🏥 MEDICAL: Bulk Operation تکمیل شد - Created: {CreatedCount}, Errors: {ErrorCount}, User: {UserName} (Id: {UserId})",
+                            createdCount, errors.Count, _currentUserService.UserName, _currentUserService.UserId);
 
-                if (errors.Any())
-                {
-                    return ServiceResult<int>.Failed($"تعداد {createdCount} تعرفه ایجاد شد، اما {errors.Count} خطا رخ داد: {string.Join("; ", errors)}");
+                        if (errors.Any())
+                        {
+                            // 🚀 P1 FIX: در صورت خطا، تراکنش را rollback کن
+                            transaction.Rollback();
+                            return ServiceResult<int>.Failed($"تعداد {createdCount} تعرفه ایجاد شد، اما {errors.Count} خطا رخ داد: {string.Join("; ", errors)}");
+                        }
+
+                        // 🚀 P1 FIX: در صورت موفقیت، تراکنش را commit کن
+                        transaction.Commit();
+                        return ServiceResult<int>.Successful(createdCount);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 🚀 P1 FIX: در صورت خطای کلی، تراکنش را rollback کن
+                        transaction.Rollback();
+                        _logger.Error(ex, "🏥 MEDICAL: خطا در Bulk Operation - تراکنش rollback شد - User: {UserName} (Id: {UserId})",
+                            _currentUserService.UserName, _currentUserService.UserId);
+                        throw;
+                    }
                 }
-
-                return ServiceResult<int>.Successful(createdCount);
             }
             catch (Exception ex)
             {
@@ -1048,9 +1067,17 @@ namespace ClinicApp.Services.Insurance
                 var statistics = await statisticsTask;
                 var totalCount = await totalCountTask;
 
+                // 🚀 P0 FIX: محاسبه آمار کامل برای محیط درمانی
+                var activeTariffs = statistics.ContainsKey("ActiveTariffs") ? statistics["ActiveTariffs"] : 0;
+                var inactiveTariffs = statistics.ContainsKey("InactiveTariffs") ? statistics["InactiveTariffs"] : 0;
+                var totalServices = statistics.ContainsKey("TotalServices") ? statistics["TotalServices"] : 0;
+
                 var viewModel = new InsuranceTariffStatisticsViewModel
                 {
                     TotalTariffs = totalCount,
+                    ActiveTariffs = activeTariffs,
+                    InactiveTariffs = inactiveTariffs,
+                    TotalServices = totalServices,
                     TariffsWithCustomPrice = statistics.ContainsKey("TariffsWithCustomPrice") ? statistics["TariffsWithCustomPrice"] : 0,
                     TariffsWithCustomPatientShare = statistics.ContainsKey("TariffsWithCustomPatientShare") ? statistics["TariffsWithCustomPatientShare"] : 0,
                     TariffsWithCustomInsurerShare = statistics.ContainsKey("TariffsWithCustomInsurerShare") ? statistics["TariffsWithCustomInsurerShare"] : 0
