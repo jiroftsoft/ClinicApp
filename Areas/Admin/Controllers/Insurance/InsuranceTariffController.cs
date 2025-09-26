@@ -768,6 +768,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return RedirectToAction("Index");
                 }
 
+                // 🔍 DEBUG LOGGING - Controller Edit Action
+                _logger.Information("🔍 Controller Edit Action - TariffId: {TariffId}, PatientSharePercent: {PatientSharePercent}, InsurerSharePercent: {InsurerSharePercent}",
+                    result.Data.InsuranceTariffId, result.Data.PatientSharePercent, result.Data.InsurerSharePercent);
+
                 // بارگیری SelectLists
                 await LoadSelectListsForCreateEditAsync(result.Data);
 

@@ -235,7 +235,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
 
         public static InsuranceTariffCreateEditViewModel FromEntity(Models.Entities.Insurance.InsuranceTariff entity)
         {
-            return new InsuranceTariffCreateEditViewModel
+            var result = new InsuranceTariffCreateEditViewModel
             {
                 InsuranceTariffId = entity.InsuranceTariffId,
                 RowVersion = entity.RowVersion,
@@ -248,7 +248,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 // 🔍 FIX: PatientShare و InsurerShare در دیتابیس به عنوان مبلغ ذخیره می‌شوند
                 PatientShare = entity.PatientShare ?? 0,
                 InsurerShare = entity.InsurerShare ?? 0,
-                // درصدها از مبلغ‌ها محاسبه می‌شوند
+                // درصدها از مبلغ‌ها محاسبه می‌شوند - DEBUG LOGGING
                 PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
                     Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
                 InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 
@@ -261,6 +261,22 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 InsurancePlanName = entity.InsurancePlan?.Name,
                 InsuranceProviderName = entity.InsurancePlan?.InsuranceProvider?.Name
             };
+            
+            // 🔍 DEBUG LOGGING - ViewModel Calculation (Console)
+            Console.WriteLine($"🔍 ViewModel FromEntity - TariffId: {entity.InsuranceTariffId}");
+            Console.WriteLine($"🔍   TariffPrice: {entity.TariffPrice}, PatientShare: {entity.PatientShare}, InsurerShare: {entity.InsurerShare}");
+            Console.WriteLine($"🔍   PatientSharePercent: {result.PatientSharePercent}, InsurerSharePercent: {result.InsurerSharePercent}");
+            
+            // 🔍 ADDITIONAL DEBUG - Check if values are already percentages
+            if (entity.PatientShare.HasValue && entity.InsurerShare.HasValue && entity.TariffPrice.HasValue)
+            {
+                var patientRatio = entity.PatientShare.Value / entity.TariffPrice.Value;
+                var insurerRatio = entity.InsurerShare.Value / entity.TariffPrice.Value;
+                Console.WriteLine($"🔍   Ratios: Patient={patientRatio:F4}, Insurer={insurerRatio:F4}");
+                Console.WriteLine($"🔍   If PatientShare is already percentage: {entity.PatientShare.Value}% of {entity.TariffPrice.Value} = {entity.PatientShare.Value / 100m * entity.TariffPrice.Value:F0}");
+            }
+            
+            return result;
         }
     }
 

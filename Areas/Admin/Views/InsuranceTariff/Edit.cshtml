@@ -563,6 +563,7 @@
                                 درصد سهم بیمار
                             </label>
                             @Html.TextBoxFor(m => m.PatientSharePercent, new { @class = "medical-form-control text-left ltr", @id = "PatientSharePercent", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*\\.?[0-9]*", @placeholder = "مثلاً 25.5", @aria_describedby = "PatientSharePercent-help PatientSharePercent-error", @aria_invalid = "false", @data_val_sumlte100 = "true", @data_val_sumlte100_a = "PatientSharePercent", @data_val_sumlte100_b = "InsurerSharePercent" })
+                            <!-- 🔍 DEBUG: PatientSharePercent Value: @Model.PatientSharePercent -->
                             <div class="medical-form-help" id="PatientSharePercent-help">درصد سهم بیمار (0-100)</div>
                             @Html.ValidationMessageFor(m => m.PatientSharePercent, "", new { @class = "medical-form-error", @id = "PatientSharePercent-error" })
                         </div>
@@ -575,6 +576,7 @@
                                 درصد سهم بیمه
                             </label>
                             @Html.TextBoxFor(m => m.InsurerSharePercent, new { @class = "medical-form-control text-left ltr", @id = "InsurerSharePercent", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*\\.?[0-9]*", @placeholder = "مثلاً 74.5", @aria_describedby = "InsurerSharePercent-help InsurerSharePercent-error", @aria_invalid = "false", @data_val_sumlte100 = "true", @data_val_sumlte100_a = "PatientSharePercent", @data_val_sumlte100_b = "InsurerSharePercent" })
+                            <!-- 🔍 DEBUG: InsurerSharePercent Value: @Model.InsurerSharePercent -->
                             <div class="medical-form-help" id="InsurerSharePercent-help">درصد سهم بیمه (0-100)</div>
                             @Html.ValidationMessageFor(m => m.InsurerSharePercent, "", new { @class = "medical-form-error", @id = "InsurerSharePercent-error" })
                         </div>
@@ -708,7 +710,8 @@
                 var num = parseFloat(convertPersianToEnglish(value));
                 if (isNaN(num)) return '';
                 // 🔍 MEDICAL: Manual formatting to avoid locale issues with / separator
-                return num.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                // برای مقادیر پولی، از toFixed(0) استفاده می‌کنیم (بدون اعشار)
+                return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             }
 
             function parseCurrency(value) {
@@ -741,6 +744,11 @@
 
                 // Store original form data after a delay to ensure fields are populated
                 setTimeout(function() {
+                    // 🔍 DEBUG LOGGING - Initial form values
+                    console.log('🔍 JavaScript - Initial form values:', {
+                        patientSharePercent: $('#PatientSharePercent').val(),
+                        insurerSharePercent: $('#InsurerSharePercent').val()
+                    });
                     storeOriginalFormData();
                 }, 100);
 
@@ -768,6 +776,12 @@
                         if (!isNaN(cleanValue)) {
                             // For percentage fields, keep 2 decimal places with dot separator
                             if ($field.attr('id').includes('Percent')) {
+                                // 🔍 FIX: Check if value is already multiplied by 10 (e.g., 300 instead of 30)
+                                if (cleanValue > 100) {
+                                    // If value is > 100, it's likely multiplied by 10, so divide by 10
+                                    cleanValue = cleanValue / 10;
+                                    console.log('🔍 FIX: Divided percentage by 10:', $field.attr('id'), 'from', cleanValue * 10, 'to', cleanValue);
+                                }
                                 $field.val(cleanValue.toFixed(2));
                             } else {
                                 // For currency fields, keep as integer with dot separator
@@ -1391,10 +1405,13 @@
                     currentTariffPrice: parseCurrency($('#TariffPrice').val()) || 0,
                     currentPatientShare: parseCurrency($('#PatientShare').val()) || 0,
                     currentInsurerShare: parseCurrency($('#InsurerShare').val()) || 0,
-                    patientSharePercent: parseFloat($('#PatientSharePercent').val()) || null,
-                    insurerSharePercent: parseFloat($('#InsurerSharePercent').val()) || null,
+                    patientSharePercent: $('#PatientSharePercent').val() ? parseFloat($('#PatientSharePercent').val()) : null,
+                    insurerSharePercent: $('#InsurerSharePercent').val() ? parseFloat($('#InsurerSharePercent').val()) : null,
                     correlationId: correlationId
                 };
+
+                // 🔍 DEBUG: لاگ داده‌های ارسالی
+                console.log('🏥 MEDICAL: ارسال داده‌ها به سرور:', formData);
 
                 updateProgress(30);
 
@@ -1443,8 +1460,12 @@
                 $('#calculatedPatientShare').text(formatCurrency(patientShare) + ' تومان');
                 $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' تومان');
                 
-                // نمایش درصدها از سرور (authoritative)
+                // نمایش درصدها از سرور (authoritative) - DEBUG LOGGING
                 if (data.patientSharePercent !== undefined && data.insurerSharePercent !== undefined) {
+                    console.log('🔍 JavaScript - Setting percentages from server:', {
+                        patientSharePercent: data.patientSharePercent,
+                        insurerSharePercent: data.insurerSharePercent
+                    });
                     $('#PatientSharePercent').val(data.patientSharePercent.toFixed(2));
                     $('#InsurerSharePercent').val(data.insurerSharePercent.toFixed(2));
                 }
@@ -1455,7 +1476,8 @@
 
             function displayCalculationError(message) {
                 $('#calculationResults').hide();
-                $('#calculationSummary').html('<div class="alert alert-danger">❌ ' + message + '</div>');
+                var errorMessage = message || 'خطای نامشخص در محاسبه';
+                $('#calculationSummary').html('<div class="alert alert-danger">❌ ' + errorMessage + '</div>');
             }
 
             function updateProgress(percent) {
