@@ -109,6 +109,8 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 InsurancePlanCode = entity.InsurancePlan?.PlanCode,
                 InsuranceProviderId = entity.InsurancePlan?.InsuranceProviderId ?? 0,
                 InsuranceProviderName = entity.InsurancePlan?.InsuranceProvider?.Name,
+                
+                // 🔍 DEBUG LOGGING - InsuranceProviderId calculation
                 TariffPrice = entity.TariffPrice,
                 PatientShare = entity.PatientShare,
                 InsurerShare = entity.InsurerShare,

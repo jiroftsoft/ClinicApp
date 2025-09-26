@@ -417,7 +417,12 @@ namespace ClinicApp.Services.Insurance
 
             try
             {
+                _log.Debug("🔍 ANTI-BULLET: شروع دریافت ارائه‌دهندگان بیمه فعال از Repository");
+                
                 var providers = await _insuranceProviderRepository.GetActiveAsync();
+                
+                _log.Debug("🔍 ANTI-BULLET: دریافت ارائه‌دهندگان بیمه فعال از Repository موفق - تعداد: {Count}", providers.Count);
+                
                 var lookupItems = providers.Select(ConvertToLookupViewModel).ToList();
 
                 _log.Information(
@@ -436,8 +441,8 @@ namespace ClinicApp.Services.Insurance
             {
                 _log.Error(
                     ex,
-                    "خطای سیستمی در دریافت ارائه‌دهندگان بیمه فعال برای Lookup. کاربر: {UserName} (شناسه: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
+                    "🔍 ANTI-BULLET: خطای سیستمی در دریافت ارائه‌دهندگان بیمه فعال برای Lookup - Type: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}. کاربر: {UserName} (شناسه: {UserId})",
+                    ex.GetType().Name, ex.Message, ex.StackTrace, _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<List<InsuranceProviderLookupViewModel>>.Failed(
                     "خطا در دریافت ارائه‌دهندگان بیمه فعال. لطفاً دوباره تلاش کنید.",

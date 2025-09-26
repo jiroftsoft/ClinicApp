@@ -105,15 +105,30 @@ namespace ClinicApp.Repositories.Insurance
         {
             try
             {
-                return await _context.InsuranceProviders
+                _logger.Debug("🔍 ANTI-BULLET: شروع دریافت ارائه‌دهندگان بیمه فعال از دیتابیس");
+                
+                // 🔍 ANTI-BULLET: تست مستقیم دیتابیس
+                var directQuery = await _context.Database.SqlQuery<InsuranceProvider>(
+                    "SELECT InsuranceProviderId, Name, Code, ContactInfo, IsActive, IsDeleted, DeletedAt, DeletedByUserId, CreatedAt, CreatedByUserId, UpdatedAt, UpdatedByUserId FROM InsuranceProviders WHERE IsActive = 1 ORDER BY Name")
+                    .ToListAsync();
+                
+                _logger.Debug("🔍 ANTI-BULLET: Direct Query موفق - تعداد: {Count}", directQuery.Count);
+                
+                // 🔍 ANTI-BULLET: تست Entity Framework
+                var efQuery = await _context.InsuranceProviders
                     .Where(ip => ip.IsActive)
                     .OrderBy(ip => ip.Name)
                     .AsNoTracking()
                     .ToListAsync();
+                
+                _logger.Debug("🔍 ANTI-BULLET: Entity Framework Query موفق - تعداد: {Count}", efQuery.Count);
+                
+                return efQuery;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت ارائه‌دهندگان بیمه فعال");
+                _logger.Error(ex, "🔍 ANTI-BULLET: خطا در دریافت ارائه‌دهندگان بیمه فعال - Type: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}", 
+                    ex.GetType().Name, ex.Message, ex.StackTrace);
                 throw new InvalidOperationException("خطا در دریافت ارائه‌دهندگان بیمه فعال", ex);
             }
         }

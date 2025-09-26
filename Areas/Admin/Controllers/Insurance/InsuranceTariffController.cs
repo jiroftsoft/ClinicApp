@@ -819,30 +819,83 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Debug("🔍   {Key}: '{Value}' - CorrelationId: {CorrelationId}", key, value, correlationId);
             }
             
-            // Logging مدل دریافتی
+            // 🔍 ANTI-BULLET LOGGING: Complete form submission analysis
             if (model != null)
             {
-                _logger.Debug("🔍 Model Properties - CorrelationId: {CorrelationId}, InsuranceTariffId: {InsuranceTariffId}, DepartmentId: {DepartmentId}, ServiceCategoryId: {ServiceCategoryId}, ServiceId: {ServiceId}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, IsActive: {IsActive}",
+                // Complete model properties logging
+                _logger.Debug("🔍 ANTI-BULLET: Complete Model Properties - CorrelationId: {CorrelationId}, InsuranceTariffId: {InsuranceTariffId}, DepartmentId: {DepartmentId}, ServiceCategoryId: {ServiceCategoryId}, ServiceId: {ServiceId}, InsuranceProviderId: {InsuranceProviderId}, InsurancePlanId: {InsurancePlanId}, TariffPrice: {TariffPrice}, PatientShare: {PatientShare}, InsurerShare: {InsurerShare}, IsActive: {IsActive}",
                     correlationId, model.InsuranceTariffId, model.DepartmentId, model.ServiceCategoryId, model.ServiceId, model.InsuranceProviderId, model.InsurancePlanId, model.TariffPrice, model.PatientShare, model.InsurerShare, model.IsActive);
+                
+                // Request analysis
+                _logger.Debug("🔍 ANTI-BULLET: Request Analysis - IsAjax: {IsAjax}, ContentType: {ContentType}, Method: {Method}, UserAgent: {UserAgent}",
+                    Request.IsAjaxRequest(), Request.ContentType, Request.HttpMethod, Request.Headers["User-Agent"]);
+                
+                // Form data analysis
+                var formData = new Dictionary<string, string>();
+                foreach (string key in Request.Form.Keys)
+                {
+                    formData[key] = Request.Form[key];
+                }
+                _logger.Debug("🔍 ANTI-BULLET: Form Data - {@FormData}", formData);
+                
+                // Query string analysis
+                var queryString = new Dictionary<string, string>();
+                foreach (string key in Request.QueryString.Keys)
+                {
+                    queryString[key] = Request.QueryString[key];
+                }
+                _logger.Debug("🔍 ANTI-BULLET: Query String - {@QueryString}", queryString);
+            }
+            else
+            {
+                _logger.Error("🔍 ANTI-BULLET: Model is NULL! - CorrelationId: {CorrelationId}, Request: {@Request}", 
+                    correlationId, new { 
+                        IsAjax = Request.IsAjaxRequest(), 
+                        ContentType = Request.ContentType, 
+                        Method = Request.HttpMethod,
+                        FormData = Request.Form.Keys.Cast<string>().ToDictionary(k => k, k => Request.Form[k])
+                    });
             }
 
             // 🔍 MEDICAL: اعتبارسنجی سرور با FluentValidation
-            var validator = new InsuranceTariffValidator();
-            var fluentValidationResult = await validator.ValidateAsync(model);
-            
-            if (!fluentValidationResult.IsValid)
+            if (model != null)
             {
-                _logger.Warning("🏥 MEDICAL: اعتبارسنجی سرور ناموفق - CorrelationId: {CorrelationId}, Errors: {@Errors}",
-                    correlationId, fluentValidationResult.Errors.Select(e => new { e.PropertyName, e.ErrorMessage }));
+                var validator = new InsuranceTariffValidator();
+                var fluentValidationResult = await validator.ValidateAsync(model);
                 
-                foreach (var error in fluentValidationResult.Errors)
+                if (!fluentValidationResult.IsValid)
                 {
-                    ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    // 🔍 ANTI-BULLET LOGGING: FluentValidation detailed analysis
+                    var fluentErrors = fluentValidationResult.Errors.Select(e => new { 
+                        PropertyName = e.PropertyName, 
+                        ErrorMessage = e.ErrorMessage,
+                        AttemptedValue = e.AttemptedValue,
+                        Severity = e.Severity.ToString(),
+                        ErrorCode = e.ErrorCode
+                    }).ToList();
+                    
+                    _logger.Warning("🏥 MEDICAL: اعتبارسنجی سرور ناموفق - CorrelationId: {CorrelationId}, Errors: {@Errors}, Model: {@Model}",
+                        correlationId, fluentErrors, new { 
+                            InsuranceProviderId = model.InsuranceProviderId,
+                            InsurancePlanId = model.InsurancePlanId,
+                            ServiceId = model.ServiceId,
+                            DepartmentId = model.DepartmentId,
+                            ServiceCategoryId = model.ServiceCategoryId
+                        });
+                    
+                    foreach (var error in fluentValidationResult.Errors)
+                    {
+                        ModelState.AddModelError(error.PropertyName, error.ErrorMessage);
+                    }
+                    
+                    // بارگذاری مجدد SelectList ها
+                    await LoadSelectListsForCreateEditAsync(model);
+                    return View(model);
                 }
-                
-                // بارگذاری مجدد SelectList ها
-                await LoadSelectListsForCreateEditAsync(model);
-                return View(model);
+                else
+                {
+                    _logger.Information("🏥 MEDICAL: اعتبارسنجی سرور موفق - CorrelationId: {CorrelationId}", correlationId);
+                }
             }
             else
             {
@@ -868,11 +921,37 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Debug("🏥 MEDICAL: Edit mode - ServiceId: {ServiceId}, ServiceCategoryId: {ServiceCategoryId}",
                     model.ServiceId, model.ServiceCategoryId);
 
-                if (!ModelState.IsValid)
+                // 🔍 MEDICAL: بررسی ModelState فقط برای خطاهای Model Binding
+                var modelBindingErrors = ModelState.Values
+                    .SelectMany(v => v.Errors)
+                    .Where(e => e.Exception != null) // فقط خطاهای Model Binding
+                    .ToList();
+                
+                if (modelBindingErrors.Any())
                 {
-                    _logger.Warning("🏥 MEDICAL: مدل تعرفه بیمه معتبر نیست - CorrelationId: {CorrelationId}, Errors: {@Errors}, User: {UserName} (Id: {UserId})",
-                        correlationId, ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage), _currentUserService.UserName, _currentUserService.UserId);
-
+                    // 🔍 ANTI-BULLET LOGGING: Model Binding errors analysis
+                    var modelStateErrors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => new { 
+                            ErrorMessage = e.ErrorMessage, 
+                            Exception = e.Exception?.Message,
+                            AttemptedValue = ModelState.FirstOrDefault(ms => ms.Value.Errors.Contains(e)).Value?.Value
+                        })
+                        .ToList();
+                    
+                    var modelStateKeys = ModelState.Keys.ToList();
+                    var modelStateValues = ModelState.ToDictionary(
+                        kvp => kvp.Key, 
+                        kvp => new { 
+                            Value = kvp.Value.Value, 
+                            Errors = kvp.Value.Errors.Select(e => e.ErrorMessage).ToList(),
+                            IsValid = kvp.Value.Errors.Count == 0
+                        }
+                    );
+                    
+                    _logger.Warning("🏥 MEDICAL: خطاهای Model Binding - CorrelationId: {CorrelationId}, Errors: {@Errors}, ModelStateKeys: {@ModelStateKeys}, ModelStateValues: {@ModelStateValues}, User: {UserName} (Id: {UserId})",
+                        correlationId, modelStateErrors, modelStateKeys, modelStateValues, _currentUserService.UserName, _currentUserService.UserId);
+                    
                     // 🚀 P0 FIX: بررسی AJAX Request برای JSON Response
                     if (Request.IsAjaxRequest())
                     {
@@ -883,7 +962,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         
                         return Json(new { 
                             success = false, 
-                            message = "خطا در اعتبارسنجی فرم",
+                            message = "خطا در Model Binding",
                             errors = errors,
                             correlationId = correlationId
                         });
@@ -1254,21 +1333,30 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (providersTask.Result?.Success == true && providersTask.Result.Data?.Any() == true)
                 {
                     // تنظیم SelectLists جدید برای سازگاری با Viewها
-                    model.InsuranceProviders = new SelectList(providersTask.Result.Data, "Id", "Name", model.InsuranceProviderId);
-                    model.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Id", "Name", model.InsuranceProviderId);
+                    // 🔧 FIX: استفاده از Value و Text properties به جای فیلدهای مستقیم
+                    model.InsuranceProviders = new SelectList(providersTask.Result.Data, "Value", "Text", model.InsuranceProviderId);
+                    model.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Value", "Text", model.InsuranceProviderId);
                     _logger.Debug("🏥 MEDICAL: Insurance Providers loaded - Count: {Count}, SelectedId: {SelectedId}, CorrelationId: {CorrelationId}",
+                        providersTask.Result.Data.Count, model.InsuranceProviderId, correlationId);
+                    
+                    // 🔍 DEBUG LOGGING - InsuranceProviders loaded successfully
+                    _logger.Debug("🔍 LoadSelectListsForCreateEditAsync - InsuranceProviders loaded successfully - Count: {Count}, SelectedId: {SelectedId}, CorrelationId: {CorrelationId}",
                         providersTask.Result.Data.Count, model.InsuranceProviderId, correlationId);
                 }
                 else
                 {
-                    model.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
-                    model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+                    model.InsuranceProviders = new SelectList(new List<object>(), "Value", "Text");
+                    model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
                     _logger.Warning("🏥 MEDICAL: No insurance providers found - CorrelationId: {CorrelationId}", correlationId);
+                    
+                    // 🔍 DEBUG LOGGING - No InsuranceProviders found
+                    _logger.Warning("🔍 LoadSelectListsForCreateEditAsync - No InsuranceProviders found - providersTask.Result.Success: {Success}, providersTask.Result.Data.Count: {DataCount}, CorrelationId: {CorrelationId}",
+                        providersTask.Result?.Success, providersTask.Result?.Data?.Count, correlationId);
                 }
 
                 // 🚀 FIX: طرح‌های بیمه باید خالی باشند تا بعد از انتخاب ارائه‌دهنده لود شوند
-                model.InsurancePlans = new SelectList(new List<object>(), "Id", "Name");
-                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
+                model.InsurancePlans = new SelectList(new List<object>(), "Value", "Text");
+                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
                 _logger.Debug("🏥 MEDICAL: Insurance Plans initialized as empty - will load after provider selection, CorrelationId: {CorrelationId}", correlationId);
 
                 // 🔄 تنظیم SelectLists برای حالت ویرایش
@@ -1280,6 +1368,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         var categoriesResult = await _serviceManagementService.GetActiveServiceCategoriesForLookupAsync(model.DepartmentId);
                         if (categoriesResult.Success && categoriesResult.Data?.Any() == true)
                         {
+                            // 🔧 FIX: استفاده از Id و Name به جای ServiceCategoryId و Name
                             model.ServiceCategories = new SelectList(categoriesResult.Data, "Id", "Name", model.ServiceCategoryId);
                             model.ServiceCategorySelectList = new SelectList(categoriesResult.Data, "Id", "Name", model.ServiceCategoryId);
                         }
@@ -1293,6 +1382,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         {
                             // Fix: Use ServiceId only if it's greater than 0
                             var selectedServiceId = model.ServiceId > 0 ? model.ServiceId : (int?)null;
+                            // 🔧 FIX: استفاده از Id و Name به جای ServiceId و Name
                             model.Services = new SelectList(servicesResult.Data, "Id", "Name", selectedServiceId);
                             model.ServiceSelectList = new SelectList(servicesResult.Data, "Id", "Name", selectedServiceId);
                         }
@@ -1312,8 +1402,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         {
                             // Fix: Use InsurancePlanId only if it's greater than 0
                             var selectedPlanId = model.InsurancePlanId > 0 ? model.InsurancePlanId : (int?)null;
-                            model.InsurancePlans = new SelectList(plansResult.Data, "InsurancePlanId", "Name", selectedPlanId);
-                            model.InsurancePlanSelectList = new SelectList(plansResult.Data, "InsurancePlanId", "Name", selectedPlanId);
+                            
+                            // 🔧 FIX: استفاده از Value و Text properties به جای فیلدهای مستقیم
+                            model.InsurancePlans = new SelectList(plansResult.Data, "Value", "Text", selectedPlanId);
+                            model.InsurancePlanSelectList = new SelectList(plansResult.Data, "Value", "Text", selectedPlanId);
                         }
                     }
                 }
@@ -1336,6 +1428,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Error(ex, "🏥 MEDICAL: خطا در بارگیری SelectLists - Duration: {Duration}ms, CorrelationId: {CorrelationId}, User: {UserName} (Id: {UserId})",
                     duration.TotalMilliseconds, correlationId, _currentUserService.UserName, _currentUserService.UserId);
 
+                // 🔍 ANTI-BULLET LOGGING: Detailed exception analysis
+                _logger.Error("🔍 ANTI-BULLET: Exception Details - Type: {ExceptionType}, Message: {Message}, StackTrace: {StackTrace}, CorrelationId: {CorrelationId}",
+                    ex.GetType().Name, ex.Message, ex.StackTrace, correlationId);
+
                 // 🛡️ Fallback: تنظیم SelectLists خالی در صورت خطا
                 SetEmptySelectLists(model);
             }
@@ -1350,14 +1446,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             model.Departments = new SelectList(new List<object>(), "Id", "Name");
             model.ServiceCategories = new SelectList(new List<object>(), "Id", "Name");
             model.Services = new SelectList(new List<object>(), "Id", "Name");
-            model.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
-            model.InsurancePlans = new SelectList(new List<object>(), "Id", "Name");
+            model.InsuranceProviders = new SelectList(new List<object>(), "Value", "Text");
+            model.InsurancePlans = new SelectList(new List<object>(), "Value", "Text");
 
             // Legacy SelectLists برای سازگاری با کد قدیمی
-                model.DepartmentSelectList = new SelectList(new List<object>(), "Id", "Name");
-            model.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
+            model.DepartmentSelectList = new SelectList(new List<object>(), "Id", "Name");
+            model.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
             model.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
-            model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+            model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
             model.ServiceCategorySelectList = new SelectList(new List<object>(), "Id", "Name");
         }
 

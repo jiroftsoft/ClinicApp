@@ -749,6 +749,17 @@
                         patientSharePercent: $('#PatientSharePercent').val(),
                         insurerSharePercent: $('#InsurerSharePercent').val()
                     });
+                    
+                    // 🔍 DEBUG LOGGING - InsuranceProviderId field on page load
+                    var providerField = $('#InsuranceProviderId');
+                    console.log('🔍 InsuranceProviderId Field on Page Load:', {
+                        exists: providerField.length > 0,
+                        value: providerField.val(),
+                        selectedIndex: providerField.prop('selectedIndex'),
+                        options: providerField.find('option').map(function() { return { value: this.value, text: this.text }; }).get(),
+                        hasValue: providerField.val() !== null && providerField.val() !== undefined && providerField.val() !== ''
+                    });
+                    
                     storeOriginalFormData();
                 }, 100);
 
@@ -776,9 +787,14 @@
                         if (!isNaN(cleanValue)) {
                             // For percentage fields, keep 2 decimal places with dot separator
                             if ($field.attr('id').includes('Percent')) {
-                                // 🔍 FIX: Check if value is already multiplied by 10 (e.g., 300 instead of 30)
-                                if (cleanValue > 100) {
-                                    // If value is > 100, it's likely multiplied by 10, so divide by 10
+                                // 🔍 FIX: Only divide by 10 if value is clearly wrong (e.g., 3000 instead of 30)
+                                // But don't divide if value is 300 (which should be 30% but displayed as 300)
+                                if (cleanValue > 1000) {
+                                    // If value is > 1000, it's likely multiplied by 100, so divide by 100
+                                    cleanValue = cleanValue / 100;
+                                    console.log('🔍 FIX: Divided percentage by 100:', $field.attr('id'), 'from', cleanValue * 100, 'to', cleanValue);
+                                } else if (cleanValue > 100 && cleanValue <= 1000) {
+                                    // If value is between 100-1000, it's likely multiplied by 10, so divide by 10
                                     cleanValue = cleanValue / 10;
                                     console.log('🔍 FIX: Divided percentage by 10:', $field.attr('id'), 'from', cleanValue * 10, 'to', cleanValue);
                                 }
@@ -1132,6 +1148,28 @@
                     var submitBtn = $(this).find('button[type="submit"]');
                     var form = $(this);
                     
+                    // 🔍 DEBUG LOGGING - Form submission data
+                    console.log('🔍 Form Submission Debug:', {
+                        insuranceProviderId: $('#InsuranceProviderId').val(),
+                        insurancePlanId: $('#InsurancePlanId').val(),
+                        serviceId: $('#ServiceId').val(),
+                        serviceCategoryId: $('#ServiceCategoryId').val(),
+                        departmentId: $('#DepartmentId').val(),
+                        tariffPrice: $('#TariffPrice').val(),
+                        patientShare: $('#PatientShare').val(),
+                        insurerShare: $('#InsurerShare').val()
+                    });
+                    
+                    // 🔍 DEBUG LOGGING - InsuranceProviderId field details
+                    var providerField = $('#InsuranceProviderId');
+                    console.log('🔍 InsuranceProviderId Field Debug:', {
+                        exists: providerField.length > 0,
+                        value: providerField.val(),
+                        selectedIndex: providerField.prop('selectedIndex'),
+                        options: providerField.find('option').map(function() { return { value: this.value, text: this.text }; }).get(),
+                        hasValue: providerField.val() !== null && providerField.val() !== undefined && providerField.val() !== ''
+                    });
+                    
                     // Check if already submitting
                     if (submitBtn.prop('disabled') || form.data('submitting')) {
                         e.preventDefault();
@@ -1420,9 +1458,6 @@
                     type: 'POST',
                     dataType: 'json',
                     data: formData,
-                    headers: {
-                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                    },
                     success: function(response) {
                         updateProgress(100);
                         // 🔍 FIX: Check both 'success' and 'Success' properties
@@ -1473,13 +1508,19 @@
                 var patientSharePercent = data.patientSharePercent || data.PatientSharePercent;
                 var insurerSharePercent = data.insurerSharePercent || data.InsurerSharePercent;
                 
-                if (patientSharePercent !== undefined && insurerSharePercent !== undefined) {
+                if (patientSharePercent !== undefined && patientSharePercent !== null && 
+                    insurerSharePercent !== undefined && insurerSharePercent !== null) {
                     console.log('🔍 JavaScript - Setting percentages from server:', {
                         patientSharePercent: patientSharePercent,
                         insurerSharePercent: insurerSharePercent
                     });
                     $('#PatientSharePercent').val(patientSharePercent.toFixed(2));
                     $('#InsurerSharePercent').val(insurerSharePercent.toFixed(2));
+                } else {
+                    console.log('🔍 JavaScript - Percentage values are null or undefined:', {
+                        patientSharePercent: patientSharePercent,
+                        insurerSharePercent: insurerSharePercent
+                    });
                 }
                 
                 $('#calculationResults').show();
