@@ -4,6 +4,11 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@* 🔧 CRITICAL FIX: Helper برای نمایش پول *@
+@helper Rial(object value) {
+    @($"{value ?? 0:N0} ریال")
+}
+
 <!-- 🚀 SEO: Meta Tags -->
 @section MetaTags {
     <meta name="description" content="مدیریت تعرفه‌های بیمه - سیستم کلینیک شفا" />
@@ -212,7 +217,10 @@
                         <p class="mb-0 opacity-75">مدیریت تعرفه‌های خاص خدمات برای طرح‌های بیمه</p>
                     </div>
                     <div>
-                        <a href="@Url.Action("Create")" class="btn btn-light">
+                        <a href="@Url.Action("Create", new { 
+                            DepartmentId = Model.Filter.DepartmentId,
+                            InsuranceProviderId = Model.Filter.InsuranceProviderId
+                        })" class="btn btn-light">
                             <i class="fas fa-plus"></i>
                             تعرفه جدید
                         </a>
@@ -233,25 +241,25 @@
                 <div class="row">
                     <div class="col-md-3 mb-3">
                         <div class="stat-card">
-                            <div class="stat-number">@Model.Statistics.TotalTariffs</div>
+                            <div class="stat-number" data-stat="total">@Model.Statistics.TotalTariffs</div>
                             <div class="stat-label">کل تعرفه‌های بیمه</div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="stat-card">
-                            <div class="stat-number">@Model.Statistics.ActiveTariffs</div>
+                            <div class="stat-number" data-stat="active">@Model.Statistics.ActiveTariffs</div>
                             <div class="stat-label">تعرفه‌های فعال</div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="stat-card">
-                            <div class="stat-number">@Model.Statistics.InactiveTariffs</div>
+                            <div class="stat-number" data-stat="inactive">@Model.Statistics.InactiveTariffs</div>
                             <div class="stat-label">تعرفه‌های غیرفعال</div>
                         </div>
                     </div>
                     <div class="col-md-3 mb-3">
                         <div class="stat-card">
-                            <div class="stat-number">@Model.Statistics.TotalServices</div>
+                            <div class="stat-number" data-stat="services">@Model.Statistics.TotalServices</div>
                             <div class="stat-label">خدمات تحت پوشش</div>
                         </div>
                     </div>
@@ -320,14 +328,14 @@
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>خدمت</th>
-                            <th>طرح بیمه</th>
-                            <th>قیمت تعرفه</th>
-                            <th>سهم بیمار</th>
-                            <th>سهم بیمه</th>
-                            <th>وضعیت</th>
-                            <th>تاریخ ایجاد</th>
-                            <th>عملیات</th>
+                            <th scope="col">خدمت</th>
+                            <th scope="col">طرح بیمه</th>
+                            <th scope="col">قیمت تعرفه</th>
+                            <th scope="col">سهم بیمار</th>
+                            <th scope="col">سهم بیمه</th>
+                            <th scope="col">وضعیت</th>
+                            <th scope="col">تاریخ ایجاد</th>
+                            <th scope="col">عملیات</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -352,16 +360,18 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="fw-bold text-primary">@(tariff.TariffPrice?.ToString("N0") ?? "0") تومان</span>
+                                        <span class="fw-bold text-primary">@Rial(tariff.TariffPrice)</span>
                                     </td>
                                     <td>
-                                        <span class="text-success">@(tariff.PatientShare?.ToString("N0") ?? "0") تومان</span>
+                                        <span class="text-success">@Rial(tariff.PatientShare)</span>
                                     </td>
                                     <td>
-                                        <span class="text-info">@(tariff.InsurerShare?.ToString("N0") ?? "0") تومان</span>
+                                        <span class="text-info">@Rial(tariff.InsurerShare)</span>
                                     </td>
                                     <td>
-                                        <span class="status-badge @(tariff.IsActive ? "status-active" : "status-inactive")">
+                                        <span class="status-badge @(tariff.IsActive ? "status-active" : "status-inactive")" 
+                                              role="status" 
+                                              aria-label="وضعیت: @(tariff.IsActive ? "فعال" : "غیرفعال")">
                                             @(tariff.IsActive ? "فعال" : "غیرفعال")
                                         </span>
                                     </td>
@@ -378,10 +388,15 @@
                                                 <i class="fas fa-edit"></i>
                                                 ویرایش
                                             </a>
-                                            <a href="@Url.Action("Delete", new { id = tariff.InsuranceTariffId })" class="medical-btn btn-delete">
-                                                <i class="fas fa-trash"></i>
-                                                حذف
-                                            </a>
+                                            @using (Html.BeginForm("Delete", "InsuranceTariff", FormMethod.Post, new { @class = "d-inline" }))
+                                            {
+                                                @Html.AntiForgeryToken()
+                                                @Html.Hidden("id", tariff.InsuranceTariffId)
+                                                <button type="submit" class="medical-btn btn-delete" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این تعرفه را حذف کنید؟');">
+                                                    <i class="fas fa-trash"></i>
+                                                    حذف
+                                                </button>
+                                            }
                                         </div>
                                     </td>
                                 </tr>
@@ -464,11 +479,8 @@
         $(document).ready(function() {
             console.log('🏥 MEDICAL: Insurance Tariff Index page loaded');
             
-            // 🚀 PERFORMANCE: Real-time data loading
-            $('.medical-table tbody tr').each(function() {
-                $(this).css('opacity', '0');
-                $(this).animate({ opacity: 1 }, 300);
-            });
+            // 🔧 CRITICAL FIX: کاهش انیمیشن‌های غیرضروری
+            $('.medical-table tbody').css('opacity', '0').animate({ opacity: 1 }, 200);
             
             // 🚀 UX: Enhanced interactions
             $('.medical-btn').hover(
@@ -476,16 +488,29 @@
                 function() { $(this).removeClass('shadow-sm'); }
             );
             
-            // 🚀 MEDICAL: Auto-refresh statistics
-            setInterval(function() {
+            // 🔧 CRITICAL FIX: Auto-refresh statistics with semantic keys
+            var statsTimer;
+            function loadStats() {
                 $.get('@Url.Action("GetStatistics")', function(data) {
-                    if (data.success) {
-                        $('.stat-number').each(function(index) {
-                            $(this).text(data.data[index]);
-                        });
+                    if (data && data.success && data.data) {
+                        $('[data-stat="total"]').text(data.data.totalTariffs || 0);
+                        $('[data-stat="active"]').text(data.data.activeTariffs || 0);
+                        $('[data-stat="inactive"]').text(data.data.inactiveTariffs || 0);
+                        $('[data-stat="services"]').text(data.data.totalServices || 0);
                     }
                 });
-            }, 30000); // هر 30 ثانیه
+            }
+            
+            // شروع تایمر
+            statsTimer = setInterval(loadStats, 30000);
+            
+            // پاک‌سازی تایمر هنگام خروج از صفحه
+            $(window).on('beforeunload', function() {
+                if (statsTimer) clearInterval(statsTimer);
+            });
+            
+            // بارگذاری اولیه
+            loadStats();
         });
     </script>
 }

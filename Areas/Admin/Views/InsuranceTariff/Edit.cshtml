@@ -745,19 +745,20 @@
                 if (value === null || value === undefined || value === '') return '';
                 var num = parseFloat(convertPersianToEnglish(value));
                 if (isNaN(num)) return '';
-                // 🔍 MEDICAL: Manual formatting to avoid locale issues with / separator
-                // برای مقادیر پولی، از toFixed(0) استفاده می‌کنیم (بدون اعشار)
+                // 🔧 CRITICAL FIX: فرمت صحیح اعداد پولی (بدون اعشار)
                 return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
             }
 
             function parseCurrency(value) {
                 if (!value) return 0;
-                // 🔍 MEDICAL: Enhanced parsing to handle various formats
+                // 🔧 CRITICAL FIX: پارس صحیح اعداد پولی
                 var clean = convertPersianToEnglish(value.toString().replace(/[,\s]/g, ''));
                 // Remove any non-numeric characters except decimal point
                 clean = clean.replace(/[^\d.-]/g, '');
                 return parseFloat(clean) || 0;
             }
+
+            // 🔧 CRITICAL FIX: حذف توابع تبدیل - سیستم یکپارچه ریال
 
             // ---------- Global State ----------
             var calculationTimeout, lastCalculationData = null, isCalculating = false;
@@ -821,11 +822,30 @@
                         // Convert to clean number - handle various formats including locale-specific separators
                         var cleanValue = parseFloat(convertPersianToEnglish(value.toString().replace(/[,\s]/g, '')));
                         if (!isNaN(cleanValue)) {
-                            // 🔧 CRITICAL FIX: فقط اعتبارسنجی 0-100، بدون تغییر مقادیر
-                            if (cleanValue < 0 || cleanValue > 100) {
+                            // 🔧 CRITICAL FIX: بررسی و اصلاح درصدهای اشتباه
+                            if (cleanValue > 100) {
                                 console.warn('🔧 CRITICAL: درصد خارج از بازه مجاز:', $field.attr('id'), 'value:', cleanValue);
-                                $field.addClass('is-invalid');
-                                $field.attr('aria-invalid', 'true');
+                                
+                                // 🔧 CRITICAL FIX: اگر درصد > 100 است، احتمالاً باید تقسیم بر 100 شود
+                                if (cleanValue > 1000) {
+                                    cleanValue = cleanValue / 100;
+                                    console.log('🔧 FIX: تقسیم بر 100:', $field.attr('id'), 'from', cleanValue * 100, 'to', cleanValue);
+                                } else if (cleanValue > 100) {
+                                    cleanValue = cleanValue / 10;
+                                    console.log('🔧 FIX: تقسیم بر 10:', $field.attr('id'), 'from', cleanValue * 10, 'to', cleanValue);
+                                }
+                                
+                                // بررسی مجدد بعد از اصلاح
+                                if (cleanValue < 0 || cleanValue > 100) {
+                                    $field.addClass('is-invalid');
+                                    $field.attr('aria-invalid', 'true');
+                                    console.error('🔧 CRITICAL: درصد هنوز خارج از بازه مجاز:', $field.attr('id'), 'value:', cleanValue);
+                                } else {
+                                    $field.removeClass('is-invalid');
+                                    $field.attr('aria-invalid', 'false');
+                                    $field.val(cleanValue.toFixed(2));
+                                    console.log('🔧 FIX: درصد اصلاح شد:', $field.attr('id'), 'value:', cleanValue);
+                                }
                             } else {
                                 $field.removeClass('is-invalid');
                                 $field.attr('aria-invalid', 'false');
@@ -1212,15 +1232,7 @@
                         .addClass('disabled')
                         .html('<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...');
                     
-                    // Re-enable after 5 seconds (in case of network issues)
-                    setTimeout(function() {
-                        if (form.data('submitting')) {
-                            form.data('submitting', false);
-                            submitBtn.prop('disabled', false)
-                                .removeClass('disabled')
-                                .html('<i class="fas fa-save"></i> ذخیره تغییرات');
-                        }
-                    }, 5000);
+                    // 🔧 CRITICAL FIX: حذف تایمر - دکمه فقط بعد از پاسخ سرور فعال می‌شود
                 });
             }
 
@@ -1243,7 +1255,8 @@
                                 if ($field.attr('id').includes('Percent')) {
                                     $field.val(numericValue.toFixed(2));
                                 } else {
-                                    $field.val(Math.round(numericValue));
+                                    // 🔧 CRITICAL FIX: برای فیلدهای پولی، فرمت صحیح اعمال کن
+                                    $field.val(formatCurrency(numericValue));
                                 }
                             }
                         }
@@ -1306,6 +1319,13 @@
 
                 // Form submission validation
                 $('#insuranceTariffEditForm').on('submit', function(e) {
+                    // 🔧 CRITICAL FIX: نرمال‌سازی مقادیر پولی قبل از Submit
+                    ['#TariffPrice', '#PatientShare', '#InsurerShare'].forEach(function(sel) {
+                        var $field = $(sel);
+                        var value = parseCurrency($field.val());
+                        $field.val(value > 0 ? value : 0);
+                    });
+                    
                     var isValid = true;
                     $('.medical-form-control[required]').each(function() {
                         if (!validateField($(this))) {
@@ -1315,6 +1335,16 @@
 
                     // Validate percentage sum
                     if (!validatePercentageSum()) {
+                        isValid = false;
+                    }
+                    
+                    // 🔧 CRITICAL FIX: ولیدیشن تساوی سهم‌ها با قیمت تعرفه
+                    var t = parseCurrency($('#TariffPrice').val());
+                    var p = parseCurrency($('#PatientShare').val());
+                    var i = parseCurrency($('#InsurerShare').val());
+                    if (t > 0 && (p + i) !== t) {
+                        e.preventDefault();
+                        alert('سهم بیمار + سهم بیمه باید برابر قیمت تعرفه (ریال) باشد.');
                         isValid = false;
                     }
 
@@ -1505,9 +1535,10 @@
                     data: { planId: planId },
                     success: function(response) {
                         if (response.success && response.data) {
-                            var deductible = response.data.deductible || 0;
-                            var tariffPrice = parseCurrency($('#TariffPrice').val()) || 0;
-                            var coverableAmount = Math.max(0, tariffPrice - deductible);
+                            // 🔧 CRITICAL FIX: فرانشیز از سرور (ریال) - بدون تبدیل
+                            var deductible = response.data.deductible || 0; // ریال از سرور
+                            var tariffPrice = parseCurrency($('#TariffPrice').val()) || 0; // ریال از UI
+                            var coverableAmount = Math.max(0, tariffPrice - deductible); // ریال - ریال = ریال
                             
                             $('#DeductibleAmount').val(formatCurrency(deductible));
                             $('#CoverableAmount').val(formatCurrency(coverableAmount));
@@ -1592,11 +1623,12 @@
                 });
             }
 
-            // 🔧 CRITICAL FIX: اعمال نتایج محاسبه به فرم
+            // 🔧 CRITICAL FIX: اعمال نتایج محاسبه به فرم (با اعداد خام)
             function applyCalculationToForm() {
-                var tariffPrice = parseCurrency($('#calculatedTariffPrice').text()) || 0;
-                var patientShare = parseCurrency($('#calculatedPatientShare').text()) || 0;
-                var insurerShare = parseCurrency($('#calculatedInsurerShare').text()) || 0;
+                // استفاده از اعداد خام ذخیره شده در data-*
+                var tariffPrice = $('#applyCalculationButton').data('tariffPrice') || 0;
+                var patientShare = $('#applyCalculationButton').data('patientShare') || 0;
+                var insurerShare = $('#applyCalculationButton').data('insurerShare') || 0;
                 
                 if (tariffPrice > 0) {
                     // اعمال مقادیر به فیلدهای فرم
@@ -1663,15 +1695,17 @@
                 // 🔧 FIX: دریافت فرانشیز از طرح بیمه
                 loadDeductibleAmount(planId);
 
+                // 🔧 CRITICAL FIX: تمام مقادیر در سیستم به صورت ریال هستند
                 var formData = {
                     serviceId: serviceId,
                     insurancePlanId: planId,
                     providerId: $('#InsuranceProviderId').val(),
-                    currentTariffPrice: parseCurrency($('#TariffPrice').val()) || 0,
-                    currentPatientShare: parseCurrency($('#PatientShare').val()) || 0,
-                    currentInsurerShare: parseCurrency($('#InsurerShare').val()) || 0,
+                    currentTariffPrice: parseCurrency($('#TariffPrice').val()) || 0, // ریال
+                    currentPatientShare: parseCurrency($('#PatientShare').val()) || 0, // ریال
+                    currentInsurerShare: parseCurrency($('#InsurerShare').val()) || 0, // ریال
                     patientSharePercent: $('#PatientSharePercent').val() ? parseFloat($('#PatientSharePercent').val()) : null,
                     insurerSharePercent: $('#InsurerSharePercent').val() ? parseFloat($('#InsurerSharePercent').val()) : null,
+                    unit: 'RIAL', // 🔧 CRITICAL FIX: واحد صریح
                     correlationId: correlationId
                 };
 
@@ -1688,6 +1722,7 @@
                     url: '@Url.Action("CalculateAdvancedTariff", "InsuranceTariff")',
                     type: 'POST',
                     dataType: 'json',
+                    headers: { 'RequestVerificationToken': token }, // 🔧 CRITICAL FIX: Anti-Forgery در Header
                     data: formData,
                     success: function(response) {
                         updateProgress(100);
@@ -1717,12 +1752,12 @@
                     return;
                 }
                 
-                // 🔍 MEDICAL: Bind server-calculated values to form fields (raw numbers for input fields)
+                // 🔧 CRITICAL FIX: دریافت مقادیر از سرور (ریال) و نمایش در UI (ریال) - بدون تبدیل
                 // Server provides authoritative calculations with proper rounding
                 // 🔍 FIX: Check both lowercase and uppercase property names
-                var tariffPrice = parseFloat(data.tariffPrice || data.TariffPrice) || 0;
-                var patientShare = parseFloat(data.patientShare || data.PatientShare) || 0;
-                var insurerShare = parseFloat(data.insurerShare || data.InsurerShare) || 0;
+                var tariffPrice = parseFloat(data.tariffPrice || data.TariffPrice) || 0; // ریال از سرور
+                var patientShare = parseFloat(data.patientShare || data.PatientShare) || 0; // ریال از سرور
+                var insurerShare = parseFloat(data.insurerShare || data.InsurerShare) || 0; // ریال از سرور
                 
                 console.log('🔍 DEBUG - displayCalculationResults:', {
                     tariffPrice: tariffPrice,
@@ -1731,20 +1766,27 @@
                     rawData: data
                 });
                 
-                // 🔧 FIX: در حالت ویرایش، فقط نتایج محاسبه را نمایش بده، فیلدها را تغییر نده
+                // 🔧 CRITICAL FIX: تمام مقادیر در سیستم به صورت ریال هستند
                 if (isEditMode) {
-                    console.log('🏥 MEDICAL: در حالت ویرایش - فقط نمایش نتایج محاسبه');
+                    console.log('🏥 MEDICAL: در حالت ویرایش - نمایش نتایج محاسبه');
                     // نمایش در بخش نتایج محاسبه (formatted for display)
                     $('#calculatedTariffPrice').text(formatCurrency(tariffPrice) + ' ریال');
                     $('#calculatedPatientShare').text(formatCurrency(patientShare) + ' ریال');
                     $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' ریال');
+                    
+                    // 🔧 CRITICAL FIX: ذخیره اعداد خام برای اعمال
+                    $('#applyCalculationButton').data({
+                        tariffPrice: tariffPrice,
+                        patientShare: patientShare,
+                        insurerShare: insurerShare
+                    });
                     
                     // 🔧 CRITICAL FIX: نمایش دکمه اعمال در حالت ویرایش
                     $('#applyCalculationButton').show();
                     return;
                 }
                 
-                // 🔧 CRITICAL FIX: Single Source of Truth - استفاده از مقادیر سرور
+                // 🔧 CRITICAL FIX: مقادیر ریال مستقیماً در فیلدها قرار می‌گیرند
                 $('#TariffPrice').val(tariffPrice);
                 $('#PatientShare').val(patientShare);
                 $('#InsurerShare').val(insurerShare);

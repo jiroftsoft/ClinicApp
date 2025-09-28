@@ -1837,6 +1837,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             var correlationId = Guid.NewGuid().ToString();
             var startTime = DateTime.UtcNow;
 
+            // 🔧 CRITICAL FIX: مقادیر از JavaScript قبلاً تبدیل شده‌اند (تومان → ریال)
+            // نیازی به تبدیل مجدد نیست چون JavaScript قبلاً تبدیل کرده
+
             _logger.Information("🏥 MEDICAL: شروع محاسبه پیشرفته تعرفه - CorrelationId: {CorrelationId}, ServiceId: {ServiceId}, InsurancePlanId: {InsurancePlanId}, ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
                 correlationId, serviceId, insurancePlanId, providerId, _currentUserService.UserName, _currentUserService.UserId);
 
@@ -1975,6 +1978,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _logger.Information("🏥 MEDICAL: مرحله 5 - آماده‌سازی پاسخ - CorrelationId: {CorrelationId}",
                     correlationId);
                 
+                // 🔧 CRITICAL FIX: مقادیر محاسبه شده در ریال هستند و JavaScript تبدیل می‌کند
+                // نیازی به تبدیل مجدد نیست چون JavaScript خودش تبدیل می‌کند
+
                 // 🚀 P1 FIX: استفاده از ApiResponse استاندارد
                 var response = ApiResponse<object>.CreateSuccess(
                     calculationResult, 
@@ -2209,20 +2215,56 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             try
             {
                 var deductible = await GetDeductibleAsync(planId, Guid.NewGuid().ToString());
+                var coveragePercent = await GetCoveragePercentAsync(planId, Guid.NewGuid().ToString());
                 
                 return Json(new { 
                     success = true, 
-                    data = new { deductible = deductible },
-                    message = "فرانشیز با موفقیت دریافت شد"
+                    data = new { 
+                        deductible = deductible,
+                        coveragePercent = coveragePercent
+                    },
+                    message = "اطلاعات طرح بیمه با موفقیت دریافت شد"
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت فرانشیز - PlanId: {PlanId}", planId);
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت اطلاعات طرح بیمه - PlanId: {PlanId}", planId);
                 return Json(new { 
                     success = false, 
-                    message = "خطا در دریافت فرانشیز" 
+                    message = "خطا در دریافت اطلاعات طرح بیمه" 
                 }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت درصد پوشش طرح بیمه
+        /// </summary>
+        private async Task<decimal> GetCoveragePercentAsync(int insurancePlanId, string correlationId)
+        {
+            try
+            {
+                var insurancePlan = await _context.InsurancePlans
+                    .Where(p => p.InsurancePlanId == insurancePlanId && p.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (insurancePlan == null)
+                {
+                    _logger.Warning("🏥 MEDICAL: طرح بیمه یافت نشد - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}", 
+                        insurancePlanId, correlationId);
+                    return 0m;
+                }
+
+                var coveragePercent = insurancePlan.CoveragePercent;
+                _logger.Debug("🏥 MEDICAL: دریافت درصد پوشش - InsurancePlanId: {InsurancePlanId}, CoveragePercent: {CoveragePercent}, CorrelationId: {CorrelationId}",
+                    insurancePlanId, coveragePercent, correlationId);
+
+                return coveragePercent;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت درصد پوشش - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}", 
+                    insurancePlanId, correlationId);
+                return 0m;
             }
         }
 
@@ -2273,11 +2315,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return currentPatientShare.Value;
                 }
 
-                // 🔧 FIX: محاسبه فرانشیز و سهم بیمار با سقف‌گذاری
+                // 🔧 CRITICAL FIX: محاسبه صحیح سهم بیمار
                 var deductible = await GetDeductibleAsync(insurancePlanId, correlationId);
                 var coverableAmount = Math.Max(0, tariffPrice - deductible);
-                var remainingAfterInsurance = Math.Max(0, coverableAmount - insurerShare);
-                var patientShareRaw = deductible + remainingAfterInsurance;
+                var insurerShareFromCoverable = Math.Min(insurerShare, coverableAmount);
+                var patientShareRaw = deductible + (coverableAmount - insurerShareFromCoverable);
                 
                 // 🔧 CRITICAL FIX: سقف‌گذاری سهم بیمار به مبلغ تعرفه
                 var calculatedShare = Math.Min(tariffPrice, patientShareRaw);
@@ -2290,8 +2332,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     calculatedShare = Math.Max(0, calculatedShare + remainder);
                 }
 
-                _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمار با فرانشیز - TariffPrice: {TariffPrice}, Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, InsurerShare: {InsurerShare}, RemainingAfterInsurance: {RemainingAfterInsurance}, Result: {Result}, CorrelationId: {CorrelationId}",
-                    tariffPrice, deductible, coverableAmount, insurerShare, remainingAfterInsurance, calculatedShare, correlationId);
+                _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمار با فرانشیز - TariffPrice: {TariffPrice}, Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, InsurerShare: {InsurerShare}, InsurerShareFromCoverable: {InsurerShareFromCoverable}, Result: {Result}, CorrelationId: {CorrelationId}",
+                    tariffPrice, deductible, coverableAmount, insurerShare, insurerShareFromCoverable, calculatedShare, correlationId);
 
                 // 🚀 FINANCIAL PRECISION: گرد کردن به ریال (بدون اعشار)
                 return Math.Round(calculatedShare, 0, MidpointRounding.AwayFromZero);

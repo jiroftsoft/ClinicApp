@@ -771,9 +771,10 @@ namespace ClinicApp.Services.Insurance
                     return (null, null, null);
                 }
 
-                decimal? tariffPrice = model.TariffPrice;
-                decimal? patientShare = model.PatientShare;
-                decimal? insurerShare = model.InsurerShare;
+                // 🔧 CRITICAL FIX: تبدیل واحد از تومان (UI) به ریال (Database)
+                decimal? tariffPrice = model.TariffPrice.HasValue ? model.TariffPrice * 10 : null; // تومان → ریال
+                decimal? patientShare = model.PatientShare.HasValue ? model.PatientShare * 10 : null; // تومان → ریال
+                decimal? insurerShare = model.InsurerShare.HasValue ? model.InsurerShare * 10 : null; // تومان → ریال
 
                 // محاسبه قیمت تعرفه با استفاده از موتور اصلی محاسبات
                 if (!tariffPrice.HasValue)
@@ -907,9 +908,10 @@ namespace ClinicApp.Services.Insurance
                     return (null, null, null);
                 }
 
-                decimal? tariffPrice = model.TariffPrice;
-                decimal? patientShare = model.PatientShare;
-                decimal? insurerShare = model.InsurerShare;
+                // 🔧 CRITICAL FIX: تبدیل واحد از تومان (UI) به ریال (Database)
+                decimal? tariffPrice = model.TariffPrice.HasValue ? model.TariffPrice * 10 : null; // تومان → ریال
+                decimal? patientShare = model.PatientShare.HasValue ? model.PatientShare * 10 : null; // تومان → ریال
+                decimal? insurerShare = model.InsurerShare.HasValue ? model.InsurerShare * 10 : null; // تومان → ریال
 
                 // محاسبه قیمت تعرفه با استفاده از موتور اصلی محاسبات
                 if (!tariffPrice.HasValue)

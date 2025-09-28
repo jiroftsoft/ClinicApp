@@ -246,15 +246,14 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 ServiceId = entity.ServiceId,
                 InsuranceProviderId = entity.InsurancePlan?.InsuranceProviderId ?? 0,
                 InsurancePlanId = entity.InsurancePlanId ?? 0,
-                TariffPrice = entity.TariffPrice ?? 0,
-                // 🔍 FIX: PatientShare و InsurerShare در دیتابیس به عنوان مبلغ ذخیره می‌شوند
-                PatientShare = entity.PatientShare ?? 0,
-                InsurerShare = entity.InsurerShare ?? 0,
-                // 🔧 CRITICAL FIX: محاسبه صحیح درصدها از مبلغ‌ها
-                PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
-                    Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
-                InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 
-                    Math.Round((entity.InsurerShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
+                // 🔧 CRITICAL FIX: تبدیل واحد از ریال (Database) به تومان (UI) و محاسبه درصدها
+                TariffPrice = entity.TariffPrice.HasValue ? Math.Round(entity.TariffPrice.Value / 10, 0, MidpointRounding.AwayFromZero) : null, // ریال → تومان
+                PatientShare = entity.PatientShare.HasValue ? Math.Round(entity.PatientShare.Value / 10, 0, MidpointRounding.AwayFromZero) : null, // ریال → تومان
+                InsurerShare = entity.InsurerShare.HasValue ? Math.Round(entity.InsurerShare.Value / 10, 0, MidpointRounding.AwayFromZero) : null, // ریال → تومان
+        PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
+            Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
+        InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 
+            Math.Round((entity.InsurerShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
                 IsActive = entity.IsActive,
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,

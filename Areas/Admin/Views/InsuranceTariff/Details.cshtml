@@ -5,6 +5,11 @@
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
+@* 🔧 CRITICAL FIX: Helper برای نمایش پول *@
+@helper Rial(object value) {
+    @($"{value ?? 0:N0} ریال")
+}
+
 @functions {
     string FormatCurrency(decimal? value)
     {
@@ -371,15 +376,15 @@
                     </h5>
                 <div class="medical-details-field">
                     <span class="medical-details-label">قیمت تعرفه:</span>
-                    <span class="medical-details-value currency">@FormatCurrency(Model.TariffPrice) تومان</span>
+                    <span class="medical-details-value currency" dir="ltr">@Rial(Model.TariffPrice)</span>
                 </div>
                 <div class="medical-details-field">
                     <span class="medical-details-label">سهم بیمار:</span>
-                    <span class="medical-details-value currency">@FormatCurrency(Model.PatientShare) تومان</span>
+                    <span class="medical-details-value currency" dir="ltr">@Rial(Model.PatientShare)</span>
                 </div>
                 <div class="medical-details-field">
                     <span class="medical-details-label">سهم بیمه:</span>
-                    <span class="medical-details-value currency">@FormatCurrency(Model.InsurerShare) تومان</span>
+                    <span class="medical-details-value currency" dir="ltr">@Rial(Model.InsurerShare)</span>
                 </div>
                 @* Supplementary coverage information removed as it's not available in the ViewModel *@
                 @* Primary coverage information removed as it's not available in the ViewModel *@
@@ -395,7 +400,9 @@
                     </h5>
                 <div class="medical-details-field">
                     <span class="medical-details-label">وضعیت:</span>
-                    <span class="medical-details-value @(Model.IsActive ? "status-active" : "status-inactive")">
+                    <span class="medical-details-value @(Model.IsActive ? "status-active" : "status-inactive")" 
+                          role="status" 
+                          aria-label="وضعیت: @(Model.IsActive ? "فعال" : "غیرفعال")">
                         @(Model.IsActive ? "فعال" : "غیرفعال")
                     </span>
                 </div>
@@ -434,14 +441,23 @@
                     <i class="fas fa-arrow-right"></i>
                     بازگشت به لیست
                 </a>
+                <button type="button" class="medical-btn medical-btn-primary" onclick="triggerPrint()">
+                    <i class="fas fa-print"></i>
+                    چاپ
+                </button>
                 <a href="@Url.Action("Edit", new { id = Model.InsuranceTariffId })" class="medical-btn medical-btn-warning">
                     <i class="fas fa-edit"></i>
                     ویرایش
                 </a>
-                <a href="@Url.Action("Delete", new { id = Model.InsuranceTariffId })" class="medical-btn medical-btn-danger">
-                    <i class="fas fa-trash"></i>
-                    حذف
-                </a>
+                @using (Html.BeginForm("Delete", "InsuranceTariff", FormMethod.Post, new { @class = "d-inline" }))
+                {
+                    @Html.AntiForgeryToken()
+                    @Html.Hidden("id", Model.InsuranceTariffId)
+                    <button type="submit" class="medical-btn medical-btn-danger" onclick="return confirm('حذف این تعرفه قطعی است. ادامه می‌دهید؟');">
+                        <i class="fas fa-trash"></i>
+                        حذف
+                    </button>
+                }
             </div>
         </div>
     </div>
@@ -449,6 +465,11 @@
 
 @section Scripts {
     <script>
+        // 🔧 CRITICAL FIX: Print functionality - در scope سراسری
+        function triggerPrint() {
+            window.print();
+        }
+        
         $(document).ready(function() {
             console.log('🏥 MEDICAL: Insurance Tariff Details page loaded');
             
@@ -463,11 +484,6 @@
                 function() { $(this).addClass('shadow-sm'); },
                 function() { $(this).removeClass('shadow-sm'); }
             );
-            
-            // 🚀 MEDICAL: Print functionality
-            window.print = function() {
-                window.print();
-            };
         });
     </script>
 }
