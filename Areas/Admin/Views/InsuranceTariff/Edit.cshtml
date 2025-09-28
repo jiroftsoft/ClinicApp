@@ -522,6 +522,31 @@
                         </div>
                     </div>
 
+                    <!-- Deductible Amount -->
+                    <div class="col-md-4 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="DeductibleAmount">
+                                فرانشیز بیمه (تومان)
+                            </label>
+                            <input type="text" class="medical-form-control text-left ltr" id="DeductibleAmount" readonly placeholder="فرانشیز از طرح بیمه" aria-describedby="DeductibleAmount-help" />
+                            <div class="medical-form-help" id="DeductibleAmount-help">مبلغ فرانشیز از طرح بیمه انتخاب شده</div>
+                        </div>
+                    </div>
+
+                    <!-- Coverable Amount -->
+                    <div class="col-md-4 mb-3">
+                        <div class="medical-form-group">
+                            <label class="medical-form-label" for="CoverableAmount">
+                                مبلغ قابل پوشش (تومان)
+                            </label>
+                            <input type="text" class="medical-form-control text-left ltr" id="CoverableAmount" readonly placeholder="مبلغ قابل پوشش" aria-describedby="CoverableAmount-help" />
+                            <div class="medical-form-help" id="CoverableAmount-help">مبلغ قابل پوشش = قیمت تعرفه - فرانشیز</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+
                     <!-- Patient Share -->
                     <div class="col-md-4 mb-3">
                         <div class="medical-form-group">
@@ -529,7 +554,7 @@
                                 سهم بیمار (تومان)
                             </label>
                             @Html.TextBoxFor(m => m.PatientShare, new { @class = "medical-form-control text-left ltr", @id = "PatientShare", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 50000", @aria_describedby = "PatientShare-help PatientShare-error", @aria_invalid = "false" })
-                            <div class="medical-form-help" id="PatientShare-help">سهم بیمار (تومان)</div>
+                            <div class="medical-form-help" id="PatientShare-help">سهم بیمار = فرانشیز + مبلغ باقی‌مانده بعد از بیمه</div>
                             @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "medical-form-error", @id = "PatientShare-error" })
                         </div>
                     </div>
@@ -541,7 +566,7 @@
                                 سهم بیمه (تومان)
                             </label>
                             @Html.TextBoxFor(m => m.InsurerShare, new { @class = "medical-form-control text-left ltr", @id = "InsurerShare", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 200000", @aria_describedby = "InsurerShare-help InsurerShare-error", @aria_invalid = "false" })
-                            <div class="medical-form-help" id="InsurerShare-help">سهم بیمه (تومان)</div>
+                            <div class="medical-form-help" id="InsurerShare-help">سهم بیمه = مبلغ قابل پوشش × درصد پوشش</div>
                             @Html.ValidationMessageFor(m => m.InsurerShare, "", new { @class = "medical-form-error", @id = "InsurerShare-error" })
                         </div>
                     </div>
@@ -1410,6 +1435,41 @@
                 $('#calculateBtn').on('click', function() {
                     performCalculation();
                 });
+
+                // 🔧 FIX: دریافت فرانشیز هنگام تغییر طرح بیمه
+                $('#InsurancePlanId').on('change', function() {
+                    var planId = $(this).val();
+                    if (planId) {
+                        loadDeductibleAmount(planId);
+                    }
+                });
+            }
+
+            // 🔧 FIX: دریافت فرانشیز از طرح بیمه
+            function loadDeductibleAmount(planId) {
+                if (!planId) return;
+                
+                $.ajax({
+                    url: '@Url.Action("GetInsurancePlanDeductible", "InsuranceTariff")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { planId: planId },
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            var deductible = response.data.deductible || 0;
+                            var tariffPrice = parseCurrency($('#TariffPrice').val()) || 0;
+                            var coverableAmount = Math.max(0, tariffPrice - deductible);
+                            
+                            $('#DeductibleAmount').val(formatCurrency(deductible));
+                            $('#CoverableAmount').val(formatCurrency(coverableAmount));
+                            
+                            console.log('🏥 MEDICAL: فرانشیز دریافت شد - PlanId:', planId, 'Deductible:', deductible);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('🏥 MEDICAL: خطا در دریافت فرانشیز:', error);
+                    }
+                });
             }
 
             function debounceCalculation() {
@@ -1435,6 +1495,9 @@
 
                 var correlationId = 'calc_edit_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 console.log('🏥 MEDICAL: Performing edit calculation - CorrelationId:', correlationId, 'ServiceId: [MASKED], PlanId: [MASKED]');
+
+                // 🔧 FIX: دریافت فرانشیز از طرح بیمه
+                loadDeductibleAmount(planId);
 
                 var formData = {
                     serviceId: serviceId,

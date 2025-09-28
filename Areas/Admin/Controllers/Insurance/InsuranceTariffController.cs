@@ -2175,11 +2175,15 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         coveragePercent, correlationId);
                 }
 
-                // 🚀 FINANCIAL PRECISION: محاسبه دقیق سهم بیمه بر اساس ریال
-                var calculatedShare = tariffPrice * (coveragePercent / 100m);
+                // 🔧 FIX: محاسبه فرانشیز و مبلغ قابل پوشش
+                var deductible = insurancePlan.Deductible;
+                var coverableAmount = Math.Max(0, tariffPrice - deductible);
+                
+                // 🚀 FINANCIAL PRECISION: محاسبه دقیق سهم بیمه بر اساس مبلغ قابل پوشش
+                var calculatedShare = coverableAmount * (coveragePercent / 100m);
 
-                _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمه با PlanService - TariffPrice: {TariffPrice}, CoveragePercent: {CoveragePercent}, Result: {Result}, CorrelationId: {CorrelationId}",
-                    tariffPrice, coveragePercent, calculatedShare, correlationId);
+                _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمه با PlanService و فرانشیز - TariffPrice: {TariffPrice}, Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, CoveragePercent: {CoveragePercent}, Result: {Result}, CorrelationId: {CorrelationId}",
+                    tariffPrice, deductible, coverableAmount, coveragePercent, calculatedShare, correlationId);
 
                 // 🚀 FINANCIAL PRECISION: گرد کردن به ریال (بدون اعشار)
                 return Math.Round(calculatedShare, 0, MidpointRounding.AwayFromZero);
@@ -2187,6 +2191,64 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             catch (Exception ex)
             {
                 _logger.Error(ex, "🏥 MEDICAL: خطا در محاسبه سهم بیمه با PlanService - CorrelationId: {CorrelationId}", correlationId);
+                return 0m;
+            }
+        }
+
+        /// <summary>
+        /// دریافت فرانشیز طرح بیمه - API endpoint
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetInsurancePlanDeductible(int planId)
+        {
+            try
+            {
+                var deductible = await GetDeductibleAsync(planId, Guid.NewGuid().ToString());
+                
+                return Json(new { 
+                    success = true, 
+                    data = new { deductible = deductible },
+                    message = "فرانشیز با موفقیت دریافت شد"
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت فرانشیز - PlanId: {PlanId}", planId);
+                return Json(new { 
+                    success = false, 
+                    message = "خطا در دریافت فرانشیز" 
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت فرانشیز طرح بیمه
+        /// </summary>
+        private async Task<decimal> GetDeductibleAsync(int insurancePlanId, string correlationId)
+        {
+            try
+            {
+                var insurancePlan = await _context.InsurancePlans
+                    .Where(p => p.InsurancePlanId == insurancePlanId && p.IsActive)
+                    .FirstOrDefaultAsync();
+
+                if (insurancePlan == null)
+                {
+                    _logger.Warning("🏥 MEDICAL: طرح بیمه یافت نشد - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}", 
+                        insurancePlanId, correlationId);
+                    return 0m;
+                }
+
+                var deductible = insurancePlan.Deductible;
+                _logger.Debug("🏥 MEDICAL: دریافت فرانشیز - InsurancePlanId: {InsurancePlanId}, Deductible: {Deductible}, CorrelationId: {CorrelationId}",
+                    insurancePlanId, deductible, correlationId);
+
+                return deductible;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🏥 MEDICAL: خطا در دریافت فرانشیز - InsurancePlanId: {InsurancePlanId}, CorrelationId: {CorrelationId}", 
+                    insurancePlanId, correlationId);
                 return 0m;
             }
         }
@@ -2206,11 +2268,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return currentPatientShare.Value;
                 }
 
-                // 🚀 FINANCIAL PRECISION: محاسبه دقیق سهم بیمار بر اساس ریال
-                var calculatedShare = Math.Max(0, tariffPrice - insurerShare);
+                // 🔧 FIX: محاسبه فرانشیز و سهم بیمار
+                var deductible = await GetDeductibleAsync(insurancePlanId, correlationId);
+                var coverableAmount = Math.Max(0, tariffPrice - deductible);
+                var remainingAfterInsurance = Math.Max(0, coverableAmount - insurerShare);
+                var calculatedShare = deductible + remainingAfterInsurance;
 
-                _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمار - TariffPrice: {TariffPrice}, InsurerShare: {InsurerShare}, Result: {Result}, CorrelationId: {CorrelationId}",
-                    tariffPrice, insurerShare, calculatedShare, correlationId);
+                _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمار با فرانشیز - TariffPrice: {TariffPrice}, Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, InsurerShare: {InsurerShare}, RemainingAfterInsurance: {RemainingAfterInsurance}, Result: {Result}, CorrelationId: {CorrelationId}",
+                    tariffPrice, deductible, coverableAmount, insurerShare, remainingAfterInsurance, calculatedShare, correlationId);
 
                 // 🚀 FINANCIAL PRECISION: گرد کردن به ریال (بدون اعشار)
                 return Math.Round(calculatedShare, 0, MidpointRounding.AwayFromZero);
