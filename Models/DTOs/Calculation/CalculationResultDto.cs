@@ -12,6 +12,7 @@ namespace ClinicApp.Models.DTOs.Calculation
         public decimal InsurerShare { get; set; }
         public decimal? SupplementaryCoveragePercent { get; set; }
         public decimal? PrimaryCoveragePercent { get; set; }
+        public decimal? TotalCoveragePercent { get; set; }
         public decimal? PatientSharePercent { get; set; }
         public decimal? InsurerSharePercent { get; set; }
         public string CalculationType { get; set; }

@@ -479,8 +479,9 @@
                             <label class="medical-form-label" for="InsuranceProviderId">
                                 ارائه‌دهنده بیمه <span class="text-danger">*</span>
                             </label>
-                            @Html.DropDownListFor(m => m.InsuranceProviderId, Model.InsuranceProviders, "ارائه‌دهنده بیمه را انتخاب کنید", new { @class = "medical-form-control", @id = "InsuranceProviderId", @required = "required" })
-                            <div class="medical-form-help">ارائه‌دهنده بیمه را انتخاب کنید</div>
+                            @Html.DropDownListFor(m => m.InsuranceProviderId, Model.InsuranceProviders, "ارائه‌دهنده بیمه را انتخاب کنید", new { @class = "medical-form-control", @id = "InsuranceProviderId", @required = "required", @disabled = "disabled" })
+                            @Html.HiddenFor(m => m.InsuranceProviderId)
+                            <div class="medical-form-help">ارائه‌دهنده بیمه انتخاب شده (غیرقابل تغییر در حالت ویرایش)</div>
                             @Html.ValidationMessageFor(m => m.InsuranceProviderId, "", new { @class = "medical-form-error" })
                         </div>
                     </div>
@@ -514,10 +515,10 @@
                     <div class="col-md-4 mb-3">
                         <div class="medical-form-group">
                             <label class="medical-form-label" for="TariffPrice">
-                                قیمت تعرفه (تومان)
+                                قیمت تعرفه (ریال)
                             </label>
                             @Html.TextBoxFor(m => m.TariffPrice, new { @class = "medical-form-control text-left ltr", @id = "TariffPrice", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 250000", @aria_describedby = "TariffPrice-help TariffPrice-error", @aria_invalid = "false" })
-                            <div class="medical-form-help" id="TariffPrice-help">مبلغ تعرفه (تومان) - در صورت عدم ورود از قیمت پایه خدمت استفاده می‌شود</div>
+                            <div class="medical-form-help" id="TariffPrice-help">مبلغ تعرفه (ریال) - در صورت عدم ورود از قیمت پایه خدمت استفاده می‌شود</div>
                             @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "medical-form-error", @id = "TariffPrice-error" })
                         </div>
                     </div>
@@ -526,7 +527,7 @@
                     <div class="col-md-4 mb-3">
                         <div class="medical-form-group">
                             <label class="medical-form-label" for="DeductibleAmount">
-                                فرانشیز بیمه (تومان)
+                                فرانشیز بیمه (ریال)
                             </label>
                             <input type="text" class="medical-form-control text-left ltr" id="DeductibleAmount" readonly placeholder="فرانشیز از طرح بیمه" aria-describedby="DeductibleAmount-help" />
                             <div class="medical-form-help" id="DeductibleAmount-help">مبلغ فرانشیز از طرح بیمه انتخاب شده</div>
@@ -537,7 +538,7 @@
                     <div class="col-md-4 mb-3">
                         <div class="medical-form-group">
                             <label class="medical-form-label" for="CoverableAmount">
-                                مبلغ قابل پوشش (تومان)
+                                مبلغ قابل پوشش (ریال)
                             </label>
                             <input type="text" class="medical-form-control text-left ltr" id="CoverableAmount" readonly placeholder="مبلغ قابل پوشش" aria-describedby="CoverableAmount-help" />
                             <div class="medical-form-help" id="CoverableAmount-help">مبلغ قابل پوشش = قیمت تعرفه - فرانشیز</div>
@@ -551,7 +552,7 @@
                     <div class="col-md-4 mb-3">
                         <div class="medical-form-group">
                             <label class="medical-form-label" for="PatientShare">
-                                سهم بیمار (تومان)
+                                سهم بیمار (ریال)
                             </label>
                             @Html.TextBoxFor(m => m.PatientShare, new { @class = "medical-form-control text-left ltr", @id = "PatientShare", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 50000", @aria_describedby = "PatientShare-help PatientShare-error", @aria_invalid = "false" })
                             <div class="medical-form-help" id="PatientShare-help">سهم بیمار = فرانشیز + مبلغ باقی‌مانده بعد از بیمه</div>
@@ -563,7 +564,7 @@
                     <div class="col-md-4 mb-3">
                         <div class="medical-form-group">
                             <label class="medical-form-label" for="InsurerShare">
-                                سهم بیمه (تومان)
+                                سهم بیمه (ریال)
                             </label>
                             @Html.TextBoxFor(m => m.InsurerShare, new { @class = "medical-form-control text-left ltr", @id = "InsurerShare", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 200000", @aria_describedby = "InsurerShare-help InsurerShare-error", @aria_invalid = "false" })
                             <div class="medical-form-help" id="InsurerShare-help">سهم بیمه = مبلغ قابل پوشش × درصد پوشش</div>
@@ -659,15 +660,25 @@
                         <div class="medical-calculation-result">
                             <div class="medical-calculation-field">
                                 <span class="medical-calculation-label">قیمت تعرفه:</span>
-                                <span class="medical-calculation-value" id="calculatedTariffPrice">0 تومان</span>
+                                <span class="medical-calculation-value" id="calculatedTariffPrice">0 ریال</span>
                             </div>
                             <div class="medical-calculation-field">
                                 <span class="medical-calculation-label">سهم بیمار:</span>
-                                <span class="medical-calculation-value" id="calculatedPatientShare">0 تومان</span>
+                                <span class="medical-calculation-value" id="calculatedPatientShare">0 ریال</span>
                             </div>
                             <div class="medical-calculation-field">
                                 <span class="medical-calculation-label">سهم بیمه:</span>
-                                <span class="medical-calculation-value" id="calculatedInsurerShare">0 تومان</span>
+                                <span class="medical-calculation-value" id="calculatedInsurerShare">0 ریال</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 🔧 CRITICAL FIX: دکمه اعمال نتایج محاسبه به فرم -->
+                        <div class="text-center mt-3" id="applyCalculationButton" style="display: none;">
+                            <button type="button" class="btn btn-warning btn-sm" id="applyCalculationBtn">
+                                <i class="fas fa-check-circle"></i> اعمال نتایج محاسبه به فرم
+                            </button>
+                            <div class="small text-muted mt-2">
+                                برای اعمال مقادیر محاسبه شده در فیلدهای فرم، روی دکمه بالا کلیک کنید
                             </div>
                         </div>
                     </div>
@@ -802,31 +813,23 @@
 
             // ---------- Form Value Cleaning ----------
             function cleanInitialFormValues() {
-                // 🔍 MEDICAL: Clean number input values to ensure they are raw numbers with InvariantCulture
+                // 🔧 CRITICAL FIX: فقط فیلدهای درصد را پاکسازی کن، نه فیلدهای پولی
                 $('.medical-form-control[type="text"][inputmode="decimal"]').each(function() {
                     var $field = $(this);
                     var value = $field.val();
-                    if (value) {
+                    if (value && $field.attr('id').includes('Percent')) {
                         // Convert to clean number - handle various formats including locale-specific separators
                         var cleanValue = parseFloat(convertPersianToEnglish(value.toString().replace(/[,\s]/g, '')));
                         if (!isNaN(cleanValue)) {
-                            // For percentage fields, keep 2 decimal places with dot separator
-                            if ($field.attr('id').includes('Percent')) {
-                                // 🔍 FIX: Only divide by 10 if value is clearly wrong (e.g., 3000 instead of 30)
-                                // But don't divide if value is 300 (which should be 30% but displayed as 300)
-                                if (cleanValue > 1000) {
-                                    // If value is > 1000, it's likely multiplied by 100, so divide by 100
-                                    cleanValue = cleanValue / 100;
-                                    console.log('🔍 FIX: Divided percentage by 100:', $field.attr('id'), 'from', cleanValue * 100, 'to', cleanValue);
-                                } else if (cleanValue > 100 && cleanValue <= 1000) {
-                                    // If value is between 100-1000, it's likely multiplied by 10, so divide by 10
-                                    cleanValue = cleanValue / 10;
-                                    console.log('🔍 FIX: Divided percentage by 10:', $field.attr('id'), 'from', cleanValue * 10, 'to', cleanValue);
-                                }
-                                $field.val(cleanValue.toFixed(2));
+                            // 🔧 CRITICAL FIX: فقط اعتبارسنجی 0-100، بدون تغییر مقادیر
+                            if (cleanValue < 0 || cleanValue > 100) {
+                                console.warn('🔧 CRITICAL: درصد خارج از بازه مجاز:', $field.attr('id'), 'value:', cleanValue);
+                                $field.addClass('is-invalid');
+                                $field.attr('aria-invalid', 'true');
                             } else {
-                                // For currency fields, keep as integer with dot separator
-                                $field.val(Math.round(cleanValue));
+                                $field.removeClass('is-invalid');
+                                $field.attr('aria-invalid', 'false');
+                                $field.val(cleanValue.toFixed(2));
                             }
                         }
                     }
@@ -1322,6 +1325,7 @@
                 });
             }
 
+            // 🔧 CRITICAL FIX: اعتبارسنجی دقیق درصدها
             function validatePercentageSum() {
                 var patientPercent = parseFloat($('#PatientSharePercent').val()) || 0;
                 var insurerPercent = parseFloat($('#InsurerSharePercent').val()) || 0;
@@ -1329,21 +1333,39 @@
 
                 var patientField = $('#PatientSharePercent');
                 var insurerField = $('#InsurerSharePercent');
-                var isValid = sum <= 100;
+                
+                // 🔧 CRITICAL FIX: بررسی بازه هر درصد (0-100)
+                var patientValid = patientPercent >= 0 && patientPercent <= 100;
+                var insurerValid = insurerPercent >= 0 && insurerPercent <= 100;
+                var sumValid = sum <= 100;
+                
+                var isValid = patientValid && insurerValid && sumValid;
 
                 // Update aria-invalid
-                patientField.attr('aria-invalid', !isValid);
-                insurerField.attr('aria-invalid', !isValid);
+                patientField.attr('aria-invalid', !patientValid);
+                insurerField.attr('aria-invalid', !insurerValid);
 
-                // Show/hide error message
-                if (sum > 100) {
+                // 🔧 CRITICAL FIX: نمایش خطاهای دقیق
+                if (!patientValid) {
+                    var errorMsg = 'درصد سهم بیمار باید بین 0 تا 100 باشد (مقدار فعلی: ' + patientPercent + '%)';
+                    showPercentageError(errorMsg);
+                    return false;
+                }
+                
+                if (!insurerValid) {
+                    var errorMsg = 'درصد سهم بیمه باید بین 0 تا 100 باشد (مقدار فعلی: ' + insurerPercent + '%)';
+                    showPercentageError(errorMsg);
+                    return false;
+                }
+                
+                if (!sumValid) {
                     var errorMsg = 'مجموع درصدها نمی‌تواند بیش از 100 باشد (مجموع فعلی: ' + sum.toFixed(2) + '%)';
                     showPercentageError(errorMsg);
                     return false;
-                } else {
-                    hidePercentageError();
-                    return true;
                 }
+                
+                hidePercentageError();
+                return true;
             }
 
             // 🔍 MEDICAL: Server-side validation reminder
@@ -1423,11 +1445,18 @@
             }
 
             // ---------- Auto Calculation ----------
+            var isEditMode = @(Model.InsuranceTariffId > 0 ? "true" : "false");
+            var isInitialLoad = true;
+            
             function setupAutoCalculation() {
                 setupCascadingDropdowns();
 
-                // Field change detection
+                // 🔧 FIX: جلوگیری از محاسبه خودکار در حالت ویرایش هنگام بارگذاری اولیه
                 $('#ServiceId, #InsurancePlanId, #TariffPrice, #PatientShare, #InsurerShare').on('change input', function() {
+                    // اگر در حالت ویرایش هستیم و هنوز بارگذاری اولیه تمام نشده، محاسبه نکن
+                    if (isEditMode && isInitialLoad) {
+                        return;
+                    }
                     debounceCalculation();
                 });
 
@@ -1436,13 +1465,33 @@
                     performCalculation();
                 });
 
-                // 🔧 FIX: دریافت فرانشیز هنگام تغییر طرح بیمه
+                // 🔧 CRITICAL FIX: دکمه اعمال نتایج محاسبه به فرم
+                $('#applyCalculationBtn').on('click', function() {
+                    applyCalculationToForm();
+                });
+
+                // 🔧 CRITICAL FIX: دریافت فرانشیز هنگام تغییر طرح بیمه (با ترتیب صحیح)
                 $('#InsurancePlanId').on('change', function() {
                     var planId = $(this).val();
                     if (planId) {
-                        loadDeductibleAmount(planId);
+                        // 🔧 CRITICAL FIX: اول فرانشیز را دریافت کن، بعد محاسبه کن
+                        loadDeductibleAmountSequentially(planId);
                     }
                 });
+
+                // 🔧 FIX: بعد از بارگذاری کامل، flag را false کن
+                setTimeout(function() {
+                    isInitialLoad = false;
+                    console.log('🏥 MEDICAL: Initial load completed, auto-calculation enabled');
+                    
+                    // 🔧 FIX: در حالت ویرایش، فرانشیز را بارگذاری کن (بدون محاسبه)
+                    if (isEditMode) {
+                        var planId = $('#InsurancePlanId').val();
+                        if (planId) {
+                            loadDeductibleAmountOnly(planId);
+                        }
+                    }
+                }, 1000);
             }
 
             // 🔧 FIX: دریافت فرانشیز از طرح بیمه
@@ -1464,6 +1513,12 @@
                             $('#CoverableAmount').val(formatCurrency(coverableAmount));
                             
                             console.log('🏥 MEDICAL: فرانشیز دریافت شد - PlanId:', planId, 'Deductible:', deductible);
+                            
+                            // 🔧 FIX: در حالت ویرایش، محاسبه خودکار نکن
+                            if (isEditMode && isInitialLoad) {
+                                console.log('🏥 MEDICAL: در حالت ویرایش - محاسبه خودکار غیرفعال');
+                                return;
+                            }
                         }
                     },
                     error: function(xhr, status, error) {
@@ -1472,6 +1527,109 @@
                 });
             }
 
+            // 🔧 FIX: دریافت فرانشیز فقط برای نمایش (بدون محاسبه)
+            function loadDeductibleAmountOnly(planId) {
+                if (!planId) return;
+                
+                $.ajax({
+                    url: '@Url.Action("GetInsurancePlanDeductible", "InsuranceTariff")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { planId: planId },
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            var deductible = response.data.deductible || 0;
+                            var tariffPrice = parseCurrency($('#TariffPrice').val()) || 0;
+                            var coverableAmount = Math.max(0, tariffPrice - deductible);
+                            
+                            $('#DeductibleAmount').val(formatCurrency(deductible));
+                            $('#CoverableAmount').val(formatCurrency(coverableAmount));
+                            
+                            console.log('🏥 MEDICAL: فرانشیز دریافت شد (فقط نمایش) - PlanId:', planId, 'Deductible:', deductible);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('🏥 MEDICAL: خطا در دریافت فرانشیز:', error);
+                    }
+                });
+            }
+
+            // 🔧 CRITICAL FIX: دریافت فرانشیز با ترتیب صحیح (اول فرانشیز، بعد محاسبه)
+            function loadDeductibleAmountSequentially(planId) {
+                if (!planId) return;
+                
+                console.log('🏥 MEDICAL: شروع دریافت فرانشیز - PlanId:', planId);
+                
+                $.ajax({
+                    url: '@Url.Action("GetInsurancePlanDeductible", "InsuranceTariff")',
+                    type: 'GET',
+                    dataType: 'json',
+                    data: { planId: planId },
+                    success: function(response) {
+                        if (response.success && response.data) {
+                            var deductible = response.data.deductible || 0;
+                            var tariffPrice = parseCurrency($('#TariffPrice').val()) || 0;
+                            var coverableAmount = Math.max(0, tariffPrice - deductible);
+                            
+                            // 🔧 CRITICAL FIX: اول فرانشیز و مبلغ قابل پوشش را تنظیم کن
+                            $('#DeductibleAmount').val(formatCurrency(deductible));
+                            $('#CoverableAmount').val(formatCurrency(coverableAmount));
+                            
+                            console.log('🏥 MEDICAL: فرانشیز دریافت شد - PlanId:', planId, 'Deductible:', deductible, 'CoverableAmount:', coverableAmount);
+                            
+                            // 🔧 CRITICAL FIX: بعد از تنظیم فرانشیز، محاسبه را انجام بده
+                            setTimeout(function() {
+                                console.log('🏥 MEDICAL: شروع محاسبه بعد از دریافت فرانشیز');
+                                debounceCalculation();
+                            }, 100); // تاخیر کوتاه برای اطمینان از تنظیم فیلدها
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('🏥 MEDICAL: خطا در دریافت فرانشیز:', error);
+                        // حتی در صورت خطا، محاسبه را انجام بده
+                        debounceCalculation();
+                    }
+                });
+            }
+
+            // 🔧 CRITICAL FIX: اعمال نتایج محاسبه به فرم
+            function applyCalculationToForm() {
+                var tariffPrice = parseCurrency($('#calculatedTariffPrice').text()) || 0;
+                var patientShare = parseCurrency($('#calculatedPatientShare').text()) || 0;
+                var insurerShare = parseCurrency($('#calculatedInsurerShare').text()) || 0;
+                
+                if (tariffPrice > 0) {
+                    // اعمال مقادیر به فیلدهای فرم
+                    $('#TariffPrice').val(tariffPrice);
+                    $('#PatientShare').val(patientShare);
+                    $('#InsurerShare').val(insurerShare);
+                    
+                    // محاسبه و اعمال درصدها
+                    var patientSharePercent = (patientShare / tariffPrice) * 100;
+                    var insurerSharePercent = (insurerShare / tariffPrice) * 100;
+                    
+                    $('#PatientSharePercent').val(patientSharePercent.toFixed(2));
+                    $('#InsurerSharePercent').val(insurerSharePercent.toFixed(2));
+                    
+                    // مخفی کردن دکمه اعمال
+                    $('#applyCalculationButton').hide();
+                    
+                    console.log('🏥 MEDICAL: نتایج محاسبه به فرم اعمال شد', {
+                        tariffPrice: tariffPrice,
+                        patientShare: patientShare,
+                        insurerShare: insurerShare,
+                        patientSharePercent: patientSharePercent.toFixed(2),
+                        insurerSharePercent: insurerSharePercent.toFixed(2)
+                    });
+                    
+                    // نمایش پیام موفقیت
+                    showCalculationMessage('نتایج محاسبه با موفقیت به فرم اعمال شد', 'success');
+                } else {
+                    showCalculationMessage('خطا: مقادیر محاسبه شده نامعتبر است', 'error');
+                }
+            }
+
+            // 🔧 CRITICAL FIX: Debounce برای جلوگیری از درخواست‌های متعدد
             function debounceCalculation() {
                 clearTimeout(calculationTimeout);
                 calculationTimeout = setTimeout(function() {
@@ -1482,6 +1640,12 @@
             }
 
             function performCalculation() {
+                // 🔧 FIX: در حالت ویرایش و بارگذاری اولیه، محاسبه نکن
+                if (isEditMode && isInitialLoad) {
+                    console.log('🏥 MEDICAL: در حالت ویرایش - محاسبه خودکار غیرفعال');
+                    return;
+                }
+                
                 var serviceId = $('#ServiceId').val();
                 var planId = $('#InsurancePlanId').val();
                 
@@ -1516,6 +1680,10 @@
 
                 updateProgress(30);
 
+                // 🔧 CRITICAL FIX: اضافه کردن Anti-Forgery Token
+                var token = $('input[name="__RequestVerificationToken"]').val();
+                formData.__RequestVerificationToken = token;
+                
                 $.ajax({
                     url: '@Url.Action("CalculateAdvancedTariff", "InsuranceTariff")',
                     type: 'POST',
@@ -1543,6 +1711,12 @@
             }
 
             function displayCalculationResults(data) {
+                // 🔧 FIX: در حالت ویرایش، مقادیر موجود را تغییر نده
+                if (isEditMode && isInitialLoad) {
+                    console.log('🏥 MEDICAL: در حالت ویرایش - نمایش نتایج محاسبه غیرفعال');
+                    return;
+                }
+                
                 // 🔍 MEDICAL: Bind server-calculated values to form fields (raw numbers for input fields)
                 // Server provides authoritative calculations with proper rounding
                 // 🔍 FIX: Check both lowercase and uppercase property names
@@ -1557,15 +1731,28 @@
                     rawData: data
                 });
                 
-                // Use server values directly (already properly formatted)
+                // 🔧 FIX: در حالت ویرایش، فقط نتایج محاسبه را نمایش بده، فیلدها را تغییر نده
+                if (isEditMode) {
+                    console.log('🏥 MEDICAL: در حالت ویرایش - فقط نمایش نتایج محاسبه');
+                    // نمایش در بخش نتایج محاسبه (formatted for display)
+                    $('#calculatedTariffPrice').text(formatCurrency(tariffPrice) + ' ریال');
+                    $('#calculatedPatientShare').text(formatCurrency(patientShare) + ' ریال');
+                    $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' ریال');
+                    
+                    // 🔧 CRITICAL FIX: نمایش دکمه اعمال در حالت ویرایش
+                    $('#applyCalculationButton').show();
+                    return;
+                }
+                
+                // 🔧 CRITICAL FIX: Single Source of Truth - استفاده از مقادیر سرور
                 $('#TariffPrice').val(tariffPrice);
                 $('#PatientShare').val(patientShare);
                 $('#InsurerShare').val(insurerShare);
                 
                 // نمایش در بخش نتایج محاسبه (formatted for display)
-                $('#calculatedTariffPrice').text(formatCurrency(tariffPrice) + ' تومان');
-                $('#calculatedPatientShare').text(formatCurrency(patientShare) + ' تومان');
-                $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' تومان');
+                $('#calculatedTariffPrice').text(formatCurrency(tariffPrice) + ' ریال');
+                $('#calculatedPatientShare').text(formatCurrency(patientShare) + ' ریال');
+                $('#calculatedInsurerShare').text(formatCurrency(insurerShare) + ' ریال');
                 
                 // نمایش درصدها از سرور (authoritative) - DEBUG LOGGING
                 var patientSharePercent = data.patientSharePercent || data.PatientSharePercent;

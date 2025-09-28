@@ -250,7 +250,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 // 🔍 FIX: PatientShare و InsurerShare در دیتابیس به عنوان مبلغ ذخیره می‌شوند
                 PatientShare = entity.PatientShare ?? 0,
                 InsurerShare = entity.InsurerShare ?? 0,
-                // درصدها از مبلغ‌ها محاسبه می‌شوند - DEBUG LOGGING
+                // 🔧 CRITICAL FIX: محاسبه صحیح درصدها از مبلغ‌ها
                 PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
                     Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
                 InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 

@@ -486,7 +486,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
 
                 // 🔒 اعتبارسنجی Idempotency واقعی با سرویس جدید
-                var isIdempotencyValid = await _idempotencyService.TryUseKeyAsync(model.IdempotencyKey, 30, "InsuranceTariff");
+                var isIdempotencyValid = await _idempotencyService.TryUseKeyAsync(model.IdempotencyKey, 300, "InsuranceTariff"); // 5 دقیقه
                 if (!isIdempotencyValid)
                 {
                     _logger.Warning("🏥 MEDICAL: IdempotencyKey تکراری یا نامعتبر - Key: {Key}, CorrelationId: {CorrelationId}", 
@@ -828,7 +828,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 
                 // Request analysis
                 _logger.Debug("🔍 ANTI-BULLET: Request Analysis - IsAjax: {IsAjax}, ContentType: {ContentType}, Method: {Method}, UserAgent: {UserAgent}",
-                    Request.IsAjaxRequest(), Request.ContentType, Request.HttpMethod, Request.Headers["User-Agent"]);
+                    Request.IsAjaxRequest(), Request.ContentType, Request.HttpMethod, MaskSensitiveData("User-Agent", Request.Headers["User-Agent"]));
                 
                 // Form data analysis
                 var formData = new Dictionary<string, string>();
@@ -853,7 +853,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         IsAjax = Request.IsAjaxRequest(), 
                         ContentType = Request.ContentType, 
                         Method = Request.HttpMethod,
-                        FormData = Request.Form.Keys.Cast<string>().ToDictionary(k => k, k => Request.Form[k])
+                        FormData = Request.Form.Keys.Cast<string>().ToDictionary(k => k, k => MaskSensitiveData(k, Request.Form[k]))
                     });
             }
 
@@ -1334,8 +1334,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     // تنظیم SelectLists جدید برای سازگاری با Viewها
                     // 🔧 FIX: استفاده از Value و Text properties به جای فیلدهای مستقیم
-                    model.InsuranceProviders = new SelectList(providersTask.Result.Data, "Value", "Text", model.InsuranceProviderId);
-                    model.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Value", "Text", model.InsuranceProviderId);
+                    model.InsuranceProviders = new SelectList(providersTask.Result.Data, "Id", "Name", model.InsuranceProviderId);
+                    model.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Id", "Name", model.InsuranceProviderId);
                     _logger.Debug("🏥 MEDICAL: Insurance Providers loaded - Count: {Count}, SelectedId: {SelectedId}, CorrelationId: {CorrelationId}",
                         providersTask.Result.Data.Count, model.InsuranceProviderId, correlationId);
                     
@@ -1345,8 +1345,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
                 else
                 {
-                    model.InsuranceProviders = new SelectList(new List<object>(), "Value", "Text");
-                    model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
+                    model.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+                    model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
                     _logger.Warning("🏥 MEDICAL: No insurance providers found - CorrelationId: {CorrelationId}", correlationId);
                     
                     // 🔍 DEBUG LOGGING - No InsuranceProviders found
@@ -1355,8 +1355,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
 
                 // 🚀 FIX: طرح‌های بیمه باید خالی باشند تا بعد از انتخاب ارائه‌دهنده لود شوند
-                model.InsurancePlans = new SelectList(new List<object>(), "Value", "Text");
-                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
+                model.InsurancePlans = new SelectList(new List<object>(), "Id", "Name");
+                model.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
                 _logger.Debug("🏥 MEDICAL: Insurance Plans initialized as empty - will load after provider selection, CorrelationId: {CorrelationId}", correlationId);
 
                 // 🔄 تنظیم SelectLists برای حالت ویرایش
@@ -1404,8 +1404,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             var selectedPlanId = model.InsurancePlanId > 0 ? model.InsurancePlanId : (int?)null;
                             
                             // 🔧 FIX: استفاده از Value و Text properties به جای فیلدهای مستقیم
-                            model.InsurancePlans = new SelectList(plansResult.Data, "Value", "Text", selectedPlanId);
-                            model.InsurancePlanSelectList = new SelectList(plansResult.Data, "Value", "Text", selectedPlanId);
+                            model.InsurancePlans = new SelectList(plansResult.Data, "Id", "Name", selectedPlanId);
+                            model.InsurancePlanSelectList = new SelectList(plansResult.Data, "Id", "Name", selectedPlanId);
                         }
                     }
                 }
@@ -1446,14 +1446,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             model.Departments = new SelectList(new List<object>(), "Id", "Name");
             model.ServiceCategories = new SelectList(new List<object>(), "Id", "Name");
             model.Services = new SelectList(new List<object>(), "Id", "Name");
-            model.InsuranceProviders = new SelectList(new List<object>(), "Value", "Text");
-            model.InsurancePlans = new SelectList(new List<object>(), "Value", "Text");
+            model.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+            model.InsurancePlans = new SelectList(new List<object>(), "Id", "Name");
 
             // Legacy SelectLists برای سازگاری با کد قدیمی
             model.DepartmentSelectList = new SelectList(new List<object>(), "Id", "Name");
-            model.InsurancePlanSelectList = new SelectList(new List<object>(), "Value", "Text");
+            model.InsurancePlanSelectList = new SelectList(new List<object>(), "Id", "Name");
             model.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
-            model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Value", "Text");
+            model.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
             model.ServiceCategorySelectList = new SelectList(new List<object>(), "Id", "Name");
         }
 
@@ -1821,6 +1821,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpPost]
         [NoCacheFilter]
+        [ValidateAntiForgeryToken]
         public async Task<JsonResult> CalculateAdvancedTariff(
             int serviceId, 
             int insurancePlanId, 
@@ -2045,6 +2046,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // 🔍 محاسبه درصدها بر اساس مقادیر محاسبه شده
                 var calculatedPatientSharePercent = tariffPrice > 0 ? (patientShare / tariffPrice) * 100m : 0m;
                 var calculatedInsurerSharePercent = tariffPrice > 0 ? (insurerShare / tariffPrice) * 100m : 0m;
+                
+                // 🔧 CRITICAL FIX: محاسبه صحیح درصد پوشش اولیه
+                var primaryCoveragePercent = tariffPrice > 0 ? (insurerShare / tariffPrice) * 100m : 0m;
 
                 // 🔍 اعمال درصدهای ورودی کاربر (اگر ارائه شده باشند)
                 if (patientSharePercent.HasValue && insurerSharePercent.HasValue)
@@ -2082,7 +2086,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     PatientShare = patientShare,
                     InsurerShare = insurerShare,
                     SupplementaryCoveragePercent = supplementaryCoverage,
-                    PrimaryCoveragePercent = totalCoveragePercent,
+                    PrimaryCoveragePercent = Math.Round(primaryCoveragePercent, 0, MidpointRounding.AwayFromZero),
+                    TotalCoveragePercent = Math.Round(totalCoveragePercent, 0, MidpointRounding.AwayFromZero),
                     PatientSharePercent = calculatedPatientSharePercent,
                     InsurerSharePercent = calculatedInsurerSharePercent,
                     CalculationType = calculationType,
@@ -2268,11 +2273,22 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return currentPatientShare.Value;
                 }
 
-                // 🔧 FIX: محاسبه فرانشیز و سهم بیمار
+                // 🔧 FIX: محاسبه فرانشیز و سهم بیمار با سقف‌گذاری
                 var deductible = await GetDeductibleAsync(insurancePlanId, correlationId);
                 var coverableAmount = Math.Max(0, tariffPrice - deductible);
                 var remainingAfterInsurance = Math.Max(0, coverableAmount - insurerShare);
-                var calculatedShare = deductible + remainingAfterInsurance;
+                var patientShareRaw = deductible + remainingAfterInsurance;
+                
+                // 🔧 CRITICAL FIX: سقف‌گذاری سهم بیمار به مبلغ تعرفه
+                var calculatedShare = Math.Min(tariffPrice, patientShareRaw);
+                
+                // 🔧 CRITICAL FIX: بالانس باقیمانده
+                var remainder = tariffPrice - (insurerShare + calculatedShare);
+                if (remainder != 0)
+                {
+                    // سیاست: باقیمانده به نفع بیمار
+                    calculatedShare = Math.Max(0, calculatedShare + remainder);
+                }
 
                 _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمار با فرانشیز - TariffPrice: {TariffPrice}, Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, InsurerShare: {InsurerShare}, RemainingAfterInsurance: {RemainingAfterInsurance}, Result: {Result}, CorrelationId: {CorrelationId}",
                     tariffPrice, deductible, coverableAmount, insurerShare, remainingAfterInsurance, calculatedShare, correlationId);
@@ -2321,7 +2337,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// محاسبه پوشش کل
+        /// 🔧 CRITICAL FIX: محاسبه صحیح پوشش کل
+        /// منطق: پوشش کل = پوشش اولیه + پوشش تکمیلی (با سقف 100%)
         /// </summary>
         private async Task<decimal> CalculateTotalCoverageAsync(decimal tariffPrice, decimal insurerShare, decimal supplementaryCoveragePercent, string correlationId)
         {
@@ -2329,11 +2346,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             {
                 if (tariffPrice <= 0) return 0m;
 
+                // 🔧 CRITICAL FIX: محاسبه صحیح پوشش اولیه
                 var primaryCoveragePercent = (insurerShare / tariffPrice) * 100m;
-                var totalCoverage = Math.Min(primaryCoveragePercent + supplementaryCoveragePercent, 100m);
+                
+                // 🔧 CRITICAL FIX: پوشش تکمیلی درصدی از مبلغ باقی‌مانده بعد از بیمه پایه است
+                var remainingAfterPrimary = Math.Max(0, tariffPrice - insurerShare);
+                var supplementaryAmount = (remainingAfterPrimary * supplementaryCoveragePercent) / 100m;
+                var supplementaryCoveragePercentOfTotal = tariffPrice > 0 ? (supplementaryAmount / tariffPrice) * 100m : 0m;
+                
+                // 🔧 CRITICAL FIX: پوشش کل = پوشش اولیه + پوشش تکمیلی (با سقف 100%)
+                var totalCoverage = Math.Min(primaryCoveragePercent + supplementaryCoveragePercentOfTotal, 100m);
 
                 _logger.Debug("🏥 MEDICAL: محاسبه پوشش کل - Primary: {Primary}%, Supplementary: {Supplementary}%, Total: {Total}%, CorrelationId: {CorrelationId}",
-                    primaryCoveragePercent, supplementaryCoveragePercent, totalCoverage, correlationId);
+                    primaryCoveragePercent, supplementaryCoveragePercentOfTotal, totalCoverage, correlationId);
 
                 return Math.Round(totalCoverage, 0, MidpointRounding.AwayFromZero);
             }
@@ -2716,7 +2741,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 
                 if (result.Success)
                 {
-                    var services = result.Data.Items.Select(s => new { id = s.ServiceId, name = s.Title }).ToList();
+                    var services = result.Data.Items.Select(s => new { id = s.ServiceId, text = s.Title }).ToList();
                     _logger.Information("🔍 MEDICAL: جستجوی خدمات موفق - Count: {Count}, TotalCount: {TotalCount}, SearchTerm: {SearchTerm}, User: {UserName} (Id: {UserId})",
                         services.Count, result.Data.TotalItems, searchTerm, _currentUserService.UserName, _currentUserService.UserId);
                     
@@ -2968,6 +2993,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// محاسبه تعرفه بیمه اصلی - JSON endpoint برای محاسبه سهم‌ها بر اساس تنظیمات داینامیک
         /// </summary>
         [HttpPost]
+        [ValidateAntiForgeryToken]
         public async Task<JsonResult> CalculatePrimaryTariff(int serviceId, int planId, decimal? baseAmount = null)
         {
             try
