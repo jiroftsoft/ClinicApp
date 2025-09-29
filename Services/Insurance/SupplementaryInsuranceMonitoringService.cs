@@ -118,14 +118,14 @@ namespace ClinicApp.Services.Insurance
         /// <summary>
         /// دریافت آمار عملکرد
         /// </summary>
-        public PerformanceReport GetPerformanceReport(DateTime? fromDate = null, DateTime? toDate = null)
+        public Models.Insurance.PerformanceReport GetPerformanceReport(DateTime? fromDate = null, DateTime? toDate = null)
         {
             try
             {
                 var from = fromDate.HasValue ? fromDate.Value : DateTime.UtcNow.AddDays(-30);
                 var to = toDate.HasValue ? toDate.Value : DateTime.UtcNow;
 
-                var report = new PerformanceReport
+                var report = new Models.Insurance.PerformanceReport
                 {
                     FromDate = from,
                     ToDate = to,
@@ -171,7 +171,7 @@ namespace ClinicApp.Services.Insurance
             catch (Exception ex)
             {
                 _log.Error(ex, "خطا در تولید گزارش عملکرد");
-                return new PerformanceReport();
+                return new Models.Insurance.PerformanceReport();
             }
         }
 

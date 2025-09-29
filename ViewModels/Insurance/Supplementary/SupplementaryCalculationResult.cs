@@ -94,11 +94,22 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public decimal TotalCoveragePercent { get; set; }
 
         /// <summary>
-        /// مبلغ باقی‌مانده پس از بیمه اصلی
+        /// سهم بیمار از بیمه اصلی (قبل از اعمال بیمه تکمیلی)
+        /// </summary>
+        [Display(Name = "سهم بیمار از بیمه اصلی")]
+        [DisplayFormat(DataFormatString = "{0:N0}")]
+        public decimal PatientShareFromPrimary { get; set; }
+
+        /// <summary>
+        /// مبلغ باقی‌مانده پس از بیمه اصلی (برای سازگاری)
         /// </summary>
         [Display(Name = "مبلغ باقی‌مانده")]
         [DisplayFormat(DataFormatString = "{0:N0}")]
-        public decimal RemainingAmount { get; set; }
+        public decimal RemainingAmount 
+        { 
+            get => PatientShareFromPrimary; 
+            set => PatientShareFromPrimary = value; 
+        }
 
         /// <summary>
         /// یادداشت‌ها
@@ -156,7 +167,7 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
                 ServiceId = serviceId,
                 ServiceAmount = serviceAmount,
                 PrimaryCoverage = primaryCoverage,
-                RemainingAmount = serviceAmount - primaryCoverage,
+                PatientShareFromPrimary = serviceAmount - primaryCoverage,
                 CalculationDate = DateTime.Now
             };
         }

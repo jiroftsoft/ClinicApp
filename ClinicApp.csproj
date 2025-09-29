@@ -551,6 +551,7 @@
     <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
     <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
+    <Compile Include="Interfaces\Insurance\ISupplementaryCombinationService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceCacheService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceCalculationService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceMonitoringService.cs" />
@@ -819,14 +820,17 @@
     <Compile Include="Services\DepartmentManagementService.cs" />
     <Compile Include="Services\ExternalInquiryService.cs" />
     <Compile Include="Services\FactorSettingService.cs" />
+    <Compile Include="Services\Financial\InsuranceTariffCalculationService.cs" />
     <Compile Include="Services\Idempotency\IIdempotencyService.cs" />
     <Compile Include="Services\Idempotency\InMemoryIdempotencyService.cs" />
     <Compile Include="Services\IMessageNotificationService.cs" />
     <Compile Include="Services\Insurance\AdvancedInsuranceCalculationService.cs" />
+    <Compile Include="Services\Insurance\BulkInsuranceTariffService.cs" />
     <Compile Include="Services\Insurance\BulkSupplementaryTariffService.cs" />
     <Compile Include="Services\Insurance\BusinessRuleEngine.cs" />
     <Compile Include="Services\Insurance\CombinedInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\CombinedInsuranceCalculationTestService.cs" />
+    <Compile Include="Services\Insurance\CorrectSupplementaryInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanDependencyService.cs" />
     <Compile Include="Services\Insurance\InsurancePlanService.cs" />
@@ -835,9 +839,12 @@
     <Compile Include="Services\Insurance\InsuranceTariffService.cs" />
     <Compile Include="Services\Insurance\InsuranceValidationService.cs" />
     <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
+    <Compile Include="Services\Insurance\SupplementaryCombinationService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceCacheService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceCalculationService.cs" />
+    <Compile Include="Services\Insurance\SupplementaryInsuranceDataFixService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceMonitoringService.cs" />
+    <Compile Include="Services\Insurance\SupplementaryInsuranceOptimizationService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceService.cs" />
     <Compile Include="Services\Insurance\SupplementaryTariffSeederService.cs" />
     <Compile Include="Services\Insurance\TariffDomainValidationService.cs" />
@@ -974,7 +981,6 @@
     </Compile>
     <Compile Include="Helpers\AppHelper.cs" />
     <Compile Include="Helpers\ApplicationVersion.cs" />
-    <Compile Include="Helpers\Class1.cs" />
     <Compile Include="Helpers\IdentityExtensions.cs" />
     <Compile Include="Helpers\IranianNationalCodeValidator.cs" />
     <Compile Include="Helpers\PersianDateHelper.cs" />

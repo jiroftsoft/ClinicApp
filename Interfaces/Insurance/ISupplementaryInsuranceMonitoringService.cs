@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models.Insurance;
-using ClinicApp.Services.Insurance;
 using ClinicApp.ViewModels.Insurance.Supplementary;
 
 namespace ClinicApp.Interfaces.Insurance
@@ -32,7 +31,7 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="fromDate">تاریخ شروع (اختیاری)</param>
         /// <param name="toDate">تاریخ پایان (اختیاری)</param>
         /// <returns>گزارش عملکرد</returns>
-        PerformanceReport GetPerformanceReport(DateTime? fromDate = null, DateTime? toDate = null);
+        Models.Insurance.PerformanceReport GetPerformanceReport(DateTime? fromDate = null, DateTime? toDate = null);
 
         /// <summary>
         /// دریافت آمار استفاده

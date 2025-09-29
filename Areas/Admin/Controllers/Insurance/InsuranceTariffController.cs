@@ -2074,9 +2074,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         };
                     }
 
-                    // محاسبه مجدد سهم‌ها بر اساس درصدهای ورودی
-                    patientShare = Math.Round(tariffPrice * (patientSharePercent.Value / 100m), 0, MidpointRounding.AwayFromZero);
-                    insurerShare = Math.Round(tariffPrice * (insurerSharePercent.Value / 100m), 0, MidpointRounding.AwayFromZero);
+                    // 🔧 CRITICAL FIX: محاسبه با تراز نهایی تضمین‌شده
+                    var insurerRaw = tariffPrice * (insurerSharePercent.Value / 100m);
+                    insurerShare = Math.Round(insurerRaw, 0, MidpointRounding.AwayFromZero);
+                    patientShare = tariffPrice - insurerShare; // تراز نهایی
                     
                     // 🔍 FIX: استفاده از درصدهای ورودی کاربر به جای محاسبه شده
                     calculatedPatientSharePercent = patientSharePercent.Value;
@@ -2324,13 +2325,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // 🔧 CRITICAL FIX: سقف‌گذاری سهم بیمار به مبلغ تعرفه
                 var calculatedShare = Math.Min(tariffPrice, patientShareRaw);
                 
-                // 🔧 CRITICAL FIX: بالانس باقیمانده
-                var remainder = tariffPrice - (insurerShare + calculatedShare);
-                if (remainder != 0)
-                {
-                    // سیاست: باقیمانده به نفع بیمار
-                    calculatedShare = Math.Max(0, calculatedShare + remainder);
-                }
+                // 🔧 CRITICAL FIX: تراز نهایی تضمین‌شده
+                // حذف منطق remainder که باعث عدم تراز می‌شد
+                // سهم بیمار = مبلغ کل - سهم بیمه (تراز خودکار)
+                calculatedShare = tariffPrice - insurerShare;
 
                 _logger.Debug("🏥 MEDICAL: محاسبه سهم بیمار با فرانشیز - TariffPrice: {TariffPrice}, Deductible: {Deductible}, CoverableAmount: {CoverableAmount}, InsurerShare: {InsurerShare}, InsurerShareFromCoverable: {InsurerShareFromCoverable}, Result: {Result}, CorrelationId: {CorrelationId}",
                     tariffPrice, deductible, coverableAmount, insurerShare, insurerShareFromCoverable, calculatedShare, correlationId);
