@@ -18,6 +18,7 @@ namespace ClinicApp.Services.Insurance
         private readonly IServiceRepository _serviceRepository;
         private readonly IPatientInsuranceRepository _patientInsuranceRepository;
         private readonly IInsuranceCalculationService _insuranceCalculationService;
+        private readonly ISupplementaryInsuranceCalculationService _supplementaryCalculationService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _log;
 
@@ -27,6 +28,7 @@ namespace ClinicApp.Services.Insurance
             IServiceRepository serviceRepository,
             IPatientInsuranceRepository patientInsuranceRepository,
             IInsuranceCalculationService insuranceCalculationService,
+            ISupplementaryInsuranceCalculationService supplementaryCalculationService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
@@ -35,6 +37,7 @@ namespace ClinicApp.Services.Insurance
             _serviceRepository = serviceRepository;
             _patientInsuranceRepository = patientInsuranceRepository;
             _insuranceCalculationService = insuranceCalculationService;
+            _supplementaryCalculationService = supplementaryCalculationService;
             _currentUserService = currentUserService;
             _log = logger;
         }
@@ -101,36 +104,30 @@ namespace ClinicApp.Services.Insurance
                     primaryCoverageAmount = coverableAmount * (primaryCoveragePercent / 100m);
                 }
 
-                // محاسبه صحیح بیمه تکمیلی
-                var correctCalculationService = new CorrectSupplementaryInsuranceCalculationService(
-                    _patientInsuranceRepository,
-                    _tariffRepository,
-                    _insuranceCalculationService,
-                    _currentUserService,
-                    _log);
-
-                var calculationResult = correctCalculationService.CalculateForSpecificScenario(
+                // محاسبه صحیح بیمه تکمیلی با استفاده از سرویس تزریق شده
+                var calculationResult = _supplementaryCalculationService.CalculateForSpecificScenario(
                     serviceAmount: serviceAmount,
                     primaryCoverage: primaryCoverageAmount,
                     supplementaryCoveragePercent: coveragePercent,
                     supplementaryMaxPayment: maxPayment > 0 ? maxPayment : (decimal?)null);
 
                 // 🔧 CRITICAL FIX: مپینگ صحیح فیلدهای تعرفه تکمیلی
+                // طبق منطق صحیح: s% روی R (باقیمانده بعد از پایه) اعمال می‌شود
                 var supplementaryTariff = new InsuranceTariff
                 {
                     ServiceId = serviceId,
-                    TariffPrice = serviceAmount, // مبلغ کل خدمت
-                    PatientShare = calculationResult.FinalPatientShare, // سهم نهایی بیمار
-                    InsurerShare = calculationResult.SupplementaryInsuranceCoverage, // سهم بیمه تکمیلی
+                    TariffPrice = calculationResult.ServiceAmount, // مبلغ کل خدمت
+                    PatientShare = calculationResult.FinalPatientShare, // سهم نهایی بیمار (بعد از هر دو لایه)
+                    InsurerShare = calculationResult.SupplementaryInsuranceCoverage, // سهم بیمه تکمیلی (نه 0!)
                     InsuranceType = InsuranceType.Supplementary,
                     InsurancePlanId = supplementaryPlanId,
-                    SupplementaryCoveragePercent = coveragePercent,
+                    SupplementaryCoveragePercent = coveragePercent, // درصد پوشش روی سهم بیمار
                     SupplementaryMaxPayment = maxPayment > 0 ? maxPayment : (decimal?)null,
-                    Priority = 2,
+                    Priority = 2, // لایه تکمیلی
                     IsActive = true,
                     CreatedAt = DateTime.UtcNow, // 🔧 FIX: استفاده از UTC
                     CreatedByUserId = _currentUserService.UserId,
-                    Notes = $"بیمه تکمیلی {supplementaryPlan.Data.Name} - پوشش {coveragePercent}% از سهم بیمار"
+                    Notes = $"بیمه تکمیلی {supplementaryPlan.Data.Name} - پوشش {coveragePercent}% از سهم باقی‌مانده بیمار"
                 };
 
                 // ذخیره‌سازی

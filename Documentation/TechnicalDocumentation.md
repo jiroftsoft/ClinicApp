@@ -124,10 +124,11 @@ public async Task<ServiceResult<SupplementaryCalculationResult>> CalculateSupple
             t.ServiceId == serviceId && 
             t.InsuranceType == InsuranceType.Supplementary);
         
-        // 4. محاسبه مبلغ باقی‌مانده
+        // 4. محاسبه مبلغ باقی‌مانده (سهم بیمار پس از بیمه پایه)
         decimal remainingAmount = serviceAmount - primaryCoverage;
         
-        // 5. محاسبه پوشش بیمه تکمیلی
+        // 5. محاسبه پوشش بیمه تکمیلی (درصدی از سهم بیمار)
+        // 🔧 CRITICAL FIX: منطق صحیح - s% روی R (باقیمانده) نه روی P (کل مبلغ)
         decimal supplementaryCoverage = 0;
         if (tariff.SupplementaryCoveragePercent.HasValue)
         {
@@ -168,6 +169,58 @@ public async Task<ServiceResult<SupplementaryCalculationResult>> CalculateSupple
     }
 }
 ```
+
+---
+
+## 🏥 **منطق تعیین ست بیمه تکمیلی**
+
+### **فرمول محاسبه صحیح**
+
+```
+P = قیمت خدمت (Service Amount)
+a% = درصد پوشش بیمه پایه (Primary Coverage Percent)
+Dₚ = فرانشیز بیمه پایه (Primary Deductible)
+s% = درصد پوشش بیمه تکمیلی (Supplementary Coverage Percent)
+Sₘₐₓ = سقف پرداخت بیمه تکمیلی (Supplementary Max Payment)
+
+// مرحله 1: محاسبه پوشش بیمه پایه
+BaseCoverable = max(0, P - Dₚ)
+PrimaryCoverage = BaseCoverable × (a/100)
+
+// مرحله 2: محاسبه سهم بیمار (باقیمانده)
+R = P - PrimaryCoverage
+
+// مرحله 3: محاسبه پوشش بیمه تکمیلی (روی R)
+SupplementaryCoverage = min(R × (s/100), Sₘₐₓ)
+
+// مرحله 4: محاسبه سهم نهایی بیمار
+FinalPatientShare = max(0, R - SupplementaryCoverage)
+```
+
+### **مثال عملی**
+
+```
+خدمت: 100,000 تومان
+بیمه پایه: 70% پوشش، 0 تومان فرانشیز
+بیمه تکمیلی: 100% پوشش روی سهم بیمار
+
+محاسبه:
+1. BaseCoverable = 100,000 - 0 = 100,000
+2. PrimaryCoverage = 100,000 × 0.7 = 70,000
+3. R = 100,000 - 70,000 = 30,000
+4. SupplementaryCoverage = 30,000 × 1.0 = 30,000
+5. FinalPatientShare = 30,000 - 30,000 = 0
+
+نتیجه: بیمار هیچ مبلغی پرداخت نمی‌کند
+```
+
+### **نکات مهم پیاده‌سازی**
+
+1. **InsurerShare برای بیمه تکمیلی**: باید برابر با `SupplementaryCoverage` باشد، نه 0
+2. **PatientShare نهایی**: سهم بیمار پس از هر دو لایه بیمه
+3. **درصد پوشش**: همیشه روی R (باقیمانده) اعمال می‌شود، نه روی P (کل مبلغ)
+4. **سقف‌ها**: قبل از ضرب درصد لحاظ شوند
+5. **گرد کردن**: انتهای هر مرحله انجام شود
 
 ---
 

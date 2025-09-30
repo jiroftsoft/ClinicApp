@@ -9,6 +9,7 @@
     </div>
     <div class="card-body">
         <form id="filterForm" method="get">
+            @Html.AntiForgeryToken()
             <div class="row">
                 <!-- Service Filter -->
                 <div class="col-md-3">
@@ -45,28 +46,27 @@
                 <!-- Status Filter -->
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label for="status" class="form-label">وضعیت:</label>
-                        <select class="form-control" id="status" name="status">
+                        <label for="isActive" class="form-label">وضعیت:</label>
+                        <select class="form-control" id="isActive" name="isActive">
                             <option value="">همه وضعیت‌ها</option>
-                            <option value="active" @(ViewBag.SelectedStatus == "active" ? "selected" : "")>فعال</option>
-                            <option value="inactive" @(ViewBag.SelectedStatus == "inactive" ? "selected" : "")>غیرفعال</option>
-                            <option value="expired" @(ViewBag.SelectedStatus == "expired" ? "selected" : "")>منقضی شده</option>
-                            <option value="upcoming" @(ViewBag.SelectedStatus == "upcoming" ? "selected" : "")>آینده</option>
+                            <option value="true" @(ViewBag.SelectedIsActive == true ? "selected" : "")>فعال</option>
+                            <option value="false" @(ViewBag.SelectedIsActive == false ? "selected" : "")>غیرفعال</option>
                         </select>
                     </div>
                 </div>
 
-                <!-- Priority Filter -->
+                <!-- Department Filter -->
                 <div class="col-md-3">
                     <div class="form-group">
-                        <label for="priority" class="form-label">اولویت:</label>
-                        <select class="form-control" id="priority" name="priority">
-                            <option value="">همه اولویت‌ها</option>
-                            <option value="1" @(ViewBag.SelectedPriority == 1 ? "selected" : "")>اولویت 1</option>
-                            <option value="2" @(ViewBag.SelectedPriority == 2 ? "selected" : "")>اولویت 2</option>
-                            <option value="3" @(ViewBag.SelectedPriority == 3 ? "selected" : "")>اولویت 3</option>
-                            <option value="4" @(ViewBag.SelectedPriority == 4 ? "selected" : "")>اولویت 4</option>
-                            <option value="5" @(ViewBag.SelectedPriority == 5 ? "selected" : "")>اولویت 5</option>
+                        <label for="departmentId" class="form-label">بخش:</label>
+                        <select class="form-control" id="departmentId" name="departmentId">
+                            <option value="">همه بخش‌ها</option>
+                            @foreach (var dept in Model.Departments)
+                            {
+                                <option value="@dept.DepartmentId" @(Model.DepartmentId == dept.DepartmentId ? "selected" : "")>
+                                    @dept.Name
+                                </option>
+                            }
                         </select>
                     </div>
                 </div>
@@ -226,7 +226,7 @@
                 });
 
                 // Auto-apply filters without page refresh
-                $('#serviceId, #insurancePlanId, #status, #priority').on('change', function() {
+                $('#serviceId, #insurancePlanId, #isActive, #departmentId').on('change', function() {
                     applyFiltersWithoutRefresh();
                 });
 

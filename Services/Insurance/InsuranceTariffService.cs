@@ -208,6 +208,15 @@ namespace ClinicApp.Services.Insurance
                     TariffPrice = calculatedValues.TariffPrice,
                     PatientShare = calculatedValues.PatientShare,
                     InsurerShare = calculatedValues.InsurerShare,
+                    // 🔧 CRITICAL FIX: اضافه کردن فیلدهای بیمه تکمیلی
+                    SupplementaryCoveragePercent = model.SupplementaryCoveragePercent,
+                    SupplementaryMaxPayment = model.SupplementaryMaxPayment,
+                    SupplementaryDeductible = model.SupplementaryDeductible,
+                    MinPatientCopay = model.MinPatientCopay,
+                    Priority = model.Priority,
+                    StartDate = model.StartDate,
+                    EndDate = model.EndDate,
+                    Notes = model.Notes,
                     CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = _currentUserService.UserId,
                     IsDeleted = false
@@ -302,6 +311,15 @@ namespace ClinicApp.Services.Insurance
                 existingTariff.TariffPrice = calculatedValues.TariffPrice;
                 existingTariff.PatientShare = calculatedValues.PatientShare;
                 existingTariff.InsurerShare = calculatedValues.InsurerShare;
+                // 🔧 CRITICAL FIX: اضافه کردن فیلدهای بیمه تکمیلی
+                existingTariff.SupplementaryCoveragePercent = model.SupplementaryCoveragePercent;
+                existingTariff.SupplementaryMaxPayment = model.SupplementaryMaxPayment;
+                existingTariff.SupplementaryDeductible = model.SupplementaryDeductible;
+                existingTariff.MinPatientCopay = model.MinPatientCopay;
+                existingTariff.Priority = model.Priority;
+                existingTariff.StartDate = model.StartDate;
+                existingTariff.EndDate = model.EndDate;
+                existingTariff.Notes = model.Notes;
                 existingTariff.UpdatedAt = DateTime.UtcNow;
                 existingTariff.UpdatedByUserId = _currentUserService.UserId;
 

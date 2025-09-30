@@ -205,6 +205,18 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Range(0, 100, ErrorMessage = "درصد پوشش باید بین 0 تا 100 باشد.")]
         public decimal SupplementaryCoveragePercent { get; set; }
 
+        [Display(Name = "حداکثر پرداخت تکمیلی (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "حداکثر پرداخت نمی‌تواند منفی باشد.")]
+        public decimal? SupplementaryMaxPayment { get; set; }
+
+        [Display(Name = "فرانشیز تکمیلی (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "فرانشیز تکمیلی نمی‌تواند منفی باشد.")]
+        public decimal? SupplementaryDeductible { get; set; }
+
+        [Display(Name = "حداقل پرداخت بیمار (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "حداقل پرداخت بیمار نمی‌تواند منفی باشد.")]
+        public decimal? MinPatientCopay { get; set; }
+
         [Display(Name = "اولویت")]
         [Range(1, 10, ErrorMessage = "اولویت باید بین 1 تا 10 باشد.")]
         public int Priority { get; set; } = 5;

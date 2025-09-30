@@ -424,6 +424,7 @@ namespace ClinicApp
                 container.RegisterType<ISupplementaryInsuranceService, SupplementaryInsuranceService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryInsuranceCacheService, SupplementaryInsuranceCacheService>(new PerRequestLifetimeManager());
                 container.RegisterType<ISupplementaryCombinationService, SupplementaryCombinationService>(new PerRequestLifetimeManager());
+                container.RegisterType<ISupplementaryInsuranceCalculationService, CorrectSupplementaryInsuranceCalculationService>(new PerRequestLifetimeManager());
                 
                 // Register Business Rules Engine
                 container.RegisterType<IBusinessRuleEngine, BusinessRuleEngine>(new PerRequestLifetimeManager());

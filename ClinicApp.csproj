@@ -657,6 +657,10 @@
     <Compile Include="Migrations\202509260343282_AddRowVersionToInsuranceTarrif.Designer.cs">
       <DependentUpon>202509260343282_AddRowVersionToInsuranceTarrif.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202509300804099_AddNewProperty.cs" />
+    <Compile Include="Migrations\202509300804099_AddNewProperty.Designer.cs">
+      <DependentUpon>202509300804099_AddNewProperty.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -841,7 +845,6 @@
     <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
     <Compile Include="Services\Insurance\SupplementaryCombinationService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceCacheService.cs" />
-    <Compile Include="Services\Insurance\SupplementaryInsuranceCalculationService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceDataFixService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceMonitoringService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceOptimizationService.cs" />
@@ -4236,6 +4239,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509260343282_AddRowVersionToInsuranceTarrif.resx">
       <DependentUpon>202509260343282_AddRowVersionToInsuranceTarrif.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202509300804099_AddNewProperty.resx">
+      <DependentUpon>202509300804099_AddNewProperty.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

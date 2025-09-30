@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
@@ -15,10 +14,7 @@ using ClinicApp.ViewModels.Insurance.InsuranceTariff;
 using ClinicApp.ViewModels.Insurance.Supplementary;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.Models.Entities.Clinic;
-// 🔧 FIX: حذف using تکراری
 using Serilog;
-using System.Runtime.Caching;
-using System.Web;
 using ClinicApp.Filters;
 
 namespace ClinicApp.Areas.Admin.Controllers.Insurance
@@ -507,12 +503,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت اطلاعات هوشمند برای فرم ایجاد تعرفه
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetSmartFormData(int serviceId, int insurancePlanId)
+        public async Task<JsonResult> GetSmartFormData(int serviceId, int insurancePlanId, int primaryInsurancePlanId = 0)
         {
             try
             {
-                _log.Information("🏥 MEDICAL: درخواست اطلاعات هوشمند فرم - ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                    serviceId, insurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: درخواست اطلاعات هوشمند فرم - ServiceId: {ServiceId}, SupplementaryPlanId: {SupplementaryPlanId}, PrimaryPlanId: {PrimaryPlanId}. User: {UserName} (Id: {UserId})",
+                    serviceId, insurancePlanId, primaryInsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
                 // دریافت اطلاعات خدمت با ServiceComponents
                 var service = await _serviceRepository.GetByIdWithComponentsAsync(serviceId);
@@ -553,38 +549,77 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     }
                 }
 
-                // 🔧 CRITICAL FIX: دریافت اطلاعات طرح بیمه با استفاده از متد مناسب
-                var planResult = await _planService.GetPlanDetailsAsync(insurancePlanId);
-                if (!planResult.Success || planResult.Data == null)
+                // 🔧 CRITICAL FIX: دریافت اطلاعات طرح بیمه پایه (Primary Insurance Plan)
+                if (primaryInsurancePlanId <= 0)
                 {
-                    _log.Warning("🏥 MEDICAL: طرح بیمه یافت نشد - PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                        insurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, message = "طرح بیمه یافت نشد" }, JsonRequestBehavior.AllowGet);
+                    _log.Warning("🏥 MEDICAL: PrimaryInsurancePlanId ارائه نشده - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                        serviceId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = "شناسه بیمه پایه الزامی است" }, JsonRequestBehavior.AllowGet);
                 }
-                var plan = planResult.Data;
+
+                var primaryPlanResult = await _planService.GetPlanDetailsAsync(primaryInsurancePlanId);
+                if (!primaryPlanResult.Success || primaryPlanResult.Data == null)
+                {
+                    _log.Warning("🏥 MEDICAL: طرح بیمه پایه یافت نشد - PrimaryPlanId: {PrimaryPlanId}. User: {UserName} (Id: {UserId})",
+                        primaryInsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = "طرح بیمه پایه یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+                var primaryPlan = primaryPlanResult.Data;
+
+                // دریافت اطلاعات طرح بیمه تکمیلی (Supplementary Insurance Plan)
+                var supplementaryPlanResult = await _planService.GetPlanDetailsAsync(insurancePlanId);
+                if (!supplementaryPlanResult.Success || supplementaryPlanResult.Data == null)
+                {
+                    _log.Warning("🏥 MEDICAL: طرح بیمه تکمیلی یافت نشد - SupplementaryPlanId: {SupplementaryPlanId}. User: {UserName} (Id: {UserId})",
+                        insurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = "طرح بیمه تکمیلی یافت نشد" }, JsonRequestBehavior.AllowGet);
+                }
+                var supplementaryPlan = supplementaryPlanResult.Data;
 
                 // دریافت تنظیمات PlanService (ساده‌سازی شده)
                 PlanService planService = null; // برای حالا null می‌گذاریم
 
-                // 🔧 CRITICAL FIX: محاسبه صحیح با استفاده از مقادیر واقعی طرح بیمه
-                var deductible = plan.Deductible;
-                var coveragePercent = plan.CoveragePercent;
-                var coverableAmount = Math.Max(0, actualServicePrice - deductible);
-                var insuranceCoverage = coverableAmount * (coveragePercent / 100m);
-                var patientPayment = actualServicePrice - insuranceCoverage;
+                // 🔧 CRITICAL FIX: محاسبه صحیح بیمه پایه (Primary Insurance) - استفاده از primaryPlan
+                var primaryDeductible = primaryPlan.Deductible;
+                var primaryCoveragePercent = primaryPlan.CoveragePercent;
+                var primaryCoverableAmount = Math.Max(0, actualServicePrice - primaryDeductible);
+                var primaryInsuranceCoverage = primaryCoverableAmount * (primaryCoveragePercent / 100m);
+                var patientShareFromPrimary = actualServicePrice - primaryInsuranceCoverage;
+                
+                // 🔧 CRITICAL FIX: محاسبه بیمه تکمیلی (Supplementary Insurance) - منطق جدید
+                // بیمه تکمیلی روی سهم باقی‌مانده بیمار (patientShareFromPrimary) اعمال می‌شود
+                // دریافت درصد پوشش واقعی از دیتابیس (نه هاردکد) - استفاده از supplementaryPlan
+                var supplementaryCoveragePercent = supplementaryPlan.CoveragePercent; // استفاده از درصد واقعی از دیتابیس
+                var supplementaryCoverage = patientShareFromPrimary * (supplementaryCoveragePercent / 100m);
+                var finalPatientShare = patientShareFromPrimary - supplementaryCoverage;
 
                 var calculationResult = new
                 {
+                    // اطلاعات کلی
                     TotalAmount = actualServicePrice,
-                    DeductibleAmount = deductible,
-                    CoverableAmount = coverableAmount,
-                    CoveragePercent = coveragePercent,
-                    InsuranceCoverage = insuranceCoverage,
-                    PatientPayment = patientPayment
+                    
+                    // بیمه پایه
+                    PrimaryDeductible = primaryDeductible,
+                    PrimaryCoveragePercent = primaryCoveragePercent,
+                    PrimaryCoverableAmount = primaryCoverableAmount,
+                    PrimaryInsuranceCoverage = primaryInsuranceCoverage,
+                    PatientShareFromPrimary = patientShareFromPrimary,
+                    
+                    // بیمه تکمیلی (منطق جدید)
+                    SupplementaryCoveragePercent = supplementaryCoveragePercent,
+                    SupplementaryCoverage = supplementaryCoverage,
+                    FinalPatientShare = finalPatientShare,
+                    
+                    // محاسبات قدیمی (برای سازگاری)
+                    DeductibleAmount = primaryDeductible,
+                    CoverableAmount = primaryCoverableAmount,
+                    CoveragePercent = primaryCoveragePercent,
+                    InsuranceCoverage = primaryInsuranceCoverage,
+                    PatientPayment = finalPatientShare
                 };
 
-                _log.Information("🏥 MEDICAL: محاسبه اطلاعات هوشمند - ServiceId: {ServiceId}, PlanId: {PlanId}, TotalAmount: {TotalAmount}, InsuranceCoverage: {InsuranceCoverage}, PatientPayment: {PatientPayment}. User: {UserName} (Id: {UserId})",
-                    serviceId, insurancePlanId, calculationResult.TotalAmount, calculationResult.InsuranceCoverage, calculationResult.PatientPayment, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: محاسبه اطلاعات هوشمند - ServiceId: {ServiceId}, PrimaryPlanId: {PrimaryPlanId}, SupplementaryPlanId: {SupplementaryPlanId}, TotalAmount: {TotalAmount}, PrimaryCoverage: {PrimaryCoverage}, SupplementaryCoverage: {SupplementaryCoverage}, FinalPatientShare: {FinalPatientShare}. User: {UserName} (Id: {UserId})",
+                    serviceId, primaryInsurancePlanId, insurancePlanId, calculationResult.TotalAmount, calculationResult.PrimaryInsuranceCoverage, calculationResult.SupplementaryCoverage, calculationResult.FinalPatientShare, _currentUserService.UserName, _currentUserService.UserId);
 
                 var result = new
                 {
@@ -599,16 +634,38 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             price = actualServicePrice,
                             priceWasCalculated = priceWasCalculated
                         },
-                        plan = new
+                        primaryPlan = new
                         {
-                            id = plan.InsurancePlanId,
-                            name = plan.Name,
-                            coveragePercent = coveragePercent,
-                            deductible = deductible
+                            id = primaryPlan.InsurancePlanId,
+                            name = primaryPlan.Name,
+                            coveragePercent = primaryCoveragePercent,
+                            deductible = primaryDeductible
+                        },
+                        supplementaryPlan = new
+                        {
+                            id = supplementaryPlan.InsurancePlanId,
+                            name = supplementaryPlan.Name,
+                            coveragePercent = supplementaryCoveragePercent,
+                            deductible = supplementaryPlan.Deductible
                         },
                         calculation = new
                         {
+                            // اطلاعات کلی
                             totalAmount = calculationResult.TotalAmount,
+                            
+                            // بیمه پایه
+                            primaryDeductible = calculationResult.PrimaryDeductible,
+                            primaryCoveragePercent = calculationResult.PrimaryCoveragePercent,
+                            primaryCoverableAmount = calculationResult.PrimaryCoverableAmount,
+                            primaryInsuranceCoverage = calculationResult.PrimaryInsuranceCoverage,
+                            patientShareFromPrimary = calculationResult.PatientShareFromPrimary,
+                            
+                            // بیمه تکمیلی (منطق جدید)
+                            supplementaryCoveragePercent = calculationResult.SupplementaryCoveragePercent,
+                            supplementaryCoverage = calculationResult.SupplementaryCoverage,
+                            finalPatientShare = calculationResult.FinalPatientShare,
+                            
+                            // محاسبات قدیمی (برای سازگاری)
                             deductibleAmount = calculationResult.DeductibleAmount,
                             coverableAmount = calculationResult.CoverableAmount,
                             coveragePercent = calculationResult.CoveragePercent,
@@ -650,18 +707,39 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Information("🏥 MEDICAL: درخواست لیست طرح‌های بیمه. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                var result = await _planService.GetPlansAsync(null, "", 1, 1000);
+                // دریافت بیمه‌های پایه و تکمیلی
+                var primaryResult = await _planService.GetPrimaryInsurancePlansAsync();
+                var supplementaryResult = await _planService.GetSupplementaryInsurancePlansAsync();
 
-                if (result.Success)
+                if (primaryResult.Success && supplementaryResult.Success)
                 {
-                    var plans = result.Data.Items.Select(p => new
+                    var plans = new List<object>();
+                    
+                    // اضافه کردن بیمه‌های پایه
+                    if (primaryResult.Data != null)
                     {
-                        id = p.InsurancePlanId,
-                        name = p.Name,
-                        providerName = p.InsuranceProviderName,
-                        coveragePercent = p.CoveragePercent,
-                        isPrimary = p.CoveragePercent > 0 && p.CoveragePercent < 100
-                    }).ToList();
+                        plans.AddRange(primaryResult.Data.Select(p => new
+                        {
+                            insurancePlanId = p.InsurancePlanId,
+                            name = p.Name,
+                            insuranceType = 1, // بیمه پایه
+                            coveragePercent = p.CoveragePercent,
+                            deductible = p.Deductible
+                        }));
+                    }
+                    
+                    // اضافه کردن بیمه‌های تکمیلی
+                    if (supplementaryResult.Data != null)
+                    {
+                        plans.AddRange(supplementaryResult.Data.Select(p => new
+                        {
+                            insurancePlanId = p.InsurancePlanId,
+                            name = p.Name,
+                            insuranceType = 2, // بیمه تکمیلی
+                            coveragePercent = p.CoveragePercent,
+                            deductible = p.Deductible
+                        }));
+                    }
 
                     _log.Information("🏥 MEDICAL: لیست طرح‌های بیمه با موفقیت دریافت شد - Count: {Count}. User: {UserName} (Id: {UserId})",
                         plans.Count, _currentUserService.UserName, _currentUserService.UserId);
@@ -670,10 +748,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 }
                 else
                 {
-                    _log.Warning("🏥 MEDICAL: خطا در دریافت لیست طرح‌های بیمه - {Error}. User: {UserName} (Id: {UserId})",
-                        result.Message, _currentUserService.UserName, _currentUserService.UserId);
+                    _log.Warning("🏥 MEDICAL: خطا در دریافت لیست طرح‌های بیمه. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
 
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "خطا در دریافت لیست طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
@@ -1415,7 +1493,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     IsActive = model.IsActive,
                     Priority = model.Priority ?? 5,
                     PrimaryInsurancePlanId = model.PrimaryInsurancePlanId,
-                    SupplementaryCoveragePercent = model.SupplementaryCoveragePercent ?? 90
+                    SupplementaryCoveragePercent = model.SupplementaryCoveragePercent ?? 90,
+                    // فیلدهای جدید (ریال)
+                    SupplementaryMaxPayment = model.SupplementaryMaxPayment,
+                    SupplementaryDeductible = model.SupplementaryDeductible,
+                    MinPatientCopay = model.MinPatientCopay
                 };
 
                 // به‌روزرسانی تعرفه
@@ -1745,8 +1827,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Debug("🏥 MEDICAL DEBUG: SupplementaryPlans Data: {SupplementaryPlans}",
                     supplementaryInsurancePlans?.Data?.Select(p => $"{p.InsurancePlanId}:{p.Name}").Take(5).ToList() ?? new List<string>());
 
-                // اضافه کردن داده‌های بیمه پایه به ViewBag برای JavaScript
-                if (primaryInsurancePlans?.Data != null)
+                // اضافه کردن داده‌های بیمه پایه به ViewBag برای JavaScript - ضد گلوله
+                if (primaryInsurancePlans?.Data != null && primaryInsurancePlans.Data.Any())
                 {
                     var primaryPlansData = primaryInsurancePlans.Data.Select(p => new
                     {
@@ -1757,10 +1839,38 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     }).ToList();
                     
                     ViewBag.PrimaryInsurancePlans = primaryPlansData;
+                    
+                    _log.Information("🏥 MEDICAL: ViewBag.PrimaryInsurancePlans تنظیم شد - Count: {Count}. User: {UserName} (Id: {UserId})",
+                        primaryPlansData.Count, _currentUserService.UserName, _currentUserService.UserId);
                 }
                 else
                 {
                     ViewBag.PrimaryInsurancePlans = new List<object>();
+                    _log.Warning("🏥 MEDICAL: ViewBag.PrimaryInsurancePlans خالی تنظیم شد. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // اضافه کردن داده‌های بیمه تکمیلی به ViewBag برای JavaScript - CRITICAL FIX
+                if (supplementaryInsurancePlans?.Data != null && supplementaryInsurancePlans.Data.Any())
+                {
+                    var supplementaryPlansData = supplementaryInsurancePlans.Data.Select(p => new
+                    {
+                        InsurancePlanId = p.InsurancePlanId,
+                        Name = p.Name,
+                        CoveragePercent = p.CoveragePercent,
+                        Deductible = p.Deductible
+                    }).ToList();
+                    
+                    ViewBag.InsurancePlans = supplementaryPlansData;
+                    
+                    _log.Information("🏥 MEDICAL: ViewBag.InsurancePlans تنظیم شد - Count: {Count}. User: {UserName} (Id: {UserId})",
+                        supplementaryPlansData.Count, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    ViewBag.InsurancePlans = new List<object>();
+                    _log.Warning("🏥 MEDICAL: ViewBag.InsurancePlans خالی تنظیم شد. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
                 }
 
                 // Debug: بررسی جزئیات ViewModel
@@ -1840,7 +1950,11 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     IsActive = model.IsActive,
                     Priority = model.Priority ?? 5,
                     PrimaryInsurancePlanId = model.PrimaryInsurancePlanId,
-                    SupplementaryCoveragePercent = model.SupplementaryCoveragePercent ?? 90
+                    SupplementaryCoveragePercent = model.SupplementaryCoveragePercent ?? 90,
+                    // فیلدهای جدید (ریال)
+                    SupplementaryMaxPayment = model.SupplementaryMaxPayment,
+                    SupplementaryDeductible = model.SupplementaryDeductible,
+                    MinPatientCopay = model.MinPatientCopay
                 };
 
                 var result = await _tariffService.CreateTariffAsync(insuranceTariffModel);

@@ -3,19 +3,113 @@
     ViewBag.Title = "ویرایش تعرفه بیمه تکمیلی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
     
-    // تنظیم Culture برای فرمت اعداد
+    // پیشنهاد: Culture را در Middleware/Filter ست کنید؛ اینجا نگه می‌داریم تا ناسازگاری نداشته باشد
     System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("fa-IR");
     System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("fa-IR");
 }
 
 @section Styles {
-    @* FIX: مطابق با VIEW_OPTIMIZATION_CONTRACT - استفاده از Bundle optimization *@
     @Styles.Render("~/Content/css/medical-environment")
     @Styles.Render("~/Content/css/insurance/supplementary-tariff")
+    <style>
+        .edit-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0,0,0,.08);
+            overflow: hidden;
+            margin-bottom: 24px
+        }
+
+            .edit-card .card-header {
+                background: linear-gradient(135deg,#667eea,#764ba2);
+                color: #fff;
+                padding: 16px 20px
+            }
+
+        .form-label {
+            font-weight: 600
+        }
+
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef
+        }
+
+            .form-control:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 .2rem rgba(102,126,234,.15)
+            }
+
+        .btn-medical {
+            background: linear-gradient(135deg,#667eea,#764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 24px;
+            padding: 10px 24px
+        }
+
+            .btn-medical:hover {
+                transform: translateY(-1px);
+                box-shadow: 0 8px 18px rgba(0,0,0,.15)
+            }
+
+        .calculation-preview {
+            background: #fff;
+            border: 2px solid #2c3e50;
+            border-radius: 12px;
+            padding: 16px
+        }
+
+            .calculation-preview h5 {
+                font-weight: 700;
+                color: #2c3e50;
+                border-bottom: 2px solid #3498db;
+                padding-bottom: 8px;
+                margin-bottom: 12px
+            }
+
+        .calculation-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px dashed #e9ecef;
+            font-size: 14px
+        }
+
+            .calculation-item:last-child {
+                border-bottom: 0
+            }
+
+            .calculation-item span:first-child {
+                color: #2c3e50;
+                font-weight: 600
+            }
+
+            .calculation-item span:last-child {
+                font-family: 'Courier New',monospace;
+                direction: ltr;
+                min-width: 120px;
+                text-align: left;
+                font-weight: 700
+            }
+        /* loading overlay */
+        #loadingOverlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,.45);
+            z-index: 9999;
+            display: none
+        }
+
+            #loadingOverlay .box {
+                color: #fff;
+                text-align: center
+            }
+    </style>
 }
 
 <div class="container-fluid">
-    <!-- Header Section -->
+    <!-- Header -->
     <div class="row mb-4">
         <div class="col-12">
             <div class="edit-card">
@@ -24,142 +118,187 @@
                         <i class="fas fa-edit me-2"></i>
                         ویرایش تعرفه بیمه تکمیلی
                     </h3>
-                    <p class="mb-0 mt-2 opacity-75">
-                        ویرایش اطلاعات تعرفه بیمه تکمیلی برای محیط درمانی
-                    </p>
+                    <p class="mb-0 mt-2 opacity-75">ویرایش استاندارد تعرفه تکمیلی ویژه محیط درمانی</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Form Section -->
+    <!-- Form & Preview -->
     <div class="row">
         <div class="col-lg-8">
             <div class="edit-card">
                 <div class="card-header">
                     <h5 class="mb-0">
-                        <i class="fas fa-edit me-2"></i>
+                        <i class="fas fa-file-invoice-dollar me-2"></i>
                         اطلاعات تعرفه
                     </h5>
                 </div>
                 <div class="card-body">
-                    @using (Html.BeginForm("Edit", "SupplementaryTariff", FormMethod.Post, new { @class = "form-horizontal", id = "editForm" }))
+                    @using (Html.BeginForm("Edit", "SupplementaryTariff", FormMethod.Post, new { @class = "form-horizontal", id = "editForm", autocomplete = "off" }))
                     {
                         @Html.AntiForgeryToken()
                         @Html.HiddenFor(m => m.InsuranceTariffId)
                         @Html.HiddenFor(m => m.ServiceId)
 
-                        <!-- Service Information (Read-only) -->
+                        @Html.ValidationSummary(false, "", new { @class = "alert alert-danger", role = "alert", id = "validationSummary" })
+
+                        <!-- Service (readonly) -->
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">نام خدمت</label>
-                                    <div class="form-control-plaintext">
-                                        <strong>@Model.ServiceName</strong>
-                                    </div>
+                                    <div class="form-control-plaintext"><strong>@(Model?.ServiceName ?? "—")</strong></div>
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <label class="form-label">کد خدمت</label>
-                                    <div class="form-control-plaintext">
-                                        <strong>@Model.ServiceCode</strong>
-                                    </div>
+                                    <div class="form-control-plaintext"><strong>@(Model?.ServiceCode ?? "—")</strong></div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Insurance Plan Selection -->
+                        <!-- Plans -->
                         <div class="row">
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     @Html.LabelFor(m => m.InsurancePlanId, new { @class = "form-label" })
-                                    @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(Model.InsurancePlans, "Value", "Text", Model.InsurancePlanId), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required" })
+                                    @Html.DropDownListFor(
+                                        m => m.InsurancePlanId,
+                                        new SelectList(Model?.InsurancePlans ?? Enumerable.Empty<SelectListItem>(), "Value", "Text", Model?.InsurancePlanId),
+                                        "انتخاب طرح بیمه تکمیلی",
+                                        new { @class = "form-control", required = "required", id = "InsurancePlanId", aria_describedby = "suppHelp" })
+                                    <small id="suppHelp" class="form-text text-muted">مثال: VIP ملت، دانا، پارسیان</small>
                                     @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                             <div class="col-md-6">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     @Html.LabelFor(m => m.PrimaryInsurancePlanId, new { @class = "form-label" })
-                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(Model.PrimaryInsurancePlans, "Value", "Text", Model.PrimaryInsurancePlanId), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required" })
+                                    @Html.DropDownListFor(
+                                        m => m.PrimaryInsurancePlanId,
+                                        new SelectList(Model?.PrimaryInsurancePlans ?? Enumerable.Empty<SelectListItem>(), "Value", "Text", Model?.PrimaryInsurancePlanId),
+                                        "انتخاب بیمه پایه",
+                                        new { @class = "form-control", required = "required", id = "PrimaryInsurancePlanId", aria_describedby = "primaryHelp" })
+                                    <small id="primaryHelp" class="form-text text-muted">مثال: تامین، نیروهای مسلح و ...</small>
                                     @Html.ValidationMessageFor(m => m.PrimaryInsurancePlanId, "", new { @class = "text-danger" })
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Tariff Information -->
+                        <!-- Tariff fields -->
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    @Html.LabelFor(m => m.TariffPrice, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.TariffPrice, new { @class = "form-control", @type = "number", @step = "0.01", @min = "0", @required = "required" })
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.TariffPrice, "قیمت کل خدمت (تومان)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.TariffPrice, new { @class = "form-control currency-input", type = "text", inputmode = "decimal", required = "required", id = "TariffPrice" })
                                     @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">قیمت کل خدمت به تومان</small>
+                                    <small class="form-text text-muted">به تومان (به‌صورت خودکار هزارگان می‌گیرد)</small>
                                 </div>
                             </div>
+
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    @Html.LabelFor(m => m.PatientShare, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control", @type = "number", @step = "0.01", @min = "0", @required = "required" })
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.PatientShare, "سهم بیمار پس از بیمه پایه (تومان)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control currency-input", type = "text", inputmode = "decimal", required = "required", id = "PatientShare" })
                                     @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">مبلغی که بیمار باید پرداخت کند</small>
+                                    <small class="form-text text-muted">R: با بیمه پایه حساب شده، قبل از تکمیلی</small>
                                 </div>
                             </div>
+
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    @Html.LabelFor(m => m.InsurerShare, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.InsurerShare, new { @class = "form-control", @type = "number", @step = "0.01", @min = "0", @required = "required" })
-                                    @Html.ValidationMessageFor(m => m.InsurerShare, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">مبلغی که بیمه پایه پرداخت می‌کند</small>
+                                <div class="form-group mb-3">
+                                    @Html.Label("سهم بیمه پایه (نمایشی)", new { @class = "form-label" })
+                                    @Html.TextBox("InsurerShare_View", "0", new { @class = "form-control", type = "text", inputmode = "decimal", @readonly = "readonly", id = "InsurerShare" })
+                                    @Html.HiddenFor(m => m.InsurerShare, new { Value = "0" }) @* همیشه صفر ذخیره می‌شود *@
+                                    <small class="form-text text-muted">در تعرفه تکمیلی ذخیره نمی‌شود</small>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Supplementary Settings -->
+                        <!-- Supplementary settings -->
                         <div class="row">
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    @Html.LabelFor(m => m.SupplementaryCoveragePercent, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.SupplementaryCoveragePercent, new { @class = "form-control", @type = "number", @step = "0.01", @min = "0", @max = "100", @required = "required" })
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.SupplementaryCoveragePercent, "درصد پوشش تکمیلی (0–100)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.SupplementaryCoveragePercent, new { @class = "form-control percentage-input", type = "number", step = "0.01", min = "0", max = "100", required = "required", id = "SupplementaryCoveragePercent" })
                                     @Html.ValidationMessageFor(m => m.SupplementaryCoveragePercent, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">درصد پوشش بیمه تکمیلی (0-100)</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-group">
-                                    @Html.LabelFor(m => m.Priority, new { @class = "form-label" })
-                                    @Html.TextBoxFor(m => m.Priority, new { @class = "form-control", @type = "number", @min = "1", @max = "10" })
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.Priority, "اولویت (1–10)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.Priority, new { @class = "form-control", type = "number", min = "1", max = "10", id = "Priority" })
                                     @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
-                                    <small class="form-text text-muted">اولویت تعرفه (1-10، 1 بالاترین اولویت)</small>
                                 </div>
                             </div>
                             <div class="col-md-4">
-                                <div class="form-group">
+                                <div class="form-group mb-3">
                                     <div class="form-check mt-4">
-                                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                        @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input", id = "IsActive" })
                                         @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Action Buttons -->
-                        <div class="form-group text-center mt-4">
-                            <button type="submit" class="btn btn-medical me-3" 
-                                    data-toggle="tooltip" 
-                                    data-placement="top" 
-                                    title="ذخیره تغییرات تعرفه بیمه تکمیلی">
-                                <i class="fas fa-save me-2"></i>
-                                ذخیره تغییرات
+                        <!-- Advanced Supplementary Settings -->
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.SupplementaryMaxPayment, "سقف پرداخت تکمیلی (تومان)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.SupplementaryMaxPayment, new { @class = "form-control currency-input", type = "number", min = "0", step = "1", id = "SupplementaryMaxPayment" })
+                                    @Html.ValidationMessageFor(m => m.SupplementaryMaxPayment, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">حداکثر مبلغی که تکمیلی می‌پردازد</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.SupplementaryDeductible, "فرانشیز تکمیلی (تومان)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.SupplementaryDeductible, new { @class = "form-control currency-input", type = "number", min = "0", step = "1", id = "SupplementaryDeductible" })
+                                    @Html.ValidationMessageFor(m => m.SupplementaryDeductible, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">کسور مورد نیاز قبل از پوشش تکمیلی</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-3">
+                                    @Html.LabelFor(m => m.MinPatientCopay, "حداقل پرداخت بیمار (تومان)", new { @class = "form-label" })
+                                    @Html.TextBoxFor(m => m.MinPatientCopay, new { @class = "form-control currency-input", type = "number", min = "0", step = "1", id = "MinPatientCopay" })
+                                    @Html.ValidationMessageFor(m => m.MinPatientCopay, "", new { @class = "text-danger" })
+                                    <small class="form-text text-muted">کف پرداخت بیمار پس از تکمیلی</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="text-center mt-3">
+                            <button type="submit"
+                                    class="btn btn-medical me-2"
+                                    id="submitBtn"
+                                    data-bs-toggle="tooltip"
+                                    data-bs-placement="top"
+                                    title="ذخیره تغییرات تعرفه">
+                                <i class="fas fa-save me-2"></i>ذخیره تغییرات
                             </button>
                             <a href="@Url.Action("Index", "SupplementaryTariff")" 
                                class="btn btn-outline-secondary" 
-                               data-toggle="tooltip" 
-                               data-placement="top" 
-                               title="بازگشت به لیست تعرفه‌های بیمه تکمیلی">
-                                <i class="fas fa-arrow-right me-2"></i>
-                                بازگشت به لیست
+                               data-bs-toggle="tooltip"
+                               data-bs-placement="top"
+                               title="بازگشت به لیست">
+                                <i class="fas fa-arrow-right me-2"></i>بازگشت
                             </a>
+                        </div>
+
+                        <!-- Loading Overlay -->
+                        <div id="loadingOverlay">
+                            <div class="d-flex h-100 justify-content-center align-items-center">
+                                <div class="box">
+                                    <div class="spinner-border spinner-border-lg mb-3" role="status"><span class="visually-hidden">...</span></div>
+                                    <h6 class="mb-1">در حال ذخیره تغییرات...</h6>
+                                    <small>لطفاً پنجره را نبندید</small>
+                                </div>
+                            </div>
                         </div>
                     }
                 </div>
@@ -169,32 +308,41 @@
         <!-- Calculation Preview -->
         <div class="col-lg-4">
             <div class="calculation-preview">
-                <h5>
-                    <i class="fas fa-calculator me-2"></i>
-                    پیش‌نمایش محاسبات
-                </h5>
+                <h5><i class="fas fa-calculator me-2"></i>پیش‌نمایش محاسبات</h5>
                 <div id="calculationPreview">
                     <div class="calculation-item">
                         <span>قیمت کل خدمت:</span>
-                        <span id="totalPrice">0 تومان</span>
+                        <span id="pv_totalPrice">0 تومان</span>
+                    </div>
+                    <div class="calculation-item">
+                        <span>درصد پوشش پایه:</span>
+                        <span id="pv_primaryPercent">—</span>
                     </div>
                     <div class="calculation-item">
                         <span>سهم بیمه پایه:</span>
-                        <span id="primaryShare">0 تومان</span>
+                        <span id="pv_primaryCoverage">—</span>
                     </div>
                     <div class="calculation-item">
-                        <span>مبلغ باقی‌مانده:</span>
-                        <span id="remainingAmount">0 تومان</span>
+                        <span>سهم بیمار پس از پایه (R):</span>
+                        <span id="pv_patientShareAfterPrimary">0 تومان</span>
                     </div>
                     <div class="calculation-item">
                         <span>درصد پوشش تکمیلی:</span>
-                        <span id="supplementaryPercent">0%</span>
+                        <span id="pv_suppPercent">0%</span>
+                    </div>
+                    <div class="calculation-item">
+                        <span>پوشش تکمیلی:</span>
+                        <span id="pv_suppCoverage">0 تومان</span>
                     </div>
                     <div class="calculation-item">
                         <span>سهم نهایی بیمار:</span>
-                        <span id="finalPatientShare">0 تومان</span>
+                        <span id="pv_finalPatientShare">0 تومان</span>
                     </div>
                 </div>
+                <div id="validationSummary" class="alert alert-warning mt-2" style="display:none"></div>
+                <small class="text-muted d-block mt-2">
+                    منطق: تکمیلی روی سهم باقی‌مانده بیمار پس از پایه اعمال می‌شود. اعداد نمایش داده‌شده به تومان هستند.
+                </small>
             </div>
         </div>
     </div>
@@ -210,103 +358,243 @@
     <script src="~/Scripts/app/supplementary-tariff.js"></script>
     
     <script>
-        $(document).ready(function() {
-            // Debug: نمایش اطلاعات Model
-            console.log('🏥 MEDICAL DEBUG: Model Data:', {
-                InsuranceTariffId: @(Model.InsuranceTariffId ?? 0),
-                ServiceId: @Model.ServiceId,
-                InsurancePlanId: @Model.InsurancePlanId,
-                TariffPrice: @(Model.TariffPrice?.ToString("F2") ?? "null"),
-                PatientShare: @(Model.PatientShare?.ToString("F2") ?? "null"),
-                InsurerShare: @(Model.InsurerShare?.ToString("F2") ?? "null"),
-                SupplementaryCoveragePercent: @(Model.SupplementaryCoveragePercent?.ToString("F2") ?? "null"),
-                Priority: @Model.Priority,
-                PrimaryInsurancePlanId: @Model.PrimaryInsurancePlanId,
-                IsActive: @Model.IsActive.ToString().ToLower()
-            });
-            
-            // Debug: نمایش اطلاعات Model
-            console.log('🏥 MEDICAL DEBUG: Model Data:', {
-                ServiceName: '@Model.ServiceName',
-                ServiceCode: '@Model.ServiceCode',
-                PrimaryInsurancePlansCount: @Model.PrimaryInsurancePlans.Count,
-                InsurancePlansCount: @Model.InsurancePlans.Count,
-                DepartmentsCount: @Model.Departments.Count
-            });
-            
-            // تنظیم مقادیر فیلدها به صورت دستی
-            @if (Model.TariffPrice.HasValue)
-            {
-                <text>
-                $('#TariffPrice').val('@Model.TariffPrice.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
-                </text>
-            }
-            @if (Model.PatientShare.HasValue)
-            {
-                <text>
-                $('#PatientShare').val('@Model.PatientShare.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
-                </text>
-            }
-            @if (Model.InsurerShare.HasValue)
-            {
-                <text>
-                $('#InsurerShare').val('@Model.InsurerShare.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
-                </text>
-            }
-            @if (Model.SupplementaryCoveragePercent.HasValue)
-            {
-                <text>
-                $('#SupplementaryCoveragePercent').val('@Model.SupplementaryCoveragePercent.Value.ToString("F2", System.Globalization.CultureInfo.InvariantCulture)');
-                </text>
-            }
-            
-            // Initialize real-time calculation
-            initializeRealTimeCalculation();
-            
-            // Initialize form validation
-            if (typeof window.MedicalValidation !== 'undefined') {
-                window.MedicalValidation.init();
-            }
-        });
+        // ===========================
+        //  Utils (ضدگلوله)
+        // ===========================
+        const faDigits = '۰۱۲۳۴۵۶۷۸۹';
+        const arDigits = '٠١٢٣٤٥٦٧٨٩';
 
-        function initializeRealTimeCalculation() {
-            // Bind events to form fields
-            $('#TariffPrice, #PatientShare, #InsurerShare, #SupplementaryCoveragePercent, #PrimaryInsurancePlanId').on('input change', function() {
+        function fa2en(s) {
+            if (!s) return '';
+            return s.replace(/[۰-۹]/g, d => String('0123456789'[faDigits.indexOf(d)]))
+                    .replace(/[٠-٩]/g, d => String('0123456789'[arDigits.indexOf(d)]));
+        }
+        function parseMoney(val) { // تومان
+            if (!val) return 0;
+            const n = fa2en(String(val)).replace(/[^\d.-]/g, '');
+            const out = Number(n || 0);
+            return isFinite(out) ? out : 0;
+        }
+        const toRial  = t => Math.round((parseMoney(t) || 0) * 10); // تومان→ریال
+        const toToman = r => (Number(r) || 0) / 10;                 // ریال→تومان
+        const clamp   = (v,min,max) => Math.min(Math.max(v,min),max);
+
+        function formatToman(v) {
+            const n = Math.round(Number(v) || 0);
+            try { return new Intl.NumberFormat('fa-IR').format(n) + ' تومان'; }
+            catch { return n.toString() + ' تومان'; }
+        }
+
+        // ===========================
+        //  Initial fill from Model
+        // ===========================
+        (function prefill() {
+            try {
+                // مقداردهی امن با فرمت invariant (اگر از سرور اعشاری آمد)
+                @if (Model?.TariffPrice != null) {
+                    <text>$('#TariffPrice').val('@Model.TariffPrice.Value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)');</text>
+                }
+                @if (Model?.PatientShare != null) {
+                    <text>$('#PatientShare').val('@Model.PatientShare.Value.ToString("F0", System.Globalization.CultureInfo.InvariantCulture)');</text>
+                }
+                // نمایش InsurerShare بصورت صفر
+                $('#InsurerShare').val('0');
+
+                // فعال‌سازی ماسک هزارگان (فقط نمایش؛ مقدار خام با parseMoney گرفته می‌شود)
+                $('.currency-input').each(function () {
+                    const $el = $(this);
+                    $el.on('input', function () {
+                        const raw = fa2en($el.val()).replace(/[^\d]/g,'');
+                        if (raw) $el.val(Number(raw).toLocaleString('fa-IR'));
+                        else $el.val('');
+                    });
+                    // normalize پس از blur
+                    $el.on('blur', function () {
+                        const raw = fa2en($el.val()).replace(/[^\d]/g,'');
+                        $el.data('raw-value', raw);
+                    });
+                });
+            } catch (e) { console.warn('prefill error', e); }
+        })();
+
+        // ===========================
+        //  Primary/Supplementary plans (اختیاری برای نمایش درصد پایه)
+        // ===========================
+        window.primaryInsurancePlans = @Html.Raw(Json.Encode(ViewBag.PrimaryInsurancePlans ?? new List<object>()));
+        window.insurancePlans = @Html.Raw(Json.Encode(ViewBag.InsurancePlans ?? new List<object>()));
+
+        function getSelectedPrimaryPlan(){
+            const id = $('#PrimaryInsurancePlanId').val();
+            const arr = Array.isArray(window.primaryInsurancePlans) ? window.primaryInsurancePlans : [];
+            return arr.find(p => String(p.InsurancePlanId) === String(id));
+        }
+
+        // ===========================
+        //  Bulletproof Helper Functions
+        // ===========================
+        function clamp(v, lo, hi){ return Math.max(lo, Math.min(hi, v)); }
+        function fa2en(s){ return (s||'').replace(/[۰-۹]/g,d=>'۰۱۲۳۴۵۶۷۸۹'.indexOf(d)).replace(/[٠-٩]/g,d=>'٠١٢٣٤٥٦٧٨٩'.indexOf(d)); }
+        function parseMoney(txt){ const n=fa2en(String(txt)).replace(/[^\d.-]/g,''); return n?Number(n):0; }
+        function toRialFromTomanInput(sel){ const toman=parseMoney($(sel).val()); return Math.max(0, Math.round(toman*10)); }
+        function formatToman(t){ try { return new Intl.NumberFormat('fa-IR').format(Math.round(t)) + ' تومان'; } catch(_){ return Math.round(t)+' تومان'; } }
+        function getSelectedPrimaryPlan(){
+            const pid = $('#PrimaryInsurancePlanId').val();
+            const arr = (window.primaryInsurancePlans || []);
+            return arr.find(p => String(p.InsurancePlanId)===String(pid)) || null;
+        }
+
+        // ===========================
+        //  Bulletproof Calculation Preview
+        // ===========================
+        function updateCalculationPreview(){
+            try{
+                // Inputs (به ریال)
+                const T_r   = toRialFromTomanInput('#TariffPrice');
+                const R_in_r= toRialFromTomanInput('#PatientShare'); // فقط برای چک
+
+                const S_pct = clamp(parseFloat($('#SupplementaryCoveragePercent').val())||0,0,100);
+
+                // طرح پایه از ViewBag (LoadCreateEditData ست کرده)
+                const prim  = getSelectedPrimaryPlan(); // {CoveragePercent, Deductible}
+                const P_pct = prim ? (Number(prim.CoveragePercent)||0) : null;
+                const P_ded_r = prim ? Math.max(0, Math.round(Number(prim.Deductible)||0)) : 0; // ریال
+
+                // فیلدهای تکمیلی (تومان→ریال)
+                const S_max_r  = toRialFromTomanInput('#SupplementaryMaxPayment');   // سقف
+                const S_ded_r  = toRialFromTomanInput('#SupplementaryDeductible');   // فرانشیز تکمیلی
+                const minCopay_r = toRialFromTomanInput('#MinPatientCopay');         // کف پرداخت
+
+                // --- Primary ---
+                const coverable_r   = Math.max(0, T_r - P_ded_r);
+                const primaryCov_r  = (P_pct!=null) ? Math.round(coverable_r * (P_pct/100)) : 0;
+                const R_calc_r      = Math.max(0, T_r - primaryCov_r);
+                const useR_r        = (P_pct==null) ? R_in_r : R_calc_r;
+
+                // --- Supplementary ---
+                const eligible_r    = Math.max(0, useR_r - S_ded_r);
+                const suppRaw_r     = Math.round(eligible_r * (S_pct/100));
+                const supp_r        = (S_max_r>0) ? Math.min(suppRaw_r, S_max_r) : suppRaw_r;
+                let   final_r       = Math.max(0, useR_r - supp_r);
+                if(minCopay_r>0) final_r = Math.max(final_r, minCopay_r);
+
+                // نمایش (تومان)
+                $('#pv_totalPrice').text(formatToman(T_r/10));
+                $('#pv_primaryPercent').text(P_pct!=null ? (P_pct+'%') : '—');
+                $('#pv_primaryCoverage').text(P_pct!=null ? formatToman(primaryCov_r/10) : '—');
+                $('#pv_patientShareAfterPrimary').text(formatToman(useR_r/10));
+                $('#pv_suppPercent').text(S_pct+'%');
+                $('#pv_suppCoverage').text(formatToman(supp_r/10));
+                $('#pv_finalPatientShare').text(formatToman(final_r/10));
+
+                // هشدار اختلاف R دستی با R محاسبه‌شده (تلورانس ۲٪ از T)
+                const delta_r = Math.abs(R_in_r - R_calc_r);
+                const tol_r   = Math.round(T_r*0.02);
+                if(P_pct!=null && delta_r>tol_r){
+                    $('#validationSummary').html(
+                        '<ul class="mb-0"><li>«سهم بیمار پس از پایه» با محاسبات طرح پایه همخوان نیست. قیمت/طرح را بررسی کنید.</li></ul>'
+                    ).show();
+                }else{
+                    $('#validationSummary').hide();
+                }
+            }catch(e){
+                console.error('calc error', e);
+            }
+        }
+
+        function bindRealtime() {
+            // رویدادها برای فیلدهای جدید
+            $('#TariffPrice, #PatientShare, #InsurerShare, #SupplementaryCoveragePercent, #PrimaryInsurancePlanId, #SupplementaryMaxPayment, #SupplementaryDeductible, #MinPatientCopay')
+                .on('input change', updateCalculationPreview);
+
+            $('#SupplementaryCoveragePercent').on('input change', function(){
+                // کلَمپ درصد
+                const v = clamp(parseFloat($(this).val()) || 0, 0, 100);
+                $(this).val(v);
                 updateCalculationPreview();
             });
-            
-            // Initial calculation
+            $('#Priority').on('input', function(){
+                const v = clamp(parseInt($(this).val()) || 1, 1, 10);
+                $(this).val(v);
+            });
             updateCalculationPreview();
         }
 
-        function updateCalculationPreview() {
-            try {
-                const tariffPrice = parseFloat($('#TariffPrice').val()) || 0;
-                const patientShare = parseFloat($('#PatientShare').val()) || 0;
-                const insurerShare = parseFloat($('#InsurerShare').val()) || 0;
-                const supplementaryPercent = parseFloat($('#SupplementaryCoveragePercent').val()) || 0;
-                
-                // Calculate remaining amount after primary insurance
-                const remainingAmount = Math.max(0, tariffPrice - insurerShare);
-                
-                // Calculate final patient share after supplementary insurance
-                const supplementaryCoverage = (remainingAmount * supplementaryPercent) / 100;
-                const finalPatientShare = Math.max(0, remainingAmount - supplementaryCoverage);
-                
-                // Update display
-                $('#totalPrice').text(formatCurrency(tariffPrice));
-                $('#primaryShare').text(formatCurrency(insurerShare));
-                $('#remainingAmount').text(formatCurrency(remainingAmount));
-                $('#supplementaryPercent').text(supplementaryPercent + '%');
-                $('#finalPatientShare').text(formatCurrency(finalPatientShare));
-                
-            } catch (error) {
-                console.error('Error in calculation preview:', error);
-            }
+        // ===========================
+        //  Submit handling (ضد دوبار کلیک + تبدیل تومان→ریال)
+        // ===========================
+        function normalizeBeforeSubmit() {
+            // تبدیل تمام currency-input ها به ریال و ارسال
+            const fields = ['#TariffPrice','#PatientShare','#InsurerShare','#SupplementaryMaxPayment','#SupplementaryDeductible','#MinPatientCopay'];
+            fields.forEach(sel => {
+                const rial = toRialFromTomanInput(sel);
+                $(sel).val(rial); // ارسال به ریال
+            });
+
+            // InsurerShare همیشه صفر
+            $('input[name="InsurerShare"]').val(0);
         }
 
-        function formatCurrency(amount) {
-            return new Intl.NumberFormat('fa-IR').format(amount) + ' تومان';
+        function preventDoubleSubmit() {
+            const $btn = $('#submitBtn');
+            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...');
+            $('#loadingOverlay').show();
         }
+
+        // ===========================
+        //  Document Ready
+        // ===========================
+        $(function(){
+            // Bootstrap 5 tooltip
+            document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+                new bootstrap.Tooltip(el);
+            });
+
+            // بایند رویدادها
+            bindRealtime();
+
+            // اعتبارسنجی عمومی (در صورت وجود ماژول پروژه)
+            if (typeof window.MedicalValidation !== 'undefined' && window.MedicalValidation.init) {
+                window.MedicalValidation.init();
+            }
+
+            // ارسال
+            $('#editForm').on('submit', function(e){
+                try {
+                    // ولیدیشن سریع کلاینتی
+                    let errors = [];
+                    const tariffT = parseMoney($('#TariffPrice').val());
+                    const patientT = parseMoney($('#PatientShare').val());
+                    const suppPct  = parseFloat($('#SupplementaryCoveragePercent').val()) || 0;
+
+                    if (!$('#InsurancePlanId').val()) errors.push('انتخاب طرح بیمه تکمیلی الزامی است');
+                    if (!$('#PrimaryInsurancePlanId').val()) errors.push('انتخاب بیمه پایه الزامی است');
+                    if (tariffT <= 0) errors.push('قیمت کل خدمت باید بیشتر از صفر باشد');
+                    if (patientT < 0) errors.push('سهم بیمار نمی‌تواند منفی باشد');
+                    if (suppPct < 0 || suppPct > 100) errors.push('درصد پوشش تکمیلی باید بین 0 تا 100 باشد');
+
+                    // منطقی: R نمی‌تواند از مبلغ کل خیلی بیشتر باشد (تلورانس 10%)
+                    if (patientT > tariffT * 1.1) errors.push('سهم بیمار پس از پایه نمی‌تواند بیش از 110% قیمت کل باشد');
+
+                    if (errors.length) {
+                        e.preventDefault();
+                        const html = '<ul class="mb-0">' + errors.map(x => `<li>${x}</li>`).join('') + '</ul>';
+                        $('#validationSummary').html(html).show();
+                        $('html,body').animate({scrollTop:0}, 400);
+                        return false;
+                    }
+
+                    preventDoubleSubmit();
+                    normalizeBeforeSubmit();
+                } catch (err) {
+                    console.error('submit error', err);
+                    // جلوگیری از ارسال در صورت خطای غیرمنتظره
+                    e.preventDefault();
+                    $('#loadingOverlay').hide();
+                    $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
+                    alert('خطایی در آماده‌سازی داده‌ها رخ داد. لطفاً بررسی و مجدد تلاش کنید.');
+                    return false;
+                }
+            });
+        });
     </script>
 }

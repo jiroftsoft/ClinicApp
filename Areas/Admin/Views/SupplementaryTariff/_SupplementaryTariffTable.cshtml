@@ -7,10 +7,11 @@
                 <th>شناسه</th>
                 <th>نام خدمت</th>
                 <th>طرح بیمه</th>
-                <th>قیمت تعرفه</th>
-                <th>سهم بیمار</th>
-                <th>درصد پوشش تکمیلی</th>
-                <th>سقف پرداخت</th>
+                <th>قیمت خدمت</th>
+                <th>سهم بیمه پایه</th>
+                <th>سهم باقی‌مانده بیمار</th>
+                <th>پوشش تکمیلی</th>
+                <th>سهم نهایی بیمار</th>
                 <th>اولویت</th>
                 <th>تاریخ شروع</th>
                 <th>تاریخ پایان</th>
@@ -34,16 +35,23 @@
                         <small class="text-muted">@item.InsuranceProviderName</small>
                     </td>
                     <td>
-                        <span class="currency-format">@(item.TariffPrice?.ToString("N0") ?? "0") تومان</span>
+                        <span class="currency-format" dir="ltr">@(item.TariffPrice?.ToString("N0") ?? "0") تومان</span>
                     </td>
                     <td>
-                        <span class="currency-format">@(item.PatientShare?.ToString("N0") ?? "0") تومان</span>
+                        <span class="currency-format" dir="ltr">@(item.InsurerShare?.ToString("N0") ?? "0") تومان</span>
+                        <small class="text-muted d-block">پوشش پایه</small>
                     </td>
                     <td>
-                        <span class="fw-bold">@(item.SupplementaryCoveragePercent?.ToString("F2") ?? "0")%</span>
+                        <span class="currency-format" dir="ltr">@((item.TariffPrice - item.InsurerShare)?.ToString("N0") ?? "0") تومان</span>
+                        <small class="text-muted d-block">باقی‌مانده</small>
                     </td>
                     <td>
-                        <span class="currency-format">@(item.SupplementaryMaxPayment?.ToString("N0") ?? "0") تومان</span>
+                        <span class="currency-format" dir="ltr">@(item.SupplementaryCoveragePercent?.ToString("F1") ?? "0")%</span>
+                        <small class="text-muted d-block">از باقی‌مانده</small>
+                    </td>
+                    <td>
+                        <span class="currency-format" dir="ltr">@(item.PatientShare?.ToString("N0") ?? "0") تومان</span>
+                        <small class="text-muted d-block">نهایی</small>
                     </td>
                     <td>
                         <span class="badge badge-info">@(item.Priority?.ToString() ?? "0")</span>
@@ -67,10 +75,10 @@
                                class="btn btn-sm btn-outline-warning" title="ویرایش">
                                 <i class="fas fa-edit"></i>
                             </a>
-                            <a href="@Url.Action("Delete", new { id = item.InsuranceTariffId })" 
-                               class="btn btn-sm btn-outline-danger" title="حذف">
+                            <button type="button" class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteTariff(@item.InsuranceTariffId)" title="حذف">
                                 <i class="fas fa-trash"></i>
-                            </a>
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -179,3 +187,45 @@
         color: white;
     }
 </style>
+
+<script>
+    // حذف تعرفه با Anti-forgery Token
+    function deleteTariff(tariffId) {
+        if (confirm('آیا از حذف این تعرفه اطمینان دارید؟')) {
+            // دریافت Anti-forgery Token
+            var token = $('input[name="__RequestVerificationToken"]').val();
+            
+            $.ajax({
+                url: '/Admin/SupplementaryTariff/DeleteTariff',
+                type: 'POST',
+                data: {
+                    id: tariffId,
+                    __RequestVerificationToken: token
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // حذف ردیف از جدول
+                        $('tr[data-tariff-id="' + tariffId + '"]').fadeOut(300, function() {
+                            $(this).remove();
+                        });
+                        
+                        // نمایش پیام موفقیت
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.showSuccess('تعرفه با موفقیت حذف شد');
+                        }
+                    } else {
+                        if (typeof window.MedicalUI !== 'undefined') {
+                            window.MedicalUI.showError('خطا در حذف تعرفه: ' + (response.message || 'خطای نامشخص'));
+                        }
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error('خطا در حذف تعرفه:', error);
+                    if (typeof window.MedicalUI !== 'undefined') {
+                        window.MedicalUI.showError('خطا در حذف تعرفه: ' + error);
+                    }
+                }
+            });
+        }
+    }
+</script>

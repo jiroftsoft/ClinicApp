@@ -93,6 +93,20 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public decimal? SupplementaryMaxPayment { get; set; }
 
         /// <summary>
+        /// فرانشیز بیمه تکمیلی
+        /// </summary>
+        [Display(Name = "فرانشیز تکمیلی (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "فرانشیز تکمیلی نمی‌تواند منفی باشد.")]
+        public decimal? SupplementaryDeductible { get; set; }
+
+        /// <summary>
+        /// حداقل پرداخت بیمار
+        /// </summary>
+        [Display(Name = "حداقل پرداخت بیمار (تومان)")]
+        [Range(0, double.MaxValue, ErrorMessage = "حداقل پرداخت بیمار نمی‌تواند منفی باشد.")]
+        public decimal? MinPatientCopay { get; set; }
+
+        /// <summary>
         /// تنظیمات خاص بیمه تکمیلی (JSON)
         /// </summary>
         [Display(Name = "تنظیمات خاص")]

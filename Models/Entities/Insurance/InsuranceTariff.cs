@@ -184,6 +184,20 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     public decimal? SupplementaryMaxPayment { get; set; }
 
     /// <summary>
+    /// فرانشیز بیمه تکمیلی
+    /// این فیلد برای تعریف کسور مورد نیاز قبل از پوشش بیمه تکمیلی استفاده می‌شود
+    /// </summary>
+    [Range(0, double.MaxValue, ErrorMessage = "فرانشیز بیمه تکمیلی نمی‌تواند منفی باشد.")]
+    public decimal? SupplementaryDeductible { get; set; }
+
+    /// <summary>
+    /// حداقل پرداخت بیمار
+    /// این فیلد برای تعریف کف پرداخت بیمار پس از بیمه تکمیلی استفاده می‌شود
+    /// </summary>
+    [Range(0, double.MaxValue, ErrorMessage = "حداقل پرداخت بیمار نمی‌تواند منفی باشد.")]
+    public decimal? MinPatientCopay { get; set; }
+
+    /// <summary>
     /// اولویت تعرفه
     /// این فیلد برای تعیین اولویت تعرفه‌ها استفاده می‌شود
     /// </summary>

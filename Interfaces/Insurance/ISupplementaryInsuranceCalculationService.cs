@@ -42,5 +42,19 @@ namespace ClinicApp.Interfaces.Insurance
             List<int> serviceIds,
             List<decimal> serviceAmounts,
             DateTime calculationDate);
+
+        /// <summary>
+        /// محاسبه بیمه تکمیلی برای سناریو خاص (بدون وابستگی به بیمار)
+        /// </summary>
+        /// <param name="serviceAmount">مبلغ خدمت</param>
+        /// <param name="primaryCoverage">پوشش بیمه اصلی</param>
+        /// <param name="supplementaryCoveragePercent">درصد پوشش بیمه تکمیلی</param>
+        /// <param name="supplementaryMaxPayment">سقف پرداخت بیمه تکمیلی</param>
+        /// <returns>نتیجه محاسبه بیمه تکمیلی</returns>
+        SupplementaryInsuranceCalculationResult CalculateForSpecificScenario(
+            decimal serviceAmount,
+            decimal primaryCoverage,
+            decimal supplementaryCoveragePercent,
+            decimal? supplementaryMaxPayment = null);
     }
 }
