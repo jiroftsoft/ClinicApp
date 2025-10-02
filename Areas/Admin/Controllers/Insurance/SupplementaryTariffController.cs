@@ -142,6 +142,35 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                     ViewBag.Stats = statsResult.Data;
 
+                    // دریافت تعرفه‌های بیمه تکمیلی برای نمایش در Index
+                    var tariffsResult = await _tariffService.GetFilteredSupplementaryTariffsAsync();
+                    
+                    // تبدیل به ViewModel
+                    var tariffs = new List<SupplementaryTariffIndexViewModel>();
+                    if (tariffsResult.Success && tariffsResult.Data != null)
+                    {
+                        tariffs = tariffsResult.Data.Select(t => new SupplementaryTariffIndexViewModel
+                        {
+                            InsuranceTariffId = t.InsuranceTariffId,
+                            ServiceId = t.ServiceId,
+                            ServiceTitle = t.Service?.Title ?? "نامشخص",
+                            ServiceCode = t.Service?.ServiceCode ?? "نامشخص",
+                            InsurancePlanId = t.InsurancePlanId ?? 0,
+                            InsurancePlanName = t.InsurancePlan?.Name ?? "نامشخص",
+                            InsuranceProviderName = t.InsurancePlan?.InsuranceProvider?.Name ?? "نامشخص",
+                            TariffPrice = t.TariffPrice,
+                            PatientShare = t.PatientShare,
+                            InsurerShare = t.InsurerShare,
+                            SupplementaryCoveragePercent = t.SupplementaryCoveragePercent,
+                            Priority = t.Priority,
+                            StartDate = t.StartDate,
+                            EndDate = t.EndDate,
+                            IsActive = t.IsActive,
+                            CreatedAt = t.CreatedAt,
+                            UpdatedAt = t.UpdatedAt
+                        }).ToList();
+                    }
+
                     // Create ViewModel for the view
                     var viewModel = new SupplementaryTariffIndexPageViewModel
                     {
@@ -155,8 +184,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         Filter = filterData,
                         Tariffs = new PagedResult<SupplementaryTariffIndexViewModel>
                         {
-                            Items = new List<SupplementaryTariffIndexViewModel>(),
-                            TotalItems = 0,
+                            Items = tariffs,
+                            TotalItems = tariffs.Count,
                             PageNumber = 1,
                             PageSize = 10
                         }
@@ -674,7 +703,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         },
                         planService = planService != null ? new
                         {
-                            copay = planService.Copay,
+                            copay = planService.PatientSharePercent,
                             coverageOverride = planService.CoverageOverride,
                             isCovered = planService.IsCovered
                         } : null
@@ -1097,6 +1126,50 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
         }
 
+        #region Helper Methods - محاسبات صحیح برای محیط درمانی
+
+        /// <summary>
+        /// تبدیل ریال به تومان - ضد گلوله
+        /// </summary>
+        private static decimal ToToman(decimal rial)
+        {
+            if (rial == 0) return 0;
+            return Math.Round(rial / 10m, 0, MidpointRounding.AwayFromZero);
+        }
+
+        /// <summary>
+        /// محاسبه پوشش تکمیلی - منطق صحیح بیمه تکمیلی
+        /// </summary>
+        private static (decimal supplementaryAmountToman, decimal finalPatientShareToman) ComputeSupplementaryCoverage(
+            decimal patientShareToman, 
+            decimal coveragePercent, 
+            decimal maxPaymentToman)
+        {
+            // امن‌سازی ورودی‌ها
+            patientShareToman = Math.Max(0, patientShareToman);
+            coveragePercent = Math.Max(0, Math.Min(100, coveragePercent));
+            maxPaymentToman = Math.Max(0, maxPaymentToman);
+
+            // محاسبه مبلغ پوشش تکمیلی
+            var supplementaryAmountToman = patientShareToman * (coveragePercent / 100m);
+            
+            // اعمال سقف (اگر تعریف شده باشد)
+            if (maxPaymentToman > 0)
+            {
+                supplementaryAmountToman = Math.Min(supplementaryAmountToman, maxPaymentToman);
+            }
+            
+            // امن‌سازی: پوشش تکمیلی نمی‌تواند بیشتر از سهم بیمار باشد
+            supplementaryAmountToman = Math.Min(supplementaryAmountToman, patientShareToman);
+            
+            // محاسبه سهم نهایی بیمار
+            var finalPatientShareToman = Math.Max(0, patientShareToman - supplementaryAmountToman);
+            
+            return (supplementaryAmountToman, finalPatientShareToman);
+        }
+
+        #endregion
+
         #region Cache Management Methods
 
         /// <summary>
@@ -1225,7 +1298,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// </summary>
         [HttpGet]
         // 🏥 MEDICAL: Real-time data - no cache for clinical safety
-        public async Task<ActionResult> GetTariffsTable(string searchTerm = "", int? insurancePlanId = null, int? departmentId = null, bool? isActive = null, int page = 1, int pageSize = 10)
+        public async Task<ActionResult> GetTariffsTable(string searchTerm = "", int? insurancePlanId = null, int? departmentId = null, bool? isActive = null, int page = 1, int pageSize = 10, string sort = "", string dir = "desc")
         {
             try
             {
@@ -1260,26 +1333,101 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     }, JsonRequestBehavior.AllowGet);
                 }
 
-                // تبدیل به ViewModel
-                var tariffs = result.Data.Select(t => new SupplementaryTariffIndexViewModel
+                // 🔧 CRITICAL: محاسبات صحیح در سرور - ضد گلوله برای محیط درمانی
+                var tariffs = result.Data.Select(t => 
                 {
-                    InsuranceTariffId = t.InsuranceTariffId,
-                    ServiceId = t.ServiceId,
-                    ServiceTitle = t.Service?.Title ?? "نامشخص",
-                    ServiceCode = t.Service?.ServiceCode ?? "نامشخص",
-                    InsurancePlanId = t.InsurancePlanId ?? 0,
-                    InsurancePlanName = t.InsurancePlan?.Name ?? "نامشخص",
-                    TariffPrice = t.TariffPrice,
-                    PatientShare = t.PatientShare,
-                    InsurerShare = t.InsurerShare,
-                    SupplementaryCoveragePercent = t.SupplementaryCoveragePercent,
-                    Priority = t.Priority,
-                    StartDate = t.StartDate,
-                    EndDate = t.EndDate,
-                    IsActive = t.IsActive,
-                    CreatedAt = t.CreatedAt,
-                    UpdatedAt = t.UpdatedAt
+                    // تبدیل ریال به تومان
+                    var tariffPriceToman = ToToman(t.TariffPrice ?? 0);
+                    var insurerShareToman = ToToman(t.InsurerShare ?? 0);
+                    var patientShareToman = ToToman(t.PatientShare ?? 0);
+                    var maxPaymentToman = ToToman(t.SupplementaryMaxPayment ?? 0);
+                    
+                    // محاسبه پوشش تکمیلی
+                    var (supplementaryAmountToman, finalPatientShareToman) = ComputeSupplementaryCoverage(
+                        patientShareToman, 
+                        t.SupplementaryCoveragePercent ?? 0, 
+                        maxPaymentToman);
+                    
+                    return new SupplementaryTariffIndexViewModel
+                    {
+                        InsuranceTariffId = t.InsuranceTariffId,
+                        ServiceId = t.ServiceId,
+                        ServiceTitle = t.Service?.Title ?? "نامشخص",
+                        ServiceCode = t.Service?.ServiceCode ?? "نامشخص",
+                        InsurancePlanId = t.InsurancePlanId ?? 0,
+                        InsurancePlanName = t.InsurancePlan?.Name ?? "نامشخص",
+                        InsuranceProviderName = t.InsurancePlan?.InsuranceProvider?.Name ?? "نامشخص",
+                        
+                        // فیلدهای اصلی (ریال)
+                        TariffPrice = t.TariffPrice,
+                        PatientShare = t.PatientShare,
+                        InsurerShare = t.InsurerShare,
+                        SupplementaryCoveragePercent = t.SupplementaryCoveragePercent,
+                        SupplementaryMaxPayment = t.SupplementaryMaxPayment,
+                        
+                        // 🔧 CRITICAL: فیلدهای محاسبه شده (تومان)
+                        TariffPriceToman = tariffPriceToman,
+                        InsurerShareToman = insurerShareToman,
+                        PatientShareToman = patientShareToman,
+                        SupplementaryCoverageAmountToman = supplementaryAmountToman,
+                        FinalPatientShareToman = finalPatientShareToman,
+                        SupplementaryMaxPaymentToman = maxPaymentToman,
+                        
+                        Priority = t.Priority,
+                        StartDate = t.StartDate,
+                        EndDate = t.EndDate,
+                        IsActive = t.IsActive,
+                        CreatedAt = t.CreatedAt,
+                        UpdatedAt = t.UpdatedAt
+                    };
                 }).ToList();
+
+                // اعمال سورت
+                if (!string.IsNullOrEmpty(sort))
+                {
+                    switch (sort.ToLower())
+                    {
+                        case "tariffprice":
+                            tariffs = dir.ToLower() == "asc" 
+                                ? tariffs.OrderBy(t => t.TariffPrice).ToList()
+                                : tariffs.OrderByDescending(t => t.TariffPrice).ToList();
+                            break;
+                        case "patientshare":
+                            tariffs = dir.ToLower() == "asc" 
+                                ? tariffs.OrderBy(t => t.PatientShare).ToList()
+                                : tariffs.OrderByDescending(t => t.PatientShare).ToList();
+                            break;
+                        case "priority":
+                            tariffs = dir.ToLower() == "asc" 
+                                ? tariffs.OrderBy(t => t.Priority).ToList()
+                                : tariffs.OrderByDescending(t => t.Priority).ToList();
+                            break;
+                        case "startdate":
+                            tariffs = dir.ToLower() == "asc" 
+                                ? tariffs.OrderBy(t => t.StartDate).ToList()
+                                : tariffs.OrderByDescending(t => t.StartDate).ToList();
+                            break;
+                        case "enddate":
+                            tariffs = dir.ToLower() == "asc" 
+                                ? tariffs.OrderBy(t => t.EndDate).ToList()
+                                : tariffs.OrderByDescending(t => t.EndDate).ToList();
+                            break;
+                        case "isactive":
+                            tariffs = dir.ToLower() == "asc" 
+                                ? tariffs.OrderBy(t => t.IsActive).ToList()
+                                : tariffs.OrderByDescending(t => t.IsActive).ToList();
+                            break;
+                        default:
+                            // سورت پیش‌فرض بر اساس تاریخ ایجاد
+                            tariffs = tariffs.OrderByDescending(t => t.CreatedAt).ToList();
+                            break;
+                    }
+                }
+                else
+                {
+                    // سورت پیش‌فرض بر اساس تاریخ ایجاد
+                    tariffs = tariffs.OrderByDescending(t => t.CreatedAt).ToList();
+                }
 
                 // محاسبه صفحه‌بندی
                 var totalCount = tariffs.Count;
@@ -1399,18 +1547,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return HttpNotFound("تعرفه بیمه یافت نشد");
                 }
 
-                // تبدیل به SupplementaryTariffCreateEditViewModel با داده‌های واقعی
+                // تبدیل به SupplementaryTariffCreateEditViewModel با داده‌های واقعی و امن
                 var editModel = new SupplementaryTariffCreateEditViewModel
                 {
                     InsuranceTariffId = tariff.InsuranceTariffId,
                     ServiceId = tariff.ServiceId,
                     InsurancePlanId = tariff.InsurancePlanId ?? 0,
-                    TariffPrice = tariff.TariffPrice,
-                    PatientShare = tariff.PatientShare,
-                    InsurerShare = tariff.InsurerShare,
+                    // ✅ CRITICAL: بررسی مقادیر decimal برای جلوگیری از Infinity
+                    TariffPrice = tariff.TariffPrice.HasValue && tariff.TariffPrice.Value > 0 ? tariff.TariffPrice : null,
+                    PatientShare = tariff.PatientShare.HasValue && tariff.PatientShare.Value > 0 ? tariff.PatientShare : null,
+                    InsurerShare = tariff.InsurerShare.HasValue && tariff.InsurerShare.Value >= 0 ? tariff.InsurerShare : 0,
                     SupplementaryCoveragePercent = tariff.SupplementaryCoveragePercent ?? 90,
                     Priority = tariff.Priority ?? 5,
-                    PrimaryInsurancePlanId = 0, // این فیلد در InsuranceTariff entity وجود ندارد
+                    PrimaryInsurancePlanId = 4, // ✅ CRITICAL: بیمه سلامت پایه (HEALTH_BASIC)
                     IsActive = tariff.IsActive
                 };
 
@@ -1471,14 +1620,44 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             try
             {
+                var correlationId = Guid.NewGuid().ToString("N");
+                _log.Information("MEDICAL_EDIT: Start Edit Tariff. CorrId={CorrId}, TariffId={TariffId}, ServiceId={ServiceId}, PlanId={PlanId}, User={User}",
+                    correlationId, model.InsuranceTariffId, model.ServiceId, model.InsurancePlanId, _currentUserService.UserName);
                 _log.Information("🏥 MEDICAL: ویرایش تعرفه بیمه تکمیلی - TariffId: {TariffId}, ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
                     model.InsuranceTariffId, model.ServiceId, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
                 if (!ValidateModelWithLogging(model, "ویرایش تعرفه بیمه تکمیلی"))
                 {
+                    _log.Warning("MEDICAL_EDIT: Validation failed. CorrId={CorrId}, TariffId={TariffId}", correlationId, model.InsuranceTariffId);
                     // FIX: غنی‌سازی مدل اصلی با داده‌های کمکی قبل از return
                     await LoadCreateEditData(model);
                     return View(model);
+                }
+
+                // Server-side guard: prevent editing immutable fields (primary/supplementary plan, service)
+                if (model.InsuranceTariffId.HasValue && model.InsuranceTariffId.Value > 0)
+                {
+                    var currentTariff = await _tariffRepository.GetByIdAsync(model.InsuranceTariffId.Value);
+                    if (currentTariff != null)
+                    {
+                        // If incoming values differ, override with persisted values and log
+                        if (model.InsurancePlanId != currentTariff.InsurancePlanId)
+                        {
+                            _log.Warning("MEDICAL_EDIT: Immutable field change detected (InsurancePlanId). CorrId={CorrId}, Incoming={Incoming}, Persisted={Persisted}, TariffId={TariffId}",
+                                correlationId, model.InsurancePlanId, currentTariff.InsurancePlanId, model.InsuranceTariffId);
+                            model.InsurancePlanId = currentTariff.InsurancePlanId ?? model.InsurancePlanId;
+                        }
+                        if (model.ServiceId != currentTariff.ServiceId)
+                        {
+                            _log.Warning("MEDICAL_EDIT: Immutable field change detected (ServiceId). CorrId={CorrId}, Incoming={Incoming}, Persisted={Persisted}, TariffId={TariffId}",
+                                correlationId, model.ServiceId, currentTariff.ServiceId, model.InsuranceTariffId);
+                            model.ServiceId = currentTariff.ServiceId;
+                        }
+                    }
+                    else
+                    {
+                        _log.Warning("MEDICAL_EDIT: Current tariff not found for guard check. CorrId={CorrId}, TariffId={TariffId}", correlationId, model.InsuranceTariffId);
+                    }
                 }
 
                 // تبدیل SupplementaryTariffCreateEditViewModel به InsuranceTariffCreateEditViewModel
@@ -1501,7 +1680,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 };
 
                 // به‌روزرسانی تعرفه
+                _log.Debug("MEDICAL_EDIT: Mapped model, calling UpdateTariffAsync. CorrId={CorrId}, TariffId={TariffId}", correlationId, insuranceTariffModel.InsuranceTariffId);
                 var updateResult = await _tariffService.UpdateTariffAsync(insuranceTariffModel);
+                _log.Information("MEDICAL_EDIT: UpdateTariffAsync completed. CorrId={CorrId}, Success={Success}, Message={Message}, TariffId={TariffId}",
+                    correlationId, updateResult.Success, updateResult.Message, model.InsuranceTariffId);
 
                 if (updateResult.Success)
                 {
@@ -1519,6 +1701,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
             catch (Exception ex)
             {
+                var corr = Guid.NewGuid().ToString("N");
+                _log.Error(ex, "MEDICAL_EDIT: Exception. CorrId={CorrId}, TariffId={TariffId}, User={User}", corr, model?.InsuranceTariffId, _currentUserService.UserName);
                 return HandleStandardError(ex, "ویرایش تعرفه بیمه تکمیلی", "Index");
             }
         }
@@ -1802,7 +1986,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         _currentUserService.UserName, _currentUserService.UserId);
                 }
 
-                // تنظیم داده‌ها در ViewModel به جای ViewBag
+                // تنظیم داده‌ها در ViewModel (Strongly Typed)
                 model.Departments = departments?.Select(d => new SelectListItem
                 {
                     Value = d.DepartmentId.ToString(),
@@ -1816,6 +2000,23 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 model.PrimaryInsurancePlans = primarySelectList.ToList();
                 model.InsurancePlans = supplementarySelectList.ToList();
 
+                // Strongly-typed meta lists for client-side logic (no ViewBag)
+                model.PrimaryInsurancePlansMeta = (primaryInsurancePlans?.Data ?? new List<InsurancePlanLookupViewModel>()).Select(p => new InsurancePlanMetaViewModel
+                {
+                    InsurancePlanId = p.InsurancePlanId,
+                    Name = p.Name,
+                    CoveragePercent = p.CoveragePercent,
+                    Deductible = p.Deductible
+                }).ToList();
+
+                model.InsurancePlansMeta = (supplementaryInsurancePlans?.Data ?? new List<InsurancePlanLookupViewModel>()).Select(p => new InsurancePlanMetaViewModel
+                {
+                    InsurancePlanId = p.InsurancePlanId,
+                    Name = p.Name,
+                    CoveragePercent = p.CoveragePercent,
+                    Deductible = p.Deductible
+                }).ToList();
+
                 _log.Information("🏥 MEDICAL: داده‌های فرم با موفقیت بارگذاری شد - Departments: {DeptCount}, PrimaryPlans: {PrimaryCount}, SupplementaryPlans: {SuppCount}. User: {UserName} (Id: {UserId})",
                     departments?.Count ?? 0, primaryInsurancePlans?.Data?.Count ?? 0, supplementaryInsurancePlans?.Data?.Count ?? 0, _currentUserService.UserName, _currentUserService.UserId);
 
@@ -1827,51 +2028,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Debug("🏥 MEDICAL DEBUG: SupplementaryPlans Data: {SupplementaryPlans}",
                     supplementaryInsurancePlans?.Data?.Select(p => $"{p.InsurancePlanId}:{p.Name}").Take(5).ToList() ?? new List<string>());
 
-                // اضافه کردن داده‌های بیمه پایه به ViewBag برای JavaScript - ضد گلوله
-                if (primaryInsurancePlans?.Data != null && primaryInsurancePlans.Data.Any())
-                {
-                    var primaryPlansData = primaryInsurancePlans.Data.Select(p => new
-                    {
-                        InsurancePlanId = p.InsurancePlanId,
-                        Name = p.Name,
-                        CoveragePercent = p.CoveragePercent,
-                        Deductible = p.Deductible
-                    }).ToList();
-                    
-                    ViewBag.PrimaryInsurancePlans = primaryPlansData;
-                    
-                    _log.Information("🏥 MEDICAL: ViewBag.PrimaryInsurancePlans تنظیم شد - Count: {Count}. User: {UserName} (Id: {UserId})",
-                        primaryPlansData.Count, _currentUserService.UserName, _currentUserService.UserId);
-                }
-                else
-                {
-                    ViewBag.PrimaryInsurancePlans = new List<object>();
-                    _log.Warning("🏥 MEDICAL: ViewBag.PrimaryInsurancePlans خالی تنظیم شد. User: {UserName} (Id: {UserId})",
-                        _currentUserService.UserName, _currentUserService.UserId);
-                }
-
-                // اضافه کردن داده‌های بیمه تکمیلی به ViewBag برای JavaScript - CRITICAL FIX
-                if (supplementaryInsurancePlans?.Data != null && supplementaryInsurancePlans.Data.Any())
-                {
-                    var supplementaryPlansData = supplementaryInsurancePlans.Data.Select(p => new
-                    {
-                        InsurancePlanId = p.InsurancePlanId,
-                        Name = p.Name,
-                        CoveragePercent = p.CoveragePercent,
-                        Deductible = p.Deductible
-                    }).ToList();
-                    
-                    ViewBag.InsurancePlans = supplementaryPlansData;
-                    
-                    _log.Information("🏥 MEDICAL: ViewBag.InsurancePlans تنظیم شد - Count: {Count}. User: {UserName} (Id: {UserId})",
-                        supplementaryPlansData.Count, _currentUserService.UserName, _currentUserService.UserId);
-                }
-                else
-                {
-                    ViewBag.InsurancePlans = new List<object>();
-                    _log.Warning("🏥 MEDICAL: ViewBag.InsurancePlans خالی تنظیم شد. User: {UserName} (Id: {UserId})",
-                        _currentUserService.UserName, _currentUserService.UserId);
-                }
+                // حذف وابستگی به ViewBag برای داده‌های JS؛ داده‌ها Strongly Typed در مدل موجودند
 
                 // Debug: بررسی جزئیات ViewModel
                 _log.Information("🏥 MEDICAL: ViewModel Details - PrimaryInsurancePlans: {PrimaryCount}, InsurancePlans: {SuppCount}, Departments: {DeptCount}. User: {UserName} (Id: {UserId})",

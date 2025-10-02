@@ -44,22 +44,27 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     /// <summary>
     /// مبلغ مشخص‌شده برای خدمت تحت پوشش این بیمه (اگر null باشد، از قیمت پایه Service استفاده می‌شود).
     /// </summary>
+    /// <summary>مبلغ تعرفه به «ریال» (اگر null باشد از قیمت پایه Service استفاده می‌شود)</summary>
     [DataType(DataType.Currency)]
-    [Column(TypeName = "decimal")]
+    [Column(TypeName = "decimal")] // precision در Fluent ⇒ (18,0)
     public decimal? TariffPrice { get; set; }
 
     /// <summary>
     /// سهم بیمار به مبلغ (تومان).
     /// اگر null باشد، از سهم پیش‌فرض بیمه استفاده می‌شود.
     /// </summary>
+    /// <summary>سهم بیمار به «ریال»</summary>
     [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
+    [Column(TypeName = "decimal")]
     public decimal? PatientShare { get; set; }
 
     /// <summary>
     /// سهم بیمه به مبلغ (تومان).
     /// اگر null باشد، از سهم پیش‌فرض بیمه استفاده می‌شود.
     /// </summary>
+    /// <summary>سهم بیمه‌گر به «ریال»</summary>
     [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
+    [Column(TypeName = "decimal")]
     public decimal? InsurerShare { get; set; }
 
     /// <summary>
@@ -180,21 +185,27 @@ public class InsuranceTariff : ISoftDelete, ITrackable
     /// سقف پرداخت بیمه تکمیلی
     /// این فیلد برای تعریف حداکثر مبلغ پرداخت بیمه تکمیلی استفاده می‌شود
     /// </summary>
-    [Range(0, double.MaxValue, ErrorMessage = "سقف پرداخت بیمه تکمیلی نمی‌تواند منفی باشد.")]
+    /// <summary>سقف پرداخت تکمیلی به «ریال»</summary>
+    [Range(0, double.MaxValue, ErrorMessage = "سقف پرداخت نمی‌تواند منفی باشد.")]
+    [Column(TypeName = "decimal")]
     public decimal? SupplementaryMaxPayment { get; set; }
 
     /// <summary>
     /// فرانشیز بیمه تکمیلی
     /// این فیلد برای تعریف کسور مورد نیاز قبل از پوشش بیمه تکمیلی استفاده می‌شود
     /// </summary>
-    [Range(0, double.MaxValue, ErrorMessage = "فرانشیز بیمه تکمیلی نمی‌تواند منفی باشد.")]
+    /// <summary>فرانشیز تکمیلی به «ریال»</summary>
+    [Range(0, double.MaxValue, ErrorMessage = "فرانشیز نمی‌تواند منفی باشد.")]
+    [Column(TypeName = "decimal")]
     public decimal? SupplementaryDeductible { get; set; }
 
     /// <summary>
     /// حداقل پرداخت بیمار
     /// این فیلد برای تعریف کف پرداخت بیمار پس از بیمه تکمیلی استفاده می‌شود
     /// </summary>
+    /// <summary>حداقل پرداخت بیمار به «ریال»</summary>
     [Range(0, double.MaxValue, ErrorMessage = "حداقل پرداخت بیمار نمی‌تواند منفی باشد.")]
+    [Column(TypeName = "decimal")]
     public decimal? MinPatientCopay { get; set; }
 
     /// <summary>
@@ -221,6 +232,53 @@ public class InsuranceTariff : ISoftDelete, ITrackable
 
     #endregion
     #endregion
+
+    #region UI-Helper
+
+    // ---------- UI helpers (Toman) ----------
+    [NotMapped]
+    public decimal? TariffPriceToman
+    {
+        get => TariffPrice.HasValue ? TariffPrice.Value / 10m : (decimal?)null;
+        set => TariffPrice = value.HasValue ? Math.Round(value.Value * 10m, 0, MidpointRounding.AwayFromZero) : (decimal?)null;
+    }
+
+    [NotMapped]
+    public decimal? PatientShareToman
+    {
+        get => PatientShare.HasValue ? PatientShare.Value / 10m : (decimal?)null;
+        set => PatientShare = value.HasValue ? Math.Round(value.Value * 10m, 0, MidpointRounding.AwayFromZero) : (decimal?)null;
+    }
+
+    [NotMapped]
+    public decimal? InsurerShareToman
+    {
+        get => InsurerShare.HasValue ? InsurerShare.Value / 10m : (decimal?)null;
+        set => InsurerShare = value.HasValue ? Math.Round(value.Value * 10m, 0, MidpointRounding.AwayFromZero) : (decimal?)null;
+    }
+
+    [NotMapped]
+    public decimal? SupplementaryMaxPaymentToman
+    {
+        get => SupplementaryMaxPayment.HasValue ? SupplementaryMaxPayment.Value / 10m : (decimal?)null;
+        set => SupplementaryMaxPayment = value.HasValue ? Math.Round(value.Value * 10m, 0, MidpointRounding.AwayFromZero) : (decimal?)null;
+    }
+
+    [NotMapped]
+    public decimal? SupplementaryDeductibleToman
+    {
+        get => SupplementaryDeductible.HasValue ? SupplementaryDeductible.Value / 10m : (decimal?)null;
+        set => SupplementaryDeductible = value.HasValue ? Math.Round(value.Value * 10m, 0, MidpointRounding.AwayFromZero) : (decimal?)null;
+    }
+
+    [NotMapped]
+    public decimal? MinPatientCopayToman
+    {
+        get => MinPatientCopay.HasValue ? MinPatientCopay.Value / 10m : (decimal?)null;
+        set => MinPatientCopay = value.HasValue ? Math.Round(value.Value * 10m, 0, MidpointRounding.AwayFromZero) : (decimal?)null;
+    }
+
+    #endregion
 }
 /// <summary>
 /// پیکربندی مدل تعرفه بیمه برای Entity Framework
@@ -234,23 +292,26 @@ public class InsuranceTariffConfig : EntityTypeConfiguration<InsuranceTariff>
         HasKey(t => t.InsuranceTariffId);
 
         // ویژگی‌های اصلی
+        // 🔷 مبالغ ریالی: همه با precision(18,0)
         Property(t => t.TariffPrice)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_TariffPrice")));
 
+
         Property(t => t.PatientShare)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_PatientShare")));
 
         Property(t => t.InsurerShare)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_InsurerShare")));
+
 
         // پیاده‌سازی ISoftDelete
         Property(t => t.IsDeleted)
@@ -319,9 +380,21 @@ public class InsuranceTariffConfig : EntityTypeConfiguration<InsuranceTariff>
 
         Property(t => t.SupplementaryMaxPayment)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_SupplementaryMaxPayment")));
+
+        Property(t => t.SupplementaryDeductible)
+            .IsOptional()
+            .HasPrecision(18, 0)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_SupplementaryDeductible")));
+
+        Property(t => t.MinPatientCopay)
+            .IsOptional()
+            .HasPrecision(18, 0)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_InsuranceTariff_MinPatientCopay")));
 
         Property(t => t.Notes)
             .IsOptional()

@@ -722,11 +722,9 @@
             }, 5000);
         }
 
-        // اضافه کردن داده‌های بیمه پایه به JavaScript
-        window.primaryInsurancePlans = @Html.Raw(Json.Encode(ViewBag.PrimaryInsurancePlans ?? new List<object>()));
-        
-        // اضافه کردن داده‌های بیمه تکمیلی به JavaScript - CRITICAL FIX
-        window.insurancePlans = @Html.Raw(Json.Encode(ViewBag.InsurancePlans ?? new List<object>()));
+        // Strongly-typed datasets from Model (no ViewBag)
+        window.primaryInsurancePlans = @Html.Raw(Json.Encode(Model?.PrimaryInsurancePlansMeta ?? new List<ClinicApp.ViewModels.Insurance.Supplementary.InsurancePlanMetaViewModel>()));
+        window.insurancePlans = @Html.Raw(Json.Encode(Model?.InsurancePlansMeta ?? new List<ClinicApp.ViewModels.Insurance.Supplementary.InsurancePlanMetaViewModel>()));
 
         function initializeInsurancePlanInfo() {
             // نمایش اطلاعات بیمه پایه

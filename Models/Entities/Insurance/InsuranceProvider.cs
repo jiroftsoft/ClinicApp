@@ -39,6 +39,7 @@ public class InsuranceProvider : ISoftDelete, ITrackable
     /// </summary>
     [Required(ErrorMessage = "کد ارائه‌دهنده بیمه الزامی است.")]
     [MaxLength(50, ErrorMessage = "کد ارائه‌دهنده بیمه نمی‌تواند بیش از 50 کاراکتر باشد.")]
+    [Index("UX_InsuranceProvider_Code", IsUnique = true)]
     public string Code { get; set; }
 
     /// <summary>
@@ -47,6 +48,9 @@ public class InsuranceProvider : ISoftDelete, ITrackable
     /// </summary>
     [MaxLength(1000, ErrorMessage = "اطلاعات تماس نمی‌تواند بیش از 1000 کاراکتر باشد.")]
     public string ContactInfo { get; set; }
+
+    [Timestamp]
+    public byte[] RowVersion { get; set; }
 
     /// <summary>
     /// آیا ارائه‌دهنده بیمه فعال است؟

@@ -264,17 +264,10 @@ public class CashSessionConfig : EntityTypeConfiguration<CashSession>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_CashSession_ClosedAt")));
 
-        Property(cs => cs.OpeningBalance)
-            .IsRequired()
-            .HasPrecision(18, 4);
-
-        Property(cs => cs.CashBalance)
-            .IsRequired()
-            .HasPrecision(18, 4);
-
-        Property(cs => cs.PosBalance)
-            .IsRequired()
-            .HasPrecision(18, 4);
+        // مبلغ‌ها = ریال بدون اعشار
+        Property(cs => cs.OpeningBalance).IsRequired().HasPrecision(18, 0);
+        Property(cs => cs.CashBalance).IsRequired().HasPrecision(18, 0);
+        Property(cs => cs.PosBalance).IsRequired().HasPrecision(18, 0);
 
         Property(cs => cs.Status)
             .IsRequired()

@@ -41,13 +41,11 @@ namespace ClinicApp.Models.Entities.Insurance
         /// <summary>
         /// شرایط اعمال قانون (JSON)
         /// </summary>
-        [MaxLength(2000)]
         public string Conditions { get; set; }
 
         /// <summary>
         /// عملیات قانون (JSON)
         /// </summary>
-        [MaxLength(2000)]
         public string Actions { get; set; }
 
         /// <summary>
@@ -59,6 +57,11 @@ namespace ClinicApp.Models.Entities.Insurance
         /// شناسه دسته‌بندی خدمت (اختیاری)
         /// </summary>
         public int? ServiceCategoryId { get; set; }
+
+        // پیشنهاد افزوده برای پوشش‌دهی بهتر
+        public int? ServiceId { get; set; }        // اختیاری: قانون برای یک خدمت خاص
+        public bool? IsHashtagged { get; set; }    // اختیاری: قوانین برای خدمات هشتگ‌دار/غیره
+
 
         /// <summary>
         /// تاریخ شروع اعتبار
@@ -78,6 +81,7 @@ namespace ClinicApp.Models.Entities.Insurance
         #region Navigation Properties
         public virtual InsurancePlan InsurancePlan { get; set; }
         public virtual ServiceCategory ServiceCategory { get; set; }
+        public virtual Service Service { get; set; } // اگر اضافه شد
         #endregion
 
         #region ISoftDelete Implementation
@@ -91,11 +95,15 @@ namespace ClinicApp.Models.Entities.Insurance
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string CreatedByUserId { get; set; }
         public ApplicationUser CreatedByUser { get; set; }
-        public DateTime? UpdatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime? UpdatedAt { get; set; }
         public string UpdatedByUserId { get; set; }
         public ApplicationUser UpdatedByUser { get; set; }
+
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
         #endregion
     }
+
 
     /// <summary>
     /// انواع قوانین کسب‌وکار

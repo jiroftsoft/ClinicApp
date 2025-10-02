@@ -45,10 +45,9 @@ public class ServiceComponent : ISoftDelete, ITrackable
     /// برای محاسبه مبلغ نهایی خدمت استفاده می‌شود
     /// دقت بالا برای محاسبات دقیق بیمه‌ای
     /// </summary>
-    [Required(ErrorMessage = "کای الزامی است.")]
-    [DataType(DataType.Currency, ErrorMessage = "فرمت کای نامعتبر است.")]
-    [Column(TypeName = "decimal")]
-    [Range(0.01, 999999.99, ErrorMessage = "کای باید بین 0.01 تا 999999.99 باشد.")]
+    [Required]
+    [Column(TypeName = "decimal")] // دقت در Fluent تنظیم می‌شود
+    [Range(typeof(decimal), "0.0001", "999999.9999", ErrorMessage = "کای باید بین 0.0001 تا 999999.9999 باشد.")]
     public decimal Coefficient { get; set; }
 
     /// <summary>
@@ -162,7 +161,7 @@ public class ServiceComponentConfig : EntityTypeConfiguration<ServiceComponent>
 
         Property(sc => sc.Coefficient)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 4)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ServiceComponent_Coefficient")));
 

@@ -116,6 +116,7 @@ public class PosTerminal : ISoftDelete, ITrackable
     /// <summary>
     /// پورت ارتباطی
     /// </summary>
+    [Range(1, 65535, ErrorMessage = "پورت باید بین 1 تا 65535 باشد.")]
     public int? Port { get; set; }
 
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)

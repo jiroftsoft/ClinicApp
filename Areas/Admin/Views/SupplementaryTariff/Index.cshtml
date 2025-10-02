@@ -2,18 +2,8 @@
 @{
     ViewBag.Title = "مدیریت تعرفه‌های بیمه تکمیلی - Production Ready";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
-    
-    // Performance optimizations
-    ViewBag.EnableOutputCache = true;
-    ViewBag.CacheDuration = 300; // 5 minutes
-    ViewBag.VaryByParam = "none";
 }
 
-@section Styles {
-    <link href="~/Content/css/medical-environment-styles.css" rel="stylesheet" />
-    <link href="~/Content/css/supplementary-tariff-styles.css" rel="stylesheet" />
-    <link href="~/Content/css/insurance/supplementary-tariff-views.css" rel="stylesheet" />
-}
 
 <div class="container-fluid">
     <!-- Header Section -->
@@ -127,12 +117,36 @@
     <!-- Tariffs Table -->
     <div class="row">
         <div class="col-12">
-            <div id="tariffsTableContainer">
+            <div id="tableHost" aria-live="polite" aria-busy="false">
                 @Html.Partial("_SupplementaryTariffTable", Model.Tariffs)
+            </div>
+            <div id="tableSkeleton" class="d-none">
+                <div class="placeholder-wave p-3">
+                    <div class="placeholder col-12 mb-2" style="height:16px"></div>
+                    <div class="placeholder col-12 mb-2" style="height:16px"></div>
+                    <div class="placeholder col-12 mb-2" style="height:16px"></div>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+@section Styles {
+    @Styles.Render("~/Content/css/medical-environment")
+    <link href="~/Content/css/medical-environment-styles.css" rel="stylesheet" />
+    <link href="~/Content/css/supplementary-tariff-styles.css" rel="stylesheet" />
+    <link href="~/Content/css/insurance/supplementary-tariff-views.css" rel="stylesheet" />
+    <link href="~/Content/css/insurance/supplementary-tariff-index.css" rel="stylesheet" />
+    
+    <!-- 🔧 CRITICAL: کاملاً غیرفعال کردن کش برای محیط درمانی realtime -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <meta http-equiv="Last-Modified" content="0" />
+    <meta http-equiv="ETag" content="" />
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+    <meta name="googlebot" content="noindex, nofollow, noarchive, nosnippet, noimageindex" />
+}
 
 @section Scripts {
     <script src="~/Scripts/app/modules/medical-config.js"></script>
@@ -171,15 +185,225 @@
         initializeSupplementaryTariff();
 
         function refreshData() {
-            if (typeof window.MedicalSupplementaryTariff !== 'undefined') {
-                window.MedicalSupplementaryTariff.refreshData();
+            try {
+                // 🔧 CRITICAL: کاملاً غیرفعال کردن کش برای محیط درمانی realtime
+                const timestamp = new Date().getTime();
+                const randomId = Math.random().toString(36).substring(7);
+                const currentUrl = new URL(location.href);
+                
+                // حذف تمام پارامترهای کش قبلی
+                currentUrl.searchParams.delete('_t');
+                currentUrl.searchParams.delete('_r');
+                currentUrl.searchParams.delete('_c');
+                
+                // اضافه کردن پارامترهای کش‌باستینگ جدید
+                currentUrl.searchParams.set('_t', timestamp);
+                currentUrl.searchParams.set('_r', randomId);
+                currentUrl.searchParams.set('_c', '1');
+                
+                // پاک کردن تمام کش‌های موجود
+                if ('caches' in window) {
+                    caches.keys().then(names => {
+                        names.forEach(name => {
+                            caches.delete(name);
+                        });
+                    });
+                }
+                
+                // پاک کردن localStorage و sessionStorage
+                try {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                } catch (e) {
+                    console.warn('خطا در پاک کردن storage:', e);
+                }
+                
+                // Force reload with cache busting
+                location.href = currentUrl.toString();
+            } catch (error) {
+                console.error('خطا در بروزرسانی داده‌ها:', error);
+                location.reload();
             }
         }
 
         function clearAllFilters() {
-            if (typeof window.MedicalUI !== 'undefined') {
-                window.MedicalUI.clearAllFilters();
+            try {
+                // پاک کردن تمام فیلدهای فیلتر
+                $('#searchTerm').val('');
+                $('#serviceId').val('');
+                $('#insurancePlanId').val('');
+                $('#departmentId').val('');
+                $('#isActive').val('');
+                $('#startDate').val('');
+                $('#endDate').val('');
+                $('#minAmount').val('');
+                $('#maxAmount').val('');
+                
+                // نمایش پیام موفقیت
+                if (typeof window.MedicalUI !== 'undefined' && window.MedicalUI.showSuccess) {
+                    window.MedicalUI.showSuccess('فیلترها پاک شدند');
+                } else {
+                    alert('فیلترها پاک شدند');
+                }
+                
+                // بروزرسانی جدول
+                refreshData();
+            } catch (error) {
+                console.error('خطا در پاک کردن فیلترها:', error);
+                alert('خطا در پاک کردن فیلترها');
             }
         }
+
+        // Ajax Loading with Debounce and Abort
+        (function () {
+            const $form = $('#filterForm');
+            const $host = $('#tableHost');
+            const $skel = $('#tableSkeleton');
+
+            let currentXhr = null;
+            let debounceTimer = null;
+
+            function params() {
+                const data = $form.serializeArray();
+                const obj = {};
+                data.forEach(x => obj[x.name] = x.value);
+                if (!obj.page) obj.page = 1;
+                return obj;
+            }
+
+            function setBusy(busy) {
+                $host.attr('aria-busy', busy ? 'true' : 'false');
+                $skel.toggleClass('d-none', !busy);
+            }
+
+            function pushUrl(state) {
+                // حذف پارامترهای خالی
+                const cleanState = {};
+                for (const [key, value] of Object.entries(state)) {
+                    if (value !== '' && value !== null && value !== undefined) {
+                        cleanState[key] = value;
+                    }
+                }
+                
+                const qs = new URLSearchParams(cleanState).toString();
+                const url = qs ? `${location.pathname}?${qs}` : location.pathname;
+                history.replaceState(cleanState, '', url);
+            }
+
+            function loadTable(state) {
+                if (currentXhr && currentXhr.abort) currentXhr.abort();
+                setBusy(true);
+                pushUrl(state);
+                
+                // Add cache busting parameter
+                if (!state._t) {
+                    state._t = new Date().getTime();
+                }
+
+                currentXhr = $.ajax({
+                    url: '@Url.Action("GetTariffsTable", "SupplementaryTariff", new { area = "Admin" })',
+                    type: 'GET',
+                    data: state,
+                    cache: false,
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate, max-age=0',
+                        'Pragma': 'no-cache',
+                        'Expires': '0',
+                        'Last-Modified': '0',
+                        'ETag': '',
+                        'If-Modified-Since': '0',
+                        'If-None-Match': ''
+                    },
+                    beforeSend: function(xhr) {
+                        // 🔧 CRITICAL: کاملاً غیرفعال کردن کش برای محیط درمانی realtime
+                        xhr.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+                        xhr.setRequestHeader('Pragma', 'no-cache');
+                        xhr.setRequestHeader('Expires', '0');
+                        xhr.setRequestHeader('Last-Modified', '0');
+                        xhr.setRequestHeader('ETag', '');
+                        xhr.setRequestHeader('If-Modified-Since', '0');
+                        xhr.setRequestHeader('If-None-Match', '');
+                    }
+                }).done(html => {
+                    $host.html(html);
+                    wirePagerAndSort();
+                }).fail(() => {
+                    $host.html('<div class="alert alert-danger">خطا در بارگذاری لیست</div>');
+                }).always(() => {
+                    setBusy(false);
+                    currentXhr = null;
+                });
+            }
+
+            function reloadWithDebounce(extra = {}) {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(() => {
+                    const state = Object.assign({}, params(), extra);
+                    state.page = extra.page || 1;
+                    loadTable(state);
+                }, 300);
+            }
+
+            // تغییر فیلترها
+            $form.on('input change', 'input, select', function () {
+                reloadWithDebounce();
+            });
+
+            // هندل بارگذاری اولیه با state از URL
+            $(function () {
+                const url = new URL(location.href);
+                const stateFromUrl = Object.fromEntries(url.searchParams.entries());
+                loadTable(Object.keys(stateFromUrl).length ? stateFromUrl : params());
+            });
+
+            // هندل صفحه‌بندی و سورت
+            function wirePagerAndSort() {
+                $host.find('[data-page]').on('click', function (e) {
+                    e.preventDefault();
+                    const page = $(this).data('page');
+                    reloadWithDebounce({ page });
+                });
+
+                $host.find('th[data-sort]').css('cursor', 'pointer').on('click', function () {
+                    const $th = $(this);
+                    const sort = $th.data('sort');
+                    const dir = ($th.data('dir') === 'asc') ? 'desc' : 'asc';
+                    $th.data('dir', dir);
+                    reloadWithDebounce({ sort, dir, page: 1 });
+                });
+            }
+
+            // Export functions globally
+            window.refreshData = function() {
+                loadTable(params());
+            };
+
+            window.clearAllFilters = function() {
+                try {
+                    $('#searchTerm').val('');
+                    $('#serviceId').val('');
+                    $('#insurancePlanId').val('');
+                    $('#departmentId').val('');
+                    $('#isActive').val('');
+                    $('#startDate').val('');
+                    $('#endDate').val('');
+                    $('#minAmount').val('');
+                    $('#maxAmount').val('');
+                    
+                    if (typeof window.MedicalUI !== 'undefined' && window.MedicalUI.showSuccess) {
+                        window.MedicalUI.showSuccess('فیلترها پاک شدند');
+                    } else {
+                        alert('فیلترها پاک شدند');
+                    }
+                    
+                    // پاک کردن URL و بارگذاری مجدد
+                    const cleanState = { page: 1 };
+                    loadTable(cleanState);
+                } catch (error) {
+                    console.error('خطا در پاک کردن فیلترها:', error);
+                    alert('خطا در پاک کردن فیلترها');
+                }
+            };
+        })();
     </script>
 }

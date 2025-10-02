@@ -61,7 +61,7 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
                 InsurancePlanId = entity.InsurancePlanId,
                 ServiceCategoryId = entity.ServiceCategoryId,
                 ServiceCategoryName = entity.ServiceCategory?.Title,
-                Copay = entity.Copay,
+                Copay = entity.PatientSharePercent,
                 CoverageOverride = entity.CoverageOverride,
                 IsCovered = entity.IsCovered,
                 CreatedAt = entity.CreatedAt,

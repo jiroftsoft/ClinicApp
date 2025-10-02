@@ -46,13 +46,25 @@ public class Service : ISoftDelete, ITrackable
     [MaxLength(50, ErrorMessage = "کد خدمات نمی‌تواند بیش از 50 کاراکتر باشد.")]
     public string ServiceCode { get; set; }
 
+
+
     /// <summary>
     /// قیمت پایه خدمات پزشکی
     /// </summary>
-    [Required(ErrorMessage = "قیمت الزامی است.")]
-    [DataType(DataType.Currency, ErrorMessage = "فرمت قیمت نامعتبر است.")]
-    [Column(TypeName = "decimal")]
-    public decimal Price { get; set; }
+    /// <summary>
+    /// مبلغ پایه به «ریال» (بدون اعشار)
+    /// </summary>
+    [Required]
+    [Column(TypeName = "decimal")] // نگاشت دقیق در Fluent تنظیم می‌شود
+    public decimal Price { get; set; } // decimal(18,0) در DB
+
+    /// <summary>فقط برای UI: تومان</summary>
+    [NotMapped]
+    public decimal PriceToman
+    {
+        get => Price / 10m;
+        set => Price = Math.Round(value * 10m, 0, MidpointRounding.AwayFromZero);
+    }
 
     /// <summary>
     /// توضیحات خدمات پزشکی
@@ -203,9 +215,10 @@ public class ServiceConfig : EntityTypeConfiguration<Service>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Service_ServiceCode") { IsUnique = true }));
 
+        // ✅ Price به ریال: decimal(18,0) + ایندکس
         Property(s => s.Price)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Service_Price")));
 

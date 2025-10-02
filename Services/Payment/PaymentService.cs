@@ -91,7 +91,7 @@ namespace ClinicApp.Services.Payment
                 {
                     ReceptionId = request.ReceptionId,
                     Amount = request.Amount,
-                    PaymentMethod = PaymentMethod.Cash,
+                    Method = PaymentMethod.Cash,
                     Status = PaymentStatus.Completed,
                     TransactionId = GenerateTransactionId(),
                     ReferenceCode = GenerateReferenceCode(),
@@ -110,7 +110,7 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<PaymentTransaction>.Failed("خطا در ذخیره تراکنش پرداخت");
                 }
 
-                _logger.Information("پرداخت نقدی با موفقیت پردازش شد. شناسه تراکنش: {TransactionId}", transaction.Id);
+                _logger.Information("پرداخت نقدی با موفقیت پردازش شد. شناسه تراکنش: {TransactionId}", transaction.PaymentTransactionId);
                 return ServiceResult<PaymentTransaction>.Successful(transaction, "پرداخت نقدی با موفقیت انجام شد");
             }
             catch (Exception ex)
@@ -151,7 +151,7 @@ namespace ClinicApp.Services.Payment
                 {
                     ReceptionId = request.ReceptionId,
                     Amount = request.Amount,
-                    PaymentMethod = PaymentMethod.POS,
+                    Method = PaymentMethod.POS,
                     Status = PaymentStatus.Completed,
                     TransactionId = request.TransactionId ?? GenerateTransactionId(),
                     ReferenceCode = request.ReferenceCode ?? GenerateReferenceCode(),
@@ -171,7 +171,7 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<PaymentTransaction>.Failed("خطا در ذخیره تراکنش پرداخت");
                 }
 
-                _logger.Information("پرداخت POS با موفقیت پردازش شد. شناسه تراکنش: {TransactionId}", transaction.Id);
+                _logger.Information("پرداخت POS با موفقیت پردازش شد. شناسه تراکنش: {TransactionId}", transaction.PaymentTransactionId);
                 return ServiceResult<PaymentTransaction>.Successful(transaction, "پرداخت POS با موفقیت انجام شد");
             }
             catch (Exception ex)
@@ -387,7 +387,7 @@ namespace ClinicApp.Services.Payment
                     return ServiceResult<OnlinePayment>.Failed("خطا در ذخیره پرداخت آنلاین");
                 }
 
-                _logger.Information("پرداخت آنلاین با موفقیت ایجاد شد. شناسه: {OnlinePaymentId}", onlinePayment.Id);
+                _logger.Information("پرداخت آنلاین با موفقیت ایجاد شد. شناسه: {OnlinePaymentId}", onlinePayment.OnlinePaymentId);
                 return ServiceResult<OnlinePayment>.Successful(onlinePayment, "پرداخت آنلاین با موفقیت ایجاد شد");
             }
             catch (Exception ex)
@@ -443,7 +443,7 @@ namespace ClinicApp.Services.Payment
                     {
                         ReceptionId = onlinePayment.ReceptionId ?? 0,
                         Amount = onlinePayment.Amount,
-                        PaymentMethod = PaymentMethod.Online,
+                        Method = PaymentMethod.Online,
                         Status = PaymentStatus.Completed,
                         TransactionId = callbackData.GatewayTransactionId ?? GenerateTransactionId(),
                         ReferenceCode = callbackData.GatewayReferenceCode ?? GenerateReferenceCode(),
@@ -452,7 +452,7 @@ namespace ClinicApp.Services.Payment
                         CreatedByUserId = onlinePayment.CreatedByUserId,
                         CreatedAt = DateTime.UtcNow,
                         PaymentGatewayId = onlinePayment.PaymentGatewayId,
-                        OnlinePaymentId = onlinePayment.Id
+                        OnlinePaymentId = onlinePayment.OnlinePaymentId
                     };
 
                     var savedTransaction = await _paymentTransactionRepository.CreateAsync(transaction);
@@ -462,7 +462,7 @@ namespace ClinicApp.Services.Payment
                         return ServiceResult<PaymentTransaction>.Failed("خطا در ایجاد تراکنش پرداخت");
                     }
 
-                    _logger.Information("پرداخت آنلاین با موفقیت تکمیل شد. شناسه تراکنش: {TransactionId}", transaction.Id);
+                    _logger.Information("پرداخت آنلاین با موفقیت تکمیل شد. شناسه تراکنش: {TransactionId}", transaction.PaymentTransactionId);
                     return ServiceResult<PaymentTransaction>.Successful(transaction, "پرداخت آنلاین با موفقیت تکمیل شد");
                 }
                 else

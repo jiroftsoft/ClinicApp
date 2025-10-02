@@ -5,6 +5,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Models.Entities.Insurance;
 
@@ -88,12 +89,12 @@ public class InsuranceCalculation : ISoftDelete, ITrackable
     /// <summary>
     /// تاریخ محاسبه
     /// </summary>
-    public DateTime CalculationDate { get; set; }
+    public DateTime CalculationDate { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// نوع محاسبه (Service, Reception, Appointment)
     /// </summary>
-    public string CalculationType { get; set; }
+    public InsuranceCalculationType CalculationType  { get; set; }
 
     /// <summary>
     /// وضعیت اعتبار محاسبه
@@ -221,31 +222,31 @@ public class InsuranceCalculationConfig : EntityTypeConfiguration<InsuranceCalcu
         // ویژگی‌های اصلی
         Property(ic => ic.ServiceAmount)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_ServiceAmount")));
 
         Property(ic => ic.InsuranceShare)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_InsuranceShare")));
 
         Property(ic => ic.PatientShare)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_PatientShare")));
 
         Property(ic => ic.Copay)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_Copay")));
 
         Property(ic => ic.CoverageOverride)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CoverageOverride")));
 
@@ -257,7 +258,7 @@ public class InsuranceCalculationConfig : EntityTypeConfiguration<InsuranceCalcu
 
         Property(ic => ic.Deductible)
             .IsOptional()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_Deductible")));
 
@@ -268,7 +269,6 @@ public class InsuranceCalculationConfig : EntityTypeConfiguration<InsuranceCalcu
 
         Property(ic => ic.CalculationType)
             .IsRequired()
-            .HasMaxLength(50)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceCalculation_CalculationType")));
 

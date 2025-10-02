@@ -126,7 +126,6 @@ namespace ClinicApp.ViewModels.Payment
         [Display(Name = "شناسه تراکنش")]
         public int PaymentTransactionId { get; set; }
 
-        public int Id { get; set; } // برای سازگاری
 
         [Required(ErrorMessage = "شناسه پذیرش الزامی است")]
         [Display(Name = "شناسه پذیرش")]

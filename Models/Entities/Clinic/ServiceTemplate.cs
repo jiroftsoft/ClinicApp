@@ -39,16 +39,18 @@ public class ServiceTemplate : ISoftDelete, ITrackable
     /// <summary>
     /// ضریب فنی پیش‌فرض
     /// </summary>
-    [Required(ErrorMessage = "ضریب فنی پیش‌فرض الزامی است.")]
-    [Range(0, 999999.99, ErrorMessage = "ضریب فنی باید بین 0 تا 999999.99 باشد.")]
-    [Column(TypeName = "decimal")]
+    /// <summary>ضریب فنی پیش‌فرض</summary>
+    [Required]
+    [Range(typeof(decimal), "0", "999999.9999", ErrorMessage = "ضریب فنی باید بین 0 تا 999999.9999 باشد.")]
+    [Column(TypeName = "decimal")] // Precision در Fluent تعیین می‌شود
     public decimal DefaultTechnicalCoefficient { get; set; }
 
     /// <summary>
     /// ضریب حرفه‌ای پیش‌فرض
     /// </summary>
-    [Required(ErrorMessage = "ضریب حرفه‌ای پیش‌فرض الزامی است.")]
-    [Range(0, 999999.99, ErrorMessage = "ضریب حرفه‌ای باید بین 0 تا 999999.99 باشد.")]
+    /// <summary>ضریب حرفه‌ای پیش‌فرض</summary>
+    [Required]
+    [Range(typeof(decimal), "0", "999999.9999", ErrorMessage = "ضریب حرفه‌ای باید بین 0 تا 999999.9999 باشد.")]
     [Column(TypeName = "decimal")]
     public decimal DefaultProfessionalCoefficient { get; set; }
 

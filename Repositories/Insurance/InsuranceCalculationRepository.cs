@@ -8,6 +8,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Enums;
 using Serilog;
 
 namespace ClinicApp.Repositories.Insurance
@@ -328,7 +329,7 @@ namespace ClinicApp.Repositories.Insurance
         /// <summary>
         /// جستجوی محاسبات بیمه بر اساس نوع محاسبه
         /// </summary>
-        public async Task<List<InsuranceCalculation>> GetByCalculationTypeAsync(string calculationType)
+        public async Task<List<InsuranceCalculation>> GetByCalculationTypeAsync(InsuranceCalculationType calculationType)
         {
             try
             {

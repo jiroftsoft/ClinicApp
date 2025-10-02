@@ -116,7 +116,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
                 {
                     Gateways = gatewaysResult.Data?.Items?.Select(g => new PaymentGatewayListViewModel
                     {
-                        Id = g.Id,
+                        Id = g.PaymentGatewayId,
                         Name = g.Name,
                         GatewayType = g.GatewayType,
                         MerchantId = g.MerchantId,
@@ -133,7 +133,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
                     }).ToList() ?? new List<PaymentGatewayListViewModel>(),
                     RecentPayments = recentPaymentsResult.Data?.Items?.Select(p => new OnlinePaymentListViewModel
                     {
-                        Id = p.Id,
+                        Id = p.OnlinePaymentId,
                         ReceptionId = p.ReceptionId ?? 0,
                         PatientId = p.PatientId,
                         PaymentType = p.PaymentType,
@@ -208,7 +208,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
 
                 var viewModel = new PaymentGatewayDetailsViewModel
                 {
-                    Id = result.Data.Id,
+                    Id = result.Data.PaymentGatewayId,
                     Name = result.Data.Name,
                     GatewayType = result.Data.GatewayType,
                     MerchantId = result.Data.MerchantId,
@@ -311,9 +311,9 @@ namespace ClinicApp.Controllers.Payment.Gateway
                 }
 
                 _logger.Information("درگاه پرداخت با موفقیت ایجاد شد. شناسه: {GatewayId}, کاربر: {UserName}",
-                    result.Data?.Id, _currentUserService.UserName);
+                    result.Data?.PaymentGatewayId, _currentUserService.UserName);
 
-                return RedirectToAction("GatewayDetails", new { id = result.Data?.Id });
+                return RedirectToAction("GatewayDetails", new { id = result.Data?.PaymentGatewayId });
             }
             catch (Exception ex)
             {
@@ -340,7 +340,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
 
                 var viewModel = new PaymentGatewayEditViewModel
                 {
-                    Id = result.Data.Id,
+                    Id = result.Data.PaymentGatewayId,
                     Name = result.Data.Name,
                     GatewayType = result.Data.GatewayType,
                     MerchantId = result.Data.MerchantId,
@@ -389,7 +389,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
                 // ویرایش درگاه
                 var result = await _paymentGatewayService.UpdateGatewayAsync(new PaymentGateway
                 {
-                    Id = model.Id,
+                    PaymentGatewayId = model.Id,
                     Name = model.Name,
                     GatewayType = model.GatewayType,
                     MerchantId = model.MerchantId,
@@ -474,7 +474,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
 
                 var viewModel = new OnlinePaymentDetailsViewModel
                 {
-                    Id = result.Data.Id,
+                    Id = result.Data.OnlinePaymentId,
                     ReceptionId = result.Data.ReceptionId ?? 0,
                     AppointmentId = result.Data.AppointmentId,
                     PatientId = result.Data.PatientId,
@@ -550,9 +550,9 @@ namespace ClinicApp.Controllers.Payment.Gateway
                 }
 
                 _logger.Information("پرداخت آنلاین با موفقیت ایجاد شد. شناسه: {PaymentId}, کاربر: {UserName}",
-                    result.Data?.Id, _currentUserService.UserName);
+                    result.Data?.OnlinePaymentId, _currentUserService.UserName);
 
-                return RedirectToAction("OnlinePaymentDetails", new { id = result.Data?.Id });
+                return RedirectToAction("OnlinePaymentDetails", new { id = result.Data?.OnlinePaymentId });
             }
             catch (Exception ex)
             {
@@ -601,7 +601,7 @@ namespace ClinicApp.Controllers.Payment.Gateway
 
                 var gateways = result.Data?.Items?.Select(g => new PaymentGatewayListViewModel
                 {
-                    Id = g.Id,
+                    Id = g.PaymentGatewayId,
                     Name = g.Name,
                     GatewayType = g.GatewayType,
                     MerchantId = g.MerchantId,

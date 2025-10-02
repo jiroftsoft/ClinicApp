@@ -45,7 +45,7 @@ public class PlanService : ISoftDelete, ITrackable
     /// مثال: 30 = 30% سهم بیمار
     /// </summary>
     [Range(0, 100, ErrorMessage = "سهم بیمار باید بین 0 تا 100 درصد باشد.")]
-    public decimal? Copay { get; set; }
+    public decimal? PatientSharePercent { get; set; } // was: Copay
 
     /// <summary>
     /// پوشش خاص به درصد (اختیاری)
@@ -157,7 +157,8 @@ public class PlanServiceConfig : EntityTypeConfiguration<PlanService>
         Property(ps => ps.ServiceCategoryId)
             .IsRequired();
 
-        Property(ps => ps.Copay)
+
+        Property(ps => ps.PatientSharePercent)   // was: Copay
             .IsOptional()
             .HasPrecision(5, 2);
 

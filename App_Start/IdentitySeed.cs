@@ -400,7 +400,7 @@ public static class IdentitySeed
                     {
                         InsurancePlanId = plan.InsurancePlanId,
                         ServiceCategoryId = category.ServiceCategoryId,
-                        Copay = adjustedCopay,
+                        PatientSharePercent = adjustedCopay,
                         CoverageOverride = adjustedCoverage,
                         IsCovered = true,
                         IsDeleted = false,

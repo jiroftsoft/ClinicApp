@@ -15,7 +15,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="serviceId" class="form-label">خدمت:</label>
-                        <select class="form-control" id="serviceId" name="serviceId">
+                        <select class="form-control" id="serviceId" name="serviceId" aria-label="انتخاب خدمت برای فیلتر کردن">
                             <option value="">همه خدمات</option>
                             @foreach (var service in Model.Services)
                             {
@@ -31,7 +31,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="insurancePlanId" class="form-label">طرح بیمه:</label>
-                        <select class="form-control" id="insurancePlanId" name="insurancePlanId">
+                        <select class="form-control" id="insurancePlanId" name="insurancePlanId" aria-label="انتخاب طرح بیمه برای فیلتر کردن">
                             <option value="">همه طرح‌ها</option>
                             @foreach (var plan in Model.InsurancePlans)
                             {
@@ -47,7 +47,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="isActive" class="form-label">وضعیت:</label>
-                        <select class="form-control" id="isActive" name="isActive">
+                        <select class="form-control" id="isActive" name="isActive" aria-label="انتخاب وضعیت فعال/غیرفعال">
                             <option value="">همه وضعیت‌ها</option>
                             <option value="true" @(ViewBag.SelectedIsActive == true ? "selected" : "")>فعال</option>
                             <option value="false" @(ViewBag.SelectedIsActive == false ? "selected" : "")>غیرفعال</option>
@@ -59,7 +59,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label for="departmentId" class="form-label">بخش:</label>
-                        <select class="form-control" id="departmentId" name="departmentId">
+                        <select class="form-control" id="departmentId" name="departmentId" aria-label="انتخاب بخش برای فیلتر کردن">
                             <option value="">همه بخش‌ها</option>
                             @foreach (var dept in Model.Departments)
                             {
@@ -78,7 +78,7 @@
                     <div class="form-group">
                         <label for="startDate" class="form-label">تاریخ شروع از:</label>
                         <input type="text" class="form-control persian-datepicker" id="startDate" name="startDate" 
-                               value="@ViewBag.SelectedStartDate" placeholder="تاریخ شروع">
+                               value="@ViewBag.SelectedStartDate" placeholder="تاریخ شروع" aria-label="تاریخ شروع برای فیلتر کردن">
                     </div>
                 </div>
 
@@ -86,7 +86,7 @@
                     <div class="form-group">
                         <label for="endDate" class="form-label">تاریخ شروع تا:</label>
                         <input type="text" class="form-control persian-datepicker" id="endDate" name="endDate" 
-                               value="@ViewBag.SelectedEndDate" placeholder="تاریخ پایان">
+                               value="@ViewBag.SelectedEndDate" placeholder="تاریخ پایان" aria-label="تاریخ پایان برای فیلتر کردن">
                     </div>
                 </div>
 
@@ -95,7 +95,7 @@
                     <div class="form-group">
                         <label for="minAmount" class="form-label">حداقل مبلغ:</label>
                         <input type="number" class="form-control" id="minAmount" name="minAmount" 
-                               value="@ViewBag.SelectedMinAmount" placeholder="حداقل مبلغ">
+                               value="@ViewBag.SelectedMinAmount" placeholder="حداقل مبلغ" aria-label="حداقل مبلغ برای فیلتر کردن">
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
                     <div class="form-group">
                         <label for="maxAmount" class="form-label">حداکثر مبلغ:</label>
                         <input type="number" class="form-control" id="maxAmount" name="maxAmount" 
-                               value="@ViewBag.SelectedMaxAmount" placeholder="حداکثر مبلغ">
+                               value="@ViewBag.SelectedMaxAmount" placeholder="حداکثر مبلغ" aria-label="حداکثر مبلغ برای فیلتر کردن">
                     </div>
                 </div>
             </div>
@@ -114,7 +114,7 @@
                     <div class="form-group">
                         <label for="searchTerm" class="form-label">جستجو:</label>
                         <input type="text" class="form-control" id="searchTerm" name="searchTerm" 
-                               value="@ViewBag.SearchTerm" placeholder="جستجو در نام خدمت، طرح بیمه، کد خدمت...">
+                               value="@ViewBag.SearchTerm" placeholder="جستجو در نام خدمت، طرح بیمه، کد خدمت..." aria-label="جستجو در نام خدمت، طرح بیمه، کد خدمت">
                     </div>
                 </div>
 

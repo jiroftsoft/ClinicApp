@@ -84,10 +84,10 @@ namespace ClinicApp.Services.Payment.Reporting
                     Date = date,
                     TotalTransactions = transactions.Count,
                     TotalAmount = transactions.Sum(t => t.Amount),
-                    CashAmount = transactions.Where(t => t.PaymentMethod == PaymentMethod.Cash).Sum(t => t.Amount),
-                    PosAmount = transactions.Where(t => t.PaymentMethod == PaymentMethod.POS).Sum(t => t.Amount),
-                    OnlineAmount = transactions.Where(t => t.PaymentMethod == PaymentMethod.Online).Sum(t => t.Amount),
-                    DebtAmount = transactions.Where(t => t.PaymentMethod == PaymentMethod.Debt).Sum(t => t.Amount),
+                    CashAmount = transactions.Where(t => t.Method == PaymentMethod.Cash).Sum(t => t.Amount),
+                    PosAmount = transactions.Where(t => t.Method == PaymentMethod.POS).Sum(t => t.Amount),
+                    OnlineAmount = transactions.Where(t => t.Method == PaymentMethod.Online).Sum(t => t.Amount),
+                    DebtAmount = transactions.Where(t => t.Method == PaymentMethod.Debt).Sum(t => t.Amount),
                     SuccessfulTransactions = transactions.Count(t => t.Status == PaymentStatus.Success),
                     FailedTransactions = transactions.Count(t => t.Status == PaymentStatus.Failed),
                     PendingTransactions = transactions.Count(t => t.Status == PaymentStatus.Pending),
@@ -130,10 +130,10 @@ namespace ClinicApp.Services.Payment.Reporting
                         Date = date,
                         TransactionCount = dayTransactions.Count,
                         TotalAmount = dayTransactions.Sum(t => t.Amount),
-                        CashAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.Cash).Sum(t => t.Amount),
-                        PosAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.POS).Sum(t => t.Amount),
-                        OnlineAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.Online).Sum(t => t.Amount),
-                        DebtAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.Debt).Sum(t => t.Amount)
+                        CashAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Cash).Sum(t => t.Amount),
+                        PosAmount = dayTransactions.Where(t => t.Method == PaymentMethod.POS).Sum(t => t.Amount),
+                        OnlineAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Online).Sum(t => t.Amount),
+                        DebtAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Debt).Sum(t => t.Amount)
                     };
                 }
 
@@ -184,10 +184,10 @@ namespace ClinicApp.Services.Payment.Reporting
                         Date = date,
                         TransactionCount = dayTransactions.Count,
                         TotalAmount = dayTransactions.Sum(t => t.Amount),
-                        CashAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.Cash).Sum(t => t.Amount),
-                        PosAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.POS).Sum(t => t.Amount),
-                        OnlineAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.Online).Sum(t => t.Amount),
-                        DebtAmount = dayTransactions.Where(t => t.PaymentMethod == PaymentMethod.Debt).Sum(t => t.Amount)
+                        CashAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Cash).Sum(t => t.Amount),
+                        PosAmount = dayTransactions.Where(t => t.Method == PaymentMethod.POS).Sum(t => t.Amount),
+                        OnlineAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Online).Sum(t => t.Amount),
+                        DebtAmount = dayTransactions.Where(t => t.Method == PaymentMethod.Debt).Sum(t => t.Amount)
                     };
                 }
 
@@ -228,7 +228,7 @@ namespace ClinicApp.Services.Payment.Reporting
 
             foreach (PaymentMethod method in Enum.GetValues(typeof(PaymentMethod)))
             {
-                var methodTransactions = transactions.Where(t => t.PaymentMethod == method).ToList();
+                var methodTransactions = transactions.Where(t => t.Method == method).ToList();
                 if (methodTransactions.Any())
                 {
                     summary[method] = new PaymentMethodSummary

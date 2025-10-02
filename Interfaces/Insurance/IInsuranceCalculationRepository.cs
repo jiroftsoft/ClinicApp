@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Interfaces.Insurance
 {
@@ -124,7 +125,7 @@ namespace ClinicApp.Interfaces.Insurance
         /// </summary>
         /// <param name="calculationType">نوع محاسبه</param>
         /// <returns>لیست محاسبات بیمه نوع مشخص</returns>
-        Task<List<InsuranceCalculation>> GetByCalculationTypeAsync(string calculationType);
+        Task<List<InsuranceCalculation>> GetByCalculationTypeAsync(InsuranceCalculationType calculationType);
 
         /// <summary>
         /// جستجوی محاسبات بیمه بر اساس تاریخ

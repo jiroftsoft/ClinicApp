@@ -578,7 +578,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var model = new InsuranceCalculationViewModel
                 {
                     CalculationDate = DateTime.Now,
-                    CalculationType = "Service" // مقدار پیش‌فرض
+                    CalculationType = InsuranceCalculationType.Service
                 };
 
                 // بارگذاری SelectLists

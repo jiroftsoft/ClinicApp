@@ -209,7 +209,7 @@ namespace ClinicApp.Services.Payment.Web
                 // ایجاد درخواست پرداخت در درگاه
                 var createPaymentRequest = new CreatePaymentRequest
                 {
-                    OnlinePaymentId = onlinePayment.Id,
+                    OnlinePaymentId = onlinePayment.OnlinePaymentId,
                     GatewayType = onlinePayment.PaymentGateway.GatewayType,
                     Amount = onlinePayment.Amount,
                     Description = onlinePayment.Description,
@@ -239,7 +239,7 @@ namespace ClinicApp.Services.Payment.Web
 
                 var result = new WebPaymentResult
                 {
-                    OnlinePaymentId = onlinePayment.Id,
+                    OnlinePaymentId = onlinePayment.OnlinePaymentId,
                     PaymentToken = onlinePayment.PaymentToken,
                     PaymentUrl = gatewayResponse.Data.PaymentUrl,
                     Status = onlinePayment.Status,
@@ -247,7 +247,7 @@ namespace ClinicApp.Services.Payment.Web
                     CreatedAt = onlinePayment.CreatedAt
                 };
 
-                _logger.Information("پرداخت آنلاین با موفقیت پردازش شد. شناسه: {OnlinePaymentId}", onlinePayment.Id);
+                _logger.Information("پرداخت آنلاین با موفقیت پردازش شد. شناسه: {OnlinePaymentId}", onlinePayment.OnlinePaymentId);
                 return ServiceResult<WebPaymentResult>.Successful(result, "پرداخت آنلاین با موفقیت پردازش شد");
             }
             catch (Exception ex)

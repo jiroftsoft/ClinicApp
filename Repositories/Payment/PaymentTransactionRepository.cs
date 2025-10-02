@@ -41,7 +41,7 @@ namespace ClinicApp.Repositories.Payment
                     .Include(pt => pt.Reception)
                     .Include(pt => pt.PosTerminal)
                     .Include(pt => pt.CashSession)
-                    .FirstOrDefaultAsync(pt => !pt.IsDeleted && pt.Id == transactionId);
+                    .FirstOrDefaultAsync(pt => !pt.IsDeleted && pt.PaymentTransactionId == transactionId);
             }
             catch (Exception ex)
             {
@@ -113,7 +113,7 @@ namespace ClinicApp.Repositories.Payment
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در به‌روزرسانی تراکنش پرداخت. شناسه: {TransactionId}", transaction.Id);
+                _logger.Error(ex, "خطا در به‌روزرسانی تراکنش پرداخت. شناسه: {TransactionId}", transaction.PaymentGatewayId);
                 throw;
             }
         }
@@ -123,7 +123,7 @@ namespace ClinicApp.Repositories.Payment
             try
             {
                 var transaction = await _context.PaymentTransactions
-                    .FirstOrDefaultAsync(pt => !pt.IsDeleted && pt.Id == transactionId);
+                    .FirstOrDefaultAsync(pt => !pt.IsDeleted && pt.PaymentGatewayId == transactionId);
 
                 if (transaction == null)
                 {
@@ -179,7 +179,7 @@ namespace ClinicApp.Repositories.Payment
                     .Include(pt => pt.Reception)
                     .Include(pt => pt.PosTerminal)
                     .Include(pt => pt.CashSession)
-                    .Where(pt => !pt.IsDeleted && pt.PaymentMethod == paymentMethod)
+                    .Where(pt => !pt.IsDeleted && pt.Method == paymentMethod)
                     .OrderByDescending(pt => pt.CreatedAt)
                     .ToListAsync();
             }
@@ -303,7 +303,7 @@ namespace ClinicApp.Repositories.Payment
             try
             {
                 return await _context.PaymentTransactions
-                    .Where(pt => !pt.IsDeleted && pt.PaymentMethod == paymentMethod)
+                    .Where(pt => !pt.IsDeleted && pt.Method == paymentMethod)
                     .SumAsync(pt => pt.Amount);
             }
             catch (Exception ex)
@@ -668,7 +668,7 @@ namespace ClinicApp.Repositories.Payment
             try
             {
                 return await _context.PaymentTransactions
-                    .AnyAsync(pt => !pt.IsDeleted && pt.Id == transactionId);
+                    .AnyAsync(pt => !pt.IsDeleted && pt.PaymentTransactionId == transactionId);
             }
             catch (Exception ex)
             {

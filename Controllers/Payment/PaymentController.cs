@@ -105,7 +105,7 @@ namespace ClinicApp.Controllers.Payment
                 {
                     Transactions = transactionsResult.Data?.Items?.Select(t => new PaymentTransactionListViewModel
                     {
-                        Id = t.Id,
+                        Id = t.PaymentTransactionId,
                         ReceptionId = t.ReceptionId,
                         Amount = t.Amount,
                         Method = t.Method,
@@ -127,7 +127,7 @@ namespace ClinicApp.Controllers.Payment
                             TransactionId = t.TransactionId,
                             PatientName = t.PatientName,
                             Amount = t.Amount,
-                            PaymentMethod = t.PaymentMethod,
+                            PaymentMethod = t.Method,
                             Status = t.Status,
                             TransactionDate = t.CreatedAt,
                             Description = t.Description,
@@ -250,9 +250,9 @@ namespace ClinicApp.Controllers.Payment
                 }
 
                 _logger.Information("تراکنش پرداخت با موفقیت ایجاد شد. شناسه: {TransactionId}, کاربر: {UserName}",
-                    result.Data?.Id, _currentUserService.UserName);
+                    result.Data?.PaymentTransactionId, _currentUserService.UserName);
 
-                return RedirectToAction("Details", new { id = result.Data?.Id });
+                return RedirectToAction("Details", new { id = result.Data?.PaymentTransactionId });
             }
             catch (Exception ex)
             {
@@ -301,7 +301,7 @@ namespace ClinicApp.Controllers.Payment
             try
             {
                 _logger.Information("درخواست ویرایش تراکنش پرداخت. شناسه: {TransactionId}, کاربر: {UserName}",
-                    model.Id, _currentUserService.UserName);
+                    model.PaymentGatewayId, _currentUserService.UserName);
 
                 // اعتبارسنجی مدل
                 var validation = await _editValidator.ValidateAsync(model);
@@ -314,7 +314,6 @@ namespace ClinicApp.Controllers.Payment
                 // ویرایش تراکنش
                 var result = await _paymentService.UpdateTransactionAsync(new PaymentTransaction
                 {
-                    Id = model.Id,
                     ReceptionId = model.ReceptionId,
                     Amount = model.Amount,
                     Method = model.Method,
@@ -336,9 +335,9 @@ namespace ClinicApp.Controllers.Payment
                 }
 
                 _logger.Information("تراکنش پرداخت با موفقیت ویرایش شد. شناسه: {TransactionId}, کاربر: {UserName}",
-                    model.Id, _currentUserService.UserName);
+                    model.PaymentTransactionId, _currentUserService.UserName);
 
-                return RedirectToAction("Details", new { id = model.Id });
+                return RedirectToAction("Details", new { id = model.PaymentGatewayId });
             }
             catch (Exception ex)
             {

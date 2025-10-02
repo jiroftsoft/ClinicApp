@@ -28,11 +28,6 @@ public class OnlinePayment : ISoftDelete, ITrackable
     public int OnlinePaymentId { get; set; }
 
     /// <summary>
-    /// شناسه (برای سازگاری با ViewModels)
-    /// </summary>
-    public int Id { get; set; }
-
-    /// <summary>
     /// شناسه درگاه پرداخت
     /// </summary>
     [Required(ErrorMessage = "درگاه پرداخت الزامی است.")]
@@ -358,17 +353,17 @@ public class OnlinePaymentConfig : EntityTypeConfiguration<OnlinePayment>
 
         Property(op => op.Amount)
             .IsRequired()
-            .HasPrecision(18, 4)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_OnlinePayment_Amount")));
 
         Property(op => op.GatewayFee)
             .IsOptional()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0);
 
         Property(op => op.NetAmount)
             .IsOptional()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0);
 
         Property(op => op.GatewayTransactionId)
             .IsOptional()

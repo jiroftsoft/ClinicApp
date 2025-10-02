@@ -2,6 +2,7 @@ using System;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
 {
@@ -84,7 +85,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
         public decimal? CoverageOverride { get; set; }
 
         [Display(Name = "نوع محاسبه")]
-        public string CalculationType { get; set; }
+        public InsuranceCalculationType CalculationType { get; set; }
 
         [Display(Name = "یادداشت‌ها")]
         public string Notes { get; set; }

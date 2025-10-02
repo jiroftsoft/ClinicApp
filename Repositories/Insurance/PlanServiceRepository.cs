@@ -382,12 +382,12 @@ namespace ClinicApp.Repositories.Insurance
 
                 _context.PlanServices.Add(planService);
                 _logger.Information("خدمات طرح بیمه جدید اضافه شد. PlanId: {PlanId}, ServiceCategoryId: {ServiceCategoryId}, Copay: {Copay}", 
-                    planService.InsurancePlanId, planService.ServiceCategoryId, planService.Copay);
+                    planService.InsurancePlanId, planService.ServiceCategoryId, planService.PatientSharePercent);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در افزودن خدمات طرح بیمه. PlanId: {PlanId}, ServiceCategoryId: {ServiceCategoryId}, Copay: {Copay}", 
-                    planService?.InsurancePlanId, planService?.ServiceCategoryId, planService?.Copay);
+                    planService?.InsurancePlanId, planService?.ServiceCategoryId, planService?.PatientSharePercent);
                 throw new InvalidOperationException("خطا در افزودن خدمات طرح بیمه", ex);
             }
         }

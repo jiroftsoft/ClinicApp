@@ -1,6 +1,7 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Extensions;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
 {
@@ -125,7 +126,7 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceCalculation
         public string CalculationDateShamsi { get; set; }
 
         [Display(Name = "نوع محاسبه")]
-        public string CalculationType { get; set; }
+        public InsuranceCalculationType CalculationType { get; set; }
 
         [Display(Name = "وضعیت اعتبار")]
         public bool IsValid { get; set; }

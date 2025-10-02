@@ -148,6 +148,7 @@ public class SharedService : ISoftDelete, ITrackable
 /// پیکربندی مدل خدمت مشترک برای Entity Framework
 /// این پیکربندی با توجه به استانداردهای سیستم‌های درمانی طراحی شده است
 /// </summary>
+/// <summary>پیکربندی EF6 برای SharedService</summary>
 public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
 {
     public SharedServiceConfig()
@@ -155,7 +156,7 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
         ToTable("SharedServices");
         HasKey(ss => ss.SharedServiceId);
 
-        // ویژگی‌های اصلی
+        // کلید خارجی‌ها + ایندکس‌های ساده
         Property(ss => ss.ServiceId)
             .IsRequired()
             .HasColumnAnnotation("Index",
@@ -171,11 +172,19 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_SharedService_IsActive")));
 
+        // Precision ضرایب Override
+        Property(ss => ss.OverrideTechnicalFactor)
+            .IsOptional()
+            .HasPrecision(18, 4);
+        Property(ss => ss.OverrideProfessionalFactor)
+            .IsOptional()
+            .HasPrecision(18, 4);
+
         Property(ss => ss.DepartmentSpecificNotes)
             .IsOptional()
             .HasMaxLength(500);
 
-        // پیاده‌سازی ISoftDelete
+        // Soft Delete + Audit ایندکس‌ها
         Property(ss => ss.IsDeleted)
             .IsRequired()
             .HasColumnAnnotation("Index",
@@ -186,7 +195,6 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_SharedService_DeletedAt")));
 
-        // پیاده‌سازی ITrackable
         Property(ss => ss.CreatedAt)
             .IsRequired()
             .HasColumnAnnotation("Index",
@@ -194,6 +202,7 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
 
         Property(ss => ss.CreatedByUserId)
             .IsOptional()
+            .HasMaxLength(450)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_SharedService_CreatedByUserId")));
 
@@ -204,11 +213,13 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
 
         Property(ss => ss.UpdatedByUserId)
             .IsOptional()
+            .HasMaxLength(450)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_SharedService_UpdatedByUserId")));
 
         Property(ss => ss.DeletedByUserId)
             .IsOptional()
+            .HasMaxLength(450)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_SharedService_DeletedByUserId")));
 
@@ -223,28 +234,35 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
             .HasForeignKey(ss => ss.DepartmentId)
             .WillCascadeOnDelete(false);
 
-        HasOptional(ss => ss.DeletedByUser)
-            .WithMany()
-            .HasForeignKey(ss => ss.DeletedByUserId)
-            .WillCascadeOnDelete(false);
+        HasOptional(ss => ss.DeletedByUser).WithMany().HasForeignKey(ss => ss.DeletedByUserId).WillCascadeOnDelete(false);
+        HasOptional(ss => ss.CreatedByUser).WithMany().HasForeignKey(ss => ss.CreatedByUserId).WillCascadeOnDelete(false);
+        HasOptional(ss => ss.UpdatedByUser).WithMany().HasForeignKey(ss => ss.UpdatedByUserId).WillCascadeOnDelete(false);
 
-        HasOptional(ss => ss.CreatedByUser)
-            .WithMany()
-            .HasForeignKey(ss => ss.CreatedByUserId)
-            .WillCascadeOnDelete(false);
+        // =============================
+        // ایندکس‌های مرکب (EF6-style)
+        // =============================
 
-        HasOptional(ss => ss.UpdatedByUser)
-            .WithMany()
-            .HasForeignKey(ss => ss.UpdatedByUserId)
-            .WillCascadeOnDelete(false);
+        // 1) Unique: جلوگیری از رکورد تکراری برای هر خدمت/دپارتمان (با درنظرگرفتن SoftDelete)
+        Property(ss => ss.ServiceId)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 1) { IsUnique = true }));
+        Property(ss => ss.DepartmentId)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 2) { IsUnique = true }));
+        Property(ss => ss.IsDeleted)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 3) { IsUnique = true }));
 
-        // ایندکس‌های ترکیبی برای بهبود عملکرد
-        HasIndex(ss => new { ss.ServiceId, ss.DepartmentId, ss.IsDeleted })
-            .IsUnique()
-            .HasName("IX_SharedService_ServiceId_DepartmentId_IsDeleted");
-
-        HasIndex(ss => new { ss.DepartmentId, ss.IsActive, ss.IsDeleted })
-            .HasName("IX_SharedService_DepartmentId_IsActive_IsDeleted");
+        // 2) برای لیست‌گیری سریع در یک دپارتمان (Active + NotDeleted)
+        Property(ss => ss.DepartmentId)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 1)));
+        Property(ss => ss.IsActive)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 2)));
+        Property(ss => ss.IsDeleted)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 3)));
     }
 }
 

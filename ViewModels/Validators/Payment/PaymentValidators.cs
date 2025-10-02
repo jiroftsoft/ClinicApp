@@ -65,7 +65,7 @@ namespace ClinicApp.ViewModels.Validators.Payment
     {
         public PaymentTransactionEditViewModelValidator()
         {
-            RuleFor(x => x.Id)
+            RuleFor(x => x.PaymentTransactionId)
                 .GreaterThan(0)
                 .WithMessage("شناسه تراکنش باید بیشتر از صفر باشد");
 

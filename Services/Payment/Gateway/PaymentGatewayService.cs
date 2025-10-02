@@ -113,7 +113,7 @@ namespace ClinicApp.Services.Payment.Gateway
                     return ServiceResult<PaymentGateway>.Failed("خطا در ذخیره درگاه پرداخت");
                 }
 
-                _logger.Information("درگاه پرداخت با موفقیت ایجاد شد. شناسه: {GatewayId}", gateway.Id);
+                _logger.Information("درگاه پرداخت با موفقیت ایجاد شد. شناسه: {GatewayId}", gateway.PaymentGatewayId);
                 return ServiceResult<PaymentGateway>.Successful(gateway, "درگاه پرداخت با موفقیت ایجاد شد");
             }
             catch (Exception ex)
@@ -209,7 +209,7 @@ namespace ClinicApp.Services.Payment.Gateway
                     return ServiceResult<PaymentGateway>.Failed("خطا در به‌روزرسانی درگاه پرداخت");
                 }
 
-                _logger.Information("درگاه پرداخت با موفقیت به‌روزرسانی شد. شناسه: {GatewayId}", gateway.Id);
+                _logger.Information("درگاه پرداخت با موفقیت به‌روزرسانی شد. شناسه: {GatewayId}", gateway.PaymentGatewayId);
                 return ServiceResult<PaymentGateway>.Successful(gateway, "درگاه پرداخت با موفقیت به‌روزرسانی شد");
             }
             catch (Exception ex)

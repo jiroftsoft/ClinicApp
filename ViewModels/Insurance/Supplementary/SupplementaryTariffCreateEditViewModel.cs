@@ -129,6 +129,16 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public List<SelectListItem> InsurancePlans { get; set; } = new List<SelectListItem>();
 
         /// <summary>
+        /// متادیتای طرح‌های بیمه پایه برای استفاده در JS (Strongly Typed)
+        /// </summary>
+        public List<InsurancePlanMetaViewModel> PrimaryInsurancePlansMeta { get; set; } = new List<InsurancePlanMetaViewModel>();
+
+        /// <summary>
+        /// متادیتای طرح‌های بیمه تکمیلی برای استفاده در JS (Strongly Typed)
+        /// </summary>
+        public List<InsurancePlanMetaViewModel> InsurancePlansMeta { get; set; } = new List<InsurancePlanMetaViewModel>();
+
+        /// <summary>
         /// نام خدمت (فقط برای نمایش)
         /// </summary>
         public string ServiceName { get; set; }
@@ -274,5 +284,16 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// </summary>
         [Display(Name = "بیمه تکمیلی اعمال شده")]
         public bool IsSupplementaryApplied => SupplementaryCoveragePercent.HasValue && SupplementaryCoveragePercent.Value > 0;
+    }
+
+    /// <summary>
+    /// ViewModel سبک برای متادیتای طرح بیمه جهت استفاده Strongly Typed در ویو
+    /// </summary>
+    public class InsurancePlanMetaViewModel
+    {
+        public int InsurancePlanId { get; set; }
+        public string Name { get; set; }
+        public decimal CoveragePercent { get; set; }
+        public decimal Deductible { get; set; } // Rial
     }
 }

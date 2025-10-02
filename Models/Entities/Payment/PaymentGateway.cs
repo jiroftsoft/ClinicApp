@@ -29,11 +29,6 @@ public class PaymentGateway : ISoftDelete, ITrackable
     public int PaymentGatewayId { get; set; }
 
     /// <summary>
-    /// شناسه درگاه (برای سازگاری با ViewModels)
-    /// </summary>
-    public int Id { get; set; }
-
-    /// <summary>
     /// نام درگاه پرداخت
     /// مثال: "زرین‌پال اصلی", "پی‌پینگ تست"
     /// </summary>
@@ -316,11 +311,11 @@ public class PaymentGatewayConfig : EntityTypeConfiguration<PaymentGateway>
 
         Property(pg => pg.MinAmount)
             .IsOptional()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 0);
 
         Property(pg => pg.MaxAmount)
             .IsOptional()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 0);
 
         Property(pg => pg.FeePercentage)
             .IsOptional()
@@ -328,7 +323,7 @@ public class PaymentGatewayConfig : EntityTypeConfiguration<PaymentGateway>
 
         Property(pg => pg.FixedFee)
             .IsOptional()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0);
 
         Property(pg => pg.Description)
             .IsOptional()

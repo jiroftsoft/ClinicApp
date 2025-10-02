@@ -27,11 +27,6 @@ public class PaymentTransaction : ISoftDelete, ITrackable
     public int PaymentTransactionId { get; set; }
 
     /// <summary>
-    /// شناسه تراکنش (برای سازگاری با ViewModels)
-    /// </summary>
-    public int Id { get; set; }
-
-    /// <summary>
     /// شناسه پذیرش مربوطه
     /// </summary>
     [Required(ErrorMessage = "پذیرش الزامی است.")]
@@ -65,12 +60,6 @@ public class PaymentTransaction : ISoftDelete, ITrackable
     [DataType(DataType.Currency, ErrorMessage = "فرمت مبلغ نامعتبر است.")]
     [Column(TypeName = "decimal")]
     public decimal Amount { get; set; }
-
-    /// <summary>
-    /// روش پرداخت (POS / Cash / Debt)
-    /// </summary>
-    [Required(ErrorMessage = "روش پرداخت الزامی است.")]
-    public PaymentMethod Method { get; set; }
 
     /// <summary>
     /// وضعیت تراکنش (Pending / Success / Failed / Canceled)
@@ -126,10 +115,7 @@ public class PaymentTransaction : ISoftDelete, ITrackable
     [MaxLength(200)]
     public string? CreatedByUserName { get; set; }
 
-    /// <summary>
-    /// روش پرداخت (برای سازگاری با ViewModels)
-    /// </summary>
-    public PaymentMethod PaymentMethod { get; set; }
+    public PaymentMethod Method { get; set; }
 
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
@@ -227,7 +213,7 @@ public class PaymentTransactionConfig : EntityTypeConfiguration<PaymentTransacti
         // ویژگی‌های اصلی
         Property(t => t.Amount)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_PaymentTransaction_Amount")));
 

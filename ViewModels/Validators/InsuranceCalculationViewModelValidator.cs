@@ -119,7 +119,7 @@ namespace ClinicApp.ViewModels.Validators
                 .NotEmpty()
                 .WithMessage("تاریخ محاسبه الزامی است")
                 .WithErrorCode("CALCULATION_DATE_REQUIRED")
-                .LessThanOrEqualTo(System.DateTime.Now)
+                .LessThanOrEqualTo(System.DateTime.UtcNow)
                 .WithMessage("تاریخ محاسبه نمی‌تواند در آینده باشد")
                 .WithErrorCode("CALCULATION_DATE_FUTURE");
 
@@ -127,10 +127,7 @@ namespace ClinicApp.ViewModels.Validators
             RuleFor(x => x.CalculationType)
                 .NotEmpty()
                 .WithMessage("نوع محاسبه الزامی است")
-                .WithErrorCode("CALCULATION_TYPE_REQUIRED")
-                .MaximumLength(50)
-                .WithMessage("نوع محاسبه نمی‌تواند بیشتر از 50 کاراکتر باشد")
-                .WithErrorCode("CALCULATION_TYPE_TOO_LONG");
+                .WithErrorCode("CALCULATION_TYPE_REQUIRED");
 
             // اعتبارسنجی یادداشت‌ها
             RuleFor(x => x.Notes)

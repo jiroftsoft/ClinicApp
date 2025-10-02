@@ -83,6 +83,49 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         [DisplayFormat(DataFormatString = "{0:N0} تومان")]
         public decimal? SupplementaryMaxPayment { get; set; }
 
+        // 🔧 CRITICAL: فیلدهای محاسبه شده برای نمایش صحیح در Index
+        /// <summary>
+        /// قیمت تعرفه به تومان (محاسبه شده)
+        /// </summary>
+        [Display(Name = "قیمت خدمت")]
+        [DisplayFormat(DataFormatString = "{0:N0} تومان")]
+        public decimal TariffPriceToman { get; set; }
+
+        /// <summary>
+        /// سهم بیمه پایه به تومان (نمایشی)
+        /// </summary>
+        [Display(Name = "سهم بیمه پایه")]
+        [DisplayFormat(DataFormatString = "{0:N0} تومان")]
+        public decimal InsurerShareToman { get; set; }
+
+        /// <summary>
+        /// سهم باقی‌مانده بیمار به تومان (بعد از بیمه پایه)
+        /// </summary>
+        [Display(Name = "سهم باقی‌مانده بیمار")]
+        [DisplayFormat(DataFormatString = "{0:N0} تومان")]
+        public decimal PatientShareToman { get; set; }
+
+        /// <summary>
+        /// مبلغ پوشش تکمیلی به تومان (محاسبه شده)
+        /// </summary>
+        [Display(Name = "پوشش تکمیلی")]
+        [DisplayFormat(DataFormatString = "{0:N0} تومان")]
+        public decimal SupplementaryCoverageAmountToman { get; set; }
+
+        /// <summary>
+        /// سهم نهایی بیمار به تومان (بعد از پوشش تکمیلی)
+        /// </summary>
+        [Display(Name = "سهم نهایی بیمار")]
+        [DisplayFormat(DataFormatString = "{0:N0} تومان")]
+        public decimal FinalPatientShareToman { get; set; }
+
+        /// <summary>
+        /// سقف پرداخت تکمیلی به تومان
+        /// </summary>
+        [Display(Name = "سقف تکمیلی")]
+        [DisplayFormat(DataFormatString = "{0:N0} تومان")]
+        public decimal SupplementaryMaxPaymentToman { get; set; }
+
         /// <summary>
         /// اولویت تعرفه
         /// </summary>

@@ -461,9 +461,9 @@ namespace ClinicApp.Services
                     }).ToList() ?? new List<ReceptionItemViewModel>(),
                     Payments = reception.Transactions?.Where(t => !t.IsDeleted).Select(t => new ReceptionPaymentViewModel
                     {
-                        Id = t.Id,
+                        Id = t.PaymentTransactionId,
                         Amount = t.Amount,
-                        PaymentMethod = t.PaymentMethod.ToString(),
+                        PaymentMethod = t.Method.ToString(),
                         TransactionDate = t.CreatedAt,
                         Status = t.Status.ToString(),
                         ReferenceNumber = t.ReferenceCode,
@@ -1590,7 +1590,7 @@ namespace ClinicApp.Services
                 var paymentGroups = dailyReceptions
                     .Where(r => r.Transactions != null && r.Transactions.Any())
                     .SelectMany(r => r.Transactions)
-                    .GroupBy(t => t.PaymentMethod)
+                    .GroupBy(t => t.Method)
                     .ToList();
 
                 stats.CashPayments = paymentGroups.Where(g => g.Key == PaymentMethod.Cash).Sum(g => g.Sum(t => t.Amount));
@@ -1669,7 +1669,7 @@ namespace ClinicApp.Services
                 var paymentGroups = doctorReceptions
                     .Where(r => r.Transactions != null && r.Transactions.Any())
                     .SelectMany(r => r.Transactions)
-                    .GroupBy(t => t.PaymentMethod)
+                    .GroupBy(t => t.Method)
                     .ToList();
 
                 stats.CashPayments = paymentGroups.Where(g => g.Key == PaymentMethod.Cash).Sum(g => g.Sum(t => t.Amount));

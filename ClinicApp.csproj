@@ -661,9 +661,66 @@
     <Compile Include="Migrations\202509300804099_AddNewProperty.Designer.cs">
       <DependentUpon>202509300804099_AddNewProperty.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510020509028_M01_ServicePrice_To_Rial_Decimal18_0.cs" />
+    <Compile Include="Migrations\202510020509028_M01_ServicePrice_To_Rial_Decimal18_0.Designer.cs">
+      <DependentUpon>202510020509028_M01_ServicePrice_To_Rial_Decimal18_0.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020543061_ChangeTableInsurancetariif.cs" />
+    <Compile Include="Migrations\202510020543061_ChangeTableInsurancetariif.Designer.cs">
+      <DependentUpon>202510020543061_ChangeTableInsurancetariif.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020559214_ServiceTemplateConfigChange01.cs" />
+    <Compile Include="Migrations\202510020559214_ServiceTemplateConfigChange01.Designer.cs">
+      <DependentUpon>202510020559214_ServiceTemplateConfigChange01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020604509_ChangeSharedServiceConfig01.cs" />
+    <Compile Include="Migrations\202510020604509_ChangeSharedServiceConfig01.Designer.cs">
+      <DependentUpon>202510020604509_ChangeSharedServiceConfig01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020626455_changeServiceComponent01.cs" />
+    <Compile Include="Migrations\202510020626455_changeServiceComponent01.Designer.cs">
+      <DependentUpon>202510020626455_changeServiceComponent01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020636136_FactorSettingConfig02.cs" />
+    <Compile Include="Migrations\202510020636136_FactorSettingConfig02.Designer.cs">
+      <DependentUpon>202510020636136_FactorSettingConfig02.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020724440_cashSession01.cs" />
+    <Compile Include="Migrations\202510020724440_cashSession01.Designer.cs">
+      <DependentUpon>202510020724440_cashSession01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020739328_Drop_Id_Column_From_OnlinePayments.cs" />
+    <Compile Include="Migrations\202510020739328_Drop_Id_Column_From_OnlinePayments.Designer.cs">
+      <DependentUpon>202510020739328_Drop_Id_Column_From_OnlinePayments.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020751091_Drop_Id_Column_FromPaymentGateway.cs" />
+    <Compile Include="Migrations\202510020751091_Drop_Id_Column_FromPaymentGateway.Designer.cs">
+      <DependentUpon>202510020751091_Drop_Id_Column_FromPaymentGateway.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020812500_Drop_Id_Column_FromPaymentTransaction.cs" />
+    <Compile Include="Migrations\202510020812500_Drop_Id_Column_FromPaymentTransaction.Designer.cs">
+      <DependentUpon>202510020812500_Drop_Id_Column_FromPaymentTransaction.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020904050_InsuranceCalculationChange.cs" />
+    <Compile Include="Migrations\202510020904050_InsuranceCalculationChange.Designer.cs">
+      <DependentUpon>202510020904050_InsuranceCalculationChange.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020910153_InsuranceProviderConfig01.cs" />
+    <Compile Include="Migrations\202510020910153_InsuranceProviderConfig01.Designer.cs">
+      <DependentUpon>202510020910153_InsuranceProviderConfig01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020921563_PlanServiceConfig01.cs" />
+    <Compile Include="Migrations\202510020921563_PlanServiceConfig01.Designer.cs">
+      <DependentUpon>202510020921563_PlanServiceConfig01.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510020929223_BusinessRuleConfig01.cs" />
+    <Compile Include="Migrations\202510020929223_BusinessRuleConfig01.Designer.cs">
+      <DependentUpon>202510020929223_BusinessRuleConfig01.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
+    <Compile Include="Models\Configurations\BusinessRuleConfig.cs" />
     <Compile Include="Models\Configurations\ServiceTemplateConfig.cs" />
     <Compile Include="Models\Core\ApplicationUser.cs" />
     <Compile Include="Models\Core\AppRoles.cs" />
@@ -678,7 +735,6 @@
     <Compile Include="Models\DTOs\Calculation\CalculationServiceDto.cs" />
     <Compile Include="Models\Entities\Appointment\Appointment.cs" />
     <Compile Include="Models\Entities\Appointment\AppointmentSlot.cs" />
-    <Compile Include="Models\Entities\Appointment\Class1.cs" />
     <Compile Include="Models\Entities\Clinic\Clinic.cs" />
     <Compile Include="Models\Entities\Clinic\Department.cs" />
     <Compile Include="Models\Entities\Clinic\FactorSetting.cs" />
@@ -700,7 +756,6 @@
     <Compile Include="Models\Entities\Doctor\ScheduleTemplate.cs" />
     <Compile Include="Models\Entities\Doctor\Specialization.cs" />
     <Compile Include="Models\Entities\Insurance\BusinessRule.cs" />
-    <Compile Include="Models\Entities\Insurance\Class1.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceCalculation.cs" />
     <Compile Include="Models\Entities\Insurance\InsurancePlan.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceProvider.cs" />
@@ -712,6 +767,7 @@
     <Compile Include="Models\Enums\EmergencyConflictSeverity.cs" />
     <Compile Include="Models\Enums\EmergencyPriority.cs" />
     <Compile Include="Models\Enums\EmergencyType.cs" />
+    <Compile Include="Models\Enums\InsuranceCalculationType.cs" />
     <Compile Include="Models\Enums\InsurancePriority.cs" />
     <Compile Include="Models\Enums\NotificationChannelType.cs" />
     <Compile Include="Models\Entities\Notification\NotificationHistory.cs" />
@@ -723,7 +779,6 @@
     <Compile Include="Models\Enums\WorkloadBalanceStatus.cs" />
     <Compile Include="Models\Entities\Patient\PatientInsurance.cs" />
     <Compile Include="Models\Entities\Insurance\PlanService.cs" />
-    <Compile Include="Models\Entities\Patient\Class1.cs" />
     <Compile Include="Models\Entities\Patient\MedicalHistory.cs" />
     <Compile Include="Models\Entities\Patient\Patient.cs" />
     <Compile Include="Models\Entities\Payment\CashSession.cs" />
@@ -731,7 +786,6 @@
     <Compile Include="Models\Entities\Payment\PaymentGateway.cs" />
     <Compile Include="Models\Entities\Payment\PaymentTransaction.cs" />
     <Compile Include="Models\Entities\Payment\PosTerminal.cs" />
-    <Compile Include="Models\Entities\Receipt\Class1.cs" />
     <Compile Include="Models\Entities\Receipt\ReceiptPrint.cs" />
     <Compile Include="Models\Entities\Reception\Reception.cs" />
     <Compile Include="Models\Entities\Reception\ReceptionItem.cs" />
@@ -977,7 +1031,6 @@
     <Compile Include="Controllers\ManageController.cs" />
     <Compile Include="Controllers\PatientController.cs" />
     <Compile Include="Filters\CheckProfileCompletionAttribute.cs" />
-    <Compile Include="Filters\Class1.cs" />
     <Compile Include="Filters\ReceptionExportHelper.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
@@ -1068,6 +1121,7 @@
     <Content Include="Content\css\forms-medical.css" />
     <Content Include="Content\css\insurance-plan-index.css" />
     <Content Include="Content\css\insurance-plan.css" />
+    <Content Include="Content\css\insurance\supplementary-tariff-index.css" />
     <Content Include="Content\css\insurance\supplementary-tariff-views.css" />
     <Content Include="Content\css\local-fonts.css" />
     <Content Include="Content\css\medical-environment-styles.css" />
@@ -3852,7 +3906,6 @@
     <Content Include="Areas\Admin\Views\BusinessRule\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\Insurance\CombinedInsuranceCalculationTest\Index.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Details.cshtml" />
-    <Content Include="Areas\Admin\Views\SupplementaryTariff\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Index.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Delete.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\_SupplementaryTariffCard.cshtml" />
@@ -3870,6 +3923,7 @@
     <Content Include="Areas\Admin\Views\InsuranceTariff\Details.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
+    <Content Include="Areas\Admin\Views\SupplementaryTariff\Edit.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4148,7 +4202,6 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
-    <Folder Include="Areas\Admin\Controllers\Base\" />
     <Folder Include="Areas\Admin\Data\" />
     <Folder Include="Constants\" />
     <Folder Include="Interfaces\Medical\" />
@@ -4242,6 +4295,48 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202509300804099_AddNewProperty.resx">
       <DependentUpon>202509300804099_AddNewProperty.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020509028_M01_ServicePrice_To_Rial_Decimal18_0.resx">
+      <DependentUpon>202510020509028_M01_ServicePrice_To_Rial_Decimal18_0.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020543061_ChangeTableInsurancetariif.resx">
+      <DependentUpon>202510020543061_ChangeTableInsurancetariif.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020559214_ServiceTemplateConfigChange01.resx">
+      <DependentUpon>202510020559214_ServiceTemplateConfigChange01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020604509_ChangeSharedServiceConfig01.resx">
+      <DependentUpon>202510020604509_ChangeSharedServiceConfig01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020626455_changeServiceComponent01.resx">
+      <DependentUpon>202510020626455_changeServiceComponent01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020636136_FactorSettingConfig02.resx">
+      <DependentUpon>202510020636136_FactorSettingConfig02.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020724440_cashSession01.resx">
+      <DependentUpon>202510020724440_cashSession01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020739328_Drop_Id_Column_From_OnlinePayments.resx">
+      <DependentUpon>202510020739328_Drop_Id_Column_From_OnlinePayments.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020751091_Drop_Id_Column_FromPaymentGateway.resx">
+      <DependentUpon>202510020751091_Drop_Id_Column_FromPaymentGateway.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020812500_Drop_Id_Column_FromPaymentTransaction.resx">
+      <DependentUpon>202510020812500_Drop_Id_Column_FromPaymentTransaction.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020904050_InsuranceCalculationChange.resx">
+      <DependentUpon>202510020904050_InsuranceCalculationChange.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020910153_InsuranceProviderConfig01.resx">
+      <DependentUpon>202510020910153_InsuranceProviderConfig01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020921563_PlanServiceConfig01.resx">
+      <DependentUpon>202510020921563_PlanServiceConfig01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510020929223_BusinessRuleConfig01.resx">
+      <DependentUpon>202510020929223_BusinessRuleConfig01.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

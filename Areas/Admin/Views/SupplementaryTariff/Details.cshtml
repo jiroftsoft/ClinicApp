@@ -1,5 +1,7 @@
 @model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffCreateEditViewModel
 
+@using System.Globalization
+
 @{
     ViewBag.Title = "جزئیات تعرفه بیمه تکمیلی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
@@ -7,6 +9,38 @@
     // تنظیم Culture برای فرمت اعداد
     System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("fa-IR");
     System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("fa-IR");
+}
+
+@functions{
+    // 🔧 CRITICAL: تبدیل ریال به تومان و فرمت با fa-IR
+    string Tomans(decimal? rial)
+    {
+        var t = (rial ?? 0m) / 10m; // ریال → تومان
+        return t.ToString("N0", new CultureInfo("fa-IR")) + " تومان";
+    }
+    
+    // محاسبه درصد امن
+    decimal Pct(decimal? p) => (p ?? 0m);
+    
+    // محاسبه پوشش تکمیلی با اعمال سقف
+    decimal SupplementaryCoverageAmount(decimal? remainingAfterPrimary, decimal? coveragePercent, decimal? maxPayment)
+    {
+        var R = remainingAfterPrimary ?? 0m;
+        var pct = Pct(coveragePercent) / 100m;
+        var raw = R * pct;
+        if (maxPayment.HasValue && maxPayment.Value > 0)
+            return Math.Min(raw, maxPayment.Value);
+        return raw;
+    }
+    
+    // سهم نهایی بیمار = R - پوشش تکمیلی (با سقف)
+    decimal FinalPatientShare(decimal? remainingAfterPrimary, decimal? coveragePercent, decimal? maxPayment)
+    {
+        var R = remainingAfterPrimary ?? 0m;
+        var supp = SupplementaryCoverageAmount(remainingAfterPrimary, coveragePercent, maxPayment);
+        var final = R - supp;
+        return final < 0 ? 0 : final;
+    }
 }
 
 <div class="container-fluid">
@@ -104,28 +138,32 @@
                     <div class="row">
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="form-label font-weight-bold">قیمت تعرفه (تومان)</label>
+                                <label class="form-label font-weight-bold">قیمت کل خدمت</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded text-center">
                                     <i class="fas fa-money-bill-wave text-success"></i>
-                                    <strong class="text-success">@(Model.TariffPrice?.ToString("N0") ?? "0")</strong>
+                                    <strong class="text-success">@Tomans(Model.TariffPrice)</strong>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="form-group">
-                                <label class="form-label font-weight-bold">سهم بیمار (تومان)</label>
-                                <div class="form-control-plaintext bg-light p-2 rounded text-center">
-                                    <i class="fas fa-user text-warning"></i>
-                                    <strong class="text-warning">@(Model.PatientShare?.ToString("N0") ?? "0")</strong>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-3">
-                            <div class="form-group">
-                                <label class="form-label font-weight-bold">سهم بیمه (تومان)</label>
+                                <label class="form-label font-weight-bold">سهم پایه (نمایشی)</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded text-center">
                                     <i class="fas fa-shield-alt text-info"></i>
-                                    <strong class="text-info">@(Model.InsurerShare?.ToString("N0") ?? "0")</strong>
+                                    @{
+                                        // اگر InsurerShare در تعرفه تکمیلی صفر است، با خط تیره نشان بدهید تا گمراه نکند
+                                        var baseShare = (Model.InsurerShare ?? 0m) <= 0 ? "-" : Tomans(Model.InsurerShare);
+                                    }
+                                    <strong class="text-info">@baseShare</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="form-group">
+                                <label class="form-label font-weight-bold">باقی‌مانده پس از پایه (R)</label>
+                                <div class="form-control-plaintext bg-light p-2 rounded text-center">
+                                    <i class="fas fa-user text-warning"></i>
+                                    <strong class="text-warning">@Tomans(Model.PatientShare)</strong>
                                 </div>
                             </div>
                         </div>
@@ -134,7 +172,7 @@
                                 <label class="form-label font-weight-bold">درصد پوشش تکمیلی</label>
                                 <div class="form-control-plaintext bg-light p-2 rounded text-center">
                                     <i class="fas fa-percentage text-primary"></i>
-                                    <strong class="text-primary">@(Model.SupplementaryCoveragePercent?.ToString("F0") ?? "0")%</strong>
+                                    <strong class="text-primary">@Pct(Model.SupplementaryCoveragePercent).ToString("0", new CultureInfo("fa-IR"))%</strong>
                                 </div>
                             </div>
                         </div>
@@ -189,6 +227,13 @@
                     </div>
 
                     <!-- پیش‌نمایش محاسبات -->
+                    @{
+                        var R = Model.PatientShare ?? 0m; // باقی‌مانده پس از پایه، از DB بر حسب ریال
+                        var pct = Pct(Model.SupplementaryCoveragePercent);
+                        var suppAmountRial = SupplementaryCoverageAmount(R, pct, Model.SupplementaryMaxPayment);
+                        var finalRial = FinalPatientShare(R, pct, Model.SupplementaryMaxPayment);
+                    }
+                    
                     <div class="row">
                         <div class="col-12">
                             <div class="card bg-light">
@@ -203,49 +248,43 @@
                                         <div class="col-md-2">
                                             <div class="border rounded p-2 bg-white">
                                                 <small class="text-muted">قیمت کل خدمت</small>
-                                                <div class="font-weight-bold text-success">
-                                                    @(Model.TariffPrice?.ToString("N0") ?? "0") تومان
-                                                </div>
+                                                <div class="font-weight-bold text-success">@Tomans(Model.TariffPrice)</div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
                                             <div class="border rounded p-2 bg-white">
                                                 <small class="text-muted">سهم بیمه پایه</small>
                                                 <div class="font-weight-bold text-info">
-                                                    @(Model.InsurerShare?.ToString("N0") ?? "0") تومان
+                                                    @((Model.InsurerShare ?? 0m) > 0 ? Tomans(Model.InsurerShare) : "-")
                                                 </div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
                                             <div class="border rounded p-2 bg-white">
-                                                <small class="text-muted">مبلغ باقی‌مانده</small>
-                                                <div class="font-weight-bold text-warning">
-                                                    @(Model.PatientShare?.ToString("N0") ?? "0") تومان
-                                                </div>
+                                                <small class="text-muted">باقی‌مانده پس از پایه (R)</small>
+                                                <div class="font-weight-bold text-warning">@Tomans(R)</div>
                                             </div>
                                         </div>
                                         <div class="col-md-2">
                                             <div class="border rounded p-2 bg-white">
                                                 <small class="text-muted">درصد پوشش تکمیلی</small>
-                                                <div class="font-weight-bold text-primary">
-                                                    @(Model.SupplementaryCoveragePercent?.ToString("F0") ?? "0")%
-                                                </div>
+                                                <div class="font-weight-bold text-primary">@pct.ToString("0", new CultureInfo("fa-IR"))%</div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-2">
+                                            <div class="border rounded p-2 bg-white">
+                                                <small class="text-muted">پوشش تکمیلی (مبلغ)</small>
+                                                <div class="font-weight-bold text-success">@Tomans(suppAmountRial)</div>
+                                                @if (Model.SupplementaryMaxPayment.HasValue && Model.SupplementaryMaxPayment.Value > 0)
+                                                {
+                                                    <div class="small text-muted">با سقف @Tomans(Model.SupplementaryMaxPayment)</div>
+                                                }
                                             </div>
                                         </div>
                                         <div class="col-md-2">
                                             <div class="border rounded p-2 bg-white">
                                                 <small class="text-muted">سهم نهایی بیمار</small>
-                                                <div class="font-weight-bold text-danger">
-                                                    @((Model.PatientShare - (Model.PatientShare * Model.SupplementaryCoveragePercent / 100))?.ToString("N0") ?? "0") تومان
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-2">
-                                            <div class="border rounded p-2 bg-white">
-                                                <small class="text-muted">سهم بیمه تکمیلی</small>
-                                                <div class="font-weight-bold text-success">
-                                                    @((Model.PatientShare * Model.SupplementaryCoveragePercent / 100)?.ToString("N0") ?? "0") تومان
-                                                </div>
+                                                <div class="font-weight-bold text-danger">@Tomans(finalRial)</div>
                                             </div>
                                         </div>
                                     </div>
@@ -277,34 +316,21 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
+        $(function () {
             console.log('🏥 MEDICAL: Details page loaded successfully');
-            
-            // Debug: نمایش اطلاعات Model
             console.log('🏥 MEDICAL DEBUG: Details Model Data:', {
                 InsuranceTariffId: @(Model.InsuranceTariffId ?? 0),
                 ServiceId: @Model.ServiceId,
                 InsurancePlanId: @Model.InsurancePlanId,
-                TariffPrice: @(Model.TariffPrice?.ToString("F2") ?? "null"),
-                PatientShare: @(Model.PatientShare?.ToString("F2") ?? "null"),
-                InsurerShare: @(Model.InsurerShare?.ToString("F2") ?? "null"),
-                SupplementaryCoveragePercent: @(Model.SupplementaryCoveragePercent?.ToString("F2") ?? "null"),
+                TariffPrice: '@(Model.TariffPrice?.ToString("G", CultureInfo.InvariantCulture) ?? "null")',
+                PatientShare: '@(Model.PatientShare?.ToString("G", CultureInfo.InvariantCulture) ?? "null")',
+                InsurerShare: '@(Model.InsurerShare?.ToString("G", CultureInfo.InvariantCulture) ?? "null")',
+                SupplementaryCoveragePercent: '@(Model.SupplementaryCoveragePercent?.ToString("G", CultureInfo.InvariantCulture) ?? "null")',
+                SupplementaryMaxPayment: '@(Model.SupplementaryMaxPayment?.ToString("G", CultureInfo.InvariantCulture) ?? "null")',
                 Priority: @Model.Priority,
                 PrimaryInsurancePlanId: @Model.PrimaryInsurancePlanId,
                 IsActive: @Model.IsActive.ToString().ToLower()
             });
-            
-            console.log('🏥 MEDICAL DEBUG: Details Model Data:', {
-                ServiceName: '@Model.ServiceName',
-                ServiceCode: '@Model.ServiceCode',
-                PrimaryInsurancePlanId: @Model.PrimaryInsurancePlanId,
-                PrimaryInsurancePlansCount: @Model.PrimaryInsurancePlans.Count,
-                InsurancePlansCount: @Model.InsurancePlans.Count,
-                DepartmentsCount: @Model.Departments.Count
-            });
-            
-            // Debug: بررسی PrimaryInsurancePlans
-            console.log('🏥 MEDICAL DEBUG: PrimaryInsurancePlans:', @Html.Raw(Json.Encode(Model.PrimaryInsurancePlans)));
         });
     </script>
 }
