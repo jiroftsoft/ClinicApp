@@ -181,10 +181,12 @@
                     success: function(response) {
                         $('#insuranceProviderListContainer').html(response);
                     },
-                    error: function() {
+                    error: function(xhr, status, error) {
+                        console.error('خطا در بارگیری ارائه‌دهندگان بیمه:', error);
                         $('#insuranceProviderListContainer').html(
                             '<div class="alert alert-danger text-center">' +
                             '<i class="fas fa-exclamation-triangle"></i> خطا در بارگیری اطلاعات' +
+                            '<br><small>لطفاً صفحه را رفرش کنید یا با مدیر سیستم تماس بگیرید.</small>' +
                             '</div>'
                         );
                     }

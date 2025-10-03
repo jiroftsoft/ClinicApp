@@ -131,13 +131,14 @@ namespace ClinicApp.Repositories.Insurance
             int? serviceId = null,
             int? providerId = null,
             string searchTerm = "",
+            InsuranceType? insuranceType = null,
             int pageNumber = 1,
             int pageSize = 10)
         {
             try
             {
-                _logger.Information("🔍 REPOSITORY: شروع GetPagedAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}", 
-                    planId, serviceId, providerId, searchTerm);
+                _logger.Information("🔍 REPOSITORY: شروع GetPagedAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}, InsuranceType: {InsuranceType}", 
+                    planId, serviceId, providerId, searchTerm, insuranceType);
 
                 // بهینه‌سازی: استفاده از AsNoTracking برای read-only operations
                 var query = _context.InsuranceTariffs
@@ -168,6 +169,13 @@ namespace ClinicApp.Repositories.Insurance
                 {
                     query = query.Where(t => t.InsurancePlan.InsuranceProviderId == providerId.Value);
                     _logger.Information("🔍 REPOSITORY: فیلتر ProviderId اضافه شد: {ProviderId}", providerId.Value);
+                }
+
+                // فیلتر بر اساس نوع بیمه
+                if (insuranceType.HasValue)
+                {
+                    query = query.Where(t => t.InsuranceType == insuranceType.Value);
+                    _logger.Information("🔍 REPOSITORY: فیلتر InsuranceType اضافه شد: {InsuranceType}", insuranceType.Value);
                 }
 
                 // جستجو
@@ -803,13 +811,14 @@ namespace ClinicApp.Repositories.Insurance
             int? serviceId = null,
             int? providerId = null,
             string searchTerm = "",
+            InsuranceType? insuranceType = null,
             int pageNumber = 1,
             int pageSize = 10)
         {
             try
             {
-                _logger.Information("🔍 REPOSITORY: شروع GetTariffsProjectionAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}", 
-                    planId, serviceId, providerId, searchTerm);
+                _logger.Information("🔍 REPOSITORY: شروع GetTariffsProjectionAsync - PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}, InsuranceType: {InsuranceType}", 
+                    planId, serviceId, providerId, searchTerm, insuranceType);
 
                 // بهینه‌سازی: Projection + AsNoTracking برای read-only operations
                 var query = _context.InsuranceTariffs
@@ -832,6 +841,13 @@ namespace ClinicApp.Repositories.Insurance
                 if (providerId.HasValue)
                 {
                     query = query.Where(t => t.InsurancePlan.InsuranceProviderId == providerId.Value);
+                }
+
+                // فیلتر بر اساس نوع بیمه
+                if (insuranceType.HasValue)
+                {
+                    query = query.Where(t => t.InsuranceType == insuranceType.Value);
+                    _logger.Information("🔍 REPOSITORY: فیلتر InsuranceType اضافه شد: {InsuranceType}", insuranceType.Value);
                 }
 
                 // جستجو در نام خدمت و طرح بیمه

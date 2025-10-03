@@ -8,6 +8,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Repositories.Insurance
@@ -107,9 +108,17 @@ namespace ClinicApp.Repositories.Insurance
             {
                 _logger.Debug("🔍 ANTI-BULLET: شروع دریافت ارائه‌دهندگان بیمه فعال از دیتابیس");
                 
-                // 🔍 ANTI-BULLET: تست مستقیم دیتابیس
-                var directQuery = await _context.Database.SqlQuery<InsuranceProvider>(
-                    "SELECT InsuranceProviderId, Name, Code, ContactInfo, IsActive, IsDeleted, DeletedAt, DeletedByUserId, CreatedAt, CreatedByUserId, UpdatedAt, UpdatedByUserId FROM InsuranceProviders WHERE IsActive = 1 ORDER BY Name")
+                // 🔧 DYNAMIC_SQL: استفاده از Dynamic SQL Helper
+                var dynamicQuery = DynamicSqlHelper.GenerateSelectQuery<InsuranceProvider>(
+                    "InsuranceProviders",
+                    DynamicSqlHelper.GetActiveFilterWhereClause(),
+                    DynamicSqlHelper.GetNameOrderByClause()
+                );
+                
+                _logger.Debug("🔧 DYNAMIC_SQL: Query تولید شده: {Query}", dynamicQuery);
+                
+                // 🔍 ANTI-BULLET: تست مستقیم دیتابیس با Dynamic SQL
+                var directQuery = await _context.Database.SqlQuery<InsuranceProvider>(dynamicQuery)
                     .ToListAsync();
                 
                 _logger.Debug("🔍 ANTI-BULLET: Direct Query موفق - تعداد: {Count}", directQuery.Count);

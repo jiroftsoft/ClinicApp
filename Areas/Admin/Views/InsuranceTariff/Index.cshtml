@@ -284,9 +284,43 @@
                     </div>
                     <div class="col-md-3">
                         <label class="form-label">ارائه‌دهنده بیمه</label>
-                        @Html.DropDownListFor(m => m.Filter.InsuranceProviderId, Model.Filter.InsuranceProviders, "همه ارائه‌دهندگان", new { @class = "form-select" })
+                        @if (Model.Filter.InsuranceProviders != null && Model.Filter.InsuranceProviders.Any())
+                        {
+                            @Html.DropDownListFor(m => m.Filter.InsuranceProviderId, Model.Filter.InsuranceProviders, "همه ارائه‌دهندگان", new { @class = "form-select" })
+                            <small class="text-success">
+                                <i class="fas fa-check-circle"></i> 
+                                @Model.Filter.InsuranceProviders.Count() ارائه‌دهنده بارگیری شد
+                            </small>
+                        }
+                        else
+                        {
+                            <select class="form-select" disabled>
+                                <option>در حال بارگیری...</option>
+                            </select>
+                            <small class="text-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 
+                                ارائه‌دهندگان بیمه در حال بارگیری هستند
+                            </small>
+                            <div class="mt-2">
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="location.reload()">
+                                    <i class="fas fa-sync-alt"></i> تلاش مجدد
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary ms-1" onclick="loadInsuranceProviders()">
+                                    <i class="fas fa-download"></i> بارگیری دستی
+                                </button>
+                            </div>
+                        }
                     </div>
-                    <div class="col-md-3">
+                    <div class="col-md-2">
+                        <label class="form-label">نوع بیمه</label>
+                        @Html.DropDownListFor(m => m.Filter.InsuranceType, new SelectList(new[]
+                        {
+                            new { Value = "", Text = "همه انواع" },
+                            new { Value = "1", Text = "بیمه پایه" },
+                            new { Value = "2", Text = "بیمه تکمیلی" }
+                        }, "Value", "Text"), new { @class = "form-select" })
+                    </div>
+                    <div class="col-md-2">
                         <label class="form-label">وضعیت</label>
                         @Html.DropDownListFor(m => m.Filter.IsActive, new SelectList(new[]
                         {
@@ -434,6 +468,7 @@
                             page = Model.Pagination.PageNumber - 1,
                             DepartmentId = Model.Filter.DepartmentId,
                             InsuranceProviderId = Model.Filter.InsuranceProviderId,
+                            InsuranceType = Model.Filter.InsuranceType,
                             IsActive = Model.Filter.IsActive,
                             SearchTerm = Model.Filter.SearchTerm
                         })" class="pagination-btn">
@@ -448,6 +483,7 @@
                             page = i,
                             DepartmentId = Model.Filter.DepartmentId,
                             InsuranceProviderId = Model.Filter.InsuranceProviderId,
+                            InsuranceType = Model.Filter.InsuranceType,
                             IsActive = Model.Filter.IsActive,
                             SearchTerm = Model.Filter.SearchTerm
                         })" class="pagination-btn @(i == Model.Pagination.PageNumber ? "active" : "")">
@@ -461,6 +497,7 @@
                             page = Model.Pagination.PageNumber + 1,
                             DepartmentId = Model.Filter.DepartmentId,
                             InsuranceProviderId = Model.Filter.InsuranceProviderId,
+                            InsuranceType = Model.Filter.InsuranceType,
                             IsActive = Model.Filter.IsActive,
                             SearchTerm = Model.Filter.SearchTerm
                         })" class="pagination-btn">
@@ -498,6 +535,8 @@
                         $('[data-stat="inactive"]').text(data.data.inactiveTariffs || 0);
                         $('[data-stat="services"]').text(data.data.totalServices || 0);
                     }
+                }).fail(function(xhr, status, error) {
+                    console.error('خطا در بارگیری آمار:', error);
                 });
             }
             
@@ -508,6 +547,41 @@
             $(window).on('beforeunload', function() {
                 if (statsTimer) clearInterval(statsTimer);
             });
+            
+            // 🚀 CRITICAL FIX: بارگیری دستی ارائه‌دهندگان بیمه
+            window.loadInsuranceProviders = function() {
+                var $providerSelect = $('select[name="Filter.InsuranceProviderId"]');
+                var $loadingText = $providerSelect.siblings('small');
+                
+                $loadingText.html('<i class="fas fa-spinner fa-spin"></i> در حال بارگیری...');
+                
+                $.ajax({
+                    url: '@Url.Action("GetInsuranceProviders", "InsuranceTariff")',
+                    type: 'GET',
+                    data: { search: '', page: 1, pageSize: 100 },
+                    success: function(response) {
+                        if (response.success && response.data && response.data.length > 0) {
+                            $providerSelect.empty();
+                            $providerSelect.append('<option value="">همه ارائه‌دهندگان</option>');
+                            
+                            $.each(response.data, function(index, item) {
+                                $providerSelect.append('<option value="' + item.id + '">' + item.name + '</option>');
+                            });
+                            
+                            $providerSelect.prop('disabled', false);
+                            $loadingText.html('<i class="fas fa-check-circle text-success"></i> ' + response.data.length + ' ارائه‌دهنده بارگیری شد');
+                            
+                            // Hide retry buttons
+                            $providerSelect.siblings('.mt-2').hide();
+                        } else {
+                            $loadingText.html('<i class="fas fa-exclamation-triangle text-danger"></i> خطا در بارگیری ارائه‌دهندگان');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        $loadingText.html('<i class="fas fa-exclamation-triangle text-danger"></i> خطا در بارگیری: ' + error);
+                    }
+                });
+            };
             
             // بارگذاری اولیه
             loadStats();

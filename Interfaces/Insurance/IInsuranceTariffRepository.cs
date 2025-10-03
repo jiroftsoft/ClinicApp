@@ -48,6 +48,7 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="serviceId">شناسه خدمت (اختیاری)</param>
         /// <param name="providerId">شناسه ارائه‌دهنده بیمه (اختیاری)</param>
         /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="insuranceType">نوع بیمه (اختیاری)</param>
         /// <param name="pageNumber">شماره صفحه</param>
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>نتیجه صفحه‌بندی شده تعرفه‌های بیمه</returns>
@@ -56,6 +57,7 @@ namespace ClinicApp.Interfaces.Insurance
             int? serviceId = null,
             int? providerId = null,
             string searchTerm = "",
+            InsuranceType? insuranceType = null,
             int pageNumber = 1,
             int pageSize = 10);
 
@@ -229,6 +231,7 @@ namespace ClinicApp.Interfaces.Insurance
             int? serviceId = null,
             int? providerId = null,
             string searchTerm = "",
+            InsuranceType? insuranceType = null,
             int pageNumber = 1,
             int pageSize = 10);
 

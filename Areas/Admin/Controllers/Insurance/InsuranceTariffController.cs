@@ -163,11 +163,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     Filter = filter
                 };
 
+                // 🚀 CRITICAL FIX: بارگیری SelectLists قبل از آمار و تعرفه‌ها
+                await LoadSelectListsForFilterAsync(model.Filter);
+
                 // بارگیری موازی آمار و تعرفه‌ها
                 var statisticsTask = _insuranceTariffService.GetStatisticsAsync();
                 var tariffsTask = _insuranceTariffService.GetTariffsAsync(
                     filter.InsurancePlanId, filter.ServiceId, filter.InsuranceProviderId,
-                    filter.SearchTerm, filter.PageNumber, filter.PageSize);
+                    filter.SearchTerm, filter.InsuranceType, filter.PageNumber, filter.PageSize);
 
                 await Task.WhenAll(statisticsTask, tariffsTask);
 
@@ -176,7 +179,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     model.Statistics = statisticsTask.Result.Data;
                     _logger.Debug("🏥 MEDICAL: آمار تعرفه‌ها با موفقیت بارگیری شد - CorrelationId: {CorrelationId}, Statistics: {@Statistics}",
-                        correlationId, model.Statistics);
+correlationId, model.Statistics);
                 }
                 else
                 {
@@ -198,9 +201,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         correlationId, tariffsTask.Result.Message);
                     model.Tariffs = new PagedResult<InsuranceTariffIndexViewModel>();
                 }
-
-                // بارگیری SelectLists
-                await LoadSelectListsForFilterAsync(model.Filter);
 
                 _logger.Information("🏥 MEDICAL: صفحه اصلی تعرفه‌های بیمه با موفقیت بارگیری شد - CorrelationId: {CorrelationId}, TotalItems: {TotalItems}, User: {UserName} (Id: {UserId})",
                     correlationId, model.Tariffs?.TotalItems ?? 0, _currentUserService.UserName, _currentUserService.UserId);
@@ -271,7 +271,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 var result = await _insuranceTariffService.GetTariffsAsync(
                     filter.InsurancePlanId, filter.ServiceId, filter.InsuranceProviderId,
-                    filter.SearchTerm, filter.PageNumber, filter.PageSize);
+                    filter.SearchTerm, filter.InsuranceType, filter.PageNumber, filter.PageSize);
 
                 if (!result.Success)
                 {
@@ -1212,7 +1212,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             try
             {
-                // 🚀 P0 FIX: بارگیری موازی SelectLists با بهینه‌سازی
+                // 🚀 CRITICAL FIX: بارگیری موازی SelectLists با بهینه‌سازی و Timeout
                 var clinicId = await GetCurrentClinicIdAsync();
                 
                 _logger.Debug("🏥 MEDICAL: شروع بارگیری SelectLists - ClinicId: {ClinicId}, User: {UserName} (Id: {UserId})",
@@ -1223,7 +1223,26 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var servicesTask = _serviceManagementService.GetActiveServicesForLookupAsync(0);
                 var providersTask = _insuranceProviderService.GetActiveProvidersForLookupAsync();
 
-                await Task.WhenAll(departmentsTask, plansTask, servicesTask, providersTask);
+                // 🚀 CRITICAL FIX: اضافه کردن Timeout برای جلوگیری از Hang
+                var timeout = TimeSpan.FromSeconds(15);
+                var allTasks = new Task[] { departmentsTask, plansTask, servicesTask, providersTask };
+                
+                try
+                {
+                    var timeoutTask = Task.Delay(timeout);
+                    var completedTask = await Task.WhenAny(Task.WhenAll(allTasks), timeoutTask);
+                    
+                    if (completedTask == timeoutTask)
+                    {
+                        _logger.Warning("🏥 MEDICAL: Timeout در بارگیری SelectLists - User: {UserName} (Id: {UserId})",
+                            _currentUserService.UserName, _currentUserService.UserId);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning(ex, "🏥 MEDICAL: خطا در بارگیری SelectLists - User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                }
                 
                 _logger.Debug("🏥 MEDICAL: نتایج SelectLists - Departments: {DeptSuccess}, Plans: {PlanSuccess}, Services: {ServiceSuccess}, Providers: {ProviderSuccess}",
                     departmentsTask.Result?.Success, plansTask.Result?.Success, servicesTask.Result?.Success, providersTask.Result?.Success);
@@ -1256,15 +1275,41 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     filter.ServiceSelectList = new SelectList(new List<object>(), "Id", "Name");
                 }
 
+                // 🚀 CRITICAL FIX: بهبود Error Handling برای ارائه‌دهندگان بیمه
                 if (providersTask.Result?.Success == true && providersTask.Result.Data?.Any() == true)
                 {
                     filter.InsuranceProviders = new SelectList(providersTask.Result.Data, "Id", "Name", filter.InsuranceProviderId);
                     filter.InsuranceProviderSelectList = new SelectList(providersTask.Result.Data, "Id", "Name", filter.InsuranceProviderId);
+                    _logger.Debug("🏥 MEDICAL: ارائه‌دهندگان بیمه با موفقیت بارگیری شدند - تعداد: {Count}", providersTask.Result.Data.Count);
                 }
                 else
                 {
-                    filter.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
-                    filter.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+                    _logger.Warning("🏥 MEDICAL: خطا در بارگیری ارائه‌دهندگان بیمه - Success: {Success}, Data: {Data}, Exception: {Exception}", 
+                        providersTask.Result?.Success, providersTask.Result?.Data?.Count ?? 0, providersTask.Exception?.Message);
+                    
+                    // 🚀 CRITICAL FIX: Fallback - تلاش مجدد با روش ساده‌تر
+                    try
+                    {
+                        var fallbackProviders = await _insuranceProviderService.GetActiveProvidersForLookupAsync();
+                        if (fallbackProviders.Success && fallbackProviders.Data?.Any() == true)
+                        {
+                            filter.InsuranceProviders = new SelectList(fallbackProviders.Data, "Id", "Name", filter.InsuranceProviderId);
+                            filter.InsuranceProviderSelectList = new SelectList(fallbackProviders.Data, "Id", "Name", filter.InsuranceProviderId);
+                            _logger.Information("🏥 MEDICAL: Fallback موفق - ارائه‌دهندگان بیمه بارگیری شدند - تعداد: {Count}", fallbackProviders.Data.Count);
+                        }
+                        else
+                        {
+                            filter.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+                            filter.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+                        }
+                    }
+                    catch (Exception fallbackEx)
+                    {
+                        _logger.Error(fallbackEx, "🏥 MEDICAL: Fallback نیز ناموفق بود - User: {UserName} (Id: {UserId})",
+                            _currentUserService.UserName, _currentUserService.UserId);
+                        filter.InsuranceProviders = new SelectList(new List<object>(), "Id", "Name");
+                        filter.InsuranceProviderSelectList = new SelectList(new List<object>(), "Id", "Name");
+                    }
                 }
 
                 _logger.Debug("🏥 MEDICAL: SelectLists برای فیلتر با موفقیت بارگیری شدند - Departments: {DeptCount}, Plans: {PlanCount}, Services: {ServiceCount}, Providers: {ProviderCount}",
@@ -1837,8 +1882,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             var correlationId = Guid.NewGuid().ToString();
             var startTime = DateTime.UtcNow;
 
-            // 🔧 CRITICAL FIX: مقادیر از JavaScript قبلاً تبدیل شده‌اند (تومان → ریال)
-            // نیازی به تبدیل مجدد نیست چون JavaScript قبلاً تبدیل کرده
+            // 🔧 CRITICAL FIX: مقادیر از JavaScript به صورت مستقیم ریال ارسال می‌شوند
+            // نیازی به تبدیل واحد نیست چون JavaScript و Service هر دو ریال استفاده می‌کنند
 
             _logger.Information("🏥 MEDICAL: شروع محاسبه پیشرفته تعرفه - CorrelationId: {CorrelationId}, ServiceId: {ServiceId}, InsurancePlanId: {InsurancePlanId}, ProviderId: {ProviderId}, User: {UserName} (Id: {UserId})",
                 correlationId, serviceId, insurancePlanId, providerId, _currentUserService.UserName, _currentUserService.UserId);

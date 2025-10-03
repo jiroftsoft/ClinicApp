@@ -620,8 +620,8 @@
                 return parseFloat(clean) || 0;
             }
 
-            // 🔧 CRITICAL FIX: حذف تبدیل واحد - سیستم بر مبنای ریال
-            // تمام مقادیر در سیستم به صورت ریال هستند
+            // 🔧 CRITICAL FIX: سیستم بر مبنای ریال - بدون تبدیل واحد
+            // تمام مقادیر در سیستم به صورت ریال هستند و نیازی به تبدیل نیست
 
             // ---------- Global State ----------
             var calculationTimeout, lastCalculationData = null, isCalculating = false;
@@ -1398,7 +1398,7 @@
                 var correlationId = lastCid = 'calc_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
                 console.log('🏥 MEDICAL: Performing calculation - CorrelationId:', correlationId, 'ServiceId:', serviceId, 'PlanId:', planId);
 
-                // 🔧 CRITICAL FIX: ارسال مستقیم ریال (بدون تبدیل)
+                // 🔧 CRITICAL FIX: ارسال مستقیم ریال (بدون تبدیل واحد)
                 var formData = {
                     serviceId: serviceId,
                     insurancePlanId: planId,
@@ -1406,7 +1406,7 @@
                     currentTariffPrice: parseCurrency($('#TariffPrice').val()) || 0, // ریال
                     currentPatientShare: parseCurrency($('#PatientShare').val()) || 0, // ریال
                     currentInsurerShare: parseCurrency($('#InsurerShare').val()) || 0, // ریال
-                    unit: 'RIAL', // 🔧 CRITICAL FIX: واحد صریح
+                    unit: 'RIAL', // 🔧 CRITICAL FIX: واحد صریح - ریال
                     correlationId: correlationId
                 };
 
@@ -1514,7 +1514,7 @@
                         insurerShareExists: insurerShareElement.length > 0
                     });
 
-                    // 🔧 CRITICAL FIX: نمایش مستقیم ریال (بدون تبدیل)
+                    // 🔧 CRITICAL FIX: نمایش مستقیم ریال (بدون تبدیل واحد)
                     // قیمت تعرفه
                     if (tariffPrice !== undefined && tariffPrice !== null && tariffPriceElement.length > 0) {
                         tariffPriceElement.val(tariffPrice);

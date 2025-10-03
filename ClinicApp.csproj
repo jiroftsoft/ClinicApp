@@ -466,6 +466,7 @@
     <Compile Include="Areas\Admin\Controllers\DoctorAssignmentController.cs" />
     <Compile Include="Areas\Admin\Controllers\EmergencyBookingController.cs" />
     <Compile Include="Areas\Admin\Controllers\FactorSettingController.cs" />
+    <Compile Include="Areas\Admin\Controllers\InsuranceTypeUpdateController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\BusinessRuleController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationController.cs" />
     <Compile Include="Areas\Admin\Controllers\DataFixController.cs" />
@@ -507,6 +508,8 @@
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\CultureHelper.cs" />
+    <Compile Include="Helpers\DynamicSqlConfiguration.cs" />
+    <Compile Include="Helpers\DynamicSqlHelper.cs" />
     <Compile Include="Helpers\EnumExtensions.cs" />
     <Compile Include="Helpers\ErrorMessageHelper.cs" />
     <Compile Include="Helpers\InsurancePriorityHelper.cs" />
@@ -515,6 +518,7 @@
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
+    <Compile Include="Helpers\SafeSqlBuilder.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
@@ -921,6 +925,7 @@
     <Compile Include="Services\ClinicManagementService.cs" />
     <Compile Include="Services\CurrentUserService.cs" />
     <Compile Include="Services\DataSeeding\FactorSettingSeedService.cs" />
+    <Compile Include="Services\DataSeeding\InsuranceTypeUpdateService.cs" />
     <Compile Include="Services\DataSeeding\ServiceSeedService.cs" />
     <Compile Include="Services\DataSeeding\ServiceTemplateSeedService.cs" />
     <Compile Include="Services\DataSeeding\SystemSeedService.cs" />
@@ -1015,6 +1020,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleConflict.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationViewModels.cs" />
     <Compile Include="ViewModels\FactorSettingViewModel.cs" />
+    <Compile Include="ViewModels\InsuranceTypeUpdate\InsuranceTypeUpdateIndexViewModel.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
     <Compile Include="ViewModels\Insurance\AdvancedCalculationResult.cs" />
     <Compile Include="ViewModels\Insurance\BusinessRule\BusinessRuleCreateEditViewModel.cs" />
@@ -3979,6 +3985,7 @@
     <Content Include="CONTRACTS\SERVICES_COMPREHENSIVE_GUIDE.md" />
     <Content Include="App_Start\DataSeeding\README.md" />
     <Content Include="CONTRACTS\SYSTEM_SEED_CONTROLLER_ANALYSIS.md" />
+    <Content Include="Areas\Admin\Views\InsuranceTypeUpdate\Index.cshtml" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>

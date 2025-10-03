@@ -162,15 +162,15 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
         [Display(Name = "طرح بیمه")]
         public int InsurancePlanId { get; set; }
 
-        [Display(Name = "قیمت تعرفه (تومان)")]
+        [Display(Name = "قیمت تعرفه (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "قیمت تعرفه نمی‌تواند منفی باشد.")]
         public decimal? TariffPrice { get; set; }
 
-        [Display(Name = "سهم بیمار (تومان)")]
+        [Display(Name = "سهم بیمار (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
         public decimal? PatientShare { get; set; }
 
-        [Display(Name = "سهم بیمه (تومان)")]
+        [Display(Name = "سهم بیمه (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
         public decimal? InsurerShare { get; set; }
 
@@ -258,14 +258,16 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
                 ServiceId = entity.ServiceId,
                 InsuranceProviderId = entity.InsurancePlan?.InsuranceProviderId ?? 0,
                 InsurancePlanId = entity.InsurancePlanId ?? 0,
-                // 🔧 CRITICAL FIX: تبدیل واحد از ریال (Database) به تومان (UI) و محاسبه درصدها
-                TariffPrice = entity.TariffPrice.HasValue ? Math.Round(entity.TariffPrice.Value / 10, 0, MidpointRounding.AwayFromZero) : null, // ریال → تومان
-                PatientShare = entity.PatientShare.HasValue ? Math.Round(entity.PatientShare.Value / 10, 0, MidpointRounding.AwayFromZero) : null, // ریال → تومان
-                InsurerShare = entity.InsurerShare.HasValue ? Math.Round(entity.InsurerShare.Value / 10, 0, MidpointRounding.AwayFromZero) : null, // ریال → تومان
-        PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
-            Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
-        InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 
-            Math.Round((entity.InsurerShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
+                // 🔧 CRITICAL FIX: استفاده مستقیم از ریال (بدون تبدیل واحد)
+                TariffPrice = entity.TariffPrice, // ریال → ریال (بدون تبدیل)
+                PatientShare = entity.PatientShare, // ریال → ریال (بدون تبدیل)
+                InsurerShare = entity.InsurerShare, // ریال → ریال (بدون تبدیل)
+                
+                // 🔧 CRITICAL FIX: محاسبه صحیح درصدها بر اساس مقادیر ریالی
+                PatientSharePercent = entity.TariffPrice > 0 && entity.PatientShare.HasValue ? 
+                    Math.Round((entity.PatientShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
+                InsurerSharePercent = entity.TariffPrice > 0 && entity.InsurerShare.HasValue ? 
+                    Math.Round((entity.InsurerShare.Value / entity.TariffPrice.Value) * 100m, 2, MidpointRounding.AwayFromZero) : 0,
                 IsActive = entity.IsActive,
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
@@ -347,6 +349,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceTariff
 
         [Display(Name = "وضعیت")]
         public bool? IsActive { get; set; }
+
+        [Display(Name = "نوع بیمه")]
+        public InsuranceType? InsuranceType { get; set; }
 
         [Display(Name = "شماره صفحه")]
         public int PageNumber { get; set; } = 1;

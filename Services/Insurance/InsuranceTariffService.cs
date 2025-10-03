@@ -55,15 +55,16 @@ namespace ClinicApp.Services.Insurance
             int? serviceId = null,
             int? providerId = null,
             string searchTerm = "",
+            InsuranceType? insuranceType = null,
             int pageNumber = 1,
             int pageSize = 10)
         {
             try
             {
-                _logger.Information("درخواست دریافت تعرفه‌های بیمه. PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}, Page: {Page}, PageSize: {PageSize}. User: {UserName} (Id: {UserId})",
-                    planId, serviceId, providerId, searchTerm, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
+                _logger.Information("درخواست دریافت تعرفه‌های بیمه. PlanId: {PlanId}, ServiceId: {ServiceId}, ProviderId: {ProviderId}, SearchTerm: {SearchTerm}, InsuranceType: {InsuranceType}, Page: {Page}, PageSize: {PageSize}. User: {UserName} (Id: {UserId})",
+                    planId, serviceId, providerId, searchTerm, insuranceType, pageNumber, pageSize, _currentUserService.UserName, _currentUserService.UserId);
 
-                var result = await _tariffRepository.GetPagedAsync(planId, serviceId, providerId, searchTerm, pageNumber, pageSize);
+                var result = await _tariffRepository.GetPagedAsync(planId, serviceId, providerId, searchTerm, insuranceType, pageNumber, pageSize);
                 
                 var viewModels = result.Items.Select(InsuranceTariffIndexViewModel.FromEntity).ToList();
                 
@@ -789,10 +790,10 @@ namespace ClinicApp.Services.Insurance
                     return (null, null, null);
                 }
 
-                // 🔧 CRITICAL FIX: تبدیل واحد از تومان (UI) به ریال (Database)
-                decimal? tariffPrice = model.TariffPrice.HasValue ? model.TariffPrice * 10 : null; // تومان → ریال
-                decimal? patientShare = model.PatientShare.HasValue ? model.PatientShare * 10 : null; // تومان → ریال
-                decimal? insurerShare = model.InsurerShare.HasValue ? model.InsurerShare * 10 : null; // تومان → ریال
+                // 🔧 CRITICAL FIX: استفاده مستقیم از ریال (بدون تبدیل واحد)
+                decimal? tariffPrice = model.TariffPrice; // ریال → ریال (بدون تبدیل)
+                decimal? patientShare = model.PatientShare; // ریال → ریال (بدون تبدیل)
+                decimal? insurerShare = model.InsurerShare; // ریال → ریال (بدون تبدیل)
 
                 // محاسبه قیمت تعرفه با استفاده از موتور اصلی محاسبات
                 if (!tariffPrice.HasValue)
@@ -908,6 +909,51 @@ namespace ClinicApp.Services.Insurance
         #region Calculation Operations
 
         /// <summary>
+        /// تشخیص منبع قیمت و تبدیل واحد مناسب
+        /// </summary>
+        private (decimal? TariffPrice, decimal? PatientShare, decimal? InsurerShare) ProcessCurrencyConversion(
+            InsuranceTariffCreateEditViewModel model, decimal? calculatedPrice = null)
+        {
+            decimal? tariffPrice;
+            decimal? patientShare;
+            decimal? insurerShare;
+
+            // 🔧 CRITICAL FIX: تشخیص منبع قیمت - استفاده مستقیم از ریال
+            if (model.TariffPrice.HasValue)
+            {
+                // قیمت از UI وارد شده (ریال) → بدون تبدیل
+                tariffPrice = model.TariffPrice; // ریال → ریال (بدون تبدیل)
+                patientShare = model.PatientShare; // ریال → ریال (بدون تبدیل)
+                insurerShare = model.InsurerShare; // ریال → ریال (بدون تبدیل)
+                
+                _logger.Information("🏥 MEDICAL: قیمت از UI وارد شده - استفاده مستقیم از ریال. TariffPrice: {TariffPrice} ریال. User: {UserName} (Id: {UserId})",
+                    tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+            }
+            else if (calculatedPrice.HasValue)
+            {
+                // قیمت از Service محاسبه شده (ریال) → تبدیل لازم نیست
+                tariffPrice = calculatedPrice;
+                patientShare = null; // محاسبه خواهد شد
+                insurerShare = null; // محاسبه خواهد شد
+                
+                _logger.Information("🏥 MEDICAL: قیمت از Service محاسبه شده - تبدیل لازم نیست. TariffPrice: {TariffPrice} ریال. User: {UserName} (Id: {UserId})",
+                    tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+            }
+            else
+            {
+                // هیچ قیمتی موجود نیست
+                tariffPrice = null;
+                patientShare = null;
+                insurerShare = null;
+                
+                _logger.Warning("🏥 MEDICAL: هیچ قیمتی موجود نیست. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+            }
+
+            return (tariffPrice, patientShare, insurerShare);
+        }
+
+        /// <summary>
         /// محاسبه مقادیر تعرفه به صورت داینامیک
         /// </summary>
         private async Task<(decimal? TariffPrice, decimal? PatientShare, decimal? InsurerShare)> CalculateTariffValuesAsync(InsuranceTariffCreateEditViewModel model)
@@ -926,13 +972,18 @@ namespace ClinicApp.Services.Insurance
                     return (null, null, null);
                 }
 
-                // 🔧 CRITICAL FIX: تبدیل واحد از تومان (UI) به ریال (Database)
-                decimal? tariffPrice = model.TariffPrice.HasValue ? model.TariffPrice * 10 : null; // تومان → ریال
-                decimal? patientShare = model.PatientShare.HasValue ? model.PatientShare * 10 : null; // تومان → ریال
-                decimal? insurerShare = model.InsurerShare.HasValue ? model.InsurerShare * 10 : null; // تومان → ریال
+                // 🔧 CRITICAL FIX: تشخیص منبع قیمت - استفاده مستقیم از ریال
+                decimal? calculatedPrice = null;
 
+                // 🔧 CRITICAL FIX: اگر قیمت از UI وارد شده، از آن استفاده کن (ریال)
+                if (model.TariffPrice.HasValue)
+                {
+                    calculatedPrice = model.TariffPrice; // ریال → ریال (بدون تبدیل)
+                    _logger.Information("🏥 MEDICAL: استفاده از قیمت UI - TariffPrice: {TariffPrice} ریال. User: {UserName} (Id: {UserId})",
+                        calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
+                }
                 // محاسبه قیمت تعرفه با استفاده از موتور اصلی محاسبات
-                if (!tariffPrice.HasValue)
+                else
                 {
                     if (model.ServiceId.HasValue)
                     {
@@ -963,12 +1014,17 @@ namespace ClinicApp.Services.Insurance
                             }
 
                             // استفاده از ServiceCalculationService برای محاسبه دقیق
-                            tariffPrice = _serviceCalculationService.CalculateServicePrice(service);
+                            calculatedPrice = _serviceCalculationService.CalculateServicePrice(service);
                             _logger.Information("🏥 MEDICAL: قیمت تعرفه محاسبه شد - ServiceId: {ServiceId}, CalculatedPrice: {Price}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
-                                model.ServiceId, tariffPrice, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+                                model.ServiceId, calculatedPrice, service.Price, _currentUserService.UserName, _currentUserService.UserId);
+
+                            // 🔧 CRITICAL FIX: اگر قیمت از Service محاسبه شده، تبدیل واحد لازم نیست
+                            // چون CalculateServicePrice نتیجه را در ریال برمی‌گرداند
+                            _logger.Information("🏥 MEDICAL: قیمت از Service محاسبه شد - تبدیل واحد لازم نیست. ServiceId: {ServiceId}, Price: {Price} ریال. User: {UserName} (Id: {UserId})",
+                                model.ServiceId, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
 
                             // اگر قیمت محاسبه شده 0 است، بررسی بیشتر
-                            if (tariffPrice == 0)
+                            if (calculatedPrice == 0)
                             {
                                 _logger.Warning("🏥 MEDICAL: قیمت محاسبه شده 0 است - ServiceId: {ServiceId}, ServiceTitle: {ServiceTitle}, BasePrice: {BasePrice}. User: {UserName} (Id: {UserId})",
                                     model.ServiceId, service.Title, service.Price, _currentUserService.UserName, _currentUserService.UserId);
@@ -993,9 +1049,9 @@ namespace ClinicApp.Services.Insurance
                                     
                                     if (service.Price > 0)
                                     {
-                                        tariffPrice = service.Price;
+                                        calculatedPrice = service.Price;
                                         _logger.Information("🏥 MEDICAL: قیمت پایه استفاده شد - ServiceId: {ServiceId}, Price: {Price}. User: {UserName} (Id: {UserId})",
-                                            model.ServiceId, tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+                                            model.ServiceId, calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
                                     }
                                     else
                                     {
@@ -1014,11 +1070,14 @@ namespace ClinicApp.Services.Insurance
                     else if (model.IsAllServices)
                     {
                         // برای "همه خدمات" - استفاده از قیمت پیش‌فرض یا 0
-                        tariffPrice = 0; // یا می‌توانید قیمت پیش‌فرض تعریف کنید
+                        calculatedPrice = 0; // یا می‌توانید قیمت پیش‌فرض تعریف کنید
                         _logger.Information("🏥 MEDICAL: قیمت تعرفه برای 'همه خدمات' تنظیم شد - TariffPrice: {Price}. User: {UserName} (Id: {UserId})",
-                            tariffPrice, _currentUserService.UserName, _currentUserService.UserId);
+                            calculatedPrice, _currentUserService.UserName, _currentUserService.UserId);
                     }
                 }
+
+                // 🔧 CRITICAL FIX: استفاده از متد جدید برای تشخیص منبع قیمت (بدون تبدیل واحد)
+                var (tariffPrice, patientShare, insurerShare) = ProcessCurrencyConversion(model, calculatedPrice);
 
                 // محاسبه سهم بیمه و بیمار بر اساس مبلغ (منطق صحیح)
                 if (tariffPrice.HasValue)
@@ -1031,23 +1090,23 @@ namespace ClinicApp.Services.Insurance
                     if (!insurerShare.HasValue)
                     {
                         insurerShare = insurerAmount;
-                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد در Bulk - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, InsurerAmount: {InsurerAmount}, User: {UserName} (Id: {UserId})",
+                        _logger.Information("🏥 MEDICAL: سهم بیمه محاسبه شد - PlanId: {PlanId}, CoveragePercent: {CoveragePercent}%, InsurerAmount: {InsurerAmount}, User: {UserName} (Id: {UserId})",
                             model.InsurancePlanId, plan.CoveragePercent, insurerAmount, _currentUserService.UserName, _currentUserService.UserId);
                     }
 
                     if (!patientShare.HasValue)
                     {
                         patientShare = patientAmount;
-                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد در Bulk - PlanId: {PlanId}, PatientAmount: {PatientAmount}, User: {UserName} (Id: {UserId})",
+                        _logger.Information("🏥 MEDICAL: سهم بیمار محاسبه شد - PlanId: {PlanId}, PatientAmount: {PatientAmount}, User: {UserName} (Id: {UserId})",
                             model.InsurancePlanId, patientAmount, _currentUserService.UserName, _currentUserService.UserId);
                     }
 
-                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه در Bulk - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}, PatientShare: {PatientShare}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
+                    _logger.Information("🏥 MEDICAL: محاسبات کامل تعرفه - ServicePrice: {ServicePrice}, InsurerShare: {InsurerShare}, PatientShare: {PatientShare}, CoveragePercent: {CoveragePercent}%, User: {UserName} (Id: {UserId})",
                         tariffPrice.Value, insurerShare.Value, patientShare.Value, plan.CoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
                 }
                 else
                 {
-                    _logger.Warning("🏥 MEDICAL: قیمت تعرفه محاسبه نشده در Bulk - محاسبه سهم‌ها امکان‌پذیر نیست. PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
+                    _logger.Warning("🏥 MEDICAL: قیمت تعرفه محاسبه نشده - محاسبه سهم‌ها امکان‌پذیر نیست. PlanId: {PlanId}, User: {UserName} (Id: {UserId})",
                         model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
                 }
 

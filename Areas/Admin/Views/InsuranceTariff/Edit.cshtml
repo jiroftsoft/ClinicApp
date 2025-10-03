@@ -517,7 +517,7 @@
                             <label class="medical-form-label" for="TariffPrice">
                                 قیمت تعرفه (ریال)
                             </label>
-                            @Html.TextBoxFor(m => m.TariffPrice, new { @class = "medical-form-control text-left ltr", @id = "TariffPrice", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 250000", @aria_describedby = "TariffPrice-help TariffPrice-error", @aria_invalid = "false" })
+                            @Html.TextBoxFor(m => m.TariffPrice, new { @class = "medical-form-control", @id = "TariffPrice", @type = "number", @min = "0", @max = "2000000000", @step = "1", @inputmode = "numeric" })
                             <div class="medical-form-help" id="TariffPrice-help">مبلغ تعرفه (ریال) - در صورت عدم ورود از قیمت پایه خدمت استفاده می‌شود</div>
                             @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "medical-form-error", @id = "TariffPrice-error" })
                         </div>
@@ -554,7 +554,7 @@
                             <label class="medical-form-label" for="PatientShare">
                                 سهم بیمار (ریال)
                             </label>
-                            @Html.TextBoxFor(m => m.PatientShare, new { @class = "medical-form-control text-left ltr", @id = "PatientShare", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 50000", @aria_describedby = "PatientShare-help PatientShare-error", @aria_invalid = "false" })
+                            @Html.TextBoxFor(m => m.PatientShare, new { @class = "medical-form-control", @id = "PatientShare", @type = "number", @min = "0", @max = "2000000000", @step = "1", @inputmode = "numeric" })
                             <div class="medical-form-help" id="PatientShare-help">سهم بیمار = فرانشیز + مبلغ باقی‌مانده بعد از بیمه</div>
                             @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "medical-form-error", @id = "PatientShare-error" })
                         </div>
@@ -566,7 +566,7 @@
                             <label class="medical-form-label" for="InsurerShare">
                                 سهم بیمه (ریال)
                             </label>
-                            @Html.TextBoxFor(m => m.InsurerShare, new { @class = "medical-form-control text-left ltr", @id = "InsurerShare", @type = "text", @inputmode = "decimal", @pattern = "[0-9]*", @placeholder = "مثلاً 200000", @aria_describedby = "InsurerShare-help InsurerShare-error", @aria_invalid = "false" })
+                            @Html.TextBoxFor(m => m.InsurerShare, new { @class = "medical-form-control", @id = "InsurerShare", @type = "number", @min = "0", @max = "2000000000", @step = "1", @inputmode = "numeric" })
                             <div class="medical-form-help" id="InsurerShare-help">سهم بیمه = مبلغ قابل پوشش × درصد پوشش</div>
                             @Html.ValidationMessageFor(m => m.InsurerShare, "", new { @class = "medical-form-error", @id = "InsurerShare-error" })
                         </div>
@@ -1238,28 +1238,11 @@
 
             // ---------- Currency Formatting ----------
             function setupCurrencyFormatting() {
-                // 🔍 MEDICAL: Handle text inputs with inputmode="decimal" for better cross-browser compatibility
-                $('.medical-form-control[type="text"][inputmode="decimal"]').on('input blur', function() {
-                    var $field = $(this);
-                    var value = $field.val();
-                    
+                $('.medical-form-control[type="number"]').on('input', function() {
+                    var value = $(this).val();
                     if (value) {
-                        // Clean the value (remove formatting, keep raw number)
-                        var cleanValue = convertPersianToEnglish(value.toString().replace(/[,\s]/g, ''));
-                        $field.attr('data-formatted', formatCurrency(cleanValue));
-                        
-                        // On blur, format for display but keep raw value
-                        if (event && event.type === 'blur') {
-                            var numericValue = parseFloat(cleanValue);
-                            if (!isNaN(numericValue)) {
-                                if ($field.attr('id').includes('Percent')) {
-                                    $field.val(numericValue.toFixed(2));
-                                } else {
-                                    // 🔧 CRITICAL FIX: برای فیلدهای پولی، فرمت صحیح اعمال کن
-                                    $field.val(formatCurrency(numericValue));
-                                }
-                            }
-                        }
+                        var formatted = formatCurrency(value);
+                        $(this).attr('data-formatted', formatted);
                     }
                 });
             }
@@ -1319,13 +1302,6 @@
 
                 // Form submission validation
                 $('#insuranceTariffEditForm').on('submit', function(e) {
-                    // 🔧 CRITICAL FIX: نرمال‌سازی مقادیر پولی قبل از Submit
-                    ['#TariffPrice', '#PatientShare', '#InsurerShare'].forEach(function(sel) {
-                        var $field = $(sel);
-                        var value = parseCurrency($field.val());
-                        $field.val(value > 0 ? value : 0);
-                    });
-                    
                     var isValid = true;
                     $('.medical-form-control[required]').each(function() {
                         if (!validateField($(this))) {
@@ -1339,9 +1315,9 @@
                     }
                     
                     // 🔧 CRITICAL FIX: ولیدیشن تساوی سهم‌ها با قیمت تعرفه
-                    var t = parseCurrency($('#TariffPrice').val());
-                    var p = parseCurrency($('#PatientShare').val());
-                    var i = parseCurrency($('#InsurerShare').val());
+                    var t = parseFloat($('#TariffPrice').val()) || 0;
+                    var p = parseFloat($('#PatientShare').val()) || 0;
+                    var i = parseFloat($('#InsurerShare').val()) || 0;
                     if (t > 0 && (p + i) !== t) {
                         e.preventDefault();
                         alert('سهم بیمار + سهم بیمه باید برابر قیمت تعرفه (ریال) باشد.');
@@ -1423,18 +1399,6 @@
                     field.addClass('is-invalid');
                     field.next('.medical-form-error').text('این فیلد الزامی است');
                     isValid = false;
-                } else if (field.attr('type') === 'text' && field.attr('inputmode') === 'decimal' && value) {
-                    // Handle text inputs with inputmode="decimal" for better cross-browser compatibility
-                    var cleanValue = convertPersianToEnglish(value.toString().replace(/[,\s]/g, ''));
-                    var num = parseFloat(cleanValue);
-                    if (isNaN(num) || num < 0) {
-                        field.addClass('is-invalid');
-                        field.next('.medical-form-error').text('عدد معتبر وارد کنید');
-                        isValid = false;
-                    } else {
-                        field.removeClass('is-invalid');
-                        field.next('.medical-form-error').text('');
-                    }
                 } else if (field.attr('type') === 'number' && value) {
                     var num = parseFloat(value);
                     if (isNaN(num) || num < 0) {
@@ -1700,9 +1664,9 @@
                     serviceId: serviceId,
                     insurancePlanId: planId,
                     providerId: $('#InsuranceProviderId').val(),
-                    currentTariffPrice: parseCurrency($('#TariffPrice').val()) || 0, // ریال
-                    currentPatientShare: parseCurrency($('#PatientShare').val()) || 0, // ریال
-                    currentInsurerShare: parseCurrency($('#InsurerShare').val()) || 0, // ریال
+                    currentTariffPrice: parseFloat($('#TariffPrice').val()) || 0, // ریال
+                    currentPatientShare: parseFloat($('#PatientShare').val()) || 0, // ریال
+                    currentInsurerShare: parseFloat($('#InsurerShare').val()) || 0, // ریال
                     patientSharePercent: $('#PatientSharePercent').val() ? parseFloat($('#PatientSharePercent').val()) : null,
                     insurerSharePercent: $('#InsurerSharePercent').val() ? parseFloat($('#InsurerSharePercent').val()) : null,
                     unit: 'RIAL', // 🔧 CRITICAL FIX: واحد صریح

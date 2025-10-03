@@ -1,0 +1,237 @@
+@model ClinicApp.ViewModels.InsuranceTypeUpdate.InsuranceTypeUpdateIndexViewModel
+
+@{
+    ViewBag.Title = "مدیریت به‌روزرسانی InsuranceType";
+    Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-database"></i>
+                        مدیریت به‌روزرسانی InsuranceType
+                    </h3>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.SuccessMessage))
+                    {
+                        <div class="alert alert-success alert-dismissible fade show" role="alert">
+                            <i class="fas fa-check-circle"></i>
+                            @Model.SuccessMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.ErrorMessage))
+                    {
+                        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @Model.ErrorMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(Model.WarningMessage))
+                    {
+                        <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @Model.WarningMessage
+                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        </div>
+                    }
+
+                    <!-- آمار فعلی -->
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-list"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کل طرح‌ها</span>
+                                    <span class="info-box-number" id="totalPlans">@Model.Statistics.TotalPlans</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-shield-alt"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بیمه‌های پایه</span>
+                                    <span class="info-box-number" id="primaryPlans">@Model.Statistics.PrimaryPlans</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-plus-circle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بیمه‌های تکمیلی</span>
+                                    <span class="info-box-number" id="supplementaryPlans">@Model.Statistics.SupplementaryPlans</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">نیاز به به‌روزرسانی</span>
+                                    <span class="info-box-number" id="invalidPlans">@Model.Statistics.InvalidPlans</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- دکمه‌های عملیات -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-tools"></i>
+                                        عملیات به‌روزرسانی
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle"></i>
+                                        <strong>توضیح:</strong>
+                                        این عملیات مقادیر InsuranceType را در جدول InsurancePlans به‌روزرسانی می‌کند.
+                                        بیمه‌های پایه به مقدار 1 و بیمه‌های تکمیلی به مقدار 2 تنظیم می‌شوند.
+                                    </div>
+
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-primary btn-lg" id="updateButton" 
+                                                @(Model.NeedsUpdate ? "" : "disabled")>
+                                            <i class="fas fa-sync-alt"></i>
+                                            به‌روزرسانی مقادیر InsuranceType
+                                        </button>
+                                        
+                                        <button type="button" class="btn btn-secondary btn-lg ms-2" id="refreshButton">
+                                            <i class="fas fa-refresh"></i>
+                                            رفرش آمار
+                                        </button>
+                                    </div>
+
+                                    @if (!Model.NeedsUpdate)
+                                    {
+                                        <div class="alert alert-success mt-3">
+                                            <i class="fas fa-check-circle"></i>
+                                            <strong>همه مقادیر به‌روزرسانی شده‌اند!</strong>
+                                            نیازی به اجرای عملیات به‌روزرسانی نیست.
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@* Helper Methods برای View *@
+@helper FormatPercentage(decimal percentage)
+{
+    @($"{percentage:F1}%")
+}
+
+@helper FormatNumber(int number)
+{
+    @($"{number:N0}")
+}
+
+@helper GetStatusClass(bool needsUpdate)
+{
+    @(needsUpdate ? "text-danger" : "text-success")
+}
+
+@helper GetStatusIcon(bool needsUpdate)
+{
+    @(needsUpdate ? "fas fa-exclamation-triangle" : "fas fa-check-circle")
+}
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // رفرش آمار
+            $('#refreshButton').click(function() {
+                refreshStatistics();
+            });
+
+            // به‌روزرسانی مقادیر
+            $('#updateButton').click(function() {
+                if (confirm('آیا مطمئن هستید که می‌خواهید مقادیر InsuranceType را به‌روزرسانی کنید؟')) {
+                    updateInsuranceTypeValues();
+                }
+            });
+
+            function refreshStatistics() {
+                $.ajax({
+                    url: '@Url.Action("GetStatistics")',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            $('#totalPlans').text(response.data.TotalPlans);
+                            $('#primaryPlans').text(response.data.PrimaryPlans);
+                            $('#supplementaryPlans').text(response.data.SupplementaryPlans);
+                            $('#invalidPlans').text(response.data.InvalidPlans);
+                            
+                            if (response.data.NeedsUpdate) {
+                                $('#updateButton').prop('disabled', false);
+                            } else {
+                                $('#updateButton').prop('disabled', true);
+                            }
+                        } else {
+                            showAlert('خطا در دریافت آمار: ' + response.message, 'danger');
+                        }
+                    },
+                    error: function() {
+                        showAlert('خطا در دریافت آمار', 'danger');
+                    }
+                });
+            }
+
+            function updateInsuranceTypeValues() {
+                $('#updateButton').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال به‌روزرسانی...');
+                
+                $.ajax({
+                    url: '@Url.Action("UpdateInsuranceTypeValues")',
+                    type: 'POST',
+                    data: {
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        location.reload();
+                    },
+                    error: function() {
+                        $('#updateButton').prop('disabled', false).html('<i class="fas fa-sync-alt"></i> به‌روزرسانی مقادیر InsuranceType');
+                        showAlert('خطا در به‌روزرسانی', 'danger');
+                    }
+                });
+            }
+
+            function showAlert(message, type) {
+                var alertClass = type === 'danger' ? 'alert-danger' : 'alert-success';
+                var icon = type === 'danger' ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle';
+                
+                var alertHtml = '<div class="alert ' + alertClass + ' alert-dismissible fade show" role="alert">' +
+                    '<i class="' + icon + '"></i> ' + message +
+                    '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                    '</div>';
+                
+                $('.card-body').prepend(alertHtml);
+            }
+        });
+    </script>
+}

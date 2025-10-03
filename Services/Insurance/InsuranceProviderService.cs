@@ -77,8 +77,11 @@ namespace ClinicApp.Services.Insurance
                     providers = await _insuranceProviderRepository.SearchAsync(searchTerm);
                 }
 
-                // تبدیل به ViewModel
-                var items = providers.Select(ConvertToIndexViewModel).ToList();
+                // تبدیل به ViewModel و فیلتر کردن null ها
+                var items = providers
+                    .Select(ConvertToIndexViewModel)
+                    .Where(item => item != null)
+                    .ToList();
 
                 // محاسبه صفحه‌بندی
                 var totalItems = items.Count;
@@ -423,7 +426,10 @@ namespace ClinicApp.Services.Insurance
                 
                 _log.Debug("🔍 ANTI-BULLET: دریافت ارائه‌دهندگان بیمه فعال از Repository موفق - تعداد: {Count}", providers.Count);
                 
-                var lookupItems = providers.Select(ConvertToLookupViewModel).ToList();
+                var lookupItems = providers
+                    .Select(ConvertToLookupViewModel)
+                    .Where(item => item != null)
+                    .ToList();
 
                 _log.Information(
                     "ارائه‌دهندگان بیمه فعال برای Lookup با موفقیت دریافت شدند. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
@@ -521,17 +527,28 @@ namespace ClinicApp.Services.Insurance
         {
             if (provider == null) return null;
 
-            return new InsuranceProviderIndexViewModel
+            try
             {
-                InsuranceProviderId = provider.InsuranceProviderId,
-                Name = provider.Name,
-                Code = provider.Code,
-                ContactInfo = provider.ContactInfo,
-                IsActive = provider.IsActive,
-                CreatedAt = provider.CreatedAt,
-                CreatedAtShamsi = provider.CreatedAt.ToPersianDateTime(),
-                CreatedByUserName = provider.CreatedByUser != null ? $"{provider.CreatedByUser.FirstName} {provider.CreatedByUser.LastName}".Trim() : null
-            };
+                return new InsuranceProviderIndexViewModel
+                {
+                    InsuranceProviderId = provider.InsuranceProviderId,
+                    Name = provider.Name,
+                    Code = provider.Code,
+                    ContactInfo = provider.ContactInfo,
+                    IsActive = provider.IsActive,
+                    CreatedAt = provider.CreatedAt,
+                    CreatedAtShamsi = provider.CreatedAt.ToPersianDateTime(),
+                    CreatedByUserName = provider.CreatedByUser != null ? 
+                        $"{provider.CreatedByUser.FirstName} {provider.CreatedByUser.LastName}".Trim() : 
+                        "سیستم"
+                };
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تبدیل InsuranceProvider به ViewModel. ProviderId: {ProviderId}", 
+                    provider.InsuranceProviderId);
+                return null;
+            }
         }
 
         /// <summary>
@@ -599,12 +616,21 @@ namespace ClinicApp.Services.Insurance
         {
             if (provider == null) return null;
 
-            return new InsuranceProviderLookupViewModel
+            try
             {
-                InsuranceProviderId = provider.InsuranceProviderId,
-                Name = provider.Name,
-                Code = provider.Code
-            };
+                return new InsuranceProviderLookupViewModel
+                {
+                    InsuranceProviderId = provider.InsuranceProviderId,
+                    Name = provider.Name,
+                    Code = provider.Code
+                };
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در تبدیل InsuranceProvider به Lookup ViewModel. ProviderId: {ProviderId}", 
+                    provider.InsuranceProviderId);
+                return null;
+            }
         }
 
         #endregion

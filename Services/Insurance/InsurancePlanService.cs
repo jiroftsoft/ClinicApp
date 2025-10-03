@@ -666,11 +666,19 @@ namespace ClinicApp.Services.Insurance
 
             try
             {
-                // دریافت تمام طرح‌های بیمه فعال
+                // 🔧 CRITICAL FIX: دریافت فقط طرح‌های بیمه پایه (Primary)
                 var plans = await _insurancePlanRepository.GetActiveAsync();
                 
-                // استخراج unique providers از plans
-                var providers = plans
+                // 🔧 CRITICAL FIX: فیلتر کردن فقط طرح‌های بیمه پایه
+                var primaryPlans = plans
+                    .Where(p => p.InsuranceType == InsuranceType.Primary)
+                    .ToList();
+                
+                _log.Information("🔧 CRITICAL FIX: فیلتر طرح‌های بیمه پایه - کل طرح‌ها: {TotalPlans}, طرح‌های پایه: {PrimaryPlans}", 
+                    plans.Count, primaryPlans.Count);
+                
+                // استخراج unique providers از طرح‌های بیمه پایه
+                var providers = primaryPlans
                     .Where(p => p.InsuranceProvider != null)
                     .GroupBy(p => new { p.InsuranceProvider.InsuranceProviderId, p.InsuranceProvider.Name, p.InsuranceProvider.Code })
                     .Select(g => new InsuranceProviderLookupViewModel
