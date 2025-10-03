@@ -8,6 +8,7 @@ using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Enums;
 using Serilog;
 
 namespace ClinicApp.Repositories.Insurance
@@ -258,6 +259,27 @@ namespace ClinicApp.Repositories.Insurance
             {
                 _logger.Error(ex, "خطا در بررسی وجود طرح بیمه. InsurancePlanId: {InsurancePlanId}", id);
                 throw new InvalidOperationException($"خطا در بررسی وجود طرح بیمه {id}", ex);
+            }
+        }
+
+        /// <summary>
+        /// بررسی وجود طرح‌های بیمه پایه برای ارائه‌دهنده
+        /// </summary>
+        public async Task<bool> HasPrimaryPlansAsync(int providerId)
+        {
+            try
+            {
+                return await _context.InsurancePlans
+                    .Where(ip => ip.InsuranceProviderId == providerId 
+                             && ip.InsuranceType == InsuranceType.Primary 
+                             && ip.IsActive 
+                             && !ip.IsDeleted)
+                    .AnyAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در بررسی وجود طرح‌های بیمه پایه. ProviderId: {ProviderId}", providerId);
+                throw new InvalidOperationException($"خطا در بررسی وجود طرح‌های بیمه پایه ارائه‌دهنده {providerId}", ex);
             }
         }
 

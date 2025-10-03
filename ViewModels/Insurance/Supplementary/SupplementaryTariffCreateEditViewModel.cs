@@ -58,52 +58,59 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public int InsurancePlanId { get; set; }
 
         /// <summary>
-        /// قیمت تعرفه
+        /// قیمت تعرفه (ریال - بدون اعشار)
         /// </summary>
-        [Display(Name = "قیمت تعرفه (تومان)")]
+        [Display(Name = "قیمت تعرفه (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "قیمت تعرفه نمی‌تواند منفی باشد.")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "قیمت تعرفه باید عدد صحیح مثبت باشد")]
         public decimal? TariffPrice { get; set; }
 
         /// <summary>
-        /// سهم بیمار
+        /// سهم بیمار (ریال - بدون اعشار)
         /// </summary>
-        [Display(Name = "سهم بیمار (تومان)")]
+        [Display(Name = "سهم بیمار (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "سهم بیمار باید عدد صحیح مثبت باشد")]
         public decimal? PatientShare { get; set; }
 
         /// <summary>
-        /// سهم بیمه
+        /// سهم بیمه (ریال - بدون اعشار)
         /// </summary>
-        [Display(Name = "سهم بیمه (تومان)")]
+        [Display(Name = "سهم بیمه (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمه نمی‌تواند منفی باشد.")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "سهم بیمه باید عدد صحیح مثبت باشد")]
         public decimal? InsurerShare { get; set; }
 
         /// <summary>
-        /// درصد پوشش بیمه تکمیلی
+        /// درصد پوشش بیمه تکمیلی (با اعشار)
         /// </summary>
         [Display(Name = "درصد پوشش تکمیلی")]
         [Range(0, 100, ErrorMessage = "درصد پوشش باید بین 0 تا 100 باشد.")]
+        [RegularExpression(@"^(0|[1-9]\d*)(\.\d{1,2})?$", ErrorMessage = "درصد پوشش باید عدد مثبت باشد (حداکثر 2 رقم اعشار)")]
         public decimal? SupplementaryCoveragePercent { get; set; }
 
         /// <summary>
-        /// سقف پرداخت بیمه تکمیلی
+        /// سقف پرداخت بیمه تکمیلی (ریال - بدون اعشار)
         /// </summary>
-        [Display(Name = "سقف پرداخت تکمیلی (تومان)")]
+        [Display(Name = "سقف پرداخت تکمیلی (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "سقف پرداخت نمی‌تواند منفی باشد.")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "سقف پرداخت باید عدد صحیح مثبت باشد")]
         public decimal? SupplementaryMaxPayment { get; set; }
 
         /// <summary>
-        /// فرانشیز بیمه تکمیلی
+        /// فرانشیز بیمه تکمیلی (ریال - بدون اعشار)
         /// </summary>
-        [Display(Name = "فرانشیز تکمیلی (تومان)")]
+        [Display(Name = "فرانشیز تکمیلی (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "فرانشیز تکمیلی نمی‌تواند منفی باشد.")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "فرانشیز تکمیلی باید عدد صحیح مثبت باشد")]
         public decimal? SupplementaryDeductible { get; set; }
 
         /// <summary>
-        /// حداقل پرداخت بیمار
+        /// حداقل پرداخت بیمار (ریال - بدون اعشار)
         /// </summary>
-        [Display(Name = "حداقل پرداخت بیمار (تومان)")]
+        [Display(Name = "حداقل پرداخت بیمار (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "حداقل پرداخت بیمار نمی‌تواند منفی باشد.")]
+        [RegularExpression(@"^\d+$", ErrorMessage = "حداقل پرداخت بیمار باید عدد صحیح مثبت باشد")]
         public decimal? MinPatientCopay { get; set; }
 
         /// <summary>
@@ -184,6 +191,11 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// نام طرح بیمه (برای نمایش)
         /// </summary>
         public string InsurancePlanName { get; set; }
+
+        /// <summary>
+        /// نام بیمه پایه (برای نمایش)
+        /// </summary>
+        public string PrimaryInsurancePlanName { get; set; }
 
         /// <summary>
         /// نام ارائه‌دهنده بیمه (برای نمایش)

@@ -10,6 +10,7 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Insurance;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 using Serilog;
 
@@ -32,15 +33,18 @@ namespace ClinicApp.Services.Insurance
     public class InsuranceProviderService : IInsuranceProviderService
     {
         private readonly IInsuranceProviderRepository _insuranceProviderRepository;
+        private readonly IInsurancePlanRepository _insurancePlanRepository;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
 
         public InsuranceProviderService(
             IInsuranceProviderRepository insuranceProviderRepository,
+            IInsurancePlanRepository insurancePlanRepository,
             ILogger logger,
             ICurrentUserService currentUserService)
         {
             _insuranceProviderRepository = insuranceProviderRepository ?? throw new ArgumentNullException(nameof(insuranceProviderRepository));
+            _insurancePlanRepository = insurancePlanRepository ?? throw new ArgumentNullException(nameof(insurancePlanRepository));
             _log = logger.ForContext<InsuranceProviderService>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
@@ -422,11 +426,34 @@ namespace ClinicApp.Services.Insurance
             {
                 _log.Debug("🔍 ANTI-BULLET: شروع دریافت ارائه‌دهندگان بیمه فعال از Repository");
                 
+                // 🚀 CRITICAL FIX: دریافت فقط ارائه‌دهندگان بیمه پایه
                 var providers = await _insuranceProviderRepository.GetActiveAsync();
                 
                 _log.Debug("🔍 ANTI-BULLET: دریافت ارائه‌دهندگان بیمه فعال از Repository موفق - تعداد: {Count}", providers.Count);
                 
-                var lookupItems = providers
+                // 🚀 CRITICAL FIX: فیلتر کردن فقط ارائه‌دهندگان بیمه پایه
+                // بررسی اینکه آیا این ارائه‌دهنده طرح‌های بیمه پایه دارد یا نه
+                var primaryProviders = new List<InsuranceProvider>();
+                
+                foreach (var provider in providers)
+                {
+                    // بررسی وجود طرح‌های بیمه پایه برای این ارائه‌دهنده
+                    var hasPrimaryPlans = await _insurancePlanRepository.HasPrimaryPlansAsync(provider.InsuranceProviderId);
+                    if (hasPrimaryPlans)
+                    {
+                        primaryProviders.Add(provider);
+                        _log.Debug("🔍 ANTI-BULLET: ارائه‌دهنده {ProviderName} دارای طرح‌های بیمه پایه است", provider.Name);
+                    }
+                    else
+                    {
+                        _log.Debug("🔍 ANTI-BULLET: ارائه‌دهنده {ProviderName} فاقد طرح‌های بیمه پایه است - حذف از لیست", provider.Name);
+                    }
+                }
+                
+                _log.Information("🔧 CRITICAL FIX: فیلتر ارائه‌دهندگان بیمه پایه - کل ارائه‌دهندگان: {TotalProviders}, ارائه‌دهندگان پایه: {PrimaryProviders}", 
+                    providers.Count, primaryProviders.Count);
+                
+                var lookupItems = primaryProviders
                     .Select(ConvertToLookupViewModel)
                     .Where(item => item != null)
                     .ToList();
@@ -438,9 +465,9 @@ namespace ClinicApp.Services.Insurance
                 return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(
                     lookupItems,
                     "ارائه‌دهندگان بیمه فعال با موفقیت دریافت شدند.",
- "GetActiveProvidersForLookup",
- _currentUserService.UserId,
- _currentUserService.UserName,
+                    "GetActiveProvidersForLookup",
+                    _currentUserService.UserId,
+                    _currentUserService.UserName,
                     securityLevel: SecurityLevel.Low);
             }
             catch (Exception ex)

@@ -196,9 +196,9 @@
                         <h6><i class="fas fa-info-circle me-2"></i>نحوه محاسبه بیمه تکمیلی:</h6>
                         <p class="mb-2">بیمه تکمیلی روی <strong>سهم باقی‌مانده بیمار</strong> پس از بیمه پایه اعمال می‌شود:</p>
                         <ul class="mb-0">
-                            <li><strong>مثال:</strong> خدمت 100,000 تومان، بیمه پایه <span id="examplePrimaryPercent">70%</span> → سهم بیمار <span id="examplePatientShare">30,000 تومان</span></li>
-                            <li><strong>بیمه تکمیلی <span id="exampleSupplementaryPercent">100%</span></strong> → پوشش کامل <span id="exampleSupplementaryCoverage">30,000 تومان</span> → پرداختی بیمار = <span id="exampleFinalShare">0 تومان</span></li>
-                            <li><strong>بیمه تکمیلی 50%</strong> → پوشش 15,000 تومان → پرداختی بیمار = 15,000 تومان</li>
+                            <li><strong>مثال:</strong> خدمت 1,000,000 ریال، بیمه پایه <span id="examplePrimaryPercent">70%</span> → سهم بیمار <span id="examplePatientShare">300,000 ریال</span></li>
+                            <li><strong>بیمه تکمیلی <span id="exampleSupplementaryPercent">100%</span></strong> → پوشش کامل <span id="exampleSupplementaryCoverage">300,000 ریال</span> → پرداختی بیمار = <span id="exampleFinalShare">0 ریال</span></li>
+                            <li><strong>بیمه تکمیلی 50%</strong> → پوشش 150,000 ریال → پرداختی بیمار = 150,000 ریال</li>
                         </ul>
                     </div>
                 </div>
@@ -209,23 +209,22 @@
                     @Html.HiddenFor(m => m.InsuranceTariffId)
                     @Html.HiddenFor(m => m.ServiceId)
 
-                    <!-- بخش انتخاب بیمه پایه -->
+                    <!-- بخش انتخاب بیمه پایه - READ-ONLY در ویرایش -->
                     <div class="row mb-4">
                         <div class="col-md-6">
                             <div class="form-group">
-                                @Html.LabelFor(m => m.PrimaryInsurancePlanId, "بیمه پایه *", new { @class = "required-field" })
-                                @if (Model.PrimaryInsurancePlans != null && Model.PrimaryInsurancePlans.Any())
-                                {
-                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(Model.PrimaryInsurancePlans ?? new List<SelectListItem>(), "Value", "Text"), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required", @id = "PrimaryInsurancePlanId", @aria_describedby = "primaryInsuranceHelp", @disabled = "disabled", @aria_readonly = "true" })
-                                    @Html.HiddenFor(m => m.PrimaryInsurancePlanId)
-                                }
-                                else
-                                {
-                                    <input type="text" class="form-control" value="—" readonly aria-readonly="true" aria-describedby="primaryInsuranceHelp" />
-                                    @Html.HiddenFor(m => m.PrimaryInsurancePlanId)
-                                }
-                                @Html.ValidationMessageFor(m => m.PrimaryInsurancePlanId, "", new { @class = "invalid-feedback" })
-                                <div class="form-help" id="primaryInsuranceHelp">بیمه پایه بیمار (تامین، نیروهای مسلح، و...)</div>
+                                @Html.LabelFor(m => m.PrimaryInsurancePlanId, "بیمه پایه", new { @class = "form-label" })
+                                <div class="form-control-plaintext bg-light p-3 rounded" style="border: 2px solid #e9ecef;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-lock text-muted me-2"></i>
+                                        <div>
+                                            <strong>@(Model?.PrimaryInsurancePlanName ?? "—")</strong>
+                                            <small class="text-muted d-block">در ویرایش قابل تغییر نیست</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                @Html.HiddenFor(m => m.PrimaryInsurancePlanId)
+                                <div class="form-help" id="primaryInsuranceHelp">بیمه پایه بیمار (در ویرایش قابل تغییر نیست)</div>
                                 
                                 <!-- نمایش اطلاعات بیمه پایه انتخاب شده -->
                                 <div id="primaryInsuranceInfo" class="alert alert-info mt-2" style="display: none;">
@@ -234,7 +233,7 @@
                                             <strong>درصد پوشش:</strong> <span id="primaryCoveragePercent">-</span>%
                             </div>
                                         <div class="col-md-6">
-                                            <strong>فرانشیز:</strong> <span id="primaryDeductible">-</span> تومان
+                                            <strong>فرانشیز:</strong> <span id="primaryDeductible">-</span> ریال
                             </div>
                                     </div>
                                 </div>
@@ -242,19 +241,18 @@
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                @Html.LabelFor(m => m.InsurancePlanId, "طرح بیمه تکمیلی *", new { @class = "required-field" })
-                                @if (Model.InsurancePlans != null && Model.InsurancePlans.Any())
-                                {
-                                    @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(Model.InsurancePlans, "Value", "Text"), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required", @id = "InsurancePlanId", @disabled = "disabled", @aria_readonly = "true" })
-                                    @Html.HiddenFor(m => m.InsurancePlanId)
-                                }
-                                else
-                                {
-                                    <input type="text" class="form-control" value="—" readonly aria-readonly="true" />
-                                    @Html.HiddenFor(m => m.InsurancePlanId)
-                                }
-                                @Html.ValidationMessageFor(m => m.InsurancePlanId, "", new { @class = "invalid-feedback" })
-                                <div class="form-help">طرح بیمه تکمیلی (VIP ملت، دانا، پارسیان تکمیلی)</div>
+                                @Html.LabelFor(m => m.InsurancePlanId, "طرح بیمه تکمیلی", new { @class = "form-label" })
+                                <div class="form-control-plaintext bg-light p-3 rounded" style="border: 2px solid #e9ecef;">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-lock text-muted me-2"></i>
+                                        <div>
+                                            <strong>@(Model?.InsurancePlanName ?? "—")</strong>
+                                            <small class="text-muted d-block">در ویرایش قابل تغییر نیست</small>
+                                        </div>
+                                    </div>
+                                </div>
+                                @Html.HiddenFor(m => m.InsurancePlanId)
+                                <div class="form-help">طرح بیمه تکمیلی (در ویرایش قابل تغییر نیست)</div>
                                 
                                 <!-- نمایش اطلاعات بیمه تکمیلی انتخاب شده -->
                                 <div id="supplementaryInsuranceInfo" class="alert alert-warning mt-2" style="display: none;">
@@ -263,7 +261,7 @@
                                             <strong>درصد پوشش:</strong> <span id="supplementaryCoveragePercent">-</span>%
                                 </div>
                                         <div class="col-md-6">
-                                            <strong>فرانشیز:</strong> <span id="supplementaryDeductible">-</span> تومان
+                                            <strong>فرانشیز:</strong> <span id="supplementaryDeductible">-</span> ریال
                                         </div>
                                     </div>
                                 </div>
@@ -306,16 +304,16 @@
                             <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
-                                @Html.LabelFor(m => m.TariffPrice, "قیمت تعرفه (تومان) *", new { @class = "required-field", @id = "tariffPriceLabel" })
-                                @Html.TextBoxFor(m => m.TariffPrice, new { @class = "form-control currency-input", @type = "text", @required = "required", @placeholder = "0.00", @id = "TariffPrice", @inputmode = "decimal", @aria_describedby = "tariffPriceHelp", @data_mask = "currency" })
+                                @Html.LabelFor(m => m.TariffPrice, "قیمت تعرفه (ریال) *", new { @class = "required-field", @id = "tariffPriceLabel" })
+                                @Html.TextBoxFor(m => m.TariffPrice, new { @class = "form-control currency-input", @type = "text", @required = "required", @placeholder = "0", @id = "TariffPrice", @inputmode = "numeric", @aria_describedby = "tariffPriceHelp", @data_mask = "currency" })
                                 @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "invalid-feedback" })
-                                <div class="form-help" id="tariffPriceHelp">قیمت کل خدمت به تومان</div>
+                                <div class="form-help" id="tariffPriceHelp">قیمت کل خدمت به ریال</div>
                             </div>
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
                                 @Html.LabelFor(m => m.PatientShare, "سهم بیمار پس از بیمه پایه (قبل از تکمیلی) *", new { @class = "required-field", @id = "patientShareLabel" })
-                                @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control currency-input", @type = "text", @required = "required", @placeholder = "0.00", @id = "PatientShare", @data_mask = "currency" })
+                                @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control currency-input", @type = "text", @required = "required", @placeholder = "0", @id = "PatientShare", @inputmode = "numeric", @data_mask = "currency" })
                                 @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">مبلغی که بیمار باید پرداخت کند</div>
                                 </div>
@@ -353,7 +351,7 @@
                             <div class="row">
                         <div class="col-md-4">
                             <div class="form-group">
-                                @Html.LabelFor(m => m.SupplementaryMaxPayment, "سقف پرداخت تکمیلی (تومان)")
+                                @Html.LabelFor(m => m.SupplementaryMaxPayment, "سقف پرداخت تکمیلی (ریال)")
                                 @Html.TextBoxFor(m => m.SupplementaryMaxPayment, new { @class = "form-control currency-input", @type = "text", @placeholder = "اختیاری", @id = "SupplementaryMaxPayment" })
                                 @Html.ValidationMessageFor(m => m.SupplementaryMaxPayment, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">حداکثر مبلغ پرداخت بیمه تکمیلی</div>
@@ -361,7 +359,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                @Html.LabelFor(m => m.SupplementaryDeductible, "فرانشیز تکمیلی (تومان)")
+                                @Html.LabelFor(m => m.SupplementaryDeductible, "فرانشیز تکمیلی (ریال)")
                                 @Html.TextBoxFor(m => m.SupplementaryDeductible, new { @class = "form-control currency-input", @type = "text", @placeholder = "اختیاری", @id = "SupplementaryDeductible" })
                                 @Html.ValidationMessageFor(m => m.SupplementaryDeductible, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">فرانشیز بیمه تکمیلی</div>
@@ -369,7 +367,7 @@
                         </div>
                         <div class="col-md-4">
                             <div class="form-group">
-                                @Html.LabelFor(m => m.MinPatientCopay, "حداقل پرداخت بیمار (تومان)")
+                                @Html.LabelFor(m => m.MinPatientCopay, "حداقل پرداخت بیمار (ریال)")
                                 @Html.TextBoxFor(m => m.MinPatientCopay, new { @class = "form-control currency-input", @type = "text", @placeholder = "اختیاری", @id = "MinPatientCopay" })
                                 @Html.ValidationMessageFor(m => m.MinPatientCopay, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">حداقل مبلغ پرداخت بیمار</div>
@@ -399,15 +397,15 @@
                                 <h6 class="text-primary">📊 اطلاعات کلی</h6>
                                 <div class="calculation-item">
                                     <span>قیمت کل خدمت:</span>
-                                    <span id="previewServiceAmount" dir="ltr">0 تومان</span>
+                                    <span id="previewServiceAmount" dir="ltr">0 ریال</span>
                                 </div>
                                 <div class="calculation-item">
                                     <span>فرانشیز بیمه پایه:</span>
-                                    <span id="previewPrimaryDeductible" dir="ltr">0 تومان</span>
+                                    <span id="previewPrimaryDeductible" dir="ltr">0 ریال</span>
                                 </div>
                                 <div class="calculation-item">
                                     <span>قابل پوشش پایه:</span>
-                                    <span id="previewPrimaryCoverableAmount" dir="ltr">0 تومان</span>
+                                    <span id="previewPrimaryCoverableAmount" dir="ltr">0 ریال</span>
                                 </div>
                             </div>
                             <div class="col-md-6">
@@ -418,11 +416,11 @@
                                 </div>
                                 <div class="calculation-item">
                                     <span>سهم بیمه پایه:</span>
-                                    <span id="previewPrimaryCoverage" dir="ltr">0 تومان</span>
+                                    <span id="previewPrimaryCoverage" dir="ltr">0 ریال</span>
                                 </div>
                                 <div class="calculation-item">
                                     <span>سهم باقی‌مانده بیمار:</span>
-                                    <span id="previewPatientShareFromPrimary" dir="ltr">0 تومان</span>
+                                    <span id="previewPatientShareFromPrimary" dir="ltr">0 ریال</span>
                                 </div>
                             </div>
                         </div>
@@ -435,14 +433,14 @@
                                 </div>
                                 <div class="calculation-item">
                                     <span>سهم بیمه تکمیلی:</span>
-                                    <span id="previewSupplementaryCoverage" dir="ltr">0 تومان</span>
+                                    <span id="previewSupplementaryCoverage" dir="ltr">0 ریال</span>
                                 </div>
                                     </div>
                             <div class="col-md-6">
                                 <h6 class="text-danger">💰 نتیجه نهایی</h6>
                                 <div class="calculation-item" style="font-weight: bold; font-size: 16px; color: #dc3545;">
                                     <span>سهم نهایی بیمار:</span>
-                                    <span id="previewFinalPatientShare" dir="ltr">0 تومان</span>
+                                    <span id="previewFinalPatientShare" dir="ltr">0 ریال</span>
                                 </div>
                             </div>
                         </div>
@@ -726,7 +724,7 @@
                     
                     if (selectedPlan) {
                         $('#primaryCoveragePercent').text(selectedPlan.CoveragePercent || '0');
-                        $('#primaryDeductible').text(((selectedPlan.Deductible || 0) / 10).toLocaleString() + ' تومان');
+                        $('#primaryDeductible').text((selectedPlan.Deductible || 0).toLocaleString() + ' ریال');
                         $('#primaryInsuranceInfo').show();
                         
                         console.log('🏥 MEDICAL: بیمه پایه انتخاب شد - CoveragePercent:', selectedPlan.CoveragePercent, 'Deductible:', selectedPlan.Deductible);
@@ -763,7 +761,7 @@
                     
                     if (selectedPlan) {
                         $('#supplementaryCoveragePercent').text(selectedPlan.CoveragePercent || '0');
-                        $('#supplementaryDeductible').text(((selectedPlan.Deductible || 0) / 10).toLocaleString() + ' تومان');
+                        $('#supplementaryDeductible').text((selectedPlan.Deductible || 0).toLocaleString() + ' ریال');
                         $('#supplementaryInsuranceInfo').show();
                         
                         console.log('🏥 MEDICAL: بیمه تکمیلی انتخاب شد - CoveragePercent:', selectedPlan.CoveragePercent, 'Deductible:', selectedPlan.Deductible);
@@ -774,26 +772,52 @@
             });
         }
 
-        // تابع یکدست برای پارس کردن مبالغ
+        // تابع یکدست برای پارس کردن مبالغ (بدون اعشار - ریال)
         function parseMoney(val) {
             if (!val) return 0;
+            
+            // تبدیل اعداد فارسی و عربی به انگلیسی
             const fa2en = s => s.replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
                               .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
-            const n = fa2en(val).replace(/[^\d.-]/g, '');
-            return Number(n || 0);
+            
+            // حذف کاما و فاصله (بدون نقطه اعشار)
+            const cleaned = fa2en(val).replace(/[^\d]/g, '');
+            
+            const result = Number(cleaned || 0);
+            
+            // بررسی محدودیت‌های عددی
+            if (isNaN(result)) {
+                console.warn('🔧 MEDICAL: عدد نامعتبر:', val);
+                return 0;
+            }
+            
+            if (result < 0) {
+                console.warn('🔧 MEDICAL: عدد منفی:', val);
+                return 0;
+            }
+            
+            // بازگرداندن عدد صحیح (ریال)
+            return Math.round(result);
         }
         
         // Helper functions for currency conversion
-        const toRial = t => Math.round(t * 10);
-        const toToman = r => (r / 10);
+        // 🔧 CRITICAL FIX: همه چیز ریال است - بدون تبدیل
+        const toRial = t => t; // مستقیماً ریال
+        const toToman = r => r; // مستقیماً ریال
+        
+        // تابع فرمت کردن مبالغ (بدون اعشار)
+        function formatCurrency(value) {
+            if (!value) return '0';
+            const num = parseMoney(value);
+            return num.toString();
+        }
 
         function updateCalculationPreview() {
             try {
-                const serviceAmountToman = parseMoney($('#TariffPrice').val());
-                const serviceAmount = toRial(serviceAmountToman);
+                const serviceAmount = parseMoney($('#TariffPrice').val()); // مستقیماً ریال
                 const supplementaryPercent = parseFloat($('#SupplementaryCoveragePercent').val()) || 0;
                 
-                console.log('🏥 MEDICAL: محاسبه پیش‌نمایش - ServiceAmount (Toman):', serviceAmountToman, 'ServiceAmount (Rial):', serviceAmount, 'SupplementaryPercent:', supplementaryPercent);
+                console.log('🏥 MEDICAL: محاسبه پیش‌نمایش - ServiceAmount (Rial):', serviceAmount, 'SupplementaryPercent:', supplementaryPercent);
                 
                 var primaryPlans = window.primaryInsurancePlans || [];
                 var selectedPrimaryPlanId = $('#PrimaryInsurancePlanId').val();
@@ -817,13 +841,14 @@
                 // محاسبه بیمه پایه
                 let primaryCoverage = 0;
                 if (selectedPrimaryPlan) {
-                    primaryCoverage = coverableAmount * (selectedPrimaryPlan.CoveragePercent || 0) / 100;
+                    primaryCoverage = coverableAmount * (selectedPrimaryPlan.CoveragePercent || 70) / 100;
                 } else {
-                    primaryCoverage = 0;
+                    // fallback به 70% در صورت عدم انتخاب
+                    primaryCoverage = coverableAmount * 70 / 100;
                 }
                 
                 // محاسبه صحیح سهم بیمار از بیمه اصلی
-                const patientShareFromPrimary = Math.max(0, serviceAmount - primaryCoverage);
+                const patientShareFromPrimary = Math.max(0, coverableAmount - primaryCoverage);
                 
                 // محاسبه بیمه تکمیلی (درصدی از سهم بیمار باقی‌مانده)
                 const supplementaryCoverage = patientShareFromPrimary * (supplementaryPercent / 100);
@@ -836,16 +861,16 @@
                 
                 console.log('🏥 MEDICAL: محاسبات صحیح بیمه تکمیلی - ServiceAmount:', serviceAmount, 'PrimaryDeductible:', primaryDeductible, 'CoverableAmount:', coverableAmount, 'PrimaryCoverage:', primaryCoverage, 'PatientShareFromPrimary (R):', patientShareFromPrimary, 'SupplementaryCoverage (s% of R):', supplementaryCoverage, 'FinalPatientShare:', finalPatientShare);
                 
-                // به‌روزرسانی پیش‌نمایش با منطق جدید بیمه تکمیلی - نمایش در تومان
-                $('#previewServiceAmount').text(serviceAmountToman.toLocaleString() + ' تومان');
-                $('#previewPrimaryDeductible').text((primaryDeductible / 10).toLocaleString() + ' تومان');
-                $('#previewPrimaryCoverableAmount').text((coverableAmount / 10).toLocaleString() + ' تومان');
+                // به‌روزرسانی پیش‌نمایش با منطق جدید بیمه تکمیلی - نمایش در ریال
+                $('#previewServiceAmount').text(serviceAmount.toLocaleString() + ' ریال');
+                $('#previewPrimaryDeductible').text(primaryDeductible.toLocaleString() + ' ریال');
+                $('#previewPrimaryCoverableAmount').text(coverableAmount.toLocaleString() + ' ریال');
                 $('#previewPrimaryCoveragePercent').text((selectedPrimaryPlan ? selectedPrimaryPlan.CoveragePercent || 70 : 70) + '%');
-                $('#previewPrimaryCoverage').text((primaryCoverage / 10).toLocaleString() + ' تومان');
-                $('#previewPatientShareFromPrimary').text((patientShareFromPrimary / 10).toLocaleString() + ' تومان');
+                $('#previewPrimaryCoverage').text(primaryCoverage.toLocaleString() + ' ریال');
+                $('#previewPatientShareFromPrimary').text(patientShareFromPrimary.toLocaleString() + ' ریال');
                 $('#previewSupplementaryPercent').text(supplementaryPercent + '%');
-                $('#previewSupplementaryCoverage').text((supplementaryCoverage / 10).toLocaleString() + ' تومان');
-                $('#previewFinalPatientShare').text((finalPatientShare / 10).toLocaleString() + ' تومان');
+                $('#previewSupplementaryCoverage').text(supplementaryCoverage.toLocaleString() + ' ریال');
+                $('#previewFinalPatientShare').text(finalPatientShare.toLocaleString() + ' ریال');
             } catch (error) {
                 console.error('🏥 MEDICAL: خطا در محاسبه پیش‌نمایش:', error);
                 $('#calculationError').html('<div class="alert alert-danger">خطا در محاسبه: ' + error.message + '</div>').show();
@@ -883,10 +908,13 @@
                         const numValue = parseMoney(value);
                         if (isNaN(numValue) || numValue < 0) {
                             isValid = false;
-                            errorMessage = 'قیمت تعرفه باید عدد مثبت باشد';
-                        } else if (numValue > 10000000) {
+                            errorMessage = 'قیمت تعرفه باید عدد صحیح مثبت باشد';
+                        } else if (numValue > 1000000000) { // 100 میلیون ریال
                             isValid = false;
-                            errorMessage = 'قیمت تعرفه نمی‌تواند بیش از 10 میلیون تومان باشد';
+                            errorMessage = 'قیمت تعرفه نمی‌تواند بیش از 100 میلیون ریال باشد';
+                        } else if (!/^\d+$/.test(value.replace(/[^\d]/g, ''))) {
+                            isValid = false;
+                            errorMessage = 'قیمت تعرفه باید عدد صحیح مثبت باشد';
                         }
                     }
                     break;
@@ -896,16 +924,22 @@
                         const numValue = parseMoney(value);
                         if (isNaN(numValue) || numValue < 0) {
                             isValid = false;
-                            errorMessage = 'مبلغ باید عدد مثبت باشد';
+                            errorMessage = 'مبلغ باید عدد صحیح مثبت باشد';
+                        } else if (!/^\d+$/.test(value.replace(/[^\d]/g, ''))) {
+                            isValid = false;
+                            errorMessage = 'مبلغ باید عدد صحیح مثبت باشد';
                         }
                     }
                     break;
                 case 'SupplementaryCoveragePercent':
                     if (value) {
-                        const numValue = parseMoney(value);
+                        const numValue = parseFloat(value);
                         if (isNaN(numValue) || numValue < 0 || numValue > 100) {
                             isValid = false;
                             errorMessage = 'درصد پوشش باید بین 0 تا 100 باشد';
+                        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
+                            isValid = false;
+                            errorMessage = 'درصد پوشش باید عدد مثبت باشد (حداکثر 2 رقم اعشار)';
                         }
                     }
                     break;
@@ -945,11 +979,12 @@
             let isValid = true;
             let errorMessages = [];
             
-            console.log('🏥 MEDICAL: Starting form validation');
+            console.log('🏥 MEDICAL EDIT: شروع اعتبارسنجی فرم ویرایش');
             
             $('.form-control').removeClass('is-valid is-invalid');
             $('.invalid-feedback').remove();
             
+            // 🔧 BULLETPROOF: اعتبارسنجی فیلدهای اجباری
             $('.form-control[required]').each(function() {
                 if (!validateField($(this))) {
                     isValid = false;
@@ -959,16 +994,21 @@
                 }
             });
             
+            // 🔧 BULLETPROOF: دریافت مقادیر با اعتبارسنجی
             const tariffPrice = parseMoney($('#TariffPrice').val());
             const patientShare = parseMoney($('#PatientShare').val());
             const insurerShare = parseMoney($('#InsurerShare').val());
             const coveragePercent = parseFloat($('#SupplementaryCoveragePercent').val()) || 0;
+            const maxPayment = parseMoney($('#SupplementaryMaxPayment').val()) || 0;
+            const deductible = parseMoney($('#SupplementaryDeductible').val()) || 0;
+            const minPatientCopay = parseMoney($('#MinPatientCopay').val()) || 0;
             const primaryPlanId = $('#PrimaryInsurancePlanId').val();
             const supplementaryPlanId = $('#InsurancePlanId').val();
             const serviceId = $('#ServiceId').val();
             
-            console.log('🏥 MEDICAL: Validation values - ServiceId:', serviceId, 'PrimaryPlanId:', primaryPlanId, 'SupplementaryPlanId:', supplementaryPlanId);
+            console.log('🏥 MEDICAL EDIT: مقادیر اعتبارسنجی - ServiceId:', serviceId, 'PrimaryPlanId:', primaryPlanId, 'SupplementaryPlanId:', supplementaryPlanId);
             
+            // 🔧 BULLETPROOF: اعتبارسنجی مقادیر کلیدی
             if (!primaryPlanId) {
                 errorMessages.push('انتخاب بیمه پایه الزامی است');
                 isValid = false;
@@ -992,29 +1032,68 @@
                 isValid = false;
             }
             
+            // 🔧 BULLETPROOF: اعتبارسنجی درصد پوشش
             if (coveragePercent < 0 || coveragePercent > 100) {
                 errorMessages.push('درصد پوشش باید بین 0 تا 100 باشد');
+                $('#SupplementaryCoveragePercent').addClass('is-invalid');
                 isValid = false;
+            } else {
+                $('#SupplementaryCoveragePercent').removeClass('is-invalid');
             }
             
-            if (patientShare < 0 || insurerShare < 0) {
-                errorMessages.push('مبالغ سهم بیمار و بیمه نمی‌تواند منفی باشد');
+            // 🔧 BULLETPROOF: اعتبارسنجی سقف پرداخت
+            if (maxPayment < 0) {
+                errorMessages.push('سقف پرداخت نمی‌تواند منفی باشد');
+                $('#SupplementaryMaxPayment').addClass('is-invalid');
                 isValid = false;
+            } else {
+                $('#SupplementaryMaxPayment').removeClass('is-invalid');
             }
             
-            const totalCoverage = patientShare + insurerShare;
-            if (totalCoverage > tariffPrice * 1.1) {
-                errorMessages.push('مجموع سهم بیمار و بیمه نمی‌تواند بیش از 110% قیمت تعرفه باشد');
+            // 🔧 BULLETPROOF: اعتبارسنجی فرانشیز
+            if (deductible < 0) {
+                errorMessages.push('فرانشیز نمی‌تواند منفی باشد');
+                $('#SupplementaryDeductible').addClass('is-invalid');
                 isValid = false;
+            } else {
+                $('#SupplementaryDeductible').removeClass('is-invalid');
             }
             
-            if (patientShare + insurerShare > tariffPrice) {
-                errorMessages.push('مجموع سهم بیمار و بیمه نمی‌تواند بیشتر از قیمت تعرفه باشد');
+            // 🔧 BULLETPROOF: اعتبارسنجی حداقل پرداخت بیمار
+            if (minPatientCopay < 0) {
+                errorMessages.push('حداقل پرداخت بیمار نمی‌تواند منفی باشد');
+                $('#MinPatientCopay').addClass('is-invalid');
                 isValid = false;
+            } else {
+                $('#MinPatientCopay').removeClass('is-invalid');
             }
             
+            // 🔧 BULLETPROOF: اعتبارسنجی سهم بیمار
             if (patientShare < 0) {
                 errorMessages.push('سهم بیمار نمی‌تواند منفی باشد');
+                $('#PatientShare').addClass('is-invalid');
+                isValid = false;
+            } else if (patientShare > tariffPrice) {
+                errorMessages.push('سهم بیمار نمی‌تواند بیشتر از قیمت تعرفه باشد');
+                $('#PatientShare').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#PatientShare').removeClass('is-invalid');
+            }
+            
+            // 🔧 BULLETPROOF: اعتبارسنجی سهم بیمه (باید 0 باشد برای بیمه تکمیلی)
+            if (insurerShare !== 0) {
+                errorMessages.push('سهم بیمه برای بیمه تکمیلی باید صفر باشد');
+                $('#InsurerShare').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#InsurerShare').removeClass('is-invalid');
+            }
+            
+            // 🔧 BULLETPROOF: اعتبارسنجی منطق بیمه تکمیلی
+            const totalCoverage = patientShare + insurerShare;
+            if (totalCoverage > tariffPrice) {
+                errorMessages.push('مجموع سهم بیمار و بیمه نمی‌تواند بیشتر از قیمت تعرفه باشد');
                 isValid = false;
             }
             
@@ -1298,22 +1377,85 @@
                     });
                 });
                 
-                // Form submission - normalize currency values and convert Toman to Rial
+                // 🔧 CRITICAL FIX: حذف تبدیل ارز - همه چیز ریال است
                 $('#editTariffForm').on('submit', function() {
-                    function normalizeCurrency(selector) {
+                    function normalizeCurrency(selector, fieldName) {
                         var $el = $(selector);
                         if ($el.length === 0) return;
-                        var rawValue = $el.data('raw-value') || $el.val().replace(/[^\d.-]/g, '');
+                        var rawValue = $el.data('raw-value') || $el.val().replace(/[^\d]/g, '');
                         if (!rawValue) { $el.val(''); return; }
-                        var numericValue = parseFloat(rawValue) || 0;
-                        var rialValue = Math.round(numericValue * 10);
+                        var numericValue = parseInt(rawValue) || 0;
+                        
+                        // 🔧 CRITICAL FIX: مستقیماً ریال - بدون تبدیل
+                        var rialValue;
+                        
+                        if (fieldName === 'TariffPrice') {
+                            // TariffPrice: مستقیماً ریال (بدون تبدیل)
+                            rialValue = numericValue;
+                            console.log('🏥 MEDICAL EDIT: TariffPrice - Rial:', rialValue);
+                        } else if (fieldName === 'PatientShare') {
+                            // PatientShare: مستقیماً ریال (بدون تبدیل)
+                            rialValue = numericValue;
+                            console.log('🏥 MEDICAL EDIT: PatientShare - Rial:', rialValue);
+                        } else if (fieldName === 'InsurerShare') {
+                            // InsurerShare: برای بیمه تکمیلی همیشه 0
+                            rialValue = 0;
+                            console.log('🏥 MEDICAL EDIT: InsurerShare set to 0 for supplementary insurance');
+                        } else {
+                            // سایر فیلدها: مستقیماً ریال (بدون تبدیل)
+                            rialValue = numericValue;
+                            console.log('🏥 MEDICAL EDIT: Other field - Rial:', rialValue);
+                        }
+                        
                         $el.val(rialValue);
                     }
-                    normalizeCurrency('#TariffPrice');
-                    normalizeCurrency('#PatientShare');
-                    normalizeCurrency('#SupplementaryMaxPayment');
-                    normalizeCurrency('#SupplementaryDeductible');
-                    normalizeCurrency('#MinPatientCopay');
+                    
+                // 🔧 BULLETPROOF: Performance Monitoring
+                var formStartTime = performance.now();
+                console.log('🏥 MEDICAL EDIT: شروع پردازش فرم - Time:', formStartTime);
+                
+                // 🔧 BULLETPROOF: تست سناریوهای خاص قبل از ارسال
+                console.log('🏥 MEDICAL EDIT: تست سناریوهای خاص');
+                
+                // تست 1: بررسی مقادیر منفی
+                var tariffPrice = parseFloat($('#TariffPrice').val()) || 0;
+                var patientShare = parseFloat($('#PatientShare').val()) || 0;
+                var insurerShare = parseFloat($('#InsurerShare').val()) || 0;
+                
+                if (tariffPrice < 0 || patientShare < 0 || insurerShare < 0) {
+                    console.error('🏥 MEDICAL EDIT: مقادیر منفی یافت شد');
+                    alert('مقادیر نمی‌توانند منفی باشند');
+                    return false;
+                }
+                
+                // تست 2: بررسی منطق بیمه تکمیلی
+                if (insurerShare !== 0) {
+                    console.error('🏥 MEDICAL EDIT: سهم بیمه برای بیمه تکمیلی باید 0 باشد');
+                    alert('سهم بیمه برای بیمه تکمیلی باید صفر باشد');
+                    return false;
+                }
+                
+                // تست 3: بررسی سهم بیمار
+                if (patientShare > tariffPrice) {
+                    console.error('🏥 MEDICAL EDIT: سهم بیمار بیشتر از قیمت تعرفه');
+                    alert('سهم بیمار نمی‌تواند بیشتر از قیمت تعرفه باشد');
+                    return false;
+                }
+                
+                console.log('🏥 MEDICAL EDIT: تمام تست‌ها موفق');
+                
+                // 🔧 BULLETPROOF: Performance Logging
+                var formEndTime = performance.now();
+                var formDuration = formEndTime - formStartTime;
+                console.log('🏥 MEDICAL EDIT: پردازش فرم تکمیل شد - Duration:', formDuration.toFixed(2), 'ms');
+                
+                // 🔧 CRITICAL FIX: تبدیل صحیح فیلدها با تشخیص نوع
+                normalizeCurrency('#TariffPrice', 'TariffPrice');
+                normalizeCurrency('#PatientShare', 'PatientShare');
+                normalizeCurrency('#InsurerShare', 'InsurerShare');
+                normalizeCurrency('#SupplementaryMaxPayment', 'SupplementaryMaxPayment');
+                normalizeCurrency('#SupplementaryDeductible', 'SupplementaryDeductible');
+                normalizeCurrency('#MinPatientCopay', 'MinPatientCopay');
                 });
             } catch (error) {
                 console.warn('خطا در مقداردهی اولیه Currency Input Mask:', error);

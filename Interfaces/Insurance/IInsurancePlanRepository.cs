@@ -101,6 +101,13 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>درست اگر طرح بیمه وجود داشته باشد</returns>
         Task<bool> DoesExistAsync(int id);
 
+        /// <summary>
+        /// بررسی وجود طرح‌های بیمه پایه برای ارائه‌دهنده
+        /// </summary>
+        /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>
+        /// <returns>درست اگر ارائه‌دهنده طرح‌های بیمه پایه داشته باشد</returns>
+        Task<bool> HasPrimaryPlansAsync(int providerId);
+
         #endregion
 
         #region Search Operations

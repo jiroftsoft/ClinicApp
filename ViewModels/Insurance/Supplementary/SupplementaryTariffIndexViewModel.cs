@@ -43,6 +43,12 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public string InsurancePlanName { get; set; }
 
         /// <summary>
+        /// نام بیمه پایه
+        /// </summary>
+        [Display(Name = "بیمه پایه")]
+        public string PrimaryInsurancePlanName { get; set; }
+
+        /// <summary>
         /// نام ارائه‌دهنده بیمه
         /// </summary>
         [Display(Name = "ارائه‌دهنده بیمه")]

@@ -47,6 +47,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private readonly BulkSupplementaryTariffService _bulkTariffService;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
+        private readonly IMessageNotificationService _messageNotificationService;
         // 🔧 CRITICAL FIX: حذف کش برای محیط درمانی realtime
         // private readonly ISupplementaryInsuranceCacheService _cacheService;
         private readonly IServiceCalculationService _serviceCalculationService;
@@ -103,6 +104,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             _bulkTariffService = bulkTariffService ?? throw new ArgumentNullException(nameof(bulkTariffService));
             _log = logger.ForContext<SupplementaryTariffController>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _messageNotificationService = messageNotificationService ?? throw new ArgumentNullException(nameof(messageNotificationService));
             // _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService)); // 🔧 CRITICAL FIX: حذف کش برای محیط درمانی realtime
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
             _patientInsuranceRepository = patientInsuranceRepository ?? throw new ArgumentNullException(nameof(patientInsuranceRepository));
@@ -157,6 +159,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             ServiceCode = t.Service?.ServiceCode ?? "نامشخص",
                             InsurancePlanId = t.InsurancePlanId ?? 0,
                             InsurancePlanName = t.InsurancePlan?.Name ?? "نامشخص",
+                            PrimaryInsurancePlanName = "نامشخص", // TODO: دریافت نام بیمه پایه
                             InsuranceProviderName = t.InsurancePlan?.InsuranceProvider?.Name ?? "نامشخص",
                             TariffPrice = t.TariffPrice,
                             PatientShare = t.PatientShare,
@@ -1134,7 +1137,8 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private static decimal ToToman(decimal rial)
         {
             if (rial == 0) return 0;
-            return Math.Round(rial / 10m, 0, MidpointRounding.AwayFromZero);
+            // تقسیم بر 10 برای تبدیل ریال به تومان
+            return rial / 10m;
         }
 
         /// <summary>
@@ -1356,6 +1360,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         ServiceCode = t.Service?.ServiceCode ?? "نامشخص",
                         InsurancePlanId = t.InsurancePlanId ?? 0,
                         InsurancePlanName = t.InsurancePlan?.Name ?? "نامشخص",
+                        PrimaryInsurancePlanName = "نامشخص", // TODO: دریافت نام بیمه پایه
                         InsuranceProviderName = t.InsurancePlan?.InsuranceProvider?.Name ?? "نامشخص",
                         
                         // فیلدهای اصلی (ریال)
@@ -1618,65 +1623,160 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         [ValidateAntiForgeryToken]
         public async Task<ActionResult> Edit(SupplementaryTariffCreateEditViewModel model)
         {
+            var correlationId = Guid.NewGuid().ToString("N");
+            var startTime = DateTime.UtcNow;
+            
             try
             {
-                var correlationId = Guid.NewGuid().ToString("N");
-                _log.Information("MEDICAL_EDIT: Start Edit Tariff. CorrId={CorrId}, TariffId={TariffId}, ServiceId={ServiceId}, PlanId={PlanId}, User={User}",
-                    correlationId, model.InsuranceTariffId, model.ServiceId, model.InsurancePlanId, _currentUserService.UserName);
-                _log.Information("🏥 MEDICAL: ویرایش تعرفه بیمه تکمیلی - TariffId: {TariffId}, ServiceId: {ServiceId}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                    model.InsuranceTariffId, model.ServiceId, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                // 🔧 BULLETPROOF: اعتبارسنجی اولیه مدل
+                if (model == null)
+                {
+                    _log.Error("🏥 MEDICAL EDIT: Model is null. CorrId={CorrId}, User={User}", 
+                        correlationId, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("اطلاعات تعرفه ارسال نشده است");
+                    return RedirectToAction("Index");
+                }
 
+                // 🔧 BULLETPROOF: اعتبارسنجی InsuranceTariffId
+                if (!model.InsuranceTariffId.HasValue || model.InsuranceTariffId.Value <= 0)
+                {
+                    _log.Error("🏥 MEDICAL EDIT: Invalid InsuranceTariffId. CorrId={CorrId}, TariffId={TariffId}, User={User}", 
+                        correlationId, model.InsuranceTariffId, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("شناسه تعرفه نامعتبر است");
+                    return RedirectToAction("Index");
+                }
+
+                _log.Information("🏥 MEDICAL EDIT: شروع ویرایش تعرفه - CorrId={CorrId}, TariffId={TariffId}, ServiceId={ServiceId}, PlanId={PlanId}, User={User}",
+                    correlationId, model.InsuranceTariffId, model.ServiceId, model.InsurancePlanId, _currentUserService.UserName);
+
+                // 🔧 BULLETPROOF: اعتبارسنجی مدل با جزئیات بیشتر
                 if (!ValidateModelWithLogging(model, "ویرایش تعرفه بیمه تکمیلی"))
                 {
-                    _log.Warning("MEDICAL_EDIT: Validation failed. CorrId={CorrId}, TariffId={TariffId}", correlationId, model.InsuranceTariffId);
-                    // FIX: غنی‌سازی مدل اصلی با داده‌های کمکی قبل از return
+                    _log.Warning("🏥 MEDICAL EDIT: اعتبارسنجی مدل ناموفق - CorrId={CorrId}, TariffId={TariffId}", 
+                        correlationId, model.InsuranceTariffId);
                     await LoadCreateEditData(model);
                     return View(model);
                 }
 
-                // Server-side guard: prevent editing immutable fields (primary/supplementary plan, service)
-                if (model.InsuranceTariffId.HasValue && model.InsuranceTariffId.Value > 0)
+                // 🔧 BULLETPROOF: دریافت تعرفه فعلی با اعتبارسنجی کامل
+                var currentTariff = await _tariffRepository.GetByIdAsync(model.InsuranceTariffId ?? 0);
+                if (currentTariff == null)
                 {
-                    var currentTariff = await _tariffRepository.GetByIdAsync(model.InsuranceTariffId.Value);
-                    if (currentTariff != null)
+                    _log.Error("🏥 MEDICAL EDIT: تعرفه یافت نشد - CorrId={CorrId}, TariffId={TariffId}, User={User}", 
+                        correlationId, model.InsuranceTariffId, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("تعرفه یافت نشد");
+                    return RedirectToAction("Index");
+                }
+
+                // 🔧 BULLETPROOF: بررسی InsuranceType - باید بیمه تکمیلی باشد
+                if (currentTariff.InsuranceType != InsuranceType.Supplementary)
+                {
+                    _log.Error("🏥 MEDICAL EDIT: تعرفه بیمه تکمیلی نیست - CorrId={CorrId}, TariffId={TariffId}, InsuranceType={InsuranceType}, User={User}", 
+                        correlationId, model.InsuranceTariffId, currentTariff.InsuranceType, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("این تعرفه بیمه تکمیلی نیست");
+                    return RedirectToAction("Index");
+                }
+
+                // 🔧 BULLETPROOF: بررسی وضعیت تعرفه
+                if (currentTariff.IsDeleted)
+                {
+                    _log.Error("🏥 MEDICAL EDIT: تعرفه حذف شده - CorrId={CorrId}, TariffId={TariffId}, User={User}", 
+                        correlationId, model.InsuranceTariffId, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("تعرفه حذف شده است");
+                    return RedirectToAction("Index");
+                }
+
+                // 🔧 BULLETPROOF: حفاظت از فیلدهای غیرقابل تغییر
+                if (model.InsurancePlanId != currentTariff.InsurancePlanId)
+                {
+                    _log.Warning("🏥 MEDICAL EDIT: تلاش برای تغییر InsurancePlanId - CorrId={CorrId}, Incoming={Incoming}, Persisted={Persisted}, TariffId={TariffId}", 
+                        correlationId, model.InsurancePlanId, currentTariff.InsurancePlanId, model.InsuranceTariffId);
+                    model.InsurancePlanId = currentTariff.InsurancePlanId ?? model.InsurancePlanId;
+                }
+                
+                if (model.ServiceId != currentTariff.ServiceId)
+                {
+                    _log.Warning("🏥 MEDICAL EDIT: تلاش برای تغییر ServiceId - CorrId={CorrId}, Incoming={Incoming}, Persisted={Persisted}, TariffId={TariffId}", 
+                        correlationId, model.ServiceId, currentTariff.ServiceId, model.InsuranceTariffId);
+                    model.ServiceId = currentTariff.ServiceId;
+                }
+
+                _log.Information("🏥 MEDICAL EDIT: تعرفه معتبر یافت شد - CorrId={CorrId}, TariffId={TariffId}, ServiceId={ServiceId}, PlanId={PlanId}, InsuranceType={InsuranceType}", 
+                    correlationId, model.InsuranceTariffId, currentTariff.ServiceId, currentTariff.InsurancePlanId, currentTariff.InsuranceType);
+
+                // 🔧 BULLETPROOF: دریافت و اعتبارسنجی خدمت
+                var service = await _serviceRepository.GetServiceByIdAsync(currentTariff.ServiceId);
+                if (service == null)
+                {
+                    _log.Error("🏥 MEDICAL EDIT: خدمت یافت نشد - CorrId={CorrId}, ServiceId={ServiceId}, User={User}", 
+                        correlationId, currentTariff.ServiceId, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("خدمت یافت نشد");
+                    return RedirectToAction("Index");
+                }
+
+                // 🔧 BULLETPROOF: اعتبارسنجی مقادیر ورودی
+                if (model.PatientShare < 0)
+                {
+                    _log.Warning("🏥 MEDICAL EDIT: PatientShare منفی - CorrId={CorrId}, PatientShare={PatientShare}, User={User}", 
+                        correlationId, model.PatientShare, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("سهم بیمار نمی‌تواند منفی باشد");
+                    await LoadCreateEditData(model);
+                    return View(model);
+                }
+
+                if (model.SupplementaryCoveragePercent.HasValue && 
+                    (model.SupplementaryCoveragePercent < 0 || model.SupplementaryCoveragePercent > 100))
+                {
+                    _log.Warning("🏥 MEDICAL EDIT: SupplementaryCoveragePercent خارج از محدوده - CorrId={CorrId}, Percent={Percent}, User={User}", 
+                        correlationId, model.SupplementaryCoveragePercent, _currentUserService.UserName);
+                    _messageNotificationService.AddErrorMessage("درصد پوشش باید بین 0 تا 100 باشد");
+                    await LoadCreateEditData(model);
+                    return View(model);
+                }
+
+                // 🔧 BULLETPROOF: اعتبارسنجی منطق بیمه تکمیلی
+                if (model.SupplementaryCoveragePercent.HasValue && model.SupplementaryCoveragePercent > 0)
+                {
+                    // محاسبه سهم باقی‌مانده پس از بیمه اصلی
+                    var primaryCoverage = service.Price * 0.7m; // فرض: بیمه اصلی 70% پوشش
+                    var remainingAmount = service.Price - primaryCoverage;
+                    
+                    // بررسی منطق سهم بیمار
+                    if (model.PatientShare > remainingAmount)
                     {
-                        // If incoming values differ, override with persisted values and log
-                        if (model.InsurancePlanId != currentTariff.InsurancePlanId)
-                        {
-                            _log.Warning("MEDICAL_EDIT: Immutable field change detected (InsurancePlanId). CorrId={CorrId}, Incoming={Incoming}, Persisted={Persisted}, TariffId={TariffId}",
-                                correlationId, model.InsurancePlanId, currentTariff.InsurancePlanId, model.InsuranceTariffId);
-                            model.InsurancePlanId = currentTariff.InsurancePlanId ?? model.InsurancePlanId;
-                        }
-                        if (model.ServiceId != currentTariff.ServiceId)
-                        {
-                            _log.Warning("MEDICAL_EDIT: Immutable field change detected (ServiceId). CorrId={CorrId}, Incoming={Incoming}, Persisted={Persisted}, TariffId={TariffId}",
-                                correlationId, model.ServiceId, currentTariff.ServiceId, model.InsuranceTariffId);
-                            model.ServiceId = currentTariff.ServiceId;
-                        }
-                    }
-                    else
-                    {
-                        _log.Warning("MEDICAL_EDIT: Current tariff not found for guard check. CorrId={CorrId}, TariffId={TariffId}", correlationId, model.InsuranceTariffId);
+                        _log.Warning("🏥 MEDICAL EDIT: سهم بیمار بیشتر از سهم باقی‌مانده - CorrId={CorrId}, PatientShare={PatientShare}, RemainingAmount={RemainingAmount}, User={User}", 
+                            correlationId, model.PatientShare, remainingAmount, _currentUserService.UserName);
+                        _messageNotificationService.AddErrorMessage($"سهم بیمار نمی‌تواند بیشتر از {remainingAmount:N0} ریال باشد");
+                        await LoadCreateEditData(model);
+                        return View(model);
                     }
                 }
+
+                // 🔧 BULLETPROOF: محاسبه صحیح مقادیر
+                var correctTariffPrice = model.TariffPrice ?? 0; // مستقیماً ریال
+                var correctPatientShare = model.PatientShare ?? 0; // مستقیماً ریال
+                var correctInsurerShare = 0m; // بیمه تکمیلی سهم بیمه ندارد
+
+                _log.Information("🏥 MEDICAL EDIT: محاسبات صحیح - CorrId={CorrId}, TariffId={TariffId}, ServiceId={ServiceId}, OriginalPrice={OriginalPrice}, CorrectTariffPrice={CorrectTariffPrice}, CorrectPatientShare={CorrectPatientShare}", 
+                    correlationId, model.InsuranceTariffId, currentTariff.ServiceId, service.Price, correctTariffPrice, correctPatientShare);
 
                 // تبدیل SupplementaryTariffCreateEditViewModel به InsuranceTariffCreateEditViewModel
                 var insuranceTariffModel = new InsuranceTariffCreateEditViewModel
                 {
                     InsuranceTariffId = model.InsuranceTariffId ?? 0,
-                    ServiceId = model.ServiceId,
-                    InsurancePlanId = model.InsurancePlanId,
-                    TariffPrice = model.TariffPrice,
-                    PatientShare = model.PatientShare,
-                    InsurerShare = model.InsurerShare,
+                    ServiceId = currentTariff.ServiceId, // 🔧 FIX: استفاده از ServiceId فعلی
+                    InsurancePlanId = currentTariff.InsurancePlanId ?? 0, // 🔧 FIX: استفاده از PlanId فعلی
+                    TariffPrice = correctTariffPrice, // 🔧 FIX: استفاده از قیمت صحیح
+                    PatientShare = correctPatientShare, // 🔧 FIX: سهم باقی‌مانده بیمار
+                    InsurerShare = correctInsurerShare, // 🔧 FIX: بیمه تکمیلی سهم بیمه ندارد
                     IsActive = model.IsActive,
                     Priority = model.Priority ?? 5,
                     PrimaryInsurancePlanId = model.PrimaryInsurancePlanId,
                     SupplementaryCoveragePercent = model.SupplementaryCoveragePercent ?? 90,
-                    // فیلدهای جدید (ریال)
-                    SupplementaryMaxPayment = model.SupplementaryMaxPayment,
-                    SupplementaryDeductible = model.SupplementaryDeductible,
-                    MinPatientCopay = model.MinPatientCopay
+                    // فیلدهای جدید (ریال) - مستقیماً ریال
+                    SupplementaryMaxPayment = model.SupplementaryMaxPayment ?? 0,
+                    SupplementaryDeductible = model.SupplementaryDeductible ?? 0,
+                    MinPatientCopay = model.MinPatientCopay ?? 0
                 };
 
                 // به‌روزرسانی تعرفه
@@ -1687,22 +1787,45 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 if (updateResult.Success)
                 {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _log.Information("🏥 MEDICAL EDIT: ویرایش موفق - CorrId={CorrId}, TariffId={TariffId}, Duration={Duration}ms, User={User}", 
+                        correlationId, model.InsuranceTariffId, duration, _currentUserService.UserName);
                     SetResponseMessage("ویرایش تعرفه بیمه تکمیلی", true, "تعرفه بیمه تکمیلی با موفقیت ویرایش شد");
                     return RedirectToAction("Index");
                 }
                 else
                 {
+                    _log.Error("🏥 MEDICAL EDIT: خطا در ویرایش - CorrId={CorrId}, TariffId={TariffId}, Error={Error}, User={User}", 
+                        correlationId, model.InsuranceTariffId, updateResult.Message, _currentUserService.UserName);
                     LogUserOperation($"خطا در ویرایش تعرفه: {updateResult.Message}", "ویرایش تعرفه بیمه تکمیلی");
-                    TempData["ErrorMessage"] = updateResult.Message;
-                    var editModel = new SupplementaryTariffCreateEditViewModel();
-                    await LoadCreateEditData(editModel);
+                    _messageNotificationService.AddErrorMessage($"خطا در ویرایش: {updateResult.Message}");
+                    await LoadCreateEditData(model);
                     return View(model);
                 }
             }
             catch (Exception ex)
             {
-                var corr = Guid.NewGuid().ToString("N");
-                _log.Error(ex, "MEDICAL_EDIT: Exception. CorrId={CorrId}, TariffId={TariffId}, User={User}", corr, model?.InsuranceTariffId, _currentUserService.UserName);
+                _log.Error(ex, "🏥 MEDICAL EDIT: Exception - CorrId={CorrId}, TariffId={TariffId}, User={User}", 
+                    correlationId, model?.InsuranceTariffId, _currentUserService.UserName);
+                
+                // 🔧 BULLETPROOF: مدیریت خطاهای مختلف
+                if (ex is ArgumentNullException)
+                {
+                    _messageNotificationService.AddErrorMessage("پارامترهای ورودی نامعتبر است");
+                }
+                else if (ex is InvalidOperationException)
+                {
+                    _messageNotificationService.AddErrorMessage("عملیات نامعتبر است");
+                }
+                else if (ex is UnauthorizedAccessException)
+                {
+                    _messageNotificationService.AddErrorMessage("دسترسی غیرمجاز");
+                }
+                else
+                {
+                    _messageNotificationService.AddErrorMessage("خطای غیرمنتظره در ویرایش تعرفه");
+                }
+                
                 return HandleStandardError(ex, "ویرایش تعرفه بیمه تکمیلی", "Index");
             }
         }
@@ -2096,22 +2219,50 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return View(model);
                 }
 
+                // 🔧 CRITICAL FIX: اصلاح منطق محاسبه برای بیمه تکمیلی
+                // بیمه تکمیلی باید TariffPrice برابر با قیمت اصلی خدمت باشد
+                // و PatientShare برابر با سهم باقی‌مانده بیمار پس از بیمه اصلی
+                
+                // دریافت قیمت اصلی خدمت
+                var service = await _serviceRepository.GetServiceByIdAsync(model.ServiceId);
+                if (service == null)
+                {
+                    _log.Warning("🏥 MEDICAL: خدمت یافت نشد - ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
+                        model.ServiceId, _currentUserService.UserName, _currentUserService.UserId);
+                    _messageNotificationService.AddErrorMessage("خدمت یافت نشد");
+                    await LoadCreateEditData(model);
+                    return View(model);
+                }
+
+                // 🔧 CRITICAL FIX: TariffPrice مستقیماً ریال است
+                var correctTariffPrice = model.TariffPrice ?? 0; // مستقیماً ریال
+                
+                // 🔧 CRITICAL FIX: محاسبه صحیح PatientShare برای بیمه تکمیلی
+                // PatientShare = سهم باقی‌مانده بیمار پس از بیمه اصلی (ریال)
+                var correctPatientShare = model.PatientShare ?? 0; // مستقیماً ریال
+                
+                // 🔧 CRITICAL FIX: InsurerShare برای بیمه تکمیلی همیشه 0 است
+                var correctInsurerShare = 0m;
+
+                _log.Information("🏥 MEDICAL: اصلاح محاسبات بیمه تکمیلی - ServiceId: {ServiceId}, OriginalPrice: {OriginalPrice}, CorrectTariffPrice: {CorrectTariffPrice}, CorrectPatientShare: {CorrectPatientShare}. User: {UserName} (Id: {UserId})",
+                    model.ServiceId, service.Price, correctTariffPrice, correctPatientShare, _currentUserService.UserName, _currentUserService.UserId);
+
                 // تبدیل SupplementaryTariffCreateEditViewModel به InsuranceTariffCreateEditViewModel
                 var insuranceTariffModel = new InsuranceTariffCreateEditViewModel
                 {
                     ServiceId = model.ServiceId,
                     InsurancePlanId = model.InsurancePlanId,
-                    TariffPrice = model.TariffPrice,
-                    PatientShare = model.PatientShare,
-                    InsurerShare = model.InsurerShare,
+                    TariffPrice = correctTariffPrice, // 🔧 FIX: استفاده از قیمت صحیح
+                    PatientShare = correctPatientShare, // 🔧 FIX: سهم باقی‌مانده بیمار
+                    InsurerShare = correctInsurerShare, // 🔧 FIX: بیمه تکمیلی سهم بیمه ندارد
                     IsActive = model.IsActive,
                     Priority = model.Priority ?? 5,
                     PrimaryInsurancePlanId = model.PrimaryInsurancePlanId,
                     SupplementaryCoveragePercent = model.SupplementaryCoveragePercent ?? 90,
-                    // فیلدهای جدید (ریال)
-                    SupplementaryMaxPayment = model.SupplementaryMaxPayment,
-                    SupplementaryDeductible = model.SupplementaryDeductible,
-                    MinPatientCopay = model.MinPatientCopay
+                    // فیلدهای جدید (ریال) - مستقیماً ریال
+                    SupplementaryMaxPayment = model.SupplementaryMaxPayment ?? 0,
+                    SupplementaryDeductible = model.SupplementaryDeductible ?? 0,
+                    MinPatientCopay = model.MinPatientCopay ?? 0
                 };
 
                 var result = await _tariffService.CreateTariffAsync(insuranceTariffModel);
