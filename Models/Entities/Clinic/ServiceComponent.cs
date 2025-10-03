@@ -41,13 +41,15 @@ public class ServiceComponent : ISoftDelete, ITrackable
     public ServiceComponentType ComponentType { get; set; }
 
     /// <summary>
-    /// کای (ضریب) این جزء
+    /// ضریب RVU این جزء (فنی یا حرفه‌ای)
     /// برای محاسبه مبلغ نهایی خدمت استفاده می‌شود
     /// دقت بالا برای محاسبات دقیق بیمه‌ای
+    /// حداقل: 0 (برای خدمات اضافی که فقط یک جزء دارند)، حداکثر: 999999
     /// </summary>
     [Required]
-    [Column(TypeName = "decimal")] // دقت در Fluent تنظیم می‌شود
-    [Range(typeof(decimal), "0.0001", "999999.9999", ErrorMessage = "کای باید بین 0.0001 تا 999999.9999 باشد.")]
+    [Column(TypeName = "decimal")]
+    [Range(typeof(decimal), "0.0000", "99.9999",
+        ErrorMessage = "ضریب RVU باید بین 0.0000 تا 99.9999 باشد.")]
     public decimal Coefficient { get; set; }
 
     /// <summary>
@@ -161,7 +163,7 @@ public class ServiceComponentConfig : EntityTypeConfiguration<ServiceComponent>
 
         Property(sc => sc.Coefficient)
             .IsRequired()
-            .HasPrecision(18, 4)
+            .HasPrecision(6, 4)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ServiceComponent_Coefficient")));
 
@@ -211,12 +213,6 @@ public class ServiceComponentConfig : EntityTypeConfiguration<ServiceComponent>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ServiceComponent_DeletedByUserId")));
 
-        // روابط
-        HasRequired(sc => sc.Service)
-            .WithMany(s => s.ServiceComponents)
-            .HasForeignKey(sc => sc.ServiceId)
-            .WillCascadeOnDelete(false);
-
         HasOptional(sc => sc.DeletedByUser)
             .WithMany()
             .HasForeignKey(sc => sc.DeletedByUserId)
@@ -234,11 +230,15 @@ public class ServiceComponentConfig : EntityTypeConfiguration<ServiceComponent>
 
         // ایندکس‌های ترکیبی برای بهبود عملکرد
         HasIndex(sc => new { sc.ServiceId, sc.ComponentType, sc.IsDeleted })
-            .IsUnique()
             .HasName("IX_ServiceComponent_ServiceId_ComponentType_IsDeleted");
 
         HasIndex(sc => new { sc.ServiceId, sc.IsActive, sc.IsDeleted })
             .HasName("IX_ServiceComponent_ServiceId_IsActive_IsDeleted");
+
+        // ایندکس یونیک برای جلوگیری از تکرار منطقی
+        HasIndex(sc => new { sc.ServiceId, sc.ComponentType })
+            .IsUnique()
+            .HasName("IX_ServiceComponent_ServiceId_ComponentType_Unique");
     }
 }
 

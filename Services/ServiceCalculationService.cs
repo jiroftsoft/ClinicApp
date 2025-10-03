@@ -286,10 +286,10 @@ namespace ClinicApp.Services
             if (IsFinancialYearFrozen(currentFinancialYear, context))
                 throw new InvalidOperationException($"سال مالی {currentFinancialYear} فریز شده است و نمی‌توان محاسبات جدید انجام داد.");
 
-            // دریافت ضریب حرفه‌ای (همیشه ثابت برای همه خدمات)
+            // دریافت ضریب حرفه‌ای (بر اساس هشتگ خدمت)
             var professionalFactor = context.FactorSettings
                 .Where(fs => fs.FactorType == ServiceComponentType.Professional &&
-                            fs.IsHashtagged == false && // کای حرفه‌ای همیشه false است
+                            fs.IsHashtagged == service.IsHashtagged && // کای حرفه‌ای بر اساس هشتگ خدمت
                             fs.FinancialYear == currentFinancialYear &&
                             fs.IsActive && !fs.IsDeleted &&
                             !fs.IsFrozen && // بررسی فریز نبودن
@@ -299,7 +299,7 @@ namespace ClinicApp.Services
                 .FirstOrDefault();
 
             if (professionalFactor == null)
-                throw new InvalidOperationException($"ضریب حرفه‌ای برای سال مالی {currentFinancialYear} یافت نشد. لطفاً ابتدا کای حرفه‌ای را تعریف کنید.");
+                throw new InvalidOperationException($"ضریب حرفه‌ای برای خدمات {(service.IsHashtagged ? "هشتگ‌دار" : "بدون هشتگ")} در سال مالی {currentFinancialYear} یافت نشد. لطفاً ابتدا کای حرفه‌ای مربوطه را تعریف کنید.");
 
             // دریافت ضریب فنی (بر اساس هشتگ)
             var technicalFactor = context.FactorSettings
@@ -382,7 +382,7 @@ namespace ClinicApp.Services
                 .FirstOrDefault();
 
             if (professionalFactor == null)
-                throw new InvalidOperationException($"ضریب حرفه‌ای برای سال مالی {currentFinancialYear} یافت نشد. لطفاً ابتدا کای حرفه‌ای را تعریف کنید.");
+                throw new InvalidOperationException($"ضریب حرفه‌ای برای خدمات {(service.IsHashtagged ? "هشتگ‌دار" : "بدون هشتگ")} در سال مالی {currentFinancialYear} یافت نشد. لطفاً ابتدا کای حرفه‌ای مربوطه را تعریف کنید.");
 
             // دریافت ضریب فنی (بر اساس هشتگ)
             var technicalFactor = context.FactorSettings

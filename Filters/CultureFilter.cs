@@ -1,3 +1,4 @@
+using System;
 using System.Globalization;
 using System.Threading;
 using System.Web.Mvc;
@@ -5,26 +6,22 @@ using System.Web.Mvc;
 namespace ClinicApp.Filters
 {
     /// <summary>
-    /// فیلتر تنظیم Culture برای پشتیبانی صحیح از زبان فارسی
-    /// این فیلتر در هر request اجرا می‌شود و اطمینان می‌دهد که
-    /// تمام متن‌ها به درستی نمایش داده شوند
+    /// Filter برای تنظیم Culture در هر Request
+    /// این Filter مشکل Culture در Decimal Parsing را حل می‌کند
     /// </summary>
     public class CultureFilter : ActionFilterAttribute
     {
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
-            // تنظیم Culture برای thread فعلی
-            var culture = new CultureInfo("fa-IR");
-            Thread.CurrentThread.CurrentCulture = culture;
-            Thread.CurrentThread.CurrentUICulture = culture;
-
-            // تنظیم Response Encoding
-            if (filterContext.HttpContext.Response != null)
-            {
-                filterContext.HttpContext.Response.ContentEncoding = System.Text.Encoding.UTF8;
-                filterContext.HttpContext.Response.HeaderEncoding = System.Text.Encoding.UTF8;
-            }
-
+            // تنظیم Culture برای Request فعلی
+            Thread.CurrentThread.CurrentCulture = new CultureInfo("fa-IR");
+            Thread.CurrentThread.CurrentUICulture = new CultureInfo("fa-IR");
+            
+            // تنظیم Culture برای Decimal Parsing
+            // این باعث می‌شود که Decimal Parsing همیشه از "." استفاده کند
+            Thread.CurrentThread.CurrentCulture = 
+                new CultureInfo("fa-IR") { NumberFormat = { NumberDecimalSeparator = "." } };
+            
             base.OnActionExecuting(filterContext);
         }
     }

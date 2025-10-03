@@ -41,7 +41,7 @@
                         <div class="col-md-3">
                             <div class="filter-group">
                                 <label class="filter-label">ارائه‌دهنده بیمه:</label>
-                                @Html.DropDownList("providerId", Model.InsuranceProviderSelectList ?? new SelectList(new List<object>(), "Value", "Text"), "همه ارائه‌دهندگان", new { @class = "form-control" })
+                                @Html.DropDownList("providerId", Model.InsuranceProviderSelectList ?? new SelectList(new List<SelectListItem>(), "Value", "Text"), "همه ارائه‌دهندگان", new { @class = "form-control" })
                             </div>
                         </div>
                         <div class="col-md-2">

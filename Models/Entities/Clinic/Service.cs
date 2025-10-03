@@ -297,10 +297,11 @@ public class ServiceConfig : EntityTypeConfiguration<Service>
             .HasForeignKey(sc => sc.ServiceId)
             .WillCascadeOnDelete(false);
 
-        HasMany(s => s.SharedServices)
-            .WithRequired(ss => ss.Service)
-            .HasForeignKey(ss => ss.ServiceId)
-            .WillCascadeOnDelete(false);
+        // رابطه SharedServices در SharedServiceConfig تعریف شده است
+        // HasMany(s => s.SharedServices)
+        //     .WithRequired(ss => ss.Service)
+        //     .HasForeignKey(ss => ss.ServiceId)
+        //     .WillCascadeOnDelete(false);
 
         HasOptional(s => s.DeletedByUser)
             .WithMany()

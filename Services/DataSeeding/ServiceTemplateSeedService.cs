@@ -380,19 +380,19 @@ public class ServiceTemplateSeedService
             if (newTemplates.Any())
             {
                 _context.ServiceTemplates.AddRange(newTemplates);
-                await _context.SaveChangesAsync();
-                _logger.Information("تعداد {Count} قالب خدمت جدید ایجاد شد", newTemplates.Count);
+                _logger.Information("📍 TEMPLATE_SEED: تعداد {Count} قالب خدمت جدید به دیتابیس اضافه شد", newTemplates.Count);
             }
             else
             {
-                _logger.Information("همه قالب‌های خدمات قبلاً ایجاد شده‌اند");
+                _logger.Information("✅ TEMPLATE_SEED: همه قالب‌های خدمات قبلاً ایجاد شده‌اند");
             }
 
-            _logger.Information("ایجاد قالب‌های خدمات با موفقیت تکمیل شد");
+            // حذف SaveChangesAsync - انجام می‌شود در SystemSeedService
+            _logger.Information("✅ TEMPLATE_SEED: قالب‌های خدمات آماده ذخیره‌سازی");
         }
         catch (Exception ex)
         {
-            _logger.Error(ex, "خطا در ایجاد قالب‌های خدمات");
+            _logger.Error(ex, "❌ TEMPLATE_SEED: خطا در ایجاد قالب‌های خدمات");
             throw;
         }
     }

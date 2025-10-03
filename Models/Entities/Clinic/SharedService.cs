@@ -243,26 +243,28 @@ public class SharedServiceConfig : EntityTypeConfiguration<SharedService>
         // =============================
 
         // 1) Unique: جلوگیری از رکورد تکراری برای هر خدمت/دپارتمان (با درنظرگرفتن SoftDelete)
-        Property(ss => ss.ServiceId)
-            .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 1) { IsUnique = true }));
-        Property(ss => ss.DepartmentId)
-            .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 2) { IsUnique = true }));
-        Property(ss => ss.IsDeleted)
-            .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 3) { IsUnique = true }));
+        // این ایندکس در خطوط قبلی تعریف شده است
+        // Property(ss => ss.ServiceId)
+        //     .HasColumnAnnotation("Index",
+        //         new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 1) { IsUnique = true }));
+        // Property(ss => ss.DepartmentId)
+        //     .HasColumnAnnotation("Index",
+        //         new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 2) { IsUnique = true }));
+        // Property(ss => ss.IsDeleted)
+        //     .HasColumnAnnotation("Index",
+        //         new IndexAnnotation(new IndexAttribute("IX_SharedService_Service_Department_Deleted", 3) { IsUnique = true }));
 
         // 2) برای لیست‌گیری سریع در یک دپارتمان (Active + NotDeleted)
-        Property(ss => ss.DepartmentId)
-            .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 1)));
-        Property(ss => ss.IsActive)
-            .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 2)));
-        Property(ss => ss.IsDeleted)
-            .HasColumnAnnotation("Index",
-                new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 3)));
+        // این ایندکس‌ها در خطوط قبلی تعریف شده‌اند
+        // Property(ss => ss.DepartmentId)
+        //     .HasColumnAnnotation("Index",
+        //         new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 1)));
+        // Property(ss => ss.IsActive)
+        //     .HasColumnAnnotation("Index",
+        //         new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 2)));
+        // Property(ss => ss.IsDeleted)
+        //     .HasColumnAnnotation("Index",
+        //         new IndexAnnotation(new IndexAttribute("IX_SharedService_Department_Active_Deleted", 3)));
     }
 }
 

@@ -8,6 +8,7 @@ using ClinicApp.Models.Enums;
 using ClinicApp.Services;
 using ClinicApp.ViewModels;
 using ClinicApp.Interfaces;
+using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Areas.Admin.Controllers
@@ -32,7 +33,7 @@ namespace ClinicApp.Areas.Admin.Controllers
         }
 
         // GET: Admin/FactorSetting
-        public async Task<ActionResult> Index(int? page, int? pageSize, string searchTerm, ServiceComponentType? factorType, int? financialYear, bool? isActive)
+        public async Task<ActionResult> Index(int? page, int? pageSize, string searchTerm, ServiceComponentType? factorType, FactorScope? scope, int? financialYear, bool? isActive)
         {
             try
             {
@@ -55,6 +56,7 @@ namespace ClinicApp.Areas.Admin.Controllers
                     Name = $"کای {(f.FactorType == ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")} {f.FinancialYear}",
                     Description = f.Description,
                     FactorType = f.FactorType,
+                    Scope = f.Scope,
                     IsHashtagged = f.IsHashtagged,
                     Value = f.Value,
                     FinancialYear = f.FinancialYear,
@@ -72,8 +74,19 @@ namespace ClinicApp.Areas.Admin.Controllers
                 ViewBag.TotalPages = (int)Math.Ceiling((double)totalCount / currentPageSize);
                 ViewBag.SearchTerm = searchTerm;
                 ViewBag.FactorType = factorType;
+                ViewBag.Scope = scope;
                 ViewBag.FinancialYear = financialYear;
                 ViewBag.IsActive = isActive;
+                
+                // لیست Scope ها برای Dropdown
+                ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                    .Cast<FactorScope>()
+                    .Select(s => new SelectListItem
+                    {
+                        Value = ((int)s).ToString(),
+                        Text = GetScopeDisplayName(s),
+                        Selected = s == scope
+                    }).ToList();
 
                 return View(viewModel);
             }
@@ -83,6 +96,25 @@ namespace ClinicApp.Areas.Admin.Controllers
                 TempData["ErrorMessage"] = "خطا در دریافت لیست کای‌ها";
                 return View(new List<FactorSettingViewModel>());
             }
+        }
+
+        /// <summary>
+        /// دریافت نام نمایشی Scope
+        /// </summary>
+        private string GetScopeDisplayName(FactorScope scope)
+        {
+            return scope switch
+            {
+                FactorScope.General_NoHash => "عمومی بدون هشتگ",
+                FactorScope.Hash_1_7 => "هشتگ‌دار (کدهای ۱-۷)",
+                FactorScope.Hash_8_9 => "هشتگ‌دار (کدهای ۸-۹)",
+                FactorScope.Dent_Technical => "دندانپزشکی فنی",
+                FactorScope.Dent_Consumables => "مواد دندانپزشکی",
+                FactorScope.Prof_NoHash => "حرفه‌ای بدون هشتگ",
+                FactorScope.Prof_Hash => "حرفه‌ای هشتگ‌دار",
+                FactorScope.Prof_Dental => "حرفه‌ای دندانپزشکی",
+                _ => scope.ToString()
+            };
         }
 
         // GET: Admin/FactorSetting/Details/5
@@ -102,6 +134,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                     Name = $"کای {(factor.FactorType == ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")} {factor.FinancialYear}",
                     Description = factor.Description,
                     FactorType = factor.FactorType,
+                    Scope = factor.Scope,
+                    ScopeDisplayName = GetScopeDisplayName(factor.Scope),
                     IsHashtagged = factor.IsHashtagged,
                     Value = factor.Value,
                     FinancialYear = factor.FinancialYear,
@@ -128,9 +162,19 @@ namespace ClinicApp.Areas.Admin.Controllers
             var viewModel = new FactorSettingCreateEditViewModel
             {
                 FactorType = ServiceComponentType.Technical, // پیش‌فرض
+                Scope = FactorScope.General_NoHash, // پیش‌فرض
                 FinancialYear = 1404, // سال مالی جاری
                 IsActive = true
             };
+
+            // لیست Scope ها برای Dropdown
+            ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                .Cast<FactorScope>()
+                .Select(s => new SelectListItem
+                {
+                    Value = ((int)s).ToString(),
+                    Text = GetScopeDisplayName(s)
+                }).ToList();
 
             return View(viewModel);
         }
@@ -146,6 +190,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!ModelState.IsValid)
                 {
                     _logger.Warning("اعتبارسنجی مدل ناموفق برای ایجاد کای جدید");
+                    
+                    // لیست Scope ها برای Dropdown
+                    ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                        .Cast<FactorScope>()
+                        .Select(s => new SelectListItem
+                        {
+                            Value = ((int)s).ToString(),
+                            Text = GetScopeDisplayName(s)
+                        }).ToList();
+                    
                     return View(model);
                 }
 
@@ -158,6 +212,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                         ModelState.AddModelError(error.Key, error.Value);
                     }
                     _logger.Warning("اعتبارسنجی Business Rules ناموفق: {Errors}", string.Join(", ", validationResult.Errors.Values));
+                    
+                    // لیست Scope ها برای Dropdown
+                    ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                        .Cast<FactorScope>()
+                        .Select(s => new SelectListItem
+                        {
+                            Value = ((int)s).ToString(),
+                            Text = GetScopeDisplayName(s)
+                        }).ToList();
+                    
                     return View(model);
                 }
 
@@ -168,22 +232,23 @@ namespace ClinicApp.Areas.Admin.Controllers
                     ModelState.AddModelError("", $"کای {model.FactorType} برای سال مالی {model.FinancialYear} و وضعیت هشتگ‌دار {(model.IsHashtagged ? "هشتگ‌دار" : "عادی")} قبلاً وجود دارد.");
                     _logger.Warning("کای تکراری: {FactorType} - سال {FinancialYear} - هشتگ‌دار: {IsHashtagged}", 
                         model.FactorType, model.FinancialYear, model.IsHashtagged);
+                    
+                    // لیست Scope ها برای Dropdown
+                    ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                        .Cast<FactorScope>()
+                        .Select(s => new SelectListItem
+                        {
+                            Value = ((int)s).ToString(),
+                            Text = GetScopeDisplayName(s)
+                        }).ToList();
+                    
                     return View(model);
                 }
 
                 // ایجاد کای جدید
-                var factor = new FactorSetting
-                {
-                    Description = model.Description?.Trim(),
-                    FactorType = model.FactorType,
-                    IsHashtagged = model.IsHashtagged,
-                    Value = model.Value,
-                    FinancialYear = model.FinancialYear,
-                    IsActive = model.IsActive,
-                    EffectiveFrom = DateTime.UtcNow, // استفاده از UTC
-                    CreatedAt = DateTime.UtcNow,
-                    CreatedByUserId = _currentUserService.GetCurrentUserId()
-                };
+                var factor = model.ToEntity();
+                factor.CreatedAt = DateTime.UtcNow;
+                factor.CreatedByUserId = _currentUserService.GetCurrentUserId();
 
                 var createdFactor = await _factorSettingService.CreateFactorAsync(factor);
                 
@@ -197,6 +262,16 @@ namespace ClinicApp.Areas.Admin.Controllers
             {
                 _logger.Error(ex, "خطا در ایجاد کای جدید - نوع: {FactorType}, سال: {FinancialYear}", model.FactorType, model.FinancialYear);
                 TempData["ErrorMessage"] = "خطا در ایجاد کای جدید. لطفاً دوباره تلاش کنید.";
+                
+                // لیست Scope ها برای Dropdown
+                ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                    .Cast<FactorScope>()
+                    .Select(s => new SelectListItem
+                    {
+                        Value = ((int)s).ToString(),
+                        Text = GetScopeDisplayName(s)
+                    }).ToList();
+                
                 return View(model);
             }
         }
@@ -213,6 +288,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                 }
 
                 var viewModel = FactorSettingCreateEditViewModel.FromEntity(factor);
+                
+                // لیست Scope ها برای Dropdown
+                ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                    .Cast<FactorScope>()
+                    .Select(s => new SelectListItem
+                    {
+                        Value = ((int)s).ToString(),
+                        Text = GetScopeDisplayName(s)
+                    }).ToList();
+                
                 return View(viewModel);
             }
             catch (Exception ex)
@@ -234,6 +319,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                 if (!ModelState.IsValid)
                 {
                     _logger.Warning("اعتبارسنجی مدل ناموفق برای ویرایش کای {FactorId}", model.Id);
+                    
+                    // لیست Scope ها برای Dropdown
+                    ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                        .Cast<FactorScope>()
+                        .Select(s => new SelectListItem
+                        {
+                            Value = ((int)s).ToString(),
+                            Text = GetScopeDisplayName(s)
+                        }).ToList();
+                    
                     return View(model);
                 }
 
@@ -255,6 +350,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                     }
                     _logger.Warning("اعتبارسنجی Business Rules ناموفق برای ویرایش کای {FactorId}: {Errors}", 
                         model.Id, string.Join(", ", validationResult.Errors.Values));
+                    
+                    // لیست Scope ها برای Dropdown
+                    ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                        .Cast<FactorScope>()
+                        .Select(s => new SelectListItem
+                        {
+                            Value = ((int)s).ToString(),
+                            Text = GetScopeDisplayName(s)
+                        }).ToList();
+                    
                     return View(model);
                 }
 
@@ -267,11 +372,24 @@ namespace ClinicApp.Areas.Admin.Controllers
                     ModelState.AddModelError("", $"کای {model.FactorType} برای سال مالی {model.FinancialYear} و وضعیت هشتگ‌دار {(model.IsHashtagged ? "هشتگ‌دار" : "عادی")} قبلاً وجود دارد.");
                     _logger.Warning("کای تکراری برای ویرایش: {FactorType} - سال {FinancialYear} - هشتگ‌دار: {IsHashtagged}", 
                         model.FactorType, model.FinancialYear, model.IsHashtagged);
+                    
+                    // لیست Scope ها برای Dropdown
+                    ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                        .Cast<FactorScope>()
+                        .Select(s => new SelectListItem
+                        {
+                            Value = ((int)s).ToString(),
+                            Text = GetScopeDisplayName(s)
+                        }).ToList();
+                    
                     return View(model);
                 }
 
                 // به‌روزرسانی کای
-                var factor = model.MapToEntity(existingFactor);
+                var factor = model.ToEntity();
+                factor.FactorSettingId = existingFactor.FactorSettingId; // حفظ ID اصلی
+                factor.CreatedAt = existingFactor.CreatedAt; // حفظ تاریخ ایجاد
+                factor.CreatedByUserId = existingFactor.CreatedByUserId; // حفظ ایجادکننده
                 factor.UpdatedAt = DateTime.UtcNow;
                 factor.UpdatedByUserId = _currentUserService.GetCurrentUserId();
 
@@ -288,6 +406,16 @@ namespace ClinicApp.Areas.Admin.Controllers
                 _logger.Error(ex, "خطا در به‌روزرسانی کای {FactorId} - نوع: {FactorType}, سال: {FinancialYear}", 
                     model.Id, model.FactorType, model.FinancialYear);
                 TempData["ErrorMessage"] = "خطا در به‌روزرسانی کای. لطفاً دوباره تلاش کنید.";
+                
+                // لیست Scope ها برای Dropdown
+                ViewBag.Scopes = Enum.GetValues(typeof(FactorScope))
+                    .Cast<FactorScope>()
+                    .Select(s => new SelectListItem
+                    {
+                        Value = ((int)s).ToString(),
+                        Text = GetScopeDisplayName(s)
+                    }).ToList();
+                
                 return View(model);
             }
         }
@@ -309,6 +437,8 @@ namespace ClinicApp.Areas.Admin.Controllers
                     Name = $"کای {(factor.FactorType == ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")} {factor.FinancialYear}",
                     Description = factor.Description,
                     FactorType = factor.FactorType,
+                    Scope = factor.Scope,
+                    ScopeDisplayName = GetScopeDisplayName(factor.Scope),
                     IsHashtagged = factor.IsHashtagged,
                     Value = factor.Value,
                     FinancialYear = factor.FinancialYear,

@@ -35,17 +35,24 @@ namespace ClinicApp.Models.Entities.Clinic
 
         /// <summary>
         /// آیا این ضریب مربوط به خدمات هشتگ‌دار است؟
-        /// برای کای حرفه‌ای: همیشه false (ثابت برای همه)
+        /// برای کای حرفه‌ای: می‌تواند true یا false باشد
         /// برای کای فنی: true = هشتگ‌دار، false = بدون هشتگ
         /// </summary>
         public bool IsHashtagged { get; set; }
 
         /// <summary>
-        /// مقدار ضریب
+        /// دامنه ضریب برای تمایز دقیق بین انواع مختلف ضرایب
+        /// </summary>
+        [Required(ErrorMessage = "دامنه ضریب الزامی است.")]
+        public FactorScope Scope { get; set; }
+
+        /// <summary>
+        /// مقدار ضریب (کای) به ریال
         /// برای محاسبه مبلغ نهایی خدمت استفاده می‌شود
+        /// حداقل: 1 ریال، حداکثر: 999,999,999 ریال
         /// </summary>
         [Required, Column(TypeName = "decimal")]
-        [Range(typeof(decimal), "0.000001", "999999999.999999", ErrorMessage = "مقدار ضریب باید بین 0.000001 تا 999,999,999.999999 باشد.")]
+        [Range(1, 999999999, ErrorMessage = "مقدار کای باید بین 1 تا 999,999,999 ریال باشد.")]
         public decimal Value { get; set; }
 
         /// <summary>
@@ -158,6 +165,12 @@ namespace ClinicApp.Models.Entities.Clinic
         /// ارجاع به کاربر بروزرسانی کننده
         /// </summary>
         public virtual ApplicationUser UpdatedByUser { get; set; }
+
+        /// <summary>
+        /// کنترل همزمانی برای جلوگیری از تداخل در ویرایش
+        /// </summary>
+        [Timestamp]
+        public byte[] RowVersion { get; set; }
         #endregion
     }
 
@@ -188,7 +201,7 @@ namespace ClinicApp.Models.Entities.Clinic
             // ✅ دقت ضریب
             Property(fs => fs.Value)
                 .IsRequired()
-                .HasPrecision(19, 6)
+                .HasPrecision(18, 0)
                 .HasColumnAnnotation("Index",
                     new IndexAnnotation(new IndexAttribute("IX_FactorSetting_Value"))); // اگر واقعاً لازم نیست، این ایندکس را حذف کن
 
@@ -279,15 +292,39 @@ namespace ClinicApp.Models.Entities.Clinic
                 .HasForeignKey(fs => fs.FrozenByUserId)
                 .WillCascadeOnDelete(false);
 
-            // ایندکس‌های ترکیبی برای جستجوهای رایج
-            HasIndex(fs => new { fs.FactorType, fs.IsHashtagged, fs.FinancialYear, fs.IsActive, fs.IsDeleted })
-                .HasName("IX_FactorSetting_FactorType_IsHashtagged_FinancialYear_IsActive_IsDeleted");
+            // ایندکس یکتا برای جلوگیری از تکرار (EF6 style)
+            Property(fs => fs.FinancialYear).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("UX_FactorSetting_Unique", 1) { IsUnique = true }));
 
-            HasIndex(fs => new { fs.FinancialYear, fs.IsFrozen, fs.IsDeleted })
-                .HasName("IX_FactorSetting_FinancialYear_IsFrozen_IsDeleted");
+            Property(fs => fs.FactorType).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("UX_FactorSetting_Unique", 2) { IsUnique = true }));
 
-            HasIndex(fs => new { fs.IsActiveForCurrentYear, fs.IsDeleted })
-                .HasName("IX_FactorSetting_IsActiveForCurrentYear_IsDeleted");
+            Property(fs => fs.Scope).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("UX_FactorSetting_Unique", 3) { IsUnique = true }));
+
+            Property(fs => fs.IsHashtagged).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("UX_FactorSetting_Unique", 4) { IsUnique = true }));
+
+            Property(fs => fs.IsActive).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("UX_FactorSetting_Unique", 5) { IsUnique = true }));
+
+            Property(fs => fs.IsDeleted).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("UX_FactorSetting_Unique", 6) { IsUnique = true }));
+
+            // ایندکس‌های کاربردی
+            Property(fs => fs.IsActiveForCurrentYear).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("IX_FactorSetting_IsActiveForCurrentYear")));
+
+            Property(fs => fs.IsFrozen).HasColumnAnnotation(
+                IndexAnnotation.AnnotationName,
+                new IndexAnnotation(new IndexAttribute("IX_FactorSetting_IsFrozen")));
         }
     }
 

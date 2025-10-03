@@ -27,6 +27,10 @@ namespace ClinicApp
             System.Threading.Thread.CurrentThread.CurrentCulture = new System.Globalization.CultureInfo("fa-IR");
             System.Threading.Thread.CurrentThread.CurrentUICulture = new System.Globalization.CultureInfo("fa-IR");
             
+            // تنظیمات Culture برای Decimal Parsing
+            // این باعث می‌شود که Decimal Parsing همیشه از "." استفاده کند
+            System.Globalization.CultureInfo.DefaultThreadCurrentCulture = System.Globalization.CultureInfo.InvariantCulture;
+            
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
             RouteConfig.RegisterRoutes(RouteTable.Routes);
@@ -52,51 +56,19 @@ namespace ClinicApp
                 SystemUsers.Initialize(context);
             }
 
-            #region پیکربندی نهایی و حرفه‌ای Serilog
+            #region پیکربندی حرفه‌ای و بهینه‌سازی شده Serilog
 
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .MinimumLevel.Override("Microsoft", LogEventLevel.Warning)
-                .MinimumLevel.Override("System", LogEventLevel.Warning)
+            // 🚀 استفاده از کلاس‌های بهینه‌سازی شده
+            Log.Logger = LoggingConfiguration.CreateOptimizedConfiguration().CreateLogger();
+            
+            // 🔧 تنظیمات اضافی SerilogWeb
+            LoggingConfiguration.ConfigureSerilogWeb();
+            
+            // 🚫 فیلترهای اضافی در CreateOptimizedConfiguration اعمال شده‌اند
 
-                // غنی‌سازی لاگ‌ها (Enrichers)
-                // توجه: SerilogWeb.Classic به صورت خودکار ClientIp, UserAgent, RequestId و ... را اضافه می‌کند.
-                .Enrich.FromLogContext()
-                .Enrich.WithMachineName()
-                .Enrich.WithEnvironmentUserName()
-                .Enrich.WithProcessId()
-                .Enrich.WithThreadId()
-                .Enrich.WithProperty("Application", "ClinicApp")
-                .Enrich.WithProperty("Environment", GetCurrentEnvironment())
-
-                // فیلتر کردن لاگ‌های مربوط به فایل‌های استاتیک
-                .Filter.ByExcluding(Matching.WithProperty<string>("RequestPath", p =>
-                    p.EndsWith(".css") || p.EndsWith(".js") || p.EndsWith(".png") || p.EndsWith(".jpg")))
-
-                // پیکربندی مقصدها (Sinks)
-                .WriteTo.Async(a => a.File(
-                    path: Server.MapPath("~/App_Data/Logs/log-.txt"),
-                    rollingInterval: RollingInterval.Day,
-                    retainedFileCountLimit: 90,
-                    outputTemplate: "{Timestamp:yyyy-MM-dd HH:mm:ss} [{Level:u3}] ({SourceContext}) {Message:lj}{NewLine}{Exception}{Properties:j}"
-                ))
-
-                .WriteTo.Async(a => a.Console(theme: AnsiConsoleTheme.Code))
-
-                .WriteTo.Async(a => a.MSSqlServer(
-                    connectionString: ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString,
-                    sinkOptions: new MSSqlServerSinkOptions { TableName = "Logs", AutoCreateSqlTable = true }
-                ))
-
-                // 🚀 پیکربندی Sink برای Seq
-                .WriteTo.Async(a => a.Seq(
-                    serverUrl: ConfigurationManager.AppSettings["SeqUrl"] ?? "http://localhost:5341",
-                    apiKey: ConfigurationManager.AppSettings["SeqApiKey"]
-                ))
-
-                .CreateLogger();
-
-            Log.Information("اپلیکیشن کلینیک با موفقیت شروع به کار کرد. محیط: {Environment}", GetCurrentEnvironment());
+            Log.Information("🚀 اپلیکیشن کلینیک با موفقیت شروع به کار کرد");
+            Log.Information("📊 محیط: {Environment} | نسخه: {Version} | سرور: {ServerName}", 
+                GetCurrentEnvironment(), GetApplicationVersion(), Environment.MachineName);
             #endregion
         }
 
@@ -118,6 +90,12 @@ namespace ClinicApp
         private string GetCurrentEnvironment()
         {
             return ConfigurationManager.AppSettings["Environment"] ?? "Production";
+        }
+
+        private string GetApplicationVersion()
+        {
+            var version = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version;
+            return version?.ToString() ?? "1.0.0.0";
         }
 
     }

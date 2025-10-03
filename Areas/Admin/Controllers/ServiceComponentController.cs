@@ -149,11 +149,11 @@ namespace ClinicApp.Areas.Admin.Controllers
                     .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                     .ToListAsync();
 
-                ViewBag.Services = services.Select(s => new SelectListItem
+                ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                 {
                     Value = s.ServiceId.ToString(),
                     Text = $"{s.ServiceCode} - {s.Title}"
-                }).ToList();
+                }).ToList(), "Value", "Text");
 
                 return View(pagedResult);
             }
@@ -331,12 +331,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                     .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                     .ToListAsync();
 
-                ViewBag.Services = services.Select(s => new SelectListItem
+                ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                 {
                     Value = s.ServiceId.ToString(),
                     Text = $"{s.ServiceCode} - {s.Title}",
                     Selected = s.ServiceId == serviceId
-                }).ToList();
+                }).ToList(), "Value", "Text", serviceId);
 
                 return View(viewModel);
             }
@@ -365,12 +365,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                         .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                         .ToListAsync();
 
-                    ViewBag.Services = services.Select(s => new SelectListItem
+                    ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                     {
                         Value = s.ServiceId.ToString(),
                         Text = $"{s.ServiceCode} - {s.Title}",
                         Selected = s.ServiceId == model.ServiceId
-                    }).ToList();
+                    }).ToList(), "Value", "Text", model.ServiceId);
 
                     return View(model);
                 }
@@ -389,12 +389,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                         .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                         .ToListAsync();
 
-                    ViewBag.Services = services.Select(s => new SelectListItem
+                    ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                     {
                         Value = s.ServiceId.ToString(),
                         Text = $"{s.ServiceCode} - {s.Title}",
                         Selected = s.ServiceId == model.ServiceId
-                    }).ToList();
+                    }).ToList(), "Value", "Text", model.ServiceId);
 
                     return View(model);
                 }
@@ -483,12 +483,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                     .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                     .ToListAsync();
 
-                ViewBag.Services = services.Select(s => new SelectListItem
+                ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                 {
                     Value = s.ServiceId.ToString(),
                     Text = $"{s.ServiceCode} - {s.Title}",
                     Selected = s.ServiceId == serviceComponent.ServiceId
-                }).ToList();
+                }).ToList(), "Value", "Text", serviceComponent.ServiceId);
 
                 return View(viewModel);
             }
@@ -516,12 +516,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                         .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                         .ToListAsync();
 
-                    ViewBag.Services = services.Select(s => new SelectListItem
+                    ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                     {
                         Value = s.ServiceId.ToString(),
                         Text = $"{s.ServiceCode} - {s.Title}",
                         Selected = s.ServiceId == model.ServiceId
-                    }).ToList();
+                    }).ToList(), "Value", "Text", model.ServiceId);
 
                     return View(model);
                 }
@@ -548,12 +548,12 @@ namespace ClinicApp.Areas.Admin.Controllers
                         .Select(s => new { s.ServiceId, s.ServiceCode, s.Title })
                         .ToListAsync();
 
-                    ViewBag.Services = services.Select(s => new SelectListItem
+                    ViewBag.Services = new SelectList(services.Select(s => new SelectListItem
                     {
                         Value = s.ServiceId.ToString(),
                         Text = $"{s.ServiceCode} - {s.Title}",
                         Selected = s.ServiceId == model.ServiceId
-                    }).ToList();
+                    }).ToList(), "Value", "Text", model.ServiceId);
 
                     return View(model);
                 }

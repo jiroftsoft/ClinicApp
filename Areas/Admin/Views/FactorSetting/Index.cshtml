@@ -1,8 +1,27 @@
 @using ClinicApp.Extensions
+@using ClinicApp.Models.Enums
 @model IEnumerable<ClinicApp.ViewModels.FactorSettingViewModel>
 @{
     ViewBag.Title = "مدیریت کای‌ها";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
+}
+
+@functions {
+    string GetScopeCssClass(FactorScope scope)
+    {
+        return scope switch
+        {
+            FactorScope.General_NoHash => "scope-general",
+            FactorScope.Hash_1_7 => "scope-hash-1-7",
+            FactorScope.Hash_8_9 => "scope-hash-8-9",
+            FactorScope.Dent_Technical => "scope-dental",
+            FactorScope.Dent_Consumables => "scope-dental",
+            FactorScope.Prof_NoHash => "scope-professional",
+            FactorScope.Prof_Hash => "scope-professional",
+            FactorScope.Prof_Dental => "scope-professional",
+            _ => "scope-general"
+        };
+    }
 }
 
 <!-- بسته‌های CSS مورد نیاز -->
@@ -48,6 +67,20 @@
             background-color: #f3e5f5;
             color: #7b1fa2;
         }
+
+        .scope-badge {
+            padding: 3px 8px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-left: 5px;
+        }
+
+        .scope-general { background-color: #e8f5e8; color: #2e7d32; }
+        .scope-hash-1-7 { background-color: #fff3e0; color: #f57c00; }
+        .scope-hash-8-9 { background-color: #fce4ec; color: #c2185b; }
+        .scope-dental { background-color: #e1f5fe; color: #0277bd; }
+        .scope-professional { background-color: #f3e5f5; color: #7b1fa2; }
 
         .factor-value {
             font-size: 1.5rem;
@@ -193,16 +226,29 @@
         <!-- فیلترها -->
         <div class="filters-section">
             <div class="row">
-                <div class="col-md-3">
-                    <label class="form-label">فیلتر بر اساس نوع:</label>
+                <div class="col-md-2">
+                    <label class="form-label">نوع کای:</label>
                     <select id="typeFilter" class="form-control">
                         <option value="">همه</option>
                         <option value="Technical">فنی</option>
                         <option value="Professional">حرفه‌ای</option>
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">فیلتر بر اساس سال مالی:</label>
+                <div class="col-md-2">
+                    <label class="form-label">دامنه کای:</label>
+                    <select id="scopeFilter" class="form-control">
+                        <option value="">همه</option>
+                        @if (ViewBag.Scopes != null)
+                        {
+                            foreach (var scope in ViewBag.Scopes)
+                            {
+                                <option value="@scope.Value">@scope.Text</option>
+                            }
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">سال مالی:</label>
                     <select id="yearFilter" class="form-control">
                         <option value="">همه سال‌ها</option>
                         @foreach (var year in Model.Select(f => f.FinancialYear).Distinct().OrderByDescending(y => y))
@@ -211,15 +257,15 @@
                         }
                     </select>
                 </div>
-                <div class="col-md-3">
-                    <label class="form-label">فیلتر بر اساس وضعیت:</label>
+                <div class="col-md-2">
+                    <label class="form-label">وضعیت:</label>
                     <select id="statusFilter" class="form-control">
                         <option value="">همه</option>
                         <option value="true">فعال</option>
                         <option value="false">غیرفعال</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <label class="form-label">جستجو:</label>
                     <input type="text" id="searchInput" class="form-control" placeholder="جستجو در نام یا توضیحات...">
                 </div>
@@ -234,6 +280,7 @@
                 {
                     <div class="col-lg-6 col-xl-4 factor-item" 
                          data-type="@factor.FactorType" 
+                         data-scope="@factor.Scope"
                          data-year="@factor.FinancialYear" 
                          data-status="@factor.IsActive.ToString().ToLower()"
                          data-search="@(factor.Name + " " + factor.Description)">
@@ -241,9 +288,14 @@
                             <div class="factor-header">
                                 <div class="d-flex justify-content-between align-items-center">
                                     <h5 class="mb-0">@factor.Name</h5>
-                                    <span class="factor-type-badge @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "factor-technical" : "factor-professional")">
-                                        @factor.FactorTypeText
-                                    </span>
+                                    <div>
+                                        <span class="factor-type-badge @(factor.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "factor-technical" : "factor-professional")">
+                                            @factor.FactorTypeText
+                                        </span>
+                                        <span class="scope-badge @GetScopeCssClass(factor.Scope)">
+                                            @factor.ScopeDisplayName
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div class="factor-body">

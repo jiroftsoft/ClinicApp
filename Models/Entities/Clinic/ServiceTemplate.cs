@@ -26,7 +26,6 @@ public class ServiceTemplate : ISoftDelete, ITrackable
     /// </summary>
     [Required(ErrorMessage = "کد خدمت الزامی است.")]
     [StringLength(50, ErrorMessage = "کد خدمت نمی‌تواند بیش از 50 کاراکتر باشد.")]
-    [Index("IX_ServiceTemplate_ServiceCode", IsUnique = true)]
     public string ServiceCode { get; set; }
 
     /// <summary>
@@ -37,22 +36,23 @@ public class ServiceTemplate : ISoftDelete, ITrackable
     public string ServiceName { get; set; }
 
     /// <summary>
-    /// ضریب فنی پیش‌فرض
+    /// ضریب فنی پیش‌فرض (RVU فنی)
+    /// حداقل: 0، حداکثر: 999999
     /// </summary>
-    /// <summary>ضریب فنی پیش‌فرض</summary>
     [Required]
-    [Range(typeof(decimal), "0", "999999.9999", ErrorMessage = "ضریب فنی باید بین 0 تا 999999.9999 باشد.")]
-    [Column(TypeName = "decimal")] // Precision در Fluent تعیین می‌شود
+    [Column(TypeName = "decimal")]
+    [Range(0, 999999, ErrorMessage = "ضریب فنی باید بین 0 تا 999999 باشد.")]
     public decimal DefaultTechnicalCoefficient { get; set; }
 
     /// <summary>
-    /// ضریب حرفه‌ای پیش‌فرض
+    /// ضریب حرفه‌ای پیش‌فرض (RVU حرفه‌ای)
+    /// حداقل: 0، حداکثر: 999999
     /// </summary>
-    /// <summary>ضریب حرفه‌ای پیش‌فرض</summary>
     [Required]
-    [Range(typeof(decimal), "0", "999999.9999", ErrorMessage = "ضریب حرفه‌ای باید بین 0 تا 999999.9999 باشد.")]
     [Column(TypeName = "decimal")]
+    [Range(0, 999999, ErrorMessage = "ضریب حرفه‌ای باید بین 0 تا 999999 باشد.")]
     public decimal DefaultProfessionalCoefficient { get; set; }
+
 
     /// <summary>
     /// توضیحات قالب

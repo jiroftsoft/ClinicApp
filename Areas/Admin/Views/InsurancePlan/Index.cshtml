@@ -35,13 +35,13 @@
                         <div class="col-md-3">
                             <div class="filter-group">
                                 <label class="filter-label">ارائه‌دهنده بیمه:</label>
-                                @Html.DropDownList("providerId", Model.InsuranceProviderSelectList, new { @class = "form-control" })
+                                @Html.DropDownList("providerId", Model.InsuranceProviderSelectList ?? new SelectList(new List<SelectListItem>(), "Value", "Text"), new { @class = "form-control" })
                             </div>
                         </div>
                         <div class="col-md-3">
                             <div class="filter-group">
                                 <label class="filter-label">وضعیت:</label>
-                                @Html.DropDownList("isActive", Model.StatusSelectList, new { @class = "form-control" })
+                                @Html.DropDownList("isActive", Model.StatusSelectList ?? new SelectList(new List<SelectListItem>(), "Value", "Text"), new { @class = "form-control" })
                             </div>
                         </div>
                         <div class="col-md-2">

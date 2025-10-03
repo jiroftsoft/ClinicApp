@@ -174,13 +174,13 @@
                                 <div>
                                     @if (Model.IsActive)
                                     {
-                                        <span class="badge badge-success">
+                                        <span class="badge bg-success">
                                             <i class="fas fa-check-circle"></i> فعال
                                         </span>
                                     }
                                     else
                                     {
-                                        <span class="badge badge-danger">
+                                        <span class="badge bg-danger">
                                             <i class="fas fa-times-circle"></i> غیرفعال
                                         </span>
                                     }
@@ -190,7 +190,7 @@
                             <div class="mb-3">
                                 <label class="form-label fw-bold">تعداد خدمات تحت پوشش:</label>
                                 <div>
-                                    <span class="badge badge-info">@Model.PlanServices.Count خدمت</span>
+                                    <span class="badge bg-info">@Model.PlanServices.Count خدمت</span>
                                 </div>
                             </div>
                         </div>
@@ -217,7 +217,7 @@
                         <div class="text-center mt-4">
                             <form method="post" action="@Url.Action("Delete", "InsurancePlan", new { id = Model.InsurancePlanId })" class="d-inline">
                                 @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-delete btn-lg me-3" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این طرح بیمه را حذف کنید؟ این عمل قابل بازگشت نیست و ممکن است بر عملکرد سیستم تأثیر بگذارد.')">
+                                <button type="submit" class="btn btn-delete btn-lg mr-3" onclick="return confirm('آیا مطمئن هستید که می‌خواهید این طرح بیمه را حذف کنید؟ این عمل قابل بازگشت نیست و ممکن است بر عملکرد سیستم تأثیر بگذارد.')">
                                     <i class="fas fa-trash-alt"></i> حذف طرح بیمه
                                 </button>
                             </form>

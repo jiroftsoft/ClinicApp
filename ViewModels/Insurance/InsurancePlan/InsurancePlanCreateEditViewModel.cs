@@ -77,6 +77,10 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         [Display(Name = "فعال")]
         public bool IsActive { get; set; } = true;
 
+        // نام ارائه‌دهنده بیمه (فقط برای نمایش)
+        [Display(Name = "نام ارائه‌دهنده بیمه")]
+        public string InsuranceProviderName { get; set; }
+
         // Select Lists for Dropdowns
         public List<InsuranceProviderLookupViewModel> InsuranceProviders { get; set; } = new List<InsuranceProviderLookupViewModel>();
         public SelectList InsuranceProviderSelectList { get; set; }
@@ -117,6 +121,7 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
                 Name = entity.Name,
                 PlanCode = entity.PlanCode,
                 InsuranceProviderId = entity.InsuranceProviderId,
+                InsuranceProviderName = entity.InsuranceProvider?.Name, // بارگیری نام ارائه‌دهنده
                 CoveragePercent = entity.CoveragePercent,
                 Deductible = entity.Deductible,
                 ValidFrom = entity.ValidFrom,

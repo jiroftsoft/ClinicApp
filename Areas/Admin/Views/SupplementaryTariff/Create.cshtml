@@ -242,7 +242,7 @@
                                 @Html.LabelFor(m => m.PrimaryInsurancePlanId, "بیمه پایه *", new { @class = "required-field" })
                                 @if (Model.PrimaryInsurancePlans != null && Model.PrimaryInsurancePlans.Any())
                                 {
-                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(Model.PrimaryInsurancePlans, "Value", "Text"), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required", @id = "PrimaryInsurancePlanId", @aria_describedby = "primaryInsuranceHelp" })
+                                    @Html.DropDownListFor(m => m.PrimaryInsurancePlanId, new SelectList(Model.PrimaryInsurancePlans ?? new List<SelectListItem>(), "Value", "Text"), "انتخاب بیمه پایه", new { @class = "form-control", @required = "required", @id = "PrimaryInsurancePlanId", @aria_describedby = "primaryInsuranceHelp" })
                                 }
                                 else
                                 {
@@ -275,7 +275,7 @@
                                 @Html.LabelFor(m => m.InsurancePlanId, "طرح بیمه تکمیلی *", new { @class = "required-field" })
                                 @if (Model.InsurancePlans != null && Model.InsurancePlans.Any())
                                 {
-                                    @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(Model.InsurancePlans, "Value", "Text"), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required", @id = "InsurancePlanId" })
+                                    @Html.DropDownListFor(m => m.InsurancePlanId, new SelectList(Model.InsurancePlans ?? new List<SelectListItem>(), "Value", "Text"), "انتخاب طرح بیمه تکمیلی", new { @class = "form-control", @required = "required", @id = "InsurancePlanId" })
                                 }
                                 else
                                 {
@@ -308,7 +308,7 @@
                                 @Html.LabelFor(m => m.DepartmentId, "دپارتمان *", new { @class = "required-field" })
                                 @if (Model.Departments != null && Model.Departments.Any())
                                 {
-                                    @Html.DropDownListFor(m => m.DepartmentId, new SelectList(Model.Departments, "Value", "Text"), "انتخاب دپارتمان", new { @class = "form-control", @required = "required", @id = "departmentId" })
+                                    @Html.DropDownListFor(m => m.DepartmentId, new SelectList(Model.Departments ?? new List<SelectListItem>(), "Value", "Text"), "انتخاب دپارتمان", new { @class = "form-control", @required = "required", @id = "departmentId" })
                                 }
                                 else
                                 {

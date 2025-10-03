@@ -374,7 +374,7 @@
                         <i class="fas fa-calculator"></i>
                     </div>
                     <h1 class="factor-title">@Model.Name</h1>
-                    <p class="factor-subtitle">جزئیات کامل کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای")</p>
+                    <p class="factor-subtitle">جزئیات کامل کای @(Model.FactorType == ClinicApp.Models.Enums.ServiceComponentType.Technical ? "فنی" : "حرفه‌ای") - @Model.ScopeDisplayName</p>
                 </div>
             </div>
 
@@ -414,6 +414,14 @@
                                         <i class="fas fa-hashtag"></i> هشتگ‌دار
                                     </span>
                                 }
+                            </div>
+                        </div>
+
+                        <div class="info-item">
+                            <div class="info-label">دامنه کای</div>
+                            <div class="info-value">
+                                <i class="fas fa-tags"></i>
+                                @Model.ScopeDisplayName
                             </div>
                         </div>
 

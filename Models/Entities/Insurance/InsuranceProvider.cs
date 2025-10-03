@@ -147,18 +147,21 @@ public class InsuranceProviderConfig : EntityTypeConfiguration<InsuranceProvider
         Property(ip => ip.Name)
             .IsRequired()
             .HasMaxLength(250)
+            .HasColumnType("nvarchar")
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_Name")));
 
         Property(ip => ip.Code)
             .IsRequired()
             .HasMaxLength(50)
+            .HasColumnType("nvarchar")
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_InsuranceProvider_Code")));
 
         Property(ip => ip.ContactInfo)
             .IsOptional()
-            .HasMaxLength(1000);
+            .HasMaxLength(1000)
+            .HasColumnType("nvarchar");
 
         // وضعیت فعال بودن
         Property(ip => ip.IsActive)

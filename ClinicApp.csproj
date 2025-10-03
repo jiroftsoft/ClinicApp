@@ -224,14 +224,14 @@
     <Reference Include="Serilog.Enrichers.CorrelationId, Version=3.0.1.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Enrichers.CorrelationId.3.0.1\lib\net452\Serilog.Enrichers.CorrelationId.dll</HintPath>
     </Reference>
-    <Reference Include="Serilog.Enrichers.Environment, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
-      <HintPath>packages\Serilog.Enrichers.Environment.2.2.0\lib\net45\Serilog.Enrichers.Environment.dll</HintPath>
+    <Reference Include="Serilog.Enrichers.Environment, Version=3.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <HintPath>packages\Serilog.Enrichers.Environment.3.0.1\lib\net471\Serilog.Enrichers.Environment.dll</HintPath>
     </Reference>
     <Reference Include="Serilog.Enrichers.Process, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Enrichers.Process.2.0.2\lib\net45\Serilog.Enrichers.Process.dll</HintPath>
     </Reference>
-    <Reference Include="Serilog.Enrichers.Thread, Version=2.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
-      <HintPath>packages\Serilog.Enrichers.Thread.3.1.0\lib\net45\Serilog.Enrichers.Thread.dll</HintPath>
+    <Reference Include="Serilog.Enrichers.Thread, Version=4.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <HintPath>packages\Serilog.Enrichers.Thread.4.0.0\lib\net471\Serilog.Enrichers.Thread.dll</HintPath>
     </Reference>
     <Reference Include="Serilog.Filters.Expressions, Version=2.1.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Filters.Expressions.2.1.0\lib\net45\Serilog.Filters.Expressions.dll</HintPath>
@@ -241,6 +241,9 @@
     </Reference>
     <Reference Include="Serilog.Formatting.Elasticsearch, Version=10.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Formatting.Elasticsearch.10.0.0\lib\netstandard2.0\Serilog.Formatting.Elasticsearch.dll</HintPath>
+    </Reference>
+    <Reference Include="Serilog.Settings.AppSettings, Version=3.0.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
+      <HintPath>packages\Serilog.Settings.AppSettings.3.0.0\lib\net471\Serilog.Settings.AppSettings.dll</HintPath>
     </Reference>
     <Reference Include="Serilog.Sinks.Async, Version=1.5.0.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Sinks.Async.1.5.0\lib\net461\Serilog.Sinks.Async.dll</HintPath>
@@ -262,6 +265,12 @@
     </Reference>
     <Reference Include="Serilog.Sinks.Seq, Version=5.2.1.0, Culture=neutral, PublicKeyToken=24c2f752a8e58a10, processorArchitecture=MSIL">
       <HintPath>packages\Serilog.Sinks.Seq.5.2.1\lib\net45\Serilog.Sinks.Seq.dll</HintPath>
+    </Reference>
+    <Reference Include="SerilogWeb.Classic, Version=5.1.0.0, Culture=neutral, PublicKeyToken=9462ddd55fbc0e7f, processorArchitecture=MSIL">
+      <HintPath>packages\SerilogWeb.Classic.5.1.66\lib\net45\SerilogWeb.Classic.dll</HintPath>
+    </Reference>
+    <Reference Include="SerilogWeb.Classic.Mvc, Version=2.1.0.0, Culture=neutral, PublicKeyToken=9462ddd55fbc0e7f, processorArchitecture=MSIL">
+      <HintPath>packages\SerilogWeb.Classic.Mvc.2.1.25\lib\net45\SerilogWeb.Classic.Mvc.dll</HintPath>
     </Reference>
     <Reference Include="SixLabors.Fonts, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d998eea7b14cab13, processorArchitecture=MSIL">
       <HintPath>packages\SixLabors.Fonts.1.0.0\lib\netstandard2.0\SixLabors.Fonts.dll</HintPath>
@@ -428,6 +437,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="App_Start\BundleConfig.cs" />
+    <Compile Include="App_Start\DataSeeding\BaseSeedService.cs" />
+    <Compile Include="App_Start\DataSeeding\InsuranceSeedService.cs" />
+    <Compile Include="App_Start\DataSeeding\OtherSeedServices.cs" />
+    <Compile Include="App_Start\DataSeeding\RoleSeedService.cs" />
+    <Compile Include="App_Start\DataSeeding\SeedConstants.cs" />
+    <Compile Include="App_Start\DataSeeding\UserSeedService.cs" />
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\IdentityConfig.cs" />
     <Compile Include="App_Start\IdentitySeed.cs" />
@@ -481,6 +496,7 @@
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
+    <Compile Include="Extensions\CultureExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Filters\CultureFilter.cs" />
@@ -490,12 +506,16 @@
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
+    <Compile Include="Helpers\CultureHelper.cs" />
     <Compile Include="Helpers\EnumExtensions.cs" />
     <Compile Include="Helpers\ErrorMessageHelper.cs" />
     <Compile Include="Helpers\InsurancePriorityHelper.cs" />
+    <Compile Include="Helpers\LoggingConfiguration.cs" />
+    <Compile Include="Helpers\LoggingHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
+    <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
@@ -717,6 +737,34 @@
     <Compile Include="Migrations\202510020929223_BusinessRuleConfig01.Designer.cs">
       <DependentUpon>202510020929223_BusinessRuleConfig01.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510021409124_FixServiceComponentUniqueIndex.cs" />
+    <Compile Include="Migrations\202510021409124_FixServiceComponentUniqueIndex.Designer.cs">
+      <DependentUpon>202510021409124_FixServiceComponentUniqueIndex.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510021433173_NewChangeFaterFault.cs" />
+    <Compile Include="Migrations\202510021433173_NewChangeFaterFault.Designer.cs">
+      <DependentUpon>202510021433173_NewChangeFaterFault.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510030422559_ChangeModles1.cs" />
+    <Compile Include="Migrations\202510030422559_ChangeModles1.Designer.cs">
+      <DependentUpon>202510030422559_ChangeModles1.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510030506008_valueOfFactor.cs" />
+    <Compile Include="Migrations\202510030506008_valueOfFactor.Designer.cs">
+      <DependentUpon>202510030506008_valueOfFactor.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510030522177_ChangeServicetempeConfig.cs" />
+    <Compile Include="Migrations\202510030522177_ChangeServicetempeConfig.Designer.cs">
+      <DependentUpon>202510030522177_ChangeServicetempeConfig.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510030536040_ChangeServiceComponentConfig.cs" />
+    <Compile Include="Migrations\202510030536040_ChangeServiceComponentConfig.Designer.cs">
+      <DependentUpon>202510030536040_ChangeServiceComponentConfig.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510030740252_ChnageFactorSetting.cs" />
+    <Compile Include="Migrations\202510030740252_ChnageFactorSetting.Designer.cs">
+      <DependentUpon>202510030740252_ChnageFactorSetting.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -767,6 +815,7 @@
     <Compile Include="Models\Enums\EmergencyConflictSeverity.cs" />
     <Compile Include="Models\Enums\EmergencyPriority.cs" />
     <Compile Include="Models\Enums\EmergencyType.cs" />
+    <Compile Include="Models\Enums\FactorScope.cs" />
     <Compile Include="Models\Enums\InsuranceCalculationType.cs" />
     <Compile Include="Models\Enums\InsurancePriority.cs" />
     <Compile Include="Models\Enums\NotificationChannelType.cs" />
@@ -965,6 +1014,7 @@
     <Compile Include="ViewModels\DoctorManagementVM\ReportingViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleConflict.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\ScheduleOptimizationViewModels.cs" />
+    <Compile Include="ViewModels\FactorSettingViewModel.cs" />
     <Compile Include="ViewModels\InsuranceViewModel.cs" />
     <Compile Include="ViewModels\Insurance\AdvancedCalculationResult.cs" />
     <Compile Include="ViewModels\Insurance\BusinessRule\BusinessRuleCreateEditViewModel.cs" />
@@ -3851,8 +3901,6 @@
     <Content Include="CONTRACTS\SERVICE_DELETION_FIX.md" />
     <Content Include="CONTRACTS\SERVICE_FILTERS_FIX.md" />
     <Content Include="CONTRACTS\TOAST_UNDEFINED_FIX.md" />
-    <Content Include="CONTRACTS\VIEWS_UPDATE_REPORT.md" />
-    <Content Include="CONTRACTS\VIEW_OPTIMIZATION_CONTRACT.md" />
     <Content Include="CONTRACTS\ADMIN_LAYOUT_USAGE_GUIDE.md" />
     <Content Include="CONTRACTS\COMPLEX_FORM_STANDARDS_CONTRACT.md" />
     <Content Include="CONTRACTS\DATE_CONVERSION_ERROR_FIX.md" />
@@ -3904,7 +3952,6 @@
     <Content Include="Areas\Admin\Views\BusinessRule\Create.cshtml" />
     <Content Include="Areas\Admin\Views\BusinessRule\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\BusinessRule\Delete.cshtml" />
-    <Content Include="Areas\Admin\Views\Insurance\CombinedInsuranceCalculationTest\Index.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Details.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Index.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Delete.cshtml" />
@@ -3924,6 +3971,14 @@
     <Content Include="Areas\Admin\Views\InsuranceTariff\_InsuranceTariffListPartial.cshtml" />
     <Content Include="Areas\Admin\Views\InsuranceTariff\Edit.cshtml" />
     <Content Include="Areas\Admin\Views\SupplementaryTariff\Edit.cshtml" />
+    <Content Include="CONTRACTS\DATABASE_COMPREHENSIVE_SCHEMA.md" />
+    <Content Include="CONTRACTS\INTERFACES_COMPREHENSIVE_GUIDE.md" />
+    <Content Include="CONTRACTS\PERSIAN_DATE_CONTROLLER_ANALYSIS.md" />
+    <Content Include="CONTRACTS\REPOSITORIES_COMPREHENSIVE_GUIDE.md" />
+    <Content Include="CONTRACTS\SERVICE_MODULE_COMPLETE_FLOW.md" />
+    <Content Include="CONTRACTS\SERVICES_COMPREHENSIVE_GUIDE.md" />
+    <Content Include="App_Start\DataSeeding\README.md" />
+    <Content Include="CONTRACTS\SYSTEM_SEED_CONTROLLER_ANALYSIS.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4337,6 +4392,27 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510020929223_BusinessRuleConfig01.resx">
       <DependentUpon>202510020929223_BusinessRuleConfig01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510021409124_FixServiceComponentUniqueIndex.resx">
+      <DependentUpon>202510021409124_FixServiceComponentUniqueIndex.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510021433173_NewChangeFaterFault.resx">
+      <DependentUpon>202510021433173_NewChangeFaterFault.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510030422559_ChangeModles1.resx">
+      <DependentUpon>202510030422559_ChangeModles1.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510030506008_valueOfFactor.resx">
+      <DependentUpon>202510030506008_valueOfFactor.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510030522177_ChangeServicetempeConfig.resx">
+      <DependentUpon>202510030522177_ChangeServicetempeConfig.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510030536040_ChangeServiceComponentConfig.resx">
+      <DependentUpon>202510030536040_ChangeServiceComponentConfig.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510030740252_ChnageFactorSetting.resx">
+      <DependentUpon>202510030740252_ChnageFactorSetting.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

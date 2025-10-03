@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
+using ClinicApp.DataSeeding;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.Models.Enums;
@@ -33,22 +34,26 @@ namespace ClinicApp.Services.DataSeeding
         }
 
         /// <summary>
-        /// ایجاد کای‌های پایه برای سال مالی 1404
+        /// ایجاد کای‌های پایه برای سال مالی 1404 با استفاده از Constants
         /// </summary>
         public async Task SeedFactorSettingsAsync()
         {
             try
             {
-                _logger.Information("شروع ایجاد کای‌های پایه برای سال مالی 1404");
+                _logger.Information("═══════════════════════════════════════════════");
+                _logger.Information("🌱 FACTOR_SEED: شروع ایجاد کای‌های پایه سال مالی {Year}", 
+                    SeedConstants.FactorSettings1404.FinancialYear);
+                _logger.Information("═══════════════════════════════════════════════");
 
-                var currentYear = GetCurrentPersianYear();
+                var currentYear = SeedConstants.FactorSettings1404.FinancialYear;
                 var existingFactors = await _context.FactorSettings
                     .Where(f => f.FinancialYear == currentYear && !f.IsDeleted)
                     .ToListAsync();
 
                 if (existingFactors.Any())
                 {
-                    _logger.Information($"کای‌های سال مالی {currentYear} قبلاً ایجاد شده‌اند");
+                    _logger.Information("✅ FACTOR_SEED: کای‌های سال مالی {Year} قبلاً ایجاد شده‌اند ({Count} کای)", 
+                        currentYear, existingFactors.Count);
                     return;
                 }
 
@@ -59,44 +64,47 @@ namespace ClinicApp.Services.DataSeeding
                     {
                         FactorType = ServiceComponentType.Technical,
                         IsHashtagged = false,
-                        Value = 4350000m, // کای فنی پایه - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21), // شروع سال 1404
-                        EffectiveTo = new DateTime(2026, 3, 20), // پایان سال 1404
+                        Scope = FactorScope.General_NoHash,
+                        Value = SeedConstants.FactorSettings1404.TechnicalNormal,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
                         IsActive = true,
-                        Description = "کای فنی پایه برای کلیه خدمات (مصوبه 1404 - 4,350,000 ریال)"
+                        Description = $"کای فنی پایه برای کلیه خدمات (مصوبه {currentYear} - {SeedConstants.FactorSettings1404.TechnicalNormal:N0} ریال)"
                     },
 
-                    // کای‌های فنی - خدمات کد ۷ (مصوبه 1404)
+                    // کای‌های فنی - خدمات هشتگ‌دار کدهای ۱ تا ۷ (مصوبه 1404)
                     new FactorSetting
                     {
                         FactorType = ServiceComponentType.Technical,
                         IsHashtagged = true,
-                        Value = 2750000m, // کای فنی کد ۷ - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Hash_1_7,
+                        Value = SeedConstants.FactorSettings1404.TechnicalHash_1_7,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
                         IsActive = true,
-                        Description = "کای فنی برای خدمات کد ۷ (مصوبه 1404 - 2,750,000 ریال)"
+                        Description = "کای فنی برای خدمات هشتگ‌دار کدهای ۱ تا ۷ (مصوبه 1404 - 2,750,000 ریال)"
                     },
 
-                    // کای‌های فنی - خدمات کدهای ۸ و ۹ (مصوبه 1404)
+                    // کای‌های فنی - خدمات هشتگ‌دار کدهای ۸ و ۹ (مصوبه 1404)
                     new FactorSetting
                     {
                         FactorType = ServiceComponentType.Technical,
                         IsHashtagged = true,
-                        Value = 2600000m, // کای فنی کدهای ۸ و ۹ - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Hash_8_9,
+                        Value = SeedConstants.FactorSettings1404.TechnicalHash_8_9,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
                         IsActive = true,
-                        Description = "کای فنی برای خدمات کدهای ۸ و ۹ (مصوبه 1404 - 2,600,000 ریال)"
+                        Description = "کای فنی برای خدمات هشتگ‌دار کدهای ۸ و ۹ (مصوبه 1404 - 2,600,000 ریال)"
                     },
 
                     // کای‌های فنی - دندانپزشکی (مصوبه 1404)
@@ -104,9 +112,10 @@ namespace ClinicApp.Services.DataSeeding
                     {
                         FactorType = ServiceComponentType.Technical,
                         IsHashtagged = false,
-                        Value = 1900000m, // کای فنی دندانپزشکی - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Dent_Technical,
+                        Value = SeedConstants.FactorSettings1404.TechnicalDental,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
@@ -119,9 +128,10 @@ namespace ClinicApp.Services.DataSeeding
                     {
                         FactorType = ServiceComponentType.Technical,
                         IsHashtagged = false,
-                        Value = 1000000m, // کای فنی مواد دندانپزشکی - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Dent_Consumables,
+                        Value = SeedConstants.FactorSettings1404.TechnicalDentalConsumables,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
@@ -134,9 +144,10 @@ namespace ClinicApp.Services.DataSeeding
                     {
                         FactorType = ServiceComponentType.Professional,
                         IsHashtagged = false,
-                        Value = 1370000m, // کای حرفه‌ای پایه - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Prof_NoHash,
+                        Value = SeedConstants.FactorSettings1404.ProfessionalNormal,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
@@ -144,19 +155,20 @@ namespace ClinicApp.Services.DataSeeding
                         Description = "کای حرفه‌ای پایه برای کلیه خدمات (مصوبه 1404 - 1,370,000 ریال)"
                     },
 
-                    // کای‌های حرفه‌ای - ویزیت سرپایی (مصوبه 1404)
+                    // کای‌های حرفه‌ای - خدمات هشتگ‌دار (مصوبه 1404)
                     new FactorSetting
                     {
                         FactorType = ServiceComponentType.Professional,
                         IsHashtagged = true,
-                        Value = 770000m, // کای حرفه‌ای ویزیت سرپایی - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Prof_Hash,
+                        Value = SeedConstants.FactorSettings1404.ProfessionalHash,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
                         IsActive = true,
-                        Description = "کای حرفه‌ای برای ویزیت سرپایی (مصوبه 1404 - 770,000 ریال)"
+                        Description = "کای حرفه‌ای برای خدمات هشتگ‌دار (مصوبه 1404 - 770,000 ریال)"
                     },
 
                     // کای‌های حرفه‌ای - دندانپزشکی (مصوبه 1404)
@@ -164,9 +176,10 @@ namespace ClinicApp.Services.DataSeeding
                     {
                         FactorType = ServiceComponentType.Professional,
                         IsHashtagged = false,
-                        Value = 850000m, // کای حرفه‌ای دندانپزشکی - مصوبه 1404
-                        EffectiveFrom = new DateTime(2025, 3, 21),
-                        EffectiveTo = new DateTime(2026, 3, 20),
+                        Scope = FactorScope.Prof_Dental, // دندانپزشکی بدون هشتگ - Scope جداگانه
+                        Value = SeedConstants.FactorSettings1404.ProfessionalDental,
+                        EffectiveFrom = SeedConstants.FactorSettings1404.EffectiveFrom,
+                        EffectiveTo = SeedConstants.FactorSettings1404.EffectiveTo,
                         FinancialYear = currentYear,
                         IsActiveForCurrentYear = true,
                         IsFrozen = false,
@@ -177,6 +190,8 @@ namespace ClinicApp.Services.DataSeeding
 
                 // دریافت کاربر معتبر برای Seed
                 var systemUserId = await GetValidUserIdForSeedAsync();
+
+                _logger.Information("📍 FACTOR_SEED: اضافه کردن {Count} کای به دیتابیس", factorSettings.Count);
 
                 foreach (var factor in factorSettings)
                 {
@@ -190,35 +205,45 @@ namespace ClinicApp.Services.DataSeeding
                     }
                     
                     _context.FactorSettings.Add(factor);
+                    _logger.Debug("📌 FACTOR_SEED: کای {Type} - {IsHashtagged} - {Value:N0} ریال", 
+                        factor.FactorType, 
+                        factor.IsHashtagged ? "هشتگ‌دار" : "عادی", 
+                        factor.Value);
                 }
 
-                await _context.SaveChangesAsync();
-                _logger.Information($"کای‌های پایه برای سال مالی {currentYear} با موفقیت ایجاد شدند");
+                // حذف SaveChangesAsync - انجام می‌شود در SystemSeedService
+                _logger.Information("✅ FACTOR_SEED: کای‌های سال مالی {Year} آماده ذخیره‌سازی ({Count} کای)", 
+                    currentYear, factorSettings.Count);
+                _logger.Information("═══════════════════════════════════════════════");
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در ایجاد کای‌های پایه");
+                _logger.Error(ex, "❌ FACTOR_SEED: خطا در ایجاد کای‌های پایه");
                 throw;
             }
         }
 
         /// <summary>
-        /// ایجاد کای‌های سال مالی قبلی (1403) برای تست
+        /// ایجاد کای‌های سال مالی قبلی (1403) برای تست با Structured Logging
         /// </summary>
         public async Task SeedPreviousYearFactorsAsync()
         {
             try
             {
-                var previousYear = GetCurrentPersianYear() - 1;
+                _logger.Information("🔄 FACTOR_SEED: بررسی کای‌های سال قبل...");
+
+                var previousYear = SeedConstants.FactorSettings1404.FinancialYear - 1;
                 var existingFactors = await _context.FactorSettings
                     .Where(f => f.FinancialYear == previousYear && !f.IsDeleted)
                     .ToListAsync();
 
                 if (existingFactors.Any())
                 {
-                    _logger.Information($"کای‌های سال مالی {previousYear} قبلاً ایجاد شده‌اند");
+                    _logger.Information("✅ FACTOR_SEED: کای‌های سال مالی {Year} قبلاً ایجاد شده‌اند", previousYear);
                     return;
                 }
+
+                _logger.Information("📍 FACTOR_SEED: ایجاد کای‌های سال مالی {Year} (Frozen)", previousYear);
 
                 var factorSettings = new List<FactorSetting>
                 {
@@ -274,12 +299,13 @@ namespace ClinicApp.Services.DataSeeding
                     _context.FactorSettings.Add(factor);
                 }
 
-                await _context.SaveChangesAsync();
-                _logger.Information($"کای‌های سال مالی {previousYear} با موفقیت ایجاد شدند");
+                // حذف SaveChangesAsync - انجام می‌شود در SystemSeedService
+                _logger.Information("✅ FACTOR_SEED: کای‌های سال مالی {Year} آماده ذخیره‌سازی ({Count} کای - Frozen)", 
+                    previousYear, factorSettings.Count);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در ایجاد کای‌های سال مالی قبلی");
+                _logger.Error(ex, "❌ FACTOR_SEED: خطا در ایجاد کای‌های سال قبلی");
                 throw;
             }
         }
@@ -348,36 +374,95 @@ namespace ClinicApp.Services.DataSeeding
         }
 
         /// <summary>
-        /// بررسی وجود کای‌های مورد نیاز
+        /// بررسی وجود کای‌های مورد نیاز با Logging دقیق و ضدگلوله‌سازی
         /// </summary>
         public async Task<bool> ValidateRequiredFactorsAsync()
         {
-            var currentYear = GetCurrentPersianYear();
-            var requiredFactors = new[]
+            try
             {
-                new { Type = ServiceComponentType.Technical, IsHashtagged = false },
-                new { Type = ServiceComponentType.Technical, IsHashtagged = true },
-                new { Type = ServiceComponentType.Professional, IsHashtagged = false },
-                new { Type = ServiceComponentType.Professional, IsHashtagged = true }
-            };
+                _logger.Information("🔍 FACTOR_VALIDATION: شروع اعتبارسنجی کای‌های مورد نیاز");
 
-            foreach (var required in requiredFactors)
-            {
-                var exists = await _context.FactorSettings
-                    .AnyAsync(f => f.FinancialYear == currentYear 
-                                && f.FactorType == required.Type 
-                                && f.IsHashtagged == required.IsHashtagged 
-                                && f.IsActive 
-                                && !f.IsDeleted);
+                var currentYear = GetCurrentPersianYear();
+                _logger.Information("📅 FACTOR_VALIDATION: سال مالی جاری: {Year}", currentYear);
 
-                if (!exists)
+                // بررسی Context.Local اول
+                var localFactorsCount = _context.FactorSettings.Local
+                    .Count(f => f.FinancialYear == currentYear && f.IsActive && !f.IsDeleted);
+
+                _logger.Information("📊 FACTOR_VALIDATION: Context.Local - تعداد کای‌ها: {Count}", localFactorsCount);
+
+                // اگر Local خالی است، از DB بخوان
+                List<FactorSetting> factors;
+                if (localFactorsCount == 0)
                 {
-                    _logger.Warning($"کای {required.Type} برای خدمات {(required.IsHashtagged ? "هشتگ‌دار" : "عادی")} یافت نشد");
+                    _logger.Information("⚠️ FACTOR_VALIDATION: Context.Local خالی است - بررسی دیتابیس...");
+                    factors = await _context.FactorSettings
+                        .Where(f => f.FinancialYear == currentYear && f.IsActive && !f.IsDeleted)
+                        .ToListAsync();
+                    _logger.Information("📊 FACTOR_VALIDATION: Database - تعداد کای‌ها: {Count}", factors.Count);
+                }
+                else
+                {
+                    factors = _context.FactorSettings.Local
+                        .Where(f => f.FinancialYear == currentYear && f.IsActive && !f.IsDeleted)
+                        .ToList();
+                }
+
+                if (!factors.Any())
+                {
+                    _logger.Error("❌ FACTOR_VALIDATION: هیچ کای‌ای برای سال مالی {Year} یافت نشد!", currentYear);
                     return false;
                 }
-            }
 
-            return true;
+                // بررسی کای‌های مورد نیاز
+                var requiredFactors = new[]
+                {
+                    new { Type = ServiceComponentType.Technical, IsHashtagged = false, Name = "کای فنی عادی" },
+                    new { Type = ServiceComponentType.Technical, IsHashtagged = true, Name = "کای فنی هشتگ‌دار" },
+                    new { Type = ServiceComponentType.Professional, IsHashtagged = false, Name = "کای حرفه‌ای عادی" },
+                    new { Type = ServiceComponentType.Professional, IsHashtagged = true, Name = "کای حرفه‌ای هشتگ‌دار" }
+                };
+
+                var missingFactors = new List<string>();
+                var foundFactors = new List<string>();
+
+                foreach (var required in requiredFactors)
+                {
+                    var exists = factors.Any(f => f.FactorType == required.Type && f.IsHashtagged == required.IsHashtagged);
+                    
+                    if (exists)
+                    {
+                        var factor = factors.First(f => f.FactorType == required.Type && f.IsHashtagged == required.IsHashtagged);
+                        foundFactors.Add($"{required.Name}: {factor.Value:N0} ریال");
+                        _logger.Information("✅ FACTOR_VALIDATION: {Name} = {Value:N0} ریال", required.Name, factor.Value);
+                    }
+                    else
+                    {
+                        missingFactors.Add(required.Name);
+                        _logger.Error("❌ FACTOR_VALIDATION: {Name} یافت نشد!", required.Name);
+                    }
+                }
+
+                if (missingFactors.Any())
+                {
+                    _logger.Error("❌ FACTOR_VALIDATION: {Count} کای مورد نیاز یافت نشد: {Missing}",
+                        missingFactors.Count, string.Join(", ", missingFactors));
+                    return false;
+                }
+
+                _logger.Information("✅ FACTOR_VALIDATION: همه کای‌های مورد نیاز موجود هستند:");
+                foreach (var found in foundFactors)
+                {
+                    _logger.Information("   - {Factor}", found);
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ FACTOR_VALIDATION: خطا در اعتبارسنجی کای‌ها");
+                return false;
+            }
         }
     }
 }
