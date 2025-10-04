@@ -142,6 +142,27 @@ namespace ClinicApp.Services.Insurance
         }
 
         /// <summary>
+        /// دریافت طرح بیمه بر اساس شناسه
+        /// </summary>
+        public async Task<ServiceResult<InsurancePlan>> GetByIdAsync(int planId)
+        {
+            try
+            {
+                var plan = await _insurancePlanRepository.GetByIdAsync(planId);
+                if (plan == null)
+                {
+                    return ServiceResult<InsurancePlan>.Failed("طرح بیمه یافت نشد");
+                }
+                return ServiceResult<InsurancePlan>.Successful(plan);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت طرح بیمه با شناسه {PlanId}", planId);
+                return ServiceResult<InsurancePlan>.Failed("خطا در دریافت طرح بیمه");
+            }
+        }
+
+        /// <summary>
         /// دریافت جزئیات طرح بیمه
         /// </summary>
         public async Task<ServiceResult<InsurancePlanDetailsViewModel>> GetPlanDetailsAsync(int planId)

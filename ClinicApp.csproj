@@ -984,6 +984,7 @@
     <Compile Include="Validators\Insurance\SupplementaryCalculationResultValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementarySettingsValidator.cs" />
     <Compile Include="Validators\Insurance\SupplementaryTariffViewModelValidator.cs" />
+    <Compile Include="Validators\PercentageValidationAttribute.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />

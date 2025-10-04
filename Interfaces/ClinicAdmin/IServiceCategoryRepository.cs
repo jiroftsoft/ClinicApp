@@ -99,5 +99,12 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// </summary>
         /// <returns>لیست تمام دسته‌بندی‌های خدمات فعال</returns>
         Task<List<ServiceCategory>> GetAllActiveServiceCategoriesAsync();
+
+        /// <summary>
+        /// دریافت دسته‌بندی‌های خدمات بر اساس لیست شناسه‌ها برای عملیات گروهی
+        /// </summary>
+        /// <param name="categoryIds">لیست شناسه‌های دسته‌بندی‌های خدمات</param>
+        /// <returns>لیستی از دسته‌بندی‌های خدمات یافت شده</returns>
+        Task<List<ServiceCategory>> GetServiceCategoriesByIdsAsync(List<int> categoryIds);
     }
 }

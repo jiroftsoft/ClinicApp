@@ -144,5 +144,16 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<bool>> IsPlanValidAsync(int planId, System.DateTime checkDate);
 
         #endregion
+
+        #region Additional Operations
+
+        /// <summary>
+        /// دریافت طرح بیمه بر اساس شناسه
+        /// </summary>
+        /// <param name="planId">شناسه طرح بیمه</param>
+        /// <returns>طرح بیمه</returns>
+        Task<ServiceResult<Models.Entities.Insurance.InsurancePlan>> GetByIdAsync(int planId);
+
+        #endregion
     }
 }

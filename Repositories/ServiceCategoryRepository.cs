@@ -135,5 +135,23 @@ namespace ClinicApp.Repositories
                 .ThenBy(sc => sc.Title)
                 .ToListAsync();
         }
+
+        /// <summary>
+        /// Get service categories by IDs for bulk operations
+        /// دریافت دسته‌بندی‌های خدمات بر اساس لیست شناسه‌ها برای عملیات گروهی
+        /// </summary>
+        public async Task<List<ServiceCategory>> GetServiceCategoriesByIdsAsync(List<int> categoryIds)
+        {
+            if (categoryIds == null || !categoryIds.Any())
+                return new List<ServiceCategory>();
+
+            return await _context.ServiceCategories
+                .AsNoTracking()
+                .Include(sc => sc.Department)
+                .Where(sc => categoryIds.Contains(sc.ServiceCategoryId) && !sc.IsDeleted)
+                .OrderBy(sc => sc.Title)
+                .ToListAsync();
+        }
+
     }
 }

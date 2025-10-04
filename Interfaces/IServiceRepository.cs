@@ -234,5 +234,18 @@ namespace ClinicApp.Interfaces
         Task<List<Service>> GetServicesByDepartmentAsync(int departmentId);
 
         #endregion
+
+        #region Bulk Operations (عملیات گروهی)
+
+        /// <summary>
+        /// Get services by department and category for bulk operations
+        /// دریافت خدمات بر اساس دپارتمان و دسته‌بندی برای عملیات گروهی
+        /// </summary>
+        /// <param name="departmentId">شناسه دپارتمان</param>
+        /// <param name="categoryId">شناسه دسته‌بندی</param>
+        /// <returns>نتیجه دریافت خدمات</returns>
+        Task<ServiceResult<List<Service>>> GetServicesByDepartmentAndCategoryAsync(int departmentId, int categoryId);
+
+        #endregion
     }
 }

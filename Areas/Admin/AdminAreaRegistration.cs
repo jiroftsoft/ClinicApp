@@ -118,6 +118,14 @@ namespace ClinicApp.Areas.Admin
                 namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
             );
 
+            // Supplementary Tariff Routes
+            context.MapRoute(
+                name: "Admin_SupplementaryTariff_Index",
+                url: "Admin/SupplementaryTariff/{action}/{id}",
+                defaults: new { controller = "SupplementaryTariff", action = "Index", id = UrlParameter.Optional },
+                namespaces: new[] { "ClinicApp.Areas.Admin.Controllers.Insurance" }
+            );
+
             context.MapRoute(
                 name: "Admin_CombinedInsuranceCalculation_Index",
                 url: "Admin/Insurance/CombinedInsuranceCalculation/{action}/{id}",

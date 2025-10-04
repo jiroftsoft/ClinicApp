@@ -276,7 +276,7 @@
                                 @Html.LabelFor(m => m.DepartmentId, "دپارتمان *", new { @class = "required-field" })
                                 @if (Model.Departments != null && Model.Departments.Any())
                                 {
-                                    @Html.DropDownListFor(m => m.DepartmentId, new SelectList(Model.Departments, "Value", "Text"), "انتخاب دپارتمان", new { @class = "form-control", @required = "required", @id = "departmentId", @disabled = "disabled", @aria_readonly = "true" })
+                                    @Html.DropDownListFor(m => m.DepartmentId, new SelectList(Model.Departments, "Value", "Text"), "انتخاب دپارتمان", new { @class = "form-control", @id = "departmentId", @disabled = "disabled", @aria_readonly = "true" })
                                     @Html.HiddenFor(m => m.DepartmentId)
                                 }
                                 else
@@ -305,7 +305,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 @Html.LabelFor(m => m.TariffPrice, "قیمت تعرفه (ریال) *", new { @class = "required-field", @id = "tariffPriceLabel" })
-                                @Html.TextBoxFor(m => m.TariffPrice, new { @class = "form-control currency-input", @type = "text", @required = "required", @placeholder = "0", @id = "TariffPrice", @inputmode = "numeric", @aria_describedby = "tariffPriceHelp", @data_mask = "currency" })
+                                @Html.TextBoxFor(m => m.TariffPrice, new { @class = "form-control currency-input", @type = "number", @step = "1", @required = "required", @placeholder = "0", @id = "TariffPrice", @inputmode = "numeric", @aria_describedby = "tariffPriceHelp", @data_mask = "currency" })
                                 @Html.ValidationMessageFor(m => m.TariffPrice, "", new { @class = "invalid-feedback" })
                                 <div class="form-help" id="tariffPriceHelp">قیمت کل خدمت به ریال</div>
                             </div>
@@ -313,7 +313,7 @@
                         <div class="col-md-4">
                             <div class="form-group">
                                 @Html.LabelFor(m => m.PatientShare, "سهم بیمار پس از بیمه پایه (قبل از تکمیلی) *", new { @class = "required-field", @id = "patientShareLabel" })
-                                @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control currency-input", @type = "text", @required = "required", @placeholder = "0", @id = "PatientShare", @inputmode = "numeric", @data_mask = "currency" })
+                                @Html.TextBoxFor(m => m.PatientShare, new { @class = "form-control currency-input", @type = "number", @step = "1", @required = "required", @placeholder = "0", @id = "PatientShare", @inputmode = "numeric", @data_mask = "currency" })
                                 @Html.ValidationMessageFor(m => m.PatientShare, "", new { @class = "invalid-feedback" })
                                 <div class="form-help">مبلغی که بیمار باید پرداخت کند</div>
                                 </div>
@@ -525,17 +525,38 @@
                 // Initial calculation
                 updateCalculationPreview();
                 updateFieldCounter();
+                
+                // 🔧 DEBUG: Log initial form values
+                console.log('🏥 MEDICAL EDIT: Initial form values:');
+                console.log('TariffPrice:', $('#TariffPrice').val(), 'Type:', typeof $('#TariffPrice').val());
+                console.log('PatientShare:', $('#PatientShare').val(), 'Type:', typeof $('#PatientShare').val());
+                console.log('SupplementaryCoveragePercent:', $('#SupplementaryCoveragePercent').val(), 'Type:', typeof $('#SupplementaryCoveragePercent').val());
+                console.log('InsuranceTariffId:', $('#InsuranceTariffId').val());
+                console.log('ServiceId:', $('#ServiceId').val());
+                
+                // 🔧 DEBUG: Test decimal parsing
+                const testValue = '100.00';
+                console.log('🏥 MEDICAL DEBUG: Test decimal parsing:');
+                console.log('parseFloat("100.00"):', parseFloat(testValue));
+                console.log('Number("100.00"):', Number(testValue));
+                console.log('parseFloat("100,00"):', parseFloat('100,00'));
+                console.log('Current culture decimal separator:', (1.1).toLocaleString().charAt(1));
 
-                // Prefill: format existing model values (DB=Rial → UI=Toman) without overwriting user inputs
+                // 🔧 TEMPORARY FIX: Disable prefill formatting to test model binding
+                console.log('🏥 MEDICAL EDIT: Prefill formatting disabled for debugging');
+                
+                // Prefill: format existing model values (DB=Rial → UI=Rial) without overwriting user inputs
                 (function prefillMonetaryFields(){
                     try{
-                        function rialToTomanStr(r){ var n = Number(r||0); if(!isFinite(n)||n===0) return ''; var t = toToman(n); return (t).toLocaleString('fa-IR'); }
-                        function setIfPresent(sel){ var $el=$(sel); if($el.length===0) return; var raw=$el.val(); if(!raw) return; var rial=parseFloat(String(raw).replace(/[^\d.-]/g,''))||0; if(rial<=0) return; var disp= rialToTomanStr(rial); if(disp){ $el.val(disp).trigger('input'); } }
-                        setIfPresent('#TariffPrice');
-                        setIfPresent('#PatientShare');
-                        setIfPresent('#SupplementaryMaxPayment');
-                        setIfPresent('#SupplementaryDeductible');
-                        setIfPresent('#MinPatientCopay');
+                        console.log('🏥 MEDICAL EDIT: Prefill values - TariffPrice:', $('#TariffPrice').val(), 'PatientShare:', $('#PatientShare').val());
+                        // Keep original values for debugging
+                        // function formatRialStr(r){ var n = Number(r||0); if(!isFinite(n)||n===0) return ''; return (n).toLocaleString('fa-IR'); }
+                        // function setIfPresent(sel){ var $el=$(sel); if($el.length===0) return; var raw=$el.val(); if(!raw) return; var rial=parseFloat(String(raw).replace(/[^\d.-]/g,''))||0; if(rial<=0) return; var disp= formatRialStr(rial); if(disp){ $el.val(disp).trigger('input'); } }
+                        // setIfPresent('#TariffPrice');
+                        // setIfPresent('#PatientShare');
+                        // setIfPresent('#SupplementaryMaxPayment');
+                        // setIfPresent('#SupplementaryDeductible');
+                        // setIfPresent('#MinPatientCopay');
                     }catch(e){ console.warn('Prefill monetary failed', e); }
                 })();
                 
@@ -549,20 +570,20 @@
                 try {
                     console.log('🏥 MEDICAL EDIT: Submit start', { tariffId: $('#InsuranceTariffId').val() });
                     
-                    if (!validateForm()) {
-                    console.log('🏥 MEDICAL EDIT: Validation failed');
-                        e.preventDefault();
-                        return false;
-                    }
-                    
-                    console.log('🏥 MEDICAL EDIT: Validation passed, submitting...');
-                
                     // Show loading state
                     $('#submitBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...');
+                    
+                    // 🔧 FIX: Reset button state after form submission
+                    setTimeout(function() {
+                        $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
+                    }, 3000); // Reset after 3 seconds
+                    
                 } catch (error) {
                     console.error('🏥 MEDICAL EDIT: Submit error', error);
                     e.preventDefault();
                     alert('خطا در ارسال فرم. لطفاً دوباره تلاش کنید.');
+                    // Reset button state on error
+                    $('#submitBtn').prop('disabled', false).html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
                 }
             });
 
@@ -577,17 +598,24 @@
 
             // Global AJAX loading/disable (unified UX)
             $(document).ajaxStart(function(){
-                $('#submitBtn').prop('disabled', true).addClass('disabled');
+                $('#submitBtn').prop('disabled', true).addClass('disabled').html('<i class="fas fa-spinner fa-spin me-2"></i>در حال پردازش...');
                 $('#loadingOverlay').removeClass('d-none');
             });
             $(document).ajaxStop(function(){
-                $('#submitBtn').prop('disabled', false).removeClass('disabled');
+                $('#submitBtn').prop('disabled', false).removeClass('disabled').html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
                 $('#loadingOverlay').addClass('d-none');
             });
 
             // Global AJAX error logging
             $(document).ajaxError(function(evt, jqxhr, settings, thrown){
                 console.error('🏥 MEDICAL EDIT: AJAX error', { url: settings && settings.url, status: jqxhr && jqxhr.status, err: thrown });
+                // Reset button state on AJAX error
+                $('#submitBtn').prop('disabled', false).removeClass('disabled').html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
+            });
+            
+            // 🔧 FIX: Reset button state on page unload
+            $(window).on('beforeunload', function() {
+                $('#submitBtn').prop('disabled', false).removeClass('disabled').html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
             });
         });
 
@@ -802,7 +830,7 @@
         
         // Helper functions for currency conversion
         // 🔧 CRITICAL FIX: همه چیز ریال است - بدون تبدیل
-        const toRial = t => t; // مستقیماً ریال
+        const toRial = r => r; // مستقیماً ریال
         const toToman = r => r; // مستقیماً ریال
         
         // تابع فرمت کردن مبالغ (بدون اعشار)
@@ -937,9 +965,6 @@
                         if (isNaN(numValue) || numValue < 0 || numValue > 100) {
                             isValid = false;
                             errorMessage = 'درصد پوشش باید بین 0 تا 100 باشد';
-                        } else if (!/^\d+(\.\d{1,2})?$/.test(value)) {
-                            isValid = false;
-                            errorMessage = 'درصد پوشش باید عدد مثبت باشد (حداکثر 2 رقم اعشار)';
                         }
                     }
                     break;
@@ -1360,19 +1385,21 @@
     <script>
         $(document).ready(function() {
             try {
+                // 🔧 TEMPORARY FIX: Disable currency formatting to test model binding
+                console.log('🏥 MEDICAL EDIT: Currency formatting disabled for debugging');
+                
                 // Initialize currency input masks for Persian culture
                 $('.currency-input').each(function() {
+                    // Disable formatting for debugging
                     $(this).on('input', function() {
-                        var value = $(this).val().replace(/[^\d]/g, '');
-                        if (value) {
-                            var formatted = (parseInt(value) || 0).toLocaleString ? (parseInt(value) || 0).toLocaleString('fa-IR') : (parseInt(value) || 0).toString();
-                            $(this).val(formatted);
-                        }
+                        // Keep original value for debugging
+                        console.log('🏥 MEDICAL EDIT: Input value:', $(this).val());
                     });
                     
                     // Normalize value before form submission
                     $(this).on('blur', function() {
-                        var value = $(this).val().replace(/[^\d]/g, '');
+                        var value = $(this).val();
+                        console.log('🏥 MEDICAL EDIT: Blur value:', value);
                         $(this).data('raw-value', value);
                     });
                 });

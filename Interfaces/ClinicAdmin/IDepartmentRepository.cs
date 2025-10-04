@@ -70,4 +70,11 @@ public interface IDepartmentRepository
     /// </summary>
     /// <returns>لیستی از تمام دپارتمان‌های فعال.</returns>
     Task<List<Department>> GetAllActiveDepartmentsAsync();
+
+        /// <summary>
+        /// دریافت دپارتمان‌ها بر اساس لیست شناسه‌ها برای عملیات گروهی
+        /// </summary>
+        /// <param name="departmentIds">لیست شناسه‌های دپارتمان‌ها</param>
+        /// <returns>لیستی از دپارتمان‌های یافت شده</returns>
+        Task<List<Department>> GetDepartmentsByIdsAsync(List<int> departmentIds);
 }

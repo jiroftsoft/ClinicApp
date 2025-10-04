@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Web.Mvc;
+using ClinicApp.Validators;
 
 namespace ClinicApp.ViewModels.Insurance.Supplementary
 {
@@ -60,6 +61,7 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// <summary>
         /// قیمت تعرفه (ریال - بدون اعشار)
         /// </summary>
+        [Required(ErrorMessage = "قیمت تعرفه الزامی است")]
         [Display(Name = "قیمت تعرفه (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "قیمت تعرفه نمی‌تواند منفی باشد.")]
         [RegularExpression(@"^\d+$", ErrorMessage = "قیمت تعرفه باید عدد صحیح مثبت باشد")]
@@ -68,6 +70,7 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// <summary>
         /// سهم بیمار (ریال - بدون اعشار)
         /// </summary>
+        [Required(ErrorMessage = "سهم بیمار پس از بیمه پایه الزامی است")]
         [Display(Name = "سهم بیمار (ریال)")]
         [Range(0, double.MaxValue, ErrorMessage = "سهم بیمار نمی‌تواند منفی باشد.")]
         [RegularExpression(@"^\d+$", ErrorMessage = "سهم بیمار باید عدد صحیح مثبت باشد")]
@@ -84,9 +87,9 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         /// <summary>
         /// درصد پوشش بیمه تکمیلی (با اعشار)
         /// </summary>
+        [Required(ErrorMessage = "درصد پوشش تکمیلی الزامی است")]
         [Display(Name = "درصد پوشش تکمیلی")]
-        [Range(0, 100, ErrorMessage = "درصد پوشش باید بین 0 تا 100 باشد.")]
-        [RegularExpression(@"^(0|[1-9]\d*)(\.\d{1,2})?$", ErrorMessage = "درصد پوشش باید عدد مثبت باشد (حداکثر 2 رقم اعشار)")]
+        [PercentageValidation(ErrorMessage = "درصد پوشش باید عددی بین 0 تا 100 باشد (حداکثر 2 رقم اعشار)")]
         public decimal? SupplementaryCoveragePercent { get; set; }
 
         /// <summary>

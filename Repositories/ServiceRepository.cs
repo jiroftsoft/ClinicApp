@@ -282,6 +282,32 @@ namespace ClinicApp.Repositories
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Get services by department and category for bulk operations
+        /// دریافت خدمات بر اساس دپارتمان و دسته‌بندی برای عملیات گروهی
+        /// </summary>
+        public async Task<ServiceResult<List<Service>>> GetServicesByDepartmentAndCategoryAsync(int departmentId, int categoryId)
+        {
+            try
+            {
+                var services = await _context.Services
+                    .AsNoTracking()
+                    .Include(s => s.ServiceCategory)
+                    .Where(s => s.ServiceCategory.DepartmentId == departmentId 
+                             && s.ServiceCategoryId == categoryId 
+                             && !s.IsDeleted 
+                             && s.IsActive)
+                    .OrderBy(s => s.Title)
+                    .ToListAsync();
+
+                return ServiceResult<List<Service>>.Successful(services);
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<List<Service>>.Failed($"خطا در دریافت خدمات: {ex.Message}");
+            }
+        }
+
         #endregion
     }
 }

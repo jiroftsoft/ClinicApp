@@ -14,5 +14,15 @@ namespace ClinicApp.ViewModels.Insurance.Supplementary
         public string DepartmentName { get; set; }
         public bool IsActive { get; set; }
         public int ServiceCount { get; set; }
+        
+        /// <summary>
+        /// Value property for dropdown binding
+        /// </summary>
+        public string Value => ServiceCategoryId.ToString();
+        
+        /// <summary>
+        /// Text property for dropdown display
+        /// </summary>
+        public string Text => Name;
     }
 }

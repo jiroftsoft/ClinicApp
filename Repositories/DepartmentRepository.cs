@@ -105,4 +105,21 @@ public class DepartmentRepository : IDepartmentRepository
             .OrderBy(d => d.Name)
             .ToListAsync();
     }
+
+        /// <summary>
+        /// Get departments by IDs for bulk operations
+        /// دریافت دپارتمان‌ها بر اساس لیست شناسه‌ها برای عملیات گروهی
+        /// </summary>
+        public async Task<List<Department>> GetDepartmentsByIdsAsync(List<int> departmentIds)
+        {
+            if (departmentIds == null || !departmentIds.Any())
+                return new List<Department>();
+
+            return await _context.Departments
+                .AsNoTracking()
+                .Where(d => departmentIds.Contains(d.DepartmentId) && !d.IsDeleted)
+                .OrderBy(d => d.Name)
+                .ToListAsync();
+        }
+
 }

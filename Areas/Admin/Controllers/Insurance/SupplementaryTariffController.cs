@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
@@ -1558,10 +1559,10 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     InsuranceTariffId = tariff.InsuranceTariffId,
                     ServiceId = tariff.ServiceId,
                     InsurancePlanId = tariff.InsurancePlanId ?? 0,
-                    // ✅ CRITICAL: بررسی مقادیر decimal برای جلوگیری از Infinity
-                    TariffPrice = tariff.TariffPrice.HasValue && tariff.TariffPrice.Value > 0 ? tariff.TariffPrice : null,
-                    PatientShare = tariff.PatientShare.HasValue && tariff.PatientShare.Value > 0 ? tariff.PatientShare : null,
-                    InsurerShare = tariff.InsurerShare.HasValue && tariff.InsurerShare.Value >= 0 ? tariff.InsurerShare : 0,
+                    // ✅ CRITICAL FIX: حفظ مقادیر موجود حتی اگر 0 باشند
+                    TariffPrice = tariff.TariffPrice ?? 0,
+                    PatientShare = tariff.PatientShare ?? 0,
+                    InsurerShare = tariff.InsurerShare ?? 0,
                     SupplementaryCoveragePercent = tariff.SupplementaryCoveragePercent ?? 90,
                     Priority = tariff.Priority ?? 5,
                     PrimaryInsurancePlanId = 4, // ✅ CRITICAL: بیمه سلامت پایه (HEALTH_BASIC)
@@ -2717,20 +2718,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         IsActive = sc.IsActive,
                         ServiceCount = 0 // TODO: محاسبه تعداد خدمات
                     }).ToList() ?? new List<ServiceCategoryLookupViewModel>(),
-                    Services = services?.Select(s => new ServiceLookupViewModel
-                    {
-                        ServiceId = s.ServiceId,
-                        Title = s.Title,
-                        ServiceCode = s.ServiceCode,
-                        Description = s.Description,
-                        Price = s.Price,
-                        ServiceCategoryId = s.ServiceCategoryId,
-                        ServiceCategoryName = s.ServiceCategory?.Title,
-                        DepartmentId = s.ServiceCategory?.DepartmentId ?? 0,
-                        DepartmentName = s.ServiceCategory?.Department?.Name,
-                        IsActive = s.IsActive,
-                        HasExistingTariff = false // TODO: بررسی وجود تعرفه
-                    }).ToList() ?? new List<ServiceLookupViewModel>()
+                    // Services removed from simplified ViewModel
                 };
 
                 return View(model);
@@ -2742,45 +2730,101 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// ایجاد تعرفه گروهی
+        /// ایجاد تعرفه گروهی - بهینه شده
         /// </summary>
         [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<ActionResult> CreateBulk(BulkSupplementaryTariffViewModel model)
+        public async Task<ActionResult> CreateBulkPost()
         {
             try
             {
-                _log.Information("🏥 MEDICAL: درخواست ایجاد تعرفه گروهی - SelectionType: {SelectionType}, User: {UserName} (Id: {UserId})",
-                    model.SelectionType, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: درخواست ایجاد تعرفه گروهی - User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
 
-                if (!ModelState.IsValid)
+                // 🔧 CRITICAL: Manual model binding for JSON
+                var request = Request.InputStream;
+                request.Seek(0, SeekOrigin.Begin);
+                var json = new StreamReader(request).ReadToEnd();
+                
+                _log.Information("🏥 MEDICAL: Raw JSON data: {Json}", json);
+                
+                var model = Newtonsoft.Json.JsonConvert.DeserializeObject<BulkSupplementaryTariffViewModel>(json);
+                
+                if (model == null)
                 {
-                    var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage);
+                    _log.Warning("🏥 MEDICAL: Model deserialization failed");
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در پردازش داده‌های ارسالی"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                _log.Information("🏥 MEDICAL: Model data - PrimaryPlanId: {PrimaryPlanId}, InsurancePlanId: {InsurancePlanId}, Departments: {DeptCount}, Categories: {CatCount}",
+                    model.PrimaryInsurancePlanId, model.InsurancePlanId, model.SelectedDepartmentIds?.Count ?? 0, model.SelectedServiceCategoryIds?.Count ?? 0);
+
+                // 🔒 CRITICAL: Manual validation
+                var validationErrors = new List<string>();
+                
+                if (model.PrimaryInsurancePlanId <= 0)
+                    validationErrors.Add("انتخاب بیمه پایه الزامی است");
+                
+                if (model.InsurancePlanId <= 0)
+                    validationErrors.Add("انتخاب طرح بیمه تکمیلی الزامی است");
+                
+                if (model.SelectedDepartmentIds == null || !model.SelectedDepartmentIds.Any())
+                    validationErrors.Add("انتخاب حداقل یک دپارتمان الزامی است");
+                
+                if (model.SelectedServiceCategoryIds == null || !model.SelectedServiceCategoryIds.Any())
+                    validationErrors.Add("انتخاب حداقل یک سرفصل الزامی است");
+                
+                if (model.SupplementaryCoveragePercent < 0 || model.SupplementaryCoveragePercent > 100)
+                    validationErrors.Add("درصد پوشش باید بین 0 تا 100 باشد");
+                
+                if (model.Priority < 1 || model.Priority > 10)
+                    validationErrors.Add("اولویت باید بین 1 تا 10 باشد");
+                
+                if (validationErrors.Any())
+                {
+                    _log.Warning("🏥 MEDICAL: Validation failed - Errors: {Errors}", string.Join(", ", validationErrors));
                     return Json(new
                     {
                         success = false,
                         message = "ورودی‌های نامعتبر",
-                        errors = errors
+                        errors = validationErrors
                     }, JsonRequestBehavior.AllowGet);
                 }
 
+                // 🔒 CRITICAL: Process bulk creation
                 var result = await _bulkTariffService.CreateBulkTariffsAsync(model);
 
                 if (result.Success)
                 {
-                    _log.Information("🏥 MEDICAL: تعرفه گروهی با موفقیت ایجاد شد - Created: {Created}, Updated: {Updated}, Errors: {Errors}. User: {UserName} (Id: {UserId})",
-                        result.Data.CreatedTariffs, result.Data.UpdatedTariffs, result.Data.Errors, _currentUserService.UserName, _currentUserService.UserId);
+                    _log.Information("🏥 MEDICAL: تعرفه گروهی با موفقیت ایجاد شد - Created: {Created}, Errors: {Errors}, Time: {Time}ms. User: {UserName} (Id: {UserId})",
+                        result.Data.CreatedTariffs, result.Data.Errors, result.Data.ProcessingTime.TotalMilliseconds, _currentUserService.UserName, _currentUserService.UserId);
 
-                    TempData["SuccessMessage"] = result.Message;
-                    return RedirectToAction("Index", "SupplementaryTariff");
+                    return Json(new
+                    {
+                        success = true,
+                        message = result.Message,
+                        data = new
+                        {
+                            createdTariffs = result.Data.CreatedTariffs,
+                            errors = result.Data.Errors,
+                            processingTime = result.Data.ProcessingTime.TotalMilliseconds
+                        }
+                    }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: خطا در ایجاد تعرفه گروهی - {Message}. User: {UserName} (Id: {UserId})",
                         result.Message, _currentUserService.UserName, _currentUserService.UserId);
 
-                    ModelState.AddModelError("", result.Message);
-                    return View(model);
+                    return Json(new
+                    {
+                        success = false,
+                        message = result.Message,
+                        errors = result.Data?.ErrorMessages ?? new List<string>()
+                    }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
@@ -2788,43 +2832,141 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در ایجاد تعرفه گروهی. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                ModelState.AddModelError("", "خطا در ایجاد تعرفه گروهی. لطفاً دوباره تلاش کنید.");
-                return View(model);
+                return Json(new
+                {
+                    success = false,
+                    message = "خطای سیستمی در ایجاد تعرفه گروهی",
+                    errors = new[] { ex.Message }
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 
+
         /// <summary>
-        /// دریافت خدمات بر اساس نوع انتخاب
+        /// دریافت سرفصل‌های خدمات برای دپارتمان انتخاب شده
         /// </summary>
-        [HttpPost]
-        public async Task<JsonResult> GetServicesBySelection(BulkSupplementaryTariffViewModel model)
+        [HttpGet]
+        public async Task<ActionResult> GetCategories(int departmentId)
         {
             try
             {
-                _log.Information("🏥 MEDICAL: درخواست دریافت خدمات - SelectionType: {SelectionType}. User: {UserName} (Id: {UserId})",
-                    model.SelectionType, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: درخواست دریافت سرفصل‌ها برای دپارتمان {DepartmentId} - User: {UserName} (Id: {UserId})",
+                    departmentId, _currentUserService.UserName, _currentUserService.UserId);
 
-                var services = await _bulkTariffService.GetServicesBySelectionTypeAsync(model);
-
+                var categories = await _serviceCategoryRepository.GetActiveServiceCategoriesAsync(departmentId);
+                
+                _log.Information("🏥 MEDICAL: {Count} سرفصل برای دپارتمان {DepartmentId} یافت شد", categories.Count, departmentId);
+                
                 return Json(new
                 {
                     success = true,
-                    data = services,
-                    count = services.Count
+                    data = new
+                    {
+                        categories = categories.Select(c => new
+                        {
+                            serviceCategoryId = c.ServiceCategoryId,
+                            title = c.Title,
+                            description = c.Description
+                        }).ToList()
+                    }
                 }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت خدمات. User: {UserName} (Id: {UserId})",
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در دریافت سرفصل‌ها. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(new
                 {
                     success = false,
-                    message = "خطا در دریافت خدمات"
+                    message = "خطای سیستمی در دریافت سرفصل‌ها",
+                    errors = new[] { ex.Message }
                 }, JsonRequestBehavior.AllowGet);
             }
         }
+
+        /// <summary>
+        /// دریافت پیش‌نمایش خدمات برای فرم CreateBulk
+        /// </summary>
+        [HttpPost]
+        public async Task<ActionResult> GetServicesPreview()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست پیش‌نمایش خدمات - User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                // 🔧 CRITICAL: Manual model binding for JSON
+                var request = Request.InputStream;
+                request.Seek(0, SeekOrigin.Begin);
+                var json = new StreamReader(request).ReadToEnd();
+                
+                _log.Information("🏥 MEDICAL: Raw JSON data for services preview: {Json}", json);
+                
+                var model = Newtonsoft.Json.JsonConvert.DeserializeObject<BulkSupplementaryTariffViewModel>(json);
+                
+                if (model == null)
+                {
+                    _log.Warning("🏥 MEDICAL: Model deserialization failed for services preview");
+                    return Json(new
+                    {
+                        success = false,
+                        message = "خطا در پردازش داده‌های ارسالی"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                // 🔒 CRITICAL: Get services using the same logic as CreateBulk
+                var services = await _bulkTariffService.GetServicesPreviewAsync(model);
+
+                if (services.Any())
+                {
+                    _log.Information("🏥 MEDICAL: {Count} خدمت برای پیش‌نمایش یافت شد", services.Count);
+                    
+                    return Json(new
+                    {
+                        success = true,
+                        data = new
+                        {
+                            services = services.Select(s => new
+                            {
+                                serviceId = s.ServiceId,
+                                serviceCode = s.ServiceCode,
+                                title = s.Title,
+                                price = s.Price,
+                                departmentName = s.ServiceCategory?.Department?.Name ?? "نامشخص",
+                                categoryName = s.ServiceCategory?.Title ?? "نامشخص"
+                            }).ToList()
+                        }
+                    }, JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: هیچ خدمتی برای پیش‌نمایش یافت نشد - Departments: {DeptCount}, Categories: {CatCount}",
+                        model.SelectedDepartmentIds?.Count ?? 0, model.SelectedServiceCategoryIds?.Count ?? 0);
+                    
+                    return Json(new
+                    {
+                        success = false,
+                        message = "هیچ خدمتی یافت نشد. لطفاً دپارتمان‌ها و سرفصل‌های انتخابی را بررسی کنید.",
+                        data = new { services = new List<object>() }
+                    }, JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در دریافت پیش‌نمایش خدمات. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطای سیستمی در دریافت پیش‌نمایش خدمات",
+                    errors = new[] { ex.Message }
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        // Method removed - no longer needed in simplified bulk form
 
         /// <summary>
         /// پیش‌نمایش تعرفه گروهی
@@ -2837,16 +2979,16 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Information("🏥 MEDICAL: درخواست پیش‌نمایش تعرفه گروهی. User: {UserName} (Id: {UserId})",
                     _currentUserService.UserName, _currentUserService.UserId);
 
-                var services = await _bulkTariffService.GetServicesBySelectionTypeAsync(model);
+                // Method removed - no longer needed in simplified bulk form
                 var preview = new
                 {
-                    TotalServices = services.Count,
-                    EstimatedTariffs = services.Count,
-                    TotalPrice = services.Sum(s => s.Price),
-                    AveragePrice = services.Any() ? services.Average(s => s.Price) : 0,
-                    MinPrice = services.Any() ? services.Min(s => s.Price) : 0,
-                    MaxPrice = services.Any() ? services.Max(s => s.Price) : 0,
-                    Services = services.Take(10).ToList() // نمایش 10 خدمت اول
+                    TotalServices = 0,
+                    EstimatedTariffs = 0,
+                    TotalPrice = 0,
+                    AveragePrice = 0,
+                    MinPrice = 0,
+                    MaxPrice = 0,
+                    Services = new List<object>() // Empty list for simplified form
                 };
 
                 return Json(new
