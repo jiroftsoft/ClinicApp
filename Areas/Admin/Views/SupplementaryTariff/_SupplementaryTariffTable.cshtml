@@ -19,112 +19,147 @@
     }
 }
 
-<div class="table-responsive">
-    <table class="table table-hover supplementary-tariff-table">
-        <thead class="table-dark">
-            <tr>
-                <th>شناسه</th>
-                <th>نام خدمت</th>
-                <th>طرح بیمه</th>
-                <th data-sort="TariffPrice">قیمت خدمت</th>
-                <th>سهم پایه (نمایشی)</th>
-                <th data-sort="PatientShare">سهم باقی‌مانده بیمار (R)</th>
-                <th>پوشش تکمیلی (٪)</th>
-                <th>پوشش تکمیلی (مبلغ)</th>
-                <th>سهم نهایی بیمار</th>
-                <th data-sort="Priority">اولویت</th>
-                <th data-sort="StartDate">تاریخ شروع</th>
-                <th data-sort="EndDate">تاریخ پایان</th>
-                <th data-sort="IsActive">وضعیت</th>
-                <th>عملیات</th>
-            </tr>
-        </thead>
-        <tbody id="tariffsTableBody">
-            @if (!Model.Items.Any())
-            {
+<div class="professional-table-container">
+    <div class="table-responsive">
+        <table class="professional-table">
+            <thead>
                 <tr>
-                    <td colspan="14" class="text-center text-muted py-4">
-                        <i class="fas fa-search fa-2x mb-3"></i>
-                        <div>نتیجه‌ای یافت نشد</div>
-                        <small>فیلترها را تغییر دهید یا تعرفه جدید ایجاد کنید</small>
-                    </td>
+                    <th class="sortable" data-sort="InsuranceTariffId">
+                        <span>شناسه</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="ServiceTitle">
+                        <span>نام خدمت</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="InsurancePlanName">
+                        <span>طرح بیمه</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable currency-column" data-sort="TariffPrice">
+                        <span>قیمت خدمت</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="currency-column">سهم پایه</th>
+                    <th class="sortable currency-column" data-sort="PatientShare">
+                        <span>سهم باقی‌مانده بیمار</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="SupplementaryCoveragePercent">
+                        <span>پوشش تکمیلی (٪)</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="currency-column">پوشش تکمیلی (مبلغ)</th>
+                    <th class="currency-column">سهم نهایی بیمار</th>
+                    <th class="sortable" data-sort="Priority">
+                        <span>اولویت</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="StartDate">
+                        <span>تاریخ شروع</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="EndDate">
+                        <span>تاریخ پایان</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="sortable" data-sort="IsActive">
+                        <span>وضعیت</span>
+                        <i class="fas fa-sort sort-icon"></i>
+                    </th>
+                    <th class="actions-column">عملیات</th>
                 </tr>
-            }
-            else
-            {
-                foreach (var item in Model.Items)
+            </thead>
+            <tbody id="tariffsTableBody">
+                @if (!Model.Items.Any())
                 {
-                    <tr data-tariff-id="@item.InsuranceTariffId">
-                        <td>
-                            <span class="badge badge-secondary">@item.InsuranceTariffId</span>
-                        </td>
-                        <td>
-                            <div class="fw-bold">@item.ServiceTitle</div>
-                            <small class="text-muted">@item.ServiceCode</small>
-                        </td>
-                        <td>
-                            <div class="fw-bold">@item.InsurancePlanName</div>
-                            <small class="text-muted">@item.InsuranceProviderName</small>
-                        </td>
-                        <td>
-                            <span class="currency-format" dir="ltr">@FormatToman(item.TariffPriceToman)</span>
-                        </td>
-                        <td>
-                            <div class="small text-muted">سهم پایه (نمایشی)</div>
-                            <div>@FormatToman(item.InsurerShareToman)</div>
-                        </td>
-                        <td>
-                            <div class="small text-muted">سهم باقی‌مانده بیمار (R)</div>
-                            <div class="fw-600">@FormatToman(item.PatientShareToman)</div>
-                        </td>
-                        <td>
-                            <div class="text-center">
-                                <span class="badge badge-info">@FormatPercent(item.SupplementaryCoveragePercent ?? 0)</span>
-                                @if (item.SupplementaryMaxPaymentToman > 0)
-                                {
-                                    <div class="text-muted small mt-1">سقف: @FormatToman(item.SupplementaryMaxPaymentToman)</div>
-                                }
-                            </div>
-                        </td>
-                        <td>
-                            <div class="text-center">
-                                <span class="fw-600 text-primary">@FormatToman(item.SupplementaryCoverageAmountToman)</span>
-                            </div>
-                        </td>
-                        <td class="text-success fw-600 text-center">@FormatToman(item.FinalPatientShareToman)</td>
-                        <td>
-                            <span class="badge badge-info">@(item.Priority?.ToString() ?? "0")</span>
-                        </td>
-                        <td>
-                            <span class="text-muted">@(item.StartDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</span>
-                        </td>
-                        <td>
-                            <span class="text-muted">@(item.EndDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</span>
-                        </td>
-                        <td>
-                            <span class="badge @(item.IsActive ? "bg-success" : "bg-secondary")">
-                                @(item.IsActive ? "فعال" : "غیرفعال")
-                            </span>
-                        </td>
-                        <td>
-                            <div class="btn-group" role="group" aria-label="عملیات">
-                                <a href="@Url.Action("Details", new { id = item.InsuranceTariffId })" 
-                                   class="btn btn-sm btn-outline-info" title="مشاهده جزئیات" aria-label="مشاهده جزئیات تعرفه @item.InsuranceTariffId">
-                                    <i class="fas fa-eye"></i>
-                                </a>
-                                <a href="@Url.Action("Edit", new { id = item.InsuranceTariffId })" 
-                                   class="btn btn-sm btn-outline-warning" title="ویرایش" aria-label="ویرایش تعرفه @item.InsuranceTariffId">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                                <button type="button" class="btn btn-sm btn-outline-danger" 
-                                        onclick="deleteTariff(@item.InsuranceTariffId)" title="حذف" aria-label="حذف تعرفه @item.InsuranceTariffId">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                    <tr>
+                        <td colspan="14" class="empty-state">
+                            <div class="empty-state-content">
+                                <i class="fas fa-search"></i>
+                                <h4>نتیجه‌ای یافت نشد</h4>
+                                <p>فیلترها را تغییر دهید یا تعرفه جدید ایجاد کنید</p>
                             </div>
                         </td>
                     </tr>
                 }
-            }
+                else
+                {
+                    foreach (var item in Model.Items)
+                    {
+                        <tr data-tariff-id="@item.InsuranceTariffId" class="table-row">
+                            <td class="id-cell">
+                                <span class="id-badge">@item.InsuranceTariffId</span>
+                            </td>
+                            <td class="service-cell">
+                                <div class="service-info">
+                                    <div class="service-title">@item.ServiceTitle</div>
+                                    <div class="service-code">@item.ServiceCode</div>
+                                </div>
+                            </td>
+                            <td class="insurance-cell">
+                                <div class="insurance-info">
+                                    <div class="plan-name">@item.InsurancePlanName</div>
+                                    <div class="provider-name">@item.InsuranceProviderName</div>
+                                </div>
+                            </td>
+                            <td class="currency-cell">
+                                <span class="currency-amount">@FormatToman(item.TariffPriceToman)</span>
+                            </td>
+                            <td class="currency-cell">
+                                <span class="currency-amount">@FormatToman(item.InsurerShareToman)</span>
+                            </td>
+                            <td class="currency-cell">
+                                <span class="currency-amount">@FormatToman(item.PatientShareToman)</span>
+                            </td>
+                            <td class="percentage-cell">
+                                <div class="percentage-info">
+                                    <span class="percentage-badge">@FormatPercent(item.SupplementaryCoveragePercent ?? 0)</span>
+                                    @if (item.SupplementaryMaxPaymentToman > 0)
+                                    {
+                                        <div class="max-payment">سقف: @FormatToman(item.SupplementaryMaxPaymentToman)</div>
+                                    }
+                                </div>
+                            </td>
+                            <td class="currency-cell">
+                                <span class="currency-amount">@FormatToman(item.SupplementaryCoverageAmountToman)</span>
+                            </td>
+                            <td class="currency-cell final-amount">
+                                <span class="currency-amount">@FormatToman(item.FinalPatientShareToman)</span>
+                            </td>
+                            <td class="priority-cell">
+                                <span class="priority-badge">@(item.Priority?.ToString() ?? "0")</span>
+                            </td>
+                            <td class="date-cell">
+                                <span class="date-text">@(item.StartDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</span>
+                            </td>
+                            <td class="date-cell">
+                                <span class="date-text">@(item.EndDate?.ToString("yyyy/MM/dd") ?? "نامشخص")</span>
+                            </td>
+                            <td class="status-cell">
+                                <span class="status-badge @(item.IsActive ? "active" : "inactive")">
+                                    @(item.IsActive ? "فعال" : "غیرفعال")
+                                </span>
+                            </td>
+                            <td class="actions-cell">
+                                <div class="action-buttons">
+                                    <a href="@Url.Action("Details", new { id = item.InsuranceTariffId })" 
+                                       class="action-btn view-btn" title="مشاهده جزئیات" aria-label="مشاهده جزئیات تعرفه @item.InsuranceTariffId">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="@Url.Action("Edit", new { id = item.InsuranceTariffId })" 
+                                       class="action-btn edit-btn" title="ویرایش" aria-label="ویرایش تعرفه @item.InsuranceTariffId">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <button type="button" class="action-btn delete-btn" 
+                                            onclick="deleteTariff(@item.InsuranceTariffId)" title="حذف" aria-label="حذف تعرفه @item.InsuranceTariffId">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                }
         </tbody>
     </table>
 </div>
@@ -169,3 +204,4 @@
         }
     }
 </script>
+</div>

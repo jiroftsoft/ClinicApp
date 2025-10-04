@@ -1,106 +1,103 @@
 @model ClinicApp.ViewModels.Insurance.Supplementary.SupplementaryTariffIndexPageViewModel
 @{
-    ViewBag.Title = "مدیریت تعرفه‌های بیمه تکمیلی - Production Ready";
+    ViewBag.Title = "مدیریت تعرفه‌های بیمه تکمیلی";
     Layout = "~/Areas/Admin/Views/Shared/_AdminLayout.cshtml";
 }
 
-
-<div class="container-fluid">
-    <!-- Header Section -->
+<div class="container-fluid professional-medical-container">
+    <!-- Professional Header Section -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="medical-card">
-                <div class="card-header">
-                    <h2 class="mb-0">
-                        <i class="fas fa-shield-alt me-2"></i>
-                        مدیریت تعرفه‌های بیمه تکمیلی
-                    </h2>
-                    <p class="mb-0 mt-2 opacity-75">
-                        مدیریت کامل تعرفه‌های بیمه تکمیلی برای محیط درمانی
-                    </p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="stats-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-list-alt fa-2x text-primary"></i>
+            <div class="professional-header-card">
+                <div class="header-content">
+                    <div class="header-icon">
+                        <i class="fas fa-shield-alt"></i>
                     </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h5 class="mb-0">@Model.TotalServices</h5>
-                        <p class="text-muted mb-0">کل خدمات</p>
+                    <div class="header-text">
+                        <h1 class="header-title">مدیریت تعرفه‌های بیمه تکمیلی</h1>
+                        <p class="header-subtitle">سیستم مدیریت حرفه‌ای تعرفه‌های بیمه تکمیلی</p>
                     </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="stats-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-shield-alt fa-2x text-success"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h5 class="mb-0">@Model.TotalTariffs</h5>
-                        <p class="text-muted mb-0">کل تعرفه‌ها</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="stats-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-check-circle fa-2x text-success"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h5 class="mb-0">@Model.ActiveTariffs</h5>
-                        <p class="text-muted mb-0">تعرفه‌های فعال</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6 mb-3">
-            <div class="stats-card">
-                <div class="d-flex align-items-center">
-                    <div class="flex-shrink-0">
-                        <i class="fas fa-clock fa-2x text-warning"></i>
-                    </div>
-                    <div class="flex-grow-1 ms-3">
-                        <h5 class="mb-0">@Model.ExpiredTariffs</h5>
-                        <p class="text-muted mb-0">تعرفه‌های منقضی</p>
+                    <div class="header-actions">
+                        <button type="button" class="btn btn-outline-light btn-sm" onclick="refreshData()">
+                            <i class="fas fa-sync-alt me-1"></i>
+                            بروزرسانی
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Action Buttons -->
+    <!-- Professional Statistics Dashboard -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="professional-stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-list-alt"></i>
+                </div>
+                <div class="stats-content">
+                    <div class="stats-number">@Model.TotalServices</div>
+                    <div class="stats-label">کل خدمات</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="professional-stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-shield-alt"></i>
+                </div>
+                <div class="stats-content">
+                    <div class="stats-number">@Model.TotalTariffs</div>
+                    <div class="stats-label">کل تعرفه‌ها</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="professional-stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="stats-content">
+                    <div class="stats-number">@Model.ActiveTariffs</div>
+                    <div class="stats-label">تعرفه‌های فعال</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="professional-stats-card">
+                <div class="stats-icon">
+                    <i class="fas fa-clock"></i>
+                </div>
+                <div class="stats-content">
+                    <div class="stats-number">@Model.ExpiredTariffs</div>
+                    <div class="stats-label">تعرفه‌های منقضی</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Professional Action Bar -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <div>
-                    <a href="@Url.Action("Create", "SupplementaryTariff")" class="btn btn-medical-primary me-2">
+            <div class="professional-action-bar">
+                <div class="action-group">
+                    <a href="@Url.Action("Create", "SupplementaryTariff")" class="btn btn-professional-primary">
                         <i class="fas fa-plus me-2"></i>
                         ایجاد تعرفه جدید
                     </a>
-                    <a href="@Url.Action("CreateBulk", "SupplementaryTariff")" class="btn btn-medical-secondary me-2">
+                    <a href="@Url.Action("CreateBulk", "SupplementaryTariff")" class="btn btn-professional-secondary">
                         <i class="fas fa-layer-group me-2"></i>
                         ایجاد گروهی
                     </a>
-                    <button type="button" class="btn btn-medical-success" onclick="refreshData()">
-                        <i class="fas fa-sync-alt me-2"></i>
-                        بروزرسانی
-                    </button>
                 </div>
-                <div>
-                    <button type="button" class="btn btn-medical-danger" onclick="clearAllFilters()">
+                <div class="action-group">
+                    <button type="button" class="btn btn-professional-outline" onclick="clearAllFilters()">
                         <i class="fas fa-filter me-2"></i>
                         پاک کردن فیلترها
+                    </button>
+                    <button type="button" class="btn btn-professional-outline" onclick="exportData()">
+                        <i class="fas fa-download me-2"></i>
+                        خروجی Excel
                     </button>
                 </div>
             </div>
@@ -184,45 +181,81 @@
         // Start initialization
         initializeSupplementaryTariff();
 
+        // Professional refresh function
         function refreshData() {
             try {
-                // 🔧 CRITICAL: کاملاً غیرفعال کردن کش برای محیط درمانی realtime
+                console.log('🏥 PROFESSIONAL: Refreshing data');
+                
+                // Show loading state
+                showProfessionalLoading();
+                
+                // Clear all caches
+                clearAllCaches();
+                
+                // Reload with cache busting
                 const timestamp = new Date().getTime();
                 const randomId = Math.random().toString(36).substring(7);
                 const currentUrl = new URL(location.href);
                 
-                // حذف تمام پارامترهای کش قبلی
                 currentUrl.searchParams.delete('_t');
                 currentUrl.searchParams.delete('_r');
                 currentUrl.searchParams.delete('_c');
                 
-                // اضافه کردن پارامترهای کش‌باستینگ جدید
                 currentUrl.searchParams.set('_t', timestamp);
                 currentUrl.searchParams.set('_r', randomId);
                 currentUrl.searchParams.set('_c', '1');
                 
-                // پاک کردن تمام کش‌های موجود
-                if ('caches' in window) {
-                    caches.keys().then(names => {
-                        names.forEach(name => {
-                            caches.delete(name);
-                        });
-                    });
-                }
-                
-                // پاک کردن localStorage و sessionStorage
-                try {
-                    localStorage.clear();
-                    sessionStorage.clear();
-                } catch (e) {
-                    console.warn('خطا در پاک کردن storage:', e);
-                }
-                
-                // Force reload with cache busting
                 location.href = currentUrl.toString();
             } catch (error) {
-                console.error('خطا در بروزرسانی داده‌ها:', error);
+                console.error('🏥 PROFESSIONAL: Error refreshing data:', error);
                 location.reload();
+            }
+        }
+
+        // Professional loading state
+        function showProfessionalLoading() {
+            $('#tableHost').attr('aria-busy', 'true');
+            $('#tableSkeleton').removeClass('d-none');
+        }
+
+        // Clear all caches
+        function clearAllCaches() {
+            if ('caches' in window) {
+                caches.keys().then(names => {
+                    names.forEach(name => {
+                        caches.delete(name);
+                    });
+                });
+            }
+            
+            try {
+                localStorage.clear();
+                sessionStorage.clear();
+            } catch (e) {
+                console.warn('خطا در پاک کردن storage:', e);
+            }
+        }
+
+        // Export data function
+        function exportData() {
+            try {
+                console.log('🏥 PROFESSIONAL: Exporting data');
+                
+                // Add export parameter to current URL
+                const currentUrl = new URL(location.href);
+                currentUrl.searchParams.set('export', 'true');
+                
+                // Open export in new window
+                window.open(currentUrl.toString(), '_blank');
+                
+                if (typeof window.MedicalUI !== 'undefined' && window.MedicalUI.showSuccess) {
+                    window.MedicalUI.showSuccess('خروجی Excel در حال آماده‌سازی است');
+                }
+            } catch (error) {
+                console.error('🏥 PROFESSIONAL: Error exporting data:', error);
+                if (typeof window.MedicalUI !== 'undefined' && window.MedicalUI.showError) {
+                    window.MedicalUI.showError('خطا در خروجی Excel: ' + error.message);
+                }
             }
         }
 
