@@ -177,6 +177,12 @@ namespace ClinicApp.Repositories.Insurance
                     query = query.Where(t => t.InsuranceType == insuranceType.Value);
                     _logger.Information("🔍 REPOSITORY: فیلتر InsuranceType اضافه شد: {InsuranceType}", insuranceType.Value);
                 }
+                else
+                {
+                    // 🔧 CRITICAL FIX: اگر فیلتر InsuranceType تنظیم نشده، فقط تعرفه‌های بیمه پایه نمایش داده شوند
+                    query = query.Where(t => t.InsuranceType == InsuranceType.Primary);
+                    _logger.Information("🔍 REPOSITORY: فیلتر پیش‌فرض InsuranceType = Primary اعمال شد");
+                }
 
                 // جستجو
                 if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -207,23 +213,15 @@ namespace ClinicApp.Repositories.Insurance
                 // 🔍 DEBUG: بررسی داده‌های موجود در دیتابیس
                 var allTariffs = await _context.InsuranceTariffs
                     .AsNoTracking()
-                    .Include(t => t.Service)
-                    .Include(t => t.InsurancePlan)
-                    .Include(t => t.InsurancePlan.InsuranceProvider)
                     .Where(t => !t.IsDeleted)
-                    .Take(5)
-                    .Select(t => new {
-                        Id = t.InsuranceTariffId,
-                        t.ServiceId,
-                        ServiceTitle = t.Service.Title,
-                        t.InsurancePlanId,
-                        PlanName = t.InsurancePlan.Name,
-                        ProviderId = t.InsurancePlan.InsuranceProviderId,
-                        ProviderName = t.InsurancePlan.InsuranceProvider.Name
-                    })
                     .ToListAsync();
-
-                _logger.Information("🔍 REPOSITORY: نمونه داده‌های موجود: {@AllTariffs}", allTariffs);
+                
+                _logger.Information("🔍 DEBUG: تمام تعرفه‌های موجود در دیتابیس: {Count}", allTariffs.Count);
+                foreach (var tariff in allTariffs.Take(5))
+                {
+                    _logger.Information("🔍 DEBUG: TariffId: {TariffId}, InsuranceType: {InsuranceType}, ServiceId: {ServiceId}", 
+                        tariff.InsuranceTariffId, tariff.InsuranceType, tariff.ServiceId);
+                }
 
                 // 🔍 DEBUG: بررسی فیلترهای اعمال شده
                 if (planId.HasValue || serviceId.HasValue || providerId.HasValue)
@@ -502,6 +500,7 @@ namespace ClinicApp.Repositories.Insurance
         {
             try
             {
+                // 🔧 CRITICAL FIX: همه تعرفه‌های فعال شمارش شوند
                 return await _context.InsuranceTariffs
                     .Where(t => !t.IsDeleted)
                     .CountAsync();
@@ -522,41 +521,52 @@ namespace ClinicApp.Repositories.Insurance
             {
                 _logger.Debug("🏥 MEDICAL: شروع محاسبه آمار تعرفه‌ها");
                 
-                // 🚀 P0 FIX: محاسبه آمار کامل برای محیط درمانی
-                var totalTariffs = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted)
+                // 🔧 CRITICAL FIX: همه تعرفه‌های فعال در آمار محاسبه شوند
+                var baseQuery = _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted);
+                
+                var totalTariffs = await baseQuery.CountAsync();
+                    
+                _logger.Debug("🏥 MEDICAL: تعداد کل تعرفه‌های فعال: {TotalTariffs}", totalTariffs);
+                
+                // تست: بررسی وجود تعرفه‌ها بدون فیلتر
+                var allTariffsCount = await _context.InsuranceTariffs.CountAsync();
+                var primaryTariffsCount = await _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted && t.InsuranceType == InsuranceType.Primary)
+                    .CountAsync();
+                var supplementaryTariffsCount = await _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted && t.InsuranceType == InsuranceType.Supplementary)
+                    .CountAsync();
+                var nullTariffsCount = await _context.InsuranceTariffs
+                    .Where(t => !t.IsDeleted && t.InsuranceType == null)
                     .CountAsync();
                     
-                _logger.Debug("🏥 MEDICAL: تعداد کل تعرفه‌ها: {TotalTariffs}", totalTariffs);
-                
-                // تست: بررسی وجود تعرفه‌ها بدون فیلتر IsDeleted
-                var allTariffsCount = await _context.InsuranceTariffs.CountAsync();
-                _logger.Debug("🏥 MEDICAL: تعداد کل تعرفه‌ها (بدون فیلتر): {AllTariffsCount}", allTariffsCount);
+                _logger.Debug("🏥 MEDICAL: آمار کامل - کل: {All}, پایه: {Primary}, تکمیلی: {Supplementary}, NULL: {Null}", 
+                    allTariffsCount, primaryTariffsCount, supplementaryTariffsCount, nullTariffsCount);
 
-                var activeTariffs = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted && t.CreatedAt >= DateTime.UtcNow.AddDays(-30))
+                var activeTariffs = await baseQuery
+                    .Where(t => t.CreatedAt >= DateTime.UtcNow.AddDays(-30))
                     .CountAsync();
 
-                var inactiveTariffs = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted && t.CreatedAt < DateTime.UtcNow.AddDays(-30))
+                var inactiveTariffs = await baseQuery
+                    .Where(t => t.CreatedAt < DateTime.UtcNow.AddDays(-30))
                     .CountAsync();
 
-                var totalServices = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted)
+                var totalServices = await baseQuery
                     .Select(t => t.ServiceId)
                     .Distinct()
                     .CountAsync();
 
-                var tariffsWithCustomPrice = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted && t.TariffPrice.HasValue)
+                var tariffsWithCustomPrice = await baseQuery
+                    .Where(t => t.TariffPrice.HasValue)
                     .CountAsync();
 
-                var tariffsWithCustomPatientShare = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted && t.PatientShare.HasValue)
+                var tariffsWithCustomPatientShare = await baseQuery
+                    .Where(t => t.PatientShare.HasValue)
                     .CountAsync();
 
-                var tariffsWithCustomInsurerShare = await _context.InsuranceTariffs
-                    .Where(t => !t.IsDeleted && t.InsurerShare.HasValue)
+                var tariffsWithCustomInsurerShare = await baseQuery
+                    .Where(t => t.InsurerShare.HasValue)
                     .CountAsync();
 
                 return new Dictionary<string, int>

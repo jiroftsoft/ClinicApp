@@ -1,3 +1,4 @@
+@using ClinicApp.Models.Entities.Insurance
 @model ClinicApp.ViewModels.Insurance.InsuranceTariff.InsuranceTariffIndexPageViewModel
 @{
     ViewBag.Title = "مدیریت تعرفه‌های بیمه";
@@ -313,12 +314,16 @@
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">نوع بیمه</label>
-                        @Html.DropDownListFor(m => m.Filter.InsuranceType, new SelectList(new[]
+                        @Html.DropDownListFor(m => m.Filter.InsuranceType, new SelectList(new object[]
                         {
                             new { Value = "", Text = "همه انواع" },
-                            new { Value = "1", Text = "بیمه پایه" },
-                            new { Value = "2", Text = "بیمه تکمیلی" }
+                            new { Value = (int)InsuranceType.Primary, Text = "بیمه پایه" },
+                            new { Value = (int)InsuranceType.Supplementary, Text = "بیمه تکمیلی" }
                         }, "Value", "Text"), new { @class = "form-select" })
+                        <small class="text-info">
+                            <i class="fas fa-info-circle"></i> 
+                            همه تعرفه‌های بیمه (پایه و تکمیلی) در این صفحه نمایش داده می‌شوند
+                        </small>
                     </div>
                     <div class="col-md-2">
                         <label class="form-label">وضعیت</label>

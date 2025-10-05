@@ -143,6 +143,19 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             var correlationId = Guid.NewGuid().ToString();
 
+            // 🔧 CRITICAL: کاملاً غیرفعال کردن کش برای محیط درمانی realtime
+            Response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+            Response.Cache.SetNoStore();
+            Response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
+            Response.Cache.SetValidUntilExpires(false);
+            Response.Cache.SetRevalidation(System.Web.HttpCacheRevalidation.AllCaches);
+            Response.Cache.AppendCacheExtension("must-revalidate");
+            Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+            Response.Headers.Add("Pragma", "no-cache");
+            Response.Headers.Add("Expires", "0");
+            Response.Headers.Add("Last-Modified", "0");
+            Response.Headers.Add("ETag", "");
+
             _logger.Information("🏥 MEDICAL: شروع بارگیری صفحه اصلی تعرفه‌های بیمه - CorrelationId: {CorrelationId}, Filter: {@Filter}, User: {UserName} (Id: {UserId})",
                 correlationId, filter, _currentUserService.UserName, _currentUserService.UserId);
 
@@ -158,6 +171,30 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 filter.PageNumber = filter.PageNumber <= 0 ? 1 : filter.PageNumber;
                 filter.PageSize = filter.PageSize <= 0 ? PageSize : filter.PageSize;
 
+                // 🔧 CRITICAL FIX: همه تعرفه‌ها نمایش داده شوند (بدون فیلتر پیش‌فرض)
+                // اگر فیلتر InsuranceType تنظیم نشده باشد، همه تعرفه‌ها نمایش داده شوند
+                InsuranceType? insuranceTypeFilter = null;
+                
+                // 🔍 DEBUG: بررسی فیلتر ورودی
+                _logger.Information("🔍 DEBUG: فیلتر ورودی - InsuranceType: {InsuranceType}, HasValue: {HasValue}", 
+                    filter.InsuranceType, filter.InsuranceType.HasValue);
+                
+                if (filter.InsuranceType.HasValue)
+                {
+                    // اگر فیلتر تنظیم شده، از همان استفاده کن
+                    insuranceTypeFilter = filter.InsuranceType;
+                    _logger.Information("🔍 DEBUG: فیلتر موجود استفاده شد - InsuranceType = {InsuranceType}", filter.InsuranceType);
+                }
+                else
+                {
+                    // بدون فیلتر - همه تعرفه‌ها نمایش داده شوند
+                    _logger.Information("🔍 DEBUG: بدون فیلتر - همه تعرفه‌ها نمایش داده می‌شوند");
+                }
+                
+                // 🔍 DEBUG: بررسی مقادیر فیلتر
+                _logger.Information("🔍 DEBUG: فیلتر InsuranceType - HasValue: {HasValue}, Value: {Value}, FilterValue: {FilterValue}", 
+                    filter.InsuranceType.HasValue, filter.InsuranceType?.ToString(), insuranceTypeFilter?.ToString());
+
                 var model = new InsuranceTariffIndexPageViewModel
                 {
                     Filter = filter
@@ -170,7 +207,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var statisticsTask = _insuranceTariffService.GetStatisticsAsync();
                 var tariffsTask = _insuranceTariffService.GetTariffsAsync(
                     filter.InsurancePlanId, filter.ServiceId, filter.InsuranceProviderId,
-                    filter.SearchTerm, filter.InsuranceType, filter.PageNumber, filter.PageSize);
+                    filter.SearchTerm, insuranceTypeFilter, filter.PageNumber, filter.PageSize);
 
                 await Task.WhenAll(statisticsTask, tariffsTask);
 
