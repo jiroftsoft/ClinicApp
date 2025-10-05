@@ -50,6 +50,32 @@ public class PatientInsurance : ISoftDelete, ITrackable
     public string PolicyNumber { get; set; }
 
     /// <summary>
+    /// شماره بیمه‌نامه تکمیلی (اختیاری)
+    /// شماره بیمه‌نامه تکمیلی بیمار در سیستم بیمه
+    /// </summary>
+    [MaxLength(100, ErrorMessage = "شماره بیمه‌نامه تکمیلی نمی‌تواند بیش از 100 کاراکتر باشد.")]
+    public string SupplementaryPolicyNumber { get; set; }
+
+    /// <summary>
+    /// شناسه بیمه‌گذار
+    /// این فیلد برای ارتباط با بیمه‌گذار استفاده می‌شود
+    /// </summary>
+    [Required(ErrorMessage = "بیمه‌گذار الزامی است.")]
+    public int InsuranceProviderId { get; set; }
+
+    /// <summary>
+    /// شناسه بیمه‌گذار تکمیلی (اختیاری)
+    /// این فیلد برای ارتباط با بیمه‌گذار تکمیلی استفاده می‌شود
+    /// </summary>
+    public int? SupplementaryInsuranceProviderId { get; set; }
+
+    /// <summary>
+    /// شناسه طرح بیمه تکمیلی (اختیاری)
+    /// این فیلد برای ارتباط با طرح بیمه تکمیلی استفاده می‌شود
+    /// </summary>
+    public int? SupplementaryInsurancePlanId { get; set; }
+
+    /// <summary>
     /// شماره کارت بیمه
     /// شماره کارت بیمه بیمار
     /// </summary>
@@ -160,10 +186,29 @@ public class PatientInsurance : ISoftDelete, ITrackable
     public virtual Patient Patient { get; set; }
 
     /// <summary>
+    /// ارجاع به بیمه‌گذار
+    /// این ناوبری برای دسترسی مستقیم به اطلاعات بیمه‌گذار ضروری است
+    /// </summary>
+    public virtual InsuranceProvider InsuranceProvider { get; set; }
+
+    /// <summary>
     /// ارجاع به طرح بیمه
     /// این ناوبری برای دسترسی مستقیم به اطلاعات طرح بیمه ضروری است
     /// </summary>
     public virtual InsurancePlan InsurancePlan { get; set; }
+
+    /// <summary>
+    /// ارجاع به بیمه‌گذار تکمیلی (اختیاری)
+    /// این ناوبری برای دسترسی مستقیم به اطلاعات بیمه‌گذار تکمیلی ضروری است
+    /// </summary>
+    public virtual InsuranceProvider SupplementaryInsuranceProvider { get; set; }
+
+    /// <summary>
+    /// ارجاع به طرح بیمه تکمیلی (اختیاری)
+    /// این ناوبری برای دسترسی مستقیم به اطلاعات طرح بیمه تکمیلی ضروری است
+    /// </summary>
+    public virtual InsurancePlan SupplementaryInsurancePlan { get; set; }
+
     public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
     #endregion
 }
@@ -190,6 +235,21 @@ public class PatientInsuranceConfig : EntityTypeConfiguration<PatientInsurance>
             .HasMaxLength(100)
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_PolicyNumber")));
+
+        Property(pi => pi.SupplementaryPolicyNumber)
+            .IsOptional()
+            .HasMaxLength(100)
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_PatientInsurance_SupplementaryPolicyNumber")));
+
+        Property(pi => pi.InsuranceProviderId)
+            .IsRequired();
+
+        Property(pi => pi.SupplementaryInsuranceProviderId)
+            .IsOptional();
+
+        Property(pi => pi.SupplementaryInsurancePlanId)
+            .IsOptional();
 
         Property(pi => pi.CardNumber)
             .IsOptional()
@@ -260,9 +320,24 @@ public class PatientInsuranceConfig : EntityTypeConfiguration<PatientInsurance>
             .HasForeignKey(pi => pi.PatientId)
             .WillCascadeOnDelete(false);
 
+        HasRequired(pi => pi.InsuranceProvider)
+            .WithMany(provider => provider.PatientInsurances)
+            .HasForeignKey(pi => pi.InsuranceProviderId)
+            .WillCascadeOnDelete(false);
+
         HasRequired(pi => pi.InsurancePlan)
             .WithMany(plan => plan.PatientInsurances)
             .HasForeignKey(pi => pi.InsurancePlanId)
+            .WillCascadeOnDelete(false);
+
+        HasOptional(pi => pi.SupplementaryInsuranceProvider)
+            .WithMany(provider => provider.SupplementaryPatientInsurances)
+            .HasForeignKey(pi => pi.SupplementaryInsuranceProviderId)
+            .WillCascadeOnDelete(false);
+
+        HasOptional(pi => pi.SupplementaryInsurancePlan)
+            .WithMany(plan => plan.SupplementaryPatientInsurances)
+            .HasForeignKey(pi => pi.SupplementaryInsurancePlanId)
             .WillCascadeOnDelete(false);
 
         HasOptional(pi => pi.CreatedByUser)

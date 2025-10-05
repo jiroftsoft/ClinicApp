@@ -188,6 +188,20 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>بیمه اصلی بیمار</returns>
         Task<PatientInsurance> GetPrimaryInsuranceByPolicyNumberAsync(int patientId, string policyNumber);
 
+        /// <summary>
+        /// دریافت بیمه پایه فعال بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>بیمه پایه فعال بیمار</returns>
+        Task<PatientInsurance> GetActivePrimaryInsuranceAsync(int patientId);
+
+        /// <summary>
+        /// دریافت بیمه تکمیلی فعال بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>بیمه تکمیلی فعال بیمار</returns>
+        Task<PatientInsurance> GetActiveSupplementaryInsuranceAsync(int patientId);
+
         #endregion
 
         #region Paged Operations
@@ -239,10 +253,24 @@ namespace ClinicApp.Interfaces.Insurance
         void Add(PatientInsurance patientInsurance);
 
         /// <summary>
+        /// افزودن بیمه بیمار جدید (Async)
+        /// </summary>
+        /// <param name="patientInsurance">بیمه بیمار جدید</param>
+        /// <returns>نتیجه عملیات</returns>
+        Task<ServiceResult<PatientInsurance>> CreateAsync(PatientInsurance patientInsurance);
+
+        /// <summary>
         /// به‌روزرسانی بیمه بیمار
         /// </summary>
         /// <param name="patientInsurance">بیمه بیمار برای به‌روزرسانی</param>
         void Update(PatientInsurance patientInsurance);
+
+        /// <summary>
+        /// به‌روزرسانی بیمه بیمار (Async)
+        /// </summary>
+        /// <param name="patientInsurance">بیمه بیمار برای به‌روزرسانی</param>
+        /// <returns>نتیجه عملیات</returns>
+        Task<ServiceResult<PatientInsurance>> UpdateAsync(PatientInsurance patientInsurance);
 
         /// <summary>
         /// حذف نرم بیمه بیمار

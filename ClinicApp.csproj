@@ -471,6 +471,7 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationController.cs" />
     <Compile Include="Areas\Admin\Controllers\DataFixController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
+    <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\ScheduleOptimizationController.cs" />
     <Compile Include="Areas\Admin\Controllers\ServiceComponentController.cs" />
@@ -505,6 +506,7 @@
     <Compile Include="Filters\NoCacheFilter.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
+    <Compile Include="Helpers\AgeCalculationHelper.cs" />
     <Compile Include="Helpers\AntiForgeryHelper.cs" />
     <Compile Include="Helpers\AppSettings.cs" />
     <Compile Include="Helpers\CultureHelper.cs" />
@@ -513,6 +515,7 @@
     <Compile Include="Helpers\EnumExtensions.cs" />
     <Compile Include="Helpers\ErrorMessageHelper.cs" />
     <Compile Include="Helpers\InsurancePriorityHelper.cs" />
+    <Compile Include="Helpers\Insurance\InsuranceTypeHelper.cs" />
     <Compile Include="Helpers\LoggingConfiguration.cs" />
     <Compile Include="Helpers\LoggingHelper.cs" />
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
@@ -572,8 +575,10 @@
     <Compile Include="Interfaces\Insurance\IInsuranceTariffRepository.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceTariffService.cs" />
     <Compile Include="Interfaces\Insurance\IInsuranceValidationService.cs" />
+    <Compile Include="Interfaces\Insurance\IPatientInsuranceManagementService.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceRepository.cs" />
     <Compile Include="Interfaces\Insurance\IPatientInsuranceService.cs" />
+    <Compile Include="Interfaces\Insurance\IPatientInsuranceValidationService.cs" />
     <Compile Include="Interfaces\Insurance\IPlanServiceRepository.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryCombinationService.cs" />
     <Compile Include="Interfaces\Insurance\ISupplementaryInsuranceCacheService.cs" />
@@ -769,6 +774,10 @@
     <Compile Include="Migrations\202510030740252_ChnageFactorSetting.Designer.cs">
       <DependentUpon>202510030740252_ChnageFactorSetting.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510051915319_ChageDb14040178.cs" />
+    <Compile Include="Migrations\202510051915319_ChageDb14040178.Designer.cs">
+      <DependentUpon>202510051915319_ChageDb14040178.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -785,6 +794,8 @@
     <Compile Include="Models\DTOs\Calculation\CalculationPlanDto.cs" />
     <Compile Include="Models\DTOs\Calculation\CalculationResultDto.cs" />
     <Compile Include="Models\DTOs\Calculation\CalculationServiceDto.cs" />
+    <Compile Include="Models\DTOs\Insurance\PatientInsuranceDTOs.cs" />
+    <Compile Include="Models\DTOs\Insurance\PatientInsuranceValidationResult.cs" />
     <Compile Include="Models\Entities\Appointment\Appointment.cs" />
     <Compile Include="Models\Entities\Appointment\AppointmentSlot.cs" />
     <Compile Include="Models\Entities\Clinic\Clinic.cs" />
@@ -950,7 +961,9 @@
     <Compile Include="Services\Insurance\InsuranceTariffCalculationService.cs" />
     <Compile Include="Services\Insurance\InsuranceTariffService.cs" />
     <Compile Include="Services\Insurance\InsuranceValidationService.cs" />
+    <Compile Include="Services\Insurance\PatientInsuranceManagementService.cs" />
     <Compile Include="Services\Insurance\PatientInsuranceService.cs" />
+    <Compile Include="Services\Insurance\PatientInsuranceValidationService.cs" />
     <Compile Include="Services\Insurance\SupplementaryCombinationService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceCacheService.cs" />
     <Compile Include="Services\Insurance\SupplementaryInsuranceDataFixService.cs" />
@@ -959,6 +972,7 @@
     <Compile Include="Services\Insurance\SupplementaryInsuranceService.cs" />
     <Compile Include="Services\Insurance\SupplementaryTariffSeederService.cs" />
     <Compile Include="Services\Insurance\TariffDomainValidationService.cs" />
+    <Compile Include="Services\Interfaces\ServiceCalculationDetails.cs" />
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
@@ -1183,10 +1197,10 @@
     <Content Include="Content\css\local-fonts.css" />
     <Content Include="Content\css\medical-environment-styles.css" />
     <Content Include="Content\css\medical-environment.css" />
-    <Content Include="Content\css\medical-forms.css" />
     <Content Include="Content\css\medical-select2.css" />
     <Content Include="Content\css\notification-system.css" />
     <Content Include="Content\css\notifications.css" />
+    <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\css\service-calculation.css" />
@@ -3534,6 +3548,7 @@
     <Content Include="Scripts\app\modules\medical-ui.js" />
     <Content Include="Scripts\app\modules\medical-ux-enhancer.js" />
     <Content Include="Scripts\app\modules\medical-validation.js" />
+    <Content Include="Scripts\app\patient-insurance-enhanced.js" />
     <Content Include="Scripts\app\patient-insurance-form.js" />
     <Content Include="Scripts\app\patient-select2.js" />
     <Content Include="Scripts\app\service-calculation.js" />
@@ -4174,6 +4189,7 @@
     <Content Include="Scripts\jquery.validate.unobtrusive.min.js" />
     <Content Include="Scripts\medical-environment.js" />
     <Content Include="Scripts\modernizr-2.8.3.js" />
+    <Content Include="Scripts\patient-insurance-management.js" />
     <Content Include="Scripts\persian-date.min.js" />
     <Content Include="Scripts\persian-datepicker.min.js" />
     <Content Include="Scripts\PersianDateTimePicker\jalaali.js" />
@@ -4421,6 +4437,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510030740252_ChnageFactorSetting.resx">
       <DependentUpon>202510030740252_ChnageFactorSetting.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510051915319_ChageDb14040178.resx">
+      <DependentUpon>202510051915319_ChageDb14040178.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

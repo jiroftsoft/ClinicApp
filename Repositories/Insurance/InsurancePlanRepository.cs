@@ -481,6 +481,64 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت طرح‌های بیمه پایه بر اساس ارائه‌دهنده
+        /// </summary>
+        public async Task<List<InsurancePlan>> GetPrimaryPlansByProviderAsync(int providerId)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت طرح‌های بیمه پایه بر اساس ارائه‌دهنده. ProviderId: {ProviderId}", providerId);
+
+                var plans = await _context.InsurancePlans
+                    .Where(p => p.InsuranceProviderId == providerId && 
+                               p.IsActive && 
+                               !p.IsDeleted &&
+                               p.InsuranceType == InsuranceType.Primary)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("طرح‌های بیمه پایه دریافت شد. ProviderId: {ProviderId}, تعداد: {Count}", 
+                    providerId, plans.Count);
+
+                return plans;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت طرح‌های بیمه پایه بر اساس ارائه‌دهنده. ProviderId: {ProviderId}", providerId);
+                throw new InvalidOperationException("خطا در دریافت طرح‌های بیمه پایه", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی بر اساس ارائه‌دهنده
+        /// </summary>
+        public async Task<List<InsurancePlan>> GetSupplementaryPlansByProviderAsync(int providerId)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت طرح‌های بیمه تکمیلی بر اساس ارائه‌دهنده. ProviderId: {ProviderId}", providerId);
+
+                var plans = await _context.InsurancePlans
+                    .Where(p => p.InsuranceProviderId == providerId && 
+                               p.IsActive && 
+                               !p.IsDeleted &&
+                               p.InsuranceType == InsuranceType.Supplementary)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("طرح‌های بیمه تکمیلی دریافت شد. ProviderId: {ProviderId}, تعداد: {Count}", 
+                    providerId, plans.Count);
+
+                return plans;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت طرح‌های بیمه تکمیلی بر اساس ارائه‌دهنده. ProviderId: {ProviderId}", providerId);
+                throw new InvalidOperationException("خطا در دریافت طرح‌های بیمه تکمیلی", ex);
+            }
+        }
+
         #endregion
     }
 }

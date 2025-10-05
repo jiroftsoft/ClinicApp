@@ -1051,5 +1051,164 @@ namespace ClinicApp.Repositories.Insurance
         }
 
         #endregion
+
+        #region New Methods for PatientInsuranceManagementService
+
+        /// <summary>
+        /// دریافت بیمه پایه فعال بیمار
+        /// </summary>
+        public async Task<PatientInsurance> GetActivePrimaryInsuranceAsync(int patientId)
+        {
+            try
+            {
+                _logger.Information("درخواست بیمه پایه فعال بیمار. PatientId: {PatientId}", patientId);
+
+                var primaryInsurance = await _context.PatientInsurances
+                    .Where(pi => pi.PatientId == patientId && 
+                                pi.IsPrimary == true && 
+                                pi.IsActive == true && 
+                                pi.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                _logger.Information("بیمه پایه فعال بیمار دریافت شد. PatientId: {PatientId}, Found: {Found}", 
+                    patientId, primaryInsurance != null);
+
+                return primaryInsurance;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمه پایه فعال بیمار. PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه تکمیلی فعال بیمار
+        /// </summary>
+        public async Task<PatientInsurance> GetActiveSupplementaryInsuranceAsync(int patientId)
+        {
+            try
+            {
+                _logger.Information("درخواست بیمه تکمیلی فعال بیمار. PatientId: {PatientId}", patientId);
+
+                var supplementaryInsurance = await _context.PatientInsurances
+                    .Where(pi => pi.PatientId == patientId && 
+                                pi.IsPrimary == false && 
+                                pi.IsActive == true && 
+                                pi.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                _logger.Information("بیمه تکمیلی فعال بیمار دریافت شد. PatientId: {PatientId}, Found: {Found}", 
+                    patientId, supplementaryInsurance != null);
+
+                return supplementaryInsurance;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمه تکمیلی فعال بیمار. PatientId: {PatientId}", patientId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// افزودن بیمه بیمار جدید (Async)
+        /// </summary>
+        public async Task<ServiceResult<PatientInsurance>> CreateAsync(PatientInsurance patientInsurance)
+        {
+            try
+            {
+                _logger.Information("شروع ایجاد بیمه بیمار جدید. PatientId: {PatientId}, IsPrimary: {IsPrimary}", 
+                    patientInsurance.PatientId, patientInsurance.IsPrimary);
+
+                // اعتبارسنجی
+                if (patientInsurance == null)
+                {
+                    return ServiceResult<PatientInsurance>.Failed("بیمه بیمار نمی‌تواند خالی باشد");
+                }
+
+                if (patientInsurance.PatientId <= 0)
+                {
+                    return ServiceResult<PatientInsurance>.Failed("شناسه بیمار نامعتبر است");
+                }
+
+                if (string.IsNullOrWhiteSpace(patientInsurance.PolicyNumber))
+                {
+                    return ServiceResult<PatientInsurance>.Failed("شماره بیمه‌نامه الزامی است");
+                }
+
+                // بررسی تداخل شماره بیمه
+                var existingPolicy = await _context.PatientInsurances
+                    .Where(pi => pi.PolicyNumber == patientInsurance.PolicyNumber && 
+                                pi.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                if (existingPolicy != null)
+                {
+                    return ServiceResult<PatientInsurance>.Failed("شماره بیمه‌نامه قبلاً استفاده شده است");
+                }
+
+                // افزودن به دیتابیس
+                _context.PatientInsurances.Add(patientInsurance);
+                await _context.SaveChangesAsync();
+
+                _logger.Information("بیمه بیمار با موفقیت ایجاد شد. PatientId: {PatientId}, InsuranceId: {InsuranceId}", 
+                    patientInsurance.PatientId, patientInsurance.PatientInsuranceId);
+
+                return ServiceResult<PatientInsurance>.Successful(patientInsurance, "بیمه بیمار با موفقیت ایجاد شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ایجاد بیمه بیمار. PatientId: {PatientId}", patientInsurance?.PatientId);
+                return ServiceResult<PatientInsurance>.Failed("خطا در ایجاد بیمه بیمار: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی بیمه بیمار (Async)
+        /// </summary>
+        public async Task<ServiceResult<PatientInsurance>> UpdateAsync(PatientInsurance patientInsurance)
+        {
+            try
+            {
+                _logger.Information("شروع به‌روزرسانی بیمه بیمار. InsuranceId: {InsuranceId}, PatientId: {PatientId}", 
+                    patientInsurance.PatientInsuranceId, patientInsurance.PatientId);
+
+                // اعتبارسنجی
+                if (patientInsurance == null)
+                {
+                    return ServiceResult<PatientInsurance>.Failed("بیمه بیمار نمی‌تواند خالی باشد");
+                }
+
+                if (patientInsurance.PatientInsuranceId <= 0)
+                {
+                    return ServiceResult<PatientInsurance>.Failed("شناسه بیمه نامعتبر است");
+                }
+
+                // بررسی وجود بیمه
+                var existingInsurance = await _context.PatientInsurances
+                    .Where(pi => pi.PatientInsuranceId == patientInsurance.PatientInsuranceId && pi.IsDeleted == false)
+                    .FirstOrDefaultAsync();
+
+                if (existingInsurance == null)
+                {
+                    return ServiceResult<PatientInsurance>.Failed("بیمه مورد نظر یافت نشد");
+                }
+
+                // به‌روزرسانی
+                _context.Entry(existingInsurance).CurrentValues.SetValues(patientInsurance);
+                await _context.SaveChangesAsync();
+
+                _logger.Information("بیمه بیمار با موفقیت به‌روزرسانی شد. InsuranceId: {InsuranceId}", patientInsurance.PatientInsuranceId);
+
+                return ServiceResult<PatientInsurance>.Successful(patientInsurance, "بیمه بیمار با موفقیت به‌روزرسانی شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در به‌روزرسانی بیمه بیمار. InsuranceId: {InsuranceId}", patientInsurance?.PatientInsuranceId);
+                return ServiceResult<PatientInsurance>.Failed("خطا در به‌روزرسانی بیمه بیمار: " + ex.Message);
+            }
+        }
+
+        #endregion
     }
 }

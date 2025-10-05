@@ -1,0 +1,299 @@
+@model int
+
+<!-- 🏥 Patient Insurance Selector Component -->
+<!-- قابل استفاده مجدد در تمامی ماژول‌ها -->
+
+<div class="patient-insurance-selector" data-patient-id="@Model">
+    <!-- وضعیت بیمه بیمار -->
+    <div class="insurance-status-card mb-4">
+        <div class="card border-info">
+            <div class="card-header bg-info text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-shield-alt"></i>
+                    وضعیت بیمه بیمار
+                </h6>
+            </div>
+            <div class="card-body" id="insurance-status-display">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <span>در حال بارگیری...</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- انتخاب بیمه پایه -->
+    <div class="primary-insurance-section mb-4">
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-shield-alt"></i>
+                    بیمه پایه
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">طرح بیمه پایه:</label>
+                            <select class="form-control" id="PrimaryInsurancePlanId" data-insurance-type="primary">
+                                <option value="">انتخاب طرح بیمه پایه...</option>
+                                <!-- اینجا لیست طرح‌های بیمه پایه بارگیری می‌شود -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">شماره بیمه‌نامه:</label>
+                            <input type="text" class="form-control" id="PrimaryPolicyNumber" placeholder="شماره بیمه‌نامه">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">تاریخ شروع:</label>
+                            <input type="date" class="form-control" id="PrimaryStartDate">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">تاریخ پایان (اختیاری):</label>
+                            <input type="date" class="form-control" id="PrimaryEndDate">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" 
+                            data-insurance-action="select-primary" 
+                            data-patient-id="@Model">
+                        <i class="fas fa-plus"></i>
+                        انتخاب بیمه پایه
+                    </button>
+                    <button type="button" class="btn btn-warning" 
+                            data-insurance-action="change-primary" 
+                            data-patient-id="@Model">
+                        <i class="fas fa-edit"></i>
+                        تغییر بیمه پایه
+                    </button>
+                    <button type="button" class="btn btn-danger" 
+                            data-insurance-action="deactivate-primary" 
+                            data-patient-id="@Model">
+                        <i class="fas fa-times"></i>
+                        غیرفعال کردن
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- انتخاب بیمه تکمیلی -->
+    <div class="supplementary-insurance-section mb-4">
+        <div class="card border-warning">
+            <div class="card-header bg-warning text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-plus-circle"></i>
+                    بیمه تکمیلی
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">طرح بیمه تکمیلی:</label>
+                            <select class="form-control" id="SupplementaryInsurancePlanId" data-insurance-type="supplementary">
+                                <option value="">انتخاب طرح بیمه تکمیلی...</option>
+                                <!-- اینجا لیست طرح‌های بیمه تکمیلی بارگیری می‌شود -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">شماره بیمه‌نامه:</label>
+                            <input type="text" class="form-control" id="SupplementaryPolicyNumber" placeholder="شماره بیمه‌نامه">
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">تاریخ شروع:</label>
+                            <input type="date" class="form-control" id="SupplementaryStartDate">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">تاریخ پایان (اختیاری):</label>
+                            <input type="date" class="form-control" id="SupplementaryEndDate">
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-warning" 
+                            data-insurance-action="select-supplementary" 
+                            data-patient-id="@Model">
+                        <i class="fas fa-plus"></i>
+                        انتخاب بیمه تکمیلی
+                    </button>
+                    <button type="button" class="btn btn-warning" 
+                            data-insurance-action="change-supplementary" 
+                            data-patient-id="@Model">
+                        <i class="fas fa-edit"></i>
+                        تغییر بیمه تکمیلی
+                    </button>
+                    <button type="button" class="btn btn-danger" 
+                            data-insurance-action="deactivate-supplementary" 
+                            data-patient-id="@Model">
+                        <i class="fas fa-times"></i>
+                        غیرفعال کردن
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- عملیات سریع -->
+    <div class="quick-actions-section">
+        <div class="card border-secondary">
+            <div class="card-header bg-secondary text-white">
+                <h6 class="mb-0">
+                    <i class="fas fa-tools"></i>
+                    عملیات سریع
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-info btn-block" 
+                                data-insurance-action="get-status" 
+                                data-patient-id="@Model">
+                            <i class="fas fa-search"></i>
+                            بررسی وضعیت
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-success btn-block" 
+                                data-insurance-action="refresh-status" 
+                                data-patient-id="@Model">
+                            <i class="fas fa-sync"></i>
+                            به‌روزرسانی
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <button type="button" class="btn btn-primary btn-block" 
+                                data-insurance-action="export-insurance" 
+                                data-patient-id="@Model">
+                            <i class="fas fa-download"></i>
+                            خروجی PDF
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS Styles -->
+<style>
+    .patient-insurance-selector {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .insurance-status-card .card-header {
+        border-radius: 0.375rem 0.375rem 0 0;
+    }
+
+    .insurance-status-item {
+        display: flex;
+        align-items: center;
+        padding: 0.5rem;
+        margin-bottom: 0.5rem;
+        border-radius: 0.25rem;
+        background-color: #f8f9fa;
+    }
+
+    .insurance-status-item.primary {
+        border-left: 4px solid #007bff;
+    }
+
+    .insurance-status-item.supplementary {
+        border-left: 4px solid #ffc107;
+    }
+
+    .insurance-status-item.inactive {
+        opacity: 0.6;
+    }
+
+    .insurance-status-item i {
+        margin-right: 0.5rem;
+        width: 20px;
+    }
+
+    .form-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .form-actions .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+
+    .quick-actions-section .btn {
+        margin-bottom: 0.5rem;
+    }
+
+    .insurance-info-card {
+        padding: 1rem;
+        border-radius: 0.25rem;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+    }
+
+    .insurance-info-card h6 {
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .insurance-info-card p {
+        margin-bottom: 0.25rem;
+        font-size: 0.9rem;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+    }
+
+    @media (max-width: 768px) {
+        .form-actions {
+            flex-direction: column;
+        }
+        
+        .form-actions .btn {
+            flex: none;
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- JavaScript Initialization -->
+<script>
+    $(document).ready(function() {
+        // Initialize Patient Insurance Selector
+        if (typeof PatientInsuranceManager !== 'undefined') {
+            const patientId = @Model;
+            
+            // Load initial insurance status
+            window.patientInsuranceManager.getPatientInsuranceStatus(patientId);
+            
+            // Set default dates
+            const today = new Date().toISOString().split('T')[0];
+            $('#PrimaryStartDate, #SupplementaryStartDate').val(today);
+            
+            // Auto-fill policy number with patient national code if available
+            // This would be implemented based on your patient data structure
+        }
+    });
+</script>

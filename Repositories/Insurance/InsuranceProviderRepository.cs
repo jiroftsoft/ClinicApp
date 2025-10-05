@@ -399,6 +399,58 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت بیمه‌گذاران پایه
+        /// </summary>
+        public async Task<List<InsuranceProvider>> GetPrimaryInsuranceProvidersAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت بیمه‌گذاران پایه");
+
+                var providers = await _context.InsuranceProviders
+                    .Where(p => p.IsActive && 
+                               !p.IsDeleted)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("بیمه‌گذاران پایه دریافت شد. تعداد: {Count}", providers.Count);
+
+                return providers;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمه‌گذاران پایه");
+                throw new InvalidOperationException("خطا در دریافت بیمه‌گذاران پایه", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران تکمیلی
+        /// </summary>
+        public async Task<List<InsuranceProvider>> GetSupplementaryInsuranceProvidersAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت بیمه‌گذاران تکمیلی");
+
+                var providers = await _context.InsuranceProviders
+                    .Where(p => p.IsActive && 
+                               !p.IsDeleted)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("بیمه‌گذاران تکمیلی دریافت شد. تعداد: {Count}", providers.Count);
+
+                return providers;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمه‌گذاران تکمیلی");
+                throw new InvalidOperationException("خطا در دریافت بیمه‌گذاران تکمیلی", ex);
+            }
+        }
+
         #endregion
     }
 }

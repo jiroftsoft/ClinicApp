@@ -81,6 +81,18 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>لیست ارائه‌دهندگان بیمه فعال</returns>
         Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetActiveProvidersForLookupAsync();
 
+        /// <summary>
+        /// دریافت بیمه‌گذاران پایه
+        /// </summary>
+        /// <returns>لیست بیمه‌گذاران پایه</returns>
+        Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetPrimaryInsuranceProvidersAsync();
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران تکمیلی
+        /// </summary>
+        /// <returns>لیست بیمه‌گذاران تکمیلی</returns>
+        Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetSupplementaryInsuranceProvidersAsync();
+
         #endregion
 
         #region Validation Operations

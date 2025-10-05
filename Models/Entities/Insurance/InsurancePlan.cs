@@ -177,10 +177,17 @@ public class InsurancePlan : ISoftDelete, ITrackable
     public virtual ICollection<PlanService> PlanServices { get; set; } = new HashSet<PlanService>();
 
     /// <summary>
-    /// لیست بیمه‌های بیماران مرتبط با این طرح
+    /// لیست بیمه‌های بیماران مرتبط با این طرح (بیمه پایه)
     /// این لیست برای نمایش تمام بیمارانی که تحت پوشش این طرح هستند استفاده می‌شود
     /// </summary>
     public virtual ICollection<PatientInsurance> PatientInsurances { get; set; } = new HashSet<PatientInsurance>();
+
+    /// <summary>
+    /// لیست بیمه‌های بیماران مرتبط با این طرح (بیمه تکمیلی)
+    /// این لیست برای نمایش تمام بیمارانی که تحت پوشش این طرح به عنوان بیمه تکمیلی هستند استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<PatientInsurance> SupplementaryPatientInsurances { get; set; } = new HashSet<PatientInsurance>();
+
     public virtual ICollection<InsuranceCalculation> InsuranceCalculations { get; set; } = new HashSet<InsuranceCalculation>();
     #endregion
 }
@@ -308,6 +315,12 @@ public class InsurancePlanConfig : EntityTypeConfiguration<InsurancePlan>
         HasMany(plan => plan.PatientInsurances)
             .WithRequired(pi => pi.InsurancePlan)
             .HasForeignKey(pi => pi.InsurancePlanId)
+            .WillCascadeOnDelete(false);
+
+        // روابط جدید برای Supplementary PatientInsurance
+        HasMany(plan => plan.SupplementaryPatientInsurances)
+            .WithOptional(pi => pi.SupplementaryInsurancePlan)
+            .HasForeignKey(pi => pi.SupplementaryInsurancePlanId)
             .WillCascadeOnDelete(false);
 
         // ایندکس‌های ترکیبی برای بهبود عملکرد

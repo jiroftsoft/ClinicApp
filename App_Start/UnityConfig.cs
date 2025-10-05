@@ -42,6 +42,7 @@ using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.Services.DataSeeding;
 using ClinicApp.Services.UserContext;
 using ClinicApp.Services.SystemSettings;
+using ClinicApp.Services.Interfaces;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -445,6 +446,12 @@ namespace ClinicApp
 
                 // Register System Settings Service
                 container.RegisterType<ISystemSettingService, SystemSettingService>(new PerRequestLifetimeManager());
+
+                // Register Patient Insurance Management Service
+                container.RegisterType<IPatientInsuranceManagementService, PatientInsuranceManagementService>(new PerRequestLifetimeManager());
+
+                // Register Patient Insurance Validation Service
+                container.RegisterType<IPatientInsuranceValidationService, PatientInsuranceValidationService>(new PerRequestLifetimeManager());
 
                 // Register Shared Service Management Service
                 container.RegisterType<ISharedServiceManagementService, SharedServiceManagementService>(new PerRequestLifetimeManager());

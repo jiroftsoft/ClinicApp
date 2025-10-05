@@ -43,6 +43,25 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "شماره بیمه")]
         public string PolicyNumber { get; set; }
 
+        /// <summary>
+        /// شماره بیمه تکمیلی (اختیاری)
+        /// </summary>
+        [StringLength(100, ErrorMessage = "شماره بیمه تکمیلی نمی‌تواند بیشتر از 100 کاراکتر باشد")]
+        [RegularExpression(@"^[A-Za-z0-9\-_]+$", ErrorMessage = "شماره بیمه تکمیلی فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد")]
+        [Display(Name = "شماره بیمه تکمیلی (اختیاری)")]
+        public string SupplementaryPolicyNumber { get; set; }
+
+        [Required(ErrorMessage = "بیمه‌گذار الزامی است")]
+        [Display(Name = "بیمه‌گذار")]
+        public int InsuranceProviderId { get; set; }
+
+        /// <summary>
+        /// نام بیمه‌گذار (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "نام بیمه‌گذار")]
+        public string InsuranceProviderName { get; set; }
+
         [Required(ErrorMessage = "طرح بیمه الزامی است")]
         [Display(Name = "طرح بیمه")]
         public int InsurancePlanId { get; set; }
@@ -53,6 +72,32 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [NotMapped]
         [Display(Name = "نام طرح بیمه")]
         public string InsurancePlanName { get; set; }
+
+        /// <summary>
+        /// بیمه‌گذار تکمیلی (اختیاری)
+        /// </summary>
+                [Display(Name = "بیمه‌گذار تکمیلی (اختیاری)")]
+                public int? SupplementaryInsuranceProviderId { get; set; }
+
+        /// <summary>
+        /// نام بیمه‌گذار تکمیلی (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "نام بیمه‌گذار تکمیلی")]
+        public string SupplementaryInsuranceProviderName { get; set; }
+
+        /// <summary>
+        /// طرح بیمه تکمیلی (اختیاری)
+        /// </summary>
+                [Display(Name = "طرح بیمه تکمیلی (اختیاری)")]
+                public int? SupplementaryInsurancePlanId { get; set; }
+
+        /// <summary>
+        /// نام طرح بیمه تکمیلی (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "نام طرح بیمه تکمیلی")]
+        public string SupplementaryInsurancePlanName { get; set; }
 
         [Required(ErrorMessage = "تاریخ شروع الزامی است")]
         [CustomValidation(typeof(PatientInsuranceCreateEditViewModel), "ValidateStartDate")]
@@ -108,8 +153,17 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "لیست بیماران")]
         public SelectList PatientSelectList { get; set; }
 
+        [Display(Name = "لیست بیمه‌گذاران")]
+        public SelectList InsuranceProviderSelectList { get; set; }
+
         [Display(Name = "لیست طرح‌های بیمه")]
         public SelectList InsurancePlanSelectList { get; set; }
+
+        [Display(Name = "لیست بیمه‌گذاران تکمیلی")]
+        public SelectList SupplementaryInsuranceProviderSelectList { get; set; }
+
+        [Display(Name = "لیست طرح‌های بیمه تکمیلی")]
+        public SelectList SupplementaryInsurancePlanSelectList { get; set; }
 
         #endregion
 
@@ -186,7 +240,11 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 PatientInsuranceId = entity.PatientInsuranceId,
                 PatientId = entity.PatientId,
                 PolicyNumber = entity.PolicyNumber,
+                SupplementaryPolicyNumber = entity.SupplementaryPolicyNumber,
+                InsuranceProviderId = entity.InsuranceProviderId,
                 InsurancePlanId = entity.InsurancePlanId,
+                SupplementaryInsuranceProviderId = entity.SupplementaryInsuranceProviderId,
+                SupplementaryInsurancePlanId = entity.SupplementaryInsurancePlanId,
                 StartDate = entity.StartDate,
                 EndDate = entity.EndDate,
                 IsPrimary = entity.IsPrimary,
@@ -194,7 +252,10 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 Priority = entity.Priority,
                 // پر کردن فیلدهای نمایشی
                 PatientName = entity.Patient != null ? $"{entity.Patient.FirstName} {entity.Patient.LastName}" : null,
-                InsurancePlanName = entity.InsurancePlan != null ? entity.InsurancePlan.Name : null
+                InsuranceProviderName = entity.InsuranceProvider != null ? entity.InsuranceProvider.Name : null,
+                InsurancePlanName = entity.InsurancePlan != null ? entity.InsurancePlan.Name : null,
+                SupplementaryInsuranceProviderName = entity.SupplementaryInsuranceProvider != null ? entity.SupplementaryInsuranceProvider.Name : null,
+                SupplementaryInsurancePlanName = entity.SupplementaryInsurancePlan != null ? entity.SupplementaryInsurancePlan.Name : null
             };
 
             // تبدیل تاریخ‌های میلادی به شمسی برای نمایش در فرم
@@ -216,7 +277,11 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 PatientInsuranceId = this.PatientInsuranceId,
                 PatientId = this.PatientId,
                 PolicyNumber = this.PolicyNumber?.Trim(),
+                SupplementaryPolicyNumber = this.SupplementaryPolicyNumber?.Trim(),
+                InsuranceProviderId = this.InsuranceProviderId,
                 InsurancePlanId = this.InsurancePlanId,
+                SupplementaryInsuranceProviderId = this.SupplementaryInsuranceProviderId,
+                SupplementaryInsurancePlanId = this.SupplementaryInsurancePlanId,
                 StartDate = this.StartDate,
                 EndDate = this.EndDate,
                 IsPrimary = this.IsPrimary,
@@ -237,7 +302,11 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
 
             entity.PatientId = this.PatientId;
             entity.PolicyNumber = this.PolicyNumber?.Trim();
+            entity.SupplementaryPolicyNumber = this.SupplementaryPolicyNumber?.Trim();
+            entity.InsuranceProviderId = this.InsuranceProviderId;
             entity.InsurancePlanId = this.InsurancePlanId;
+            entity.SupplementaryInsuranceProviderId = this.SupplementaryInsuranceProviderId;
+            entity.SupplementaryInsurancePlanId = this.SupplementaryInsurancePlanId;
             entity.StartDate = this.StartDate;
             entity.EndDate = this.EndDate;
             entity.IsPrimary = this.IsPrimary;

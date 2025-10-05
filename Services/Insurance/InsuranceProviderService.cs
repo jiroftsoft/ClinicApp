@@ -660,6 +660,94 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت بیمه‌گذاران پایه
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetPrimaryInsuranceProvidersAsync()
+        {
+            _log.Information(
+                "درخواست دریافت بیمه‌گذاران پایه. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت بیمه‌گذاران پایه از Repository
+                var providers = await _insuranceProviderRepository.GetPrimaryInsuranceProvidersAsync();
+                
+                if (providers == null || !providers.Any())
+                {
+                    _log.Warning("هیچ بیمه‌گذار پایه‌ای یافت نشد. کاربر: {UserName} (شناسه: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(
+                        new List<InsuranceProviderLookupViewModel>(),
+                        "هیچ بیمه‌گذار پایه‌ای یافت نشد");
+                }
+
+                // تبدیل به Lookup ViewModel
+                var lookupProviders = providers.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information("بیمه‌گذاران پایه با موفقیت دریافت شد. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    lookupProviders.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(
+                    lookupProviders,
+                    "بیمه‌گذاران پایه با موفقیت دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت بیمه‌گذاران پایه. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Failed(
+                    "خطا در دریافت بیمه‌گذاران پایه");
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران تکمیلی
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetSupplementaryInsuranceProvidersAsync()
+        {
+            _log.Information(
+                "درخواست دریافت بیمه‌گذاران تکمیلی. کاربر: {UserName} (شناسه: {UserId})",
+                _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // دریافت بیمه‌گذاران تکمیلی از Repository
+                var providers = await _insuranceProviderRepository.GetSupplementaryInsuranceProvidersAsync();
+                
+                if (providers == null || !providers.Any())
+                {
+                    _log.Warning("هیچ بیمه‌گذار تکمیلی یافت نشد. کاربر: {UserName} (شناسه: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(
+                        new List<InsuranceProviderLookupViewModel>(),
+                        "هیچ بیمه‌گذار تکمیلی یافت نشد");
+                }
+
+                // تبدیل به Lookup ViewModel
+                var lookupProviders = providers.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information("بیمه‌گذاران تکمیلی با موفقیت دریافت شد. تعداد: {Count}. کاربر: {UserName} (شناسه: {UserId})",
+                    lookupProviders.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(
+                    lookupProviders,
+                    "بیمه‌گذاران تکمیلی با موفقیت دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در دریافت بیمه‌گذاران تکمیلی. کاربر: {UserName} (شناسه: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Failed(
+                    "خطا در دریافت بیمه‌گذاران تکمیلی");
+            }
+        }
+
         #endregion
     }
 }

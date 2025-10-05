@@ -437,7 +437,7 @@ namespace ClinicApp.Services
             decimal professionalAmount = professionalComponent.Coefficient * finalProfessionalFactor;
             decimal totalAmount = technicalAmount + professionalAmount;
 
-            return new Interfaces.ServiceCalculationDetails
+            return new ServiceCalculationDetails
             {
                 ServiceId = service.ServiceId,
                 ServiceTitle = service.Title,
@@ -709,7 +709,7 @@ namespace ClinicApp.Services
                 Console.WriteLine($"   👨‍⚕️ Professional Amount: {professionalComponent.Coefficient} × {finalProfessionalFactor:N0} = {professionalAmount:N0}");
                 Console.WriteLine($"   💰 Total Price: {technicalAmount:N0} + {professionalAmount:N0} = {calculatedPrice:N0}");
 
-                var details = new Interfaces.ServiceCalculationDetails
+                var details = new ServiceCalculationDetails
                 {
                     ServiceId = service.ServiceId,
                     ServiceTitle = service.Title,
@@ -894,7 +894,7 @@ namespace ClinicApp.Services
             decimal professionalAmount = professionalComponent.Coefficient * finalProfessionalFactor;
             decimal totalAmount = technicalAmount + professionalAmount;
 
-            return new Interfaces.ServiceCalculationDetails
+            return new ServiceCalculationDetails
             {
                 ServiceId = service.ServiceId,
                 ServiceTitle = service.Title,

@@ -1,4 +1,5 @@
 ﻿using ClinicApp.Models.Core;
+using ClinicApp.Models.Entities.Patient;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -130,6 +131,18 @@ public class InsuranceProvider : ISoftDelete, ITrackable
     /// این لیست برای نمایش تمام طرح‌های بیمه موجود برای این ارائه‌دهنده استفاده می‌شود
     /// </summary>
     public virtual ICollection<InsurancePlan> InsurancePlans { get; set; } = new HashSet<InsurancePlan>();
+
+    /// <summary>
+    /// لیست بیمه‌های بیماران مرتبط با این ارائه‌دهنده (بیمه پایه)
+    /// این لیست برای نمایش تمام بیمارانی که تحت پوشش این ارائه‌دهنده هستند استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<PatientInsurance> PatientInsurances { get; set; } = new HashSet<PatientInsurance>();
+
+    /// <summary>
+    /// لیست بیمه‌های بیماران مرتبط با این ارائه‌دهنده (بیمه تکمیلی)
+    /// این لیست برای نمایش تمام بیمارانی که تحت پوشش این ارائه‌دهنده به عنوان بیمه تکمیلی هستند استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<PatientInsurance> SupplementaryPatientInsurances { get; set; } = new HashSet<PatientInsurance>();
     #endregion
 }
 /// <summary>
@@ -224,6 +237,17 @@ public class InsuranceProviderConfig : EntityTypeConfiguration<InsuranceProvider
         HasMany(ip => ip.InsurancePlans)
             .WithRequired(plan => plan.InsuranceProvider)
             .HasForeignKey(plan => plan.InsuranceProviderId)
+            .WillCascadeOnDelete(false);
+
+        // روابط جدید برای PatientInsurance
+        HasMany(ip => ip.PatientInsurances)
+            .WithRequired(pi => pi.InsuranceProvider)
+            .HasForeignKey(pi => pi.InsuranceProviderId)
+            .WillCascadeOnDelete(false);
+
+        HasMany(ip => ip.SupplementaryPatientInsurances)
+            .WithOptional(pi => pi.SupplementaryInsuranceProvider)
+            .HasForeignKey(pi => pi.SupplementaryInsuranceProviderId)
             .WillCascadeOnDelete(false);
 
         // ایندکس‌های ترکیبی برای بهبود عملکرد

@@ -7,9 +7,14 @@ using System.Web.Mvc;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Patient;
+using ClinicApp.Core;
+using ClinicApp.Helpers;
+using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
+using ClinicApp.Models.DTOs.Insurance;
 using Serilog;
 using System.Net;
 using System.Data.SqlClient;
@@ -56,6 +61,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
     {
         private readonly IPatientInsuranceService _patientInsuranceService;
         private readonly IInsurancePlanService _insurancePlanService;
+        private readonly IInsuranceProviderService _insuranceProviderService;
         private readonly IPatientService _patientService;
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
@@ -69,6 +75,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         public PatientInsuranceController(
             IPatientInsuranceService patientInsuranceService,
             IInsurancePlanService insurancePlanService,
+            IInsuranceProviderService insuranceProviderService,
             IPatientService patientService,
             ILogger logger,
             ICurrentUserService currentUserService,
@@ -76,6 +83,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         {
             _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
             _insurancePlanService = insurancePlanService ?? throw new ArgumentNullException(nameof(insurancePlanService));
+            _insuranceProviderService = insuranceProviderService ?? throw new ArgumentNullException(nameof(insuranceProviderService));
             _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
             _log = logger.ForContext<PatientInsuranceController>();
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -83,6 +91,255 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         private int PageSize => _appSettings.DefaultPageSize;
+
+        #region Insurance Status Helper Methods
+
+        /// <summary>
+        /// بررسی وضعیت بیمه بیمار و ارائه راهنمایی مناسب
+        /// </summary>
+        private async Task<InsuranceStatusInfo> GetPatientInsuranceStatusAsync(int patientId)
+        {
+            try
+            {
+                var statusInfo = new InsuranceStatusInfo
+                {
+                    PatientId = patientId,
+                    HasPrimaryInsurance = false,
+                    HasSupplementaryInsurance = false,
+                    PrimaryInsuranceCount = 0,
+                    SupplementaryInsuranceCount = 0,
+                    Recommendation = InsuranceRecommendation.None
+                };
+
+                // بررسی وجود بیمه اصلی
+                var primaryInsuranceResult = await _patientInsuranceService.DoesPrimaryInsuranceExistAsync(patientId, null);
+                if (primaryInsuranceResult.Success && primaryInsuranceResult.Data)
+                {
+                    statusInfo.HasPrimaryInsurance = true;
+                    statusInfo.PrimaryInsuranceCount = 1; // فقط یک بیمه اصلی مجاز است
+                }
+
+                // بررسی وجود بیمه تکمیلی
+                var supplementaryInsurancesResult = await _patientInsuranceService.GetSupplementaryInsurancesByPatientAsync(patientId);
+                if (supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data.Any())
+                {
+                    statusInfo.HasSupplementaryInsurance = true;
+                    statusInfo.SupplementaryInsuranceCount = supplementaryInsurancesResult.Data.Count;
+                }
+
+                // تعیین توصیه
+                if (!statusInfo.HasPrimaryInsurance)
+                {
+                    statusInfo.Recommendation = InsuranceRecommendation.CreatePrimaryInsurance;
+                }
+                else if (!statusInfo.HasSupplementaryInsurance)
+                {
+                    statusInfo.Recommendation = InsuranceRecommendation.ConsiderSupplementaryInsurance;
+                }
+                else
+                {
+                    statusInfo.Recommendation = InsuranceRecommendation.InsuranceComplete;
+                }
+
+                _log.Information("🏥 MEDICAL: وضعیت بیمه بیمار بررسی شد. PatientId: {PatientId}, HasPrimary: {HasPrimary}, HasSupplementary: {HasSupplementary}, Recommendation: {Recommendation}. User: {UserName} (Id: {UserId})",
+                    patientId, statusInfo.HasPrimaryInsurance, statusInfo.HasSupplementaryInsurance, statusInfo.Recommendation, _currentUserService.UserName, _currentUserService.UserId);
+
+                return statusInfo;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وضعیت بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                
+                return new InsuranceStatusInfo
+                {
+                    PatientId = patientId,
+                    HasPrimaryInsurance = false,
+                    HasSupplementaryInsurance = false,
+                    Recommendation = InsuranceRecommendation.Error
+                };
+            }
+        }
+
+        /// <summary>
+        /// بررسی وابستگی بیمه تکمیلی به بیمه پایه
+        /// </summary>
+        private async Task<ServiceResult<bool>> ValidateSupplementaryInsuranceDependencyAsync(int patientId, string policyNumber)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: بررسی وابستگی بیمه تکمیلی. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                // بررسی وجود بیمه پایه برای بیمار
+                var primaryInsuranceResult = await _patientInsuranceService.GetPrimaryInsuranceByPatientAsync(patientId);
+                if (!primaryInsuranceResult.Success || primaryInsuranceResult.Data == null)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمه پایه برای بیمار {PatientId} یافت نشد. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("ابتدا باید بیمه پایه برای این بیمار تعریف شود.");
+                }
+
+                var primaryInsurance = primaryInsuranceResult.Data;
+
+                // بررسی فعال بودن بیمه پایه
+                if (!primaryInsurance.IsActive)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمه پایه بیمار {PatientId} غیرفعال است. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("بیمه پایه این بیمار غیرفعال است. ابتدا بیمه پایه را فعال کنید.");
+                }
+
+                // بررسی تاریخ پایان بیمه پایه
+                if (primaryInsurance.EndDate.HasValue && primaryInsurance.EndDate.Value < DateTime.Now)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمه پایه بیمار {PatientId} منقضی شده است. EndDate: {EndDate}. User: {UserName} (Id: {UserId})",
+                        patientId, primaryInsurance.EndDate.Value, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("بیمه پایه این بیمار منقضی شده است. ابتدا بیمه پایه را تمدید کنید.");
+                }
+
+                _log.Information("🏥 MEDICAL: وابستگی بیمه تکمیلی تأیید شد. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وابستگی بیمه تکمیلی. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<bool>.Failed("خطا در بررسی وابستگی بیمه تکمیلی");
+            }
+        }
+
+        /// <summary>
+        /// ایجاد بیمه پیش‌فرض آزاد برای بیمار
+        /// </summary>
+        private async Task<ServiceResult<PatientInsurance>> CreateDefaultFreeInsuranceAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: ایجاد بیمه پیش‌فرض آزاد برای بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت طرح بیمه آزاد (Free Insurance Plan)
+                var freeInsurancePlans = await _insurancePlanService.GetActivePlansForLookupAsync();
+                if (!freeInsurancePlans.Success || !freeInsurancePlans.Data.Any())
+                {
+                    _log.Error("🏥 MEDICAL: هیچ طرح بیمه‌ای یافت نشد. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<PatientInsurance>.Failed("هیچ طرح بیمه‌ای یافت نشد");
+                }
+
+                // جستجوی طرح بیمه آزاد
+                var freePlan = freeInsurancePlans.Data.FirstOrDefault(p => 
+                    p.Name.Contains("آزاد") || p.Name.Contains("Free") || p.Name.Contains("عمومی"));
+                
+                if (freePlan == null)
+                {
+                    // اگر طرح آزاد یافت نشد، از اولین طرح استفاده کن
+                    freePlan = freeInsurancePlans.Data.First();
+                    _log.Warning("🏥 MEDICAL: طرح بیمه آزاد یافت نشد، از اولین طرح استفاده می‌شود. PlanId: {PlanId}, PlanName: {PlanName}. User: {UserName} (Id: {UserId})",
+                        freePlan.InsurancePlanId, freePlan.Name, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // ایجاد بیمه آزاد
+                var freeInsurance = new PatientInsurance
+                {
+                    PatientId = patientId,
+                    InsurancePlanId = freePlan.InsurancePlanId,
+                    PolicyNumber = "FREE-" + patientId.ToString("D6") + "-" + DateTime.Now.ToString("yyyyMMdd"),
+                    StartDate = DateTime.Now,
+                    IsPrimary = true,
+                    IsActive = true,
+                    Priority = InsurancePriority.Primary,
+                    CreatedAt = DateTime.Now,
+                    CreatedByUserId = _currentUserService.UserId
+                };
+
+                // ذخیره بیمه آزاد
+                var createResult = await _patientInsuranceService.CreatePatientInsuranceAsync(new PatientInsuranceCreateEditViewModel
+                {
+                    PatientId = freeInsurance.PatientId,
+                    InsurancePlanId = freeInsurance.InsurancePlanId,
+                    PolicyNumber = freeInsurance.PolicyNumber,
+                    StartDate = freeInsurance.StartDate,
+                    IsPrimary = freeInsurance.IsPrimary,
+                    IsActive = freeInsurance.IsActive
+                });
+
+                if (!createResult.Success)
+                {
+                    _log.Error("🏥 MEDICAL: خطا در ایجاد بیمه آزاد. PatientId: {PatientId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        patientId, createResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<PatientInsurance>.Failed("خطا در ایجاد بیمه آزاد: " + createResult.Message);
+                }
+
+                _log.Information("🏥 MEDICAL: بیمه پیش‌فرض آزاد با موفقیت ایجاد شد. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    patientId, freeInsurance.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<PatientInsurance>.Successful(freeInsurance);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در ایجاد بیمه پیش‌فرض آزاد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<PatientInsurance>.Failed("خطا در ایجاد بیمه پیش‌فرض آزاد");
+            }
+        }
+
+        /// <summary>
+        /// ایجاد خودکار بیمه پیش‌فرض آزاد برای بیمار
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> CreateDefaultFreeInsurance(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست ایجاد بیمه پیش‌فرض آزاد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // بررسی وجود بیمه اصلی
+                var hasPrimaryInsurance = await _patientInsuranceService.DoesPrimaryInsuranceExistAsync(patientId, null);
+                if (hasPrimaryInsurance.Success && hasPrimaryInsurance.Data)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمار قبلاً بیمه اصلی دارد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = "این بیمار قبلاً بیمه اصلی دارد." });
+                }
+
+                // ایجاد بیمه آزاد
+                var result = await CreateDefaultFreeInsuranceAsync(patientId);
+                if (result.Success)
+                {
+                    _log.Information("🏥 MEDICAL: بیمه پیش‌فرض آزاد با موفقیت ایجاد شد. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                        patientId, result.Data.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return Json(new { 
+                        success = true, 
+                        message = "بیمه پیش‌فرض آزاد با موفقیت ایجاد شد.",
+                        data = new {
+                            policyNumber = result.Data.PolicyNumber,
+                            startDate = result.Data.StartDate.ToString("yyyy/MM/dd")
+                        }
+                    });
+                }
+                else
+                {
+                    _log.Error("🏥 MEDICAL: خطا در ایجاد بیمه پیش‌فرض آزاد. PatientId: {PatientId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        patientId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در ایجاد بیمه پیش‌فرض آزاد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return Json(new { success = false, message = "خطا در ایجاد بیمه پیش‌فرض آزاد" });
+            }
+        }
+
+        #endregion
 
         #region Error Handling (Simplified - SRP Compliance)
 
@@ -169,7 +426,223 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
         #region Validation Helper Methods
 
-        // منطق اعتبارسنجی به سرویس منتقل شد - طبق قرارداد No Business Logic in Controllers
+        /// <summary>
+        /// اعتبارسنجی بیمه بیمار با استفاده از سرویس جدید
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> ValidatePatientInsurance(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: شروع اعتبارسنجی بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // استفاده از سرویس اعتبارسنجی جدید
+                var validationService = DependencyResolver.Current.GetService<IPatientInsuranceValidationService>();
+                var validationResult = await validationService.ValidatePatientInsuranceAsync(patientId);
+
+                if (validationResult.Success)
+                {
+                    _log.Information("🏥 MEDICAL: اعتبارسنجی بیمه بیمار موفق. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceValidationResult>.Successful(
+                        validationResult.Data, 
+                        "اعتبارسنجی بیمه بیمار با موفقیت انجام شد"), 
+                        JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: خطا در اعتبارسنجی بیمه بیمار. PatientId: {PatientId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        patientId, validationResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceValidationResult>.Failed(
+                        validationResult.Message), 
+                        JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در اعتبارسنجی بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<PatientInsuranceValidationResult>.Failed(
+                    "خطای غیرمنتظره در اعتبارسنجی بیمه بیمار"), 
+                    JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت وضعیت بیمه بیمار
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetPatientInsuranceStatus(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت وضعیت بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت بیمه‌های بیمار
+                var primaryInsuranceResult = await _patientInsuranceService.GetPrimaryInsuranceByPatientAsync(patientId);
+                var supplementaryInsurancesResult = await _patientInsuranceService.GetSupplementaryInsurancesByPatientAsync(patientId);
+
+                var status = new PatientInsuranceStatus
+                {
+                    PatientId = patientId,
+                    HasPrimaryInsurance = primaryInsuranceResult.Success && primaryInsuranceResult.Data != null,
+                    HasSupplementaryInsurance = supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data?.Any() == true,
+                    PrimaryInsuranceActive = primaryInsuranceResult.Success && primaryInsuranceResult.Data?.IsActive == true,
+                    ValidationDate = DateTime.UtcNow
+                };
+
+                _log.Information("🏥 MEDICAL: وضعیت بیمه بیمار دریافت شد. PatientId: {PatientId}, HasPrimary: {HasPrimary}, HasSupplementary: {HasSupplementary}. User: {UserName} (Id: {UserId})",
+                    patientId, status.HasPrimaryInsurance, status.HasSupplementaryInsurance, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<PatientInsuranceStatus>.Successful(
+                    status,
+                    "وضعیت بیمه بیمار دریافت شد"),
+                    JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت وضعیت بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                    "خطای غیرمنتظره در دریافت وضعیت بیمه بیمار"),
+                    JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران پایه
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetPrimaryInsuranceProviders()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت بیمه‌گذاران پایه. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var providers = await _insuranceProviderService.GetPrimaryInsuranceProvidersAsync();
+                if (providers.Success)
+                {
+                    var providerList = providers.Data.Select(p => new { id = p.InsuranceProviderId, name = p.Name }).ToList();
+                    
+                    _log.Information("🏥 MEDICAL: بیمه‌گذاران پایه دریافت شد. Count: {Count}. User: {UserName} (Id: {UserId})",
+                        providerList.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<List<object>>.Successful(
+                        providerList.Cast<object>().ToList(),
+                        "بیمه‌گذاران پایه دریافت شد"),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(ServiceResult<List<object>>.Failed("خطا در دریافت بیمه‌گذاران پایه"),
+                    JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت بیمه‌گذاران پایه. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<List<object>>.Failed("خطای غیرمنتظره در دریافت بیمه‌گذاران پایه"),
+                    JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران تکمیلی
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetSupplementaryInsuranceProviders()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت بیمه‌گذاران تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                var providers = await _insuranceProviderService.GetSupplementaryInsuranceProvidersAsync();
+                if (providers.Success)
+                {
+                    var providerList = providers.Data.Select(p => new { id = p.InsuranceProviderId, name = p.Name }).ToList();
+                    
+                    _log.Information("🏥 MEDICAL: بیمه‌گذاران تکمیلی دریافت شد. Count: {Count}. User: {UserName} (Id: {UserId})",
+                        providerList.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<List<object>>.Successful(
+                        providerList.Cast<object>().ToList(),
+                        "بیمه‌گذاران تکمیلی دریافت شد"),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(ServiceResult<List<object>>.Failed("خطا در دریافت بیمه‌گذاران تکمیلی"),
+                    JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت بیمه‌گذاران تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<List<object>>.Failed("خطای غیرمنتظره در دریافت بیمه‌گذاران تکمیلی"),
+                    JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه بر اساس بیمه‌گذار
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult> GetInsurancePlansByProvider(int providerId, string type = "primary")
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت طرح‌های بیمه. ProviderId: {ProviderId}, Type: {Type}. User: {UserName} (Id: {UserId})",
+                    providerId, type, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت طرح‌های بیمه بر اساس نوع
+                var plans = new List<object>();
+                
+                if (type == "primary")
+                {
+                    // طرح‌های بیمه پایه
+                    var primaryPlans = await _insurancePlanService.GetPrimaryInsurancePlansByProviderAsync(providerId);
+                    if (primaryPlans.Success)
+                    {
+                        plans = primaryPlans.Data.Select(p => new { id = p.InsurancePlanId, name = p.Name }).ToList<object>();
+                    }
+                }
+                else if (type == "supplementary")
+                {
+                    // طرح‌های بیمه تکمیلی
+                    var supplementaryPlans = await _insurancePlanService.GetSupplementaryInsurancePlansByProviderAsync(providerId);
+                    if (supplementaryPlans.Success)
+                    {
+                        plans = supplementaryPlans.Data.Select(p => new { id = p.InsurancePlanId, name = p.Name }).ToList<object>();
+                    }
+                }
+
+                _log.Information("🏥 MEDICAL: طرح‌های بیمه دریافت شد. ProviderId: {ProviderId}, Type: {Type}, Count: {Count}. User: {UserName} (Id: {UserId})",
+                    providerId, type, plans.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<List<object>>.Successful(
+                    plans,
+                    "طرح‌های بیمه دریافت شد"),
+                    JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت طرح‌های بیمه. ProviderId: {ProviderId}, Type: {Type}. User: {UserName} (Id: {UserId})",
+                    providerId, type, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<List<object>>.Failed(
+                    "خطای غیرمنتظره در دریافت طرح‌های بیمه"),
+                    JsonRequestBehavior.AllowGet);
+            }
+        }
 
         #endregion
 
@@ -691,16 +1164,40 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // 🏥 Medical Environment: بارگیری لیست طرح‌های بیمه با بهینه‌سازی
                 await LoadDropdownsForModelAsync(model);
 
-                // 🏥 Medical Environment: بررسی وجود بیمه اصلی برای بیمار
+                // 🏥 Medical Environment: بررسی وضعیت بیمه بیمار
                 if (patientId.HasValue && patientId.Value > 0)
                 {
-                    // TODO: بررسی وجود بیمه اصلی برای بیمار
-                    // var hasPrimaryInsurance = await _patientInsuranceService.CheckPrimaryInsuranceExistsAsync(patientId.Value, null);
-                    // if (hasPrimaryInsurance.Success && hasPrimaryInsurance.Data)
-                    // {
-                    //     TempData["InfoMessage"] = "این بیمار قبلاً بیمه اصلی دارد. بیمه جدید به عنوان بیمه تکمیلی ثبت خواهد شد.";
-                    //     model.IsPrimary = false;
-                    // }
+                    var insuranceStatus = await GetPatientInsuranceStatusAsync(patientId.Value);
+                    
+                    switch (insuranceStatus.Recommendation)
+                    {
+                        case InsuranceRecommendation.CreatePrimaryInsurance:
+                            model.IsPrimary = true;
+                            TempData["InfoMessage"] = "این بیمار فاقد بیمه اصلی است. لطفاً ابتدا بیمه اصلی را ثبت کنید.";
+                            _log.Information("🏥 MEDICAL: بیمار فاقد بیمه اصلی - توصیه به ایجاد بیمه اصلی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                                patientId, _currentUserService.UserName, _currentUserService.UserId);
+                            break;
+                            
+                        case InsuranceRecommendation.ConsiderSupplementaryInsurance:
+                            model.IsPrimary = false;
+                            TempData["InfoMessage"] = "این بیمار دارای بیمه اصلی است. بیمه جدید به عنوان بیمه تکمیلی ثبت خواهد شد.";
+                            _log.Information("🏥 MEDICAL: بیمار دارای بیمه اصلی - توصیه به ایجاد بیمه تکمیلی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                                patientId, _currentUserService.UserName, _currentUserService.UserId);
+                            break;
+                            
+                        case InsuranceRecommendation.InsuranceComplete:
+                            model.IsPrimary = false;
+                            TempData["WarningMessage"] = "این بیمار دارای بیمه اصلی و تکمیلی است. آیا مطمئن هستید که می‌خواهید بیمه اضافی ثبت کنید؟";
+                            _log.Information("🏥 MEDICAL: بیمار دارای بیمه کامل - هشدار برای بیمه اضافی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                                patientId, _currentUserService.UserName, _currentUserService.UserId);
+                            break;
+                            
+                        case InsuranceRecommendation.Error:
+                            TempData["ErrorMessage"] = "خطا در بررسی وضعیت بیمه بیمار. لطفاً دوباره تلاش کنید.";
+                            _log.Error("🏥 MEDICAL: خطا در بررسی وضعیت بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                                patientId, _currentUserService.UserName, _currentUserService.UserId);
+                            break;
+                    }
                 }
 
                 _log.Information("🏥 MEDICAL: فرم ایجاد بیمه بیمار با موفقیت بارگذاری شد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
@@ -778,6 +1275,22 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     TempData["ErrorMessage"] = "اطلاعات وارد شده معتبر نیست.";
                     await LoadDropdownsForModelAsync(model);
                     return View(model);
+                }
+
+                // 🏥 Medical Environment: اعتبارسنجی وابستگی بیمه تکمیلی
+                if (!model.IsPrimary)
+                {
+                    var dependencyValidation = await ValidateSupplementaryInsuranceDependencyAsync(model.PatientId, model.PolicyNumber);
+                    if (!dependencyValidation.Success)
+                    {
+                        _log.Warning("🏥 MEDICAL: خطا در وابستگی بیمه تکمیلی. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                            model.PatientId, model.PolicyNumber, dependencyValidation.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                        ModelState.AddModelError("PolicyNumber", dependencyValidation.Message);
+                        TempData["ErrorMessage"] = "خطا در وابستگی بیمه تکمیلی: " + dependencyValidation.Message;
+                        await LoadDropdownsForModelAsync(model);
+                        return View(model);
+                    }
                 }
 
                 // 🏥 Medical Environment: ایجاد بیمه بیمار
@@ -1351,7 +1864,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     firstName = p.FirstName,
                     lastName = p.LastName,
                     nationalCode = p.NationalCode,
-                    phoneNumber = p.PhoneNumber
+                    phoneNumber = p.PhoneNumber,
+                    birthDate = p.BirthDate,
+                    birthDateShamsi = p.BirthDateShamsi,
+                    age = p.Age,
+                    gender = p.Gender,
+                    address = p.Address
                 }).ToList();
 
                 var hasMore = (page * pageSize) < result.Data.TotalItems;
@@ -1767,5 +2285,31 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         #endregion
+    }
+
+    /// <summary>
+    /// اطلاعات وضعیت بیمه بیمار
+    /// </summary>
+    public class InsuranceStatusInfo
+    {
+        public int PatientId { get; set; }
+        public bool HasPrimaryInsurance { get; set; }
+        public bool HasSupplementaryInsurance { get; set; }
+        public int PrimaryInsuranceCount { get; set; }
+        public int SupplementaryInsuranceCount { get; set; }
+        public InsuranceRecommendation Recommendation { get; set; }
+        public string Message { get; set; }
+    }
+
+    /// <summary>
+    /// انواع توصیه‌های بیمه
+    /// </summary>
+    public enum InsuranceRecommendation
+    {
+        None,
+        CreatePrimaryInsurance,
+        ConsiderSupplementaryInsurance,
+        InsuranceComplete,
+        Error
     }
 }

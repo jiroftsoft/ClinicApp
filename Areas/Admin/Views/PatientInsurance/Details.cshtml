@@ -300,6 +300,9 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>جزئیات بیمه بیمار</h2>
                 <div>
+                    <button type="button" class="btn btn-success btn-action" id="validateInsuranceBtn" onclick="validateCurrentInsurance()">
+                        <i class="fas fa-check-circle"></i> اعتبارسنجی بیمه
+                    </button>
                     <a href="@Url.Action("Edit", "PatientInsurance", new { id = Model.PatientInsuranceId })" class="btn btn-warning btn-action">
                         <i class="fas fa-edit"></i> ویرایش
                     </a>
@@ -797,5 +800,99 @@
 
             initializeMedicalDetailsPage();
         })();
+        
+        // تابع اعتبارسنجی بیمه فعلی
+        function validateCurrentInsurance() {
+            var validateBtn = $('#validateInsuranceBtn');
+            var originalText = validateBtn.html();
+            var patientId = @Model.PatientId;
+            
+            // نمایش loading
+            validateBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال اعتبارسنجی...');
+            
+            $.ajax({
+                url: '@Url.Action("ValidatePatientInsurance", "PatientInsurance")',
+                type: 'POST',
+                data: {
+                    patientId: patientId,
+                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                },
+                success: function(response) {
+                    if (response.success) {
+                        showValidationResult(response.data);
+                    } else {
+                        showErrorMessage('خطا در اعتبارسنجی: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showErrorMessage('خطا در ارتباط با سرور: ' + error);
+                },
+                complete: function() {
+                    validateBtn.prop('disabled', false).html(originalText);
+                }
+            });
+        }
+        
+        // نمایش نتیجه اعتبارسنجی
+        function showValidationResult(validationResult) {
+            var resultHtml = '<div class="alert alert-info mt-3">';
+            resultHtml += '<h5><i class="fas fa-info-circle"></i> نتیجه اعتبارسنجی بیمه</h5>';
+            
+            if (validationResult.isValid) {
+                resultHtml += '<div class="alert alert-success">';
+                resultHtml += '<i class="fas fa-check-circle"></i> <strong>بیمه معتبر است</strong>';
+                resultHtml += '</div>';
+            } else {
+                resultHtml += '<div class="alert alert-danger">';
+                resultHtml += '<i class="fas fa-exclamation-triangle"></i> <strong>بیمه نامعتبر است</strong>';
+                resultHtml += '</div>';
+            }
+            
+            if (validationResult.issues && validationResult.issues.length > 0) {
+                resultHtml += '<h6>مسائل شناسایی شده:</h6>';
+                resultHtml += '<ul class="list-unstyled">';
+                validationResult.issues.forEach(function(issue) {
+                    var severityClass = issue.severity === 'Critical' ? 'text-danger' : 
+                                       issue.severity === 'Warning' ? 'text-warning' : 'text-info';
+                    resultHtml += '<li class="' + severityClass + '">';
+                    resultHtml += '<i class="fas fa-' + (issue.severity === 'Critical' ? 'times-circle' : 
+                                                       issue.severity === 'Warning' ? 'exclamation-triangle' : 'info-circle') + '"></i> ';
+                    resultHtml += issue.message;
+                    if (issue.recommendation) {
+                        resultHtml += '<br><small class="text-muted">توصیه: ' + issue.recommendation + '</small>';
+                    }
+                    resultHtml += '</li>';
+                });
+                resultHtml += '</ul>';
+            }
+            
+            if (validationResult.recommendations && validationResult.recommendations.length > 0) {
+                resultHtml += '<h6>توصیه‌ها:</h6>';
+                resultHtml += '<ul class="list-unstyled">';
+                validationResult.recommendations.forEach(function(recommendation) {
+                    resultHtml += '<li class="text-info"><i class="fas fa-lightbulb"></i> ' + recommendation + '</li>';
+                });
+                resultHtml += '</ul>';
+            }
+            
+            resultHtml += '</div>';
+            
+            // حذف نتیجه قبلی
+            $('.validation-result').remove();
+            
+            // اضافه کردن نتیجه جدید
+            $('.patient-insurance-details-card').after(resultHtml);
+        }
+        
+        // نمایش پیام خطا
+        function showErrorMessage(message) {
+            var alertHtml = '<div class="alert alert-danger alert-dismissible fade show mt-3 validation-result">';
+            alertHtml += '<i class="fas fa-exclamation-circle"></i> ' + message;
+            alertHtml += '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>';
+            alertHtml += '</div>';
+            
+            $('.validation-result').remove();
+            $('.patient-insurance-details-card').after(alertHtml);
+        }
     </script>
 }

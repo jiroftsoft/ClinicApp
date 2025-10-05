@@ -60,6 +60,20 @@ namespace ClinicApp.Interfaces.Insurance
         Task<List<InsurancePlan>> GetByProviderIdAsync(int providerId);
 
         /// <summary>
+        /// دریافت طرح‌های بیمه پایه بر اساس ارائه‌دهنده
+        /// </summary>
+        /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>
+        /// <returns>لیست طرح‌های بیمه پایه ارائه‌دهنده</returns>
+        Task<List<InsurancePlan>> GetPrimaryPlansByProviderAsync(int providerId);
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی بر اساس ارائه‌دهنده
+        /// </summary>
+        /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>
+        /// <returns>لیست طرح‌های بیمه تکمیلی ارائه‌دهنده</returns>
+        Task<List<InsurancePlan>> GetSupplementaryPlansByProviderAsync(int providerId);
+
+        /// <summary>
         /// دریافت طرح‌های بیمه فعال بر اساس ارائه‌دهنده
         /// </summary>
         /// <param name="providerId">شناسه ارائه‌دهنده بیمه</param>

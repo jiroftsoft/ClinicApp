@@ -6,6 +6,7 @@
 
 @section Styles {
     <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
+    <link href="~/Content/css/patient-insurance-enhanced.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2-bootstrap4.min.css" rel="stylesheet" />
     
@@ -52,21 +53,21 @@
         }
         
         .medical-form-container {
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
+            background: white;
             border-radius: 12px;
             padding: 2rem;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
         }
         
         .medical-form-actions {
             margin-top: 2rem;
             padding-top: 1.5rem;
-            border-top: 2px solid #e0e0e0;
+            border-top: 2px solid #f0f0f0;
         }
         
         .medical-save-btn {
-            background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+            background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
             border: none;
             color: white;
             font-weight: 600;
@@ -199,60 +200,49 @@
                 width: 100%;
                 margin-bottom: 0.5rem;
             }
-            
-            .patient-details {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-        }
-        
-        /* Medical Environment Validation Messages */
-        .medical-validation-message {
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            color: #f44336;
-            font-weight: 500;
-        }
-        
-        .medical-success-message {
-            font-size: 0.875rem;
-            margin-top: 0.25rem;
-            color: #4caf50;
-            font-weight: 500;
         }
     </style>
 }
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2>ویرایش بیمه بیمار</h2>
-                <a href="@Url.Action("Index", "PatientInsurance")" class="btn btn-secondary">
-                    <i class="fas fa-arrow-right"></i> بازگشت به لیست
-                </a>
-            </div>
 
-            <div class="row justify-content-center">
-                <div class="col-md-10">
-                    <!-- 🏥 Medical Environment Edit Header -->
-                    <div class="edit-header medical-edit-header">
-                        <div class="insurance-info medical-insurance-info">
-                            <div class="d-flex align-items-center">
+<div class="container-fluid">
+    <!-- 🏥 Medical Environment: Edit Header -->
+    <div class="medical-edit-header">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <div class="medical-insurance-info">
+                    <h5 class="mb-2">
                                 <i class="fas fa-edit me-2"></i>
-                                <div>
-                                    <h5 class="mb-1">در حال ویرایش بیمه بیمار</h5>
+                        ویرایش بیمه بیمار
+                    </h5>
                                     <div class="patient-details">
-                                        <span class="patient-name-badge">@Model.PatientName</span>
-                                        <i class="fas fa-arrow-left mx-2"></i>
-                                        <span class="insurance-plan-badge">@Model.InsurancePlanName</span>
+                        <span class="patient-name-badge">
+                            <i class="fas fa-user me-1"></i>
+                            @Model.PatientName
+                        </span>
+                        <span class="insurance-plan-badge">
+                            <i class="fas fa-shield-alt me-1"></i>
+                            @Model.InsurancePlanName
+                        </span>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
-
-                    <!-- 🏥 Medical Environment Form Container -->
-                    <div class="patient-insurance-form medical-form-container">
+            <div class="col-md-4 text-end">
+                <div class="medical-status-indicators">
+                    <span class="badge bg-success me-2">
+                        <i class="fas fa-check-circle me-1"></i>
+                        فعال
+                                        </span>
+                    <span class="badge bg-info">
+                        <i class="fas fa-calendar me-1"></i>
+                        @Model.StartDateShamsi
+                                        </span>
+                                    </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+    <!-- 🏥 Medical Environment: Edit Form -->
+    <div class="medical-form-container">
                         @using (Html.BeginForm("Edit", "PatientInsurance", FormMethod.Post, new { 
                             @class = "needs-validation medical-form", 
                             novalidate = "novalidate",
@@ -262,8 +252,25 @@
                         {
                             @Html.AntiForgeryToken()
                             @Html.HiddenFor(m => m.PatientInsuranceId)
+            @Html.HiddenFor(m => m.PatientId)
+            @Html.HiddenFor(m => m.InsuranceProviderId)
+            @Html.HiddenFor(m => m.InsurancePlanId)
+            @Html.HiddenFor(m => m.SupplementaryInsuranceProviderId)
+            @Html.HiddenFor(m => m.SupplementaryInsurancePlanId)
+            @Html.HiddenFor(m => m.IsPrimary)
+            @Html.HiddenFor(m => m.IsActive)
 
                             @Html.Partial("_PatientInsuranceForm", Model)
+
+                            <!-- 🏥 Medical Environment: Change Tracking -->
+                            <div class="change-tracking" id="changeTracking" style="display: none;">
+                                <h6 class="mb-3">
+                                    <i class="fas fa-history"></i> تغییرات انجام شده
+                                </h6>
+                                <div id="changeList">
+                                    <!-- Changes will be tracked here -->
+                                </div>
+                            </div>
 
                             <!-- 🏥 Medical Environment Form Actions -->
                             <div class="form-actions medical-form-actions">
@@ -293,260 +300,483 @@
                                         <i class="fas fa-info-circle me-2"></i>
                                         <strong>راهنمای ویرایش:</strong>
                                         <ul class="mb-0 mt-2">
-                                            <li>اطلاعات بیمه بیمار را با دقت بررسی کنید</li>
-                                            <li>تاریخ‌های اعتبار باید صحیح و معتبر باشند</li>
-                                            <li>تغییرات پس از ذخیره فوراً اعمال می‌شوند</li>
+                            <li>تغییرات در فیلدهای بیمه پایه و تکمیلی قابل ویرایش است</li>
+                            <li>بیمه تکمیلی اختیاری است و می‌توانید آن را حذف کنید</li>
+                            <li>تاریخ‌های شروع و پایان بیمه قابل تغییر هستند</li>
+                            <li>شماره بیمه‌نامه بر اساس کد ملی بیمار تنظیم می‌شود</li>
                                         </ul>
                                     </div>
                                 </div>
                             </div>
                         }
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
 @section Scripts {
-    <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
-    <script src="~/Scripts/app/patient-select2.js"></script>
-    <script src="~/Scripts/app/patient-insurance-form.js"></script>
+    <script src="~/Content/plugins/select2/js/select2.min.js"></script>
+    <script src="~/Content/plugins/select2/js/i18n/fa.js"></script>
+    <script src="~/Scripts/app/patient-insurance-enhanced.js"></script>
+    
     <script>
-        // 🏥 Medical Environment JavaScript - Enhanced Standards
-        (function () {
-            'use strict';
-
-            function ensureJQuery(callback) {
-                if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
-                    callback();
-                } else {
-                    setTimeout(function () {
-                        ensureJQuery(callback);
-                    }, 50);
-                }
-            }
-
-            function initializeMedicalEditPage() {
-                ensureJQuery(function () {
                     $(document).ready(function() {
                         console.log('🏥 Medical Environment: Initializing Patient Insurance Edit Form');
                         
-                        // 🏥 Medical Environment Form Validation
-                        initializeMedicalFormValidation();
-                        
-                        // 🏥 Medical Environment Real-time Validation
-                        initializeRealTimeValidation();
-                        
-                        // Wait for PatientInsuranceForm to be available
-                        var checkPatientInsuranceForm = function() {
-                            if (typeof PatientInsuranceForm !== 'undefined' && PatientInsuranceForm.initializeFormWithData) {
-                                console.log('✅ PatientInsuranceForm found, initializing form with data...');
-                                PatientInsuranceForm.initializeFormWithData();
-                            } else {
-                                console.log('⏳ Waiting for PatientInsuranceForm...');
-                                setTimeout(checkPatientInsuranceForm, 100);
-                            }
-                        };
-                        
-                        checkPatientInsuranceForm();
-
-                        // Set existing patient selection for Edit mode
-                        @if (Model.PatientId > 0)
-                        {
-                            <text>
-                            var checkPatientSelect2 = function() {
-                                if (typeof PatientSelect2 !== 'undefined' && PatientSelect2.setValue) {
-                                    console.log('✅ PatientSelect2 found, setting patient value...');
-                                    PatientSelect2.setValue('#PatientId', {
-                                        id: @Model.PatientId,
-                                        text: 'بیمار انتخاب شده'
-                                    });
-                                } else {
-                                    console.log('⏳ Waiting for PatientSelect2...');
-                                    setTimeout(checkPatientSelect2, 100);
-                                }
-                            };
-                            
-                            checkPatientSelect2();
-                            </text>
-                        }
-                    });
-                });
+            // Initialize Enhanced Patient Insurance for Edit
+            if (typeof PatientInsuranceEnhanced !== 'undefined') {
+                PatientInsuranceEnhanced.initializeEditForm();
             }
+            
+            // 🏥 Medical Environment: Edit Form Specific Initialization
+            initializeEditForm();
+                        
+                        // 🏥 Medical Environment: Change Tracking
+                        initializeChangeTracking();
+                        
+            // 🏥 Medical Environment: Form Submission
+            initializeFormSubmission();
+        });
 
-            // 🏥 Medical Environment Form Validation
-            function initializeMedicalFormValidation() {
-                ensureJQuery(function () {
-                    // Enhanced form validation for medical environment
-                    $('#patientInsuranceEditForm').on('submit', function(e) {
-                        console.log('🏥 Medical Environment: Form submission validation');
-                        
-                        var $form = $(this);
-                        var $saveButton = $('#saveEditButton');
-                        var $loadingIndicator = $('#editLoadingIndicator');
-                        
-                        // Show loading state
-                        $saveButton.prop('disabled', true).addClass('medical-loading');
-                        $loadingIndicator.show();
-                        
-                        var isValid = true;
-                        var errors = [];
-
-                        // Validate required fields
-                        $('.medical-form-control[required]').each(function() {
-                            if (!$(this).val().trim()) {
-                                isValid = false;
-                                var fieldName = $(this).attr('data-medical-field') || $(this).attr('name');
-                                errors.push('فیلد ' + fieldName + ' الزامی است');
-                                $(this).addClass('is-invalid');
-                            } else {
-                                $(this).removeClass('is-invalid');
+        // 🏥 Medical Environment: Initialize Edit Form
+        function initializeEditForm() {
+            console.log('🏥 Medical Environment: Initializing Edit Form with Model Data');
+            
+            // Initialize Enhanced Patient Insurance
+            if (typeof PatientInsuranceEnhanced !== 'undefined') {
+                PatientInsuranceEnhanced.initializeInsuranceSelection();
+            }
+            
+            // Load insurance providers first
+            loadPrimaryInsuranceProviders().then(function() {
+                // Set primary insurance provider
+                if ('@Model.InsuranceProviderId' && '@Model.InsuranceProviderId' !== '0') {
+                    $('#PrimaryInsuranceProviderId').val('@Model.InsuranceProviderId').trigger('change');
+                    
+                    // Load primary insurance plans after provider is set
+                    setTimeout(function() {
+                        loadInsurancePlans('@Model.InsuranceProviderId', $('#PrimaryInsurancePlanId'), 'primary').then(function() {
+                            if ('@Model.InsurancePlanId' && '@Model.InsurancePlanId' !== '0') {
+                                $('#PrimaryInsurancePlanId').val('@Model.InsurancePlanId').trigger('change');
                             }
                         });
-
-                        // Validate date range
-                        var startDate = $('#StartDateShamsi').val();
-                        var endDate = $('#EndDateShamsi').val();
-                        
-                        if (startDate && endDate) {
-                            // Add date range validation logic here
-                            console.log('🏥 Medical Environment: Validating date range');
-                        }
-
-                        if (!isValid) {
-                            e.preventDefault();
-                            console.log('🏥 Medical Environment: Form validation failed', errors);
-                            
-                            // Hide loading state
-                            $saveButton.prop('disabled', false).removeClass('medical-loading');
-                            $loadingIndicator.hide();
-                            
-                            // Show medical environment error message
-                            if (typeof toastr !== 'undefined') {
-                                toastr.error('لطفاً خطاهای اعتبارسنجی را برطرف کنید', 'خطا در اعتبارسنجی');
-                            }
-                        } else {
-                            console.log('🏥 Medical Environment: Form validation passed');
-                        }
-                    });
-                });
-            }
-
-            // 🏥 Medical Environment Real-time Validation
-            function initializeRealTimeValidation() {
-                ensureJQuery(function () {
-                    // Real-time validation for medical form controls
-                    $('.medical-form-control').on('blur', function() {
-                        var $field = $(this);
-                        var value = $field.val().trim();
-                        var fieldType = $field.attr('data-medical-field');
-
-                        // Remove previous validation classes
-                        $field.removeClass('is-valid is-invalid');
-
-                        if ($field.prop('required') && !value) {
-                            $field.addClass('is-invalid');
-                            console.log('🏥 Medical Environment: Field validation failed - required field empty');
-                        } else if (value) {
-                            // Field-specific validation
-                            switch (fieldType) {
-                                case 'policy-number':
-                                    if (!/^[0-9]{3,15}$/.test(value)) {
-                                        $field.addClass('is-invalid');
-                                        console.log('🏥 Medical Environment: Policy number format invalid');
-                                    } else {
-                                        $field.addClass('is-valid');
-                                    }
-                                    break;
-                                case 'start-date':
-                                case 'end-date':
-                                    if (!/^[0-9]{4}\/[0-9]{2}\/[0-9]{2}$/.test(value)) {
-                                        $field.addClass('is-invalid');
-                                        console.log('🏥 Medical Environment: Date format invalid');
-                                    } else {
-                                        $field.addClass('is-valid');
-                                    }
-                                    break;
-                                default:
-                                    $field.addClass('is-valid');
-                            }
-                        }
-                    });
-                });
-            }
-
-            // 🏥 Medical Environment Policy Number Validation
-            function validatePolicyNumberFormat(policyNumber) {
-                var regex = /^[A-Za-z0-9\-_]+$/;
-                var $field = $('#PolicyNumber');
-                
-                if (!regex.test(policyNumber)) {
-                    $field.addClass('is-invalid');
-                    showMedicalValidationMessage($field, 'شماره بیمه فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد');
-                    return false;
-                } else {
-                    $field.removeClass('is-invalid');
-                    hideMedicalValidationMessage($field);
-                    return true;
+                    }, 500);
                 }
-            }
+            });
             
-            // 🏥 Medical Environment Date Range Validation
-            function validateDateRange() {
-                var startDate = $('#StartDateShamsi').val();
-                var endDate = $('#EndDateShamsi').val();
-                var isValid = true;
-                
-                if (startDate && endDate) {
-                    var start = new Date(startDate);
-                    var end = new Date(endDate);
+            // Load supplementary insurance providers
+            loadSupplementaryInsuranceProviders().then(function() {
+                // Set supplementary insurance provider if exists
+                if ('@Model.SupplementaryInsuranceProviderId' && '@Model.SupplementaryInsuranceProviderId' !== '0') {
+                    $('#SupplementaryInsuranceProviderId').val('@Model.SupplementaryInsuranceProviderId').trigger('change');
                     
-                    if (start >= end) {
-                        $('#EndDateShamsi').addClass('is-invalid');
-                        showMedicalValidationMessage($('#EndDateShamsi'), 'تاریخ پایان باید بعد از تاریخ شروع باشد');
-                        isValid = false;
-                    } else {
-                        $('#EndDateShamsi').removeClass('is-invalid');
-                        hideMedicalValidationMessage($('#EndDateShamsi'));
-                    }
+                    // Load supplementary insurance plans after provider is set
+                    setTimeout(function() {
+                        loadInsurancePlans('@Model.SupplementaryInsuranceProviderId', $('#SupplementaryInsurancePlanId'), 'supplementary').then(function() {
+                            if ('@Model.SupplementaryInsurancePlanId' && '@Model.SupplementaryInsurancePlanId' !== '0') {
+                                $('#SupplementaryInsurancePlanId').val('@Model.SupplementaryInsurancePlanId').trigger('change');
+                            }
+                        });
+                    }, 500);
+                }
+            });
+            
+            // Set other form values
+            setTimeout(function() {
+                // Set policy numbers
+                if ('@Model.PolicyNumber') {
+                    $('#PolicyNumber').val('@Model.PolicyNumber');
                 }
                 
-                return isValid;
+                if ('@Model.SupplementaryPolicyNumber') {
+                    $('#SupplementaryPolicyNumber').val('@Model.SupplementaryPolicyNumber');
+                }
+                
+                // Set dates
+                if ('@Model.StartDateShamsi') {
+                    $('#StartDateShamsi').val('@Model.StartDateShamsi');
+                }
+                
+                if ('@Model.EndDateShamsi') {
+                    $('#EndDateShamsi').val('@Model.EndDateShamsi');
+                }
+                
+                // Initialize change tracking after all values are set
+                initializeChangeTracking();
+            }, 1000);
+        }
+
+        // 🏥 Medical Environment: Load Primary Insurance Providers
+        function loadPrimaryInsuranceProviders() {
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: '/Admin/PatientInsurance/GetPrimaryInsuranceProviders',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            var $select = $('#PrimaryInsuranceProviderId');
+                            $select.empty();
+                            $select.append('<option value="">انتخاب بیمه‌گذار پایه</option>');
+                            
+                            response.data.forEach(function(provider) {
+                                $select.append('<option value="' + provider.id + '">' + provider.name + '</option>');
+                            });
+                            
+                            $select.prop('disabled', false);
+                            resolve();
+                        } else {
+                            console.error('خطا در دریافت بیمه‌گذاران پایه:', response.message);
+                            reject(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در دریافت بیمه‌گذاران پایه:', error);
+                        reject(error);
+                        }
+                    });
+                });
+            }
+
+        // 🏥 Medical Environment: Load Supplementary Insurance Providers
+        function loadSupplementaryInsuranceProviders() {
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: '/Admin/PatientInsurance/GetSupplementaryInsuranceProviders',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            var $select = $('#SupplementaryInsuranceProviderId');
+                            $select.empty();
+                            $select.append('<option value="">انتخاب بیمه‌گذار تکمیلی (اختیاری)</option>');
+                            
+                            response.data.forEach(function(provider) {
+                                $select.append('<option value="' + provider.id + '">' + provider.name + '</option>');
+                            });
+                            
+                            $select.prop('disabled', false);
+                            resolve();
+                                    } else {
+                            console.error('خطا در دریافت بیمه‌گذاران تکمیلی:', response.message);
+                            reject(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در دریافت بیمه‌گذاران تکمیلی:', error);
+                        reject(error);
+                        }
+                    });
+                });
+            }
+
+        // 🏥 Medical Environment: Load Insurance Plans
+        function loadInsurancePlans(providerId, $planSelect, type) {
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: '/Admin/PatientInsurance/GetInsurancePlansByProvider',
+                    type: 'GET',
+                    data: { providerId: providerId, type: type },
+                    success: function(response) {
+                        if (response.success) {
+                            $planSelect.empty();
+                            $planSelect.append('<option value="">انتخاب طرح بیمه</option>');
+                            
+                            response.data.forEach(function(plan) {
+                                $planSelect.append('<option value="' + plan.id + '">' + plan.name + '</option>');
+                            });
+                            
+                            $planSelect.prop('disabled', false);
+                            
+                            // Auto-select if only one plan is available
+                            if (response.data.length === 1) {
+                                $planSelect.val(response.data[0].id).trigger('change');
+                            }
+                            
+                            resolve();
+                } else {
+                            console.error('خطا در دریافت طرح‌های بیمه:', response.message);
+                            reject(response.message);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در دریافت طرح‌های بیمه:', error);
+                        reject(error);
+                    }
+                });
+            });
             }
             
-            // 🏥 Medical Environment Insurance Plan Validation
-            function validateInsurancePlan(planId) {
-                var $field = $('#InsurancePlanId');
+            // 🏥 Medical Environment: Change Tracking
+            function initializeChangeTracking() {
+                    var originalValues = {};
+            var $form = $('#patientInsuranceEditForm');
+                    
+            // Store original values after a delay to ensure all fields are loaded
+            setTimeout(function() {
+                $form.find('input, select, textarea').each(function() {
+                        var $field = $(this);
+                    var fieldName = $field.attr('name');
+                        if (fieldName) {
+                            originalValues[fieldName] = $field.val();
+                        }
+                    });
                 
-                if (!planId || planId === '') {
+                console.log('🏥 Medical Environment: Original values stored:', originalValues);
+                    
+                    // Track changes
+                $form.find('input, select, textarea').on('change', function() {
+                        var $field = $(this);
+                    var fieldName = $field.attr('name');
+                        var currentValue = $field.val();
+                        var originalValue = originalValues[fieldName];
+                        
+                    console.log('🏥 Medical Environment: Field changed:', fieldName, 'from', originalValue, 'to', currentValue);
+                    
+                    if (currentValue !== originalValue) {
+                            trackChange(fieldName, originalValue, currentValue);
+                    } else {
+                        removeChange(fieldName);
+                        }
+                    
+                    updateChangeTracking();
+                    });
+            }, 1500); // Wait for all fields to be loaded
+        }
+                    
+        // 🏥 Medical Environment: Track Individual Changes
+        function trackChange(fieldName, originalValue, currentValue) {
+                        var changeId = 'change_' + fieldName;
+            var $changeItem = $('#' + changeId);
+            
+            if ($changeItem.length === 0) {
+                            var changeHtml = `
+                                <div class="change-item" id="${changeId}">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <span class="change-field">${getFieldDisplayName(fieldName)}</span>
+                            <div class="change-values">
+                                <span class="original-value">${originalValue || 'خالی'}</span>
+                                        <i class="fas fa-arrow-right mx-2"></i>
+                                <span class="new-value">${currentValue || 'خالی'}</span>
+                            </div>
+                        </div>
+                                </div>
+                            `;
+                $('#changeList').append(changeHtml);
+            } else {
+                $changeItem.find('.original-value').text(originalValue || 'خالی');
+                $changeItem.find('.new-value').text(currentValue || 'خالی');
+            }
+        }
+
+        // 🏥 Medical Environment: Remove Change
+        function removeChange(fieldName) {
+            var changeId = 'change_' + fieldName;
+            $('#' + changeId).remove();
+        }
+
+        // 🏥 Medical Environment: Update Change Tracking Display
+        function updateChangeTracking() {
+            var $changeTracking = $('#changeTracking');
+            var $changeList = $('#changeList');
+            
+            if ($changeList.children().length > 0) {
+                $changeTracking.show();
+            } else {
+                $changeTracking.hide();
+            }
+        }
+
+        // 🏥 Medical Environment: Get Field Display Name
+        function getFieldDisplayName(fieldName) {
+            var fieldNames = {
+                'InsuranceProviderId': 'بیمه‌گذار پایه',
+                'PrimaryInsuranceProviderId': 'بیمه‌گذار پایه',
+                'InsurancePlanId': 'طرح بیمه پایه',
+                'PrimaryInsurancePlanId': 'طرح بیمه پایه',
+                'SupplementaryInsuranceProviderId': 'بیمه‌گذار تکمیلی',
+                'SupplementaryInsurancePlanId': 'طرح بیمه تکمیلی',
+                'PolicyNumber': 'شماره بیمه‌نامه',
+                'SupplementaryPolicyNumber': 'شماره بیمه‌نامه تکمیلی',
+                            'StartDateShamsi': 'تاریخ شروع',
+                'EndDateShamsi': 'تاریخ پایان'
+            };
+            
+            return fieldNames[fieldName] || fieldName;
+        }
+
+        // 🏥 Medical Environment: Form Submission
+        function initializeFormSubmission() {
+            $('#patientInsuranceEditForm').on('submit', function(e) {
+                e.preventDefault();
+                
+                var $form = $(this);
+                var $submitBtn = $('#saveEditButton');
+                var $loadingIndicator = $('#editLoadingIndicator');
+                
+                // Validate form before submission
+                if (!validateEditForm()) {
+                    showErrorMessage('لطفاً تمام فیلدهای الزامی را پر کنید');
+                    return;
+                }
+                
+                // Show loading state
+                $submitBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-2"></i>در حال ذخیره...');
+                $loadingIndicator.show();
+                $form.addClass('medical-loading');
+                
+                // Prepare form data
+                var formData = {
+                    PatientInsuranceId: $('#PatientInsuranceId').val(),
+                    PatientId: $('#PatientId').val(),
+                    InsuranceProviderId: $('#PrimaryInsuranceProviderId').val(),
+                    InsurancePlanId: $('#PrimaryInsurancePlanId').val(),
+                    SupplementaryInsuranceProviderId: $('#SupplementaryInsuranceProviderId').val() || null,
+                    SupplementaryInsurancePlanId: $('#SupplementaryInsurancePlanId').val() || null,
+                    PolicyNumber: $('#PolicyNumber').val(),
+                    SupplementaryPolicyNumber: $('#SupplementaryPolicyNumber').val() || null,
+                    StartDateShamsi: $('#StartDateShamsi').val(),
+                    EndDateShamsi: $('#EndDateShamsi').val(),
+                    IsPrimary: true,
+                    IsActive: true
+                };
+                
+                // Remove null values to avoid issues
+                Object.keys(formData).forEach(key => {
+                    if (formData[key] === null || formData[key] === '' || formData[key] === undefined) {
+                        delete formData[key];
+                    }
+                });
+                
+                // Ensure required fields are present
+                if (!formData.InsuranceProviderId || !formData.InsurancePlanId) {
+                    showErrorMessage('لطفاً بیمه‌گذار و طرح بیمه پایه را انتخاب کنید');
+                    return;
+                }
+                
+                // Validate supplementary insurance consistency
+                if (formData.SupplementaryInsuranceProviderId && !formData.SupplementaryInsurancePlanId) {
+                    showErrorMessage('لطفاً طرح بیمه تکمیلی را انتخاب کنید');
+                    return;
+                }
+                
+                if (!formData.SupplementaryInsuranceProviderId && formData.SupplementaryInsurancePlanId) {
+                    showErrorMessage('لطفاً بیمه‌گذار تکمیلی را انتخاب کنید');
+                    return;
+                }
+                
+                // Add anti-forgery token
+                formData['__RequestVerificationToken'] = $form.find('input[name="__RequestVerificationToken"]').val();
+                
+                // Convert to FormData for proper submission
+                var formDataObj = new FormData();
+                Object.keys(formData).forEach(key => {
+                    formDataObj.append(key, formData[key]);
+                });
+                
+                console.log('🏥 Medical Environment: Submitting form data:', formData);
+                
+                // Submit form
+                $.ajax({
+                    url: $form.attr('action'),
+                    type: 'POST',
+                    data: formDataObj,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        console.log('🏥 Medical Environment: Form submission response:', response);
+                        
+                        if (response.success) {
+                            showSuccessMessage('تغییرات بیمه بیمار با موفقیت ذخیره شد');
+                            
+                            // Redirect to details page after a short delay
+                            setTimeout(function() {
+                                window.location.href = '@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })';
+                            }, 2000);
+                        } else {
+                            showErrorMessage(response.message || 'خطا در ذخیره تغییرات');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('خطا در ذخیره تغییرات:', error);
+                        console.error('Response:', xhr.responseText);
+                        showErrorMessage('خطا در ذخیره تغییرات بیمه بیمار');
+                    },
+                    complete: function() {
+                        // Hide loading state
+                        $submitBtn.prop('disabled', false).html('<i class="fas fa-save me-2"></i>ذخیره تغییرات');
+                        $loadingIndicator.hide();
+                        $form.removeClass('medical-loading');
+                    }
+                });
+            });
+        }
+
+        // 🏥 Medical Environment: Validate Edit Form
+        function validateEditForm() {
+            var isValid = true;
+            var $form = $('#patientInsuranceEditForm');
+            
+            // Validate required fields
+            var requiredFields = [
+                'InsuranceProviderId',
+                'InsurancePlanId',
+                'StartDateShamsi'
+            ];
+            
+            requiredFields.forEach(function(fieldName) {
+                var $field = $form.find('[name="' + fieldName + '"]');
+                if ($field.length && !$field.val()) {
                     $field.addClass('is-invalid');
-                    showMedicalValidationMessage($field, 'لطفاً طرح بیمه را انتخاب کنید');
-                    return false;
+                    isValid = false;
                 } else {
                     $field.removeClass('is-invalid');
-                    hideMedicalValidationMessage($field);
-                    return true;
                 }
+            });
+            
+            // Validate supplementary insurance if provided
+            var supplementaryProvider = $('#SupplementaryInsuranceProviderId').val();
+            var supplementaryPlan = $('#SupplementaryInsurancePlanId').val();
+            
+            if (supplementaryProvider && !supplementaryPlan) {
+                $('#SupplementaryInsurancePlanId').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#SupplementaryInsurancePlanId').removeClass('is-invalid');
             }
             
-            // 🏥 Medical Environment Show Validation Message
-            function showMedicalValidationMessage($field, message) {
-                var $message = $field.siblings('.medical-validation-message');
-                if ($message.length === 0) {
-                    $message = $('<div class="medical-validation-message text-danger"></div>');
-                    $field.after($message);
-                }
-                $message.text(message).show();
+            if (!supplementaryProvider && supplementaryPlan) {
+                $('#SupplementaryInsuranceProviderId').addClass('is-invalid');
+                isValid = false;
+            } else {
+                $('#SupplementaryInsuranceProviderId').removeClass('is-invalid');
             }
             
-            // 🏥 Medical Environment Hide Validation Message
-            function hideMedicalValidationMessage($field) {
-                $field.siblings('.medical-validation-message').hide();
+            return isValid;
             }
             
-            // شروع initialization
-            initializeMedicalEditPage();
-        })();
+            // 🏥 Medical Environment: Show Success Message
+        function showSuccessMessage(message) {
+                var alertHtml = `
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="fas fa-check-circle"></i> ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+                $('.medical-form-container').prepend(alertHtml);
+                
+                setTimeout(function() {
+                    $('.alert-success').fadeOut();
+                }, 5000);
+            }
+            
+            // 🏥 Medical Environment: Show Error Message
+        function showErrorMessage(message) {
+                var alertHtml = `
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="fas fa-exclamation-circle"></i> ${message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>`;
+                $('.medical-form-container').prepend(alertHtml);
+                
+                setTimeout(function() {
+                    $('.alert-danger').fadeOut();
+                }, 5000);
+            }
     </script>
 }

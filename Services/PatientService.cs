@@ -1190,20 +1190,26 @@ namespace ClinicApp.Services
                     bool isCompleteNationalCode = normalizedQuery.Length == 10 && normalizedQuery.All(char.IsDigit);
                     bool isPartialNationalCode = normalizedQuery.Length >= 3 && normalizedQuery.Length < 10 && normalizedQuery.All(char.IsDigit);
                     
+                    _log.Information("🔍 جستجوی بیماران برای Select2. Query: {Query}, Normalized: {Normalized}, IsComplete: {IsComplete}, IsPartial: {IsPartial}", 
+                        query, normalizedQuery, isCompleteNationalCode, isPartialNationalCode);
+                    
                     if (isCompleteNationalCode)
                     {
                         // جستجوی دقیق کد ملی - فقط یک نتیجه
                         queryBuilder = queryBuilder.Where(p => p.NationalCode == normalizedQuery);
+                        _log.Information("🔍 جستجوی دقیق کد ملی: {NationalCode}", normalizedQuery);
                     }
                     else if (isPartialNationalCode)
                     {
                         // جستجوی جزئی کد ملی - حداکثر 5 نتیجه
                         queryBuilder = queryBuilder.Where(p => p.NationalCode.StartsWith(normalizedQuery));
+                        _log.Information("🔍 جستجوی جزئی کد ملی: {NationalCode}", normalizedQuery);
                     }
                     else
                     {
                         // اگر کد ملی نیست، هیچ نتیجه‌ای نمایش نده
                         queryBuilder = queryBuilder.Where(p => false);
+                        _log.Warning("🔍 جستجوی نامعتبر - نه کامل و نه جزئی: {Query}", query);
                     }
                 }
 
@@ -1213,23 +1219,45 @@ namespace ClinicApp.Services
                 // محدودیت سخت‌گیرانه: حداکثر 5 نتیجه برای محیط درمانی
                 if (totalItems > 5) totalItems = 5;
 
-                // اعمال صفحه‌بندی و مرتب‌سازی - بهینه‌سازی برای کد ملی
-                // محدودیت سخت‌گیرانه برای محیط درمانی
-                var maxPageSize = Math.Min(pageSize, 5); // حداکثر 5 نتیجه
-                
-                var patients = await queryBuilder
-                    .OrderBy(p => p.NationalCode) // مرتب‌سازی بر اساس کد ملی
-                    .Skip((page - 1) * maxPageSize)
-                    .Take(maxPageSize)
-                    .Select(p => new PatientIndexViewModel
-                    {
-                        PatientId = p.PatientId,
-                        FullName = p.FirstName + " " + p.LastName,
-                        NationalCode = p.NationalCode,
-                        PhoneNumber = p.PhoneNumber,
-                        CreatedAt = p.CreatedAt
-                    })
-                    .ToListAsync();
+         // اعمال صفحه‌بندی و مرتب‌سازی - بهینه‌سازی برای کد ملی
+         // محدودیت سخت‌گیرانه برای محیط درمانی
+         var maxPageSize = Math.Min(pageSize, 5); // حداکثر 5 نتیجه
+         
+         // دریافت داده‌ها بدون محاسبات پیچیده
+         var patientData = await queryBuilder
+             .OrderBy(p => p.NationalCode) // مرتب‌سازی بر اساس کد ملی
+             .Skip((page - 1) * maxPageSize)
+             .Take(maxPageSize)
+             .Select(p => new
+             {
+                 PatientId = p.PatientId,
+                 FirstName = p.FirstName,
+                 LastName = p.LastName,
+                 NationalCode = p.NationalCode,
+                 PhoneNumber = p.PhoneNumber,
+                 BirthDate = p.BirthDate,
+                 Gender = p.Gender,
+                 Address = p.Address,
+                 CreatedAt = p.CreatedAt
+             })
+             .ToListAsync();
+
+         // محاسبه سن و تاریخ شمسی در حافظه (بعد از دریافت از دیتابیس)
+         var patients = patientData.Select(p => new PatientIndexViewModel
+         {
+             PatientId = p.PatientId,
+             FirstName = p.FirstName,
+             LastName = p.LastName,
+             FullName = (p.FirstName ?? "") + " " + (p.LastName ?? ""),
+             NationalCode = p.NationalCode,
+             PhoneNumber = p.PhoneNumber,
+             BirthDate = p.BirthDate,
+             BirthDateShamsi = p.BirthDate.HasValue ? p.BirthDate.Value.ToPersianDate() : null,
+             Age = p.BirthDate.HasValue ? CalculateAge(p.BirthDate.Value) : null,
+             Gender = p.Gender,
+             Address = p.Address,
+             CreatedAt = p.CreatedAt
+         }).ToList();
 
                 // ایجاد نتیجه صفحه‌بندی شده
                 var pagedResult = new PagedResult<PatientIndexViewModel>
@@ -1657,6 +1685,30 @@ namespace ClinicApp.Services
                     return "نیاز به پرداخت بیشتر";
                 default:
                     return "نامشخص";
+            }
+        }
+
+        /// <summary>
+        /// محاسبه سن بر اساس تاریخ تولد (استفاده از Helper حرفه‌ای)
+        /// </summary>
+        /// <param name="birthDate">تاریخ تولد</param>
+        /// <returns>سن به سال</returns>
+        private static int CalculateAge(DateTime birthDate)
+        {
+            try
+            {
+                // تست: بررسی اینکه آیا Extension Method کار می‌کند
+                Log.Information("🔍 Testing CalculateAge for: {BirthDate}", birthDate);
+                
+                var age = birthDate.CalculateAge();
+                Log.Information("🔍 Calculated age: {Age}", age);
+                
+                return age;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "خطا در محاسبه سن برای تاریخ تولد: {BirthDate}", birthDate);
+                return 0; // مقدار پیش‌فرض در صورت خطا
             }
         }
     }

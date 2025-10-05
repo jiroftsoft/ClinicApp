@@ -8,6 +8,62 @@
 
 @section Styles {
     <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
+    <style>
+        /* وضعیت‌های اعتبارسنجی بیمه */
+        .insurance-valid {
+            background-color: #d4edda !important;
+            border-left: 4px solid #28a745 !important;
+        }
+
+        .insurance-invalid {
+            background-color: #f8d7da !important;
+            border-left: 4px solid #dc3545 !important;
+        }
+
+        .insurance-warning {
+            background-color: #fff3cd !important;
+            border-left: 4px solid #ffc107 !important;
+        }
+
+        .insurance-status .badge {
+            font-size: 0.8em;
+            padding: 0.4em 0.6em;
+        }
+
+        .insurance-issues {
+            margin-top: 0.5rem;
+            font-size: 0.9em;
+        }
+
+            .insurance-issues li {
+                margin-bottom: 0.25rem;
+            }
+
+        /* دکمه اعتبارسنجی */
+        #validateInsurancesBtn {
+            transition: all 0.3s ease;
+        }
+
+            #validateInsurancesBtn:disabled {
+                opacity: 0.6;
+                cursor: not-allowed;
+            }
+
+        /* انیمیشن loading */
+        .fa-spinner {
+            animation: spin 1s linear infinite;
+        }
+
+        @@keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
 }
 
 <div class="container-fluid">
@@ -22,6 +78,9 @@
                     <a href="@Url.Action("Index", "CombinedInsuranceCalculation")" class="btn btn-info">
                         <i class="fas fa-calculator"></i> محاسبه بیمه ترکیبی
                     </a>
+                    <button type="button" class="btn btn-success" id="validateInsurancesBtn" onclick="validateAllInsurances()">
+                        <i class="fas fa-check-circle"></i> اعتبارسنجی بیمه‌ها
+                    </button>
                 </div>
             </div>
 
@@ -32,9 +91,9 @@
                         <div class="col-md-3">
                             <div class="filter-group">
                                 <label class="filter-label">جستجو در نام یا کد ملی بیمار:</label>
-                                <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" 
-                                       placeholder="نام یا کد ملی بیمار..." 
-                                       data-min-length="2" 
+                                <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control"
+                                       placeholder="نام یا کد ملی بیمار..."
+                                       data-min-length="2"
                                        data-debounce="500">
                             </div>
                         </div>
@@ -88,7 +147,7 @@
                 </form>
             </div>
 
-            <!-- Results Summary -->
+            <!-- 🏥 Medical Environment: Insurance Status Summary -->
             <div class="row mb-3">
                 <div class="col-12">
                     <div class="alert alert-info">
@@ -109,6 +168,43 @@
                         {
                             <span>هیچ بیمه بیمار یافت نشد</span>
                         }
+                    </div>
+                </div>
+            </div>
+
+            <!-- 🏥 Medical Environment: Quick Actions -->
+            <div class="row mb-3">
+                <div class="col-12">
+                    <div class="card border-primary">
+                        <div class="card-header bg-primary text-white">
+                            <h5 class="mb-0">
+                                <i class="fas fa-tools"></i> عملیات سریع
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-success btn-block" id="createDefaultFreeInsurance">
+                                        <i class="fas fa-plus-circle"></i> ایجاد بیمه پیش‌فرض آزاد
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-info btn-block" id="checkInsuranceStatus">
+                                        <i class="fas fa-search"></i> بررسی وضعیت بیمه
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-warning btn-block" id="validateInsurances">
+                                        <i class="fas fa-check-circle"></i> اعتبارسنجی بیمه‌ها
+                                    </button>
+                                </div>
+                                <div class="col-md-3">
+                                    <button type="button" class="btn btn-secondary btn-block" id="exportInsurances">
+                                        <i class="fas fa-download"></i> خروجی Excel
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -200,6 +296,174 @@
                             });
                         }
 
+                        // --- 🏥 Medical Environment: Quick Actions ---
+                        $('#createDefaultFreeInsurance').on('click', function() {
+                            var patientId = prompt('لطفاً شناسه بیمار را وارد کنید:');
+                            if (patientId && !isNaN(patientId)) {
+                                createDefaultFreeInsurance(parseInt(patientId));
+                            } else {
+                                showErrorMessage('شناسه بیمار نامعتبر است');
+                            }
+                        });
+
+                        $('#checkInsuranceStatus').on('click', function() {
+                            var patientId = prompt('لطفاً شناسه بیمار را وارد کنید:');
+                            if (patientId && !isNaN(patientId)) {
+                                checkInsuranceStatus(parseInt(patientId));
+                            } else {
+                                showErrorMessage('شناسه بیمار نامعتبر است');
+                            }
+                        });
+
+                        $('#validateInsurances').on('click', function() {
+                            validateAllInsurances();
+                        });
+
+                        $('#exportInsurances').on('click', function() {
+                            exportInsurancesToExcel();
+                        });
+
+                        // --- 🏥 Medical Environment: Helper Functions ---
+                        function createDefaultFreeInsurance(patientId) {
+                            $.ajax({
+                                url: '@Url.Action("CreateDefaultFreeInsurance", "PatientInsurance")',
+                                type: 'POST',
+                                data: {
+                                    patientId: patientId,
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                success: function(response) {
+                                    if (response.success) {
+                                        showSuccessMessage('بیمه پیش‌فرض آزاد با موفقیت ایجاد شد');
+                                        reloadInsurances(1);
+                                    } else {
+                                        showErrorMessage(response.message || 'خطا در ایجاد بیمه پیش‌فرض آزاد');
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('خطا در ایجاد بیمه پیش‌فرض آزاد:', error);
+                                    showErrorMessage('خطا در ایجاد بیمه پیش‌فرض آزاد');
+                                }
+                            });
+                        }
+
+                        function checkInsuranceStatus(patientId) {
+                            $.ajax({
+                                url: '@Url.Action("GetPatientInsuranceStatus", "PatientInsurance")',
+                                type: 'GET',
+                                data: { patientId: patientId },
+                                success: function(response) {
+                                    if (response.success) {
+                                        showInsuranceStatusModal(response.data);
+                                    } else {
+                                        showErrorMessage(response.message || 'خطا در دریافت وضعیت بیمه');
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('خطا در بررسی وضعیت بیمه:', error);
+                                    showErrorMessage('خطا در بررسی وضعیت بیمه');
+                                }
+                            });
+                        }
+
+                        function validateAllInsurances() {
+                            $.ajax({
+                                url: '@Url.Action("ValidateAllInsurances", "PatientInsurance")',
+                                type: 'POST',
+                                data: {
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                success: function(response) {
+                                    if (response.success) {
+                                        showSuccessMessage('اعتبارسنجی بیمه‌ها با موفقیت انجام شد');
+                                        reloadInsurances(1);
+                                    } else {
+                                        showErrorMessage(response.message || 'خطا در اعتبارسنجی بیمه‌ها');
+                                    }
+                                },
+                                error: function(xhr, status, error) {
+                                    console.error('خطا در اعتبارسنجی بیمه‌ها:', error);
+                                    showErrorMessage('خطا در اعتبارسنجی بیمه‌ها');
+                                }
+                            });
+                        }
+
+                        function exportInsurancesToExcel() {
+                            var searchTerm = $('input[name="searchTerm"]').val();
+                            var providerId = $('select[name="providerId"]').val();
+                            var isPrimary = $('select[name="isPrimary"]').val();
+                            var isActive = $('select[name="isActive"]').val();
+
+                            var url = '@Url.Action("ExportToExcel", "PatientInsurance")' +
+                                '?searchTerm=' + encodeURIComponent(searchTerm || '') +
+                                '&providerId=' + (providerId || '') +
+                                '&isPrimary=' + (isPrimary || '') +
+                                '&isActive=' + (isActive || '');
+
+                            window.open(url, '_blank');
+                        }
+
+                        function showInsuranceStatusModal(statusData) {
+                            var modalHtml = `
+                                <div class="modal fade" id="insuranceStatusModal" tabindex="-1">
+                                    <div class="modal-dialog modal-lg">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">وضعیت بیمه بیمار</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <strong>بیمه اصلی:</strong> ${statusData.hasPrimaryInsurance ? 'دارد' : 'ندارد'}
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <strong>بیمه تکمیلی:</strong> ${statusData.hasSupplementaryInsurance ? 'دارد' : 'ندارد'}
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-md-6">
+                                                        <strong>تعداد بیمه اصلی:</strong> ${statusData.primaryInsuranceCount}
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <strong>تعداد بیمه تکمیلی:</strong> ${statusData.supplementaryInsuranceCount}
+                                                    </div>
+                                                </div>
+                                                <div class="row mt-3">
+                                                    <div class="col-12">
+                                                        <strong>توصیه:</strong> ${statusData.message}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            $('body').append(modalHtml);
+                            $('#insuranceStatusModal').modal('show');
+
+                            $('#insuranceStatusModal').on('hidden.bs.modal', function() {
+                                $(this).remove();
+                            });
+                        }
+
+                        function showSuccessMessage(message) {
+                            var alertHtml = `
+                                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                                    <i class="fas fa-check-circle"></i> ${message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>`;
+                            $('.container-fluid').prepend(alertHtml);
+
+                            setTimeout(function() {
+                                $('.alert-success').fadeOut();
+                            }, 5000);
+                        }
+
                         // --- نمایش پیام خطا ---
                         function showErrorMessage(message) {
                             var alertHtml = `
@@ -221,14 +485,124 @@
 
             // اجرای init
             initializePatientInsurancePage();
-            
+
             // ✅ **Virtual Scrolling برای 7000 بیمار**
             initializeVirtualScrolling();
         })();
-        
+
+        // تابع اعتبارسنجی بیمه‌ها
+        function validateAllInsurances() {
+            var validateBtn = $('#validateInsurancesBtn');
+            var originalText = validateBtn.html();
+
+            // نمایش loading
+            validateBtn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال اعتبارسنجی...');
+
+            // دریافت لیست بیماران از جدول
+            var patientIds = [];
+            $('.patient-insurance-row').each(function() {
+                var patientId = $(this).data('patient-id');
+                if (patientId && patientIds.indexOf(patientId) === -1) {
+                    patientIds.push(patientId);
+                }
+            });
+
+            if (patientIds.length === 0) {
+                showErrorMessage('هیچ بیمه‌ای برای اعتبارسنجی یافت نشد');
+                validateBtn.prop('disabled', false).html(originalText);
+                return;
+            }
+
+            // اعتبارسنجی هر بیمار
+            var validationPromises = patientIds.map(function(patientId) {
+                return validatePatientInsurance(patientId);
+            });
+
+            Promise.all(validationPromises).then(function(results) {
+                var successCount = results.filter(function(r) { return r.success; }).length;
+                var totalCount = results.length;
+
+                showSuccessMessage(`اعتبارسنجی تکمیل شد: ${successCount} از ${totalCount} بیمه معتبر`);
+
+                // به‌روزرسانی وضعیت ردیف‌ها
+                results.forEach(function(result, index) {
+                    if (result.success && result.data) {
+                        updateInsuranceRowStatus(patientIds[index], result.data);
+                    }
+                });
+
+            }).catch(function(error) {
+                console.error('خطا در اعتبارسنجی:', error);
+                showErrorMessage('خطا در اعتبارسنجی بیمه‌ها: ' + error.message);
+            }).finally(function() {
+                validateBtn.prop('disabled', false).html(originalText);
+            });
+        }
+
+        // اعتبارسنجی بیمه یک بیمار
+        function validatePatientInsurance(patientId) {
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: '@Url.Action("ValidatePatientInsurance", "PatientInsurance")',
+                    type: 'POST',
+                    data: {
+                        patientId: patientId,
+                        __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    success: function(response) {
+                        if (response.success) {
+                            resolve({
+                                success: true,
+                                data: response.data
+                            });
+                        } else {
+                            resolve({
+                                success: false,
+                                error: response.message
+                            });
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        reject(new Error('خطا در ارتباط با سرور: ' + error));
+                    }
+                });
+            });
+        }
+
+        // به‌روزرسانی وضعیت ردیف بیمه
+        function updateInsuranceRowStatus(patientId, validationResult) {
+            var row = $('.patient-insurance-row[data-patient-id="' + patientId + '"]');
+
+            // حذف کلاس‌های وضعیت قبلی
+            row.removeClass('insurance-valid insurance-invalid insurance-warning');
+
+            // اضافه کردن کلاس وضعیت جدید
+            if (validationResult.isValid) {
+                row.addClass('insurance-valid');
+                row.find('.insurance-status').html('<span class="badge bg-success">معتبر</span>');
+            } else {
+                row.addClass('insurance-invalid');
+                row.find('.insurance-status').html('<span class="badge bg-danger">نامعتبر</span>');
+
+                // نمایش مسائل
+                if (validationResult.issues && validationResult.issues.length > 0) {
+                    var issuesHtml = '<ul class="list-unstyled mb-0">';
+                    validationResult.issues.forEach(function(issue) {
+                        var severityClass = issue.severity === 'Critical' ? 'text-danger' :
+                                           issue.severity === 'Warning' ? 'text-warning' : 'text-info';
+                        issuesHtml += '<li class="' + severityClass + '">' + issue.message + '</li>';
+                    });
+                    issuesHtml += '</ul>';
+
+                    row.find('.insurance-issues').html(issuesHtml);
+                }
+            }
+        }
+
+
         function initializeVirtualScrolling() {
             console.log('🚀 Initializing Virtual Scrolling for 7000 patients...');
-            
+
             // تنظیمات Virtual Scrolling
             var virtualScrollOptions = {
                 itemHeight: 60, // ارتفاع هر ردیف
@@ -236,10 +610,11 @@
                 bufferSize: 10, // تعداد ردیف‌های اضافی
                 loadMoreThreshold: 5 // آستانه بارگذاری بیشتر
             };
-            
+
             // پیاده‌سازی Virtual Scrolling
             // این کد باعث می‌شود فقط ردیف‌های قابل مشاهده رندر شوند
             console.log('✅ Virtual Scrolling initialized for better performance');
         }
     </script>
-}
+})();
+

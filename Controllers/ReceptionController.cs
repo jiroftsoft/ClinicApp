@@ -20,6 +20,7 @@ using ClinicApp.Models;
 using System.Data.Entity;
 using PatientInquiryViewModel = ClinicApp.ViewModels.Reception.PatientInquiryViewModel;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Models.DTOs.Insurance;
 
 namespace ClinicApp.Controllers
 {
@@ -53,6 +54,8 @@ namespace ClinicApp.Controllers
         private readonly IServiceCalculationService _serviceCalculationService;
         private readonly ICombinedInsuranceCalculationService _combinedInsuranceCalculationService;
         private readonly IPatientInsuranceService _patientInsuranceService;
+        private readonly IPatientInsuranceValidationService _patientInsuranceValidationService;
+        private readonly IPatientInsuranceManagementService _patientInsuranceManagementService;
 
         public ReceptionController(
             IReceptionService receptionService,
@@ -61,7 +64,9 @@ namespace ClinicApp.Controllers
             ILogger logger,
             IServiceCalculationService serviceCalculationService,
             ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
-            IPatientInsuranceService patientInsuranceService) : base(logger)
+            IPatientInsuranceService patientInsuranceService,
+            IPatientInsuranceValidationService patientInsuranceValidationService,
+            IPatientInsuranceManagementService patientInsuranceManagementService) : base(logger)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -69,6 +74,8 @@ namespace ClinicApp.Controllers
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
             _combinedInsuranceCalculationService = combinedInsuranceCalculationService ?? throw new ArgumentNullException(nameof(combinedInsuranceCalculationService));
             _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
+            _patientInsuranceValidationService = patientInsuranceValidationService ?? throw new ArgumentNullException(nameof(patientInsuranceValidationService));
+            _patientInsuranceManagementService = patientInsuranceManagementService ?? throw new ArgumentNullException(nameof(patientInsuranceManagementService));
         }
 
         #endregion
@@ -2021,6 +2028,121 @@ namespace ClinicApp.Controllers
                 _logger.Error(ex, "🏥 MEDICAL: خطا در بررسی وضعیت اجزای خدمت. ServiceId: {ServiceId}, User: {UserName} (Id: {UserId})", 
                     serviceId, _currentUserService.UserName, _currentUserService.UserId);
                 return Json(new { success = false, message = ex.Message }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        #endregion
+
+        #region Insurance Validation for Reception
+
+        /// <summary>
+        /// اعتبارسنجی بیمه بیمار برای پذیرش
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> ValidatePatientInsuranceForReception(int patientId)
+        {
+            try
+            {
+                _logger.Information("🔍 MEDICAL: درخواست اعتبارسنجی بیمه بیمار برای پذیرش. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var validationResult = await _patientInsuranceValidationService.ValidatePatientInsuranceAsync(patientId);
+
+                if (validationResult.Success)
+                {
+                    _logger.Information("🔍 MEDICAL: اعتبارسنجی بیمه بیمار تکمیل شد. PatientId: {PatientId}, IsValid: {IsValid}, IssuesCount: {IssuesCount}, User: {UserName} (Id: {UserId})", 
+                        patientId, validationResult.Data.IsValid, validationResult.Data.Issues.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceValidationResult>.Successful(validationResult.Data, "اعتبارسنجی بیمه تکمیل شد"), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("🔍 MEDICAL: خطا در اعتبارسنجی بیمه بیمار. PatientId: {PatientId}, Message: {Message}, User: {UserName} (Id: {UserId})", 
+                        patientId, validationResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult.Failed(validationResult.Message), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "🔍 MEDICAL: خطای سیستمی در اعتبارسنجی بیمه بیمار. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult.Failed("خطای سیستمی در اعتبارسنجی بیمه بیمار"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// بررسی سریع اعتبار بیمه برای پذیرش
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> QuickValidatePatientInsurance(int patientId)
+        {
+            try
+            {
+                _logger.Information("⚡ MEDICAL: بررسی سریع اعتبار بیمه بیمار. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var validationResult = await _patientInsuranceValidationService.IsPatientInsuranceValidAsync(patientId);
+
+                if (validationResult.Success)
+                {
+                    _logger.Information("⚡ MEDICAL: بررسی سریع اعتبار بیمه تکمیل شد. PatientId: {PatientId}, IsValid: {IsValid}, User: {UserName} (Id: {UserId})", 
+                        patientId, validationResult.Data, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<bool>.Successful(validationResult.Data, "بیمه معتبر است"), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("⚡ MEDICAL: بیمه بیمار معتبر نیست. PatientId: {PatientId}, Message: {Message}, User: {UserName} (Id: {UserId})", 
+                        patientId, validationResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult.Failed(validationResult.Message), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "⚡ MEDICAL: خطای سیستمی در بررسی سریع اعتبار بیمه. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult.Failed("خطای سیستمی در بررسی اعتبار بیمه"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت وضعیت کامل بیمه بیمار برای پذیرش
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetPatientInsuranceStatusForReception(int patientId)
+        {
+            try
+            {
+                _logger.Information("📊 MEDICAL: درخواست وضعیت کامل بیمه بیمار برای پذیرش. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                var statusResult = await _patientInsuranceManagementService.GetPatientInsuranceStatusAsync(patientId);
+
+                if (statusResult.Success)
+                {
+                    _logger.Information("📊 MEDICAL: وضعیت بیمه بیمار دریافت شد. PatientId: {PatientId}, HasPrimary: {HasPrimary}, HasSupplementary: {HasSupplementary}, User: {UserName} (Id: {UserId})", 
+                        patientId, statusResult.Data.HasPrimaryInsurance, statusResult.Data.HasSupplementaryInsurance, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceStatus>.Successful(statusResult.Data, "وضعیت بیمه بیمار دریافت شد"), JsonRequestBehavior.AllowGet);
+                }
+                else
+                {
+                    _logger.Warning("📊 MEDICAL: خطا در دریافت وضعیت بیمه بیمار. PatientId: {PatientId}, Message: {Message}, User: {UserName} (Id: {UserId})", 
+                        patientId, statusResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult.Failed(statusResult.Message), JsonRequestBehavior.AllowGet);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "📊 MEDICAL: خطای سیستمی در دریافت وضعیت بیمه بیمار. PatientId: {PatientId}, User: {UserName} (Id: {UserId})", 
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult.Failed("خطای سیستمی در دریافت وضعیت بیمه بیمار"), JsonRequestBehavior.AllowGet);
             }
         }
 

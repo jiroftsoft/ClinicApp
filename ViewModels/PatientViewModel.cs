@@ -276,6 +276,9 @@ namespace ClinicApp.ViewModels
         [Display(Name = "تاریخ تولد")]
         public DateTime? BirthDate { get; set; }
 
+        [Display(Name = "سن")]
+        public int? Age { get; set; }
+
         [Display(Name = "ایمیل")]
         public string Email { get; set; }
 
