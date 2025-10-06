@@ -663,7 +663,7 @@
             </div>
 
             <!-- 🏥 Step 2: Advanced Insurance Selection -->
-            <div class="medical-form-section">
+            <div class="medical-form-section patient-insurance-form">
                 <h4 class="medical-section-title">
                     <i class="fas fa-shield-alt"></i>
                     مرحله ۲: انتخاب نوع بیمه
@@ -671,6 +671,12 @@
                 </h4>
                 
                 <div class="insurance-selection-container">
+                    <!-- Insurance Status Containers -->
+                    <div class="row mb-3">
+                        <div class="col-md-6" id="primaryInsuranceStatus"></div>
+                        <div class="col-md-6" id="supplementaryInsuranceStatus"></div>
+                    </div>
+                    
                     <div class="insurance-type-tabs">
                         <div class="insurance-tab active" data-type="primary">
                             <i class="fas fa-star me-2"></i>
@@ -692,7 +698,7 @@
                                 name="InsuranceProviderId" 
                                 class="form-control medical-form-control" 
                                 required="required"
-                                data_medical_field = "insurance-provider">
+                                data-medical-field="insurance-provider">
                             <option value="">انتخاب بیمه‌گذار پایه</option>
                         </select>
                         @Html.ValidationMessageFor(m => m.InsuranceProviderId, "", new { @class = "text-danger" })
@@ -705,7 +711,7 @@
                                 name="InsurancePlanId" 
                                 class="form-control medical-form-control" 
                                 required="required"
-                                data_medical_field = "insurance-plan"
+                                data-medical-field="insurance-plan"
                                 disabled>
                             <option value="">ابتدا بیمه‌گذار را انتخاب کنید</option>
                         </select>
@@ -723,7 +729,7 @@
                                            class="form-control medical-form-control" 
                                            placeholder="خودکار با کد ملی پر می‌شود"
                                            readonly
-                                           data_medical_field = "policy-number">
+                                           data-medical-field="policy-number">
                                     @Html.ValidationMessageFor(m => m.PolicyNumber, "", new { @class = "text-danger" })
                                 </div>
                             </div>
@@ -735,7 +741,7 @@
                                            name="SupplementaryPolicyNumber" 
                                            class="form-control medical-form-control" 
                                            placeholder="اختیاری - برای بیمه تکمیلی"
-                                           data_medical_field = "supplementary-policy-number">
+                                           data-medical-field="supplementary-policy-number">
                                     @Html.ValidationMessageFor(m => m.SupplementaryPolicyNumber, "", new { @class = "text-danger" })
                                 </div>
                             </div>
@@ -755,7 +761,7 @@
                         <select id="SupplementaryInsuranceProviderId" 
                                 name="SupplementaryInsuranceProviderId" 
                                 class="form-control medical-form-control" 
-                                data_medical_field = "supplementary-insurance-provider"
+                                data-medical-field="supplementary-insurance-provider"
                                 data-optional="true">
                             <option value="">انتخاب بیمه‌گذار تکمیلی (اختیاری)</option>
                         </select>
@@ -768,7 +774,7 @@
                         <select id="SupplementaryInsurancePlanId" 
                                 name="SupplementaryInsurancePlanId" 
                                 class="form-control medical-form-control" 
-                                data_medical_field = "supplementary-insurance-plan"
+                                data-medical-field="supplementary-insurance-plan"
                                 data-optional="true"
                                 disabled>
                             <option value="">ابتدا بیمه‌گذار تکمیلی را انتخاب کنید</option>
@@ -806,8 +812,7 @@
                             <label class="form-label">تاریخ پایان اعتبار:</label>
                             @Html.TextBoxFor(m => m.EndDateShamsi, new { 
                                 @class = "form-control persian-datepicker medical-form-control", 
-                                placeholder = "تاریخ پایان اعتبار (شمسی)", 
-                                required = "required",
+                                placeholder = "تاریخ پایان اعتبار (شمسی) - اختیاری", 
                                 id = "EndDateShamsi"
                             })
                             @Html.ValidationMessageFor(m => m.EndDateShamsi, "", new { @class = "text-danger" })
@@ -887,7 +892,24 @@
 </div>
 
 @section Scripts {
+    <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
+    <style>
+        /* Fallback Date Input Styling */
+        .form-control.is-invalid {
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+        }
+        
+        .form-control[placeholder*="مثال"] {
+            background-color: #f8f9fa;
+        }
+        
+        .form-control[placeholder*="مثال"]:focus {
+            background-color: #fff;
+        }
+    </style>
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
+    <script src="~/Scripts/FinalDatePicker/persian-datepicker.min.js"></script>
     <script src="~/Scripts/app/patient-select2.js"></script>
     <script src="~/Scripts/app/patient-insurance-enhanced.js"></script>
     
@@ -908,12 +930,94 @@
                 initializeAdvancedInsuranceSelection();
                 initializeAutoPolicyNumber();
                 initializeFormValidation();
-                initializeFormSubmission();
+                // initializeFormSubmission(); // حذف شد - فقط AJAX استفاده می‌کنیم
                 initializeEnhancedFormSubmission();
                 initializeDefaultFreeInsuranceButton();
                 initializePatientInsuranceValidationButton();
             }
+            
+            // Initialize Persian DatePickers
+            initializePersianDatePickers();
         });
+        
+        /**
+         * 🏥 Initialize Persian DatePickers
+         */
+        function initializePersianDatePickers() {
+            console.log('🏥 Medical Environment: Initializing Persian DatePickers');
+            
+            // Skip Persian DatePicker completely due to step property issues
+            console.log('🏥 Medical Environment: Skipping Persian DatePicker due to compatibility issues, using enhanced fallback');
+            initializeEnhancedFallbackDateInputs();
+        }
+        
+        /**
+         * 🏥 Initialize Fallback Date Inputs
+         */
+        function initializeFallbackDateInputs() {
+            console.log('🏥 Medical Environment: Initializing Fallback Date Inputs');
+            
+            // Use regular text inputs with Persian date validation
+            $('#StartDateShamsi, #EndDateShamsi').attr('type', 'text').addClass('form-control');
+            
+            // Add placeholder and pattern
+            $('#StartDateShamsi').attr('placeholder', 'مثال: 1403/01/01');
+            $('#EndDateShamsi').attr('placeholder', 'مثال: 1403/12/29');
+            
+            // Add manual date validation
+            $('#StartDateShamsi, #EndDateShamsi').on('blur', function() {
+                var value = $(this).val();
+                if (value && !isValidPersianDate(value)) {
+                    $(this).addClass('is-invalid');
+                    showErrorMessage('تاریخ وارد شده معتبر نیست. فرمت صحیح: 1403/01/01');
+                } else {
+                    $(this).removeClass('is-invalid');
+                }
+            });
+            
+            // Add input formatting
+            $('#StartDateShamsi, #EndDateShamsi').on('input', function() {
+                var value = $(this).val();
+                // Remove non-numeric characters except /
+                value = value.replace(/[^\d\/]/g, '');
+                $(this).val(value);
+            });
+        }
+        
+        /**
+         * 🏥 Validate Persian Date Format
+         */
+        function isValidPersianDate(dateString) {
+            if (!dateString) return true;
+            
+            // Simple validation for YYYY/MM/DD format
+            var pattern = /^\d{4}\/\d{1,2}\/\d{1,2}$/;
+            if (!pattern.test(dateString)) return false;
+            
+            var parts = dateString.split('/');
+            var year = parseInt(parts[0]);
+            var month = parseInt(parts[1]);
+            var day = parseInt(parts[2]);
+            
+            // Enhanced validation
+            if (year < 1300 || year > 1500) return false;
+            if (month < 1 || month > 12) return false;
+            if (day < 1 || day > 31) return false;
+            
+            // Persian calendar month days validation
+            var monthDays = [31, 31, 31, 31, 31, 31, 30, 30, 30, 30, 30, 29];
+            if (month === 12 && isLeapYear(year)) monthDays[11] = 30;
+            
+            return day <= monthDays[month - 1];
+        }
+        
+        /**
+         * 🏥 Check if Persian year is leap year
+         */
+        function isLeapYear(year) {
+            // Persian leap year calculation
+            return (year % 4 === 3);
+        }
         
         /**
          * 🏥 Helper function to extract name from text
@@ -1438,8 +1542,8 @@
                     SupplementaryPolicyNumber: $('#SupplementaryPolicyNumber').val() || null,
                     StartDateShamsi: $('#StartDateShamsi').val(),
                     EndDateShamsi: $('#EndDateShamsi').val(),
-                    IsPrimary: true,
-                    IsActive: true
+                    IsPrimary: $('#IsPrimary').prop('checked') === true,
+                    IsActive: $('#IsActive').prop('checked') === true
                 };
                 
                 // Remove null values

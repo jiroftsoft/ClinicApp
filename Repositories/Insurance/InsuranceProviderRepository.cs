@@ -410,7 +410,10 @@ namespace ClinicApp.Repositories.Insurance
 
                 var providers = await _context.InsuranceProviders
                     .Where(p => p.IsActive && 
-                               !p.IsDeleted)
+                               !p.IsDeleted &&
+                               p.InsurancePlans.Any(plan => plan.InsuranceType == InsuranceType.Primary && 
+                                                           plan.IsActive && 
+                                                           !plan.IsDeleted))
                     .OrderBy(p => p.Name)
                     .ToListAsync();
 
@@ -436,7 +439,10 @@ namespace ClinicApp.Repositories.Insurance
 
                 var providers = await _context.InsuranceProviders
                     .Where(p => p.IsActive && 
-                               !p.IsDeleted)
+                               !p.IsDeleted &&
+                               p.InsurancePlans.Any(plan => plan.InsuranceType == InsuranceType.Supplementary && 
+                                                           plan.IsActive && 
+                                                           !plan.IsDeleted))
                     .OrderBy(p => p.Name)
                     .ToListAsync();
 
