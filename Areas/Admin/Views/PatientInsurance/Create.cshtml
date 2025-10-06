@@ -894,22 +894,55 @@
 @section Scripts {
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
-        /* Fallback Date Input Styling */
+        /* Enhanced Fallback Date Input Styling */
         .form-control.is-invalid {
             border-color: #dc3545;
             box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
         }
         
-        .form-control[placeholder*="مثال"] {
+        .persian-date-input {
+            background-color: #f8f9fa;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .persian-date-input:focus {
+            background-color: #fff;
+            border-color: #007bff;
+            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        }
+        
+        .persian-date-input[placeholder*="مثال"] {
             background-color: #f8f9fa;
         }
         
-        .form-control[placeholder*="مثال"]:focus {
+        .persian-date-input[placeholder*="مثال"]:focus {
             background-color: #fff;
+        }
+        
+        /* Persian Date Input Icons */
+        .persian-date-input::before {
+            content: "📅";
+            position: absolute;
+            right: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            pointer-events: none;
+        }
+        
+        /* Enhanced validation styling */
+        .persian-date-input.is-invalid {
+            border-color: #dc3545;
+            background-color: #fff5f5;
+        }
+        
+        .persian-date-input.is-valid {
+            border-color: #28a745;
+            background-color: #f8fff8;
         }
     </style>
     <script src="~/Content/plugins/select2/js/select2.full.min.js"></script>
-    <script src="~/Scripts/FinalDatePicker/persian-datepicker.min.js"></script>
+    <!-- Persian DatePicker removed due to compatibility issues -->
     <script src="~/Scripts/app/patient-select2.js"></script>
     <script src="~/Scripts/app/patient-insurance-enhanced.js"></script>
     
@@ -949,6 +982,68 @@
             // Skip Persian DatePicker completely due to step property issues
             console.log('🏥 Medical Environment: Skipping Persian DatePicker due to compatibility issues, using enhanced fallback');
             initializeEnhancedFallbackDateInputs();
+        }
+        
+        /**
+         * 🏥 Initialize Enhanced Fallback Date Inputs
+         */
+        function initializeEnhancedFallbackDateInputs() {
+            console.log('🏥 Medical Environment: Initializing Enhanced Fallback Date Inputs');
+            
+            // Use regular text inputs with enhanced Persian date features
+            $('#StartDateShamsi, #EndDateShamsi').attr('type', 'text').addClass('form-control');
+            
+            // Add enhanced placeholders
+            $('#StartDateShamsi').attr('placeholder', 'مثال: 1403/01/01');
+            $('#EndDateShamsi').attr('placeholder', 'مثال: 1403/12/29');
+            
+            // Add enhanced styling
+            $('#StartDateShamsi, #EndDateShamsi').addClass('persian-date-input');
+            
+            // Add manual date validation with enhanced feedback
+            $('#StartDateShamsi, #EndDateShamsi').on('blur', function() {
+                var value = $(this).val();
+                var $this = $(this);
+                
+                if (value && !isValidPersianDate(value)) {
+                    $this.addClass('is-invalid');
+                    showErrorMessage('تاریخ وارد شده معتبر نیست. فرمت صحیح: 1403/01/01');
+                } else {
+                    $this.removeClass('is-invalid');
+                    // Update hidden field if valid
+                    if (value && isValidPersianDate(value)) {
+                        var altFieldId = $this.attr('id') === 'StartDateShamsi' ? '#StartDate' : '#EndDate';
+                        $(altFieldId).val(convertPersianToGregorian(value));
+                    }
+                }
+            });
+            
+            // Add enhanced input formatting
+            $('#StartDateShamsi, #EndDateShamsi').on('input', function() {
+                var value = $(this).val();
+                // Remove non-numeric characters except /
+                value = value.replace(/[^\d\/]/g, '');
+                $(this).val(value);
+            });
+            
+            // Add keyboard shortcuts
+            $('#StartDateShamsi, #EndDateShamsi').on('keydown', function(e) {
+                // Allow: backspace, delete, tab, escape, enter
+                if ([46, 8, 9, 27, 13].indexOf(e.keyCode) !== -1 ||
+                    // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+                    (e.keyCode === 65 && e.ctrlKey === true) ||
+                    (e.keyCode === 67 && e.ctrlKey === true) ||
+                    (e.keyCode === 86 && e.ctrlKey === true) ||
+                    (e.keyCode === 88 && e.ctrlKey === true)) {
+                    return;
+                }
+                // Ensure that it is a number and stop the keypress
+                if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105) && e.keyCode !== 191) {
+                    e.preventDefault();
+                }
+            });
+            
+            console.log('🏥 Medical Environment: Enhanced Fallback Date Inputs initialized successfully');
         }
         
         /**
@@ -1017,6 +1112,40 @@
         function isLeapYear(year) {
             // Persian leap year calculation
             return (year % 4 === 3);
+        }
+        
+        /**
+         * 🏥 Convert Persian date to Gregorian date (simple approximation)
+         */
+        function convertPersianToGregorian(persianDate) {
+            if (!persianDate || !isValidPersianDate(persianDate)) {
+                return '';
+            }
+            
+            try {
+                var parts = persianDate.split('/');
+                var year = parseInt(parts[0]);
+                var month = parseInt(parts[1]);
+                var day = parseInt(parts[2]);
+                
+                // Simple approximation: Persian year + 621 = Gregorian year
+                var gregorianYear = year + 621;
+                
+                // Simple month mapping (not exact but functional)
+                var gregorianMonth = month;
+                var gregorianDay = day;
+                
+                // Basic validation
+                if (gregorianMonth > 12) gregorianMonth = 12;
+                if (gregorianDay > 31) gregorianDay = 31;
+                
+                return gregorianYear + '-' + 
+                       (gregorianMonth < 10 ? '0' + gregorianMonth : gregorianMonth) + '-' + 
+                       (gregorianDay < 10 ? '0' + gregorianDay : gregorianDay);
+            } catch (error) {
+                console.error('Error converting Persian date:', error);
+                return '';
+            }
         }
         
         /**
