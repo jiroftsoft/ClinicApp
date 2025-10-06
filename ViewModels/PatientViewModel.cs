@@ -276,6 +276,9 @@ namespace ClinicApp.ViewModels
         [Display(Name = "تاریخ تولد")]
         public DateTime? BirthDate { get; set; }
 
+        [Display(Name = "تاریخ تولد (شمسی)")]
+        public string BirthDateShamsi { get; set; }
+
         [Display(Name = "سن")]
         public int? Age { get; set; }
 
@@ -317,8 +320,6 @@ namespace ClinicApp.ViewModels
         public string LastLoginDateShamsi { get; set; }
 
         public int ReceptionCount { get; set; }
-        [Display(Name = "تاریخ تولد (شمسی)")]
-        public string BirthDateShamsi { get; set; }
 
         // فیلدهای باندل حذف شدند طبق قرارداد FormStandards
 

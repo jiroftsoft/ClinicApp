@@ -673,27 +673,27 @@
                 console.log('🏥 Medical Environment: Submitting form data:', formData);
                 
                 // Submit form
-                $.ajax({
+                        $.ajax({
                     url: $form.attr('action'),
-                    type: 'POST',
+                            type: 'POST',
                     data: formDataObj,
                     processData: false,
                     contentType: false,
-                    success: function(response) {
+                            success: function(response) {
                         console.log('🏥 Medical Environment: Form submission response:', response);
                         
-                        if (response.success) {
+                                if (response.success) {
                             showSuccessMessage('تغییرات بیمه بیمار با موفقیت ذخیره شد');
                             
                             // Redirect to details page after a short delay
-                            setTimeout(function() {
+                                    setTimeout(function() {
                                 window.location.href = '@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })';
-                            }, 2000);
-                        } else {
+                                    }, 2000);
+                                } else {
                             showErrorMessage(response.message || 'خطا در ذخیره تغییرات');
-                        }
-                    },
-                    error: function(xhr, status, error) {
+                                }
+                            },
+                            error: function(xhr, status, error) {
                         console.error('خطا در ذخیره تغییرات:', error);
                         console.error('Response:', xhr.responseText);
                         showErrorMessage('خطا در ذخیره تغییرات بیمه بیمار');
