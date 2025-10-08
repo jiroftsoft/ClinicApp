@@ -231,7 +231,26 @@ namespace ClinicApp.Helpers
 
                 // ... بقیه منطق اعتبارسنجی و تبدیل بدون تغییر باقی می‌ماند ...
                 ValidatePersianDate(year, month, day);
-                return Calendar.ToDateTime(year, month, day, 0, 0, 0, 0);
+                
+                // Debug logging for date conversion
+                _log.Information("🔍 DateTime conversion: Persian '{PersianDate}' -> Year: {Year}, Month: {Month}, Day: {Day}", 
+                    persianDate, year, month, day);
+                
+                // تبدیل صحیح تاریخ شمسی به میلادی
+                var result = Calendar.ToDateTime(year, month, day, 0, 0, 0, 0);
+                
+                _log.Information("🔍 DateTime conversion result: Persian '{PersianDate}' -> Gregorian '{GregorianDate}'", 
+                    persianDate, result.ToString("yyyy/MM/dd"));
+                
+                // بررسی صحت تبدیل
+                var convertedBack = Calendar.GetYear(result).ToString("0000") + "/" + 
+                                   Calendar.GetMonth(result).ToString("00") + "/" + 
+                                   Calendar.GetDayOfMonth(result).ToString("00");
+                
+                _log.Information("🔍 DateTime conversion verification: Original Persian '{OriginalPersian}' -> Converted Back '{ConvertedBack}'", 
+                    persianDate, convertedBack);
+                
+                return result;
             }
             catch (Exception ex)
             {

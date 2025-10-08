@@ -39,6 +39,16 @@ namespace ClinicApp.Services.Insurance
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
 
+        /// <summary>
+        /// 🚨 CRITICAL FIX: ماسک کردن اطلاعات حساس برای لاگ
+        /// </summary>
+        private string MaskSensitiveData(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return value;
+            if (value.Length <= 4) return new string('*', value.Length);
+            return new string('*', Math.Max(0, value.Length - 4)) + value.Substring(value.Length - 4);
+        }
+
         public PatientInsuranceService(
             IPatientInsuranceRepository patientInsuranceRepository,
             ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
@@ -194,16 +204,16 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Creating patient insurance for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})", 
-                    model.PatientId, model.PolicyNumber, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("Creating patient insurance for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, MaskSensitiveData(model.PolicyNumber), model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
 
                 // استفاده از متد CreateAsync که واقعاً کار می‌کند
                 return await CreateAsync(model);
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error creating patient insurance for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})", 
-                    model.PatientId, model.PolicyNumber, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Error(ex, "Error creating patient insurance for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, MaskSensitiveData(model.PolicyNumber), model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<int>.Failed("خطا در ایجاد بیمه بیمار");
             }
         }
@@ -212,8 +222,8 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Updating patient insurance for PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
-                    model.PatientInsuranceId, model.PatientId, model.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("Updating patient insurance for PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    model.PatientInsuranceId, model.PatientId, MaskSensitiveData(model.PolicyNumber), _currentUserService.UserName, _currentUserService.UserId);
 
                 // استفاده از متد UpdateAsync که واقعاً کار می‌کند
                 var result = await UpdateAsync(model);
@@ -228,8 +238,8 @@ namespace ClinicApp.Services.Insurance
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error updating patient insurance for PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
-                    model.PatientInsuranceId, model.PatientId, model.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Error(ex, "Error updating patient insurance for PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    model.PatientInsuranceId, model.PatientId, MaskSensitiveData(model.PolicyNumber), _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult.Failed("خطا در به‌روزرسانی بیمه بیمار");
             }
         }
@@ -282,8 +292,8 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Checking if policy number exists: {PolicyNumber}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
-                    policyNumber, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("Checking if policy number exists: {PolicyNumber}(masked), ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    MaskSensitiveData(policyNumber), excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
                 // استفاده از متد ریپازیتوری که واقعاً کار می‌کند
                 var exists = await _patientInsuranceRepository.DoesPolicyNumberExistAsync(policyNumber, excludePatientInsuranceId);
@@ -291,8 +301,8 @@ namespace ClinicApp.Services.Insurance
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error checking policy number existence: {PolicyNumber}, ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
-                    policyNumber, excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Error(ex, "Error checking policy number existence: {PolicyNumber}(masked), ExcludeId: {ExcludeId}. User: {UserName} (Id: {UserId})", 
+                    MaskSensitiveData(policyNumber), excludePatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<bool>.Failed("خطا در بررسی وجود شماره بیمه");
             }
         }
@@ -342,8 +352,8 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Getting primary insurance by policy number for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
-                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("Getting primary insurance by policy number for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    patientId, MaskSensitiveData(policyNumber), _currentUserService.UserName, _currentUserService.UserId);
 
                 // استفاده از متد ریپازیتوری که واقعاً کار می‌کند
                 var primaryInsurance = await _patientInsuranceRepository.GetPrimaryInsuranceByPolicyNumberAsync(patientId, policyNumber);
@@ -351,8 +361,8 @@ namespace ClinicApp.Services.Insurance
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "Error getting primary insurance by policy number: PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
-                    patientId, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Error(ex, "Error getting primary insurance by policy number: PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                    patientId, MaskSensitiveData(policyNumber), _currentUserService.UserName, _currentUserService.UserId);
                 return ServiceResult<PatientInsurance>.Failed("خطا در دریافت بیمه اصلی");
             }
         }
@@ -371,8 +381,8 @@ namespace ClinicApp.Services.Insurance
                 var primaryInsurance = await _patientInsuranceRepository.GetPrimaryInsuranceByPatientIdAsync(patientId);
                 if (primaryInsurance != null && !string.IsNullOrEmpty(primaryInsurance.PolicyNumber))
                 {
-                    _log.Information("Primary insurance policy number found for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})", 
-                        patientId, primaryInsurance.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                    _log.Information("Primary insurance policy number found for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}. User: {UserName} (Id: {UserId})", 
+                        patientId, MaskSensitiveData(primaryInsurance.PolicyNumber), _currentUserService.UserName, _currentUserService.UserId);
                     return ServiceResult<string>.Successful(primaryInsurance.PolicyNumber);
                 }
                 else
@@ -394,14 +404,15 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Validating patient insurance for PatientId: {PatientId}, PolicyNumber: {PolicyNumber}", 
-                    model.PatientId, model.PolicyNumber);
+                _log.Information("Validating patient insurance for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}", 
+                    model.PatientId, MaskSensitiveData(model.PolicyNumber));
 
                 var errors = new Dictionary<string, string>();
 
                 // بررسی وجود شماره بیمه تکراری (فقط برای بیمه اصلی)
                 if (model.IsPrimary)
                 {
+                    _log.Information("🏥 MEDICAL: Validating primary insurance policy number(masked): {PolicyNumber}", MaskSensitiveData(model.PolicyNumber));
                     var policyExistsResult = await DoesPolicyNumberExistAsync(model.PolicyNumber, model.PatientInsuranceId);
                     if (policyExistsResult.Success && policyExistsResult.Data)
                     {
@@ -410,11 +421,12 @@ namespace ClinicApp.Services.Insurance
                 }
                 else
                 {
-                    // برای بیمه تکمیلی، بررسی کنیم که آیا بیمه پایه با همین شماره بیمه وجود دارد
-                    var primaryInsuranceResult = await GetPrimaryInsuranceByPolicyNumberAsync(model.PatientId, model.PolicyNumber);
-                    if (!primaryInsuranceResult.Success || primaryInsuranceResult.Data == null)
+                    _log.Information("🏥 MEDICAL: Validating supplementary insurance policy number(masked): {PolicyNumber}", MaskSensitiveData(model.PolicyNumber));
+                    // برای بیمه تکمیلی، بررسی وجود شماره بیمه تکراری
+                    var policyExistsResult = await DoesPolicyNumberExistAsync(model.PolicyNumber, model.PatientInsuranceId);
+                    if (policyExistsResult.Success && policyExistsResult.Data)
                     {
-                        errors.Add("PolicyNumber", "ابتدا باید بیمه پایه با این شماره بیمه تعریف شود.");
+                        errors.Add("PolicyNumber", "شماره بیمه تکمیلی قبلاً ثبت شده است.");
                     }
                 }
 
@@ -440,9 +452,13 @@ namespace ClinicApp.Services.Insurance
                 }
                 else
                 {
-                    // برای بیمه تکمیلی، بررسی کنیم که بیمه پایه فعال باشد
-                    var primaryInsuranceResult = await GetPrimaryInsuranceByPolicyNumberAsync(model.PatientId, model.PolicyNumber);
-                    if (primaryInsuranceResult.Success && primaryInsuranceResult.Data != null)
+                    // 🚨 CRITICAL FIX: برای بیمه تکمیلی، بیمه پایه بیمار را بررسی کنیم (نه با PolicyNumber)
+                    var primaryInsuranceResult = await GetPrimaryInsuranceByPatientAsync(model.PatientId);
+                    if (!primaryInsuranceResult.Success || primaryInsuranceResult.Data == null)
+                    {
+                        errors.Add("PolicyNumber", "ابتدا باید بیمه پایه برای این بیمار تعریف شود.");
+                    }
+                    else
                     {
                         var primaryInsurance = primaryInsuranceResult.Data;
                         if (!primaryInsurance.IsActive)
@@ -574,7 +590,7 @@ namespace ClinicApp.Services.Insurance
                         {
                             insurance.IsPrimary = false;
                             insurance.UpdatedByUserId = _currentUserService.GetCurrentUserId();
-                            insurance.UpdatedAt = DateTime.Now;
+                            insurance.UpdatedAt = DateTime.UtcNow;
                             _patientInsuranceRepository.Update(insurance);
                             
                             _log.Information("بیمه اصلی قبلی غیرفعال شد. PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
@@ -584,7 +600,7 @@ namespace ClinicApp.Services.Insurance
                         // 2. تنظیم بیمه جدید به عنوان اصلی
                         patientInsurance.IsPrimary = true;
                         patientInsurance.UpdatedByUserId = _currentUserService.GetCurrentUserId();
-                        patientInsurance.UpdatedAt = DateTime.Now;
+                        patientInsurance.UpdatedAt = DateTime.UtcNow;
                         _patientInsuranceRepository.Update(patientInsurance);
 
                         // 3. Commit Transaction
@@ -855,6 +871,21 @@ namespace ClinicApp.Services.Insurance
                 var patientInsurance = ConvertToEntity(model);
                 patientInsurance.IsActive = true;
                 patientInsurance.IsDeleted = false;
+                
+                // 🚨 CRITICAL FIX: اضافه کردن فیلدهای Audit
+                patientInsurance.CreatedAt = DateTime.UtcNow;
+                patientInsurance.CreatedByUserId = _currentUserService.UserId;
+                patientInsurance.UpdatedAt = null;
+                patientInsurance.UpdatedByUserId = null;
+                
+                // 🏥 Medical Environment: بررسی مقادیر Entity قبل از ذخیره
+                _log.Information("🏥 MEDICAL: === ENTITY VALUES BEFORE SAVE ===");
+                _log.Information("🏥 MEDICAL: Entity.InsuranceProviderId: {InsuranceProviderId}", patientInsurance.InsuranceProviderId);
+                _log.Information("🏥 MEDICAL: Entity.InsurancePlanId: {InsurancePlanId}", patientInsurance.InsurancePlanId);
+                _log.Information("🏥 MEDICAL: Entity.PatientId: {PatientId}", patientInsurance.PatientId);
+                _log.Information("🏥 MEDICAL: Entity.PolicyNumber(masked): {PolicyNumber}", MaskSensitiveData(patientInsurance.PolicyNumber));
+                _log.Information("🏥 MEDICAL: Entity.IsPrimary: {IsPrimary}", patientInsurance.IsPrimary);
+                _log.Information("🏥 MEDICAL: Entity.IsActive: {IsActive}", patientInsurance.IsActive);
 
                 // تنظیم خودکار Priority بر اساس نوع بیمه
                 if (model.IsPrimary)
@@ -919,6 +950,10 @@ namespace ClinicApp.Services.Insurance
                 existingPatientInsurance.StartDate = model.StartDate;
                 existingPatientInsurance.EndDate = model.EndDate;
                 existingPatientInsurance.IsActive = model.IsActive;
+                
+                // 🚨 CRITICAL FIX: اضافه کردن فیلدهای Audit برای Update
+                existingPatientInsurance.UpdatedAt = DateTime.UtcNow;
+                existingPatientInsurance.UpdatedByUserId = _currentUserService.UserId;
 
                 // ذخیره در Repository
                 _patientInsuranceRepository.Update(existingPatientInsurance);
@@ -962,8 +997,13 @@ namespace ClinicApp.Services.Insurance
                     return ServiceResult<bool>.Failed("بیمه بیمار یافت نشد");
                 }
 
-                // حذف نرم
-                _patientInsuranceRepository.Delete(patientInsurance);
+                // 🚨 CRITICAL FIX: حذف نرم صحیح (Soft Delete)
+                patientInsurance.IsDeleted = true;
+                patientInsurance.IsActive = false;
+                patientInsurance.UpdatedAt = DateTime.UtcNow;
+                patientInsurance.UpdatedByUserId = _currentUserService.UserId;
+                
+                _patientInsuranceRepository.Update(patientInsurance);
                 await _patientInsuranceRepository.SaveChangesAsync();
 
                 _log.Information(
@@ -1186,12 +1226,17 @@ namespace ClinicApp.Services.Insurance
                 PatientInsuranceId = model.PatientInsuranceId,
                 PatientId = model.PatientId,
                 InsurancePlanId = model.InsurancePlanId,
+                InsuranceProviderId = model.InsuranceProviderId, // 🚨 CRITICAL FIX: اضافه کردن InsuranceProviderId
                 PolicyNumber = model.PolicyNumber,
                 IsPrimary = model.IsPrimary,
                 StartDate = model.StartDate,
                 EndDate = model.EndDate,
                 IsActive = model.IsActive,
-                Priority = model.Priority
+                Priority = model.Priority,
+                // 🚨 CRITICAL FIX: اضافه کردن فیلدهای تکمیلی
+                SupplementaryInsuranceProviderId = model.SupplementaryInsuranceProviderId,
+                SupplementaryInsurancePlanId = model.SupplementaryInsurancePlanId,
+                SupplementaryPolicyNumber = model.SupplementaryPolicyNumber
             };
         }
 
@@ -1234,7 +1279,7 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("🏥 MEDICAL: درخواست محاسبه بیمه ترکیبی - PatientId: {PatientId}, ServiceId: {ServiceId}, Amount: {Amount}. User: {UserName} (Id: {UserId})",
                     patientId, serviceId, serviceAmount, _currentUserService.UserName, _currentUserService.UserId);
 
-                var effectiveDate = calculationDate ?? DateTime.Now;
+                var effectiveDate = calculationDate ?? DateTime.UtcNow;
 
                 var result = await _combinedInsuranceCalculationService.CalculateCombinedInsuranceAsync(
                     patientId, serviceId, serviceAmount, effectiveDate);

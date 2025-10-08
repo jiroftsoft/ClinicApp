@@ -82,12 +82,16 @@ var PatientSelect2 = (function () {
                 return patient.text;
             }
             
+            var patientName = patient.text || '';
+            var nationalCode = patient.nationalCode || '';
+            var phoneNumber = patient.phoneNumber || '';
+            
             var $result = $(
                 '<div class="patient-select2-result">' +
-                    '<div class="patient-name">' + patient.text + '</div>' +
+                    '<div class="patient-name">' + patientName + '</div>' +
                     '<div class="patient-details">' +
-                        '<span class="national-code">کد ملی: ' + patient.nationalCode + '</span>' +
-                        (patient.phoneNumber ? '<span class="phone-number"> | تلفن: ' + patient.phoneNumber + '</span>' : '') +
+                        '<span class="national-code">کد ملی: ' + nationalCode + '</span>' +
+                        (phoneNumber ? '<span class="phone-number"> | تلفن: ' + phoneNumber + '</span>' : '') +
                     '</div>' +
                 '</div>'
             );
@@ -95,7 +99,15 @@ var PatientSelect2 = (function () {
             return $result;
         },
         templateSelection: function (patient) {
-            return patient.text || patient.firstName + ' ' + patient.lastName + ' (' + patient.nationalCode + ')';
+            if (patient.text) {
+                return patient.text;
+            }
+            
+            var firstName = patient.firstName || '';
+            var lastName = patient.lastName || '';
+            var nationalCode = patient.nationalCode || '';
+            
+            return firstName + ' ' + lastName + ' (' + nationalCode + ')';
         },
         escapeMarkup: function (markup) {
             return markup;

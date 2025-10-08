@@ -9,7 +9,7 @@ var PatientInsuranceEnhanced = (function() {
     // 🏥 Medical Environment Configuration
     var config = {
         selectors: {
-            patientId: '#PatientId',
+            patientId: '#PatientIdSelect',
             primaryInsuranceProviderId: '#PrimaryInsuranceProviderId',
             primaryInsurancePlanId: '#PrimaryInsurancePlanId',
             supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderId',
@@ -25,13 +25,13 @@ var PatientInsuranceEnhanced = (function() {
             createDefaultButton: '#createDefaultFreeInsuranceBtn'
         },
         urls: {
-            searchPatients: '/Admin/PatientInsurance/SearchPatients',
-            getPatientInsuranceStatus: '/Admin/PatientInsurance/GetPatientInsuranceStatus',
-            validatePatientInsurance: '/Admin/PatientInsurance/ValidatePatientInsurance',
-            createDefaultFreeInsurance: '/Admin/PatientInsurance/CreateDefaultFreeInsurance',
-            getPrimaryInsuranceProviders: '/Admin/PatientInsurance/GetPrimaryInsuranceProviders',
-            getSupplementaryInsuranceProviders: '/Admin/PatientInsurance/GetSupplementaryInsuranceProviders',
-            getInsurancePlansByProvider: '/Admin/PatientInsurance/GetInsurancePlansByProvider'
+            searchPatients: '/Admin/Insurance/PatientInsurance/SearchPatients',
+            getPatientInsuranceStatus: '/Admin/Insurance/PatientInsurance/GetPatientInsuranceStatus',
+            validatePatientInsurance: '/Admin/Insurance/PatientInsurance/ValidatePatientInsurance',
+            createDefaultFreeInsurance: '/Admin/Insurance/PatientInsurance/CreateDefaultFreeInsurance',
+            getPrimaryInsuranceProviders: '/Admin/Insurance/PatientInsurance/GetPrimaryInsuranceProviders',
+            getSupplementaryInsuranceProviders: '/Admin/Insurance/PatientInsurance/GetSupplementaryInsuranceProviders',
+            getInsurancePlansByProvider: '/Admin/Insurance/PatientInsurance/GetInsurancePlansByProvider'
         }
     };
 
@@ -48,6 +48,12 @@ var PatientInsuranceEnhanced = (function() {
 
     // 🏥 Medical Environment: Advanced Patient Selection
     function initializePatientSelection() {
+        console.log('🏥 Medical Environment: Initializing Patient Selection');
+        console.log('🏥 Medical Environment: PatientIdSelect element exists:', $(config.selectors.patientId).length > 0);
+        console.log('🏥 Medical Environment: PatientIdSelect element:', $(config.selectors.patientId)[0]);
+        console.log('🏥 Medical Environment: PatientId hidden element exists:', $('#PatientId').length > 0);
+        console.log('🏥 Medical Environment: PatientId hidden element:', $('#PatientId')[0]);
+        
         $(config.selectors.patientId).select2({
             placeholder: 'جستجو در بیماران: نام، نام خانوادگی، کد ملی یا شماره تلفن...',
             allowClear: true,
@@ -133,14 +139,47 @@ var PatientInsuranceEnhanced = (function() {
             var data = e.params.data;
             var patient = data.patient;
             if (patient) {
+                // Update hidden field for form submission
+                $('#PatientId').val(patient.id);
+                console.log('🏥 Medical Environment: Updated PatientId hidden field:', $('#PatientId').val());
+                
                 showSelectedPatientInfo(patient);
+                
+                // Auto-fill policy numbers with national code
+                console.log('🏥 Medical Environment: Auto-filling policy numbers with national code:', patient.nationalCode);
+                console.log('🏥 Medical Environment: PolicyNumber element exists:', $(config.selectors.policyNumber).length > 0);
+                console.log('🏥 Medical Environment: PolicyNumber element:', $(config.selectors.policyNumber)[0]);
+                console.log('🏥 Medical Environment: SupplementaryPolicyNumber element exists:', $(config.selectors.supplementaryPolicyNumber).length > 0);
+                console.log('🏥 Medical Environment: SupplementaryPolicyNumber element:', $(config.selectors.supplementaryPolicyNumber)[0]);
+                
                 $(config.selectors.policyNumber).val(patient.nationalCode);
                 $(config.selectors.supplementaryPolicyNumber).val(patient.nationalCode);
+                
+                // Verify policy numbers were set
+                console.log('🏥 Medical Environment: PolicyNumber value after setting:', $(config.selectors.policyNumber).val());
+                console.log('🏥 Medical Environment: SupplementaryPolicyNumber value after setting:', $(config.selectors.supplementaryPolicyNumber).val());
+                
+                // Force UI update
+                $(config.selectors.policyNumber).trigger('input');
+                $(config.selectors.supplementaryPolicyNumber).trigger('input');
+                
+                // Visual feedback
+                $(config.selectors.policyNumber).addClass('bg-success text-white').delay(2000).queue(function() {
+                    $(this).removeClass('bg-success text-white').dequeue();
+                });
+                $(config.selectors.supplementaryPolicyNumber).addClass('bg-success text-white').delay(2000).queue(function() {
+                    $(this).removeClass('bg-success text-white').dequeue();
+                });
+                
                 checkPatientInsuranceStatus();
             }
         });
 
         $(config.selectors.patientId).on('select2:clear', function(e) {
+            // Reset hidden field
+            $('#PatientId').val('0');
+            console.log('🏥 Medical Environment: Reset PatientId hidden field');
+            
             $(config.selectors.selectedPatientInfo).hide();
             clearPolicyNumbers();
         });
@@ -163,6 +202,17 @@ var PatientInsuranceEnhanced = (function() {
         
         $('.insurance-tab').on('click', function() {
             var type = $(this).data('type');
+            console.log('🏥 Medical Environment: Switching to tab:', type);
+            
+            // حفظ انتخاب‌های قبلی
+            var currentPrimaryProvider = $(config.selectors.primaryInsuranceProviderId).val();
+            var currentPrimaryPlan = $(config.selectors.primaryInsurancePlanId).val();
+            var currentSupplementaryProvider = $(config.selectors.supplementaryInsuranceProviderId).val();
+            var currentSupplementaryPlan = $(config.selectors.supplementaryInsurancePlanId).val();
+            
+            console.log('🏥 Medical Environment: Preserving selections - Primary Provider:', currentPrimaryProvider, 'Primary Plan:', currentPrimaryPlan);
+            console.log('🏥 Medical Environment: Preserving selections - Supplementary Provider:', currentSupplementaryProvider, 'Supplementary Plan:', currentSupplementaryPlan);
+            
             $('.insurance-tab').removeClass('active');
             $(this).addClass('active');
             $('.insurance-content').removeClass('active');
@@ -171,10 +221,22 @@ var PatientInsuranceEnhanced = (function() {
             // تنظیم نوع بیمه و بارگذاری بیمه‌گذاران
             if (type === 'primary') {
                 $(config.selectors.isPrimary).prop('checked', true);
-                loadPrimaryInsuranceProviders();
+                loadPrimaryInsuranceProviders().then(function() {
+                    // بازگردانی انتخاب‌های قبلی
+                    if (currentPrimaryProvider) {
+                        console.log('🏥 Medical Environment: Restoring primary provider selection:', currentPrimaryProvider);
+                        $(config.selectors.primaryInsuranceProviderId).val(currentPrimaryProvider).trigger('change');
+                    }
+                });
             } else {
                 $(config.selectors.isPrimary).prop('checked', false);
-                loadSupplementaryInsuranceProviders();
+                loadSupplementaryInsuranceProviders().then(function() {
+                    // بازگردانی انتخاب‌های قبلی
+                    if (currentSupplementaryProvider) {
+                        console.log('🏥 Medical Environment: Restoring supplementary provider selection:', currentSupplementaryProvider);
+                        $(config.selectors.supplementaryInsuranceProviderId).val(currentSupplementaryProvider).trigger('change');
+                    }
+                });
             }
         });
 
@@ -207,7 +269,7 @@ var PatientInsuranceEnhanced = (function() {
     function loadPrimaryInsuranceProviders() {
         console.log('🏥 Medical Environment: Loading primary insurance providers...');
         
-        $.ajax({
+        return $.ajax({
             url: config.urls.getPrimaryInsuranceProviders,
             type: 'GET',
             success: function(response) {
@@ -292,7 +354,7 @@ var PatientInsuranceEnhanced = (function() {
     function loadSupplementaryInsuranceProviders() {
         console.log('🏥 Medical Environment: Loading supplementary insurance providers...');
         
-        $.ajax({
+        return $.ajax({
             url: config.urls.getSupplementaryInsuranceProviders,
             type: 'GET',
             success: function(response) {
@@ -808,9 +870,61 @@ var PatientInsuranceEnhanced = (function() {
         });
     }
 
+    // 🚨 CRITICAL FIX: Sync hidden fields function
+    function syncHiddenFields() {
+        console.log('🏥 Medical Environment: === SYNCING HIDDEN FIELDS ===');
+        
+        // Sync PatientId
+        var patientId = $(config.selectors.patientId).val();
+        if (patientId && patientId !== '' && patientId !== '0') {
+            $('#PatientId').val(patientId);
+            console.log('🏥 Medical Environment: ✅ PatientId synced:', patientId);
+        }
+        
+        // Sync InsuranceProviderId
+        var primaryProviderId = $(config.selectors.primaryInsuranceProviderId).val();
+        var supplementaryProviderId = $(config.selectors.supplementaryInsuranceProviderId).val();
+        var finalProviderId = primaryProviderId || supplementaryProviderId;
+        
+        if (finalProviderId && finalProviderId !== '' && finalProviderId !== '0') {
+            $('#InsuranceProviderId').val(finalProviderId);
+            console.log('🏥 Medical Environment: ✅ InsuranceProviderId synced:', finalProviderId);
+        }
+        
+        // Sync InsurancePlanId
+        var primaryPlanId = $(config.selectors.primaryInsurancePlanId).val();
+        var supplementaryPlanId = $(config.selectors.supplementaryInsurancePlanId).val();
+        var finalPlanId = primaryPlanId || supplementaryPlanId;
+        
+        if (finalPlanId && finalPlanId !== '' && finalPlanId !== '0') {
+            $('#InsurancePlanId').val(finalPlanId);
+            console.log('🏥 Medical Environment: ✅ InsurancePlanId synced:', finalPlanId);
+        }
+        
+        // Sync Supplementary fields
+        if (supplementaryProviderId && supplementaryProviderId !== '' && supplementaryProviderId !== '0') {
+            $('#SupplementaryInsuranceProviderId').val(supplementaryProviderId);
+            console.log('🏥 Medical Environment: ✅ SupplementaryInsuranceProviderId synced:', supplementaryProviderId);
+        }
+        
+        if (supplementaryPlanId && supplementaryPlanId !== '' && supplementaryPlanId !== '0') {
+            $('#SupplementaryInsurancePlanId').val(supplementaryPlanId);
+            console.log('🏥 Medical Environment: ✅ SupplementaryInsurancePlanId synced:', supplementaryPlanId);
+        }
+        
+        // Final validation
+        console.log('🏥 Medical Environment: === FINAL HIDDEN FIELD VALUES ===');
+        console.log('🏥 Medical Environment: PatientId:', $('#PatientId').val());
+        console.log('🏥 Medical Environment: InsuranceProviderId:', $('#InsuranceProviderId').val());
+        console.log('🏥 Medical Environment: InsurancePlanId:', $('#InsurancePlanId').val());
+        console.log('🏥 Medical Environment: SupplementaryInsuranceProviderId:', $('#SupplementaryInsuranceProviderId').val());
+        console.log('🏥 Medical Environment: SupplementaryInsurancePlanId:', $('#SupplementaryInsurancePlanId').val());
+    }
+
     // Public API
     return {
         initialize: initialize,
+        syncHiddenFields: syncHiddenFields,
         initializeCreateForm: function() {
             initializePatientSelection();
             initializeInsuranceSelection();

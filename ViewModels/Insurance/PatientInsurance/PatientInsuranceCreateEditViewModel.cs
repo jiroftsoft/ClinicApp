@@ -330,12 +330,14 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                     return new ValidationResult("تاریخ پایان باید بعد از تاریخ شروع باشد.");
                 }
                 
-                // بررسی اینکه تاریخ پایان بیش از 10 سال در آینده نباشد
-                var maxEndDate = model.StartDate.AddYears(10);
-                if (endDate.Value > maxEndDate)
+                // بررسی اینکه تاریخ پایان در گذشته نباشد
+                var now = DateTime.Now;
+                if (endDate.Value < now)
                 {
-                    return new ValidationResult("تاریخ پایان نمی‌تواند بیش از 10 سال بعد از تاریخ شروع باشد.");
+                    return new ValidationResult("تاریخ پایان نمی‌تواند در گذشته باشد.");
                 }
+                
+                // محدودیت 10 سال آینده حذف شد - منشی می‌تواند اعتبار بیمه را تا هر زمان آینده تنظیم کند
             }
             
             return ValidationResult.Success;
@@ -376,18 +378,23 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 return ValidationResult.Success; // Required attribute handles this
             }
 
-            var oneYearAgo = DateTime.Now.AddYears(-1);
+            var now = DateTime.Now;
+            var oneYearAgo = now.AddYears(-1);
+
+            // Debug logging
+            var log = Serilog.Log.ForContext(typeof(PatientInsuranceCreateEditViewModel));
+            log.Information("🔍 StartDate Validation: StartDate={StartDate}, Now={Now}, OneYearAgo={OneYearAgo}", 
+                startDate.ToString("yyyy/MM/dd"), now.ToString("yyyy/MM/dd"), oneYearAgo.ToString("yyyy/MM/dd"));
+
+            // فقط بررسی می‌کنیم که تاریخ شروع بیش از 1 سال در گذشته نباشد
+            // محدودیت 1 سال آینده حذف شد - منشی می‌تواند اعتبار بیمه را تا هر زمان آینده تنظیم کند
             if (startDate < oneYearAgo)
             {
+                log.Warning("🔍 StartDate Validation Failed: StartDate {StartDate} is more than 1 year in the past", startDate.ToString("yyyy/MM/dd"));
                 return new ValidationResult("تاریخ شروع نمی‌تواند بیش از 1 سال در گذشته باشد.");
             }
 
-            var oneYearFromNow = DateTime.Now.AddYears(1);
-            if (startDate > oneYearFromNow)
-            {
-                return new ValidationResult("تاریخ شروع نمی‌تواند بیش از 1 سال در آینده باشد.");
-            }
-
+            log.Information("🔍 StartDate Validation Passed: StartDate {StartDate} is valid (no future limit)", startDate.ToString("yyyy/MM/dd"));
             return ValidationResult.Success;
         }
 

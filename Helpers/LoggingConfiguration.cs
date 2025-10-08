@@ -83,14 +83,37 @@ namespace ClinicApp.Helpers
                     outputTemplate: GetPerformanceOutputTemplate()
                 ))
 
-                // 🖥️ Sink 4: Console (فقط در Development)
+                // 🏥 Sink 4: فایل لاگ MEDICAL (مخصوص لاگ‌های پزشکی)
+                .WriteTo.Async(a => a.File(
+                    path: HttpContext.Current.Server.MapPath("~/App_Data/Logs/medical-.log"),
+                    restrictedToMinimumLevel: LogEventLevel.Debug,
+                    rollingInterval: RollingInterval.Day,
+                    retainedFileCountLimit: 90, // 3 ماه
+                    fileSizeLimitBytes: 50 * 1024 * 1024, // 50MB
+                    rollOnFileSizeLimit: true,
+                    outputTemplate: GetMedicalOutputTemplate()
+                ))
+
+                // 🏥 Sink 4.1: فایل لاگ MEDICAL با فیلتر مخصوص
+                .WriteTo.Conditional(evt => evt.MessageTemplate.Text.Contains("MEDICAL"),
+                    sink => sink.Async(a => a.File(
+                        path: HttpContext.Current.Server.MapPath("~/App_Data/Logs/medical-filtered-.log"),
+                        restrictedToMinimumLevel: LogEventLevel.Debug,
+                        rollingInterval: RollingInterval.Day,
+                        retainedFileCountLimit: 90, // 3 ماه
+                        fileSizeLimitBytes: 50 * 1024 * 1024, // 50MB
+                        rollOnFileSizeLimit: true,
+                        outputTemplate: GetMedicalOutputTemplate()
+                    )))
+
+                // 🖥️ Sink 5: Console (فقط در Development)
                 .WriteTo.Conditional(evt => environment == "Development",
                     sink => sink.Console(
                         theme: AnsiConsoleTheme.Code,
                         outputTemplate: GetConsoleOutputTemplate()
                     ))
 
-                // 🗄️ Sink 5: SQL Server Database
+                // 🗄️ Sink 6: SQL Server Database
                 .WriteTo.Async(a => a.MSSqlServer(
                     connectionString: ConfigurationManager.ConnectionStrings["DefaultConnection"].ConnectionString,
                     sinkOptions: new MSSqlServerSinkOptions
@@ -102,7 +125,7 @@ namespace ClinicApp.Helpers
                     restrictedToMinimumLevel: LogEventLevel.Information
                 ))
 
-                // 🔍 Sink 6: Seq (فقط در Development و Staging)
+                // 🔍 Sink 7: Seq (فقط در Development و Staging)
                 .WriteTo.Conditional(evt => environment != "Production",
                     sink => sink.Async(a => a.Seq(
                         serverUrl: ConfigurationManager.AppSettings["SeqUrl"] ?? "http://localhost:5341",
@@ -110,7 +133,7 @@ namespace ClinicApp.Helpers
                         restrictedToMinimumLevel: LogEventLevel.Debug
                     )))
 
-                // 📧 Sink 7: Email برای خطاهای بحرانی
+                // 📧 Sink 8: Email برای خطاهای بحرانی
                 .WriteTo.Conditional(evt => environment == "Production" && evt.Level >= LogEventLevel.Fatal,
                     sink => sink.Email(
                         fromEmail: ConfigurationManager.AppSettings["Email:FromAddress"],
@@ -238,6 +261,14 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
+        /// دریافت Template برای فایل لاگ MEDICAL
+        /// </summary>
+        private static string GetMedicalOutputTemplate()
+        {
+            return "{Timestamp:yyyy-MM-dd HH:mm:ss.fff} [{Level:u3}] {SourceContext} | {Message:lj}{NewLine}{Properties:j}{NewLine}---{NewLine}";
+        }
+
+        /// <summary>
         /// دریافت Template برای Console
         /// </summary>
         private static string GetConsoleOutputTemplate()
@@ -282,6 +313,9 @@ namespace ClinicApp.Helpers
             
             // فیلتر کردن لاگ‌های مربوط به Unity
             config = config.Filter.ByExcluding(Matching.FromSource("Unity"));
+            
+            // 🏥 MEDICAL: فیلتر برای لاگ‌های MEDICAL حذف شد
+            // به جای آن از Sink مخصوص استفاده می‌کنیم
             
             return config;
         }

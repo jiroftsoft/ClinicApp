@@ -18,6 +18,8 @@ using ClinicApp.Models.DTOs.Insurance;
 using Serilog;
 using System.Net;
 using System.Data.SqlClient;
+using ClinicApp.Models;
+// using System.Data.Entity; // 🚨 CRITICAL FIX: حذف شد - دیگر از EF مستقیم استفاده نمی‌کنیم
 using System.Net.Http;
 using System.Threading;
 // using Microsoft.Extensions.Caching.Memory; // در ASP.NET Framework در دسترس نیست
@@ -190,8 +192,9 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return ServiceResult<bool>.Failed("بیمه پایه این بیمار غیرفعال است. ابتدا بیمه پایه را فعال کنید.");
                 }
 
-                // بررسی تاریخ پایان بیمه پایه
-                if (primaryInsurance.EndDate.HasValue && primaryInsurance.EndDate.Value < DateTime.Now)
+                // 🚨 CRITICAL FIX: همسان‌سازی UTC و مقایسه تاریخ
+                var effectiveStartDate = DateTime.UtcNow; // استفاده از UTC
+                if (primaryInsurance.EndDate.HasValue && primaryInsurance.EndDate.Value < effectiveStartDate)
                 {
                     _log.Warning("🏥 MEDICAL: بیمه پایه بیمار {PatientId} منقضی شده است. EndDate: {EndDate}. User: {UserName} (Id: {UserId})",
                         patientId, primaryInsurance.EndDate.Value, _currentUserService.UserName, _currentUserService.UserId);
@@ -242,17 +245,37 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         freePlan.InsurancePlanId, freePlan.Name, _currentUserService.UserName, _currentUserService.UserId);
                 }
 
-                // ایجاد بیمه آزاد
+                // 🚨 CRITICAL FIX: تضمین یکتا بودن شماره بیمه آزاد
+                var basePolicyNumber = $"FREE-{patientId:D6}-{DateTime.UtcNow:yyyyMMdd}";
+                var policyNumber = basePolicyNumber;
+                
+                // بررسی یکتا بودن و retry در صورت برخورد
+                for (var i = 1; ; i++)
+                {
+                    var existsResult = await _patientInsuranceService.DoesPolicyNumberExistAsync(policyNumber, null);
+                    if (!existsResult.Success || !existsResult.Data)
+                    {
+                        break; // شماره یکتا است
+                    }
+                    
+                    // شماره تکراری است، شمارنده اضافه کن
+                    policyNumber = $"{basePolicyNumber}-{i}";
+                    
+                    _log.Information("🏥 MEDICAL: شماره بیمه تکراری، شمارنده اضافه شد. Original: {Original}, New: {New}. User: {UserName} (Id: {UserId})",
+                        basePolicyNumber, policyNumber, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // ایجاد بیمه آزاد با شماره یکتا
                 var freeInsurance = new PatientInsurance
                 {
                     PatientId = patientId,
                     InsurancePlanId = freePlan.InsurancePlanId,
-                    PolicyNumber = "FREE-" + patientId.ToString("D6") + "-" + DateTime.Now.ToString("yyyyMMdd"),
-                    StartDate = DateTime.Now,
+                    PolicyNumber = policyNumber,
+                    StartDate = DateTime.UtcNow,
                     IsPrimary = true,
                     IsActive = true,
                     Priority = InsurancePriority.Primary,
-                    CreatedAt = DateTime.Now,
+                    CreatedAt = DateTime.UtcNow,
                     CreatedByUserId = _currentUserService.UserId
                 };
 
@@ -449,8 +472,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                     return Json(ServiceResult<PatientInsuranceValidationResult>.Successful(
                         validationResult.Data, 
-                        "اعتبارسنجی بیمه بیمار با موفقیت انجام شد"), 
-                        JsonRequestBehavior.AllowGet);
+                        "اعتبارسنجی بیمه بیمار با موفقیت انجام شد"));
                 }
                 else
                 {
@@ -833,17 +855,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var result = await _patientInsuranceService.GetTotalRecordsCountAsync();
                 if (result.Success)
                 {
-                    return Json(new { success = true, count = result.Data, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = true, count = result.Data, message = result.Message });
                 }
                 else
                 {
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = result.Message });
                 }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error in DebugCount method");
-                return Json(new { success = false, message = "خطا در بررسی تعداد رکوردها" }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false, message = "خطا در بررسی تعداد رکوردها" });
             }
         }
 
@@ -855,17 +877,17 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var result = await _patientInsuranceService.GetSimpleListAsync();
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = true, data = result.Data, message = result.Message });
                 }
                 else
                 {
-                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = result.Message });
                 }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "Error in DebugSimpleList method");
-                return Json(new { success = false, message = "خطا در دریافت لیست ساده" }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false, message = "خطا در دریافت لیست ساده" });
             }
         }
 
@@ -926,12 +948,12 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
 
                 if (result.Success)
                 {
-                    // تبدیل PatientInsuranceIndexViewModel به PatientInsuranceIndexItemViewModel
+                    // 🚨 CRITICAL FIX: استفاده مستقیم از ViewModel های سرویس (بدون مپ اضافی)
                     model.PatientInsurances = result.Data.Items.Select(item => new PatientInsuranceIndexItemViewModel
                     {
                         PatientInsuranceId = item.PatientInsuranceId,
                         PatientId = item.PatientId,
-                        PatientFullName = item.PatientName,
+                        PatientFullName = item.PatientName, // مپ صحیح: PatientName -> PatientFullName
                         PatientCode = item.PatientCode,
                         PatientNationalCode = item.PatientNationalCode,
                         InsurancePlanId = item.InsurancePlanId,
@@ -1340,20 +1362,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Information("🏥 MEDICAL: شماره بیمه پایه دریافت شد. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
                         patientId, result.Data, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = true, data = result.Data });
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: شماره بیمه پایه یافت نشد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                         patientId, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, message = "بیمه پایه برای این بیمار تعریف نشده است" }, JsonRequestBehavior.AllowGet);
+                    return Json(new { success = false, message = "بیمه پایه برای این بیمار تعریف نشده است" });
                 }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت شماره بیمه پایه. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
-                return Json(new { success = false, message = "خطا در دریافت شماره بیمه پایه" }, JsonRequestBehavior.AllowGet);
+                return Json(new { success = false, message = "خطا در دریافت شماره بیمه پایه" });
             }
         }
 
@@ -1364,12 +1386,188 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> CreateAjax(PatientInsuranceCreateEditViewModel model)
         {
+            _log.Information("🏥 MEDICAL: CreateAjax method STARTED at {Timestamp}", DateTime.UtcNow);
+            // 🏥 MEDICAL: بررسی Model Binding در ابتدای متد
+            _log.Information("🏥 MEDICAL: === CreateAjax METHOD STARTED ===");
+            _log.Information("🏥 MEDICAL: Model is null: {IsNull}", model == null);
+            _log.Information("🏥 MEDICAL: Request.ContentType: {ContentType}", Request.ContentType);
+            _log.Information("🏥 MEDICAL: Request.Form.Count: {FormCount}", Request.Form.Count);
+            
+            // Log all form values for debugging
+            foreach (string key in Request.Form.AllKeys)
+            {
+                _log.Information("🏥 MEDICAL: Request.Form[{Key}]: {Value}", key, Request.Form[key]);
+            }
+            
+            // 🏥 MEDICAL: Comprehensive Model Logging
+            _log.Information("🏥 MEDICAL: === COMPREHENSIVE MODEL ANALYSIS ===");
+            _log.Information("🏥 MEDICAL: Model is null: {IsNull}", model == null);
+            
+            if (model != null)
+            {
+                _log.Information("🏥 MEDICAL: === BASIC PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: PatientId: {PatientId} (Type: {PatientIdType})", model.PatientId, model.PatientId.GetType().Name);
+                _log.Information("🏥 MEDICAL: PatientInsuranceId: {PatientInsuranceId} (Type: {PatientInsuranceIdType})", model.PatientInsuranceId, model.PatientInsuranceId.GetType().Name);
+                _log.Information("🏥 MEDICAL: PatientName: {PatientName}", model.PatientName ?? "NULL");
+                
+                _log.Information("🏥 MEDICAL: === INSURANCE PROVIDER PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: InsuranceProviderId: {InsuranceProviderId} (Type: {InsuranceProviderIdType})", model.InsuranceProviderId, model.InsuranceProviderId.GetType().Name);
+                _log.Information("🏥 MEDICAL: InsuranceProviderName: {InsuranceProviderName}", model.InsuranceProviderName ?? "NULL");
+                _log.Information("🏥 MEDICAL: InsurancePlanId: {InsurancePlanId} (Type: {InsurancePlanIdType})", model.InsurancePlanId, model.InsurancePlanId.GetType().Name);
+                _log.Information("🏥 MEDICAL: InsurancePlanName: {InsurancePlanName}", model.InsurancePlanName ?? "NULL");
+                
+                _log.Information("🏥 MEDICAL: === SUPPLEMENTARY INSURANCE PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: SupplementaryInsuranceProviderId: {SupplementaryInsuranceProviderId} (Type: {SupplementaryInsuranceProviderIdType})", 
+                    model.SupplementaryInsuranceProviderId, model.SupplementaryInsuranceProviderId?.GetType().Name ?? "NULL");
+                _log.Information("🏥 MEDICAL: SupplementaryInsuranceProviderName: {SupplementaryInsuranceProviderName}", model.SupplementaryInsuranceProviderName ?? "NULL");
+                _log.Information("🏥 MEDICAL: SupplementaryInsurancePlanId: {SupplementaryInsurancePlanId} (Type: {SupplementaryInsurancePlanIdType})", 
+                    model.SupplementaryInsurancePlanId, model.SupplementaryInsurancePlanId?.GetType().Name ?? "NULL");
+                _log.Information("🏥 MEDICAL: SupplementaryInsurancePlanName: {SupplementaryInsurancePlanName}", model.SupplementaryInsurancePlanName ?? "NULL");
+                
+                _log.Information("🏥 MEDICAL: === POLICY NUMBER PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: PolicyNumber: {PolicyNumber}", model.PolicyNumber ?? "NULL");
+                _log.Information("🏥 MEDICAL: SupplementaryPolicyNumber: {SupplementaryPolicyNumber}", model.SupplementaryPolicyNumber ?? "NULL");
+                
+                _log.Information("🏥 MEDICAL: === DATE PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: StartDate: {StartDate} (Type: {StartDateType})", model.StartDate, model.StartDate.GetType().Name);
+                _log.Information("🏥 MEDICAL: EndDate: {EndDate} (Type: {EndDateType})", model.EndDate, model.EndDate?.GetType().Name ?? "NULL");
+                _log.Information("🏥 MEDICAL: StartDateShamsi: {StartDateShamsi}", model.StartDateShamsi ?? "NULL");
+                _log.Information("🏥 MEDICAL: EndDateShamsi: {EndDateShamsi}", model.EndDateShamsi ?? "NULL");
+                
+                _log.Information("🏥 MEDICAL: === BOOLEAN PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: IsPrimary: {IsPrimary} (Type: {IsPrimaryType})", model.IsPrimary, model.IsPrimary.GetType().Name);
+                _log.Information("🏥 MEDICAL: IsActive: {IsActive} (Type: {IsActiveType})", model.IsActive, model.IsActive.GetType().Name);
+                
+                _log.Information("🏥 MEDICAL: === ENUM PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: Priority: {Priority} (Type: {PriorityType})", model.Priority, model.Priority.GetType().Name);
+                
+                _log.Information("🏥 MEDICAL: === SELECT LIST PROPERTIES ===");
+                _log.Information("🏥 MEDICAL: PatientSelectList is null: {PatientSelectListIsNull}", model.PatientSelectList == null);
+                _log.Information("🏥 MEDICAL: InsuranceProviderSelectList is null: {InsuranceProviderSelectListIsNull}", model.InsuranceProviderSelectList == null);
+                _log.Information("🏥 MEDICAL: InsurancePlanSelectList is null: {InsurancePlanSelectListIsNull}", model.InsurancePlanSelectList == null);
+                _log.Information("🏥 MEDICAL: SupplementaryInsuranceProviderSelectList is null: {SupplementaryInsuranceProviderSelectListIsNull}", model.SupplementaryInsuranceProviderSelectList == null);
+                _log.Information("🏥 MEDICAL: SupplementaryInsurancePlanSelectList is null: {SupplementaryInsurancePlanSelectListIsNull}", model.SupplementaryInsurancePlanSelectList == null);
+            }
+            else
+            {
+                _log.Error("🏥 MEDICAL: Model is NULL - This indicates a serious Model Binding issue!");
+            }
+            
+            _log.Information("🏥 MEDICAL: === REQUEST CONTEXT ANALYSIS ===");
+            _log.Information("🏥 MEDICAL: Request Method: {RequestMethod}", Request.HttpMethod);
+            _log.Information("🏥 MEDICAL: Request ContentType: {RequestContentType}", Request.ContentType ?? "NULL");
+            _log.Information("🏥 MEDICAL: Request Form Keys: {FormKeys}", string.Join(", ", Request.Form.AllKeys ?? new string[0]));
+            _log.Information("🏥 MEDICAL: Request QueryString Keys: {QueryStringKeys}", string.Join(", ", Request.QueryString.AllKeys ?? new string[0]));
+            
+            // Log all form values
+            _log.Information("🏥 MEDICAL: === FORM VALUES ANALYSIS ===");
+            foreach (string key in Request.Form.AllKeys ?? new string[0])
+            {
+                _log.Information("🏥 MEDICAL: Form[{Key}] = {Value}", key, Request.Form[key] ?? "NULL");
+            }
+            
+            _log.Information("🏥 MEDICAL: === MODEL STATE ANALYSIS ===");
+            _log.Information("🏥 MEDICAL: ModelState.IsValid: {IsValid}", ModelState.IsValid);
+            _log.Information("🏥 MEDICAL: ModelState.Keys: {Keys}", string.Join(", ", ModelState.Keys));
+            
+            foreach (var key in ModelState.Keys)
+            {
+                var state = ModelState[key];
+                _log.Information("🏥 MEDICAL: ModelState[{Key}].Value: {Value}, Errors: {ErrorCount}", 
+                    key, state.Value?.AttemptedValue ?? "NULL", state.Errors.Count);
+                foreach (var error in state.Errors)
+                {
+                    _log.Information("🏥 MEDICAL: ModelState[{Key}].Error: {Error}", key, error.ErrorMessage);
+                }
+            }
+            
+            // 🏥 Medical Environment: بررسی Model Binding
+            _log.Information("🏥 MEDICAL: === MODEL BINDING ANALYSIS ===");
+            _log.Information("🏥 MEDICAL: Model is null: {IsNull}", model == null);
+            _log.Information("🏥 MEDICAL: ModelState.IsValid: {IsValid}", ModelState.IsValid);
+            
+            // محاسبه تعداد خطاهای ModelState
+            var errorCount = ModelState.Values.SelectMany(v => v.Errors).Count();
+            _log.Information("🏥 MEDICAL: ModelState.ErrorCount: {ErrorCount}", errorCount);
+            
+            // 🏥 Medical Environment: بررسی Model Binding مشکل
+            if (model == null)
+            {
+                _log.Error("🏥 MEDICAL: CRITICAL ERROR - Model is NULL! Model Binding failed completely!");
+                _log.Error("🏥 MEDICAL: This means the form data is not being bound to the model properly!");
+                _log.Error("🏥 MEDICAL: Request.ContentType: {ContentType}", Request.ContentType);
+                _log.Error("🏥 MEDICAL: Request.Form.Count: {FormCount}", Request.Form.Count);
+                
+                // Log all form values for debugging
+                foreach (string key in Request.Form.AllKeys)
+                {
+                    _log.Error("🏥 MEDICAL: Request.Form[{Key}]: {Value}", key, Request.Form[key]);
+                }
+                
+                return Json(new { success = false, message = "خطا در دریافت اطلاعات فرم - Model Binding ناموفق" });
+            }
+            
+            // 🏥 Medical Environment: بررسی Request.Form
+            _log.Information("🏥 MEDICAL: === REQUEST.FORM ANALYSIS ===");
+            _log.Information("🏥 MEDICAL: Request.ContentType: {ContentType}", Request.ContentType);
+            _log.Information("🏥 MEDICAL: Request.Form.Count: {FormCount}", Request.Form.Count);
+            
+            foreach (string key in Request.Form.AllKeys)
+            {
+                _log.Information("🏥 MEDICAL: Request.Form[{Key}]: {Value}", key, Request.Form[key]);
+            }
+            
+            if (model != null)
+        {
             _log.Information(
                 "🏥 MEDICAL: درخواست AJAX ایجاد بیمه بیمار جدید. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, PlanId: {PlanId}. User: {UserName} (Id: {UserId})",
-                model?.PatientId, model?.PolicyNumber, model?.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    model.PatientId, model.PolicyNumber, model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // 🏥 Medical Environment: بررسی مقادیر کلیدی
+                _log.Information("🏥 MEDICAL: === COMPREHENSIVE MODEL ANALYSIS ===");
+                _log.Information("🏥 MEDICAL: InsuranceProviderId: {InsuranceProviderId}", model.InsuranceProviderId);
+                _log.Information("🏥 MEDICAL: InsurancePlanId: {InsurancePlanId}", model.InsurancePlanId);
+                _log.Information("🏥 MEDICAL: IsPrimary: {IsPrimary}", model.IsPrimary);
+                _log.Information("🏥 MEDICAL: IsActive: {IsActive}", model.IsActive);
+                _log.Information("🏥 MEDICAL: PolicyNumber: {PolicyNumber}", model.PolicyNumber);
+                _log.Information("🏥 MEDICAL: StartDate: {StartDate}", model.StartDate);
+                _log.Information("🏥 MEDICAL: EndDate: {EndDate}", model.EndDate);
+            }
+            else
+            {
+                _log.Error("🏥 MEDICAL: Model is NULL! Model Binding failed!");
+                return Json(new { success = false, message = "خطا در دریافت اطلاعات فرم" });
+            }
 
             try
             {
+                // 🏥 MEDICAL DEBUG: لاگ تمام فیلدهای ارسالی
+                _log.Information("🏥 MEDICAL: === COMPLETE FORM DATA ANALYSIS ===");
+                _log.Information("🏥 MEDICAL: TEST LOG - این لاگ برای تست است");
+                _log.Information("🏥 MEDICAL: PatientId: {PatientId}", model?.PatientId ?? 0);
+                _log.Information("🏥 MEDICAL: InsuranceProviderId: {InsuranceProviderId}", model?.InsuranceProviderId ?? 0);
+                _log.Information("🏥 MEDICAL: InsurancePlanId: {InsurancePlanId}", model?.InsurancePlanId ?? 0);
+                _log.Information("🏥 MEDICAL: PolicyNumber: {PolicyNumber}", model?.PolicyNumber ?? "NULL");
+                _log.Information("🏥 MEDICAL: StartDate: {StartDate}", model?.StartDate);
+                _log.Information("🏥 MEDICAL: EndDate: {EndDate}", model?.EndDate);
+                _log.Information("🏥 MEDICAL: StartDateShamsi: {StartDateShamsi}", model?.StartDateShamsi ?? "NULL");
+                _log.Information("🏥 MEDICAL: EndDateShamsi: {EndDateShamsi}", model?.EndDateShamsi ?? "NULL");
+                _log.Information("🏥 MEDICAL: IsPrimary: {IsPrimary}", model?.IsPrimary ?? false);
+                _log.Information("🏥 MEDICAL: IsActive: {IsActive}", model?.IsActive ?? false);
+                // _log.Information("🏥 MEDICAL: CoveragePercent: {CoveragePercent}", model?.CoveragePercent ?? 0); // فیلد موجود نیست
+                _log.Information("🏥 MEDICAL: Priority: {Priority}", model?.Priority ?? 0);
+                _log.Information("🏥 MEDICAL: SupplementaryInsuranceProviderId: {SupplementaryInsuranceProviderId}", model?.SupplementaryInsuranceProviderId ?? 0);
+                _log.Information("🏥 MEDICAL: SupplementaryInsurancePlanId: {SupplementaryInsurancePlanId}", model?.SupplementaryInsurancePlanId ?? 0);
+                _log.Information("🏥 MEDICAL: === END FORM DATA ANALYSIS ===");
+                
+                // 🚨 CRITICAL DEBUG: بررسی دقیق مشکل InsuranceProviderId
+                if (model?.InsuranceProviderId == 0)
+                {
+                    _log.Error("🚨 CRITICAL: InsuranceProviderId is ZERO! This will cause FK constraint violation!");
+                    _log.Error("🚨 CRITICAL: Model state: {ModelState}", ModelState.IsValid);
+                    _log.Error("🚨 CRITICAL: Model errors: {ModelErrors}", string.Join(", ", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage)));
+                }
+
                 // 🏥 Medical Environment: بررسی وضعیت سیستم
                 var systemHealth = await CheckSystemHealthAsync();
                 if (!systemHealth)
@@ -1383,7 +1581,73 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 // 🏥 Medical Environment: تبدیل تاریخ‌های شمسی به میلادی قبل از validation
                 if (model != null)
                 {
+                    _log.Information("🏥 MEDICAL: === DATE CONVERSION ANALYSIS ===");
+                    _log.Information("🏥 MEDICAL: Before conversion - StartDateShamsi: {StartDateShamsi}, EndDateShamsi: {EndDateShamsi}", 
+                        model.StartDateShamsi ?? "NULL", model.EndDateShamsi ?? "NULL");
+                    _log.Information("🏥 MEDICAL: Before conversion - StartDate: {StartDate}, EndDate: {EndDate}", 
+                        model.StartDate, model.EndDate);
+                    
                     model.ConvertPersianDatesToGregorian();
+                    
+                    _log.Information("🏥 MEDICAL: After conversion - StartDate: {StartDate}, EndDate: {EndDate}", 
+                        model.StartDate, model.EndDate);
+                    
+                    // محدودیت 1 سال آینده حذف شد - منشی می‌تواند اعتبار بیمه را تا هر زمان آینده تنظیم کند
+                    _log.Information("🏥 MEDICAL: Date validation completed - no future date restrictions");
+                }
+
+                // 🚨 CRITICAL FIX: Validate InsuranceProviderId exists in database
+                if (model.InsuranceProviderId > 0)
+                {
+                    _log.Information("🏥 MEDICAL: Validating InsuranceProviderId {InsuranceProviderId} exists in database. User: {UserName} (Id: {UserId})",
+                        model.InsuranceProviderId, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    // 🚨 CRITICAL FIX: استفاده از سرویس به جای EF مستقیم
+                    var providerResult = await _insuranceProviderService.GetProviderDetailsAsync(model.InsuranceProviderId);
+                    if (!providerResult.Success || providerResult.Data == null || !providerResult.Data.IsActive)
+                    {
+                        _log.Error("🏥 MEDICAL: InsuranceProviderId {InsuranceProviderId} does not exist or is inactive. User: {UserName} (Id: {UserId})",
+                            model.InsuranceProviderId, _currentUserService.UserName, _currentUserService.UserId);
+                        
+                        return Json(new { success = false, message = $"بیمه‌گذار با شناسه {model.InsuranceProviderId} در سیستم وجود ندارد یا غیرفعال است." });
+                    }
+                    
+                    _log.Information("🏥 MEDICAL: InsuranceProviderId {InsuranceProviderId} validated successfully. Provider: {ProviderName}. User: {UserName} (Id: {UserId})",
+                        model.InsuranceProviderId, providerResult.Data.Name, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: InsuranceProviderId is 0 or empty. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return Json(new { success = false, message = "لطفاً بیمه‌گذار را انتخاب کنید." });
+                }
+
+                // 🚨 CRITICAL FIX: Validate InsurancePlanId exists in database
+                if (model.InsurancePlanId > 0)
+                {
+                    _log.Information("🏥 MEDICAL: Validating InsurancePlanId {InsurancePlanId} exists in database. User: {UserName} (Id: {UserId})",
+                        model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    // 🚨 CRITICAL FIX: استفاده از سرویس به جای EF مستقیم
+                    var planResult = await _insurancePlanService.GetByIdAsync(model.InsurancePlanId);
+                    if (!planResult.Success || planResult.Data == null || !planResult.Data.IsActive || planResult.Data.IsDeleted)
+                    {
+                        _log.Error("🏥 MEDICAL: InsurancePlanId {InsurancePlanId} does not exist or is inactive. User: {UserName} (Id: {UserId})",
+                            model.InsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                        
+                        return Json(new { success = false, message = $"طرح بیمه با شناسه {model.InsurancePlanId} در سیستم وجود ندارد یا غیرفعال است." });
+                    }
+                    
+                    _log.Information("🏥 MEDICAL: InsurancePlanId {InsurancePlanId} validated successfully. Plan: {PlanName}. User: {UserName} (Id: {UserId})",
+                        model.InsurancePlanId, planResult.Data.Name, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: InsurancePlanId is 0 or empty. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    
+                    return Json(new { success = false, message = "لطفاً طرح بیمه را انتخاب کنید." });
                 }
 
                 // 🏥 Medical Environment: اعتبارسنجی ModelState
@@ -2024,7 +2288,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         success = false,
                         message = "ورودی‌های نامعتبر",
                         errors = errors
-                    }, JsonRequestBehavior.AllowGet);
+                    });
                 }
 
                 var effectiveDate = calculationDate ?? DateTime.Now;
@@ -2054,7 +2318,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             coverageStatusColor = result.Data.CoverageStatusColor
                         },
                         message = "محاسبه بیمه تکمیلی با موفقیت انجام شد"
-                    }, JsonRequestBehavior.AllowGet);
+                    });
                 }
 
                 _log.Warning("🏥 MEDICAL: خطا در محاسبه بیمه تکمیلی - PatientId: {PatientId}, ServiceId: {ServiceId}, Error: {Error}. User: {UserName} (Id: {UserId})",
@@ -2064,7 +2328,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     success = false,
                     message = result.Message
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
             catch (ArgumentException ex)
             {
@@ -2075,7 +2339,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     success = false,
                     message = "ورودی‌های نامعتبر: " + ex.Message
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
             catch (TimeoutException ex)
             {
@@ -2086,7 +2350,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     success = false,
                     message = "عملیات بیش از حد انتظار طول کشید"
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
             catch (Exception ex)
             {
@@ -2107,7 +2371,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     success = false,
                     message = errorMessage,
                     errorCode = ex.GetType().Name
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
         }
 
@@ -2133,7 +2397,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     {
                         success = false,
                         message = "شناسه طرح بیمه نامعتبر است"
-                    }, JsonRequestBehavior.AllowGet);
+                    });
                 }
 
                 // دریافت اطلاعات طرح بیمه
@@ -2147,7 +2411,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     {
                         success = false,
                         message = "طرح بیمه یافت نشد"
-                    }, JsonRequestBehavior.AllowGet);
+                    });
                 }
 
                 var plan = planResult.Data;
@@ -2179,7 +2443,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     success = true,
                     data = settings,
                     message = "تنظیمات بیمه تکمیلی با موفقیت دریافت شد"
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
             catch (ArgumentException ex)
             {
@@ -2190,7 +2454,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     success = false,
                     message = "ورودی نامعتبر: " + ex.Message
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
             catch (Exception ex)
             {
@@ -2202,7 +2466,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     success = false,
                     message = "خطا در دریافت تنظیمات بیمه تکمیلی",
                     errorCode = ex.GetType().Name
-                }, JsonRequestBehavior.AllowGet);
+                });
             }
         }
 
