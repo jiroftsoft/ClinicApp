@@ -10,6 +10,9 @@
     <link href="~/Content/plugins/select2/css/select2.min.css" rel="stylesheet" />
     <link href="~/Content/plugins/select2/css/select2-bootstrap4.min.css" rel="stylesheet" />
     
+    <!-- 🎉 Toast Notifications Styles -->
+    <link href="~/Content/plugins/toastr/toastr.min.css" rel="stylesheet" />
+    
     <!-- 🏥 Medical Environment - Advanced Admin Styles -->
     <style>
         /* 🏥 Advanced Admin Layout */
@@ -905,6 +908,9 @@
 </div>
 
 @section Scripts {
+    <!-- 🎉 Toast Notifications JavaScript -->
+    <script src="~/Content/plugins/toastr/toastr.min.js"></script>
+    
     <link href="~/Content/plugins/persian-datepicker/persian-datepicker.min.css" rel="stylesheet" />
     <style>
         /* Enhanced Fallback Date Input Styling */
@@ -1087,7 +1093,7 @@
                 
                 if (value && !isValidPersianDate(value)) {
                     $this.addClass('is-invalid');
-                    showErrorMessage('تاریخ وارد شده معتبر نیست. فرمت صحیح: 1403/01/01');
+                    showToastError('تاریخ وارد شده معتبر نیست. فرمت صحیح: 1403/01/01', 'خطای تاریخ');
                 } else {
                     $this.removeClass('is-invalid');
                     // Update hidden field if valid
@@ -1528,7 +1534,7 @@
                         });
                         
                         // Show user-friendly error message
-                        showErrorMessage('خطا در جستجوی بیماران. لطفاً دوباره تلاش کنید.');
+                        showToastError('خطا در جستجوی بیماران. لطفاً دوباره تلاش کنید.', 'خطای جستجو');
                     },
                     processResults: function(data, params) {
                         params.page = params.page || 1;
@@ -2563,7 +2569,7 @@
                     
                     // Show detailed validation errors
                     var errorMessage = 'خطاهای اعتبارسنجی:\n' + validationErrors.join('\n');
-                    showErrorMessage(errorMessage);
+                    showToastError(errorMessage, 'خطای اعتبارسنجی');
                     
                     // Scroll to first invalid field
                     var firstInvalidField = $form.find('.is-invalid').first();
@@ -2658,7 +2664,8 @@
                         var errors = getResponseErrors(response);
                         
                         if (isSuccess) {
-                            showSuccessMessage('بیمه بیمار با موفقیت ایجاد شد');
+                            // 🎉 Show Toast Success Message
+                            showToastSuccess('بیمه بیمار با موفقیت ایجاد شد', 'موفقیت');
                             
                             // Redirect to details page after a short delay
                             setTimeout(function() {
@@ -2673,7 +2680,9 @@
                             } else {
                                 errorMessage += ': خطای نامشخص';
                             }
-                            showErrorMessage(errorMessage);
+                            
+                            // 🎉 Show Toast Error Message
+                            showToastError(errorMessage, 'خطا');
                         }
                     },
                     error: function(xhr, status, error) {
@@ -2714,7 +2723,8 @@
                             console.error('🏥 Medical Environment: Could not parse error response as JSON');
                         }
                         
-                        showErrorMessage('خطا در ایجاد بیمه بیمار');
+                        // 🎉 Show Toast Error Message
+                        showToastError('خطا در ایجاد بیمه بیمار', 'خطای سیستم');
                     },
                     complete: function() {
                         // Hide loading state
@@ -3227,6 +3237,54 @@
          */
         function showErrorMessage(message) {
             showMedicalErrorMessage(message);
+        }
+        
+        // 🎉 Toast Notifications Configuration
+        toastr.options = {
+            "closeButton": true,
+            "debug": false,
+            "newestOnTop": true,
+            "progressBar": true,
+            "positionClass": "toast-top-right",
+            "preventDuplicates": false,
+            "onclick": null,
+            "showDuration": "300",
+            "hideDuration": "1000",
+            "timeOut": "5000",
+            "extendedTimeOut": "1000",
+            "showEasing": "swing",
+            "hideEasing": "linear",
+            "showMethod": "fadeIn",
+            "hideMethod": "fadeOut",
+            "rtl": true
+        };
+        
+        /**
+         * 🎉 Show Toast Success Message
+         */
+        function showToastSuccess(message, title = "موفقیت") {
+            toastr.success(message, title);
+        }
+        
+        /**
+         * 🎉 Show Toast Error Message
+         */
+        function showToastError(message, title = "خطا") {
+            toastr.error(message, title);
+        }
+        
+        /**
+         * 🎉 Show Toast Warning Message
+         */
+        function showToastWarning(message, title = "هشدار") {
+            toastr.warning(message, title);
+        }
+        
+        /**
+         * 🎉 Show Toast Info Message
+         */
+        function showToastInfo(message, title = "اطلاعات") {
+            toastr.info(message, title);
         }
     </script>
 }
