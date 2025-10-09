@@ -373,7 +373,7 @@
             initializeEditForm();
             
             // 🏥 Medical Environment: Insurance Provider Change Handlers
-            initializeInsuranceProviderChangeHandlers();
+            // initializeInsuranceProviderChangeHandlers(); // حذف شده - Event Handlers در patient-insurance-enhanced.js تعریف شده‌اند
                         
             // 🏥 Medical Environment: Change Tracking
             initializeChangeTracking();
@@ -465,10 +465,18 @@
                 loadPrimaryInsuranceProviders().then(function() {
                     console.log('🏥 MEDICAL: Primary providers loaded successfully');
                     
-                    // Set primary insurance provider
+                    // Set primary insurance provider AFTER dropdown is populated
                     if (modelData.InsuranceProviderId && modelData.InsuranceProviderId !== 0) {
                         console.log('🏥 MEDICAL: Setting primary provider:', modelData.InsuranceProviderId);
-                        $('#InsuranceProviderId').val(modelData.InsuranceProviderId).trigger('change');
+                        
+                        // 🏥 Medical Environment: Set value after dropdown is populated
+                        setTimeout(function() {
+                            $('#InsuranceProviderId').val(modelData.InsuranceProviderId);
+                            console.log('🏥 MEDICAL: Primary provider value set:', $('#InsuranceProviderId').val());
+                            
+                            // Trigger change after value is set
+                            $('#InsuranceProviderId').trigger('change');
+                        }, 50);
                         
                         // Load primary insurance plans after provider is set
                         setTimeout(function() {
@@ -499,10 +507,18 @@
                 loadSupplementaryInsuranceProviders().then(function() {
                     console.log('🏥 MEDICAL: Supplementary providers loaded successfully');
                     
-                    // Set supplementary insurance provider if exists
+                    // Set supplementary insurance provider if exists AFTER dropdown is populated
                     if (modelData.SupplementaryInsuranceProviderId && modelData.SupplementaryInsuranceProviderId !== 0) {
                         console.log('🏥 MEDICAL: Setting supplementary provider:', modelData.SupplementaryInsuranceProviderId);
-                        $('#SupplementaryInsuranceProviderId').val(modelData.SupplementaryInsuranceProviderId).trigger('change');
+                        
+                        // 🏥 Medical Environment: Set value after dropdown is populated
+                        setTimeout(function() {
+                            $('#SupplementaryInsuranceProviderId').val(modelData.SupplementaryInsuranceProviderId);
+                            console.log('🏥 MEDICAL: Supplementary provider value set:', $('#SupplementaryInsuranceProviderId').val());
+                            
+                            // Trigger change after value is set
+                            $('#SupplementaryInsuranceProviderId').trigger('change');
+                        }, 50);
                         
                         // Load supplementary insurance plans after provider is set
                         setTimeout(function() {
