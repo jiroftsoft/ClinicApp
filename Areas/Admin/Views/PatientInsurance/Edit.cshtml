@@ -958,19 +958,39 @@
                     data: formDataObj,
                     processData: false,
                     contentType: false,
+                    dataType: 'json',
                             success: function(response) {
                         console.log('🏥 Medical Environment: Form submission response:', response);
+                        console.log('🏥 Medical Environment: Response type:', typeof response);
                         
-                                if (response.success) {
+                        // 🏥 Medical Environment: Parse response if it's a string
+                        var parsedResponse = response;
+                        if (typeof response === 'string') {
+                            try {
+                                parsedResponse = JSON.parse(response);
+                                console.log('🏥 Medical Environment: Parsed response:', parsedResponse);
+                            } catch (e) {
+                                console.error('🏥 Medical Environment: JSON parse error:', e);
+                                showErrorMessage('خطا در پردازش پاسخ سرور');
+                                return;
+                            }
+                        }
+                        
+                        console.log('🏥 Medical Environment: Parsed response success:', parsedResponse?.success);
+                        console.log('🏥 Medical Environment: Parsed response message:', parsedResponse?.message);
+                        
+                        if (parsedResponse && parsedResponse.success === true) {
+                            console.log('🏥 Medical Environment: Success response received');
                             showSuccessMessage('تغییرات بیمه بیمار با موفقیت ذخیره شد');
                             
                             // Redirect to details page after a short delay
-                                    setTimeout(function() {
+                            setTimeout(function() {
                                 window.location.href = '@Url.Action("Details", "PatientInsurance", new { id = Model.PatientInsuranceId })';
-                                    }, 2000);
-                                } else {
-                            showErrorMessage(response.message || 'خطا در ذخیره تغییرات');
-                                }
+                            }, 1500);
+                        } else {
+                            console.log('🏥 Medical Environment: Error response received:', parsedResponse);
+                            showErrorMessage(parsedResponse?.message || 'خطا در ذخیره تغییرات');
+                        }
                             },
                             error: function(xhr, status, error) {
                         console.error('خطا در ذخیره تغییرات:', error);
