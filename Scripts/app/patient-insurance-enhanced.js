@@ -10,10 +10,10 @@ var PatientInsuranceEnhanced = (function() {
     var config = {
         selectors: {
             patientId: '#PatientIdSelect',
-            primaryInsuranceProviderId: '#PrimaryInsuranceProviderId',
-            primaryInsurancePlanId: '#PrimaryInsurancePlanId',
-            supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderIdSelect',
-            supplementaryInsurancePlanId: '#SupplementaryInsurancePlanIdSelect',
+            primaryInsuranceProviderId: '#InsuranceProviderId',
+            primaryInsurancePlanId: '#InsurancePlanId',
+            supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderId',
+            supplementaryInsurancePlanId: '#SupplementaryInsurancePlanId',
             policyNumber: '#PolicyNumber',
             supplementaryPolicyNumber: '#SupplementaryPolicyNumber',
             startDate: '#StartDateShamsi',

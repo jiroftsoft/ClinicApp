@@ -371,13 +371,71 @@
             
             // 🏥 Medical Environment: Edit Form Specific Initialization
             initializeEditForm();
+            
+            // 🏥 Medical Environment: Insurance Provider Change Handlers
+            initializeInsuranceProviderChangeHandlers();
                         
-                        // 🏥 Medical Environment: Change Tracking
-                        initializeChangeTracking();
+            // 🏥 Medical Environment: Change Tracking
+            initializeChangeTracking();
                         
             // 🏥 Medical Environment: Form Submission
             initializeFormSubmission();
         });
+
+        // 🏥 Medical Environment: Initialize Insurance Provider Change Handlers
+        function initializeInsuranceProviderChangeHandlers() {
+            console.log('🏥 Medical Environment: Initializing Insurance Provider Change Handlers');
+            
+            // 🏥 Medical Environment: Primary Insurance Provider Change Handler
+            $('#InsuranceProviderId').on('change', function() {
+                var providerId = $(this).val();
+                var $planSelect = $('#InsurancePlanId');
+                
+                console.log('🏥 Medical Environment: Primary insurance provider changed:', providerId);
+                
+                if (providerId) {
+                    // Clear current plan selection
+                    $planSelect.empty().append('<option value="">در حال بارگذاری طرح‌های بیمه...</option>').prop('disabled', true);
+                    
+                    // Load insurance plans for the selected provider
+                    loadInsurancePlans(providerId, $planSelect, 'primary').then(function() {
+                        console.log('🏥 Medical Environment: Primary insurance plans loaded successfully');
+                        $planSelect.prop('disabled', false);
+                    }).catch(function(error) {
+                        console.error('🏥 Medical Environment: Error loading primary insurance plans:', error);
+                        $planSelect.empty().append('<option value="">خطا در بارگذاری طرح‌های بیمه</option>').prop('disabled', true);
+                    });
+                } else {
+                    // Clear plan selection if no provider selected
+                    $planSelect.empty().append('<option value="">ابتدا بیمه‌گذار را انتخاب کنید</option>').prop('disabled', true);
+                }
+            });
+            
+            // 🏥 Medical Environment: Supplementary Insurance Provider Change Handler
+            $('#SupplementaryInsuranceProviderId').on('change', function() {
+                var providerId = $(this).val();
+                var $planSelect = $('#SupplementaryInsurancePlanId');
+                
+                console.log('🏥 Medical Environment: Supplementary insurance provider changed:', providerId);
+                
+                if (providerId) {
+                    // Clear current plan selection
+                    $planSelect.empty().append('<option value="">در حال بارگذاری طرح‌های بیمه...</option>').prop('disabled', true);
+                    
+                    // Load insurance plans for the selected provider
+                    loadInsurancePlans(providerId, $planSelect, 'supplementary').then(function() {
+                        console.log('🏥 Medical Environment: Supplementary insurance plans loaded successfully');
+                        $planSelect.prop('disabled', false);
+                    }).catch(function(error) {
+                        console.error('🏥 Medical Environment: Error loading supplementary insurance plans:', error);
+                        $planSelect.empty().append('<option value="">خطا در بارگذاری طرح‌های بیمه</option>').prop('disabled', true);
+                    });
+                } else {
+                    // Clear plan selection if no provider selected
+                    $planSelect.empty().append('<option value="">ابتدا بیمه‌گذار تکمیلی را انتخاب کنید</option>').prop('disabled', true);
+                }
+            });
+        }
 
         // 🏥 Medical Environment: Initialize Edit Form
         function initializeEditForm() {
