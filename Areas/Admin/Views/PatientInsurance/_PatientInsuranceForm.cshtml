@@ -1,25 +1,63 @@
 @model ClinicApp.ViewModels.Insurance.PatientInsurance.PatientInsuranceCreateEditViewModel
 
-<!-- 🏥 Medical Environment: Patient Selection Section -->
+<!-- 🏥 Medical Environment: Patient Selection Section (Edit Mode - Read Only) -->
 <div class="medical-form-section">
     <h4 class="medical-section-title">
-        <i class="fas fa-user-plus"></i>
-        انتخاب بیمار
-        <span class="required-indicator">*</span>
+        <i class="fas fa-user-edit"></i>
+        اطلاعات بیمار (ویرایش)
+        <span class="edit-mode-indicator">ویرایش</span>
     </h4>
     
     <div class="patient-selection-container">
-        <div class="form-group">
-            <label class="form-label">انتخاب بیمار:</label>
-            @Html.DropDownListFor(m => m.PatientId, new List<SelectListItem>(), "جستجو و انتخاب بیمار...", new { 
-                @class = "form-control patient-select2-advanced", 
-                required = "required",
-                id = "PatientId",
-                data_placeholder = "جستجو در بیماران: نام، نام خانوادگی، کد ملی یا شماره تلفن...",
-                data_allow_clear = "true",
-                data_medical_field = "patient-selection"
+        <!-- 🏥 Medical Environment: Patient Info Display (Read Only) -->
+        <div class="selected-patient-info" id="selectedPatientInfo" style="display: block;">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-user-check"></i> بیمار در حال ویرایش
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="patient-avatar-large">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        </div>
+                        <div class="col-md-9">
+                            <div class="patient-details-complete">
+                                <h5 class="patient-name" id="selectedPatientName">@Model.PatientName</h5>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <strong>نام و نام خانوادگی:</strong> <span id="selectedPatientFullName">@Model.PatientName</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>کد ملی:</strong> <span id="selectedPatientNationalCode">@Model.PatientNationalCode</span>
+                                    </div>
+                                </div>
+                                <div class="row mt-2">
+                                    <div class="col-md-6">
+                                        <strong>شماره تلفن:</strong> <span id="selectedPatientPhone">@Model.PatientPhone</span>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <strong>تاریخ تولد:</strong> <span id="selectedPatientBirthDate">@Model.PatientBirthDate</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 🏥 Medical Environment: Hidden Patient ID (Read Only) -->
+        <div class="form-group" style="display: none;">
+            <label class="form-label">شناسه بیمار:</label>
+            @Html.TextBoxFor(m => m.PatientId, new { 
+                @class = "form-control", 
+                @readonly = "readonly",
+                id = "PatientId"
             })
-            @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "text-danger" })
         </div>
         
         <!-- نمایش اطلاعات بیمار انتخاب شده -->
@@ -100,23 +138,28 @@
         
         <!-- بیمه پایه -->
         <div class="insurance-content active" id="primaryInsuranceContent">
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i>
+                <strong>بیمه پایه:</strong> این بیمه اصلی بیمار است و قابل تغییر می‌باشد.
+            </div>
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">انتخاب بیمه‌گذار پایه:</label>
-                        <select id="PrimaryInsuranceProviderId" 
+                        <select id="InsuranceProviderId" 
                                 name="InsuranceProviderId" 
                                 class="form-control medical-form-control" 
                                 required="required"
                                 data_medical_field = "insurance-provider">
                             <option value="">انتخاب بیمه‌گذار پایه</option>
                         </select>
+                        <small class="form-text text-muted">بیمه‌گذار فعلی: <strong id="currentPrimaryProvider">@Model.InsuranceProviderName</strong></small>
                     </div>
                 </div>
                 <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">انتخاب طرح بیمه پایه:</label>
-                        <select id="PrimaryInsurancePlanId" 
+                        <select id="InsurancePlanId" 
                                 name="InsurancePlanId" 
                                 class="form-control medical-form-control" 
                                 required="required"
@@ -124,6 +167,7 @@
                                 disabled>
                             <option value="">ابتدا بیمه‌گذار را انتخاب کنید</option>
                         </select>
+                        <small class="form-text text-muted">طرح فعلی: <strong id="currentPrimaryPlan">@Model.InsurancePlanName</strong></small>
                     </div>
                 </div>
             </div>
@@ -156,10 +200,20 @@
         
         <!-- بیمه تکمیلی (اختیاری) -->
         <div class="insurance-content" id="supplementaryInsuranceContent">
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i>
-                <strong>نکته:</strong> بیمه تکمیلی اختیاری است. در صورت نیاز می‌توانید بیمه تکمیلی اضافه کنید.
-            </div>
+            @if (Model.SupplementaryInsuranceProviderId.HasValue)
+            {
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i>
+                    <strong>بیمه تکمیلی موجود:</strong> این بیمار دارای بیمه تکمیلی است و قابل تغییر می‌باشد.
+                </div>
+            }
+            else
+            {
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>بیمه تکمیلی:</strong> این بیمار بیمه تکمیلی ندارد. در صورت نیاز می‌توانید بیمه تکمیلی اضافه کنید.
+                </div>
+            }
             <div class="row">
                 <div class="col-md-6">
                     <div class="form-group">
@@ -171,6 +225,10 @@
                                 data-optional="true">
                             <option value="">انتخاب بیمه‌گذار تکمیلی (اختیاری)</option>
                         </select>
+                        @if (Model.SupplementaryInsuranceProviderId.HasValue)
+                        {
+                            <small class="form-text text-muted">بیمه‌گذار فعلی: <strong id="currentSupplementaryProvider">@Model.SupplementaryInsuranceProviderName</strong></small>
+                        }
                     </div>
                 </div>
                 <div class="col-md-6">
@@ -184,6 +242,10 @@
                                 disabled>
                             <option value="">ابتدا بیمه‌گذار تکمیلی را انتخاب کنید</option>
                         </select>
+                        @if (Model.SupplementaryInsurancePlanId.HasValue)
+                        {
+                            <small class="form-text text-muted">طرح فعلی: <strong id="currentSupplementaryPlan">@Model.SupplementaryInsurancePlanName</strong></small>
+                        }
                     </div>
                 </div>
             </div>

@@ -12,8 +12,8 @@ var PatientInsuranceEnhanced = (function() {
             patientId: '#PatientIdSelect',
             primaryInsuranceProviderId: '#PrimaryInsuranceProviderId',
             primaryInsurancePlanId: '#PrimaryInsurancePlanId',
-            supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderId',
-            supplementaryInsurancePlanId: '#SupplementaryInsurancePlanId',
+            supplementaryInsuranceProviderId: '#SupplementaryInsuranceProviderIdSelect',
+            supplementaryInsurancePlanId: '#SupplementaryInsurancePlanIdSelect',
             policyNumber: '#PolicyNumber',
             supplementaryPolicyNumber: '#SupplementaryPolicyNumber',
             startDate: '#StartDateShamsi',
@@ -218,9 +218,11 @@ var PatientInsuranceEnhanced = (function() {
             $('.insurance-content').removeClass('active');
             $('#' + type + 'InsuranceContent').addClass('active');
             
-            // تنظیم نوع بیمه و بارگذاری بیمه‌گذاران
-            if (type === 'primary') {
-                $(config.selectors.isPrimary).prop('checked', true);
+        // تنظیم نوع بیمه و بارگذاری بیمه‌گذاران
+        if (type === 'primary') {
+            $(config.selectors.isPrimary).prop('checked', true);
+            // فقط اگر قبلاً بارگذاری نشده، بارگذاری کن
+            if ($(config.selectors.primaryInsuranceProviderId).find('option').length <= 1) {
                 loadPrimaryInsuranceProviders().then(function() {
                     // بازگردانی انتخاب‌های قبلی
                     if (currentPrimaryProvider) {
@@ -229,7 +231,16 @@ var PatientInsuranceEnhanced = (function() {
                     }
                 });
             } else {
-                $(config.selectors.isPrimary).prop('checked', false);
+                // بازگردانی انتخاب‌های قبلی بدون بارگذاری مجدد
+                if (currentPrimaryProvider) {
+                    console.log('🏥 Medical Environment: Restoring primary provider selection:', currentPrimaryProvider);
+                    $(config.selectors.primaryInsuranceProviderId).val(currentPrimaryProvider).trigger('change');
+                }
+            }
+        } else {
+            $(config.selectors.isPrimary).prop('checked', false);
+            // فقط اگر قبلاً بارگذاری نشده، بارگذاری کن
+            if ($(config.selectors.supplementaryInsuranceProviderId).find('option').length <= 1) {
                 loadSupplementaryInsuranceProviders().then(function() {
                     // بازگردانی انتخاب‌های قبلی
                     if (currentSupplementaryProvider) {
@@ -237,7 +248,14 @@ var PatientInsuranceEnhanced = (function() {
                         $(config.selectors.supplementaryInsuranceProviderId).val(currentSupplementaryProvider).trigger('change');
                     }
                 });
+            } else {
+                // بازگردانی انتخاب‌های قبلی بدون بارگذاری مجدد
+                if (currentSupplementaryProvider) {
+                    console.log('🏥 Medical Environment: Restoring supplementary provider selection:', currentSupplementaryProvider);
+                    $(config.selectors.supplementaryInsuranceProviderId).val(currentSupplementaryProvider).trigger('change');
+                }
             }
+        }
         });
 
         // 🏥 Medical Environment: Primary Insurance Provider Selection

@@ -70,6 +70,45 @@
         </div>
 
         <!-- اطلاعات اضافی برای استانداردهای محیط درمانی -->
+        <!-- 🏥 Medical Environment: نمایش بیمه تکمیلی -->
+        @if (Model.HasSupplementaryInsurance)
+        {
+            <div class="supplementary-insurance mt-3">
+                <div class="alert alert-info">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="alert-heading mb-0">
+                            <i class="fas fa-shield-alt"></i> بیمه تکمیلی
+                        </h6>
+                        <a href="@Url.Action("SupplementaryInsurances", "PatientInsurance", new { patientId = Model.PatientId })"
+                           class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-cog"></i> مدیریت
+                        </a>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">ارائه‌دهنده تکمیلی:</label>
+                                <div class="supplementary-provider">@(Model.SupplementaryInsuranceProviderName ?? "نامشخص")</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="info-item">
+                                <label class="info-label">طرح تکمیلی:</label>
+                                <div class="supplementary-plan">@(Model.SupplementaryInsurancePlanName ?? "نامشخص")</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.SupplementaryPolicyNumber))
+                    {
+                        <div class="info-item mt-2">
+                            <label class="info-label">شماره بیمه تکمیلی:</label>
+                            <div class="supplementary-policy">@Model.SupplementaryPolicyNumber</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
         <div class="medical-info mt-2">
             <div class="row">
                 <div class="col-md-6">
@@ -107,8 +146,17 @@
                 </button>
             }
             <a href="@Url.Action("SupplementaryInsurances", "PatientInsurance", new { patientId = Model.PatientId })"
-               class="btn btn-outline-info btn-sm">
-                <i class="fas fa-shield-alt"></i> بیمه‌های تکمیلی
+               class="btn btn-outline-info btn-sm" 
+               title="مدیریت بیمه‌های تکمیلی این بیمار">
+                <i class="fas fa-shield-alt"></i> 
+                @if (Model.HasSupplementaryInsurance)
+                {
+                    <span>بیمه‌های تکمیلی</span>
+                }
+                else
+                {
+                    <span>اضافه کردن بیمه تکمیلی</span>
+                }
             </a>
             <a href="@Url.Action("Delete", "PatientInsurance", new { id = Model.PatientInsuranceId })"
                class="btn btn-outline-danger btn-sm"

@@ -22,6 +22,8 @@ using ClinicApp.Models;
 // using System.Data.Entity; // 🚨 CRITICAL FIX: حذف شد - دیگر از EF مستقیم استفاده نمی‌کنیم
 using System.Net.Http;
 using System.Threading;
+using ViewModels.Insurance.PatientInsurance;
+
 // using Microsoft.Extensions.Caching.Memory; // در ASP.NET Framework در دسترس نیست
 
 namespace ClinicApp.Areas.Admin.Controllers.Insurance
@@ -552,19 +554,28 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 var providers = await _insuranceProviderService.GetPrimaryInsuranceProvidersAsync();
                 if (providers.Success)
                 {
-                    var providerList = providers.Data.Select(p => new { id = p.InsuranceProviderId, name = p.Name }).ToList();
+                    var providerList = providers.Data.Select(p => new { 
+                        id = p.InsuranceProviderId, 
+                        name = p.Name,
+                        code = p.Code 
+                    }).ToList();
                     
                     _log.Information("🏥 MEDICAL: بیمه‌گذاران پایه دریافت شد. Count: {Count}. User: {UserName} (Id: {UserId})",
                         providerList.Count, _currentUserService.UserName, _currentUserService.UserId);
 
-                    return Json(ServiceResult<List<object>>.Successful(
-                        providerList.Cast<object>().ToList(),
-                        "بیمه‌گذاران پایه دریافت شد"),
-                        JsonRequestBehavior.AllowGet);
+                    return Json(new
+                    {
+                        success = true,
+                        data = providerList,
+                        message = "بیمه‌گذاران پایه دریافت شد"
+                    }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(ServiceResult<List<object>>.Failed("خطا در دریافت بیمه‌گذاران پایه"),
-                    JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = providers.Message
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
@@ -576,43 +587,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
         }
 
-        /// <summary>
-        /// دریافت بیمه‌گذاران تکمیلی
-        /// </summary>
-        [HttpGet]
-        public async Task<ActionResult> GetSupplementaryInsuranceProviders()
-        {
-            try
-            {
-                _log.Information("🏥 MEDICAL: دریافت بیمه‌گذاران تکمیلی. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
-
-                var providers = await _insuranceProviderService.GetSupplementaryInsuranceProvidersAsync();
-                if (providers.Success)
-                {
-                    var providerList = providers.Data.Select(p => new { id = p.InsuranceProviderId, name = p.Name }).ToList();
-                    
-                    _log.Information("🏥 MEDICAL: بیمه‌گذاران تکمیلی دریافت شد. Count: {Count}. User: {UserName} (Id: {UserId})",
-                        providerList.Count, _currentUserService.UserName, _currentUserService.UserId);
-
-                    return Json(ServiceResult<List<object>>.Successful(
-                        providerList.Cast<object>().ToList(),
-                        "بیمه‌گذاران تکمیلی دریافت شد"),
-                        JsonRequestBehavior.AllowGet);
-                }
-
-                return Json(ServiceResult<List<object>>.Failed("خطا در دریافت بیمه‌گذاران تکمیلی"),
-                    JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت بیمه‌گذاران تکمیلی. User: {UserName} (Id: {UserId})",
-                    _currentUserService.UserName, _currentUserService.UserId);
-
-                return Json(ServiceResult<List<object>>.Failed("خطای غیرمنتظره در دریافت بیمه‌گذاران تکمیلی"),
-                    JsonRequestBehavior.AllowGet);
-            }
-        }
 
         /// <summary>
         /// دریافت طرح‌های بیمه بر اساس بیمه‌گذار
@@ -650,19 +624,23 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 _log.Information("🏥 MEDICAL: طرح‌های بیمه دریافت شد. ProviderId: {ProviderId}, Type: {Type}, Count: {Count}. User: {UserName} (Id: {UserId})",
                     providerId, type, plans.Count, _currentUserService.UserName, _currentUserService.UserId);
 
-                return Json(ServiceResult<List<object>>.Successful(
-                    plans,
-                    "طرح‌های بیمه دریافت شد"),
-                    JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = true,
+                    data = plans,
+                    message = "طرح‌های بیمه دریافت شد"
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت طرح‌های بیمه. ProviderId: {ProviderId}, Type: {Type}. User: {UserName} (Id: {UserId})",
                     providerId, type, _currentUserService.UserName, _currentUserService.UserId);
 
-                return Json(ServiceResult<List<object>>.Failed(
-                    "خطای غیرمنتظره در دریافت طرح‌های بیمه"),
-                    JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = "خطای غیرمنتظره در دریافت طرح‌های بیمه"
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -970,7 +948,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                         CoveragePercent = item.CoveragePercent,
                         CreatedAt = item.CreatedAt,
                         CreatedAtShamsi = item.CreatedAtShamsi,
-                        CreatedByUserName = item.CreatedByUserName
+                        CreatedByUserName = item.CreatedByUserName,
+                        // 🏥 Medical Environment: فیلدهای بیمه تکمیلی
+                        SupplementaryInsuranceProviderId = item.SupplementaryInsuranceProviderId,
+                        SupplementaryInsuranceProviderName = item.SupplementaryInsuranceProviderName,
+                        SupplementaryInsurancePlanId = item.SupplementaryInsurancePlanId,
+                        SupplementaryInsurancePlanName = item.SupplementaryInsurancePlanName,
+                        SupplementaryPolicyNumber = item.SupplementaryPolicyNumber,
+                        HasSupplementaryInsurance = item.HasSupplementaryInsurance
                     }).ToList();
                     model.TotalCount = result.Data.TotalItems;
                 }
@@ -1362,20 +1347,20 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 {
                     _log.Information("🏥 MEDICAL: شماره بیمه پایه دریافت شد. PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
                         patientId, result.Data, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
                     _log.Warning("🏥 MEDICAL: شماره بیمه پایه یافت نشد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                         patientId, _currentUserService.UserName, _currentUserService.UserId);
-                    return Json(new { success = false, message = "بیمه پایه برای این بیمار تعریف نشده است" });
+                    return Json(new { success = false, message = "بیمه پایه برای این بیمار تعریف نشده است" }, JsonRequestBehavior.AllowGet);
                 }
             }
             catch (Exception ex)
             {
                 _log.Error(ex, "🏥 MEDICAL: خطا در دریافت شماره بیمه پایه. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
-                return Json(new { success = false, message = "خطا در دریافت شماره بیمه پایه" });
+                return Json(new { success = false, message = "خطا در دریافت شماره بیمه پایه" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -1674,7 +1659,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     return Json(new { success = false, message = "اطلاعات وارد شده معتبر نیست.", errors = validationResult.Data });
                 }
 
-                // 🏥 Medical Environment: ایجاد بیمه بیمار
+                // 🏥 Medical Environment: ایجاد بیمه بیمار جدید
                 var result = await _patientInsuranceService.CreatePatientInsuranceAsync(model);
                 if (!result.Success)
                 {
@@ -1697,6 +1682,73 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     model?.PatientId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(new { success = false, message = "خطا در ایجاد بیمه بیمار. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        #endregion
+
+        #region Supplementary Insurance Management
+
+        /// <summary>
+        /// افزودن بیمه تکمیلی به رکورد بیمه پایه موجود (AJAX)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> AddSupplementaryInsurance(AddSupplementaryInsuranceViewModel model)
+        {
+            _log.Information("🏥 MEDICAL: درخواست افزودن بیمه تکمیلی. PatientId: {PatientId}, SupplementaryProviderId: {SupplementaryProviderId}, SupplementaryPlanId: {SupplementaryPlanId}. User: {UserName} (Id: {UserId})",
+                model.PatientId, model.SupplementaryInsuranceProviderId, model.SupplementaryInsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // اعتبارسنجی ModelState
+                if (!ModelState.IsValid)
+                {
+                    var validationErrors = ModelState.Where(x => x.Value.Errors.Count > 0)
+                        .ToDictionary(x => x.Key, x => x.Value.Errors.Select(e => e.ErrorMessage).ToList());
+
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی در افزودن بیمه تکمیلی. Errors: {ValidationErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationErrors.SelectMany(x => x.Value)), _currentUserService.UserName, _currentUserService.UserId);
+
+                    var errorDetails = string.Join("; ", validationErrors.SelectMany(x => x.Value));
+                    return Json(new { success = false, message = $"خطاهای اعتبارسنجی: {errorDetails}", errors = validationErrors });
+                }
+
+                // تبدیل به مدل اصلی برای سرویس
+                var serviceModel = new PatientInsuranceCreateEditViewModel
+                {
+                    PatientId = model.PatientId,
+                    SupplementaryInsuranceProviderId = model.SupplementaryInsuranceProviderId,
+                    SupplementaryInsurancePlanId = model.SupplementaryInsurancePlanId,
+                    SupplementaryPolicyNumber = model.SupplementaryPolicyNumber,
+                    IsPrimary = false, // همیشه false برای بیمه تکمیلی
+                    IsActive = model.IsActive,
+                    Priority = (InsurancePriority)model.Priority // تبدیل صریح int به InsurancePriority
+                };
+
+                // فراخوانی سرویس
+                var result = await _patientInsuranceService.AddSupplementaryInsuranceToExistingAsync(serviceModel);
+                
+                if (!result.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: خطا در افزودن بیمه تکمیلی. PatientId: {PatientId}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        model.PatientId, result.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                // 🏥 Medical Environment: Audit Trail
+                _log.Information("🏥 MEDICAL: بیمه تکمیلی با موفقیت اضافه شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    result.Data, model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = true, message = "بیمه تکمیلی با موفقیت اضافه شد", data = result.Data });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در افزودن بیمه تکمیلی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = false, message = "خطا در افزودن بیمه تکمیلی. لطفاً دوباره تلاش کنید." });
             }
         }
 
@@ -1864,6 +1916,83 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 await LoadDropdownsForModelAsync(model);
                 model.ConvertGregorianDatesToPersian();
                 return View(model);
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی بیمه بیمار (AJAX)
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> EditAjax(PatientInsuranceCreateEditViewModel model)
+        {
+            _log.Information("🏥 MEDICAL: درخواست به‌روزرسانی بیمه بیمار (AJAX). PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                model?.PatientInsuranceId, model?.PatientId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+            try
+            {
+                // 🏥 Medical Environment: بررسی وضعیت سیستم
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای به‌روزرسانی بیمه بیمار. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new { success = false, message = "سیستم در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید." });
+                }
+
+                // 🏥 Medical Environment: تبدیل تاریخ‌های شمسی به میلادی قبل از validation
+                if (model != null)
+                {
+                    model.ConvertPersianDatesToGregorian();
+                }
+
+                // 🏥 Medical Environment: اعتبارسنجی ModelState
+                if (!ModelState.IsValid)
+                {
+                    var validationErrors = ModelState.Where(x => x.Value.Errors.Count > 0)
+                        .ToDictionary(x => x.Key, x => x.Value.Errors.Select(e => e.ErrorMessage).ToList());
+
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی در ویرایش بیمه بیمار. Errors: {ValidationErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationErrors.SelectMany(x => x.Value)), _currentUserService.UserName, _currentUserService.UserId);
+
+                    var errorDetails = string.Join("; ", validationErrors.SelectMany(x => x.Value));
+                    return Json(new { success = false, message = $"خطاهای اعتبارسنجی: {errorDetails}", errors = validationErrors });
+                }
+
+                // 🏥 Medical Environment: اعتبارسنجی اضافی server-side
+                var validationResult = await _patientInsuranceService.ValidatePatientInsuranceAsync(model);
+                if (!validationResult.Success || validationResult.Data.Count > 0)
+                {
+                    _log.Warning("🏥 MEDICAL: خطاهای اعتبارسنجی کسب‌وکار در ویرایش بیمه بیمار. Errors: {BusinessErrors}. User: {UserName} (Id: {UserId})",
+                        string.Join(", ", validationResult.Data.Select(x => $"{x.Key}: {x.Value}")), _currentUserService.UserName, _currentUserService.UserId);
+
+                    var errorDetails = string.Join("; ", validationResult.Data.Select(x => x.Value));
+                    return Json(new { success = false, message = $"خطاهای کسب‌وکار: {errorDetails}", errors = validationResult.Data });
+                }
+
+                // 🏥 Medical Environment: به‌روزرسانی بیمه بیمار
+                var result = await _patientInsuranceService.UpdatePatientInsuranceAsync(model);
+                if (!result.Success)
+                {
+                    _log.Warning("🏥 MEDICAL: خطا در به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}, Error: {Error}. User: {UserName} (Id: {UserId})",
+                        model?.PatientInsuranceId, model?.PatientId, model?.PolicyNumber, result.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                // 🏥 Medical Environment: Audit Trail
+                _log.Information("🏥 MEDICAL: بیمه بیمار با موفقیت به‌روزرسانی شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    model.PatientInsuranceId, model.PatientId, model.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = true, message = "بیمه بیمار با موفقیت به‌روزرسانی شد", data = model.PatientInsuranceId });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطای سیستمی در به‌روزرسانی بیمه بیمار. PatientInsuranceId: {PatientInsuranceId}, PolicyNumber: {PolicyNumber}. User: {UserName} (Id: {UserId})",
+                    model?.PatientInsuranceId, model?.PolicyNumber, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new { success = false, message = "خطا در به‌روزرسانی بیمه بیمار. لطفاً دوباره تلاش کنید." });
             }
         }
 
@@ -2205,6 +2334,166 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         #region Supplementary Insurance Methods
 
         /// <summary>
+        /// دریافت صندوق‌های بیمه تکمیلی برای مودال افزودن
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetSupplementaryInsuranceProviders()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست صندوق‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت فقط صندوق‌های بیمه تکمیلی
+                var result = await _insuranceProviderService.GetSupplementaryInsuranceProvidersAsync();
+                if (result.Success)
+                {
+                    var providers = result.Data.Select(p => new
+                    {
+                        id = p.InsuranceProviderId,
+                        name = p.Name,
+                        code = p.Code
+                    }).ToList();
+
+                    _log.Information("🏥 MEDICAL: {Count} صندوق بیمه تکمیلی دریافت شد. User: {UserName} (Id: {UserId})",
+                        providers.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = true,
+                        data = providers,
+                        message = "صندوق‌های بیمه تکمیلی با موفقیت دریافت شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت صندوق‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در دریافت صندوق‌های بیمه تکمیلی"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی بر اساس صندوق
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetSupplementaryInsurancePlansByProvider(int providerId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست طرح‌های بیمه تکمیلی برای صندوق {ProviderId}. User: {UserName} (Id: {UserId})",
+                    providerId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت طرح‌های بیمه تکمیلی بر اساس صندوق
+                var result = await _insurancePlanService.GetSupplementaryInsurancePlansByProviderAsync(providerId);
+                if (result.Success)
+                {
+                    var plans = result.Data.Select(p => new
+                    {
+                        id = p.InsurancePlanId,
+                        name = p.Name,
+                        providerName = p.InsuranceProviderName ?? "نامشخص",
+                        coveragePercent = p.CoveragePercent,
+                        deductible = p.Deductible
+                    }).ToList();
+
+                    _log.Information("🏥 MEDICAL: {Count} طرح بیمه تکمیلی برای صندوق {ProviderId} دریافت شد. User: {UserName} (Id: {UserId})",
+                        plans.Count, providerId, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = true,
+                        data = plans,
+                        message = "طرح‌های بیمه تکمیلی با موفقیت دریافت شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت طرح‌های بیمه تکمیلی برای صندوق {ProviderId}. User: {UserName} (Id: {UserId})",
+                    providerId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در دریافت طرح‌های بیمه تکمیلی"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی برای مودال افزودن
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetSupplementaryInsurancePlans()
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: درخواست طرح‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                // دریافت فقط طرح‌های بیمه تکمیلی (InsuranceType = 2)
+                var result = await _insurancePlanService.GetSupplementaryInsurancePlansAsync();
+                if (result.Success)
+                {
+                    var plans = result.Data.Select(p => new
+                    {
+                        id = p.InsurancePlanId,
+                        name = p.Name,
+                        providerName = p.InsuranceProviderName ?? "نامشخص",
+                        coveragePercent = p.CoveragePercent,
+                        deductible = p.Deductible
+                    }).ToList();
+
+                    _log.Information("🏥 MEDICAL: {Count} طرح بیمه تکمیلی دریافت شد. User: {UserName} (Id: {UserId})",
+                        plans.Count, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(new
+                    {
+                        success = true,
+                        data = plans,
+                        message = "طرح‌های بیمه تکمیلی با موفقیت دریافت شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت طرح‌های بیمه تکمیلی. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در دریافت طرح‌های بیمه تکمیلی"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
         /// دریافت بیمه‌های تکمیلی بیمار
         /// </summary>
         [HttpGet]
@@ -2235,7 +2524,14 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                             IsActive = pi.IsActive,
                             IsPrimary = pi.IsPrimary,
                             CoveragePercent = pi.CoveragePercent, // اضافه کردن CoveragePercent
-                            CreatedAt = pi.CreatedAt
+                            CreatedAt = pi.CreatedAt,
+                            // 🏥 Medical Environment: فیلدهای بیمه تکمیلی
+                            SupplementaryInsuranceProviderId = pi.SupplementaryInsuranceProviderId,
+                            SupplementaryInsuranceProviderName = pi.SupplementaryInsuranceProviderName,
+                            SupplementaryInsurancePlanId = pi.SupplementaryInsurancePlanId,
+                            SupplementaryInsurancePlanName = pi.SupplementaryInsurancePlanName,
+                            SupplementaryPolicyNumber = pi.SupplementaryPolicyNumber,
+                            HasSupplementaryInsurance = pi.HasSupplementaryInsurance
                         }).ToList(),
                         InsurancePlans = new List<ViewModels.Insurance.InsurancePlan.InsurancePlanLookupViewModel>(),
                         InsuranceProviders = new List<ViewModels.Insurance.InsuranceProvider.InsuranceProviderLookupViewModel>()

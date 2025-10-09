@@ -218,6 +218,59 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// افزودن بیمه تکمیلی به رکورد بیمه پایه موجود
+        /// </summary>
+        public async Task<ServiceResult<int>> AddSupplementaryInsuranceToExistingAsync(PatientInsuranceCreateEditViewModel model)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: افزودن بیمه تکمیلی به رکورد موجود. PatientId: {PatientId}, SupplementaryProviderId: {SupplementaryProviderId}, SupplementaryPlanId: {SupplementaryPlanId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, model.SupplementaryInsuranceProviderId, model.SupplementaryInsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // 1. پیدا کردن رکورد بیمه پایه موجود
+                var existingInsurances = await _patientInsuranceRepository.GetByPatientIdAsync(model.PatientId);
+                var primaryInsurance = existingInsurances.FirstOrDefault(pi => pi.IsPrimary && pi.IsActive && !pi.IsDeleted);
+                
+                if (primaryInsurance == null)
+                {
+                    _log.Warning("🏥 MEDICAL: رکورد بیمه پایه یافت نشد. PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                        model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<int>.Failed("رکورد بیمه پایه برای این بیمار یافت نشد");
+                }
+
+                // 2. بررسی عدم وجود بیمه تکمیلی فعال
+                if (primaryInsurance.SupplementaryInsuranceProviderId.HasValue)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمه تکمیلی فعال موجود است. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                        primaryInsurance.PatientInsuranceId, model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<int>.Failed("بیمه تکمیلی فعال برای این بیمار موجود است");
+                }
+
+                // 3. به‌روزرسانی رکورد بیمه پایه با اطلاعات تکمیلی
+                primaryInsurance.SupplementaryInsuranceProviderId = model.SupplementaryInsuranceProviderId;
+                primaryInsurance.SupplementaryInsurancePlanId = model.SupplementaryInsurancePlanId;
+                primaryInsurance.SupplementaryPolicyNumber = model.SupplementaryPolicyNumber;
+                primaryInsurance.UpdatedAt = DateTime.UtcNow;
+                primaryInsurance.UpdatedByUserId = _currentUserService.UserId;
+
+                // 4. ذخیره تغییرات
+                _patientInsuranceRepository.Update(primaryInsurance);
+                await _patientInsuranceRepository.SaveChangesAsync();
+
+                _log.Information("🏥 MEDICAL: بیمه تکمیلی با موفقیت اضافه شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
+                    primaryInsurance.PatientInsuranceId, model.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<int>.Successful(primaryInsurance.PatientInsuranceId);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در افزودن بیمه تکمیلی. PatientId: {PatientId}, SupplementaryProviderId: {SupplementaryProviderId}, SupplementaryPlanId: {SupplementaryPlanId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, model.SupplementaryInsuranceProviderId, model.SupplementaryInsurancePlanId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<int>.Failed("خطا در افزودن بیمه تکمیلی");
+            }
+        }
+
         public async Task<ServiceResult> UpdatePatientInsuranceAsync(PatientInsuranceCreateEditViewModel model)
         {
             try
@@ -404,10 +457,42 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("Validating patient insurance for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}", 
-                    model.PatientId, MaskSensitiveData(model.PolicyNumber));
+                _log.Information("🏥 MEDICAL: Validating patient insurance for PatientId: {PatientId}, PolicyNumber(masked): {PolicyNumber}, PatientInsuranceId: {PatientInsuranceId}. User: {UserName} (Id: {UserId})", 
+                    model.PatientId, MaskSensitiveData(model.PolicyNumber), model.PatientInsuranceId, _currentUserService.UserName, _currentUserService.UserId);
 
                 var errors = new Dictionary<string, string>();
+                
+                // 🏥 Medical Environment: اعتبارسنجی فیلدهای الزامی
+                if (model.PatientId <= 0)
+                {
+                    errors.Add("PatientId", "شناسه بیمار الزامی است");
+                }
+                
+                if (model.InsurancePlanId <= 0)
+                {
+                    errors.Add("InsurancePlanId", "انتخاب طرح بیمه الزامی است");
+                }
+                
+                if (string.IsNullOrWhiteSpace(model.PolicyNumber))
+                {
+                    errors.Add("PolicyNumber", "شماره بیمه الزامی است");
+                }
+                
+                if (model.StartDate == DateTime.MinValue)
+                {
+                    errors.Add("StartDate", "تاریخ شروع الزامی است");
+                }
+                
+                // 🏥 Medical Environment: اعتبارسنجی بیمه تکمیلی
+                if (model.SupplementaryInsuranceProviderId.HasValue && !model.SupplementaryInsurancePlanId.HasValue)
+                {
+                    errors.Add("SupplementaryInsurancePlanId", "اگر بیمه‌گذار تکمیلی انتخاب شده، طرح بیمه تکمیلی نیز باید انتخاب شود");
+                }
+                
+                if (!model.SupplementaryInsuranceProviderId.HasValue && model.SupplementaryInsurancePlanId.HasValue)
+                {
+                    errors.Add("SupplementaryInsuranceProviderId", "اگر طرح بیمه تکمیلی انتخاب شده، بیمه‌گذار تکمیلی نیز باید انتخاب شود");
+                }
 
                 // بررسی وجود شماره بیمه تکراری (فقط برای بیمه اصلی)
                 if (model.IsPrimary)
@@ -942,7 +1027,7 @@ namespace ClinicApp.Services.Insurance
                     return ServiceResult<bool>.Failed("بیمه بیمار یافت نشد");
                 }
 
-                // به‌روزرسانی Entity
+                // 🏥 Medical Environment: به‌روزرسانی Entity با تمام فیلدها
                 existingPatientInsurance.PatientId = model.PatientId;
                 existingPatientInsurance.InsurancePlanId = model.InsurancePlanId;
                 existingPatientInsurance.PolicyNumber = model.PolicyNumber;
@@ -950,6 +1035,11 @@ namespace ClinicApp.Services.Insurance
                 existingPatientInsurance.StartDate = model.StartDate;
                 existingPatientInsurance.EndDate = model.EndDate;
                 existingPatientInsurance.IsActive = model.IsActive;
+                
+                // 🏥 Medical Environment: به‌روزرسانی فیلدهای بیمه تکمیلی
+                existingPatientInsurance.SupplementaryInsuranceProviderId = model.SupplementaryInsuranceProviderId;
+                existingPatientInsurance.SupplementaryInsurancePlanId = model.SupplementaryInsurancePlanId;
+                existingPatientInsurance.SupplementaryPolicyNumber = model.SupplementaryPolicyNumber;
                 
                 // 🚨 CRITICAL FIX: اضافه کردن فیلدهای Audit برای Update
                 existingPatientInsurance.UpdatedAt = DateTime.UtcNow;
@@ -1155,6 +1245,7 @@ namespace ClinicApp.Services.Insurance
 
         /// <summary>
         /// تبدیل Entity به Index ViewModel
+        /// 🏥 Medical Environment: پشتیبانی از بیمه‌های تکمیلی
         /// </summary>
         private PatientInsuranceIndexViewModel ConvertToIndexViewModel(PatientInsurance patientInsurance)
         {
@@ -1176,7 +1267,15 @@ namespace ClinicApp.Services.Insurance
                 StartDateShamsi = patientInsurance.StartDate.ToPersianDate(),
                 EndDateShamsi = patientInsurance.EndDate.ToPersianDate(),
                 IsActive = patientInsurance.IsActive,
-                CoveragePercent = patientInsurance.InsurancePlan?.CoveragePercent ?? 0
+                CoveragePercent = patientInsurance.SupplementaryInsurancePlan?.CoveragePercent ?? patientInsurance.InsurancePlan?.CoveragePercent ?? 0,
+                // 🏥 Medical Environment: فیلدهای بیمه تکمیلی
+                SupplementaryInsuranceProviderId = patientInsurance.SupplementaryInsuranceProviderId,
+                SupplementaryInsuranceProviderName = patientInsurance.SupplementaryInsuranceProvider?.Name,
+                SupplementaryInsurancePlanId = patientInsurance.SupplementaryInsurancePlanId,
+                SupplementaryInsurancePlanName = patientInsurance.SupplementaryInsurancePlan?.Name,
+                SupplementaryPolicyNumber = patientInsurance.SupplementaryPolicyNumber,
+                HasSupplementaryInsurance = patientInsurance.SupplementaryInsuranceProviderId.HasValue && 
+                                          patientInsurance.SupplementaryInsuranceProviderId.Value > 0
             };
         }
 

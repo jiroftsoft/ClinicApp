@@ -36,6 +36,27 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "نام بیمار")]
         public string PatientName { get; set; }
 
+        /// <summary>
+        /// کد ملی بیمار (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "کد ملی بیمار")]
+        public string PatientNationalCode { get; set; }
+
+        /// <summary>
+        /// شماره تلفن بیمار (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "شماره تلفن بیمار")]
+        public string PatientPhone { get; set; }
+
+        /// <summary>
+        /// تاریخ تولد بیمار (برای نمایش)
+        /// </summary>
+        [NotMapped]
+        [Display(Name = "تاریخ تولد بیمار")]
+        public string PatientBirthDate { get; set; }
+
         [Required(ErrorMessage = "شماره بیمه الزامی است")]
         [StringLength(100, ErrorMessage = "شماره بیمه نمی‌تواند بیشتر از 100 کاراکتر باشد")]
         [RegularExpression(@"^[A-Za-z0-9\-_]+$", ErrorMessage = "شماره بیمه فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد")]
@@ -44,11 +65,11 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         public string PolicyNumber { get; set; }
 
         /// <summary>
-        /// شماره بیمه تکمیلی (اختیاری)
+        /// شماره معرفی نامه بیمه تکمیلی (اختیاری)
         /// </summary>
-        [StringLength(100, ErrorMessage = "شماره بیمه تکمیلی نمی‌تواند بیشتر از 100 کاراکتر باشد")]
-        [RegularExpression(@"^[A-Za-z0-9\-_]+$", ErrorMessage = "شماره بیمه تکمیلی فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد")]
-        [Display(Name = "شماره بیمه تکمیلی (اختیاری)")]
+        [StringLength(100, ErrorMessage = "شماره معرفی نامه نمی‌تواند بیشتر از 100 کاراکتر باشد")]
+        [RegularExpression(@"^[A-Za-z0-9\-_]*$", ErrorMessage = "شماره معرفی نامه فقط می‌تواند شامل حروف انگلیسی، اعداد، خط تیره و زیرخط باشد")]
+        [Display(Name = "شماره معرفی نامه")]
         public string SupplementaryPolicyNumber { get; set; }
 
         [Required(ErrorMessage = "بیمه‌گذار الزامی است")]
@@ -252,6 +273,9 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 Priority = entity.Priority,
                 // پر کردن فیلدهای نمایشی
                 PatientName = entity.Patient != null ? $"{entity.Patient.FirstName} {entity.Patient.LastName}" : null,
+                PatientNationalCode = entity.Patient?.NationalCode,
+                PatientPhone = entity.Patient?.PhoneNumber,
+                PatientBirthDate = entity.Patient?.BirthDate?.ToPersianDate(),
                 InsuranceProviderName = entity.InsuranceProvider != null ? entity.InsuranceProvider.Name : null,
                 InsurancePlanName = entity.InsurancePlan != null ? entity.InsurancePlan.Name : null,
                 SupplementaryInsuranceProviderName = entity.SupplementaryInsuranceProvider != null ? entity.SupplementaryInsuranceProvider.Name : null,

@@ -270,5 +270,16 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<bool>> HasCombinedInsuranceAsync(int patientId);
 
         #endregion
+
+        #region Supplementary Insurance Management
+
+        /// <summary>
+        /// افزودن بیمه تکمیلی به رکورد بیمه پایه موجود
+        /// </summary>
+        /// <param name="model">مدل بیمه تکمیلی</param>
+        /// <returns>نتیجه افزودن بیمه تکمیلی</returns>
+        Task<ServiceResult<int>> AddSupplementaryInsuranceToExistingAsync(PatientInsuranceCreateEditViewModel model);
+
+        #endregion
     }
 }

@@ -48,6 +48,25 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "نوع بیمه")]
         public string InsuranceType { get; set; }
 
+        // 🏥 Medical Environment: فیلدهای بیمه تکمیلی
+        [Display(Name = "شناسه بیمه‌گذار تکمیلی")]
+        public int? SupplementaryInsuranceProviderId { get; set; }
+
+        [Display(Name = "نام بیمه‌گذار تکمیلی")]
+        public string SupplementaryInsuranceProviderName { get; set; }
+
+        [Display(Name = "شناسه طرح بیمه تکمیلی")]
+        public int? SupplementaryInsurancePlanId { get; set; }
+
+        [Display(Name = "نام طرح بیمه تکمیلی")]
+        public string SupplementaryInsurancePlanName { get; set; }
+
+        [Display(Name = "شماره بیمه تکمیلی")]
+        public string SupplementaryPolicyNumber { get; set; }
+
+        [Display(Name = "آیا بیمه تکمیلی دارد؟")]
+        public bool HasSupplementaryInsurance { get; set; }
+
         [Display(Name = "بیمه اصلی")]
         public bool IsPrimary { get; set; }
 

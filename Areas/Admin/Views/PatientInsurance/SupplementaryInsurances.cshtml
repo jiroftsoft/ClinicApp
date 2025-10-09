@@ -146,7 +146,7 @@
                         <div class="row" id="supplementary-insurances-list">
                             @foreach (var insurance in Model.PatientInsurances)
                             {
-                                <div class="col-md-6 col-lg-4 mb-3 fade-in">
+                                <div class="col-md-6 col-lg-4 mb-3 fade-in" data-insurance-item>
                                     <div class="card supplementary-card border-left-info">
                                         <div class="security-indicator">
                                             <i class="fas fa-shield-alt"></i>
@@ -156,12 +156,12 @@
                                                 <div class="flex-grow-1">
                                                     <h6 class="card-title medical-primary">
                                                         <i class="fas fa-shield-alt medical-icon"></i>
-                                                        @insurance.InsuranceProviderName
+                                                        @(insurance.SupplementaryInsuranceProviderName ?? insurance.InsuranceProviderName)
                                                     </h6>
                                                     <p class="card-text mb-2">
                                                         <small class="text-muted">
                                                             <i class="fas fa-id-card"></i>
-                                                            شماره بیمه: @insurance.PolicyNumber
+                                                            شماره بیمه: @(insurance.SupplementaryPolicyNumber ?? insurance.PolicyNumber)
                                                         </small>
                                                     </p>
                                                     <p class="card-text mb-2">
@@ -246,19 +246,25 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="supplementaryPlanId">طرح بیمه تکمیلی</label>
-                                <select class="form-control" id="supplementaryPlanId" name="InsurancePlanId" required>
+                                <label for="supplementaryProviderId">صندوق بیمه تکمیلی</label>
+                                <select class="form-control" id="supplementaryProviderId" name="SupplementaryInsuranceProviderId" required>
                                     <option value="">انتخاب کنید...</option>
                                 </select>
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    ابتدا صندوق بیمه تکمیلی را انتخاب کنید
+                                </small>
                             </div>
                         </div>
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="supplementaryPolicyNumber">شماره بیمه</label>
-                                <input type="text" class="form-control" id="supplementaryPolicyNumber" name="PolicyNumber" required readonly>
+                                <label for="supplementaryPlanId">طرح بیمه تکمیلی</label>
+                                <select class="form-control" id="supplementaryPlanId" name="SupplementaryInsurancePlanId" required disabled>
+                                    <option value="">ابتدا صندوق را انتخاب کنید</option>
+                                </select>
                                 <small class="form-text text-muted">
                                     <i class="fas fa-info-circle"></i>
-                                    شماره بیمه از بیمه پایه این بیمار کپی می‌شود
+                                    پس از انتخاب صندوق، طرح‌های مربوطه نمایش داده می‌شوند
                                 </small>
                             </div>
                         </div>
@@ -266,24 +272,26 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
-                                <label for="supplementaryStartDate">تاریخ شروع</label>
-                                <input type="text" class="form-control persian-datepicker" id="supplementaryStartDate" name="StartDateShamsi" required>
+                                <label for="supplementaryReferralNumber">شماره معرفی نامه</label>
+                                <input type="text" class="form-control" id="supplementaryReferralNumber" name="SupplementaryPolicyNumber">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    شماره معرفی نامه بیمه تکمیلی (اختیاری)
+                                </small>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="form-group">
-                                <label for="supplementaryEndDate">تاریخ پایان</label>
-                                <input type="text" class="form-control persian-datepicker" id="supplementaryEndDate" name="EndDateShamsi">
-                            </div>
-                        </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="supplementaryCardNumber">شماره کارت بیمه</label>
                                 <input type="text" class="form-control" id="supplementaryCardNumber" name="CardNumber" maxlength="50">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    شماره کارت بیمه تکمیلی (اختیاری)
+                                </small>
                             </div>
                         </div>
+                    </div>
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <label for="supplementaryPriority">اولویت بیمه</label>
@@ -300,8 +308,6 @@
                                 </select>
                             </div>
                         </div>
-                    </div>
-                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
                                 <div class="form-check">
@@ -312,11 +318,13 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
                             <div class="form-group">
                                 <div class="alert alert-info">
                                     <i class="fas fa-info-circle"></i>
-                                    <strong>نکته:</strong> این بیمه تکمیلی است و نه بیمه اصلی
+                                    <strong>نکته:</strong> این بیمه تکمیلی است و نه بیمه اصلی. تاریخ شروع و پایان برای بیمه تکمیلی نیاز نیست.
                                 </div>
                             </div>
                         </div>
@@ -324,6 +332,8 @@
                     
                     <!-- فیلدهای مخفی برای بیمه تکمیلی -->
                     <input type="hidden" name="IsPrimary" value="false" />
+                    <input type="hidden" name="PatientId" id="supplementaryPatientId" value="@ViewBag.PatientId" />
+                    <input type="hidden" name="IsActive" value="false" />
                 </form>
             </div>
             <div class="modal-footer">
@@ -353,6 +363,7 @@
             <div class="modal-body">
                 <form id="calculateSupplementaryInsuranceForm">
                     @Html.AntiForgeryToken()
+                    <input type="hidden" name="PatientInsuranceId" id="calcPatientInsuranceId" />
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group">
@@ -405,22 +416,36 @@
 @section Scripts {
     <script>
         // 🏥 Medical Environment JavaScript - بهینه شده برای محیط درمانی
+        
+        // Escape HTML برای جلوگیری از XSS
+        function escapeHtml(s) { 
+            return String(s)
+                .replace(/&/g,'&amp;')
+                .replace(/</g,'&lt;')
+                .replace(/>/g,'&gt;')
+                .replace(/"/g,'&quot;')
+                .replace(/'/g,'&#039;'); 
+        }
+        
         $(document).ready(function() {
             console.log('🏥 MEDICAL: صفحه بیمه‌های تکمیلی بارگذاری شد');
             
             // Initialize Persian DatePicker
-            $('.persian-datepicker').persianDatepicker({
-                format: 'YYYY/MM/DD',
-                altField: '.gregorian-datepicker',
-                observer: true,
-                timePicker: {
-                    enabled: false
-                }
-            });
+            if ($.fn.persianDatepicker) {
+                $('.persian-datepicker').persianDatepicker({
+                    format: 'YYYY/MM/DD',
+                    observer: true,
+                    timePicker: {
+                        enabled: false
+                    }
+                });
+            } else {
+                console.warn('persianDatepicker not loaded');
+            }
 
             // بارگیری همزمان داده‌ها برای بهبود Performance
             Promise.all([
-                loadSupplementaryInsurancePlans(),
+                loadSupplementaryInsuranceProviders(),
                 loadServicesForCalculation(),
                 updateInsuranceCount()
             ]).then(function() {
@@ -435,9 +460,12 @@
         });
         
         function setupEventListeners() {
-            // Auto-refresh هر 5 دقیقه
+            // Auto-refresh هر 5 دقیقه (فقط اگر کاربر در حال کار نیست)
             setInterval(function() {
-                refreshSupplementaryInsurances();
+                if (!$('.modal.show').length && !document.activeElement.closest('form')) {
+                    // TODO: فقط لیست را با Ajax تازه کن، نه کل صفحه
+                    // refreshSupplementaryInsurancesPartial();
+                }
             }, 300000); // 5 minutes
             
             // Keyboard shortcuts
@@ -450,7 +478,7 @@
         }
         
         function updateInsuranceCount() {
-            var count = $('#supplementary-insurances-list .col-md-6').length;
+            var count = $('#supplementary-insurances-list [data-insurance-item]').length;
             $('#insuranceCount').text(count);
             console.log('🏥 MEDICAL: تعداد بیمه‌های تکمیلی به‌روزرسانی شد:', count);
         }
@@ -458,13 +486,13 @@
         function showAddSupplementaryInsuranceModal() {
             console.log('🏥 MEDICAL: نمایش مودال افزودن بیمه تکمیلی...');
             
-            // بارگیری طرح‌های بیمه قبل از نمایش مودال
-            loadSupplementaryInsurancePlans().then(function() {
+            // بارگیری صندوق‌های بیمه قبل از نمایش مودال
+            loadSupplementaryInsuranceProviders().then(function() {
                 $('#addSupplementaryInsuranceModal').modal('show');
                 console.log('🏥 MEDICAL: مودال افزودن بیمه تکمیلی نمایش داده شد');
             }).catch(function(error) {
-                console.error('🏥 MEDICAL: خطا در بارگیری طرح‌های بیمه:', error);
-                showMedicalError('خطا در بارگیری طرح‌های بیمه: ' + error);
+                console.error('🏥 MEDICAL: خطا در بارگیری صندوق‌های بیمه:', error);
+                showMedicalError('خطا در بارگیری صندوق‌های بیمه: ' + error);
             });
         }
 
@@ -488,14 +516,57 @@
                 console.log('🏥 MEDICAL: کلیک روی دکمه X');
                 $('#addSupplementaryInsuranceModal').modal('hide');
             });
+            
+            // Event handler برای تغییر صندوق بیمه تکمیلی
+            $('#supplementaryProviderId').on('change', function() {
+                var providerId = $(this).val();
+                console.log('🏥 MEDICAL: صندوق بیمه تکمیلی انتخاب شد:', providerId);
+                
+                if (providerId) {
+                    // بارگیری طرح‌های بیمه تکمیلی بر اساس صندوق
+                    loadSupplementaryInsurancePlansByProvider(providerId);
+                } else {
+                    // پاک کردن طرح‌ها
+                    $('#supplementaryPlanId').html('<option value="">ابتدا صندوق را انتخاب کنید</option>').prop('disabled', true);
+                }
+            });
+            
+            // Event handler برای تغییر طرح بیمه تکمیلی
+            $('#supplementaryPlanId').on('change', function() {
+                var selectedOption = $(this).find('option:selected');
+                var providerName = selectedOption.data('provider');
+                var coveragePercent = selectedOption.data('coverage');
+                var planId = $(this).val();
+                
+                console.log('🏥 MEDICAL: طرح بیمه تکمیلی انتخاب شد:', {
+                    planId: planId,
+                    providerName: providerName,
+                    coveragePercent: coveragePercent
+                });
+                
+                // تنظیم فیلدهای مخفی
+                if (planId) {
+                    // تنظیم SupplementaryInsurancePlanId
+                    $('#supplementaryPlanId').attr('name', 'SupplementaryInsurancePlanId');
+                    
+                    console.log('🏥 MEDICAL: فیلدهای مخفی تنظیم شدند:', {
+                        SupplementaryInsurancePlanId: planId
+                    });
+                }
+                
+                // نمایش اطلاعات طرح انتخاب شده
+                if ($(this).val()) {
+                    console.log('🏥 MEDICAL: ارائه‌دهنده:', providerName, 'پوشش:', coveragePercent + '%');
+                }
+            });
         });
 
-        function loadSupplementaryInsurancePlans() {
-            console.log('🏥 MEDICAL: بارگیری طرح‌های بیمه تکمیلی...');
+        function loadSupplementaryInsuranceProviders() {
+            console.log('🏥 MEDICAL: بارگیری صندوق‌های بیمه تکمیلی...');
             
             return new Promise(function(resolve, reject) {
                 $.ajax({
-                    url: '@Url.Action("GetInsurancePlans", "InsuranceTariff", new { area = "Admin" })',
+                    url: '@Url.Action("GetSupplementaryInsuranceProviders", "PatientInsurance", new { area = "Admin" })',
                     type: 'GET',
                     timeout: 10000, // 10 seconds timeout
                     dataType: 'json',
@@ -503,18 +574,21 @@
                         console.log('🏥 MEDICAL: Response received:', response);
                         
                         if (response && response.success) {
-                            console.log('🏥 MEDICAL: طرح‌های بیمه دریافت شد', response.data ? response.data.length : 0);
+                            console.log('🏥 MEDICAL: صندوق‌های بیمه دریافت شد', response.data ? response.data.length : 0);
                             
                             var options = '<option value="">انتخاب کنید...</option>';
                             if (response.data && Array.isArray(response.data)) {
-                                $.each(response.data, function(index, plan) {
-                                    options += '<option value="' + plan.id + '">' + plan.name + '</option>';
+                                $.each(response.data, function(index, provider) {
+                                    options += '<option value="' + provider.id + '" data-code="' + escapeHtml(provider.code) + '">' + escapeHtml(provider.name) + '</option>';
                                 });
                             }
-                            $('#supplementaryPlanId').html(options);
+                            $('#supplementaryProviderId').html(options);
                             
-                            // بارگیری شماره بیمه پایه
-                            loadPrimaryInsurancePolicyNumber();
+                            // اگر فقط یک صندوق وجود دارد، خودکار انتخاب کن
+                            if (response.data && response.data.length === 1) {
+                                $('#supplementaryProviderId').val(response.data[0].id).trigger('change');
+                                console.log('🏥 MEDICAL: صندوق بیمه تکمیلی خودکار انتخاب شد:', response.data[0].name);
+                            }
                             
                             resolve();
                         } else {
@@ -538,36 +612,58 @@
             });
         }
         
-        function loadPrimaryInsurancePolicyNumber() {
-            console.log('🏥 MEDICAL: بارگیری شماره بیمه پایه...');
+        function loadSupplementaryInsurancePlansByProvider(providerId) {
+            console.log('🏥 MEDICAL: بارگیری طرح‌های بیمه تکمیلی برای صندوق:', providerId);
             
-            $.ajax({
-                url: '@Url.Action("GetPrimaryInsurancePolicyNumber", "PatientInsurance", new { area = "Admin" })',
-                type: 'GET',
-                data: { patientId: @ViewBag.PatientId },
-                dataType: 'json',
-                success: function(response) {
-                    console.log('🏥 MEDICAL: شماره بیمه پایه دریافت شد:', response);
-                    
-                    if (response && response.success && response.data) {
-                        $('#supplementaryPolicyNumber').val(response.data);
-                        console.log('🏥 MEDICAL: شماره بیمه پایه تنظیم شد:', response.data);
-                    } else {
-                        console.warn('🏥 MEDICAL: شماره بیمه پایه یافت نشد');
-                        showMedicalWarning('ابتدا باید بیمه پایه برای این بیمار تعریف شود');
+            return new Promise(function(resolve, reject) {
+                $.ajax({
+                    url: '@Url.Action("GetSupplementaryInsurancePlansByProvider", "PatientInsurance", new { area = "Admin" })',
+                    type: 'GET',
+                    data: { providerId: providerId },
+                    timeout: 10000, // 10 seconds timeout
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('🏥 MEDICAL: Response received:', response);
+                        
+                        if (response && response.success) {
+                            console.log('🏥 MEDICAL: طرح‌های بیمه تکمیلی دریافت شد', response.data ? response.data.length : 0);
+                            
+                            var options = '<option value="">انتخاب کنید...</option>';
+                            if (response.data && Array.isArray(response.data)) {
+                                $.each(response.data, function(index, plan) {
+                                    options += '<option value="' + plan.id + '" data-provider="' + escapeHtml(plan.providerName) + '" data-coverage="' + plan.coveragePercent + '">' + escapeHtml(plan.name) + '</option>';
+                                });
+                            }
+                            $('#supplementaryPlanId').html(options).prop('disabled', false);
+                            
+                            // اگر فقط یک طرح وجود دارد، خودکار انتخاب کن
+                            if (response.data && response.data.length === 1) {
+                                $('#supplementaryPlanId').val(response.data[0].id).trigger('change');
+                                console.log('🏥 MEDICAL: طرح بیمه تکمیلی خودکار انتخاب شد:', response.data[0].name);
+                            }
+                            
+                            resolve();
+                        } else {
+                            var errorMessage = response ? response.message : 'پاسخ نامعتبر از سرور';
+                            console.error('🏥 MEDICAL: خطا در دریافت طرح‌های بیمه تکمیلی', errorMessage);
+                            showMedicalError('خطا در دریافت طرح‌های بیمه تکمیلی: ' + errorMessage);
+                            reject(errorMessage);
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('🏥 MEDICAL: خطای AJAX در دریافت طرح‌های بیمه تکمیلی', {
+                            status: xhr.status,
+                            statusText: xhr.statusText,
+                            responseText: xhr.responseText,
+                            error: error
+                        });
+                        showMedicalError('خطا در ارتباط با سرور برای دریافت طرح‌های بیمه تکمیلی (Status: ' + xhr.status + ')');
+                        reject(error);
                     }
-                },
-                error: function(xhr, status, error) {
-                    console.error('🏥 MEDICAL: خطا در دریافت شماره بیمه پایه:', {
-                        status: xhr.status,
-                        statusText: xhr.statusText,
-                        responseText: xhr.responseText,
-                        error: error
-                    });
-                    showMedicalError('خطا در دریافت شماره بیمه پایه');
-                }
+                });
             });
         }
+        
 
         function loadServicesForCalculation() {
             $.ajax({
@@ -601,18 +697,21 @@
                 return;
             }
             
-            var formData = form.serialize();
             
-            // اضافه کردن PatientId به formData
-            formData += '&PatientId=@ViewBag.PatientId';
+            // جلوگیری از دوبار کلیک
+            var $btn = $('#addSupplementaryInsuranceModal .btn.btn-primary').prop('disabled', true);
+            
+            var formData = form.serialize(); // 🔹 فقط همین
             
             console.log('🏥 MEDICAL: ارسال داده‌ها:', formData);
             
             $.ajax({
-                url: '@Url.Action("CreateAjax", "PatientInsurance", new { area = "Admin" })',
+                url: '@Url.Action("AddSupplementaryInsurance", "PatientInsurance", new { area = "Admin" })',
                 type: 'POST',
                 data: formData,
                 dataType: 'json',
+                headers: { 'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').first().val() },
+                complete: function(){ $btn.prop('disabled', false); },
                 success: function(response) {
                     console.log('🏥 MEDICAL: پاسخ سرور:', response);
                     
@@ -670,6 +769,7 @@
         }
 
         function calculateSupplementaryInsurance(patientInsuranceId) {
+            $('#calcPatientInsuranceId').val(patientInsuranceId);
             $('#calculateSupplementaryInsuranceModal').modal('show');
         }
 

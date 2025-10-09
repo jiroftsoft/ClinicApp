@@ -198,14 +198,25 @@ namespace ClinicApp.Repositories.Insurance
 
         /// <summary>
         /// دریافت بیمه‌های تکمیلی بیمار بر اساس شناسه بیمار
+        /// 🏥 Medical Environment: منطق صحیح برای سیستم درمانی کلینیک شفا
         /// </summary>
         public async Task<List<PatientInsurance>> GetSupplementaryByPatientIdAsync(int patientId)
         {
             try
             {
+                // 🚨 CRITICAL FIX: منطق صحیح برای سیستم درمانی
+                // بیمه‌های تکمیلی: رکوردهایی که SupplementaryInsuranceProviderId دارند
                 return await _context.PatientInsurances
-                    .Where(pi => pi.PatientId == patientId && !pi.IsPrimary && pi.IsActive)
+                    .Where(pi => pi.PatientId == patientId 
+                             && pi.SupplementaryInsuranceProviderId.HasValue 
+                             && pi.SupplementaryInsuranceProviderId.Value > 0
+                             && pi.IsActive
+                             && !pi.IsDeleted)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Include(pi => pi.InsuranceProvider) // بیمه‌گذار اصلی
+                    .Include(pi => pi.SupplementaryInsuranceProvider) // بیمه‌گذار تکمیلی
+                    .Include(pi => pi.SupplementaryInsurancePlan) // طرح بیمه تکمیلی
+                    .Include(pi => pi.Patient) // اطلاعات بیمار
                     .OrderBy(pi => pi.Priority)
                     .ThenBy(pi => pi.StartDate)
                     .AsNoTracking()
@@ -502,10 +513,10 @@ namespace ClinicApp.Repositories.Insurance
                 if (patientInsurance == null)
                     throw new ArgumentNullException(nameof(patientInsurance));
 
-                // تنظیم اطلاعات Audit
+                // 🏥 Medical Environment: تنظیم اطلاعات Audit (تصحیح شده)
                 var currentUser = _currentUserService.GetCurrentUserId();
-                patientInsurance.UpdatedAt = DateTime.Now;
-                patientInsurance.CreatedByUserId = currentUser;
+                patientInsurance.UpdatedAt = DateTime.UtcNow;
+                patientInsurance.UpdatedByUserId = currentUser; // تصحیح: باید UpdatedByUserId باشد، نه CreatedByUserId
 
                 _context.Entry(patientInsurance).State = EntityState.Modified;
                 _logger.Information("بیمه بیمار به‌روزرسانی شد. PatientInsuranceId: {PatientInsuranceId}, PatientId: {PatientId}", 
@@ -722,6 +733,8 @@ namespace ClinicApp.Repositories.Insurance
                     .Include(pi => pi.Patient)
                     .Include(pi => pi.InsurancePlan)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Include(pi => pi.SupplementaryInsuranceProvider) // بیمه‌گذار تکمیلی
+                    .Include(pi => pi.SupplementaryInsurancePlan) // طرح بیمه تکمیلی
                     .Include(pi => pi.CreatedByUser);
 
                 // اعمال فیلتر providerId بعد از Include
@@ -776,7 +789,15 @@ namespace ClinicApp.Repositories.Insurance
                     EndDateShamsi = pi.EndDate.HasValue ? pi.EndDate.Value.ToPersianDate() : null,
                     CreatedAt = pi.CreatedAt,
                     CreatedAtShamsi = pi.CreatedAt.ToPersianDate(), // تبدیل صحیح به شمسی
-                    CreatedByUserName = "سیستم" // موقتاً ساده می‌کنیم
+                    CreatedByUserName = "سیستم", // موقتاً ساده می‌کنیم
+                    // 🏥 Medical Environment: فیلدهای بیمه تکمیلی
+                    SupplementaryInsuranceProviderId = pi.SupplementaryInsuranceProviderId,
+                    SupplementaryInsuranceProviderName = pi.SupplementaryInsuranceProvider?.Name,
+                    SupplementaryInsurancePlanId = pi.SupplementaryInsurancePlanId,
+                    SupplementaryInsurancePlanName = pi.SupplementaryInsurancePlan?.Name,
+                    SupplementaryPolicyNumber = pi.SupplementaryPolicyNumber,
+                    HasSupplementaryInsurance = pi.SupplementaryInsuranceProviderId.HasValue && 
+                                            pi.SupplementaryInsuranceProviderId.Value > 0
                 }).ToList();
 
                 _logger.Information("Retrieved {ItemCount} items from database", items.Count);
