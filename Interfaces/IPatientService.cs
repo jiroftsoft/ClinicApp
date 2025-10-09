@@ -4,6 +4,7 @@ using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
+using ClinicApp.Models.Entities.Patient;
 
 namespace ClinicApp.Interfaces
 {
@@ -409,6 +410,13 @@ namespace ClinicApp.Interfaces
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>لیست بیماران صفحه‌بندی شده</returns>
         Task<ServiceResult<PagedResult<PatientIndexViewModel>>> SearchPatientsForSelect2Async(string query, int page = 1, int pageSize = 20);
+
+        /// <summary>
+        /// دریافت بیمار بر اساس کد ملی - بهینه‌سازی شده برای محیط Production
+        /// </summary>
+        /// <param name="nationalCode">کد ملی بیمار</param>
+        /// <returns>بیمار یا null اگر یافت نشود</returns>
+        Task<Patient> GetPatientByNationalCodeAsync(string nationalCode);
 
     }
 }

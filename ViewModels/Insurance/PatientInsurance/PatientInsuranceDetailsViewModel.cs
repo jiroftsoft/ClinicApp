@@ -90,6 +90,31 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "به‌روزرساننده")]
         public string UpdatedByUserName { get; set; }
 
+        // 🏥 Medical Environment: Supplementary Insurance Fields
+        [Display(Name = "شناسه بیمه‌گذار تکمیلی")]
+        public int? SupplementaryInsuranceProviderId { get; set; }
+
+        [Display(Name = "نام بیمه‌گذار تکمیلی")]
+        public string SupplementaryInsuranceProviderName { get; set; }
+
+        [Display(Name = "شناسه طرح بیمه تکمیلی")]
+        public int? SupplementaryInsurancePlanId { get; set; }
+
+        [Display(Name = "نام طرح بیمه تکمیلی")]
+        public string SupplementaryInsurancePlanName { get; set; }
+
+        [Display(Name = "شماره بیمه تکمیلی")]
+        public string SupplementaryPolicyNumber { get; set; }
+
+        [Display(Name = "درصد پوشش تکمیلی")]
+        public decimal? SupplementaryCoveragePercent { get; set; }
+
+        [Display(Name = "فرانشیز تکمیلی")]
+        public decimal? SupplementaryDeductible { get; set; }
+
+        [Display(Name = "آیا بیمه تکمیلی دارد")]
+        public bool HasSupplementaryInsurance { get; set; }
+
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.
         /// </summary>
@@ -118,6 +143,17 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
                 // 🏥 اضافه کردن اطلاعات پوشش و فرانشیز از InsurancePlan
                 CoveragePercent = entity.InsurancePlan?.CoveragePercent ?? 0,
                 Deductible = entity.InsurancePlan?.Deductible ?? 0,
+                
+                // 🏥 Medical Environment: Supplementary Insurance Information
+                SupplementaryInsuranceProviderId = entity.SupplementaryInsuranceProviderId,
+                SupplementaryInsuranceProviderName = entity.SupplementaryInsuranceProvider?.Name,
+                SupplementaryInsurancePlanId = entity.SupplementaryInsurancePlanId,
+                SupplementaryInsurancePlanName = entity.SupplementaryInsurancePlan?.Name,
+                SupplementaryPolicyNumber = entity.SupplementaryPolicyNumber,
+                SupplementaryCoveragePercent = entity.SupplementaryInsurancePlan?.CoveragePercent,
+                SupplementaryDeductible = entity.SupplementaryInsurancePlan?.Deductible,
+                HasSupplementaryInsurance = entity.SupplementaryInsuranceProviderId.HasValue && entity.SupplementaryInsurancePlanId.HasValue,
+                
                 CreatedAt = entity.CreatedAt,
                 UpdatedAt = entity.UpdatedAt,
                 CreatedAtShamsi = entity.CreatedAt.ToPersianDateTime(),

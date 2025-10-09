@@ -146,7 +146,7 @@
                     </div>
                 </form>
             </div>
-
+                
             <!-- 🏥 Medical Environment: Insurance Status Summary -->
             <div class="row mb-3">
                 <div class="col-12">
@@ -307,13 +307,15 @@
                             }
                         });
 
+                        // 🏥 Medical Environment: بهینه‌سازی UI برای محیط Production
                         $('#checkInsuranceStatus').on('click', function() {
-                            var patientId = prompt('لطفاً شناسه بیمار را وارد کنید:');
-                            if (patientId && !isNaN(patientId)) {
-                                checkInsuranceStatus(parseInt(patientId));
+                            showNationalCodeInputModal('بررسی وضعیت بیمه', function(nationalCode) {
+                                if (nationalCode && nationalCode.length >= 10) {
+                                    checkInsuranceStatusByNationalCode(nationalCode);
                             } else {
-                                showErrorMessage('شناسه بیمار نامعتبر است');
+                                    showErrorMessage('کد ملی نامعتبر است. لطفاً کد ملی 10 رقمی وارد کنید.');
                             }
+                            });
                         });
 
                         $('#validateInsurances').on('click', function() {
@@ -348,21 +350,114 @@
                             });
                         }
 
-                        function checkInsuranceStatus(patientId) {
+                        // 🏥 Medical Environment: بررسی وضعیت بیمه - بهینه‌سازی شده برای Production
+                        function checkInsuranceStatusByNationalCode(nationalCode) {
+                            var $btn = $('#checkInsuranceStatus');
+                            var originalText = $btn.html();
+                            
+                            // 🏥 Medical Environment: Performance Monitoring
+                            var startTime = performance.now();
+                            
+                            // نمایش loading state
+                            $btn.prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i> در حال بررسی...');
+                            
                             $.ajax({
-                                url: '@Url.Action("GetPatientInsuranceStatus", "PatientInsurance")',
-                                type: 'GET',
-                                data: { patientId: patientId },
+                                url: '@Url.Action("GetPatientInsuranceStatusByNationalCode", "PatientInsurance")',
+                                type: 'POST',
+                                dataType: 'json', // 🏥 Medical Environment: اطمینان از JSON Parsing
+                                data: { 
+                                    nationalCode: nationalCode,
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                },
+                                timeout: 30000, // 30 ثانیه timeout
                                 success: function(response) {
-                                    if (response.success) {
-                                        showInsuranceStatusModal(response.data);
+                                    // 🏥 Medical Environment: Performance Logging
+                                    var endTime = performance.now();
+                                    var duration = endTime - startTime;
+                                    
+                                    console.log('🏥 MEDICAL: پاسخ بررسی وضعیت بیمه:', response);
+                                    console.log('🏥 MEDICAL: زمان پاسخ: ' + duration.toFixed(2) + 'ms');
+                                    
+                                    // 🏥 Medical Environment: Performance Alert
+                                    if (duration > 5000) { // بیش از 5 ثانیه
+                                        console.warn('🏥 MEDICAL: هشدار عملکرد - زمان پاسخ بیش از حد انتظار: ' + duration.toFixed(2) + 'ms');
+                                        showErrorMessage('زمان پاسخ سرور بیش از حد انتظار است. لطفاً دوباره تلاش کنید.');
+                                        return;
+                                    }
+                                    
+                                    // 🏥 Medical Environment: بررسی نوع Response
+                                    console.log('🏥 MEDICAL: نوع Response:', typeof response);
+                                    console.log('🏥 MEDICAL: Response اولیه:', response);
+                                    
+                                    // 🏥 Medical Environment: JSON Parsing اگر لازم باشد
+                                    var parsedResponse = response;
+                                    if (typeof response === 'string') {
+                                        try {
+                                            parsedResponse = JSON.parse(response);
+                                            console.log('🏥 MEDICAL: Response پس از Parse:', parsedResponse);
+                                        } catch (parseError) {
+                                            console.error('🏥 MEDICAL: خطا در Parse کردن Response:', parseError);
+                                            showErrorMessage('خطا در پردازش پاسخ سرور');
+                                            logPerformanceMetrics('insurance_status_check', duration, false);
+                                            return;
+                                        }
+                                    }
+                                    
+                                    // 🏥 Medical Environment: Debug Response Structure
+                                    console.log('🏥 MEDICAL: بررسی Response Structure:');
+                                    console.log('🏥 MEDICAL: parsedResponse.success:', parsedResponse.success);
+                                    console.log('🏥 MEDICAL: parsedResponse.Success:', parsedResponse.Success);
+                                    console.log('🏥 MEDICAL: parsedResponse.data:', parsedResponse.data);
+                                    console.log('🏥 MEDICAL: parsedResponse.Data:', parsedResponse.Data);
+                                    console.log('🏥 MEDICAL: parsedResponse structure:', Object.keys(parsedResponse || {}));
+                                    
+                                    // 🏥 Medical Environment: بررسی موفقیت Response
+                                    var isSuccess = parsedResponse && (parsedResponse.success || parsedResponse.Success);
+                                    var responseData = parsedResponse?.data || parsedResponse?.Data;
+                                    
+                                    console.log('🏥 MEDICAL: isSuccess:', isSuccess);
+                                    console.log('🏥 MEDICAL: responseData:', responseData);
+                                    
+                                    if (isSuccess && responseData) {
+                                        console.log('🏥 MEDICAL: Response موفق - نمایش مودال');
+                                        showInsuranceStatusModalOptimized(responseData);
+                                        
+                                        // 🏥 Medical Environment: Success Metrics
+                                        logPerformanceMetrics('insurance_status_check', duration, true);
                                     } else {
-                                        showErrorMessage(response.message || 'خطا در دریافت وضعیت بیمه');
+                                        console.log('🏥 MEDICAL: Response ناموفق - نمایش خطا');
+                                        showErrorMessage(parsedResponse?.message || parsedResponse?.Message || 'خطا در دریافت وضعیت بیمه');
+                                        logPerformanceMetrics('insurance_status_check', duration, false);
                                     }
                                 },
                                 error: function(xhr, status, error) {
-                                    console.error('خطا در بررسی وضعیت بیمه:', error);
-                                    showErrorMessage('خطا در بررسی وضعیت بیمه');
+                                    var endTime = performance.now();
+                                    var duration = endTime - startTime;
+                                    
+                                    console.error('🏥 MEDICAL: خطا در بررسی وضعیت بیمه:', {
+                                        status: xhr.status,
+                                        statusText: xhr.statusText,
+                                        error: error,
+                                        responseText: xhr.responseText,
+                                        duration: duration.toFixed(2) + 'ms'
+                                    });
+                                    
+                                    var errorMessage = 'خطا در بررسی وضعیت بیمه';
+                                    if (xhr.status === 0) {
+                                        errorMessage = 'اتصال به سرور برقرار نیست';
+                                    } else if (xhr.status === 500) {
+                                        errorMessage = 'خطای داخلی سرور';
+                                    } else if (xhr.status === 404) {
+                                        errorMessage = 'سرویس یافت نشد';
+                                    } else if (xhr.status === 403) {
+                                        errorMessage = 'شما مجوز دسترسی به این اطلاعات را ندارید';
+                                    }
+                                    
+                                    showErrorMessage(errorMessage);
+                                    logPerformanceMetrics('insurance_status_check', duration, false);
+                                },
+                                complete: function() {
+                                    $btn.prop('disabled', false).html(originalText);
                                 }
                             });
                         }
@@ -404,40 +499,277 @@
                             window.open(url, '_blank');
                         }
 
-                        function showInsuranceStatusModal(statusData) {
+                        // 🏥 Medical Environment: نمایش مودال وضعیت بیمه - بهینه‌سازی شده برای Production
+                        // 🏥 Medical Environment: تابع فرمت تاریخ
+                        function formatDate(dateValue) {
+                            if (!dateValue) return 'نامشخص';
+                            
+                            try {
+                                // بررسی فرمت /Date(timestamp)/
+                                if (typeof dateValue === 'string' && dateValue.startsWith('/Date(') && dateValue.endsWith(')/')) {
+                                    var timestamp = parseInt(dateValue.replace('/Date(', '').replace(')/', ''));
+                                    var date = new Date(timestamp);
+                                } else {
+                                    var date = new Date(dateValue);
+                                }
+                                
+                                if (isNaN(date.getTime())) return 'نامشخص';
+                                
+                                // تبدیل به تاریخ شمسی
+                                return date.toLocaleDateString('fa-IR', {
+                                    year: 'numeric',
+                                    month: '2-digit',
+                                    day: '2-digit'
+                                });
+                            } catch (error) {
+                                console.error('🏥 MEDICAL: خطا در فرمت تاریخ:', error, dateValue);
+                                return 'نامشخص';
+                            }
+                        }
+
+                        // 🏥 Medical Environment: تابع محاسبه روزهای باقی‌مانده
+                        function calculateDaysRemaining(dateValue) {
+                            if (!dateValue) return null;
+                            
+                            try {
+                                var date;
+                                if (typeof dateValue === 'string' && dateValue.startsWith('/Date(') && dateValue.endsWith(')/')) {
+                                    var timestamp = parseInt(dateValue.replace('/Date(', '').replace(')/', ''));
+                                    date = new Date(timestamp);
+                                } else {
+                                    date = new Date(dateValue);
+                                }
+                                
+                                if (isNaN(date.getTime())) return null;
+                                
+                                var now = new Date();
+                                var diffTime = date.getTime() - now.getTime();
+                                var diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                
+                                return diffDays;
+                            } catch (error) {
+                                console.error('🏥 MEDICAL: خطا در محاسبه روزهای باقی‌مانده:', error);
+                                return null;
+                            }
+                        }
+
+                        function showInsuranceStatusModalOptimized(statusData) {
+                            try {
+                                console.log('🏥 MEDICAL: نمایش مودال وضعیت بیمه:', statusData);
+                                console.log('🏥 MEDICAL: نوع داده:', typeof statusData);
+                                console.log('🏥 MEDICAL: کلیدهای موجود:', Object.keys(statusData || {}));
+                                
+                                // حذف مودال قبلی اگر وجود دارد
+                                $('#insuranceStatusModal').remove();
+                                
+                                // 🏥 Medical Environment: بررسی وجود داده‌ها
+                                if (!statusData) {
+                                    console.error('🏥 MEDICAL: داده‌های وضعیت بیمه موجود نیست');
+                                    showErrorMessage('داده‌های وضعیت بیمه دریافت نشد');
+                                    return;
+                                }
+                            
+                            // تعیین وضعیت و رنگ
+                            var statusClass = 'success';
+                            var statusIcon = 'fas fa-check-circle';
+                            var statusText = 'معتبر';
+                            
+                            // 🏥 Medical Environment: بررسی وضعیت اعتبارسنجی
+                            var validationStatus = statusData.validationStatus || statusData.ValidationStatus;
+                            if (validationStatus === 'Expired') {
+                                statusClass = 'danger';
+                                statusIcon = 'fas fa-times-circle';
+                                statusText = 'منقضی شده';
+                            } else if (validationStatus === 'Expiring') {
+                                statusClass = 'warning';
+                                statusIcon = 'fas fa-exclamation-triangle';
+                                statusText = 'در حال انقضا';
+                            } else if (validationStatus === 'NoPrimaryInsurance') {
+                                statusClass = 'info';
+                                statusIcon = 'fas fa-info-circle';
+                                statusText = 'فاقد بیمه اصلی';
+                            }
+
                             var modalHtml = `
-                                <div class="modal fade" id="insuranceStatusModal" tabindex="-1">
-                                    <div class="modal-dialog modal-lg">
+                                <div class="modal fade" id="insuranceStatusModal" tabindex="-1" role="dialog">
+                                    <div class="modal-dialog modal-xl" role="document">
                                         <div class="modal-content">
-                                            <div class="modal-header">
-                                                <h5 class="modal-title">وضعیت بیمه بیمار</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                            <div class="modal-header bg-${statusClass} text-white">
+                                                <h5 class="modal-title">
+                                                    <i class="${statusIcon}"></i> وضعیت بیمه بیمار - ${statusText}
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                                             </div>
                                             <div class="modal-body">
-                                                <div class="row">
-                                                    <div class="col-md-6">
-                                                        <strong>بیمه اصلی:</strong> ${statusData.hasPrimaryInsurance ? 'دارد' : 'ندارد'}
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <strong>بیمه تکمیلی:</strong> ${statusData.hasSupplementaryInsurance ? 'دارد' : 'ندارد'}
-                                                    </div>
-                                                </div>
-                                                <div class="row mt-3">
-                                                    <div class="col-md-6">
-                                                        <strong>تعداد بیمه اصلی:</strong> ${statusData.primaryInsuranceCount}
-                                                    </div>
-                                                    <div class="col-md-6">
-                                                        <strong>تعداد بیمه تکمیلی:</strong> ${statusData.supplementaryInsuranceCount}
-                                                    </div>
-                                                </div>
-                                                <div class="row mt-3">
+                                                <!-- 🏥 Medical Environment: خلاصه وضعیت -->
+                                                <div class="row mb-4">
                                                     <div class="col-12">
-                                                        <strong>توصیه:</strong> ${statusData.message}
+                                                        <div class="alert alert-${statusClass}">
+                                                            <h6><i class="fas fa-info-circle"></i> خلاصه وضعیت</h6>
+                                                            <p class="mb-0">${statusData.validationMessage || statusData.ValidationMessage || 'وضعیت بیمه بررسی شد'}</p>
+                                                            ${(statusData.expiryWarning || statusData.ExpiryWarning) ? '<small class="text-warning"><i class="fas fa-exclamation-triangle"></i> هشدار انقضا</small>' : ''}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 🏥 Medical Environment: اطلاعات بیمه اصلی -->
+                                                <div class="row mb-3">
+                                                    <div class="col-12">
+                                                        <h6><i class="fas fa-shield-alt"></i> بیمه اصلی</h6>
+                                                        <div class="card">
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <strong>وضعیت:</strong> 
+                                                                        <span class="badge bg-${(statusData.hasPrimaryInsurance || statusData.HasPrimaryInsurance) ? 'success' : 'danger'}">
+                                                                            ${(statusData.hasPrimaryInsurance || statusData.HasPrimaryInsurance) ? 'دارد' : 'ندارد'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <strong>فعال:</strong> 
+                                                                        <span class="badge bg-${(statusData.primaryInsuranceActive || statusData.PrimaryInsuranceActive) ? 'success' : 'danger'}">
+                                                                            ${(statusData.primaryInsuranceActive || statusData.PrimaryInsuranceActive) ? 'فعال' : 'غیرفعال'}
+                                                                        </span>
+                                                                    </div>
+                                                                </div>
+                                                                ${(statusData.primaryInsurance || statusData.PrimaryInsurance) ? `
+                                                                    <div class="row mt-2">
+                                                                        <div class="col-md-6">
+                                                                            <strong>نام طرح:</strong> ${(statusData.primaryInsurance || statusData.PrimaryInsurance)?.name || (statusData.primaryInsurance || statusData.PrimaryInsurance)?.Name || 'نامشخص'}
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <strong>شماره بیمه:</strong> ${(statusData.primaryInsurance || statusData.PrimaryInsurance)?.policyNumber || (statusData.primaryInsurance || statusData.PrimaryInsurance)?.PolicyNumber || 'نامشخص'}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row mt-2">
+                                                                        <div class="col-md-6">
+                                                                            <strong>تاریخ شروع:</strong> ${formatDate((statusData.primaryInsurance || statusData.PrimaryInsurance)?.startDate || (statusData.primaryInsurance || statusData.PrimaryInsurance)?.StartDate)}
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <strong>تاریخ پایان:</strong> ${formatDate((statusData.primaryInsurance || statusData.PrimaryInsurance)?.endDate || (statusData.primaryInsurance || statusData.PrimaryInsurance)?.EndDate)} ${(() => {
+                                                                                var endDate = (statusData.primaryInsurance || statusData.PrimaryInsurance)?.endDate || (statusData.primaryInsurance || statusData.PrimaryInsurance)?.EndDate;
+                                                                                var daysRemaining = calculateDaysRemaining(endDate);
+                                                                                if (daysRemaining !== null) {
+                                                                                    if (daysRemaining < 0) {
+                                                                                        return '<span class="badge bg-danger">منقضی شده</span>';
+                                                                                    } else if (daysRemaining <= 30) {
+                                                                                        return '<span class="badge bg-warning">' + daysRemaining + ' روز باقی‌مانده</span>';
+                                                                                    } else {
+                                                                                        return '<span class="badge bg-success">' + daysRemaining + ' روز باقی‌مانده</span>';
+                                                                                    }
+                                                                                }
+                                                                                return '';
+                                                                            })()}
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 🏥 Medical Environment: اطلاعات بیمه تکمیلی -->
+                                                <div class="row mb-3">
+                                                    <div class="col-12">
+                                                        <h6><i class="fas fa-plus-circle"></i> بیمه تکمیلی</h6>
+                                                        <div class="card">
+                                                            <div class="card-body">
+                                                                <div class="row">
+                                                                    <div class="col-md-6">
+                                                                        <strong>وضعیت:</strong> 
+                                                                        <span class="badge bg-${(statusData.hasSupplementaryInsurance || statusData.HasSupplementaryInsurance) ? 'success' : 'info'}">
+                                                                            ${(statusData.hasSupplementaryInsurance || statusData.HasSupplementaryInsurance) ? 'دارد' : 'ندارد'}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div class="col-md-6">
+                                                                        <strong>تعداد:</strong> ${statusData.supplementaryInsuranceCount || 0}
+                                                                    </div>
+                                                                </div>
+                                                                ${(statusData.supplementaryInsurance || statusData.SupplementaryInsurance) ? `
+                                                                    <div class="row mt-2">
+                                                                        <div class="col-md-6">
+                                                                            <strong>نام طرح:</strong> ${(statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.name || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.Name || 'نامشخص'}
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <strong>شماره بیمه:</strong> ${(statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.policyNumber || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.PolicyNumber || 'نامشخص'}
+                                                                        </div>
+                                                                    </div>
+                                                                    <div class="row mt-2">
+                                                                        <div class="col-md-6">
+                                                                            <strong>تاریخ شروع:</strong> ${formatDate((statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.startDate || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.StartDate)}
+                                                                        </div>
+                                                                        <div class="col-md-6">
+                                                                            <strong>تاریخ پایان:</strong> ${formatDate((statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.endDate || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.EndDate)} ${(() => {
+                                                                                var endDate = (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.endDate || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.EndDate;
+                                                                                var daysRemaining = calculateDaysRemaining(endDate);
+                                                                                if (daysRemaining !== null) {
+                                                                                    if (daysRemaining < 0) {
+                                                                                        return '<span class="badge bg-danger">منقضی شده</span>';
+                                                                                    } else if (daysRemaining <= 30) {
+                                                                                        return '<span class="badge bg-warning">' + daysRemaining + ' روز باقی‌مانده</span>';
+                                                                                    } else {
+                                                                                        return '<span class="badge bg-success">' + daysRemaining + ' روز باقی‌مانده</span>';
+                                                                                    }
+                                                                                }
+                                                                                return '';
+                                                                            })()}
+                                                                        </div>
+                                                                    </div>
+                                                                ` : ''}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <!-- 🏥 Medical Environment: تحلیل پوشش -->
+                                                ${statusData.coverageAnalysis ? `
+                                                    <div class="row mb-3">
+                                                        <div class="col-12">
+                                                            <h6><i class="fas fa-chart-pie"></i> تحلیل پوشش</h6>
+                                                            <div class="card">
+                                                                <div class="card-body">
+                                                                    <div class="row">
+                                                                        <div class="col-md-3">
+                                                                            <strong>پوشش اصلی:</strong> ${statusData.coverageAnalysis.primaryCoveragePercent || 0}%
+                                                                        </div>
+                                                                        <div class="col-md-3">
+                                                                            <strong>پوشش تکمیلی:</strong> ${statusData.coverageAnalysis.supplementaryCoveragePercent || 0}%
+                                                                        </div>
+                                                                        <div class="col-md-3">
+                                                                            <strong>پوشش کل:</strong> ${statusData.coverageAnalysis.totalCoveragePercent || 0}%
+                                                                        </div>
+                                                                        <div class="col-md-3">
+                                                                            <strong>فرانشیز:</strong> ${(statusData.coverageAnalysis.primaryDeductible || 0) + (statusData.coverageAnalysis.supplementaryDeductible || 0)} تومان
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                ` : ''}
+
+                                                <!-- 🏥 Medical Environment: اطلاعات فنی -->
+                                                <div class="row">
+                                                    <div class="col-12">
+                                                        <small class="text-muted">
+                                                            <i class="fas fa-clock"></i> تاریخ بررسی: ${formatDate(statusData.validationDate || statusData.ValidationDate)}
+                                                        </small>
                                                     </div>
                                                 </div>
                                             </div>
                                             <div class="modal-footer">
-                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">بستن</button>
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="fas fa-times"></i> بستن
+                                                </button>
+                                                ${statusData.hasPrimaryInsurance ? `
+                                                    <button type="button" class="btn btn-info" onclick="editPatientInsurance(${statusData.patientId})">
+                                                        <i class="fas fa-edit"></i> ویرایش بیمه
+                                                    </button>
+                                                ` : `
+                                                    <button type="button" class="btn btn-success" onclick="createPatientInsurance(${statusData.patientId})">
+                                                        <i class="fas fa-plus"></i> ایجاد بیمه
+                                                    </button>
+                                                `}
                                             </div>
                                         </div>
                                     </div>
@@ -447,7 +779,121 @@
                             $('body').append(modalHtml);
                             $('#insuranceStatusModal').modal('show');
 
+                            // حذف مودال بعد از بسته شدن
                             $('#insuranceStatusModal').on('hidden.bs.modal', function() {
+                                $(this).remove();
+                            });
+                            
+                            } catch (error) {
+                                console.error('🏥 MEDICAL: خطا در نمایش مودال وضعیت بیمه:', error);
+                                showErrorMessage('خطا در نمایش وضعیت بیمه: ' + error.message);
+                            }
+                        }
+
+                        // 🏥 Medical Environment: توابع کمکی برای Production
+                        function editPatientInsurance(patientId) {
+                            window.location.href = '@Url.Action("Edit", "PatientInsurance")' + '?patientId=' + patientId;
+                        }
+
+                        function createPatientInsurance(patientId) {
+                            window.location.href = '@Url.Action("Create", "PatientInsurance")' + '?patientId=' + patientId;
+                        }
+
+                        // 🏥 Medical Environment: Performance Metrics Logging
+                        function logPerformanceMetrics(operation, duration, success) {
+                            try {
+                                var metrics = {
+                                    operation: operation,
+                                    duration: duration,
+                                    success: success,
+                                    timestamp: new Date().toISOString(),
+                                    userAgent: navigator.userAgent,
+                                    url: window.location.href
+                                };
+
+                                console.log('🏥 MEDICAL: Performance Metrics:', metrics);
+
+                                // 🏥 Medical Environment: در محیط Production باید اینجا:
+                                // 1. ارسال به سیستم مانیتورینگ (Application Insights, New Relic, etc.)
+                                // 2. ثبت در دیتابیس برای تحلیل
+                                // 3. ارسال به سیستم‌های Alerting
+                                // 4. ثبت در Log Files
+
+                                // برای حال حاضر فقط در Console ثبت می‌کنیم
+                                if (duration > 3000) { // بیش از 3 ثانیه
+                                    console.warn('🏥 MEDICAL: Slow Operation Detected:', metrics);
+                                }
+                            } catch (ex) {
+                                console.error('🏥 MEDICAL: خطا در ثبت Performance Metrics:', ex);
+                            }
+                        }
+
+                        // 🏥 Medical Environment: مودال ورودی کد ملی بیمار - بهینه‌سازی شده برای Production
+                        function showNationalCodeInputModal(title, callback) {
+                            var modalHtml = `
+                                <div class="modal fade" id="nationalCodeInputModal" tabindex="-1" role="dialog">
+                                    <div class="modal-dialog modal-sm" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header bg-primary text-white">
+                                                <h5 class="modal-title">
+                                                    <i class="fas fa-user-md"></i> ${title}
+                                                </h5>
+                                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="form-group">
+                                                    <label for="nationalCodeInput" class="form-label">
+                                                        <i class="fas fa-id-card"></i> کد ملی بیمار
+                                                    </label>
+                                                    <input type="text" class="form-control" id="nationalCodeInput" 
+                                                           placeholder="مثال: 1234567890" maxlength="10" pattern="[0-9]{10}" required>
+                                                    <div class="form-text">
+                                                        <i class="fas fa-info-circle"></i> لطفاً کد ملی 10 رقمی بیمار را وارد کنید
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                    <i class="fas fa-times"></i> لغو
+                                                </button>
+                                                <button type="button" class="btn btn-primary" id="confirmNationalCode">
+                                                    <i class="fas fa-check"></i> تایید
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+
+                            $('body').append(modalHtml);
+                            $('#nationalCodeInputModal').modal('show');
+
+                            // Focus on input
+                            $('#nationalCodeInputModal').on('shown.bs.modal', function() {
+                                $('#nationalCodeInput').focus();
+                            });
+
+                            // Handle Enter key
+                            $('#nationalCodeInput').on('keypress', function(e) {
+                                if (e.which === 13) { // Enter key
+                                    $('#confirmNationalCode').click();
+                                }
+                            });
+
+                            // Handle confirm button
+                            $('#confirmNationalCode').on('click', function() {
+                                var nationalCode = $('#nationalCodeInput').val();
+                                if (nationalCode && nationalCode.length === 10 && /^[0-9]+$/.test(nationalCode)) {
+                                    $('#nationalCodeInputModal').modal('hide');
+                                    callback(nationalCode);
+                                } else {
+                                    $('#nationalCodeInput').addClass('is-invalid');
+                                    showErrorMessage('لطفاً کد ملی 10 رقمی معتبر وارد کنید');
+                                }
+                            });
+
+                            // Remove modal after hiding
+                            $('#nationalCodeInputModal').on('hidden.bs.modal', function() {
                                 $(this).remove();
                             });
                         }

@@ -19,7 +19,7 @@ namespace ClinicApp.Models.DTOs.Insurance
     }
 
     /// <summary>
-    /// وضعیت بیمه بیمار
+    /// وضعیت بیمه بیمار - بهینه‌سازی شده برای محیط Production
     /// </summary>
     public class PatientInsuranceStatus
     {
@@ -30,6 +30,12 @@ namespace ClinicApp.Models.DTOs.Insurance
         public DateTime ValidationDate { get; set; }
         public InsuranceInfo PrimaryInsurance { get; set; }
         public InsuranceInfo SupplementaryInsurance { get; set; }
+        
+        // 🏥 Medical Environment: فیلدهای اضافی برای Production
+        public string ValidationStatus { get; set; }
+        public string ValidationMessage { get; set; }
+        public bool ExpiryWarning { get; set; }
+        public CoverageAnalysis CoverageAnalysis { get; set; }
     }
 
     /// <summary>
@@ -43,5 +49,17 @@ namespace ClinicApp.Models.DTOs.Insurance
         public DateTime StartDate { get; set; }
         public DateTime? EndDate { get; set; }
         public bool IsActive { get; set; }
+    }
+
+    /// <summary>
+    /// تحلیل پوشش بیمه برای محیط Production
+    /// </summary>
+    public class CoverageAnalysis
+    {
+        public decimal PrimaryCoveragePercent { get; set; }
+        public decimal PrimaryDeductible { get; set; }
+        public decimal SupplementaryCoveragePercent { get; set; }
+        public decimal SupplementaryDeductible { get; set; }
+        public decimal TotalCoveragePercent { get; set; }
     }
 }

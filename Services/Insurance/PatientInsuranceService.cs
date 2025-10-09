@@ -599,7 +599,25 @@ namespace ClinicApp.Services.Insurance
 
                 // دریافت فقط بیمه‌های تکمیلی (غیر اصلی) از ریپازیتوری
                 var supplementaryInsurances = await _patientInsuranceRepository.GetSupplementaryByPatientIdAsync(patientId);
+                
+                // 🚨 DEBUG: بررسی رکوردهای دریافتی
+                _log.Information("🔍 DEBUG: Repository returned {Count} records for PatientId: {PatientId}", 
+                    supplementaryInsurances.Count, patientId);
+                
+                foreach (var insurance in supplementaryInsurances)
+                {
+                    _log.Information("🔍 DEBUG: Record - PatientInsuranceId: {Id}, IsPrimary: {IsPrimary}, SupplementaryProviderId: {SuppProviderId}, SupplementaryPlanId: {SuppPlanId}", 
+                        insurance.PatientInsuranceId, insurance.IsPrimary, insurance.SupplementaryInsuranceProviderId, insurance.SupplementaryInsurancePlanId);
+                }
+                
                 var viewModels = supplementaryInsurances.Select(ConvertToIndexViewModel).ToList();
+                
+                // 🚨 DEBUG: بررسی ViewModels
+                foreach (var viewModel in viewModels)
+                {
+                    _log.Information("🔍 DEBUG: ViewModel - PatientInsuranceId: {Id}, HasSupplementaryInsurance: {HasSupp}, SupplementaryProviderId: {SuppProviderId}, SupplementaryPlanId: {SuppPlanId}", 
+                        viewModel.PatientInsuranceId, viewModel.HasSupplementaryInsurance, viewModel.SupplementaryInsuranceProviderId, viewModel.SupplementaryInsurancePlanId);
+                }
                 
                 _log.Information("Found {Count} supplementary insurances for PatientId: {PatientId}. User: {UserName} (Id: {UserId})", 
                     viewModels.Count, patientId, _currentUserService.UserName, _currentUserService.UserId);
@@ -1275,7 +1293,7 @@ namespace ClinicApp.Services.Insurance
                 SupplementaryInsurancePlanName = patientInsurance.SupplementaryInsurancePlan?.Name,
                 SupplementaryPolicyNumber = patientInsurance.SupplementaryPolicyNumber,
                 HasSupplementaryInsurance = patientInsurance.SupplementaryInsuranceProviderId.HasValue && 
-                                          patientInsurance.SupplementaryInsuranceProviderId.Value > 0
+                                            patientInsurance.SupplementaryInsurancePlanId.HasValue
             };
         }
 

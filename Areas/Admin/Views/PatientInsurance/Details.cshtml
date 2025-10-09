@@ -6,7 +6,18 @@
 
 @section Styles {
     <link href="~/Content/css/patient-insurance.css" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Vazir:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
     <style>
+        /* 🏥 Medical Environment: Vazir Font for High Readability */
+        * {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif !important;
+        }
+        
+        body {
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif !important;
+            font-weight: 400;
+            line-height: 1.6;
+        }
         /* 🏥 Medical Environment Details Page - Enhanced Standards */
         .patient-insurance-details-card {
             background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -37,13 +48,16 @@
             font-weight: 600;
             color: #1976d2;
             margin-bottom: 0.5rem;
-            font-size: 1rem;
+            font-size: 1.1rem;
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
         }
         
         .detail-value {
             color: #424242;
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 500;
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            line-height: 1.8;
         }
         
         .patient-header {
@@ -61,6 +75,8 @@
             font-weight: 700;
             margin-bottom: 0.75rem;
             text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            line-height: 1.4;
         }
         
         .patient-code {
@@ -214,13 +230,15 @@
         .section-title {
             color: #1976d2;
             font-weight: 700;
-            font-size: 1.3rem;
+            font-size: 1.4rem;
             margin-bottom: 1.5rem;
             padding-bottom: 0.75rem;
             border-bottom: 3px solid #1976d2;
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            font-family: 'Vazir', 'Tahoma', 'Arial', sans-serif;
+            line-height: 1.6;
         }
         
         /* 🏥 Medical Environment Animations */
@@ -646,6 +664,149 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- 🏥 Supplementary Insurance Information Section -->
+                        @if (Model.HasSupplementaryInsurance)
+                        {
+                            <div class="section-title">
+                                <i class="fas fa-plus-circle"></i>
+                                اطلاعات بیمه تکمیلی
+                            </div>
+
+                            <div class="insurance-section" style="background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%); border: 2px solid #90caf9;">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="plan-name" style="color: #1976d2;">
+                                            <i class="fas fa-file-medical-alt"></i> 
+                                            @if (!string.IsNullOrEmpty(Model.SupplementaryInsurancePlanName))
+                                            {
+                                                @Model.SupplementaryInsurancePlanName
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">نام طرح بیمه تکمیلی ثبت نشده</span>
+                                            }
+                                        </div>
+                                        <div class="provider-badge" style="background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%); color: #7b1fa2; border: 1px solid #ba68c8;">
+                                            <i class="fas fa-hospital-alt"></i> 
+                                            @if (!string.IsNullOrEmpty(Model.SupplementaryInsuranceProviderName))
+                                            {
+                                                @Model.SupplementaryInsuranceProviderName
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">ارائه‌دهنده بیمه تکمیلی ثبت نشده</span>
+                                            }
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4 text-right">
+                                        <div class="detail-label">شناسه طرح بیمه تکمیلی</div>
+                                        <div class="detail-value">
+                                            <strong>#@Model.SupplementaryInsurancePlanId</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 🏥 Supplementary Policy Information -->
+                            <div class="policy-section" style="background: linear-gradient(135deg, #fff3cd 0%, #fff8e1 100%); border: 2px solid #ffeaa7;">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <div class="policy-number" style="color: #856404;">
+                                            @if (!string.IsNullOrEmpty(Model.SupplementaryPolicyNumber))
+                                            {
+                                                @Model.SupplementaryPolicyNumber
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">شماره بیمه تکمیلی ثبت نشده</span>
+                                            }
+                                        </div>
+                                        <div class="text-center text-muted mt-2">
+                                            <strong>شماره بیمه تکمیلی</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="detail-label">شناسه بیمه‌گذار تکمیلی</div>
+                                        <div class="detail-value">
+                                            <strong>#@Model.SupplementaryInsuranceProviderId</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- 🏥 Supplementary Coverage Information -->
+                            <div class="coverage-section" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border: 2px solid #dee2e6;">
+                                <div class="row">
+                                    <div class="col-md-4">
+                                        <div class="coverage-percent" style="color: #17a2b8;">
+                                            @if (Model.SupplementaryCoveragePercent.HasValue && Model.SupplementaryCoveragePercent > 0)
+                                            {
+                                                @Model.SupplementaryCoveragePercent.Value.ToString("N1")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">تعریف نشده</span>
+                                            }
+                                        </div>
+                                        <div class="text-center text-muted">
+                                            <strong>درصد پوشش تکمیلی</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="deductible-amount" style="color: #6f42c1;">
+                                            @if (Model.SupplementaryDeductible.HasValue && Model.SupplementaryDeductible > 0)
+                                            {
+                                                @Model.SupplementaryDeductible.Value.ToString("N0")
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">تعریف نشده</span>
+                                            }
+                                        </div>
+                                        <div class="text-center text-muted">
+                                            <strong>فرانشیز تکمیلی</strong>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="detail-label">نوع پوشش تکمیلی</div>
+                                        <div class="detail-value">
+                                            @if (Model.SupplementaryCoveragePercent.HasValue && Model.SupplementaryCoveragePercent > 0)
+                                            {
+                                                if (Model.SupplementaryCoveragePercent >= 80)
+                                                {
+                                                    <span class="badge badge-success">پوشش بالا</span>
+                                                }
+                                                else if (Model.SupplementaryCoveragePercent >= 50)
+                                                {
+                                                    <span class="badge badge-warning">پوشش متوسط</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge badge-danger">پوشش پایین</span>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <span class="badge badge-secondary">تعریف نشده</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="section-title">
+                                <i class="fas fa-plus-circle"></i>
+                                اطلاعات بیمه تکمیلی
+                            </div>
+                            
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle"></i>
+                                <strong>این بیمار بیمه تکمیلی ندارد.</strong> در صورت نیاز می‌توانید بیمه تکمیلی اضافه کنید.
+                            </div>
+                        }
 
                         <hr class="my-4">
 

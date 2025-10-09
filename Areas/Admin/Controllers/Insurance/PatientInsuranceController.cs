@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
+using ClinicApp.Interfaces.Repositories;
+using System.Data.Entity;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.Core;
@@ -97,6 +99,235 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         private int PageSize => _appSettings.DefaultPageSize;
 
         #region Insurance Status Helper Methods
+
+        /// <summary>
+        /// اعتبارسنجی پیشرفته وضعیت بیمه برای محیط Production
+        /// </summary>
+        private async Task<InsuranceValidationResult> ValidateInsuranceStatusAsync(int patientId, 
+            ServiceResult<PatientInsuranceDetailsViewModel> primaryInsuranceResult, 
+            ServiceResult<List<PatientInsuranceIndexViewModel>> supplementaryInsurancesResult)
+        {
+            try
+            {
+                var validationResult = new InsuranceValidationResult
+                {
+                    Status = "Valid",
+                    Message = "وضعیت بیمه معتبر است",
+                    ExpiryWarning = false,
+                    CoverageAnalysis = new CoverageAnalysis()
+                };
+
+                // 🏥 Medical Environment: بررسی بیمه اصلی
+                if (primaryInsuranceResult.Success && primaryInsuranceResult.Data != null)
+                {
+                    var primaryInsurance = primaryInsuranceResult.Data;
+                    
+                    // بررسی انقضای بیمه اصلی
+                    if (primaryInsurance.EndDate.HasValue && primaryInsurance.EndDate.Value < DateTime.UtcNow)
+                    {
+                        validationResult.Status = "Expired";
+                        validationResult.Message = "بیمه اصلی منقضی شده است";
+                        validationResult.ExpiryWarning = true;
+                    }
+                    else if (primaryInsurance.EndDate.HasValue && primaryInsurance.EndDate.Value <= DateTime.UtcNow.AddDays(30))
+                    {
+                        validationResult.Status = "Expiring";
+                        validationResult.Message = "بیمه اصلی در حال انقضا است";
+                        validationResult.ExpiryWarning = true;
+                    }
+
+                    // تحلیل پوشش بیمه اصلی
+                    validationResult.CoverageAnalysis.PrimaryCoveragePercent = primaryInsurance.CoveragePercent;
+                    validationResult.CoverageAnalysis.PrimaryDeductible = primaryInsurance.Deductible;
+                }
+                else
+                {
+                    validationResult.Status = "NoPrimaryInsurance";
+                    validationResult.Message = "بیمه اصلی یافت نشد";
+                }
+
+                // 🏥 Medical Environment: بررسی بیمه تکمیلی
+                if (supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data?.Any() == true)
+                {
+                    var supplementaryInsurance = supplementaryInsurancesResult.Data.First();
+                    
+                    // بررسی انقضای بیمه تکمیلی
+                    if (supplementaryInsurance.EndDate.HasValue && supplementaryInsurance.EndDate.Value < DateTime.UtcNow)
+                    {
+                        if (validationResult.Status == "Valid")
+                        {
+                            validationResult.Status = "SupplementaryExpired";
+                            validationResult.Message = "بیمه تکمیلی منقضی شده است";
+                        }
+                        validationResult.ExpiryWarning = true;
+                    }
+
+                    // تحلیل پوشش بیمه تکمیلی (از فیلدهای موجود در IndexViewModel)
+                    validationResult.CoverageAnalysis.SupplementaryCoveragePercent = supplementaryInsurance.CoveragePercent;
+                    validationResult.CoverageAnalysis.SupplementaryDeductible = 0; // در IndexViewModel این فیلد موجود نیست
+                }
+
+                // 🏥 Medical Environment: تحلیل کلی پوشش
+                if (validationResult.CoverageAnalysis.PrimaryCoveragePercent > 0 && validationResult.CoverageAnalysis.SupplementaryCoveragePercent > 0)
+                {
+                    validationResult.CoverageAnalysis.TotalCoveragePercent = Math.Min(100, 
+                        validationResult.CoverageAnalysis.PrimaryCoveragePercent + validationResult.CoverageAnalysis.SupplementaryCoveragePercent);
+                }
+                else if (validationResult.CoverageAnalysis.PrimaryCoveragePercent > 0)
+                {
+                    validationResult.CoverageAnalysis.TotalCoveragePercent = validationResult.CoverageAnalysis.PrimaryCoveragePercent;
+                }
+
+                _log.Information("🏥 MEDICAL: اعتبارسنجی بیمه انجام شد. PatientId: {PatientId}, Status: {Status}, Message: {Message}. User: {UserName} (Id: {UserId})",
+                    patientId, validationResult.Status, validationResult.Message, _currentUserService.UserName, _currentUserService.UserId);
+
+                return validationResult;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی بیمه. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return new InsuranceValidationResult
+                {
+                    Status = "Error",
+                    Message = "خطا در اعتبارسنجی بیمه",
+                    ExpiryWarning = false,
+                    CoverageAnalysis = new CoverageAnalysis()
+                };
+            }
+        }
+
+        /// <summary>
+        /// پردازش هشدارهای Real-time برای محیط درمانی
+        /// </summary>
+        private async Task ProcessRealTimeAlertsAsync(PatientInsuranceStatus status)
+        {
+            try
+            {
+                // 🏥 Medical Environment: بررسی هشدارهای حیاتی
+                var criticalAlerts = new List<string>();
+
+                // بررسی انقضای بیمه اصلی
+                if (status.ValidationStatus == "Expired")
+                {
+                    criticalAlerts.Add($"🚨 هشدار حیاتی: بیمه اصلی بیمار {status.PatientId} منقضی شده است");
+                    _log.Warning("🏥 MEDICAL: هشدار حیاتی - بیمه اصلی منقضی شده. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        status.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // بررسی انقضای بیمه تکمیلی
+                if (status.ValidationStatus == "SupplementaryExpired")
+                {
+                    criticalAlerts.Add($"⚠️ هشدار: بیمه تکمیلی بیمار {status.PatientId} منقضی شده است");
+                    _log.Warning("🏥 MEDICAL: هشدار - بیمه تکمیلی منقضی شده. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        status.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // بررسی عدم وجود بیمه اصلی
+                if (status.ValidationStatus == "NoPrimaryInsurance")
+                {
+                    criticalAlerts.Add($"🔴 هشدار بحرانی: بیمار {status.PatientId} فاقد بیمه اصلی است");
+                    _log.Error("🏥 MEDICAL: هشدار بحرانی - بیمار فاقد بیمه اصلی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        status.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // بررسی پوشش کم
+                if (status.CoverageAnalysis?.TotalCoveragePercent < 50)
+                {
+                    criticalAlerts.Add($"📊 هشدار: پوشش بیمه بیمار {status.PatientId} کمتر از 50% است");
+                    _log.Warning("🏥 MEDICAL: هشدار - پوشش بیمه کم. PatientId: {PatientId}, Coverage: {Coverage}%. User: {UserName} (Id: {UserId})",
+                        status.PatientId, status.CoverageAnalysis.TotalCoveragePercent, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // 🏥 Medical Environment: ارسال هشدارها به سیستم مانیتورینگ
+                if (criticalAlerts.Any())
+                {
+                    await SendAlertsToMonitoringSystemAsync(criticalAlerts, status);
+                }
+
+                // 🏥 Medical Environment: ثبت در Audit Trail
+                _log.Information("🏥 MEDICAL: Real-time Alerts پردازش شد. PatientId: {PatientId}, AlertCount: {AlertCount}. User: {UserName} (Id: {UserId})",
+                    status.PatientId, criticalAlerts.Count, _currentUserService.UserName, _currentUserService.UserId);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در پردازش Real-time Alerts. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    status.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+            }
+        }
+
+        /// <summary>
+        /// ارسال هشدارها به سیستم مانیتورینگ
+        /// </summary>
+        private async Task SendAlertsToMonitoringSystemAsync(List<string> alerts, PatientInsuranceStatus status)
+        {
+            try
+            {
+                // 🏥 Medical Environment: در محیط واقعی اینجا باید به سیستم مانیتورینگ متصل شویم
+                // مثل Slack, Teams, Email, SMS, یا سیستم‌های تخصصی بیمارستان
+                
+                foreach (var alert in alerts)
+                {
+                    _log.Warning("🏥 MEDICAL ALERT: {Alert}. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        alert, status.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                // 🏥 Medical Environment: در محیط Production باید اینجا:
+                // 1. ارسال به Slack/Teams
+                // 2. ارسال Email به مدیران
+                // 3. ارسال SMS در موارد بحرانی
+                // 4. ثبت در سیستم Audit
+                // 5. ارسال به سیستم‌های مانیتورینگ بیمارستان
+
+                await Task.CompletedTask; // Placeholder برای async operation
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در ارسال هشدارها به سیستم مانیتورینگ. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    status.PatientId, _currentUserService.UserName, _currentUserService.UserId);
+            }
+        }
+
+        ///// <summary>
+        ///// بررسی مجوز دسترسی کاربر به اطلاعات بیمار
+        ///// </summary>
+        //private async Task<bool> CheckUserAccessToPatientAsync(int patientId)
+        //{
+        //    try
+        //    {
+        //        // 🏥 Medical Environment: در محیط واقعی اینجا باید:
+        //        // 1. بررسی نقش کاربر (Doctor, Nurse, Admin, etc.)
+        //        // 2. بررسی مجوزهای خاص
+        //        // 3. بررسی قوانین بیمارستان
+        //        // 4. بررسی حریم خصوصی بیمار
+
+        //        // برای حال حاضر فقط بررسی می‌کنیم که کاربر لاگین کرده باشد
+        //        if (_currentUserService.UserId <= 0)
+        //        {
+        //            _log.Warning("🏥 MEDICAL: تلاش برای دسترسی بدون لاگین. PatientId: {PatientId}",
+        //                patientId);
+        //            return false;
+        //        }
+
+        //        // 🏥 Medical Environment: در محیط Production باید اینجا:
+        //        // - بررسی نقش کاربر
+        //        // - بررسی مجوزهای RBAC
+        //        // - بررسی قوانین HIPAA
+        //        // - بررسی دسترسی به بخش‌های خاص
+
+        //        _log.Information("🏥 MEDICAL: مجوز دسترسی بررسی شد. PatientId: {PatientId}, User: {UserName} (Id: {UserId})",
+        //            patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+        //        return true;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _log.Error(ex, "🏥 MEDICAL: خطا در بررسی مجوز دسترسی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+        //            patientId, _currentUserService.UserName, _currentUserService.UserId);
+        //        return false;
+        //    }
+        //}
 
         /// <summary>
         /// بررسی وضعیت بیمه بیمار و ارائه راهنمایی مناسب
@@ -498,19 +729,67 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         }
 
         /// <summary>
-        /// دریافت وضعیت بیمه بیمار
+        /// دریافت وضعیت بیمه بیمار بر اساس کد ملی - بهینه‌سازی شده برای محیط Production
         /// </summary>
-        [HttpGet]
-        public async Task<ActionResult> GetPatientInsuranceStatus(int patientId)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> GetPatientInsuranceStatusByNationalCode(string nationalCode)
         {
             try
             {
-                _log.Information("🏥 MEDICAL: دریافت وضعیت بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
-                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("🏥 MEDICAL: دریافت وضعیت بیمه بیمار بر اساس کد ملی (Production Optimized). NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                    nationalCode, _currentUserService.UserName, _currentUserService.UserId);
 
-                // دریافت بیمه‌های بیمار
-                var primaryInsuranceResult = await _patientInsuranceService.GetPrimaryInsuranceByPatientAsync(patientId);
-                var supplementaryInsurancesResult = await _patientInsuranceService.GetSupplementaryInsurancesByPatientAsync(patientId);
+                // 🏥 Medical Environment: اعتبارسنجی کد ملی
+                if (string.IsNullOrEmpty(nationalCode) || nationalCode.Length != 10 || !nationalCode.All(char.IsDigit))
+                {
+                    _log.Warning("🏥 MEDICAL: تلاش برای دسترسی با کد ملی نامعتبر. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                        nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                        "کد ملی نامعتبر است"),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                // 🏥 Medical Environment: یافتن بیمار بر اساس کد ملی
+                var patientService = DependencyResolver.Current.GetService<IPatientService>();
+                var patient = await patientService.GetPatientByNationalCodeAsync(nationalCode);
+                
+                if (patient == null)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمار با کد ملی یافت نشد. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                        nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                        "بیمار با این کد ملی یافت نشد"),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                var patientId = patient.PatientId;
+                
+                // 🏥 Medical Environment: بررسی وضعیت سیستم قبل از عملیات
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای بررسی وضعیت بیمه. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                        "سیستم در حال حاضر در دسترس نیست. لطفاً بعداً تلاش کنید"),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                // 🏥 Medical Environment: دریافت موازی اطلاعات بیمه
+                var primaryInsuranceTask = _patientInsuranceService.GetPrimaryInsuranceByPatientAsync(patientId);
+                var supplementaryInsurancesTask = _patientInsuranceService.GetSupplementaryInsurancesByPatientAsync(patientId);
+
+                await Task.WhenAll(primaryInsuranceTask, supplementaryInsurancesTask);
+
+                var primaryInsuranceResult = await primaryInsuranceTask;
+                var supplementaryInsurancesResult = await supplementaryInsurancesTask;
+
+                // 🏥 Medical Environment: بررسی اعتبارسنجی پیشرفته
+                var validationResult = await ValidateInsuranceStatusAsync(patientId, primaryInsuranceResult, supplementaryInsurancesResult);
 
                 var status = new PatientInsuranceStatus
                 {
@@ -518,11 +797,147 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                     HasPrimaryInsurance = primaryInsuranceResult.Success && primaryInsuranceResult.Data != null,
                     HasSupplementaryInsurance = supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data?.Any() == true,
                     PrimaryInsuranceActive = primaryInsuranceResult.Success && primaryInsuranceResult.Data?.IsActive == true,
-                    ValidationDate = DateTime.UtcNow
+                    ValidationDate = DateTime.UtcNow,
+                    PrimaryInsurance = primaryInsuranceResult.Success && primaryInsuranceResult.Data != null ? new InsuranceInfo
+                    {
+                        Id = primaryInsuranceResult.Data.PatientInsuranceId,
+                        Name = primaryInsuranceResult.Data.InsurancePlanName ?? "نامشخص",
+                        PolicyNumber = primaryInsuranceResult.Data.PolicyNumber,
+                        StartDate = primaryInsuranceResult.Data.StartDate,
+                        EndDate = primaryInsuranceResult.Data.EndDate,
+                        IsActive = primaryInsuranceResult.Data.IsActive
+                    } : null,
+                    SupplementaryInsurance = supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data?.Any() == true ? new InsuranceInfo
+                    {
+                        Id = supplementaryInsurancesResult.Data.First().PatientInsuranceId,
+                        Name = supplementaryInsurancesResult.Data.First().InsurancePlanName ?? "نامشخص",
+                        PolicyNumber = supplementaryInsurancesResult.Data.First().PolicyNumber,
+                        StartDate = supplementaryInsurancesResult.Data.First().StartDate,
+                        EndDate = supplementaryInsurancesResult.Data.First().EndDate,
+                        IsActive = supplementaryInsurancesResult.Data.First().IsActive
+                    } : null,
+                    // 🏥 Medical Environment: اطلاعات اضافی برای Production
+                    ValidationStatus = validationResult.Status,
+                    ValidationMessage = validationResult.Message,
+                    ExpiryWarning = validationResult.ExpiryWarning
                 };
 
-                _log.Information("🏥 MEDICAL: وضعیت بیمه بیمار دریافت شد. PatientId: {PatientId}, HasPrimary: {HasPrimary}, HasSupplementary: {HasSupplementary}. User: {UserName} (Id: {UserId})",
-                    patientId, status.HasPrimaryInsurance, status.HasSupplementaryInsurance, _currentUserService.UserName, _currentUserService.UserId);
+                // 🏥 Medical Environment: Real-time Monitoring و Alerting
+                await ProcessRealTimeAlertsAsync(status);
+
+                _log.Information("🏥 MEDICAL: دریافت وضعیت بیمه بیمار موفق. PatientId: {PatientId}. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                    patientId, nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<PatientInsuranceStatus>.Successful(status, "وضعیت بیمه بیمار با موفقیت دریافت شد"),
+                    JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت وضعیت بیمه بیمار بر اساس کد ملی. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                    nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                    "خطا در دریافت وضعیت بیمه بیمار. لطفاً دوباره تلاش کنید"),
+                    JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت وضعیت بیمه بیمار - بهینه‌سازی شده برای محیط Production
+        /// </summary>
+        [HttpGet]
+        [ValidateAntiForgeryToken]
+        public async Task<ActionResult> GetPatientInsuranceStatus(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت وضعیت بیمه بیمار (Production Optimized). PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                // 🏥 Medical Environment: اعتبارسنجی امنیتی
+                if (patientId <= 0)
+                {
+                    _log.Warning("🏥 MEDICAL: تلاش برای دسترسی با شناسه بیمار نامعتبر. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                        "شناسه بیمار نامعتبر است"),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                // 🏥 Medical Environment: بررسی مجوز دسترسی (موقتاً غیرفعال)
+                // var hasAccess = await CheckUserAccessToPatientAsync(patientId);
+                // if (!hasAccess)
+                // {
+                //     _log.Warning("🏥 MEDICAL: تلاش برای دسترسی غیرمجاز به اطلاعات بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                //         patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                //     return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                //         "شما مجوز دسترسی به اطلاعات این بیمار را ندارید"),
+                //         JsonRequestBehavior.AllowGet);
+                // }
+
+                // 🏥 Medical Environment: بررسی وضعیت سیستم قبل از عملیات
+                var systemHealth = await CheckSystemHealthAsync();
+                if (!systemHealth)
+                {
+                    _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای بررسی وضعیت بیمه. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                    return Json(ServiceResult<PatientInsuranceStatus>.Failed(
+                        "سیستم در حال حاضر در دسترس نیست. لطفاً دوباره تلاش کنید."),
+                        JsonRequestBehavior.AllowGet);
+                }
+
+                // 🏥 Medical Environment: دریافت همزمان بیمه‌های اصلی و تکمیلی (بدون کش)
+                // در محیط درمانی کش ممنوع است - همیشه از دیتابیس خوانده می‌شود
+                var primaryInsuranceTask = _patientInsuranceService.GetPrimaryInsuranceByPatientAsync(patientId);
+                var supplementaryInsurancesTask = _patientInsuranceService.GetSupplementaryInsurancesByPatientAsync(patientId);
+
+                await Task.WhenAll(primaryInsuranceTask, supplementaryInsurancesTask);
+
+                var primaryInsuranceResult = await primaryInsuranceTask;
+                var supplementaryInsurancesResult = await supplementaryInsurancesTask;
+
+                // 🏥 Medical Environment: بررسی اعتبارسنجی پیشرفته
+                var validationResult = await ValidateInsuranceStatusAsync(patientId, primaryInsuranceResult, supplementaryInsurancesResult);
+
+                var status = new PatientInsuranceStatus
+                {
+                    PatientId = patientId,
+                    HasPrimaryInsurance = primaryInsuranceResult.Success && primaryInsuranceResult.Data != null,
+                    HasSupplementaryInsurance = supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data?.Any() == true,
+                    PrimaryInsuranceActive = primaryInsuranceResult.Success && primaryInsuranceResult.Data?.IsActive == true,
+                    ValidationDate = DateTime.UtcNow,
+                    PrimaryInsurance = primaryInsuranceResult.Success && primaryInsuranceResult.Data != null ? new InsuranceInfo
+                    {
+                        Id = primaryInsuranceResult.Data.PatientInsuranceId,
+                        Name = primaryInsuranceResult.Data.InsurancePlanName ?? "نامشخص",
+                        PolicyNumber = primaryInsuranceResult.Data.PolicyNumber,
+                        StartDate = primaryInsuranceResult.Data.StartDate,
+                        EndDate = primaryInsuranceResult.Data.EndDate,
+                        IsActive = primaryInsuranceResult.Data.IsActive
+                    } : null,
+                    SupplementaryInsurance = supplementaryInsurancesResult.Success && supplementaryInsurancesResult.Data?.Any() == true ? new InsuranceInfo
+                    {
+                        Id = supplementaryInsurancesResult.Data.First().PatientInsuranceId,
+                        Name = supplementaryInsurancesResult.Data.First().InsurancePlanName ?? "نامشخص",
+                        PolicyNumber = supplementaryInsurancesResult.Data.First().PolicyNumber,
+                        StartDate = supplementaryInsurancesResult.Data.First().StartDate,
+                        EndDate = supplementaryInsurancesResult.Data.First().EndDate,
+                        IsActive = supplementaryInsurancesResult.Data.First().IsActive
+                    } : null,
+                    // 🏥 Medical Environment: اطلاعات اضافی برای Production
+                    ValidationStatus = validationResult.Status,
+                    ValidationMessage = validationResult.Message,
+                    ExpiryWarning = validationResult.ExpiryWarning
+                };
+
+                // 🏥 Medical Environment: Real-time Monitoring و Alerting
+                await ProcessRealTimeAlertsAsync(status);
+
+                _log.Information("🏥 MEDICAL: وضعیت بیمه بیمار دریافت شد (Production Optimized). PatientId: {PatientId}, HasPrimary: {HasPrimary}, HasSupplementary: {HasSupplementary}, Status: {Status}. User: {UserName} (Id: {UserId})",
+                    patientId, status.HasPrimaryInsurance, status.HasSupplementaryInsurance, status.ValidationStatus, _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(ServiceResult<PatientInsuranceStatus>.Successful(
                     status,
@@ -531,7 +946,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
             }
             catch (Exception ex)
             {
-                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت وضعیت بیمه بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                _log.Error(ex, "🏥 MEDICAL: خطای غیرمنتظره در دریافت وضعیت بیمه بیمار (Production Optimized). PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
 
                 return Json(ServiceResult<PatientInsuranceStatus>.Failed(
@@ -2871,5 +3286,28 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         ConsiderSupplementaryInsurance,
         InsuranceComplete,
         Error
+    }
+
+    /// <summary>
+    /// نتیجه اعتبارسنجی بیمه برای محیط Production
+    /// </summary>
+    public class InsuranceValidationResult
+    {
+        public string Status { get; set; }
+        public string Message { get; set; }
+        public bool ExpiryWarning { get; set; }
+        public CoverageAnalysis CoverageAnalysis { get; set; }
+    }
+
+    /// <summary>
+    /// تحلیل پوشش بیمه
+    /// </summary>
+    public class CoverageAnalysis
+    {
+        public decimal PrimaryCoveragePercent { get; set; }
+        public decimal PrimaryDeductible { get; set; }
+        public decimal SupplementaryCoveragePercent { get; set; }
+        public decimal SupplementaryDeductible { get; set; }
+        public decimal TotalCoveragePercent { get; set; }
     }
 }

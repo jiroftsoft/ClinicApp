@@ -205,15 +205,18 @@ namespace ClinicApp.Repositories.Insurance
             try
             {
                 // 🚨 CRITICAL FIX: منطق صحیح برای سیستم درمانی
-                // بیمه‌های تکمیلی: رکوردهایی که SupplementaryInsuranceProviderId دارند
+                // بیمه‌های تکمیلی: 
+                // 1. رکوردهایی که IsPrimary = false هستند (رکوردهای جداگانه)
+                // 2. رکوردهایی که IsPrimary = true اما SupplementaryInsuranceProviderId دارند (فیلدهای تکمیلی)
                 return await _context.PatientInsurances
                     .Where(pi => pi.PatientId == patientId 
-                             && pi.SupplementaryInsuranceProviderId.HasValue 
-                             && pi.SupplementaryInsuranceProviderId.Value > 0
                              && pi.IsActive
-                             && !pi.IsDeleted)
-                    .Include(pi => pi.InsurancePlan.InsuranceProvider)
-                    .Include(pi => pi.InsuranceProvider) // بیمه‌گذار اصلی
+                             && !pi.IsDeleted
+                             && (
+                                 pi.IsPrimary == false || // رکوردهای جداگانه بیمه تکمیلی
+                                 (pi.IsPrimary == true && pi.SupplementaryInsuranceProviderId.HasValue && pi.SupplementaryInsurancePlanId.HasValue) // فیلدهای تکمیلی در بیمه اصلی
+                             ))
+                    .Include(pi => pi.InsurancePlan)
                     .Include(pi => pi.SupplementaryInsuranceProvider) // بیمه‌گذار تکمیلی
                     .Include(pi => pi.SupplementaryInsurancePlan) // طرح بیمه تکمیلی
                     .Include(pi => pi.Patient) // اطلاعات بیمار

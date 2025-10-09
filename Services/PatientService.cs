@@ -1413,6 +1413,70 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// دریافت بیمار بر اساس کد ملی - بهینه‌سازی شده برای محیط Production
+        /// 
+        /// ویژگی‌های کلیدی:
+        /// 1. اعتبارسنجی کد ملی قبل از جستجو
+        /// 2. استفاده از AsNoTracking برای عملکرد بهتر
+        /// 3. پشتیبانی از Soft Delete
+        /// 4. لاگ‌گیری حرفه‌ای برای امنیت
+        /// 5. مدیریت خطاهای جامع
+        /// </summary>
+        /// <param name="nationalCode">کد ملی بیمار</param>
+        /// <returns>بیمار یا null اگر یافت نشود</returns>
+        public async Task<Patient> GetPatientByNationalCodeAsync(string nationalCode)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: دریافت بیمار بر اساس کد ملی. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                    nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+
+                // 🏥 Medical Environment: اعتبارسنجی کد ملی
+                if (string.IsNullOrWhiteSpace(nationalCode))
+                {
+                    _log.Warning("🏥 MEDICAL: کد ملی خالی ارسال شد. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    return null;
+                }
+
+                // 🏥 Medical Environment: نرمال‌سازی کد ملی
+                string normalizedNationalCode = PersianNumberHelper.ToEnglishNumbers(nationalCode.Trim());
+                
+                if (!PersianNumberHelper.IsValidNationalCode(normalizedNationalCode))
+                {
+                    _log.Warning("🏥 MEDICAL: کد ملی نامعتبر. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                        normalizedNationalCode, _currentUserService.UserName, _currentUserService.UserId);
+                    return null;
+                }
+
+                // 🏥 Medical Environment: جستجوی بیمار با بهینه‌سازی عملکرد
+                var patient = await _context.Patients
+                    .AsNoTracking() // بهینه‌سازی عملکرد
+                    .Where(p => p.NationalCode == normalizedNationalCode && !p.IsDeleted)
+                    .FirstOrDefaultAsync();
+
+                if (patient != null)
+                {
+                    _log.Information("🏥 MEDICAL: بیمار یافت شد. PatientId: {PatientId}, NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                        patient.PatientId, normalizedNationalCode, _currentUserService.UserName, _currentUserService.UserId);
+                }
+                else
+                {
+                    _log.Warning("🏥 MEDICAL: بیمار یافت نشد. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                        normalizedNationalCode, _currentUserService.UserName, _currentUserService.UserId);
+                }
+
+                return patient;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در دریافت بیمار بر اساس کد ملی. NationalCode: {NationalCode}. User: {UserName} (Id: {UserId})",
+                    nationalCode, _currentUserService.UserName, _currentUserService.UserId);
+                return null;
+            }
+        }
+
+        /// <summary>
         /// دریافت اطلاعات بیمه‌های فعال بیمار
         /// </summary>
         public async Task<ServiceResult<List<PatientInsuranceViewModel>>> GetPatientInsurancesAsync(int patientId, int pageNumber = 1, int pageSize = 10)
