@@ -492,29 +492,54 @@ var PatientInsuranceEnhanced = (function() {
 
     // 🏥 Medical Environment: Form Validation
     function initializeFormValidation() {
-        $('.medical-form-control').on('blur', function() {
-            validateField($(this));
+        // 🏥 Medical Environment: Wait for DOM to be ready
+        $(document).ready(function() {
+            // 🏥 Medical Environment: Check if elements exist before binding events
+            if ($('.medical-form-control').length === 0) {
+                console.log('🏥 Medical Environment: No medical-form-control elements found, skipping validation initialization');
+                return;
+            }
+            
+            $('.medical-form-control').on('blur', function() {
+                // 🏥 Medical Environment: Safety check for event handler
+                var $this = $(this);
+                if ($this && $this.length > 0) {
+                    validateField($this);
+                } else {
+                    console.error('🏥 Medical Environment: Invalid element in blur event');
+                }
+            });
         });
         
         function validateField($field) {
-            var value = $field.val().trim();
+            // 🏥 Medical Environment: Null check for field
+            if (!$field || $field.length === 0) {
+                console.error('🏥 Medical Environment: Invalid field passed to validateField');
+                return false;
+            }
+            
+            var value = $field.val() ? $field.val().trim() : '';
             var isValid = true;
-            var fieldName = $field.attr('name') || $field.attr('id');
+            var fieldName = $field.attr('name') || $field.attr('id') || 'unknown';
             
             // بیمه تکمیلی اختیاری است
-            if (fieldName && fieldName.includes('Supplementary') && !value) {
+            if (fieldName && fieldName !== 'unknown' && fieldName.includes('Supplementary') && !value) {
                 $field.removeClass('is-invalid is-valid');
                 return true; // اختیاری است
             }
             
-            if ($field.prop('required') && !value) {
+            if ($field && $field.prop && $field.prop('required') && !value) {
                 isValid = false;
             }
             
             if (isValid) {
-                $field.removeClass('is-invalid').addClass('is-valid');
+                if ($field && $field.removeClass && $field.addClass) {
+                    $field.removeClass('is-invalid').addClass('is-valid');
+                }
             } else {
-                $field.removeClass('is-valid').addClass('is-invalid');
+                if ($field && $field.removeClass && $field.addClass) {
+                    $field.removeClass('is-valid').addClass('is-invalid');
+                }
             }
             
             return isValid;

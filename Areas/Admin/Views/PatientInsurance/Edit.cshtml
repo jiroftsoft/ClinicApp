@@ -449,145 +449,112 @@
                 PatientInsuranceEnhanced.initializeInsuranceSelection();
             }
             
-            // 🏥 Medical Environment: Load data only once
-            var dataLoaded = false;
-            
+            // 🏥 Medical Environment: Load data every time for real-time medical environment
             function loadFormData() {
-                if (dataLoaded) {
-                    console.log('🏥 MEDICAL: Data already loaded, skipping...');
-                    return;
-                }
+                console.log('🏥 MEDICAL: Loading form data for real-time medical environment...');
                 
-                dataLoaded = true;
-                console.log('🏥 MEDICAL: Loading form data...');
-                
-                // 🏥 Medical Environment: Load Primary Insurance (Always Required)
-                loadPrimaryInsuranceProviders().then(function() {
-                    console.log('🏥 MEDICAL: Primary providers loaded successfully');
+                // 🏥 Medical Environment: Load both primary and supplementary insurance providers in parallel for real-time medical environment
+                Promise.all([
+                    loadPrimaryInsuranceProviders(),
+                    loadSupplementaryInsuranceProviders()
+                ]).then(function(results) {
+                    console.log('🏥 MEDICAL: Both providers loaded successfully');
                     
-                    // Set primary insurance provider AFTER dropdown is populated
+                    // 🏥 Medical Environment: Set primary insurance provider immediately
                     if (modelData.InsuranceProviderId && modelData.InsuranceProviderId !== 0) {
                         console.log('🏥 MEDICAL: Setting primary provider:', modelData.InsuranceProviderId);
+                        $('#InsuranceProviderId').val(modelData.InsuranceProviderId).trigger('change');
                         
-                        // 🏥 Medical Environment: Set value after dropdown is populated
-                        setTimeout(function() {
-                            $('#InsuranceProviderId').val(modelData.InsuranceProviderId);
-                            console.log('🏥 MEDICAL: Primary provider value set:', $('#InsuranceProviderId').val());
-                            
-                            // Trigger change after value is set
-                            $('#InsuranceProviderId').trigger('change');
-                        }, 50);
-                        
-                        // Load primary insurance plans after provider is set
-                        setTimeout(function() {
-                            loadInsurancePlans(modelData.InsuranceProviderId, $('#InsurancePlanId'), 'primary').then(function() {
-                                console.log('🏥 MEDICAL: Primary plans loaded successfully');
-                                if (modelData.InsurancePlanId && modelData.InsurancePlanId !== 0) {
-                                    console.log('🏥 MEDICAL: Setting primary plan:', modelData.InsurancePlanId);
-                                    $('#InsurancePlanId').val(modelData.InsurancePlanId).trigger('change');
-                                }
-                                
-                                // 🏥 Medical Environment: Show Primary Insurance Status
-                                showInsuranceStatus('primary', 'loaded');
-                            }).catch(function(error) {
-                                console.error('🏥 MEDICAL: Error loading primary plans:', error);
-                                showInsuranceStatus('primary', 'error');
-                            });
-                        }, 500);
+                        // Load primary insurance plans immediately
+                        loadInsurancePlans(modelData.InsuranceProviderId, $('#InsurancePlanId'), 'primary').then(function() {
+                            if (modelData.InsurancePlanId && modelData.InsurancePlanId !== 0) {
+                                $('#InsurancePlanId').val(modelData.InsurancePlanId).trigger('change');
+                            }
+                            showInsuranceStatus('primary', 'loaded');
+                        });
                     } else {
-                        console.log('🏥 MEDICAL: No primary insurance provider set');
                         showInsuranceStatus('primary', 'empty');
                     }
-                }).catch(function(error) {
-                    console.error('🏥 MEDICAL: Error loading primary providers:', error);
-                    showInsuranceStatus('primary', 'error');
-                });
-                
-                // 🏥 Medical Environment: Load Supplementary Insurance (If Exists)
-                loadSupplementaryInsuranceProviders().then(function() {
-                    console.log('🏥 MEDICAL: Supplementary providers loaded successfully');
                     
-                    // Set supplementary insurance provider if exists AFTER dropdown is populated
+                    // 🏥 Medical Environment: Set supplementary insurance provider immediately
                     if (modelData.SupplementaryInsuranceProviderId && modelData.SupplementaryInsuranceProviderId !== 0) {
                         console.log('🏥 MEDICAL: Setting supplementary provider:', modelData.SupplementaryInsuranceProviderId);
+                        $('#SupplementaryInsuranceProviderId').val(modelData.SupplementaryInsuranceProviderId).trigger('change');
                         
-                        // 🏥 Medical Environment: Set value after dropdown is populated
-                        setTimeout(function() {
-                            $('#SupplementaryInsuranceProviderId').val(modelData.SupplementaryInsuranceProviderId);
-                            console.log('🏥 MEDICAL: Supplementary provider value set:', $('#SupplementaryInsuranceProviderId').val());
-                            
-                            // Trigger change after value is set
-                            $('#SupplementaryInsuranceProviderId').trigger('change');
-                        }, 50);
-                        
-                        // Load supplementary insurance plans after provider is set
-                        setTimeout(function() {
-                            loadInsurancePlans(modelData.SupplementaryInsuranceProviderId, $('#SupplementaryInsurancePlanId'), 'supplementary').then(function() {
-                                console.log('🏥 MEDICAL: Supplementary plans loaded successfully');
-                                if (modelData.SupplementaryInsurancePlanId && modelData.SupplementaryInsurancePlanId !== 0) {
-                                    console.log('🏥 MEDICAL: Setting supplementary plan:', modelData.SupplementaryInsurancePlanId);
-                                    $('#SupplementaryInsurancePlanId').val(modelData.SupplementaryInsurancePlanId).trigger('change');
-                                }
-                                
-                                // 🏥 Medical Environment: Show Supplementary Insurance Status
-                                showInsuranceStatus('supplementary', 'loaded');
-                            }).catch(function(error) {
-                                console.error('🏥 MEDICAL: Error loading supplementary plans:', error);
-                                showInsuranceStatus('supplementary', 'error');
-                            });
-                        }, 500);
+                        // Load supplementary insurance plans immediately
+                        loadInsurancePlans(modelData.SupplementaryInsuranceProviderId, $('#SupplementaryInsurancePlanId'), 'supplementary').then(function() {
+                            if (modelData.SupplementaryInsurancePlanId && modelData.SupplementaryInsurancePlanId !== 0) {
+                                $('#SupplementaryInsurancePlanId').val(modelData.SupplementaryInsurancePlanId).trigger('change');
+                            }
+                            showInsuranceStatus('supplementary', 'loaded');
+                        });
                     } else {
-                        console.log('🏥 MEDICAL: No supplementary insurance provider set');
                         showInsuranceStatus('supplementary', 'empty');
                     }
                 }).catch(function(error) {
-                    console.error('🏥 MEDICAL: Error loading supplementary providers:', error);
+                    console.error('🏥 MEDICAL: Error loading providers:', error);
+                    showInsuranceStatus('primary', 'error');
                     showInsuranceStatus('supplementary', 'error');
                 });
             }
             
-            // Load data once
+            // 🏥 Medical Environment: Load data immediately for real-time medical environment
             loadFormData();
             
-            // Set other form values
-            setTimeout(function() {
-                console.log('🏥 MEDICAL: Setting form values...');
-                
-                // Set policy numbers
-                if (modelData.PolicyNumber) {
-                    $('#PolicyNumber').val(modelData.PolicyNumber);
-                    console.log('🏥 MEDICAL: Policy number set:', modelData.PolicyNumber);
-                }
-                
-                if (modelData.SupplementaryPolicyNumber) {
-                    $('#SupplementaryPolicyNumber').val(modelData.SupplementaryPolicyNumber);
-                    console.log('🏥 MEDICAL: Supplementary policy number set:', modelData.SupplementaryPolicyNumber);
-                }
-                
-                // Set dates
-                if (modelData.StartDateShamsi) {
-                    $('#StartDateShamsi').val(modelData.StartDateShamsi);
-                    console.log('🏥 MEDICAL: Start date set:', modelData.StartDateShamsi);
-                }
-                
-                if (modelData.EndDateShamsi) {
-                    $('#EndDateShamsi').val(modelData.EndDateShamsi);
-                    console.log('🏥 MEDICAL: End date set:', modelData.EndDateShamsi);
-                }
-                
-                // Set model values for debugging
-                console.log('🏥 MEDICAL: Model values:', {
-                    InsuranceProviderId: modelData.InsuranceProviderId,
-                    InsurancePlanId: modelData.InsurancePlanId,
-                    SupplementaryInsuranceProviderId: modelData.SupplementaryInsuranceProviderId,
-                    SupplementaryInsurancePlanId: modelData.SupplementaryInsurancePlanId,
-                    PolicyNumber: modelData.PolicyNumber,
-                    SupplementaryPolicyNumber: modelData.SupplementaryPolicyNumber
-                });
-                
-                // Initialize change tracking after all values are set
-                initializeChangeTracking();
-            }, 1500);
+            // 🏥 Medical Environment: Reload data on page focus for real-time updates
+            $(window).on('focus', function() {
+                console.log('🏥 MEDICAL: Page focused, reloading data for real-time medical environment...');
+                // 🏥 Medical Environment: Reset form state for real-time medical environment
+                $('#InsuranceProviderId').val('').trigger('change');
+                $('#InsurancePlanId').val('').trigger('change');
+                $('#SupplementaryInsuranceProviderId').val('').trigger('change');
+                $('#SupplementaryInsurancePlanId').val('').trigger('change');
+                loadFormData();
+            });
+            
+            // 🏥 Medical Environment: Real-time data refresh every 30 seconds for medical environment
+            setInterval(function() {
+                console.log('🏥 MEDICAL: Real-time data refresh for medical environment...');
+                loadFormData();
+            }, 30000); // 30 seconds for real-time medical environment
+            
+            // 🏥 Medical Environment: Set form values immediately for real-time medical environment
+            console.log('🏥 MEDICAL: Setting form values immediately...');
+            
+            // Set policy numbers
+            if (modelData.PolicyNumber) {
+                $('#PolicyNumber').val(modelData.PolicyNumber);
+                console.log('🏥 MEDICAL: Policy number set:', modelData.PolicyNumber);
+            }
+            
+            if (modelData.SupplementaryPolicyNumber) {
+                $('#SupplementaryPolicyNumber').val(modelData.SupplementaryPolicyNumber);
+                console.log('🏥 MEDICAL: Supplementary policy number set:', modelData.SupplementaryPolicyNumber);
+            }
+            
+            // Set dates
+            if (modelData.StartDateShamsi) {
+                $('#StartDateShamsi').val(modelData.StartDateShamsi);
+                console.log('🏥 MEDICAL: Start date set:', modelData.StartDateShamsi);
+            }
+            
+            if (modelData.EndDateShamsi) {
+                $('#EndDateShamsi').val(modelData.EndDateShamsi);
+                console.log('🏥 MEDICAL: End date set:', modelData.EndDateShamsi);
+            }
+            
+            // Set model values for debugging
+            console.log('🏥 MEDICAL: Model values:', {
+                InsuranceProviderId: modelData.InsuranceProviderId,
+                InsurancePlanId: modelData.InsurancePlanId,
+                SupplementaryInsuranceProviderId: modelData.SupplementaryInsuranceProviderId,
+                SupplementaryInsurancePlanId: modelData.SupplementaryInsurancePlanId,
+                PolicyNumber: modelData.PolicyNumber,
+                SupplementaryPolicyNumber: modelData.SupplementaryPolicyNumber
+            });
+            
+            // Initialize change tracking after all values are set
+            initializeChangeTracking();
         }
 
         // 🏥 Medical Environment: Load Patient Information
@@ -673,6 +640,7 @@
                     url: '@Url.Action("GetPrimaryInsuranceProviders", "PatientInsurance", new { area = "Admin" })',
                     type: 'GET',
                     dataType: 'json',
+                    cache: false, // 🏥 Medical Environment: Disable cache for real-time data
                     success: function(response) {
                         console.log('🏥 MEDICAL: Primary Providers Response:', response);
                         
@@ -717,6 +685,7 @@
                     url: '@Url.Action("GetSupplementaryInsuranceProviders", "PatientInsurance", new { area = "Admin" })',
                     type: 'GET',
                     dataType: 'json',
+                    cache: false, // 🏥 Medical Environment: Disable cache for real-time data
                     success: function(response) {
                         console.log('🏥 MEDICAL: Supplementary Providers Response:', response);
                         
@@ -761,6 +730,7 @@
                     url: '@Url.Action("GetInsurancePlansByProvider", "PatientInsurance", new { area = "Admin" })',
                     type: 'GET',
                     dataType: 'json',
+                    cache: false, // 🏥 Medical Environment: Disable cache for real-time data
                     data: { providerId: providerId, type: type },
                     success: function(response) {
                         console.log('🏥 MEDICAL: Insurance Plans Response:', response);
