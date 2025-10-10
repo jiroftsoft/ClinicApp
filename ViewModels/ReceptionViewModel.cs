@@ -357,6 +357,9 @@ namespace ClinicApp.ViewModels
         [Display(Name = "آیا پذیرش آنلاین است")]
         public bool? IsOnlineReception { get; set; }
 
+        [Display(Name = "عبارت جستجو")]
+        public string SearchTerm { get; set; }
+
         [Display(Name = "مبلغ حداقل")]
         [DataType(DataType.Currency)]
         [Range(0, double.MaxValue, ErrorMessage = "مبلغ حداقل نمی‌تواند منفی باشد.")]

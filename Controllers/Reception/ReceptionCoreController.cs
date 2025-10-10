@@ -106,8 +106,7 @@ namespace ClinicApp.Controllers.Reception
                     ReceptionId = result.Data.ReceptionId,
                     PatientId = result.Data.PatientId,
                     DoctorId = result.Data.DoctorId,
-                    ServiceId = 0,
-                    ReceptionDate = result.Data.ReceptionDate,
+                    ReceptionDate = DateTime.Parse(result.Data.ReceptionDate),
                     Notes = result.Data.Notes,
                     IsEmergency = false
                 };
