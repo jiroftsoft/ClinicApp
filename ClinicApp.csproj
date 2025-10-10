@@ -531,6 +531,8 @@
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
     <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
     <Compile Include="Infrastructure\QueryExtensions.cs" />
+    <Compile Include="Infrastructure\Reception\ReceptionCompiledQueries.cs" />
+    <Compile Include="Interfaces\Base\IBaseRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IAppointmentAvailabilityService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicManagementService.cs" />
     <Compile Include="Interfaces\ClinicAdmin\IClinicRepository.cs" />
@@ -606,6 +608,10 @@
     <Compile Include="Interfaces\Payment\Reporting\IPaymentReportingService.cs" />
     <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
     <Compile Include="Interfaces\Payment\Web\IWebPaymentService.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionBusinessRules.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionCacheService.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionPerformanceOptimizer.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionSecurityService.cs" />
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
@@ -894,6 +900,7 @@
     <Compile Include="Models\Statistics\PaymentStatistics.cs" />
     <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
     <Compile Include="Models\SystemSettings\SystemSetting.cs" />
+    <Compile Include="Repositories\Base\BaseRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorCrudRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentRepository.cs" />
@@ -919,6 +926,7 @@
     <Compile Include="Repositories\Payment\POS\CashSessionRepository.cs" />
     <Compile Include="Repositories\Payment\POS\PosTerminalRepository.cs" />
     <Compile Include="Repositories\ReceptionRepository.cs" />
+    <Compile Include="Repositories\Reception\OptimizedReceptionRepository.cs" />
     <Compile Include="Repositories\ServiceCategoryRepository.cs" />
     <Compile Include="Repositories\ServiceRepository.cs" />
     <Compile Include="Services\AsanakSmsService.cs" />
@@ -988,6 +996,7 @@
     <Compile Include="Services\Payment\Validation\PaymentValidationService.cs" />
     <Compile Include="Services\Payment\Web\WebPaymentService.cs" />
     <Compile Include="Services\ReceptionService.cs" />
+    <Compile Include="Services\Reception\ReceptionPerformanceOptimizer.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
     <Compile Include="Services\ServiceCalculationService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
