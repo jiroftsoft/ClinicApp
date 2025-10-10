@@ -1,0 +1,799 @@
+@model ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionFormComponentViewModel
+
+<div class="reception-component reception-form-component" data-component="reception-form">
+    <div class="component-header">
+        <h5 class="component-title">
+            <i class="fas fa-clipboard-list me-2"></i>
+            فرم پذیرش
+        </h5>
+        <div class="component-actions">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-action="save-draft">
+                <i class="fas fa-save me-1"></i>
+                ذخیره پیش‌نویس
+            </button>
+        </div>
+    </div>
+
+    <div class="component-body">
+        <form id="receptionForm" data-form="reception">
+            @Html.AntiForgeryToken()
+            
+            <!-- اطلاعات پذیرش -->
+            <div class="form-section" data-section="reception-info">
+                <h6 class="section-title">اطلاعات پذیرش</h6>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="receptionDate" class="form-label">تاریخ پذیرش *</label>
+                            <input type="text" 
+                                   class="form-control persian-datepicker" 
+                                   id="receptionDate" 
+                                   name="ReceptionDate"
+                                   value="@Model.ReceptionDate.ToString("yyyy/MM/dd")"
+                                   data-validate="required">
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="receptionTime" class="form-label">ساعت پذیرش *</label>
+                            <input type="time" 
+                                   class="form-control" 
+                                   id="receptionTime" 
+                                   name="ReceptionTime"
+                                   value="@DateTime.Now.ToString("HH:mm")"
+                                   data-validate="required">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="receptionType" class="form-label">نوع پذیرش *</label>
+                            <select class="form-select" 
+                                    id="receptionType" 
+                                    name="ReceptionType"
+                                    data-validate="required">
+                                <option value="">انتخاب کنید</option>
+                                <option value="Normal" @(Model.ReceptionType == "Normal" ? "selected" : "")>عادی</option>
+                                <option value="Emergency" @(Model.ReceptionType == "Emergency" ? "selected" : "")>اورژانس</option>
+                                <option value="Special" @(Model.ReceptionType == "Special" ? "selected" : "")>ویژه</option>
+                                <option value="Online" @(Model.ReceptionType == "Online" ? "selected" : "")>آنلاین</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="priority" class="form-label">اولویت</label>
+                            <select class="form-select" 
+                                    id="priority" 
+                                    name="Priority">
+                                <option value="Normal" @(Model.Priority == "Normal" ? "selected" : "")>عادی</option>
+                                <option value="High" @(Model.Priority == "High" ? "selected" : "")>بالا</option>
+                                <option value="Urgent" @(Model.Priority == "Urgent" ? "selected" : "")>فوری</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="notes" class="form-label">یادداشت‌ها</label>
+                    <textarea class="form-control" 
+                              id="notes" 
+                              name="Notes" 
+                              rows="3" 
+                              placeholder="یادداشت‌های اضافی...">@Model.Notes</textarea>
+                </div>
+            </div>
+
+            <!-- اطلاعات پزشک -->
+            <div class="form-section" data-section="doctor-info">
+                <h6 class="section-title">انتخاب پزشک</h6>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="doctorId" class="form-label">پزشک *</label>
+                            <select class="form-select select2" 
+                                    id="doctorId" 
+                                    name="DoctorId"
+                                    data-validate="required"
+                                    data-placeholder="انتخاب پزشک">
+                                <option value="">انتخاب کنید</option>
+                                <!-- پزشکان به صورت AJAX بارگذاری می‌شوند -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="departmentId" class="form-label">دپارتمان</label>
+                            <select class="form-select" 
+                                    id="departmentId" 
+                                    name="DepartmentId"
+                                    disabled>
+                                <option value="">ابتدا پزشک را انتخاب کنید</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات خدمات -->
+            <div class="form-section" data-section="service-info">
+                <h6 class="section-title">انتخاب خدمات</h6>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="serviceCategoryId" class="form-label">دسته‌بندی خدمت</label>
+                            <select class="form-select" 
+                                    id="serviceCategoryId" 
+                                    name="ServiceCategoryId">
+                                <option value="">انتخاب کنید</option>
+                                <!-- دسته‌بندی‌ها به صورت AJAX بارگذاری می‌شوند -->
+                            </select>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label for="serviceId" class="form-label">خدمت *</label>
+                            <select class="form-select select2" 
+                                    id="serviceId" 
+                                    name="ServiceId"
+                                    data-validate="required"
+                                    data-placeholder="انتخاب خدمت">
+                                <option value="">ابتدا دسته‌بندی را انتخاب کنید</option>
+                                <!-- خدمات به صورت AJAX بارگذاری می‌شوند -->
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- جزئیات خدمت -->
+                <div class="service-details" id="serviceDetails" style="display: none;">
+                    <div class="service-info-card">
+                        <div class="service-info-header">
+                            <h6 class="service-name" id="serviceName"></h6>
+                            <span class="service-price" id="servicePrice"></span>
+                        </div>
+                        <div class="service-info-body">
+                            <div class="service-description" id="serviceDescription"></div>
+                            <div class="service-components" id="serviceComponents"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- اطلاعات بیمه -->
+            <div class="form-section" data-section="insurance-info">
+                <h6 class="section-title">اطلاعات بیمه</h6>
+                
+                <div class="insurance-status" id="insuranceStatus">
+                    <div class="insurance-status-header">
+                        <span class="status-indicator" id="insuranceStatusIndicator"></span>
+                        <span class="status-text" id="insuranceStatusText">در حال بررسی...</span>
+                    </div>
+                    <div class="insurance-details" id="insuranceDetails" style="display: none;">
+                        <!-- جزئیات بیمه به صورت AJAX بارگذاری می‌شود -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- محاسبات -->
+            <div class="form-section" data-section="calculations">
+                <h6 class="section-title">محاسبات</h6>
+                
+                <div class="calculation-summary" id="calculationSummary">
+                    <div class="calculation-item">
+                        <span class="calculation-label">مبلغ خدمت:</span>
+                        <span class="calculation-value" id="serviceAmount">0 ریال</span>
+                    </div>
+                    <div class="calculation-item">
+                        <span class="calculation-label">سهم بیمه:</span>
+                        <span class="calculation-value" id="insuranceShare">0 ریال</span>
+                    </div>
+                    <div class="calculation-item calculation-total">
+                        <span class="calculation-label">مبلغ قابل پرداخت:</span>
+                        <span class="calculation-value" id="payableAmount">0 ریال</span>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="component-footer">
+        <div class="form-actions">
+            <button type="button" class="btn btn-secondary" data-action="cancel">
+                <i class="fas fa-times me-1"></i>
+                انصراف
+            </button>
+            <button type="button" class="btn btn-primary" data-action="save">
+                <i class="fas fa-save me-1"></i>
+                ذخیره پذیرش
+            </button>
+        </div>
+        <div class="component-status">
+            <span class="status-indicator" id="receptionFormStatus"></span>
+            <span class="status-text" id="receptionFormStatusText">آماده</span>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize Reception Form Component
+    initializeReceptionFormComponent();
+});
+
+function initializeReceptionFormComponent() {
+    const component = $('[data-component="reception-form"]');
+    
+    // Event handlers
+    component.on('click', '[data-action="save"]', function() {
+        saveReception();
+    });
+    
+    component.on('click', '[data-action="cancel"]', function() {
+        cancelReception();
+    });
+    
+    component.on('click', '[data-action="save-draft"]', function() {
+        saveDraft();
+    });
+    
+    // Form field changes
+    component.on('change', '#doctorId', function() {
+        loadDoctorDepartments($(this).val());
+    });
+    
+    component.on('change', '#serviceCategoryId', function() {
+        loadServicesByCategory($(this).val());
+    });
+    
+    component.on('change', '#serviceId', function() {
+        loadServiceDetails($(this).val());
+    });
+    
+    // Patient selection event
+    $(document).on('patientSelected', function(event, patient) {
+        validatePatientInsurance(patient.patientId);
+    });
+    
+    // Initialize form
+    initializeForm();
+}
+
+function initializeForm() {
+    // Initialize Persian DatePicker
+    $('.persian-datepicker').persianDatepicker({
+        format: 'YYYY/MM/DD',
+        observer: true,
+        altField: '.observer-example-alt',
+        altFormat: 'YYYY/MM/DD',
+        timePicker: {
+            enabled: false
+        }
+    });
+    
+    // Initialize Select2
+    $('.select2').select2({
+        placeholder: 'انتخاب کنید',
+        allowClear: true,
+        language: 'fa'
+    });
+    
+    // Load initial data
+    loadDoctors();
+    loadServiceCategories();
+}
+
+function loadDoctors() {
+    $.ajax({
+        url: '/Reception/ReceptionDoctor/GetDoctors',
+        type: 'POST',
+        success: function(response) {
+            if (response.success) {
+                const doctorSelect = $('#doctorId');
+                doctorSelect.empty().append('<option value="">انتخاب کنید</option>');
+                
+                response.data.forEach(function(doctor) {
+                    doctorSelect.append(`<option value="${doctor.doctorId}">${doctor.fullName}</option>`);
+                });
+            }
+        },
+        error: function() {
+            showFormError('خطا در بارگذاری لیست پزشکان');
+        }
+    });
+}
+
+function loadServiceCategories() {
+    $.ajax({
+        url: '/Reception/ReceptionService/GetServiceCategories',
+        type: 'POST',
+        success: function(response) {
+            if (response.success) {
+                const categorySelect = $('#serviceCategoryId');
+                categorySelect.empty().append('<option value="">انتخاب کنید</option>');
+                
+                response.data.forEach(function(category) {
+                    categorySelect.append(`<option value="${category.categoryId}">${category.categoryName}</option>`);
+                });
+            }
+        },
+        error: function() {
+            showFormError('خطا در بارگذاری دسته‌بندی‌های خدمات');
+        }
+    });
+}
+
+function loadDoctorDepartments(doctorId) {
+    if (!doctorId) {
+        $('#departmentId').empty().append('<option value="">ابتدا پزشک را انتخاب کنید</option>').prop('disabled', true);
+        return;
+    }
+    
+    $.ajax({
+        url: '/Reception/ReceptionDoctor/GetDoctorDepartments',
+        type: 'POST',
+        data: { doctorId: doctorId },
+        success: function(response) {
+            if (response.success) {
+                const departmentSelect = $('#departmentId');
+                departmentSelect.empty().append('<option value="">انتخاب کنید</option>');
+                
+                response.data.forEach(function(department) {
+                    departmentSelect.append(`<option value="${department.departmentId}">${department.departmentName}</option>`);
+                });
+                
+                departmentSelect.prop('disabled', false);
+            }
+        },
+        error: function() {
+            showFormError('خطا در بارگذاری دپارتمان‌های پزشک');
+        }
+    });
+}
+
+function loadServicesByCategory(categoryId) {
+    if (!categoryId) {
+        $('#serviceId').empty().append('<option value="">ابتدا دسته‌بندی را انتخاب کنید</option>');
+        return;
+    }
+    
+    $.ajax({
+        url: '/Reception/ReceptionService/GetServicesByCategory',
+        type: 'POST',
+        data: { categoryId: categoryId },
+        success: function(response) {
+            if (response.success) {
+                const serviceSelect = $('#serviceId');
+                serviceSelect.empty().append('<option value="">انتخاب کنید</option>');
+                
+                response.data.forEach(function(service) {
+                    serviceSelect.append(`<option value="${service.serviceId}">${service.serviceName}</option>`);
+                });
+            }
+        },
+        error: function() {
+            showFormError('خطا در بارگذاری خدمات');
+        }
+    });
+}
+
+function loadServiceDetails(serviceId) {
+    if (!serviceId) {
+        $('#serviceDetails').hide();
+        return;
+    }
+    
+    $.ajax({
+        url: '/Reception/ReceptionService/GetServiceCalculationDetails',
+        type: 'POST',
+        data: { serviceId: serviceId },
+        success: function(response) {
+            if (response.success) {
+                displayServiceDetails(response.data);
+                calculateServicePrice(serviceId);
+            }
+        },
+        error: function() {
+            showFormError('خطا در بارگذاری جزئیات خدمت');
+        }
+    });
+}
+
+function displayServiceDetails(serviceData) {
+    $('#serviceName').text(serviceData.serviceName);
+    $('#servicePrice').text(serviceData.price + ' ریال');
+    $('#serviceDescription').text(serviceData.description);
+    
+    // Display service components
+    const componentsContainer = $('#serviceComponents');
+    componentsContainer.empty();
+    
+    if (serviceData.components && serviceData.components.length > 0) {
+        serviceData.components.forEach(function(component) {
+            componentsContainer.append(`
+                <div class="service-component">
+                    <span class="component-name">${component.componentName}</span>
+                    <span class="component-price">${component.price} ریال</span>
+                </div>
+            `);
+        });
+    }
+    
+    $('#serviceDetails').show();
+}
+
+function calculateServicePrice(serviceId) {
+    $.ajax({
+        url: '/Reception/ReceptionService/CalculateServicePrice',
+        type: 'POST',
+        data: { serviceId: serviceId },
+        success: function(response) {
+            if (response.success) {
+                updateCalculationSummary(response.data);
+            }
+        },
+        error: function() {
+            showFormError('خطا در محاسبه قیمت خدمت');
+        }
+    });
+}
+
+function updateCalculationSummary(calculationData) {
+    $('#serviceAmount').text(calculationData.totalAmount + ' ریال');
+    $('#insuranceShare').text(calculationData.insuranceShare + ' ریال');
+    $('#payableAmount').text(calculationData.payableAmount + ' ریال');
+}
+
+function validatePatientInsurance(patientId) {
+    setFormLoading(true);
+    
+    $.ajax({
+        url: '/Reception/ReceptionInsurance/ValidatePatientInsurance',
+        type: 'POST',
+        data: { patientId: patientId },
+        success: function(response) {
+            if (response.success) {
+                displayInsuranceStatus(response.data);
+        } else {
+            showInsuranceError(response.message);
+        }
+        setFormLoading(false);
+    },
+    error: function() {
+        showInsuranceError('خطا در بررسی بیمه بیمار');
+        setFormLoading(false);
+    });
+}
+
+function displayInsuranceStatus(insuranceData) {
+    const statusIndicator = $('#insuranceStatusIndicator');
+    const statusText = $('#insuranceStatusText');
+    const detailsContainer = $('#insuranceDetails');
+    
+    if (insuranceData.isValid) {
+        statusIndicator.removeClass('invalid').addClass('valid');
+        statusText.text('بیمه معتبر است');
+        detailsContainer.html(`
+            <div class="insurance-info">
+                <p><strong>بیمه‌گذار:</strong> ${insuranceData.insuranceProvider}</p>
+                <p><strong>شماره بیمه:</strong> ${insuranceData.policyNumber}</p>
+                <p><strong>تاریخ انقضا:</strong> ${insuranceData.expiryDate}</p>
+            </div>
+        `).show();
+    } else {
+        statusIndicator.removeClass('valid').addClass('invalid');
+        statusText.text('بیمه نامعتبر است');
+        detailsContainer.html(`
+            <div class="insurance-error">
+                <p>${insuranceData.message}</p>
+            </div>
+        `).show();
+    }
+}
+
+function saveReception() {
+    if (!validateForm()) {
+        return;
+    }
+    
+    const formData = getFormData();
+    setFormLoading(true);
+    
+    $.ajax({
+        url: '/Reception/ReceptionCore/CreateReception',
+        type: 'POST',
+        data: formData,
+        success: function(response) {
+            if (response.success) {
+                showFormSuccess('پذیرش با موفقیت ایجاد شد');
+                resetForm();
+            } else {
+                showFormError(response.message);
+            }
+            setFormLoading(false);
+        },
+        error: function() {
+            showFormError('خطا در ایجاد پذیرش');
+            setFormLoading(false);
+        }
+    });
+}
+
+function validateForm() {
+    let isValid = true;
+    
+    // Validate required fields
+    $('[data-validate="required"]').each(function() {
+        if (!$(this).val()) {
+            $(this).addClass('is-invalid');
+            isValid = false;
+        } else {
+            $(this).removeClass('is-invalid');
+        }
+    });
+    
+    return isValid;
+}
+
+function getFormData() {
+    return {
+        PatientId: getSelectedPatientId(),
+        DoctorId: $('#doctorId').val(),
+        ServiceId: $('#serviceId').val(),
+        ReceptionDate: $('#receptionDate').val(),
+        ReceptionTime: $('#receptionTime').val(),
+        ReceptionType: $('#receptionType').val(),
+        Priority: $('#priority').val(),
+        Notes: $('#notes').val()
+    };
+}
+
+function setFormLoading(loading) {
+    const component = $('[data-component="reception-form"]');
+    const statusIndicator = $('#receptionFormStatus');
+    const statusText = $('#receptionFormStatusText');
+    
+    if (loading) {
+        component.addClass('loading');
+        statusIndicator.addClass('loading');
+        statusText.text('در حال پردازش...');
+    } else {
+        component.removeClass('loading');
+        statusIndicator.removeClass('loading');
+        statusText.text('آماده');
+    }
+}
+
+function showFormError(message) {
+    const statusIndicator = $('#receptionFormStatus');
+    const statusText = $('#receptionFormStatusText');
+    
+    statusIndicator.addClass('error');
+    statusText.text(message);
+    
+    setTimeout(function() {
+        statusIndicator.removeClass('error');
+        statusText.text('آماده');
+    }, 5000);
+}
+
+function showFormSuccess(message) {
+    const statusIndicator = $('#receptionFormStatus');
+    const statusText = $('#receptionFormStatusText');
+    
+    statusIndicator.addClass('success');
+    statusText.text(message);
+    
+    setTimeout(function() {
+        statusIndicator.removeClass('success');
+        statusText.text('آماده');
+    }, 3000);
+}
+
+function resetForm() {
+    $('#receptionForm')[0].reset();
+    $('#serviceDetails').hide();
+    $('#insuranceDetails').hide();
+    $('.select2').val(null).trigger('change');
+}
+</script>
+
+<style>
+.reception-form-component {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.reception-form-component.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.form-section {
+    margin-bottom: 30px;
+    padding: 20px;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.section-title {
+    margin-bottom: 20px;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 8px;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-label {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 8px;
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.service-details {
+    margin-top: 20px;
+}
+
+.service-info-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    padding: 15px;
+}
+
+.service-info-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.service-name {
+    margin: 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.service-price {
+    font-weight: 600;
+    color: #28a745;
+    font-size: 18px;
+}
+
+.service-component {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.service-component:last-child {
+    border-bottom: none;
+}
+
+.component-name {
+    font-weight: 500;
+    color: #333;
+}
+
+.component-price {
+    color: #6c757d;
+}
+
+.insurance-status {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    padding: 15px;
+}
+
+.insurance-status-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.status-indicator {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    margin-left: 10px;
+}
+
+.status-indicator.valid {
+    background: #28a745;
+}
+
+.status-indicator.invalid {
+    background: #dc3545;
+}
+
+.status-indicator.loading {
+    background: #ffc107;
+    animation: pulse 1s infinite;
+}
+
+.calculation-summary {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    padding: 20px;
+}
+
+.calculation-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.calculation-item:last-child {
+    border-bottom: none;
+}
+
+.calculation-total {
+    font-weight: 600;
+    font-size: 16px;
+    color: #333;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 4px;
+    margin-top: 10px;
+}
+
+.calculation-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.calculation-value {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.component-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.component-status {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+@@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+</style>

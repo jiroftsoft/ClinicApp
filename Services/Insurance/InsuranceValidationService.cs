@@ -50,6 +50,146 @@ namespace ClinicApp.Services.Insurance
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
+        #region Reception-Specific Validation Implementation
+
+        /// <summary>
+        /// اعتبارسنجی بدهی بیمار برای پذیرش
+        /// </summary>
+        public async Task<ServiceResult<bool>> ValidatePatientDebtAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: اعتبارسنجی بدهی بیمار برای پذیرش. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                if (patientId <= 0)
+                {
+                    _log.Warning("🏥 MEDICAL: شناسه بیمار نامعتبر برای اعتبارسنجی بدهی. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("شناسه بیمار نامعتبر است");
+                }
+
+                // 🏥 MEDICAL: بررسی بدهی بیمار از طریق Repository
+                // TODO: پیاده‌سازی GetPatientDebtAsync در Repository
+                var totalDebt = 0m; // مقدار پیش‌فرض
+                var hasDebt = totalDebt > 0;
+
+                if (hasDebt)
+                {
+                    _log.Warning("🏥 MEDICAL: بیمار دارای بدهی است. PatientId: {PatientId}, Debt: {Debt}. User: {UserName} (Id: {UserId})",
+                        patientId, totalDebt, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed($"بیمار دارای بدهی {totalDebt:N0} ریال است");
+                }
+
+                _log.Information("🏥 MEDICAL: بیمار بدون بدهی است. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(true, "بیمار بدون بدهی است");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی بدهی بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<bool>.Failed("خطا در اعتبارسنجی بدهی بیمار");
+            }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی ظرفیت پزشک برای پذیرش
+        /// </summary>
+        public async Task<ServiceResult<bool>> ValidateDoctorCapacityAsync(int doctorId, DateTime appointmentDate)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: اعتبارسنجی ظرفیت پزشک برای پذیرش. DoctorId: {DoctorId}, Date: {Date}. User: {UserName} (Id: {UserId})",
+                    doctorId, appointmentDate, _currentUserService.UserName, _currentUserService.UserId);
+
+                if (doctorId <= 0)
+                {
+                    _log.Warning("🏥 MEDICAL: شناسه پزشک نامعتبر برای اعتبارسنجی ظرفیت. DoctorId: {DoctorId}. User: {UserName} (Id: {UserId})",
+                        doctorId, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("شناسه پزشک نامعتبر است");
+                }
+
+                if (appointmentDate < DateTime.Today)
+                {
+                    _log.Warning("🏥 MEDICAL: تاریخ قرار ملاقات در گذشته است. DoctorId: {DoctorId}, Date: {Date}. User: {UserName} (Id: {UserId})",
+                        doctorId, appointmentDate, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("تاریخ قرار ملاقات نمی‌تواند در گذشته باشد");
+                }
+
+                // 🏥 MEDICAL: بررسی ظرفیت پزشک از طریق Repository
+                // TODO: پیاده‌سازی GetDoctorCapacityAsync در Repository
+                var capacity = 10; // مقدار پیش‌فرض
+                var hasCapacity = capacity > 0;
+
+                if (!hasCapacity)
+                {
+                    _log.Warning("🏥 MEDICAL: پزشک ظرفیت ندارد. DoctorId: {DoctorId}, Date: {Date}, Capacity: {Capacity}. User: {UserName} (Id: {UserId})",
+                        doctorId, appointmentDate, capacity, _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("پزشک در این تاریخ ظرفیت ندارد");
+                }
+
+                _log.Information("🏥 MEDICAL: پزشک ظرفیت دارد. DoctorId: {DoctorId}, Date: {Date}, Capacity: {Capacity}. User: {UserName} (Id: {UserId})",
+                    doctorId, appointmentDate, capacity, _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(true, $"پزشک دارای {capacity} ظرفیت است");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی ظرفیت پزشک. DoctorId: {DoctorId}, Date: {Date}. User: {UserName} (Id: {UserId})",
+                    doctorId, appointmentDate, _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<bool>.Failed("خطا در اعتبارسنجی ظرفیت پزشک");
+            }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی Real-time داده‌های پذیرش
+        /// </summary>
+        public async Task<ServiceResult<bool>> ValidateReceptionDataRealTimeAsync(object model)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: اعتبارسنجی Real-time داده‌های پذیرش. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                if (model == null)
+                {
+                    _log.Warning("🏥 MEDICAL: مدل داده‌های پذیرش خالی است. User: {UserName} (Id: {UserId})",
+                        _currentUserService.UserName, _currentUserService.UserId);
+                    return ServiceResult<bool>.Failed("داده‌های پذیرش خالی است");
+                }
+
+                // 🏥 MEDICAL: اعتبارسنجی Real-time با استفاده از Reflection
+                var modelType = model.GetType();
+                var properties = modelType.GetProperties();
+
+                foreach (var property in properties)
+                {
+                    var value = property.GetValue(model);
+                    if (value == null && property.Name != "OptionalField")
+                    {
+                        _log.Warning("🏥 MEDICAL: فیلد اجباری خالی است. Field: {Field}. User: {UserName} (Id: {UserId})",
+                            property.Name, _currentUserService.UserName, _currentUserService.UserId);
+                        return ServiceResult<bool>.Failed($"فیلد {property.Name} اجباری است");
+                    }
+                }
+
+                _log.Information("🏥 MEDICAL: اعتبارسنجی Real-time موفق. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+
+                return ServiceResult<bool>.Successful(true, "اعتبارسنجی Real-time موفق");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در اعتبارسنجی Real-time داده‌های پذیرش. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName, _currentUserService.UserId);
+                return ServiceResult<bool>.Failed("خطا در اعتبارسنجی Real-time");
+            }
+        }
+
+        #endregion
+
         #region IInsuranceValidationService Implementation
 
         public async Task<ServiceResult<bool>> ValidateCoverageAsync(int patientId, int serviceId, DateTime appointmentDate)

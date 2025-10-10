@@ -1,0 +1,491 @@
+@model ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.PatientSearchComponentViewModel
+
+<div class="reception-component patient-search-component" data-component="patient-search">
+    <div class="component-header">
+        <h5 class="component-title">
+            <i class="fas fa-user-search me-2"></i>
+            جستجوی بیمار
+        </h5>
+        <div class="component-actions">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-action="toggle-search">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="component-body">
+        <!-- جستجو بر اساس کد ملی -->
+        <div class="search-method" data-method="national-code">
+            <div class="input-group mb-3">
+                <span class="input-group-text">
+                    <i class="fas fa-id-card"></i>
+                </span>
+                <input type="text" 
+                       class="form-control" 
+                       id="nationalCodeInput" 
+                       placeholder="کد ملی بیمار"
+                       maxlength="10"
+                       data-validate="national-code">
+                <button class="btn btn-primary" 
+                        type="button" 
+                        data-action="search-by-national-code">
+                    <i class="fas fa-search me-1"></i>
+                    جستجو
+                </button>
+            </div>
+        </div>
+
+        <!-- جستجو بر اساس نام -->
+        <div class="search-method" data-method="name">
+            <div class="input-group mb-3">
+                <span class="input-group-text">
+                    <i class="fas fa-user"></i>
+                </span>
+                <input type="text" 
+                       class="form-control" 
+                       id="patientNameInput" 
+                       placeholder="نام یا نام خانوادگی بیمار"
+                       data-validate="patient-name">
+                <button class="btn btn-outline-primary" 
+                        type="button" 
+                        data-action="search-by-name">
+                    <i class="fas fa-search me-1"></i>
+                    جستجو
+                </button>
+            </div>
+        </div>
+
+        <!-- نتایج جستجو -->
+        <div class="search-results" id="patientSearchResults" style="display: none;">
+            <div class="results-header">
+                <h6 class="results-title">نتایج جستجو</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-action="clear-results">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="results-body">
+                <!-- نتایج به صورت AJAX بارگذاری می‌شود -->
+            </div>
+        </div>
+
+        <!-- بیمار انتخاب شده -->
+        <div class="selected-patient" id="selectedPatient" style="display: none;">
+            <div class="patient-card">
+                <div class="patient-info">
+                    <div class="patient-avatar">
+                        <i class="fas fa-user-circle"></i>
+                    </div>
+                    <div class="patient-details">
+                        <h6 class="patient-name" id="selectedPatientName"></h6>
+                        <p class="patient-national-code" id="selectedPatientNationalCode"></p>
+                        <p class="patient-birth-date" id="selectedPatientBirthDate"></p>
+                    </div>
+                </div>
+                <div class="patient-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="view-patient-history">
+                        <i class="fas fa-history me-1"></i>
+                        تاریخچه
+                    </button>
+                    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="change-patient">
+                        <i class="fas fa-exchange-alt me-1"></i>
+                        تغییر
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ایجاد بیمار جدید -->
+        <div class="create-patient-section" id="createPatientSection" style="display: none;">
+            <div class="create-patient-header">
+                <h6 class="create-patient-title">ایجاد بیمار جدید</h6>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-action="cancel-create-patient">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="create-patient-form">
+                <!-- فرم ایجاد بیمار به صورت AJAX بارگذاری می‌شود -->
+            </div>
+        </div>
+    </div>
+
+    <div class="component-footer">
+        <div class="component-status">
+            <span class="status-indicator" id="patientSearchStatus"></span>
+            <span class="status-text" id="patientSearchStatusText">آماده</span>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Initialize Patient Search Component
+    initializePatientSearchComponent();
+});
+
+function initializePatientSearchComponent() {
+    const component = $('[data-component="patient-search"]');
+    
+    // Event handlers
+    component.on('click', '[data-action="search-by-national-code"]', function() {
+        searchPatientByNationalCode();
+    });
+    
+    component.on('click', '[data-action="search-by-name"]', function() {
+        searchPatientByName();
+    });
+    
+    component.on('click', '[data-action="clear-results"]', function() {
+        clearSearchResults();
+    });
+    
+    component.on('click', '[data-action="change-patient"]', function() {
+        changeSelectedPatient();
+    });
+    
+    component.on('click', '[data-action="view-patient-history"]', function() {
+        viewPatientHistory();
+    });
+    
+    // Input validation
+    component.on('input', '#nationalCodeInput', function() {
+        validateNationalCode($(this).val());
+    });
+    
+    component.on('input', '#patientNameInput', function() {
+        validatePatientName($(this).val());
+    });
+}
+
+function searchPatientByNationalCode() {
+    const nationalCode = $('#nationalCodeInput').val().trim();
+    
+    if (!nationalCode) {
+        showComponentError('کد ملی الزامی است');
+        return;
+    }
+    
+    if (!isValidNationalCode(nationalCode)) {
+        showComponentError('کد ملی نامعتبر است');
+        return;
+    }
+    
+    setComponentLoading(true);
+    
+    $.ajax({
+        url: '/Reception/ReceptionPatient/SearchByNationalCode',
+        type: 'POST',
+        data: { nationalCode: nationalCode },
+        success: function(response) {
+            if (response.success) {
+                displayPatientSearchResults([response.data]);
+            } else {
+                showComponentError(response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            showComponentError('خطا در جستجوی بیمار');
+        },
+        complete: function() {
+            setComponentLoading(false);
+        }
+    });
+}
+
+function searchPatientByName() {
+    const searchTerm = $('#patientNameInput').val().trim();
+    
+    if (!searchTerm) {
+        showComponentError('نام بیمار الزامی است');
+        return;
+    }
+    
+    setComponentLoading(true);
+    
+    $.ajax({
+        url: '/Reception/ReceptionPatient/SearchByName',
+        type: 'POST',
+        data: { 
+            searchTerm: searchTerm,
+            pageNumber: 1,
+            pageSize: 10
+        },
+        success: function(response) {
+            if (response.success) {
+                displayPatientSearchResults(response.data);
+            } else {
+                showComponentError(response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            showComponentError('خطا در جستجوی بیمار');
+        },
+        complete: function() {
+            setComponentLoading(false);
+        }
+    });
+}
+
+function displayPatientSearchResults(patients) {
+    const resultsContainer = $('#patientSearchResults .results-body');
+    resultsContainer.empty();
+    
+    if (patients.length === 0) {
+        resultsContainer.html('<div class="no-results">بیماری یافت نشد</div>');
+    } else {
+        patients.forEach(function(patient) {
+            const patientItem = createPatientItem(patient);
+            resultsContainer.append(patientItem);
+        });
+    }
+    
+    $('#patientSearchResults').show();
+}
+
+function createPatientItem(patient) {
+    return $(`
+        <div class="patient-item" data-patient-id="${patient.patientId}">
+            <div class="patient-item-info">
+                <h6 class="patient-item-name">${patient.firstName} ${patient.lastName}</h6>
+                <p class="patient-item-national-code">کد ملی: ${patient.nationalCode}</p>
+                <p class="patient-item-birth-date">تاریخ تولد: ${patient.birthDate}</p>
+            </div>
+            <div class="patient-item-actions">
+                <button type="button" class="btn btn-sm btn-primary" data-action="select-patient">
+                    <i class="fas fa-check me-1"></i>
+                    انتخاب
+                </button>
+            </div>
+        </div>
+    `);
+}
+
+function selectPatient(patientId) {
+    // Load patient details and select
+    $.ajax({
+        url: '/Reception/ReceptionPatient/GetPatientDetails',
+        type: 'POST',
+        data: { patientId: patientId },
+        success: function(response) {
+            if (response.success) {
+                displaySelectedPatient(response.data);
+                $('#patientSearchResults').hide();
+            } else {
+                showComponentError(response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            showComponentError('خطا در انتخاب بیمار');
+        }
+    });
+}
+
+function displaySelectedPatient(patient) {
+    $('#selectedPatientName').text(`${patient.firstName} ${patient.lastName}`);
+    $('#selectedPatientNationalCode').text(`کد ملی: ${patient.nationalCode}`);
+    $('#selectedPatientBirthDate').text(`تاریخ تولد: ${patient.birthDate}`);
+    $('#selectedPatient').show();
+    
+    // Trigger patient selected event
+    $(document).trigger('patientSelected', [patient]);
+}
+
+function setComponentLoading(loading) {
+    const component = $('[data-component="patient-search"]');
+    const statusIndicator = $('#patientSearchStatus');
+    const statusText = $('#patientSearchStatusText');
+    
+    if (loading) {
+        component.addClass('loading');
+        statusIndicator.addClass('loading');
+        statusText.text('در حال جستجو...');
+    } else {
+        component.removeClass('loading');
+        statusIndicator.removeClass('loading');
+        statusText.text('آماده');
+    }
+}
+
+function showComponentError(message) {
+    const component = $('[data-component="patient-search"]');
+    const statusIndicator = $('#patientSearchStatus');
+    const statusText = $('#patientSearchStatusText');
+    
+    statusIndicator.addClass('error');
+    statusText.text(message);
+    
+    // Auto-hide error after 5 seconds
+    setTimeout(function() {
+        statusIndicator.removeClass('error');
+        statusText.text('آماده');
+    }, 5000);
+}
+
+function validateNationalCode(nationalCode) {
+    // Iranian national code validation
+    if (nationalCode.length === 10) {
+        const digits = nationalCode.split('').map(Number);
+        const sum = digits.slice(0, 9).reduce((acc, digit, index) => acc + digit * (10 - index), 0);
+        const remainder = sum % 11;
+        const checkDigit = remainder < 2 ? remainder : 11 - remainder;
+        
+        return checkDigit === digits[9];
+    }
+    return false;
+}
+
+function isValidNationalCode(nationalCode) {
+    return /^\d{10}$/.test(nationalCode) && validateNationalCode(nationalCode);
+}
+
+function validatePatientName(name) {
+    return name.length >= 2;
+}
+</script>
+
+<style>
+.reception-component {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fff;
+    margin-bottom: 20px;
+    transition: all 0.3s ease;
+}
+
+.reception-component.loading {
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+.component-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    border-bottom: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.component-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333;
+}
+
+.component-body {
+    padding: 20px;
+}
+
+.search-method {
+    margin-bottom: 20px;
+}
+
+.search-results {
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    margin-top: 15px;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.results-body {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.patient-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    border-bottom: 1px solid #f0f0f0;
+    transition: background-color 0.2s ease;
+}
+
+.patient-item:hover {
+    background-color: #f8f9fa;
+}
+
+.patient-item:last-child {
+    border-bottom: none;
+}
+
+.selected-patient {
+    border: 1px solid #28a745;
+    border-radius: 6px;
+    background: #f8fff9;
+    margin-top: 15px;
+}
+
+.patient-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+}
+
+.patient-info {
+    display: flex;
+    align-items: center;
+}
+
+.patient-avatar {
+    font-size: 24px;
+    color: #6c757d;
+    margin-right: 15px;
+}
+
+.patient-details h6 {
+    margin: 0 0 5px 0;
+    font-weight: 600;
+    color: #333;
+}
+
+.patient-details p {
+    margin: 0;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.component-footer {
+    padding: 10px 20px;
+    border-top: 1px solid #e0e0e0;
+    background: #f8f9fa;
+}
+
+.component-status {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+}
+
+.status-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #28a745;
+    margin-left: 8px;
+}
+
+.status-indicator.loading {
+    background: #ffc107;
+    animation: pulse 1s infinite;
+}
+
+.status-indicator.error {
+    background: #dc3545;
+}
+
+@@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+</style>

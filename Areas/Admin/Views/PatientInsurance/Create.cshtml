@@ -622,7 +622,7 @@
                             data_allow_clear = "true"
                         })
                         <!-- Hidden input for form submission -->
-                        <!-- PatientId will be handled by Select2 DropDownListFor only -->
+                        @Html.HiddenFor(m => m.PatientId, new { @id = "PatientId" })
                         @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "text-danger" })
                     </div>
                     

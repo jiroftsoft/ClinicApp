@@ -772,7 +772,7 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
                 if (!systemHealth)
                 {
                     _log.Warning("🏥 MEDICAL: وضعیت سیستم نامناسب برای بررسی وضعیت بیمه. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
-                        patientId, _currentUserService.UserName, _currentUserService.UserId);
+                    patientId, _currentUserService.UserName, _currentUserService.UserId);
 
                     return Json(ServiceResult<PatientInsuranceStatus>.Failed(
                         "سیستم در حال حاضر در دسترس نیست. لطفاً بعداً تلاش کنید"),
@@ -846,7 +846,6 @@ namespace ClinicApp.Areas.Admin.Controllers.Insurance
         /// دریافت وضعیت بیمه بیمار - بهینه‌سازی شده برای محیط Production
         /// </summary>
         [HttpGet]
-        [ValidateAntiForgeryToken]
         public async Task<ActionResult> GetPatientInsuranceStatus(int patientId)
         {
             try

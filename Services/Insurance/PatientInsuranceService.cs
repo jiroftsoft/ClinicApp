@@ -199,6 +199,28 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت وضعیت بیمه بیمار برای پذیرش (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>وضعیت بیمه بیمار</returns>
+        public async Task<ServiceResult<object>> GetPatientInsuranceStatusForReceptionAsync(int patientId)
+        {
+            // TODO: پیاده‌سازی منطق دریافت وضعیت بیمه برای پذیرش
+            return ServiceResult<object>.Successful(new { PatientId = patientId, HasInsurance = true, Status = "فعال" });
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های بیمار برای پذیرش (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>لیست بیمه‌های بیمار</returns>
+        public async Task<ServiceResult<object>> GetPatientInsurancesForReceptionAsync(int patientId)
+        {
+            // TODO: پیاده‌سازی منطق دریافت بیمه‌های بیمار برای پذیرش
+            return ServiceResult<object>.Successful(new { PatientId = patientId, Insurances = new List<object>() });
+        }
+
 
         public async Task<ServiceResult<int>> CreatePatientInsuranceAsync(PatientInsuranceCreateEditViewModel model)
         {

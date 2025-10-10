@@ -66,6 +66,13 @@ namespace ClinicApp.Interfaces
         /// <returns>جزئیات پذیرش</returns>
         Task<ServiceResult<ReceptionDetailsViewModel>> GetReceptionDetailsAsync(int id);
 
+        /// <summary>
+        /// دریافت پذیرش بر اساس شناسه (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="id">شناسه پذیرش</param>
+        /// <returns>اطلاعات پذیرش</returns>
+        Task<ServiceResult<ReceptionDetailsViewModel>> GetReceptionByIdAsync(int id);
+
         #endregion
 
         #region Search and List Operations
@@ -101,6 +108,18 @@ namespace ClinicApp.Interfaces
             int pageSize = 10);
 
         /// <summary>
+        /// جستجوی پذیرش‌ها با مدل (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="model">مدل جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه جستجو</returns>
+        Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> SearchReceptionsAsync(
+            ReceptionSearchViewModel model,
+            int pageNumber = 1,
+            int pageSize = 10);
+
+        /// <summary>
         /// دریافت پذیرش‌های بیمار
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
@@ -108,6 +127,18 @@ namespace ClinicApp.Interfaces
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>لیست پذیرش‌های بیمار</returns>
         Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetPatientReceptionsAsync(
+            int patientId,
+            int pageNumber = 1,
+            int pageSize = 10);
+
+        /// <summary>
+        /// دریافت تاریخچه پذیرش‌های بیمار (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>تاریخچه پذیرش‌های بیمار</returns>
+        Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetPatientReceptionHistoryAsync(
             int patientId,
             int pageNumber = 1,
             int pageSize = 10);
@@ -138,6 +169,13 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult<ReceptionPatientLookupViewModel>> LookupPatientByNationalCodeAsync(string nationalCode);
 
         /// <summary>
+        /// جستجوی بیمار بر اساس کد ملی (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="nationalCode">کد ملی</param>
+        /// <returns>اطلاعات بیمار</returns>
+        Task<ServiceResult<ReceptionPatientLookupViewModel>> SearchPatientByNationalCodeAsync(string nationalCode);
+
+        /// <summary>
         /// جستجوی بیمار بر اساس نام
         /// </summary>
         /// <param name="name">نام بیمار</param>
@@ -155,6 +193,13 @@ namespace ClinicApp.Interfaces
         /// <param name="model">مدل ایجاد بیمار</param>
         /// <returns>اطلاعات بیمار جدید</returns>
         Task<ServiceResult<ReceptionPatientLookupViewModel>> CreatePatientInlineAsync(PatientCreateEditViewModel model);
+
+        /// <summary>
+        /// ایجاد بیمار جدید (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="model">مدل ایجاد بیمار</param>
+        /// <returns>اطلاعات بیمار جدید</returns>
+        Task<ServiceResult<ReceptionPatientLookupViewModel>> CreatePatientAsync(PatientCreateEditViewModel model);
 
         #endregion
 
@@ -199,6 +244,13 @@ namespace ClinicApp.Interfaces
         /// <param name="departmentIds">شناسه‌های دپارتمان‌ها</param>
         /// <returns>لیست سرفصل‌های خدمات</returns>
         Task<ServiceResult<List<ReceptionServiceCategoryLookupViewModel>>> GetServiceCategoriesByDepartmentsAsync(List<int> departmentIds);
+
+        /// <summary>
+        /// دریافت خدمات بر اساس دپارتمان‌ها (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="departmentIds">شناسه‌های دپارتمان‌ها</param>
+        /// <returns>لیست خدمات</returns>
+        Task<ServiceResult<List<ReceptionServiceLookupViewModel>>> GetServicesByDepartmentsAsync(List<int> departmentIds);
 
         #endregion
 

@@ -494,6 +494,16 @@ namespace ClinicApp.Services
             }
         }
 
+        /// <summary>
+        /// دریافت پذیرش بر اساس شناسه (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="id">شناسه پذیرش</param>
+        /// <returns>اطلاعات پذیرش</returns>
+        public async Task<ServiceResult<ReceptionDetailsViewModel>> GetReceptionByIdAsync(int id)
+        {
+            return await GetReceptionDetailsAsync(id);
+        }
+
         #endregion
 
         #region Helper Methods
@@ -536,6 +546,21 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// جستجوی پذیرش‌ها با مدل (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="model">مدل جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه جستجو</returns>
+        public async Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> SearchReceptionsAsync(
+            ReceptionSearchViewModel model,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            return await SearchReceptionsAsync(model.SearchTerm ?? "", pageNumber, pageSize);
+        }
+
+        /// <summary>
         /// دریافت پذیرش‌های بیمار
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
@@ -548,6 +573,21 @@ namespace ClinicApp.Services
             int pageSize = 10)
         {
             return await GetReceptionsAsync(patientId, null, null, null, pageNumber, pageSize);
+        }
+
+        /// <summary>
+        /// دریافت تاریخچه پذیرش‌های بیمار (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>تاریخچه پذیرش‌های بیمار</returns>
+        public async Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetPatientReceptionHistoryAsync(
+            int patientId,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            return await GetPatientReceptionsAsync(patientId, pageNumber, pageSize);
         }
 
         /// <summary>
@@ -640,6 +680,16 @@ namespace ClinicApp.Services
                     ErrorCategory.System,
                     SecurityLevel.High);
             }
+        }
+
+        /// <summary>
+        /// جستجوی بیمار بر اساس کد ملی (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="nationalCode">کد ملی</param>
+        /// <returns>اطلاعات بیمار</returns>
+        public async Task<ServiceResult<ReceptionPatientLookupViewModel>> SearchPatientByNationalCodeAsync(string nationalCode)
+        {
+            return await LookupPatientByNationalCodeAsync(nationalCode);
         }
 
         /// <summary>
@@ -801,6 +851,16 @@ namespace ClinicApp.Services
                     ErrorCategory.System,
                     SecurityLevel.High);
             }
+        }
+
+        /// <summary>
+        /// ایجاد بیمار جدید (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="model">مدل ایجاد بیمار</param>
+        /// <returns>اطلاعات بیمار جدید</returns>
+        public async Task<ServiceResult<ReceptionPatientLookupViewModel>> CreatePatientAsync(PatientCreateEditViewModel model)
+        {
+            return await CreatePatientInlineAsync(model);
         }
 
         /// <summary>
@@ -1159,6 +1219,17 @@ namespace ClinicApp.Services
                     ErrorCategory.System,
                     SecurityLevel.High);
             }
+        }
+
+        /// <summary>
+        /// دریافت خدمات بر اساس دپارتمان‌ها (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="departmentIds">شناسه‌های دپارتمان‌ها</param>
+        /// <returns>لیست خدمات</returns>
+        public async Task<ServiceResult<List<ReceptionServiceLookupViewModel>>> GetServicesByDepartmentsAsync(List<int> departmentIds)
+        {
+            // TODO: پیاده‌سازی منطق دریافت خدمات بر اساس دپارتمان‌ها
+            return ServiceResult<List<ReceptionServiceLookupViewModel>>.Successful(new List<ReceptionServiceLookupViewModel>());
         }
 
         public async Task<ServiceResult<List<ReceptionPatientInsuranceLookupViewModel>>> GetPatientActiveInsurancesAsync(int patientId)

@@ -18,7 +18,6 @@ using Microsoft.AspNet.Identity;
 using ClinicApp.Services;
 using ClinicApp.Models;
 using System.Data.Entity;
-using PatientInquiryViewModel = ClinicApp.ViewModels.Reception.PatientInquiryViewModel;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.DTOs.Insurance;
 

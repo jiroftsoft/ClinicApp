@@ -92,6 +92,32 @@ namespace ClinicApp.Interfaces.Insurance
 
         #endregion
 
+        #region Reception-Specific Validation
+
+        /// <summary>
+        /// اعتبارسنجی بدهی بیمار برای پذیرش
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>نتیجه اعتبارسنجی بدهی</returns>
+        Task<ServiceResult<bool>> ValidatePatientDebtAsync(int patientId);
+
+        /// <summary>
+        /// اعتبارسنجی ظرفیت پزشک برای پذیرش
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <param name="appointmentDate">تاریخ قرار ملاقات</param>
+        /// <returns>نتیجه اعتبارسنجی ظرفیت</returns>
+        Task<ServiceResult<bool>> ValidateDoctorCapacityAsync(int doctorId, System.DateTime appointmentDate);
+
+        /// <summary>
+        /// اعتبارسنجی Real-time داده‌های پذیرش
+        /// </summary>
+        /// <param name="model">مدل داده‌های پذیرش</param>
+        /// <returns>نتیجه اعتبارسنجی Real-time</returns>
+        Task<ServiceResult<bool>> ValidateReceptionDataRealTimeAsync(object model);
+
+        #endregion
+
         #region Eligibility Validation
 
         /// <summary>

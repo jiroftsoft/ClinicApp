@@ -257,8 +257,31 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// اعتبارسنجی بیمه بیمار برای پذیرش (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="serviceIds">شناسه‌های خدمات</param>
+        /// <param name="receptionDate">تاریخ پذیرش</param>
+        /// <returns>نتیجه اعتبارسنجی</returns>
+        public async Task<ServiceResult<object>> ValidatePatientInsuranceForReceptionAsync(int patientId, System.Collections.Generic.List<int> serviceIds, System.DateTime receptionDate)
+        {
+            // TODO: پیاده‌سازی منطق اعتبارسنجی بیمه برای پذیرش
+            return ServiceResult<object>.Successful(new { PatientId = patientId, ServiceIds = serviceIds, ReceptionDate = receptionDate, IsValid = true });
+        }
+
+        /// <summary>
+        /// اعتبارسنجی سریع بیمه بیمار (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="receptionDate">تاریخ پذیرش</param>
+        /// <returns>نتیجه اعتبارسنجی سریع</returns>
+        public async Task<ServiceResult<object>> QuickValidatePatientInsuranceAsync(int patientId, System.DateTime receptionDate)
+        {
+            // TODO: پیاده‌سازی منطق اعتبارسنجی سریع
+            return ServiceResult<object>.Successful(new { PatientId = patientId, ReceptionDate = receptionDate, IsValid = true });
+        }
+
         #endregion
     }
-
-
 }

@@ -1126,6 +1126,19 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// محاسبه بیمه بیمار برای پذیرش (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="serviceIds">لیست شناسه‌های خدمات</param>
+        /// <param name="receptionDate">تاریخ پذیرش</param>
+        /// <returns>نتیجه محاسبه بیمه</returns>
+        public async Task<ServiceResult<object>> CalculatePatientInsuranceForReceptionAsync(int patientId, System.Collections.Generic.List<int> serviceIds, System.DateTime receptionDate)
+        {
+            // TODO: پیاده‌سازی منطق محاسبه بیمه برای پذیرش
+            return ServiceResult<object>.Successful(new { PatientId = patientId, ServiceIds = serviceIds, ReceptionDate = receptionDate, TotalAmount = 0m });
+        }
+
         #endregion
     }
 }

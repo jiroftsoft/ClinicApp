@@ -146,7 +146,7 @@
                     </div>
                 </form>
             </div>
-                
+
             <!-- 🏥 Medical Environment: Insurance Status Summary -->
             <div class="row mb-3">
                 <div class="col-12">
@@ -674,8 +674,8 @@
                                                         <h6><i class="fas fa-plus-circle"></i> بیمه تکمیلی</h6>
                                                         <div class="card">
                                                             <div class="card-body">
-                                                                <div class="row">
-                                                                    <div class="col-md-6">
+                                                <div class="row">
+                                                    <div class="col-md-6">
                                                                         <strong>وضعیت:</strong> 
                                                                         <span class="badge bg-${(statusData.hasSupplementaryInsurance || statusData.HasSupplementaryInsurance) ? 'success' : 'info'}">
                                                                             ${(statusData.hasSupplementaryInsurance || statusData.HasSupplementaryInsurance) ? 'دارد' : 'ندارد'}
@@ -689,16 +689,16 @@
                                                                     <div class="row mt-2">
                                                                         <div class="col-md-6">
                                                                             <strong>نام طرح:</strong> ${(statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.name || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.Name || 'نامشخص'}
-                                                                        </div>
-                                                                        <div class="col-md-6">
+                                                    </div>
+                                                    <div class="col-md-6">
                                                                             <strong>شماره بیمه:</strong> ${(statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.policyNumber || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.PolicyNumber || 'نامشخص'}
-                                                                        </div>
-                                                                    </div>
+                                                    </div>
+                                                </div>
                                                                     <div class="row mt-2">
-                                                                        <div class="col-md-6">
+                                                    <div class="col-md-6">
                                                                             <strong>تاریخ شروع:</strong> ${formatDate((statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.startDate || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.StartDate)}
-                                                                        </div>
-                                                                        <div class="col-md-6">
+                                                    </div>
+                                                    <div class="col-md-6">
                                                                             <strong>تاریخ پایان:</strong> ${formatDate((statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.endDate || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.EndDate)} ${(() => {
                                                                                 var endDate = (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.endDate || (statusData.supplementaryInsurance || statusData.SupplementaryInsurance)?.EndDate;
                                                                                 var daysRemaining = calculateDaysRemaining(endDate);
@@ -744,8 +744,8 @@
                                                                     </div>
                                                                 </div>
                                                             </div>
-                                                        </div>
                                                     </div>
+                                                </div>
                                                 ` : ''}
 
                                                 <!-- 🏥 Medical Environment: اطلاعات فنی -->

@@ -493,6 +493,10 @@
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionCoreController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionInsuranceController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionPatientController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionServiceController.cs" />
     <Compile Include="Controllers\TokenTestController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
@@ -796,6 +800,7 @@
     <Compile Include="Models\DTOs\Calculation\CalculationServiceDto.cs" />
     <Compile Include="Models\DTOs\Insurance\PatientInsuranceDTOs.cs" />
     <Compile Include="Models\DTOs\Insurance\PatientInsuranceValidationResult.cs" />
+    <Compile Include="Models\DTOs\Reception\ReceptionValidationDTOs.cs" />
     <Compile Include="Models\Entities\Appointment\Appointment.cs" />
     <Compile Include="Models\Entities\Appointment\AppointmentSlot.cs" />
     <Compile Include="Models\Entities\Clinic\Clinic.cs" />
@@ -1096,6 +1101,7 @@
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionComponentViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Controllers\AccountController.cs" />
@@ -4279,6 +4285,9 @@
     <Content Include="Views\Shared\_PaginationPartial.cshtml" />
     <Content Include="Views\Shared\EditorTemplates\PersianDatePicker.cshtml" />
     <Content Include="Views\Shared\EditorTemplates\PersianDateRange.cshtml" />
+    <Content Include="Views\Reception\Components\_PatientSearchComponent.cshtml" />
+    <Content Include="Views\Reception\Components\_ReceptionFormComponent.cshtml" />
+    <Content Include="Views\Reception\Components\_ReceptionHistoryComponent.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

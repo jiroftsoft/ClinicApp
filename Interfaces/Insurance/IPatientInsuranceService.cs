@@ -93,6 +93,20 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<PatientInsuranceDetailsViewModel>> GetPatientInsuranceDetailsAsync(int patientInsuranceId);
 
         /// <summary>
+        /// دریافت وضعیت بیمه بیمار برای پذیرش (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>وضعیت بیمه بیمار</returns>
+        Task<ServiceResult<object>> GetPatientInsuranceStatusForReceptionAsync(int patientId);
+
+        /// <summary>
+        /// دریافت بیمه‌های بیمار برای پذیرش (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>لیست بیمه‌های بیمار</returns>
+        Task<ServiceResult<object>> GetPatientInsurancesForReceptionAsync(int patientId);
+
+        /// <summary>
         /// دریافت بیمه بیمار برای ویرایش
         /// </summary>
         /// <param name="patientInsuranceId">شناسه بیمه بیمار</param>

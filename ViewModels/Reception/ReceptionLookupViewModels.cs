@@ -9,7 +9,7 @@ using ClinicApp.ViewModels.Payment;
 namespace ClinicApp.ViewModels.Reception
 {
     /// <summary>
-    /// ViewModel برای جستجوی بیمار در پذیرش
+    /// ViewModel برای جستجوی بیمار در پذیرش - بهینه‌سازی شده
     /// </summary>
     public class ReceptionPatientLookupViewModel
     {
@@ -31,11 +31,17 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "شماره تلفن")]
         public string PhoneNumber { get; set; }
 
+        [Display(Name = "شماره موبایل")]
+        public string MobileNumber { get; set; }
+
         [Display(Name = "تاریخ تولد")]
         public DateTime? BirthDate { get; set; }
 
         [Display(Name = "تاریخ تولد (شمسی)")]
         public string BirthDateShamsi { get; set; }
+
+        [Display(Name = "سن")]
+        public int Age { get; set; }
 
         [Display(Name = "جنسیت")]
         public Gender Gender { get; set; }
@@ -49,17 +55,41 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "ایمیل")]
         public string Email { get; set; }
 
+        [Display(Name = "گروه خونی")]
+        public string BloodType { get; set; }
+
+        [Display(Name = "آیا فعال است")]
+        public bool IsActive { get; set; }
+
         [Display(Name = "آیا بیمه فعال دارد")]
         public bool HasActiveInsurance { get; set; }
 
         [Display(Name = "نام بیمه فعال")]
         public string ActiveInsuranceName { get; set; }
 
+        [Display(Name = "شماره بیمه فعال")]
+        public string ActiveInsuranceNumber { get; set; }
+
+        [Display(Name = "تاریخ انقضای بیمه")]
+        public DateTime? InsuranceExpiryDate { get; set; }
+
         [Display(Name = "تاریخ آخرین پذیرش")]
         public DateTime? LastReceptionDate { get; set; }
 
         [Display(Name = "تاریخ آخرین پذیرش (شمسی)")]
         public string LastReceptionDateShamsi { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌ها")]
+        public int ReceptionCount { get; set; }
+
+        [Display(Name = "بیمه تکمیلی")]
+        public string SupplementaryInsurance { get; set; }
+
+        [Display(Name = "آلرژی‌ها")]
+        public string Allergies { get; set; }
+
+        [Display(Name = "بیماری‌های مزمن")]
+        public string ChronicDiseases { get; set; }
     }
 
     /// <summary>

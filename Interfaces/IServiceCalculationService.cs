@@ -1,8 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities.Clinic;
 using ClinicApp.ViewModels;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Interfaces
 {
@@ -59,6 +61,71 @@ namespace ClinicApp.Interfaces
         /// <returns>جزئیات محاسبه</returns>
         ServiceCalculationDetails CalculateServicePriceWithDetails(Service service, ApplicationDbContext context,
             DateTime? date = null, int? departmentId = null, int? financialYear = null);
+
+        #endregion
+
+        #region Reception-Specific Calculation Methods
+
+        /// <summary>
+        /// محاسبه مجموع پذیرش
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="serviceIds">لیست شناسه‌های خدمات</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>نتیجه محاسبه مجموع پذیرش</returns>
+        Task<ServiceResult<decimal>> CalculateReceptionTotalAsync(int patientId, List<int> serviceIds, ApplicationDbContext context);
+
+        /// <summary>
+        /// محاسبه تخفیف
+        /// </summary>
+        /// <param name="totalAmount">مبلغ کل</param>
+        /// <param name="discountCode">کد تخفیف</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>نتیجه محاسبه تخفیف</returns>
+        Task<ServiceResult<decimal>> CalculateDiscountAsync(decimal totalAmount, string discountCode, ApplicationDbContext context);
+
+        /// <summary>
+        /// محاسبه مالیات
+        /// </summary>
+        /// <param name="totalAmount">مبلغ کل</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>نتیجه محاسبه مالیات</returns>
+        Task<ServiceResult<decimal>> CalculateTaxAsync(decimal totalAmount, ApplicationDbContext context);
+
+        /// <summary>
+        /// محاسبه Real-time پذیرش
+        /// </summary>
+        /// <param name="model">مدل داده‌های پذیرش</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>نتیجه محاسبه Real-time</returns>
+        Task<ServiceResult<object>> CalculateReceptionRealTimeAsync(object model, ApplicationDbContext context);
+
+        /// <summary>
+        /// محاسبه قیمت خدمت با کامپوننت‌ها (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>نتیجه محاسبه قیمت</returns>
+        Task<ServiceResult<object>> CalculateServicePriceWithComponentsAsync(int serviceId, int patientId, ApplicationDbContext context);
+
+        /// <summary>
+        /// دریافت جزئیات محاسبه خدمت (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>جزئیات محاسبه</returns>
+        Task<ServiceResult<object>> GetServiceCalculationDetailsAsync(int serviceId, int patientId, ApplicationDbContext context);
+
+        /// <summary>
+        /// دریافت وضعیت کامپوننت‌های خدمت (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>وضعیت کامپوننت‌ها</returns>
+        Task<ServiceResult<object>> GetServiceComponentsStatusAsync(int serviceId, int patientId, ApplicationDbContext context);
 
         #endregion
 

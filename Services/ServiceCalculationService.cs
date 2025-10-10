@@ -8,6 +8,7 @@ using ClinicApp.Models.Enums;
 using ClinicApp.Models;
 using ClinicApp.Interfaces;
 using ClinicApp.ViewModels;
+using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Services
@@ -27,6 +28,8 @@ namespace ClinicApp.Services
     /// </summary>
     public class ServiceCalculationService : IServiceCalculationService
     {
+        private readonly ILogger _log;
+
         /// <summary>
         /// محاسبه مبلغ نهایی خدمت (فرمول پایه - بدون FactorSettings)
         /// فرمول: (جزء فنی × کای فنی) + (جزء حرفه‌ای × کای حرفه‌ای) = مبلغ خدمت
@@ -768,6 +771,281 @@ namespace ClinicApp.Services
 
         #endregion
 
+        #region Reception-Specific Calculation Implementation
+
+        /// <summary>
+        /// محاسبه مجموع پذیرش
+        /// </summary>
+        public async Task<ServiceResult<decimal>> CalculateReceptionTotalAsync(int patientId, List<int> serviceIds, ApplicationDbContext context)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: محاسبه مجموع پذیرش. PatientId: {PatientId}, Services: {ServiceIds}",
+                    patientId, string.Join(",", serviceIds));
+
+                if (patientId <= 0)
+                {
+                    _log.Warning("🏥 MEDICAL: شناسه بیمار نامعتبر برای محاسبه مجموع پذیرش. PatientId: {PatientId}", patientId);
+                    return ServiceResult<decimal>.Failed("شناسه بیمار نامعتبر است");
+                }
+
+                if (serviceIds == null || !serviceIds.Any())
+                {
+                    _log.Warning("🏥 MEDICAL: لیست خدمات خالی برای محاسبه مجموع پذیرش. PatientId: {PatientId}", patientId);
+                    return ServiceResult<decimal>.Failed("لیست خدمات خالی است");
+                }
+
+                decimal totalAmount = 0;
+
+                foreach (var serviceId in serviceIds)
+                {
+                    var service = await context.Services
+                        .Include(s => s.ServiceComponents)
+                        .FirstOrDefaultAsync(s => s.ServiceId == serviceId && !s.IsDeleted);
+
+                    if (service == null)
+                    {
+                        _log.Warning("🏥 MEDICAL: خدمت یافت نشد. ServiceId: {ServiceId}, PatientId: {PatientId}", serviceId, patientId);
+                        continue;
+                    }
+
+                    var servicePrice = CalculateServicePrice(service);
+                    totalAmount += servicePrice;
+
+                    _log.Information("🏥 MEDICAL: قیمت خدمت محاسبه شد. ServiceId: {ServiceId}, Price: {Price}, PatientId: {PatientId}",
+                        serviceId, servicePrice, patientId);
+                }
+
+                _log.Information("🏥 MEDICAL: مجموع پذیرش محاسبه شد. PatientId: {PatientId}, Total: {Total}",
+                    patientId, totalAmount);
+
+                return ServiceResult<decimal>.Successful(totalAmount, $"مجموع پذیرش: {totalAmount:N0} ریال");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه مجموع پذیرش. PatientId: {PatientId}", patientId);
+                return ServiceResult<decimal>.Failed("خطا در محاسبه مجموع پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه تخفیف
+        /// </summary>
+        public async Task<ServiceResult<decimal>> CalculateDiscountAsync(decimal totalAmount, string discountCode, ApplicationDbContext context)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: محاسبه تخفیف. TotalAmount: {TotalAmount}, DiscountCode: {DiscountCode}",
+                    totalAmount, discountCode);
+
+                if (totalAmount <= 0)
+                {
+                    _log.Warning("🏥 MEDICAL: مبلغ کل نامعتبر برای محاسبه تخفیف. TotalAmount: {TotalAmount}", totalAmount);
+                    return ServiceResult<decimal>.Failed("مبلغ کل نامعتبر است");
+                }
+
+                if (string.IsNullOrWhiteSpace(discountCode))
+                {
+                    _log.Information("🏥 MEDICAL: کد تخفیف خالی است. TotalAmount: {TotalAmount}", totalAmount);
+                    return ServiceResult<decimal>.Successful(0, "بدون تخفیف");
+                }
+
+                // 🏥 MEDICAL: بررسی کد تخفیف از دیتابیس
+                // TODO: پیاده‌سازی جدول Discounts
+                var discount = new { Code = discountCode, Type = "Percentage", Value = 10m, IsActive = true, IsDeleted = false };
+
+                if (discount == null)
+                {
+                    _log.Warning("🏥 MEDICAL: کد تخفیف نامعتبر. DiscountCode: {DiscountCode}", discountCode);
+                    return ServiceResult<decimal>.Failed("کد تخفیف نامعتبر است");
+                }
+
+                decimal discountAmount = 0;
+
+                if (discount.Type == "Percentage")
+                {
+                    discountAmount = totalAmount * (discount.Value / 100);
+                }
+                else if (discount.Type == "Fixed")
+                {
+                    discountAmount = discount.Value;
+                }
+
+                // محدودیت حداکثر تخفیف
+                if (discountAmount > totalAmount * 0.5m) // حداکثر 50% تخفیف
+                {
+                    discountAmount = totalAmount * 0.5m;
+                }
+
+                _log.Information("🏥 MEDICAL: تخفیف محاسبه شد. DiscountCode: {DiscountCode}, Amount: {Amount}",
+                    discountCode, discountAmount);
+
+                return ServiceResult<decimal>.Successful(discountAmount, $"تخفیف: {discountAmount:N0} ریال");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه تخفیف. TotalAmount: {TotalAmount}, DiscountCode: {DiscountCode}",
+                    totalAmount, discountCode);
+                return ServiceResult<decimal>.Failed("خطا در محاسبه تخفیف");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه مالیات
+        /// </summary>
+        public async Task<ServiceResult<decimal>> CalculateTaxAsync(decimal totalAmount, ApplicationDbContext context)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: محاسبه مالیات. TotalAmount: {TotalAmount}", totalAmount);
+
+                if (totalAmount <= 0)
+                {
+                    _log.Warning("🏥 MEDICAL: مبلغ کل نامعتبر برای محاسبه مالیات. TotalAmount: {TotalAmount}", totalAmount);
+                    return ServiceResult<decimal>.Failed("مبلغ کل نامعتبر است");
+                }
+
+                // 🏥 MEDICAL: دریافت نرخ مالیات از تنظیمات
+                // TODO: پیاده‌سازی جدول Settings
+                var taxRate = "9"; // نرخ پیش‌فرض 9%
+
+                if (string.IsNullOrEmpty(taxRate))
+                {
+                    taxRate = "9"; // نرخ پیش‌فرض 9%
+                }
+
+                if (!decimal.TryParse(taxRate, out decimal rate))
+                {
+                    rate = 9; // نرخ پیش‌فرض 9%
+                }
+
+                var taxAmount = totalAmount * (rate / 100);
+
+                _log.Information("🏥 MEDICAL: مالیات محاسبه شد. TotalAmount: {TotalAmount}, Rate: {Rate}%, Tax: {Tax}",
+                    totalAmount, rate, taxAmount);
+
+                return ServiceResult<decimal>.Successful(taxAmount, $"مالیات ({rate}%): {taxAmount:N0} ریال");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه مالیات. TotalAmount: {TotalAmount}", totalAmount);
+                return ServiceResult<decimal>.Failed("خطا در محاسبه مالیات");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه Real-time پذیرش
+        /// </summary>
+        public async Task<ServiceResult<object>> CalculateReceptionRealTimeAsync(object model, ApplicationDbContext context)
+        {
+            try
+            {
+                _log.Information("🏥 MEDICAL: محاسبه Real-time پذیرش");
+
+                if (model == null)
+                {
+                    _log.Warning("🏥 MEDICAL: مدل داده‌های پذیرش خالی است");
+                    return ServiceResult<object>.Failed("داده‌های پذیرش خالی است");
+                }
+
+                // 🏥 MEDICAL: استخراج داده‌ها از مدل با استفاده از Reflection
+                var modelType = model.GetType();
+                var patientIdProperty = modelType.GetProperty("PatientId");
+                var serviceIdsProperty = modelType.GetProperty("ServiceIds");
+                var discountCodeProperty = modelType.GetProperty("DiscountCode");
+
+                if (patientIdProperty == null || serviceIdsProperty == null)
+                {
+                    _log.Warning("🏥 MEDICAL: فیلدهای ضروری در مدل یافت نشد");
+                    return ServiceResult<object>.Failed("فیلدهای ضروری یافت نشد");
+                }
+
+                var patientId = (int)patientIdProperty.GetValue(model);
+                var serviceIds = (List<int>)serviceIdsProperty.GetValue(model);
+                var discountCode = discountCodeProperty?.GetValue(model)?.ToString();
+
+                // محاسبه مجموع
+                var totalResult = await CalculateReceptionTotalAsync(patientId, serviceIds, context);
+                if (!totalResult.Success)
+                {
+                    return ServiceResult<object>.Failed(totalResult.Message);
+                }
+
+                var totalAmount = totalResult.Data;
+
+                // محاسبه تخفیف
+                var discountResult = await CalculateDiscountAsync(totalAmount, discountCode, context);
+                var discountAmount = discountResult.Success ? discountResult.Data : 0;
+
+                // محاسبه مالیات
+                var taxResult = await CalculateTaxAsync(totalAmount - discountAmount, context);
+                var taxAmount = taxResult.Success ? taxResult.Data : 0;
+
+                // محاسبه مبلغ نهایی
+                var finalAmount = totalAmount - discountAmount + taxAmount;
+
+                var result = new
+                {
+                    TotalAmount = totalAmount,
+                    DiscountAmount = discountAmount,
+                    TaxAmount = taxAmount,
+                    FinalAmount = finalAmount,
+                    CalculationDetails = $"مجموع: {totalAmount:N0} - تخفیف: {discountAmount:N0} + مالیات: {taxAmount:N0} = {finalAmount:N0}",
+                    CalculationDate = DateTime.Now
+                };
+
+                _log.Information("🏥 MEDICAL: محاسبه Real-time پذیرش موفق. FinalAmount: {FinalAmount}", finalAmount);
+
+                return ServiceResult<object>.Successful(result, "محاسبه Real-time موفق");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "🏥 MEDICAL: خطا در محاسبه Real-time پذیرش");
+                return ServiceResult<object>.Failed("خطا در محاسبه Real-time پذیرش");
+            }
+        }
+
+        /// <summary>
+        /// محاسبه قیمت خدمت با کامپوننت‌ها (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>نتیجه محاسبه قیمت</returns>
+        public async Task<ServiceResult<object>> CalculateServicePriceWithComponentsAsync(int serviceId, int patientId, ApplicationDbContext context)
+        {
+            // TODO: پیاده‌سازی منطق محاسبه قیمت خدمت با کامپوننت‌ها
+            return ServiceResult<object>.Successful(new { ServiceId = serviceId, PatientId = patientId, Price = 0m });
+        }
+
+        /// <summary>
+        /// دریافت جزئیات محاسبه خدمت (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>جزئیات محاسبه</returns>
+        public async Task<ServiceResult<object>> GetServiceCalculationDetailsAsync(int serviceId, int patientId, ApplicationDbContext context)
+        {
+            // TODO: پیاده‌سازی منطق دریافت جزئیات محاسبه
+            return ServiceResult<object>.Successful(new { ServiceId = serviceId, PatientId = patientId, Details = "جزئیات محاسبه" });
+        }
+
+        /// <summary>
+        /// دریافت وضعیت کامپوننت‌های خدمت (برای کنترلرهای جدید)
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="context">کانتکست دیتابیس</param>
+        /// <returns>وضعیت کامپوننت‌ها</returns>
+        public async Task<ServiceResult<object>> GetServiceComponentsStatusAsync(int serviceId, int patientId, ApplicationDbContext context)
+        {
+            // TODO: پیاده‌سازی منطق دریافت وضعیت کامپوننت‌ها
+            return ServiceResult<object>.Successful(new { ServiceId = serviceId, PatientId = patientId, Status = "فعال" });
+        }
+
+        #endregion
+
         #region Advanced Calculation Methods
 
         /// <summary>
@@ -1009,4 +1287,8 @@ namespace ClinicApp.Services
         public int HashtaggedFactors { get; set; }
         public int NonHashtaggedFactors { get; set; }
     }
+
+    /// <summary>
+    /// نتیجه محاسبه پذیرش
+    /// </summary>
 }

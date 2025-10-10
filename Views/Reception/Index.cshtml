@@ -1,587 +1,738 @@
-@model ClinicApp.ViewModels.ReceptionSearchViewModel
+@model ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionIndexViewModel
 
 @{
-    ViewBag.Title = "مدیریت پذیرش‌ها";
-    ViewBag.RequireDataTables = true;
-    ViewBag.RequireSelect2 = true;
-    ViewBag.RequireDatePicker = true;
-    ViewBag.RequireFormValidation = true;
+    ViewBag.Title = "مدیریت پذیرش";
     Layout = "~/Views/Shared/_Layout.cshtml";
 }
 
-<div class="container-fluid">
-    <div class="row">
-        <div class="col-12">
-            <!-- ✅ بخش ۱: ساختار کلی -->
-            <h2 class="text-center mb-4">مدیریت پذیرش‌ها</h2>
-            <p class="text-center text-muted mb-4">جستجو، فیلتر و مدیریت پذیرش‌های بیماران کلینیک شفا</p>
-            
-            <!-- ✅ بخش ۲: طراحی بصری -->
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        لیست پذیرش‌ها
-                    </h4>
+<div class="reception-dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="dashboard-title">
+                <i class="fas fa-clipboard-list me-3"></i>
+                مدیریت پذیرش
+            </h1>
+            <p class="dashboard-subtitle">سیستم مدیریت پذیرش بیماران - کامپوننت محور و بدون رفرش صفحه</p>
+        </div>
+        <div class="header-actions">
+            <button type="button" class="btn btn-primary" data-action="new-reception">
+                <i class="fas fa-plus me-2"></i>
+                پذیرش جدید
+            </button>
+            <button type="button" class="btn btn-outline-primary" data-action="quick-search">
+                <i class="fas fa-search me-2"></i>
+                جستجوی سریع
+            </button>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="dashboard-content">
+        <div class="content-grid">
+            <!-- Left Column - Patient Search -->
+            <div class="content-column">
+                <div class="column-header">
+                    <h5 class="column-title">
+                        <i class="fas fa-user-search me-2"></i>
+                        انتخاب بیمار
+                    </h5>
                 </div>
-                <div class="card-body">
-                    <!-- ✅ بخش جستجو و فیلتر -->
-                    <div class="form-section mb-4">
-                        <div class="form-section-header">
-                            <i class="fas fa-search text-primary me-2"></i>
-                            <h5 class="mb-0">جستجو و فیلتر</h5>
-                        </div>
-                        <div class="form-section-body">
-                            @using (Html.BeginForm("Index", "Reception", FormMethod.Get, new { id = "search-form", @class = "needs-validation", novalidate = "novalidate" }))
-                            {
-                                <div class="row g-3">
-                                    <!-- کد ملی بیمار -->
-                                    <div class="col-md-3">
-                                        <label for="PatientNationalCode" class="form-label">کد ملی بیمار</label>
-                                        @Html.TextBoxFor(model => model.PatientNationalCode, new { @class = "form-control", placeholder = "کد ملی ۱۰ رقمی" })
-                                        @Html.ValidationMessageFor(model => model.PatientNationalCode, "", new { @class = "text-danger" })
-                                    </div>
+                <div class="column-content">
+                    @Html.Partial("Components/_PatientSearchComponent", new ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.PatientSearchComponentViewModel())
+                </div>
+            </div>
 
-                                    <!-- نام بیمار -->
-                                    <div class="col-md-3">
-                                        <label for="PatientName" class="form-label">نام بیمار</label>
-                                        @Html.TextBoxFor(model => model.PatientName, new { @class = "form-control", placeholder = "نام و نام خانوادگی" })
-                                        @Html.ValidationMessageFor(model => model.PatientName, "", new { @class = "text-danger" })
-                                    </div>
+            <!-- Right Column - Reception Form -->
+            <div class="content-column">
+                <div class="column-header">
+                    <h5 class="column-title">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        فرم پذیرش
+                    </h5>
+                </div>
+                <div class="column-content">
+                    @Html.Partial("Components/_ReceptionFormComponent", new ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionFormComponentViewModel())
+                </div>
+            </div>
+        </div>
 
-                                    <!-- نام پزشک -->
-                                    <div class="col-md-3">
-                                        <label for="DoctorName" class="form-label">نام پزشک</label>
-                                        @Html.TextBoxFor(model => model.DoctorName, new { @class = "form-control", placeholder = "نام پزشک" })
-                                        @Html.ValidationMessageFor(model => model.DoctorName, "", new { @class = "text-danger" })
-                                    </div>
+        <!-- Bottom Section - Reception History -->
+        <div class="history-section">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-history me-2"></i>
+                    تاریخچه پذیرش‌ها
+                </h5>
+            </div>
+            <div class="section-content">
+                @Html.Partial("Components/_ReceptionHistoryComponent", new ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionHistoryComponentViewModel())
+            </div>
+        </div>
+    </div>
 
-                                    <!-- وضعیت پذیرش -->
-                                    <div class="col-md-3">
-                                        <label for="Status" class="form-label">وضعیت پذیرش</label>
-                                        @Html.DropDownListFor(model => model.Status, Model.StatusList, "همه وضعیت‌ها", new { @class = "form-select", id = "statusFilter" })
-                                        @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
-                                    </div>
+    <!-- Quick Actions Panel -->
+    <div class="quick-actions-panel" id="quickActionsPanel" style="display: none;">
+        <div class="panel-header">
+            <h6 class="panel-title">عملیات سریع</h6>
+            <button type="button" class="btn-close" data-action="close-panel">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="panel-content">
+            <div class="quick-actions">
+                <button type="button" class="quick-action-btn" data-action="insurance-check">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>بررسی بیمه</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="payment-calc">
+                    <i class="fas fa-calculator"></i>
+                    <span>محاسبه پرداخت</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="appointment-schedule">
+                    <i class="fas fa-calendar-alt"></i>
+                    <span>زمان‌بندی</span>
+                </button>
+                <button type="button" class="quick-action-btn" data-action="report-generate">
+                    <i class="fas fa-file-alt"></i>
+                    <span>گزارش</span>
+                </button>
+            </div>
+        </div>
+    </div>
 
-                                    <!-- تاریخ شروع -->
-                                    <div class="col-md-3">
-                                        <label for="StartDateShamsi" class="form-label">تاریخ شروع</label>
-                                        @Html.TextBoxFor(model => model.StartDateShamsi, new { @class = "form-control persian-datepicker", placeholder = "انتخاب تاریخ شروع", id = "startDateShamsi", value = "" })
-                                        @Html.HiddenFor(model => model.StartDate)
-                                        @Html.ValidationMessageFor(model => model.StartDateShamsi, "", new { @class = "text-danger" })
-                                    </div>
+    <!-- Status Bar -->
+    <div class="status-bar">
+        <div class="status-info">
+            <span class="status-item">
+                <i class="fas fa-user me-1"></i>
+                <span id="selectedPatientInfo">هیچ بیمار انتخاب نشده</span>
+            </span>
+            <span class="status-item">
+                <i class="fas fa-clock me-1"></i>
+                <span id="currentTime"></span>
+            </span>
+            <span class="status-item">
+                <i class="fas fa-user-md me-1"></i>
+                <span id="currentUser">@User.Identity.Name</span>
+            </span>
+        </div>
+        <div class="status-actions">
+            <button type="button" class="btn btn-sm btn-outline-primary" data-action="toggle-quick-actions">
+                <i class="fas fa-bolt"></i>
+            </button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="refresh-all">
+                <i class="fas fa-sync-alt"></i>
+            </button>
+        </div>
+    </div>
+</div>
 
-                                    <!-- تاریخ پایان -->
-                                    <div class="col-md-3">
-                                        <label for="EndDateShamsi" class="form-label">تاریخ پایان</label>
-                                        @Html.TextBoxFor(model => model.EndDateShamsi, new { @class = "form-control persian-datepicker", placeholder = "انتخاب تاریخ پایان", id = "endDateShamsi", value = "" })
-                                        @Html.HiddenFor(model => model.EndDate)
-                                        @Html.ValidationMessageFor(model => model.EndDateShamsi, "", new { @class = "text-danger" })
-                                    </div>
+<!-- Global Styles -->
+<style>
+.reception-dashboard {
+    min-height: 100vh;
+    background: #f8f9fa;
+    padding: 20px;
+}
 
-                                    <!-- نوع پذیرش -->
-                                    <div class="col-md-3">
-                                        <label for="Type" class="form-label">نوع پذیرش</label>
-                                        @Html.DropDownListFor(model => model.Type, Model.TypeList, "همه انواع", new { @class = "form-select", id = "typeFilter" })
-                                        @Html.ValidationMessageFor(model => model.Type, "", new { @class = "text-danger" })
-                                    </div>
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
 
-                                    <!-- دکمه‌های جستجو -->
-                                    <div class="col-md-3">
-                                        <label class="form-label">&nbsp;</label>
-                                        <div class="d-grid gap-2">
-                                            <button type="submit" class="btn btn-primary">
-                                                <i class="fas fa-search me-1"></i> جستجو
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            }
-                        </div>
+.dashboard-title {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 700;
+    color: #333;
+}
+
+.dashboard-subtitle {
+    margin: 5px 0 0 0;
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.header-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.dashboard-content {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+}
+
+.content-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+}
+
+.content-column {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.column-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.column-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.column-content {
+    padding: 0;
+}
+
+.history-section {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    padding: 20px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #333;
+}
+
+.section-content {
+    padding: 0;
+}
+
+.quick-actions-panel {
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
+    width: 200px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+}
+
+.panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px;
+    background: #f8f9fa;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.panel-title {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.btn-close {
+    background: none;
+    border: none;
+    font-size: 14px;
+    color: #6c757d;
+    cursor: pointer;
+}
+
+.panel-content {
+    padding: 15px;
+}
+
+.quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.quick-action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px;
+    background: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 14px;
+    color: #333;
+}
+
+.quick-action-btn:hover {
+    background: #e9ecef;
+    border-color: #007bff;
+}
+
+.quick-action-btn i {
+    font-size: 16px;
+    color: #007bff;
+}
+
+.status-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 20px;
+    background: #fff;
+    border-top: 1px solid #e0e0e0;
+    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
+    z-index: 1000;
+}
+
+.status-info {
+    display: flex;
+    gap: 20px;
+}
+
+.status-item {
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    color: #6c757d;
+}
+
+.status-item i {
+    color: #007bff;
+}
+
+.status-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* Responsive Design */
+@@media (max-width: 1200px) {
+    .content-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .header-actions {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .quick-actions-panel {
+        right: 10px;
+        width: 180px;
+    }
+    
+    .status-bar {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.slide-in-right {
+    animation: slideInRight 0.3s ease-in-out;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.3s ease-in-out;
+}
+
+@@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@@keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+}
+
+@@keyframes slideInLeft {
+    from { transform: translateX(-100%); }
+    to { transform: translateX(0); }
+}
+</style>
+
+<!-- Global JavaScript -->
+<script>
+$(document).ready(function() {
+    // Initialize Reception Dashboard
+    initializeReceptionDashboard();
+});
+
+function initializeReceptionDashboard() {
+    // Initialize components
+    initializeComponents();
+    
+    // Initialize event handlers
+    initializeEventHandlers();
+    
+    // Initialize status bar
+    initializeStatusBar();
+    
+    // Initialize quick actions
+    initializeQuickActions();
+    
+    // Start real-time updates
+    startRealTimeUpdates();
+}
+
+function initializeComponents() {
+    // Initialize all components
+    $('[data-component]').each(function() {
+        const component = $(this);
+        const componentName = component.data('component');
+        
+        // Add fade-in animation
+        component.addClass('fade-in');
+        
+        // Initialize component-specific functionality
+        switch (componentName) {
+            case 'patient-search':
+                // Already initialized in component
+                break;
+            case 'reception-form':
+                // Already initialized in component
+                break;
+            case 'reception-history':
+                // Already initialized in component
+                break;
+        }
+    });
+}
+
+function initializeEventHandlers() {
+    // New reception button
+    $('[data-action="new-reception"]').on('click', function() {
+        createNewReception();
+    });
+    
+    // Quick search button
+    $('[data-action="quick-search"]').on('click', function() {
+        openQuickSearch();
+    });
+    
+    // Refresh all button
+    $('[data-action="refresh-all"]').on('click', function() {
+        refreshAllComponents();
+    });
+    
+    // Toggle quick actions
+    $('[data-action="toggle-quick-actions"]').on('click', function() {
+        toggleQuickActions();
+    });
+    
+    // Close quick actions panel
+    $('[data-action="close-panel"]').on('click', function() {
+        closeQuickActions();
+    });
+    
+    // Quick action buttons
+    $('[data-action="insurance-check"]').on('click', function() {
+        performInsuranceCheck();
+    });
+    
+    $('[data-action="payment-calc"]').on('click', function() {
+        performPaymentCalculation();
+    });
+    
+    $('[data-action="appointment-schedule"]').on('click', function() {
+        scheduleAppointment();
+    });
+    
+    $('[data-action="report-generate"]').on('click', function() {
+        generateReport();
+    });
+}
+
+function initializeStatusBar() {
+    // Update current time
+    updateCurrentTime();
+    setInterval(updateCurrentTime, 1000);
+    
+    // Update selected patient info
+    $(document).on('patientSelected', function(event, patient) {
+        updateSelectedPatientInfo(patient);
+    });
+}
+
+function initializeQuickActions() {
+    // Quick actions are initialized in HTML
+}
+
+function startRealTimeUpdates() {
+    // Start real-time updates for components
+    setInterval(function() {
+        updateComponentStatuses();
+    }, 30000); // Update every 30 seconds
+}
+
+function createNewReception() {
+    // Reset form and show new reception
+    $('[data-component="reception-form"]').trigger('reset');
+    $('[data-component="patient-search"]').trigger('clear');
+    
+    // Show success message
+    showNotification('آماده برای پذیرش جدید', 'success');
+}
+
+function openQuickSearch() {
+    // Focus on patient search
+    $('[data-component="patient-search"] #nationalCodeInput').focus();
+    
+    // Show quick search modal if needed
+    showQuickSearchModal();
+}
+
+function refreshAllComponents() {
+    // Refresh all components
+    $('[data-component]').each(function() {
+        const component = $(this);
+        component.trigger('refresh');
+    });
+    
+    showNotification('همه کامپوننت‌ها به‌روزرسانی شدند', 'info');
+}
+
+function toggleQuickActions() {
+    const panel = $('#quickActionsPanel');
+    panel.toggle();
+    
+    if (panel.is(':visible')) {
+        panel.addClass('slide-in-right');
+    }
+}
+
+function closeQuickActions() {
+    $('#quickActionsPanel').hide();
+}
+
+function performInsuranceCheck() {
+    const selectedPatientId = getSelectedPatientId();
+    if (selectedPatientId) {
+        // Trigger insurance validation
+        $('[data-component="reception-form"]').trigger('validateInsurance', [selectedPatientId]);
+        showNotification('بررسی بیمه در حال انجام است', 'info');
+    } else {
+        showNotification('ابتدا بیمار را انتخاب کنید', 'warning');
+    }
+}
+
+function performPaymentCalculation() {
+    const selectedPatientId = getSelectedPatientId();
+    const serviceId = $('#serviceId').val();
+    
+    if (selectedPatientId && serviceId) {
+        // Trigger payment calculation
+        $('[data-component="reception-form"]').trigger('calculatePayment', [selectedPatientId, serviceId]);
+        showNotification('محاسبه پرداخت در حال انجام است', 'info');
+    } else {
+        showNotification('ابتدا بیمار و خدمت را انتخاب کنید', 'warning');
+    }
+}
+
+function scheduleAppointment() {
+    const selectedPatientId = getSelectedPatientId();
+    if (selectedPatientId) {
+        // Open appointment scheduling
+        window.open('/Appointment/Schedule', '_blank');
+        showNotification('صفحه زمان‌بندی باز شد', 'info');
+    } else {
+        showNotification('ابتدا بیمار را انتخاب کنید', 'warning');
+    }
+}
+
+function generateReport() {
+    // Generate reception report
+    window.open('/Report/Reception', '_blank');
+    showNotification('گزارش پذیرش در حال تولید است', 'info');
+}
+
+function updateCurrentTime() {
+    const now = new Date();
+    const timeString = now.toLocaleTimeString('fa-IR');
+    $('#currentTime').text(timeString);
+}
+
+function updateSelectedPatientInfo(patient) {
+    const info = `${patient.firstName} ${patient.lastName} - ${patient.nationalCode}`;
+    $('#selectedPatientInfo').text(info);
+}
+
+function updateComponentStatuses() {
+    // Update component statuses
+    $('[data-component]').each(function() {
+        const component = $(this);
+        const statusIndicator = component.find('.status-indicator');
+        const statusText = component.find('.status-text');
+        
+        // Check if component is responsive
+        if (component.hasClass('loading')) {
+            statusIndicator.removeClass('error success').addClass('loading');
+            statusText.text('در حال پردازش...');
+        } else {
+            statusIndicator.removeClass('loading error').addClass('success');
+            statusText.text('آماده');
+        }
+    });
+}
+
+function getSelectedPatientId() {
+    return $('#selectedPatient').data('patient-id');
+}
+
+function showNotification(message, type) {
+    // Create notification element
+    const notification = $(`
+        <div class="notification notification-${type}">
+            <i class="fas fa-${getNotificationIcon(type)} me-2"></i>
+            <span>${message}</span>
+        </div>
+    `);
+    
+    // Add to page
+    $('body').append(notification);
+    
+    // Show notification
+    notification.addClass('show');
+    
+    // Auto-hide after 3 seconds
+    setTimeout(function() {
+        notification.removeClass('show');
+        setTimeout(function() {
+            notification.remove();
+        }, 300);
+    }, 3000);
+}
+
+function getNotificationIcon(type) {
+    switch (type) {
+        case 'success': return 'check-circle';
+        case 'error': return 'exclamation-circle';
+        case 'warning': return 'exclamation-triangle';
+        case 'info': return 'info-circle';
+        default: return 'info-circle';
+    }
+}
+
+function showQuickSearchModal() {
+    // Show quick search modal if needed
+    const modal = $(`
+        <div class="modal fade" id="quickSearchModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">جستجوی سریع</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
-
-                    <!-- ✅ بخش نتایج -->
-                    <div class="form-section">
-                        <div class="form-section-header">
-                            <i class="fas fa-list text-primary me-2"></i>
-                            <h5 class="mb-0">نتایج جستجو</h5>
-                            <div class="ms-auto">
-                                <a href="@Url.Action("Create")" class="btn btn-success btn-sm">
-                                    <i class="fas fa-plus me-1"></i> پذیرش جدید
-                                </a>
-                            </div>
-                        </div>
-                        <div class="form-section-body">
-                            <!-- جدول نتایج -->
-                            <div class="table-responsive">
-                                <table class="table table-hover table-striped" id="receptions-table">
-                                    <thead class="table-dark">
-                                        <tr>
-                                            <th>شناسه</th>
-                                            <th>نام بیمار</th>
-                                            <th>نام پزشک</th>
-                                            <th>تاریخ پذیرش</th>
-                                            <th>نوع</th>
-                                            <th>وضعیت</th>
-                                            <th>مبلغ</th>
-                                            <th>عملیات</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="receptions-tbody">
-                                        <!-- نتایج از طریق AJAX بارگذاری می‌شوند -->
-                                        <tr>
-                                            <td colspan="8" class="text-center text-muted">
-                                                <i class="fas fa-spinner fa-spin me-2"></i>
-                                                در حال بارگذاری...
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            <!-- صفحه‌بندی -->
-                            <nav aria-label="صفحه‌بندی نتایج" class="mt-3">
-                                <ul class="pagination justify-content-center" id="pagination">
-                                    <!-- صفحه‌بندی از طریق AJAX بارگذاری می‌شود -->
-                                </ul>
-                            </nav>
+                    <div class="modal-body">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="کد ملی یا نام بیمار">
+                            <button class="btn btn-primary" type="button">جستجو</button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-</div>
-
-@section Styles {
-    <link href="~/Content/css/reception-standards.css" rel="stylesheet" />
-    <style>
-        /* ✅ استایل‌های اضافی برای Persian DatePicker */
-        .persian-datepicker {
-            direction: rtl;
-            text-align: right;
-        }
-        
-        .persian-datepicker:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-        
-        /* ✅ استایل‌های Select2 */
-        .select2-container--default .select2-selection--single {
-            height: 38px;
-            border: 2px solid #e9ecef;
-            border-radius: 0.375rem;
-        }
-        
-        .select2-container--default .select2-selection--single:focus {
-            border-color: #007bff;
-            box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-        }
-    </style>
-}
-
-@section Scripts {
-    @Scripts.Render("~/bundles/jqueryval")
+    `);
     
-    <script type="text/javascript">
-        $(document).ready(function () {
-            // ✅ مقداردهی اولیه Persian DatePicker
-            initializePersianDatePickers();
-            
-            // ✅ مقداردهی اولیه Select2
-            initializeSelect2();
-            
-            // ✅ بارگذاری اولیه نتایج
-            loadReceptions();
-
-            // ✅ جستجو با فرم
-            $('#search-form').on('submit', function (e) {
-                e.preventDefault();
-                
-                // ✅ اعتبارسنجی تاریخ‌های فارسی
-                if (!validatePersianDates()) {
-                    return false;
-                }
-                
-                loadReceptions();
-            });
-
-            // ✅ تابع بارگذاری نتایج
-            function loadReceptions() {
-                var formData = $('#search-form').serialize();
-                
-                $.ajax({
-                    url: '@Url.Action("GetReceptions", "Reception")',
-                    type: 'GET',
-                    dataType: 'json',
-                    data: formData,
-                    beforeSend: function () {
-                        $('#receptions-tbody').html('<tr><td colspan="8" class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...</td></tr>');
-                    },
-                    success: function (response) {
-                        // Parse response if it's a string
-                        var parsedResponse = response;
-                        if (typeof response === 'string') {
-                            try {
-                                parsedResponse = JSON.parse(response);
-                            } catch (e) {
-                                console.error('خطا در Parse کردن Response:', e);
-                                showError('خطا در پردازش پاسخ سرور');
-                                return;
-                            }
-                        }
-                        
-                        // لاگ‌گیری حرفه‌ای برای Debugging
-                        console.log('Reception API Response:', {
-                            success: parsedResponse.success,
-                            requestId: parsedResponse.requestId,
-                            timestamp: parsedResponse.timestamp,
-                            dataCount: parsedResponse.data ? parsedResponse.data.items ? parsedResponse.data.items.length : 0 : 0,
-                            totalCount: parsedResponse.data ? parsedResponse.data.totalCount : 0
-                        });
-
-                        if (parsedResponse.success) {
-                            displayReceptions(parsedResponse.data);
-                        } else {
-                            var errorMessage = parsedResponse.message || 'خطای نامشخص';
-                            var errorCode = parsedResponse.errorCode || 'UNKNOWN_ERROR';
-                            var errorId = parsedResponse.errorId || 'N/A';
-                            
-                            console.error('خطا در API Response:', {
-                                message: errorMessage,
-                                errorCode: errorCode,
-                                errorId: errorId,
-                                fullResponse: parsedResponse
-                            });
-                            
-                            showError(`خطا در بارگذاری نتایج: ${errorMessage} (کد خطا: ${errorCode})`);
-                        }
-                    },
-                    error: function (xhr, status, error) {
-                        // لاگ‌گیری حرفه‌ای برای خطاها
-                        console.error('Reception API Error:', {
-                            status: xhr.status,
-                            statusText: xhr.statusText,
-                            responseText: xhr.responseText,
-                            error: error
-                        });
-                        
-                        var errorMessage = 'خطا در ارتباط با سرور';
-                        if (xhr.status === 404) {
-                            errorMessage = 'سرویس یافت نشد';
-                        } else if (xhr.status === 500) {
-                            errorMessage = 'خطای داخلی سرور';
-                        }
-                        
-                        showError(errorMessage);
-                    }
-                });
-            }
-
-            // ✅ نمایش نتایج
-            function displayReceptions(data) {
-                // لاگ‌گیری حرفه‌ای برای Debugging
-                console.log('Display Receptions Data:', {
-                    hasData: !!data,
-                    hasItems: !!(data && data.items),
-                    itemsCount: data && data.items ? data.items.length : 0,
-                    totalCount: data ? data.totalCount : 0,
-                    data: data
-                });
-
-                var tbody = $('#receptions-tbody');
-                tbody.empty();
-
-                if (data && data.items && data.items.length > 0) {
-                    $.each(data.items, function (index, reception) {
-                        var row = '<tr>' +
-                            '<td>' + reception.receptionId + '</td>' +
-                            '<td>' + reception.patientFullName + '</td>' +
-                            '<td>' + reception.doctorFullName + '</td>' +
-                            '<td>' + reception.receptionDate + '</td>' +
-                            '<td>' + reception.type + '</td>' +
-                            '<td><span class="badge bg-' + getStatusColor(reception.status) + '">' + reception.status + '</span></td>' +
-                            '<td>' + formatCurrency(reception.totalAmount) + '</td>' +
-                            '<td>' +
-                                '<div class="btn-group btn-group-sm" role="group">' +
-                                    '<a href="@Url.Action("Details")/' + reception.receptionId + '" class="btn btn-outline-info" title="مشاهده جزئیات">' +
-                                        '<i class="fas fa-eye"></i>' +
-                                    '</a>' +
-                                    '<a href="@Url.Action("Edit")/' + reception.receptionId + '" class="btn btn-outline-warning" title="ویرایش">' +
-                                        '<i class="fas fa-edit"></i>' +
-                                    '</a>' +
-                                    '<button type="button" class="btn btn-outline-danger" onclick="deleteReception(' + reception.receptionId + ')" title="حذف">' +
-                                        '<i class="fas fa-trash"></i>' +
-                                    '</button>' +
-                                '</div>' +
-                            '</td>' +
-                        '</tr>';
-                        tbody.append(row);
-                    });
-                } else {
-                    tbody.html('<tr><td colspan="8" class="text-center text-muted">هیچ پذیرشی یافت نشد</td></tr>');
-                }
-
-                // نمایش صفحه‌بندی
-                displayPagination(data);
-            }
-
-            // ✅ نمایش صفحه‌بندی
-            function displayPagination(data) {
-                var pagination = $('#pagination');
-                pagination.empty();
-
-                if (data.totalPages > 1) {
-                    // دکمه قبلی
-                    if (data.pageNumber > 1) {
-                        pagination.append('<li class="page-item"><a class="page-link" href="#" onclick="changePage(' + (data.pageNumber - 1) + ')">قبلی</a></li>');
-                    }
-
-                    // صفحات
-                    for (var i = 1; i <= data.totalPages; i++) {
-                        var activeClass = i === data.pageNumber ? 'active' : '';
-                        pagination.append('<li class="page-item ' + activeClass + '"><a class="page-link" href="#" onclick="changePage(' + i + ')">' + i + '</a></li>');
-                    }
-
-                    // دکمه بعدی
-                    if (data.pageNumber < data.totalPages) {
-                        pagination.append('<li class="page-item"><a class="page-link" href="#" onclick="changePage(' + (data.pageNumber + 1) + ')">بعدی</a></li>');
-                    }
-                }
-            }
-
-            // ✅ تغییر صفحه
-            window.changePage = function (pageNumber) {
-                // اضافه کردن فیلد مخفی برای شماره صفحه
-                var pageInput = $('#search-form').find('input[name="pageNumber"]');
-                if (pageInput.length === 0) {
-                    $('#search-form').append('<input type="hidden" name="pageNumber" value="' + pageNumber + '">');
-                } else {
-                    pageInput.val(pageNumber);
-                }
-                loadReceptions();
-            };
-
-            // ✅ حذف پذیرش
-            window.deleteReception = function (receptionId) {
-                if (confirm('آیا از حذف این پذیرش اطمینان دارید؟')) {
-                    $.ajax({
-                        url: '@Url.Action("DeleteConfirmed", "Reception")/' + receptionId,
-                        type: 'POST',
-                        data: {
-                            __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
-                        },
-                        success: function (response) {
-                            if (response.success) {
-                                showSuccess('پذیرش با موفقیت حذف شد');
-                                loadReceptions();
-                            } else {
-                                showError('خطا در حذف پذیرش: ' + response.message);
-                            }
-                        },
-                        error: function () {
-                            showError('خطا در ارتباط با سرور');
-                        }
-                    });
-                }
-            };
-
-            // ✅ توابع کمکی
-            function getStatusColor(status) {
-                switch (status) {
-                    case 'تکمیل شده': return 'success';
-                    case 'در انتظار': return 'warning';
-                    case 'لغو شده': return 'danger';
-                    case 'در حال انجام': return 'info';
-                    default: return 'secondary';
-                }
-            }
-
-            function formatCurrency(amount) {
-                return new Intl.NumberFormat('fa-IR').format(amount) + ' تومان';
-            }
-
-            function showSuccess(message) {
-                // نمایش پیام موفقیت
-                toastr.success(message);
-            }
-
-            function showError(message) {
-                // نمایش پیام خطا
-                toastr.error(message);
-            }
-            
-            // ✅ اعتبارسنجی تاریخ‌های فارسی
-            function validatePersianDates() {
-                var isValid = true;
-                var startDateShamsi = $('#startDateShamsi').val();
-                var endDateShamsi = $('#endDateShamsi').val();
-                
-                // پاک کردن پیام‌های خطای قبلی
-                $('.text-danger').text('');
-                
-                // اعتبارسنجی تاریخ شروع
-                if (startDateShamsi && !isValidPersianDate(startDateShamsi)) {
-                    $('#startDateShamsi').next('.text-danger').text('فرمت تاریخ شروع صحیح نیست');
-                    isValid = false;
-                }
-                
-                // اعتبارسنجی تاریخ پایان
-                if (endDateShamsi && !isValidPersianDate(endDateShamsi)) {
-                    $('#endDateShamsi').next('.text-danger').text('فرمت تاریخ پایان صحیح نیست');
-                    isValid = false;
-                }
-                
-                // اعتبارسنجی منطقی بودن بازه تاریخ
-                if (startDateShamsi && endDateShamsi && isValidPersianDate(startDateShamsi) && isValidPersianDate(endDateShamsi)) {
-                    var startDate = persianDatepicker.parseDate(startDateShamsi);
-                    var endDate = persianDatepicker.parseDate(endDateShamsi);
-                    
-                    if (startDate > endDate) {
-                        $('#endDateShamsi').next('.text-danger').text('تاریخ پایان باید بعد از تاریخ شروع باشد');
-                        isValid = false;
-                    }
-                }
-                
-                return isValid;
-            }
-            
-            // ✅ بررسی صحت فرمت تاریخ فارسی
-            function isValidPersianDate(dateString) {
-                if (!dateString) return true; // فیلد اختیاری
-                
-                // الگوی تاریخ فارسی: YYYY/MM/DD
-                var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
-                
-                if (!persianDatePattern.test(dateString)) {
-                    return false;
-                }
-                
-                try {
-                    // تلاش برای parse کردن تاریخ
-                    var parsedDate = persianDatepicker.parseDate(dateString);
-                    return parsedDate !== null;
-                } catch (e) {
-                    return false;
-                }
-            }
-            
-            // ✅ مقداردهی اولیه Persian DatePicker
-            function initializePersianDatePickers() {
-                // مقداردهی Persian DatePicker با تنظیمات ساده و صحیح
-                $('.persian-datepicker').each(function() {
-                    var $this = $(this);
-                    var currentValue = $this.val();
-                    
-                    // اگر مقدار اولیه وجود دارد، آن را پاک کن
-                    if (currentValue && currentValue.includes('۷۸۳')) {
-                        $this.val('');
-                    }
-                    
-                    $this.persianDatepicker({
-                        format: 'YYYY/MM/DD',
-                        initialValue: false,
-                        autoClose: true,
-                        calendar: {
-                            persian: {
-                                locale: 'fa',
-                                showHint: true,
-                                leapYearMode: 'algorithmic'
-                            }
-                        }
-                    });
-                    
-                    // تنظیم مقدار اولیه صحیح
-                    setTimeout(function() {
-                        if (!$this.val() || $this.val().includes('۷۸۳')) {
-                            $this.val('');
-                        }
-                    }, 100);
-                });
-                
-                // ✅ Event delegation برای تغییر تاریخ
-                $(document).on('change', '.persian-datepicker', function() {
-                    convertPersianDateToGregorian($(this));
-                });
-                
-                // ✅ Event delegation برای input events
-                $(document).on('input blur', '.persian-datepicker', function() {
-                    setTimeout(function() {
-                        convertPersianDateToGregorian($(this));
-                    }, 100);
-                });
-            }
-            
-            // ✅ تابع جداگانه برای تبدیل تاریخ
-            function convertPersianDateToGregorian($element) {
-                try {
-                    var fieldId = $element.attr('id');
-                    var persianDate = $element.val();
-                    
-                    if (persianDate && persianDate.trim() !== '') {
-                        // بررسی فرمت تاریخ فارسی
-                        var persianDatePattern = /^[۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+[/][۱۲۳۴۵۶۷۸۹۰]+$/;
-                        
-                        if (persianDatePattern.test(persianDate)) {
-                            // تبدیل تاریخ شمسی به میلادی
-                            var gregorianDate = persianDatepicker.parseDate(persianDate);
-                            if (gregorianDate) {
-                                var isoDate = gregorianDate.toISOString().split('T')[0];
-                                
-                                if (fieldId === 'startDateShamsi') {
-                                    $('#StartDate').val(isoDate);
-                                } else if (fieldId === 'endDateShamsi') {
-                                    $('#EndDate').val(isoDate);
-                                }
-                                
-                                console.log('تاریخ تبدیل شد:', {
-                                    fieldId: fieldId,
-                                    persianDate: persianDate,
-                                    gregorianDate: isoDate
-                                });
-                            } else {
-                                console.warn('تاریخ شمسی قابل تبدیل نیست:', persianDate);
-                            }
-                        } else {
-                            console.warn('فرمت تاریخ شمسی صحیح نیست:', persianDate);
-                        }
-                    }
-                } catch (error) {
-                    console.error('خطا در تبدیل تاریخ:', error);
-                }
-            }
-            
-            // ✅ مقداردهی اولیه Select2
-            function initializeSelect2() {
-                $('#statusFilter').select2({
-                    placeholder: 'انتخاب وضعیت',
-                    allowClear: true,
-                    width: '100%',
-                    language: {
-                        noResults: function() {
-                            return "نتیجه‌ای یافت نشد";
-                        },
-                        searching: function() {
-                            return "در حال جستجو...";
-                        }
-                    }
-                });
-                
-                $('#typeFilter').select2({
-                    placeholder: 'انتخاب نوع',
-                    allowClear: true,
-                    width: '100%',
-                    language: {
-                        noResults: function() {
-                            return "نتیجه‌ای یافت نشد";
-                        },
-                        searching: function() {
-                            return "در حال جستجو...";
-                        }
-                    }
-                });
-            }
-        });
-    </script>
+    $('body').append(modal);
+    $('#quickSearchModal').modal('show');
 }
+
+// Global error handler
+$(document).ajaxError(function(event, xhr, settings, thrownError) {
+    console.error('AJAX Error:', thrownError);
+    showNotification('خطا در ارتباط با سرور', 'error');
+});
+
+// Global success handler
+$(document).ajaxSuccess(function(event, xhr, settings) {
+    if (xhr.responseJSON && xhr.responseJSON.success) {
+        // Component-specific success handling
+        const url = settings.url;
+        if (url.includes('ReceptionPatient')) {
+            // Patient-related success
+        } else if (url.includes('ReceptionService')) {
+            // Service-related success
+        } else if (url.includes('ReceptionInsurance')) {
+            // Insurance-related success
+        }
+    }
+});
+</script>
+
+<!-- Notification Styles -->
+<style>
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 500;
+    z-index: 9999;
+    transform: translateX(100%);
+    transition: transform 0.3s ease;
+}
+
+.notification.show {
+    transform: translateX(0);
+}
+
+.notification-success {
+    background: #28a745;
+}
+
+.notification-error {
+    background: #dc3545;
+}
+
+.notification-warning {
+    background: #ffc107;
+    color: #333;
+}
+
+.notification-info {
+    background: #17a2b8;
+}
+</style>
