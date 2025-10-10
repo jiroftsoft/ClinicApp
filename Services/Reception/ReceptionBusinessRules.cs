@@ -1,13 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.Extensions;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.ClinicAdmin;
+using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
 

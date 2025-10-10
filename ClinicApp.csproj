@@ -487,12 +487,14 @@
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceController.cs" />
     <Compile Include="Areas\Admin\Controllers\SystemSeedController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
+    <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
+    <Compile Include="Controllers\Reception\OptimizedReceptionController.cs" />
     <Compile Include="Controllers\Reception\ReceptionCoreController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceController.cs" />
     <Compile Include="Controllers\Reception\ReceptionPatientController.cs" />
@@ -525,6 +527,7 @@
     <Compile Include="Helpers\MedicalReportExcelGenerator.cs" />
     <Compile Include="Helpers\PersianDatePickerHelper.cs" />
     <Compile Include="Helpers\PhoneNumberValidator.cs" />
+    <Compile Include="Helpers\ReceptionAjaxHelper.cs" />
     <Compile Include="Helpers\SafeSqlBuilder.cs" />
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
