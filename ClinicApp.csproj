@@ -996,7 +996,9 @@
     <Compile Include="Services\Payment\Validation\PaymentValidationService.cs" />
     <Compile Include="Services\Payment\Web\WebPaymentService.cs" />
     <Compile Include="Services\ReceptionService.cs" />
+    <Compile Include="Services\Reception\ReceptionBusinessRules.cs" />
     <Compile Include="Services\Reception\ReceptionPerformanceOptimizer.cs" />
+    <Compile Include="Services\Reception\ReceptionSecurityService.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
     <Compile Include="Services\ServiceCalculationService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
