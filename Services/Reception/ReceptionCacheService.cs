@@ -1,14 +1,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.Caching;
 using System.Threading.Tasks;
 using ClinicApp.Core;
+using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
-using Microsoft.Extensions.Caching.Memory;
 using Serilog;
+using ReceptionLookupListsViewModel = ClinicApp.Interfaces.Reception.ReceptionLookupListsViewModel;
 
 namespace ClinicApp.Services.Reception
 {
@@ -342,6 +344,16 @@ namespace ClinicApp.Services.Reception
                 _logger.Error(ex, "خطا در ذخیره لیست خدمات در Cache. دسته‌بندی: {CategoryId}", categoryId);
                 return false;
             }
+        }
+
+        Task<ReceptionLookupListsViewModel> IReceptionCacheService.GetLookupListsFromCacheAsync()
+        {
+            return GetLookupListsFromCacheAsync();
+        }
+
+        Task<bool> IReceptionCacheService.CacheLookupListsAsync(ReceptionLookupListsViewModel lookupLists)
+        {
+            return CacheLookupListsAsync(lookupLists);
         }
 
         /// <summary>

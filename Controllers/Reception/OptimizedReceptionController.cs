@@ -20,6 +20,7 @@ using ClinicApp.Models;
 using System.Data.Entity;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.DTOs.Insurance;
+using ClinicApp.ViewModels;
 
 namespace ClinicApp.Controllers.Reception
 {
@@ -43,8 +44,7 @@ namespace ClinicApp.Controllers.Reception
     /// ✅ Open/Closed: باز برای توسعه، بسته برای تغییر
     /// ✅ Dependency Inversion: وابستگی به Interface ها
     /// </summary>
-    [Authorize(Roles = "Receptionist,Admin")]
-    [RequireHttps] // Force HTTPS in production
+    //[RequireHttps] // Force HTTPS in production
     public class OptimizedReceptionController : BaseController
     {
         #region Fields and Constructor
