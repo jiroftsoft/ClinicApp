@@ -16,6 +16,7 @@ using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.ViewModels.Reception;
+using ReceptionIndexViewModel = ClinicApp.ViewModels.Reception.ReceptionIndexViewModel;
 using ClinicApp.ViewModels.DoctorManagementVM;
 using ClinicApp.ViewModels.Insurance.InsuranceCalculation;
 using ClinicApp.Interfaces.ClinicAdmin;
@@ -141,7 +142,7 @@ namespace ClinicApp.Services
                 }
 
                 // ایجاد Entity
-                var reception = new Reception
+                var reception = new Models.Entities.Reception.Reception
                 {
                     PatientId = model.PatientId,
                     DoctorId = model.DoctorId,
@@ -341,7 +342,7 @@ namespace ClinicApp.Services
                     "پذیرش با موفقیت حذف شد. شناسه: {ReceptionId}. کاربر: {UserName}",
                     id, _currentUserService.UserName);
 
-                return ServiceResult.Successful("پذیرش با موفقیت حذف شد.");
+                return ServiceResult<bool>.CreateSuccess(true, "پذیرش با موفقیت حذف شد.");
             }
             catch (Exception ex)
             {
@@ -2457,6 +2458,78 @@ namespace ClinicApp.Services
                     patientId, serviceId, _currentUserService.UserName, _currentUserService.UserId);
                 
                 return ServiceResult<List<CombinedInsuranceCalculationResult>>.Failed("خطا در مقایسه گزینه‌های بیمه");
+            }
+        }
+
+        /// <summary>
+        /// جستجوی بیماران
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه جستجوی بیماران</returns>
+        public async Task<ServiceResult<PagedResult<PatientDetailsViewModel>>> SearchPatientsAsync(
+            string searchTerm,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            try
+            {
+                _logger.Debug("جستجوی بیماران. عبارت جستجو: {SearchTerm}, صفحه: {PageNumber}, اندازه: {PageSize}", 
+                    searchTerm, pageNumber, pageSize);
+
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return ServiceResult<PagedResult<PatientDetailsViewModel>>.Failed("عبارت جستجو نمی‌تواند خالی باشد");
+                }
+
+                var patients = await _context.Patients
+                    .Where(p => !p.IsDeleted && 
+                        (p.FirstName.Contains(searchTerm) || 
+                         p.LastName.Contains(searchTerm) || 
+                         p.NationalCode.Contains(searchTerm) ||
+                         p.PhoneNumber.Contains(searchTerm)))
+                    .OrderBy(p => p.FirstName)
+                    .ThenBy(p => p.LastName)
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .AsNoTracking()
+                    .ToListAsync();
+
+                var totalCount = await _context.Patients
+                    .CountAsync(p => !p.IsDeleted && 
+                        (p.FirstName.Contains(searchTerm) || 
+                         p.LastName.Contains(searchTerm) || 
+                         p.NationalCode.Contains(searchTerm) ||
+                         p.PhoneNumber.Contains(searchTerm)));
+
+                var patientViewModels = patients.Select(p => new PatientDetailsViewModel
+                {
+                    PatientId = p.PatientId,
+                    FirstName = p.FirstName,
+                    LastName = p.LastName,
+                    NationalCode = p.NationalCode,
+                    PhoneNumber = p.PhoneNumber,
+                    BirthDate = p.BirthDate,
+                    Gender = p.Gender,
+                    IsActive = !p.IsDeleted
+                }).ToList();
+
+                var pagedResult = new PagedResult<PatientDetailsViewModel>(
+                    patientViewModels, 
+                    totalCount, 
+                    pageNumber, 
+                    pageSize);
+
+                _logger.Information("جستجوی بیماران موفق. تعداد نتایج: {Count}, کاربر: {UserName}", 
+                    patientViewModels.Count, _currentUserService.UserName);
+
+                return ServiceResult<PagedResult<PatientDetailsViewModel>>.CreateSuccess(pagedResult);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در جستجوی بیماران");
+                return ServiceResult<PagedResult<PatientDetailsViewModel>>.Failed("خطا در جستجوی بیماران");
             }
         }
 

@@ -13,6 +13,7 @@ using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using FluentValidation;
 using Serilog;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Validators.Reception
 {
@@ -61,7 +62,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateReceptionCreateAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateReceptionCreateAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -109,7 +110,7 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پیشرفته ایجاد پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 if (warnings.Any())
@@ -118,7 +119,7 @@ namespace ClinicApp.Validators.Reception
                 }
 
                 _logger.Debug("اعتبارسنجی پیشرفته ایجاد پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -132,7 +133,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateBasicReceptionCreateAsync(ReceptionCreateViewModel model)
+        private async Task<CustomValidationResult> ValidateBasicReceptionCreateAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -143,7 +144,7 @@ namespace ClinicApp.Validators.Reception
                 if (model == null)
                 {
                     errors.Add("مدل پذیرش نمی‌تواند null باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 if (model.PatientId <= 0)
@@ -174,11 +175,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پایه ایجاد پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پایه ایجاد پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -192,7 +193,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateReceptionCreateSecurityAsync(ReceptionCreateViewModel model)
+        private async Task<CustomValidationResult> ValidateReceptionCreateSecurityAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -234,11 +235,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی امنیتی ایجاد پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی امنیتی ایجاد پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -252,7 +253,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateReceptionCreatePerformanceAsync(ReceptionCreateViewModel model)
+        private async Task<CustomValidationResult> ValidateReceptionCreatePerformanceAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -281,11 +282,11 @@ namespace ClinicApp.Validators.Reception
                 if (warnings.Any())
                 {
                     _logger.Information("اعتبارسنجی عملکرد ایجاد پذیرش با هشدار. هشدارها: {@Warnings}", warnings);
-                    return ValidationResult.Failed(string.Join(", ", warnings), warnings);
+                    return CustomValidationResult.Failed(string.Join(", ", warnings), warnings.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی عملکرد ایجاد پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -299,7 +300,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateReceptionCreateIntegrityAsync(ReceptionCreateViewModel model)
+        private async Task<CustomValidationResult> ValidateReceptionCreateIntegrityAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -340,11 +341,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی یکپارچگی ایجاد پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی یکپارچگی ایجاد پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -362,7 +363,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateReceptionEditAsync(ReceptionEditViewModel model)
+        public async Task<CustomValidationResult> ValidateReceptionEditAsync(ReceptionEditViewModel model)
         {
             try
             {
@@ -410,7 +411,7 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پیشرفته ویرایش پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 if (warnings.Any())
@@ -419,7 +420,7 @@ namespace ClinicApp.Validators.Reception
                 }
 
                 _logger.Debug("اعتبارسنجی پیشرفته ویرایش پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -433,7 +434,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateBasicReceptionEditAsync(ReceptionEditViewModel model)
+        private async Task<CustomValidationResult> ValidateBasicReceptionEditAsync(ReceptionEditViewModel model)
         {
             try
             {
@@ -444,7 +445,7 @@ namespace ClinicApp.Validators.Reception
                 if (model == null)
                 {
                     errors.Add("مدل پذیرش نمی‌تواند null باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 if (model.ReceptionId <= 0)
@@ -480,11 +481,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پایه ویرایش پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پایه ویرایش پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -498,7 +499,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateReceptionEditSecurityAsync(ReceptionEditViewModel model)
+        private async Task<CustomValidationResult> ValidateReceptionEditSecurityAsync(ReceptionEditViewModel model)
         {
             try
             {
@@ -540,11 +541,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی امنیتی ویرایش پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی امنیتی ویرایش پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -558,7 +559,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateReceptionEditPerformanceAsync(ReceptionEditViewModel model)
+        private async Task<CustomValidationResult> ValidateReceptionEditPerformanceAsync(ReceptionEditViewModel model)
         {
             try
             {
@@ -587,11 +588,11 @@ namespace ClinicApp.Validators.Reception
                 if (warnings.Any())
                 {
                     _logger.Information("اعتبارسنجی عملکرد ویرایش پذیرش با هشدار. هشدارها: {@Warnings}", warnings);
-                    return ValidationResult.Failed(string.Join(", ", warnings), warnings);
+                    return CustomValidationResult.Failed(string.Join(", ", warnings), warnings.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی عملکرد ویرایش پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -605,7 +606,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        private async Task<ValidationResult> ValidateReceptionEditIntegrityAsync(ReceptionEditViewModel model)
+        private async Task<CustomValidationResult> ValidateReceptionEditIntegrityAsync(ReceptionEditViewModel model)
         {
             try
             {
@@ -646,11 +647,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی یکپارچگی ویرایش پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی یکپارچگی ویرایش پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -668,7 +669,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل جستجو</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateReceptionSearchAsync(ReceptionSearchViewModel model)
+        public async Task<CustomValidationResult> ValidateReceptionSearchAsync(ReceptionSearchViewModel model)
         {
             try
             {
@@ -679,7 +680,7 @@ namespace ClinicApp.Validators.Reception
                 if (model == null)
                 {
                     errors.Add("مدل جستجو نمی‌تواند null باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 // Validate date range
@@ -718,11 +719,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی جستجوی پذیرش‌ها ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی جستجوی پذیرش‌ها موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -740,7 +741,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="models">مدل‌های پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateBatchReceptionsAsync(List<ReceptionCreateViewModel> models)
+        public async Task<CustomValidationResult> ValidateBatchReceptionsAsync(List<ReceptionCreateViewModel> models)
         {
             try
             {
@@ -751,7 +752,7 @@ namespace ClinicApp.Validators.Reception
                 if (models == null || !models.Any())
                 {
                     errors.Add("لیست پذیرش‌ها نمی‌تواند خالی باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 if (models.Count > 50)
@@ -766,18 +767,18 @@ namespace ClinicApp.Validators.Reception
                     var validation = await ValidateReceptionCreateAsync(model);
                     if (!validation.IsValid)
                     {
-                        errors.Add($"پذیرش {i + 1}: {validation.ErrorMessage}");
+                        errors.Add($"پذیرش {i + 1}: {validation.Message}");
                     }
                 }
 
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی دسته‌ای پذیرش‌ها ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی دسته‌ای پذیرش‌ها موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -795,7 +796,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateEmergencyReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateEmergencyReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -828,11 +829,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش اورژانس ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش اورژانس موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -846,7 +847,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateOnlineReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateOnlineReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -874,11 +875,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش آنلاین ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش آنلاین موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -892,7 +893,7 @@ namespace ClinicApp.Validators.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateSpecialReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateSpecialReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -920,11 +921,11 @@ namespace ClinicApp.Validators.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش ویژه ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors), errors);
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش ویژه موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Interfaces.Reception
 {
@@ -126,21 +127,21 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         /// <param name="input">ورودی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateReceptionInputAsync(string input);
+        Task<CustomValidationResult> ValidateReceptionInputAsync(string input);
 
         /// <summary>
         /// اعتبارسنجی ورودی‌های بیمار
         /// </summary>
         /// <param name="input">ورودی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidatePatientInputAsync(string input);
+        Task<CustomValidationResult> ValidatePatientInputAsync(string input);
 
         /// <summary>
         /// اعتبارسنجی ورودی‌های پزشک
         /// </summary>
         /// <param name="input">ورودی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateDoctorInputAsync(string input);
+        Task<CustomValidationResult> ValidateDoctorInputAsync(string input);
 
         #endregion
 
@@ -255,7 +256,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="action">عملیات</param>
         /// <param name="resource">منبع</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<SecurityValidationResult> ValidateAdvancedSecurityAsync(string userId, string action, string resource);
+        Task<SecurityCustomValidationResult> ValidateAdvancedSecurityAsync(string userId, string action, string resource);
 
         /// <summary>
         /// بررسی امنیت Real-time

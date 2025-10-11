@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
-using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
 

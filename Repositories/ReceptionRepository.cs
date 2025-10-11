@@ -12,6 +12,7 @@ using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Reception;
 using Serilog;
 
 namespace ClinicApp.Repositories
@@ -48,7 +49,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت پذیرش بر اساس شناسه
         /// </summary>
-        public async Task<Reception> GetByIdAsync(int id)
+        public async Task<Models.Entities.Reception.Reception> GetByIdAsync(int id)
         {
             try
             {
@@ -67,7 +68,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت پذیرش بر اساس شناسه همراه با جزئیات کامل
         /// </summary>
-        public async Task<Reception> GetByIdWithDetailsAsync(int id)
+        public async Task<Models.Entities.Reception.Reception> GetByIdWithDetailsAsync(int id)
         {
             try
             {
@@ -95,7 +96,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت تمام پذیرش‌های فعال
         /// </summary>
-        public async Task<List<Reception>> GetAllActiveAsync()
+        public async Task<List<Models.Entities.Reception.Reception>> GetAllActiveAsync()
         {
             try
             {
@@ -115,7 +116,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت پذیرش‌های بیمار
         /// </summary>
-        public async Task<List<Reception>> GetByPatientIdAsync(int patientId)
+        public async Task<List<Models.Entities.Reception.Reception>> GetByPatientIdAsync(int patientId)
         {
             try
             {
@@ -135,7 +136,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت پذیرش‌های پزشک
         /// </summary>
-        public async Task<List<Reception>> GetByDoctorIdAsync(int doctorId)
+        public async Task<List<Models.Entities.Reception.Reception>> GetByDoctorIdAsync(int doctorId)
         {
             try
             {
@@ -155,7 +156,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت پذیرش‌های تاریخ مشخص
         /// </summary>
-        public async Task<List<Reception>> GetByDateAsync(DateTime date)
+        public async Task<List<Models.Entities.Reception.Reception>> GetByDateAsync(DateTime date)
         {
             try
             {
@@ -178,7 +179,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت پذیرش‌های بازه زمانی
         /// </summary>
-        public async Task<List<Reception>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
+        public async Task<List<Models.Entities.Reception.Reception>> GetByDateRangeAsync(DateTime startDate, DateTime endDate)
         {
             try
             {
@@ -205,7 +206,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس کد ملی بیمار
         /// </summary>
-        public async Task<List<Reception>> SearchByNationalCodeAsync(string nationalCode)
+        public async Task<List<Models.Entities.Reception.Reception>> SearchByNationalCodeAsync(string nationalCode)
         {
             try
             {
@@ -226,7 +227,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس نام بیمار
         /// </summary>
-        public async Task<List<Reception>> SearchByPatientNameAsync(string patientName)
+        public async Task<List<Models.Entities.Reception.Reception>> SearchByPatientNameAsync(string patientName)
         {
             try
             {
@@ -250,7 +251,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس وضعیت
         /// </summary>
-        public async Task<List<Reception>> GetByStatusAsync(ReceptionStatus status)
+        public async Task<List<Models.Entities.Reception.Reception>> GetByStatusAsync(ReceptionStatus status)
         {
             try
             {
@@ -270,7 +271,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس نوع
         /// </summary>
-        public async Task<List<Reception>> GetByTypeAsync(ReceptionType type)
+        public async Task<List<Models.Entities.Reception.Reception>> GetByTypeAsync(ReceptionType type)
         {
             try
             {
@@ -290,7 +291,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// جستجوی پذیرش‌های اورژانس
         /// </summary>
-        public async Task<List<Reception>> GetEmergencyReceptionsAsync()
+        public async Task<List<Models.Entities.Reception.Reception>> GetEmergencyReceptionsAsync()
         {
             try
             {
@@ -406,7 +407,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// افزودن پذیرش جدید
         /// </summary>
-        public void Add(Reception reception)
+        public void Add(Models.Entities.Reception.Reception reception)
         {
             try
             {
@@ -437,7 +438,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// به‌روزرسانی پذیرش
         /// </summary>
-        public void Update(Reception reception)
+        public void Update(Models.Entities.Reception.Reception reception)
         {
             try
             {
@@ -461,7 +462,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// حذف نرم پذیرش
         /// </summary>
-        public void Delete(Reception reception)
+        public void Delete(Models.Entities.Reception.Reception reception)
         {
             try
             {
@@ -557,7 +558,7 @@ namespace ClinicApp.Repositories
         /// <summary>
         /// دریافت آخرین پذیرش بیمار
         /// </summary>
-        public async Task<Reception> GetLatestByPatientIdAsync(int patientId)
+        public async Task<Models.Entities.Reception.Reception> GetLatestByPatientIdAsync(int patientId)
         {
             try
             {
@@ -692,7 +693,7 @@ namespace ClinicApp.Repositories
         /// </summary>
         /// <param name="date">Date</param>
         /// <returns>List of receptions</returns>
-        public async Task<List<Reception>> GetReceptionsByDateAsync(DateTime date)
+        public async Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDateAsync(DateTime date)
         {
             try
             {
@@ -724,7 +725,7 @@ namespace ClinicApp.Repositories
         /// <param name="doctorId">Doctor ID</param>
         /// <param name="date">Date</param>
         /// <returns>List of receptions</returns>
-        public async Task<List<Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date)
+        public async Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date)
         {
             try
             {
@@ -759,7 +760,7 @@ namespace ClinicApp.Repositories
         /// </summary>
         /// <param name="reception">Reception entity</param>
         /// <returns>Updated reception</returns>
-        public async Task<Reception> UpdateReceptionAsync(Reception reception)
+        public async Task<Models.Entities.Reception.Reception> UpdateReceptionAsync(Models.Entities.Reception.Reception reception)
         {
             try
             {
@@ -801,6 +802,30 @@ namespace ClinicApp.Repositories
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت تراکنش‌های پرداخت پذیرش {ReceptionId}", receptionId);
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد پذیرش‌های پزشک
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>تعداد پذیرش‌ها</returns>
+        public async Task<int> GetReceptionCountByDoctorAsync(int doctorId)
+        {
+            try
+            {
+                _logger.Debug("دریافت تعداد پذیرش‌های پزشک. شناسه پزشک: {DoctorId}", doctorId);
+
+                var count = await _context.Receptions
+                    .CountAsync(r => r.DoctorId == doctorId && !r.IsDeleted);
+
+                _logger.Debug("تعداد پذیرش‌های پزشک: {Count}", count);
+                return count;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعداد پذیرش‌های پزشک");
                 throw;
             }
         }

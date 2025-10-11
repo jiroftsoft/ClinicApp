@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Reception;
 
 namespace ClinicApp.ViewModels.Validators
 {

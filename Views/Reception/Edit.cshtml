@@ -1,5 +1,6 @@
-@using ClinicApp.ViewModels
-@model ClinicApp.ViewModels.ReceptionEditViewModel
+@using ClinicApp.ViewModels.Reception
+@using ClinicApp.Models.Enums
+@model ClinicApp.ViewModels.Reception.ReceptionEditViewModel
 
 @{
     ViewBag.Title = "ویرایش پذیرش";
@@ -102,12 +103,12 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label for="Type" class="form-label">نوع پذیرش</label>
-                                        @Html.DropDownListFor(model => model.Type, new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.ReceptionType)).Cast<ClinicApp.Models.Entities.ReceptionType>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب نوع", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.Type, new SelectList(Enum.GetValues(typeof(ReceptionType)).Cast<ReceptionType>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب نوع", new { @class = "form-select" })
                                         @Html.ValidationMessageFor(model => model.Type, "", new { @class = "text-danger" })
                                     </div>
                                     <div class="col-md-4">
                                         <label for="Priority" class="form-label">اولویت</label>
-                                        @Html.DropDownListFor(model => model.Priority, new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.AppointmentPriority)).Cast<ClinicApp.Models.Entities.AppointmentPriority>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب اولویت", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.Priority, new SelectList(Enum.GetValues(typeof(AppointmentPriority)).Cast<AppointmentPriority>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب اولویت", new { @class = "form-select" })
                                         @Html.ValidationMessageFor(model => model.Priority, "", new { @class = "text-danger" })
                                     </div>
                                 </div>
@@ -264,7 +265,7 @@
                                     </div>
                                     <div class="col-md-4">
                                         <label for="Status" class="form-label">وضعیت پذیرش</label>
-                                        @Html.DropDownListFor(model => model.Status, new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.ReceptionStatus)).Cast<ClinicApp.Models.Entities.ReceptionStatus>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب وضعیت", new { @class = "form-select" })
+                                        @Html.DropDownListFor(model => model.Status, new SelectList(Enum.GetValues(typeof(ReceptionStatus)).Cast<ReceptionStatus>().Select(x => new { Value = (int)x, Text = x.ToString() }), "Value", "Text"), "انتخاب وضعیت", new { @class = "form-select" })
                                         @Html.ValidationMessageFor(model => model.Status, "", new { @class = "text-danger" })
                                     </div>
                                 </div>

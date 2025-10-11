@@ -55,9 +55,19 @@ namespace ClinicApp.Interfaces
         public int TotalItems { get; set; }
 
         /// <summary>
+        /// تعداد کل آیتم‌ها (برای سازگاری)
+        /// </summary>
+        public int TotalCount => TotalItems;
+
+        /// <summary>
         /// تعداد کل صفحات
         /// </summary>
         public int TotalPages => (int)Math.Ceiling((double)TotalItems / PageSize);
+
+        /// <summary>
+        /// تعداد کل صفحات (برای سازگاری)
+        /// </summary>
+        public int PageCount => TotalPages;
 
         /// <summary>
         /// نشان‌دهنده وجود صفحه قبلی

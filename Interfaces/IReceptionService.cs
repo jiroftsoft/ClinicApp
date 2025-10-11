@@ -320,6 +320,18 @@ namespace ClinicApp.Interfaces
         /// <returns>آمار پذیرش‌های پزشک</returns>
         Task<ServiceResult<ReceptionDoctorStatsViewModel>> GetDoctorStatsAsync(int doctorId, DateTime date);
 
+        /// <summary>
+        /// جستجوی بیماران
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>نتیجه جستجوی بیماران</returns>
+        Task<ServiceResult<PagedResult<PatientDetailsViewModel>>> SearchPatientsAsync(
+            string searchTerm,
+            int pageNumber = 1,
+            int pageSize = 10);
+
         #endregion
 
         #region Payment Operations

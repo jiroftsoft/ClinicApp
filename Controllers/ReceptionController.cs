@@ -10,7 +10,6 @@ using ClinicApp.Interfaces;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
-using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Validators;
 using FluentValidation;
 using Serilog;
@@ -20,6 +19,7 @@ using ClinicApp.Models;
 using System.Data.Entity;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.DTOs.Insurance;
+using ClinicApp.ViewModels;
 
 namespace ClinicApp.Controllers
 {

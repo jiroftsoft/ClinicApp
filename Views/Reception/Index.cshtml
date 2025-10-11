@@ -1,4 +1,4 @@
-@model ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionIndexViewModel
+@model ClinicApp.ViewModels.Reception.ReceptionIndexViewModel
 
 @{
     ViewBag.Title = "مدیریت پذیرش";
@@ -39,7 +39,7 @@
                     </h5>
                 </div>
                 <div class="column-content">
-                    @Html.Partial("Components/_PatientSearchComponent", new ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.PatientSearchComponentViewModel())
+                    @Html.Partial("Components/_PatientSearchComponent", new ClinicApp.ViewModels.Reception.PatientSearchComponentViewModel())
                 </div>
             </div>
 
@@ -52,7 +52,7 @@
                     </h5>
                 </div>
                 <div class="column-content">
-                    @Html.Partial("Components/_ReceptionFormComponent", new ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionFormComponentViewModel())
+                    @Html.Partial("Components/_ReceptionFormComponent", new ClinicApp.ViewModels.Reception.ReceptionFormComponentViewModel())
                 </div>
             </div>
         </div>
@@ -66,7 +66,7 @@
                 </h5>
             </div>
             <div class="section-content">
-                @Html.Partial("Components/_ReceptionHistoryComponent", new ClinicApp.ViewModels.Reception.ReceptionComponentViewModels.ReceptionHistoryComponentViewModel())
+                @Html.Partial("Components/_ReceptionHistoryComponent", new ClinicApp.ViewModels.Reception.ReceptionHistoryComponentViewModel())
             </div>
         </div>
     </div>

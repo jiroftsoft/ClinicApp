@@ -3,6 +3,7 @@ using FluentValidation;
 using System;
 using System.Linq;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Reception;
 
 namespace ClinicApp.ViewModels.Validators
 {

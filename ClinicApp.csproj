@@ -613,8 +613,6 @@
     <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
     <Compile Include="Interfaces\Payment\Web\IWebPaymentService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionBusinessRules.cs" />
-    <Compile Include="Interfaces\Reception\IReceptionCacheService.cs" />
-    <Compile Include="Interfaces\Reception\IReceptionPerformanceOptimizer.cs" />
     <Compile Include="Interfaces\Reception\IReceptionSecurityService.cs" />
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
@@ -1002,8 +1000,6 @@
     <Compile Include="Services\ReceptionService.cs" />
     <Compile Include="Services\Reception\ReceptionBusinessRules.cs" />
     <Compile Include="Services\Reception\ReceptionBusinessRulesEngine.cs" />
-    <Compile Include="Services\Reception\ReceptionCacheService.cs" />
-    <Compile Include="Services\Reception\ReceptionPerformanceOptimizer.cs" />
     <Compile Include="Services\Reception\ReceptionSecurityService.cs" />
     <Compile Include="Services\Reception\ReceptionValidationOrchestrator.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
@@ -1122,6 +1118,17 @@
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionComponentViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionMonthlyStatsViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionSearchCriteria.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionLookupViewModel.cs" />
+    <Compile Include="ViewModels\Reception\PerformanceInfo.cs" />
+    <Compile Include="ViewModels\Reception\QueryStatistics.cs" />
+    <Compile Include="ViewModels\Reception\CacheStatistics.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionIndexViewModel.cs" />
+    <Compile Include="ViewModels\Reception\PatientSearchComponentViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionFormComponentViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionHistoryComponentViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -1142,6 +1149,8 @@
     <Compile Include="Helpers\RateLimiter.cs" />
     <Compile Include="Helpers\RegexHelper.cs" />
     <Compile Include="Helpers\ServiceResult.cs" />
+    <Compile Include="Helpers\ValidationResult.cs" />
+    <Compile Include="Helpers\SecurityValidationResult.cs" />
     <Compile Include="Interfaces\Class1.cs" />
     <Compile Include="Interfaces\IAuthService.cs" />
     <Compile Include="Interfaces\IClinicService.cs" />
@@ -1166,7 +1175,6 @@
     <Compile Include="ViewModels\ClinicViewModels.cs" />
     <Compile Include="ViewModels\OtpViewModels.cs" />
     <Compile Include="ViewModels\PatientViewModel.cs" />
-    <Compile Include="ViewModels\ReceptionViewModel.cs" />
     <Compile Include="ViewModels\ServiceViewModels.cs" />
     <Compile Include="ViewModels\Shared\PaginationViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationCreateEditViewModel.cs" />

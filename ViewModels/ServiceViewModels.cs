@@ -417,6 +417,11 @@ namespace ClinicApp.ViewModels
         public string Title { get; set; }
 
         /// <summary>
+        /// نام خدمت (برای سازگاری)
+        /// </summary>
+        public string Name => Title;
+
+        /// <summary>
         /// کد خدمت
         /// </summary>
         public string ServiceCode { get; set; }

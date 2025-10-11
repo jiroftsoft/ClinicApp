@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Web.Mvc;
 
-namespace ClinicApp.ViewModels
+namespace ClinicApp.ViewModels.Reception
 {
   
 
@@ -92,6 +92,12 @@ namespace ClinicApp.ViewModels
         [Display(Name = "نوع پذیرش")]
         public ReceptionType Type { get; set; }
 
+        [Display(Name = "وضعیت پذیرش")]
+        public ReceptionStatus Status { get; set; }
+
+        [Display(Name = "اولویت")]
+        public AppointmentPriority Priority { get; set; }
+
         // اطلاعات پزشک
         [Required(ErrorMessage = "باید یک پزشک انتخاب شود.")]
         [Display(Name = "پزشک معالج")]
@@ -164,6 +170,14 @@ namespace ClinicApp.ViewModels
         [Display(Name = "یادداشت‌ها")]
         [StringLength(1000, ErrorMessage = "یادداشت‌ها نمی‌تواند بیش از ۱۰۰۰ کاراکتر باشد.")]
         public string Notes { get; set; }
+
+        // Properties for lookup lists
+        public List<SelectListItem> Doctors { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> Patients { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> Services { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> ServiceCategories { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> PaymentMethods { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> InsuranceProviders { get; set; } = new List<SelectListItem>();
 
         public ReceptionCreateViewModel()
         {
@@ -296,6 +310,14 @@ namespace ClinicApp.ViewModels
         public IEnumerable<SelectListItem> InsuranceList { get; set; }
         public IEnumerable<SelectListItem> PaymentMethodList { get; set; }
 
+        // Properties for lookup lists (for compatibility)
+        public List<SelectListItem> Doctors { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> Patients { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> Services { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> ServiceCategories { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> PaymentMethods { get; set; } = new List<SelectListItem>();
+        public List<SelectListItem> InsuranceProviders { get; set; } = new List<SelectListItem>();
+
         public ReceptionEditViewModel()
         {
             SelectedServiceIds = new List<int>();
@@ -410,6 +432,90 @@ namespace ClinicApp.ViewModels
             StartDate = DateTime.Now.AddDays(-30);
             EndDate = DateTime.Now;
         }
+    }
+
+    /// <summary>
+    /// ViewModel برای آمار پزشکان در پذیرش
+    /// </summary>
+    public class ReceptionDoctorStatsViewModel
+    {
+        [Display(Name = "شناسه پزشک")]
+        public int DoctorId { get; set; }
+
+        [Display(Name = "نام پزشک")]
+        public string DoctorName { get; set; }
+
+        [Display(Name = "تخصص")]
+        public string Specialty { get; set; }
+
+        [Display(Name = "تاریخ")]
+        public DateTime Date { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌ها")]
+        public int ReceptionCount { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌ها (سازگاری)")]
+        public int ReceptionsCount { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌ها (سازگاری)")]
+        public int Count => ReceptionCount;
+
+        [Display(Name = "تعداد پذیرش‌های تکمیل شده")]
+        public int CompletedReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های در انتظار")]
+        public int PendingReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های لغو شده")]
+        public int CancelledReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های در حال انجام")]
+        public int InProgressReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های اورژانس")]
+        public int EmergencyReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های آنلاین")]
+        public int OnlineReceptions { get; set; }
+
+        [Display(Name = "تعداد پذیرش‌های عادی")]
+        public int NormalReceptions { get; set; }
+
+        [Display(Name = "مجموع درآمد")]
+        public decimal TotalRevenue { get; set; }
+
+        [Display(Name = "میانگین درآمد")]
+        public decimal AverageRevenue { get; set; }
+
+        [Display(Name = "میانگین درآمد هر پذیرش")]
+        public decimal AverageRevenuePerReception { get; set; }
+
+        [Display(Name = "درآمد نقدی")]
+        public decimal CashPayments { get; set; }
+
+        [Display(Name = "درآمد کارتی")]
+        public decimal CardPayments { get; set; }
+
+        [Display(Name = "درآمد آنلاین")]
+        public decimal OnlinePayments { get; set; }
+
+        [Display(Name = "درآمد بیمه")]
+        public decimal InsurancePayments { get; set; }
+
+        [Display(Name = "درصد تکمیل")]
+        public decimal CompletionRate { get; set; }
+
+        [Display(Name = "درصد لغو")]
+        public decimal CancellationRate { get; set; }
+
+        [Display(Name = "درصد اورژانس")]
+        public decimal EmergencyRate { get; set; }
+
+        [Display(Name = "میانگین زمان انتظار")]
+        public string AverageWaitingTime { get; set; }
+
+        [Display(Name = "نرخ رضایت")]
+        public decimal SatisfactionRate { get; set; }
     }
 
     /// <summary>
@@ -596,63 +702,6 @@ namespace ClinicApp.ViewModels
         }
     }
 
-    /// <summary>
-    /// ViewModel سبک برای نمایش هر ردیف در لیست سوابق پذیرش.
-    /// </summary>
-    public class ReceptionIndexViewModel
-    {
-        public int ReceptionId { get; set; }
-
-        [Display(Name = "نام بیمار")]
-        public string PatientFullName { get; set; }
-
-        [Display(Name = "نام پزشک")]
-        public string DoctorFullName { get; set; }
-
-        [Display(Name = "تاریخ پذیرش")]
-        public string ReceptionDate { get; set; }
-
-        [Display(Name = "مجموع مبلغ")]
-        [DisplayFormat(DataFormatString = "{0:N0}")]
-        public decimal TotalAmount { get; set; }
-
-        [Display(Name = "وضعیت")]
-        public string Status { get; set; }
-
-        [Display(Name = "کد ملی بیمار")]
-        public string PatientNationalCode { get; set; }
-
-        [Display(Name = "نوع پذیرش")]
-        public string Type { get; set; }
-
-        [Display(Name = "مبلغ پرداخت شده")]
-        [DisplayFormat(DataFormatString = "{0:N0}")]
-        public decimal PaidAmount { get; set; }
-
-        [Display(Name = "مبلغ باقی‌مانده")]
-        [DisplayFormat(DataFormatString = "{0:N0}")]
-        public decimal RemainingAmount { get; set; }
-
-        [Display(Name = "روش پرداخت")]
-        public string PaymentMethod { get; set; }
-
-        // Properties for Controller
-        [Display(Name = "عنوان صفحه")]
-        public string PageTitle { get; set; }
-
-        [Display(Name = "تاریخ فعلی")]
-        public DateTime CurrentDate { get; set; }
-
-        [Display(Name = "تاریخ فعلی (شمسی)")]
-        public string CurrentDateShamsi { get; set; }
-
-        public ReceptionIndexViewModel()
-        {
-            CurrentDate = DateTime.Now;
-            PageTitle = "مدیریت پذیرش‌ها";
-            TotalAmount = 0;
-        }
-    }
 
     /// <summary>
     /// ViewModel دقیق برای نمایش تمام اطلاعات یک پذیرش.
@@ -727,6 +776,22 @@ namespace ClinicApp.ViewModels
         [Display(Name = "یادداشت‌ها")]
         public string Notes { get; set; }
 
+        // Additional properties for compatibility
+        [Display(Name = "شماره پذیرش")]
+        public string ReceptionNumber { get; set; }
+
+        [Display(Name = "اولویت")]
+        public AppointmentPriority Priority { get; set; }
+
+        [Display(Name = "آیا اورژانس است")]
+        public bool IsEmergency { get; set; }
+
+        [Display(Name = "آیا پذیرش آنلاین است")]
+        public bool IsOnlineReception { get; set; }
+
+        [Display(Name = "آیتم‌های پذیرش")]
+        public List<ReceptionItemViewModel> ReceptionItems { get; set; } = new List<ReceptionItemViewModel>();
+
         [Display(Name = "تاریخ ایجاد")]
         public DateTime CreatedAt { get; set; }
 
@@ -758,6 +823,9 @@ namespace ClinicApp.ViewModels
     /// </summary>
     public class ReceptionItemViewModel
     {
+        [Display(Name = "شناسه خدمت")]
+        public int ServiceId { get; set; }
+
         [Display(Name = "نام خدمت")]
         public string ServiceName { get; set; }
 

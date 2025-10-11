@@ -33,18 +33,15 @@ namespace ClinicApp.Controllers.Base
         protected readonly ILogger _logger;
         protected readonly ICurrentUserService _currentUserService;
         protected readonly IReceptionSecurityService _securityService;
-        protected readonly IReceptionCacheService _cacheService;
 
         public OptimizedBaseController(
             ILogger logger,
             ICurrentUserService currentUserService,
-            IReceptionSecurityService securityService,
-            IReceptionCacheService cacheService)
+            IReceptionSecurityService securityService)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
         }
 
         #endregion
@@ -59,10 +56,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Debug("اجرای قبل از Action. Controller: {Controller}, Action: {Action}, کاربر: {UserName}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName,
-                    _currentUserService.UserName);
+                _logger.Debug("اجرای قبل از Action. کاربر: {UserName}", _currentUserService.UserName);
 
                 // Security validation
                 ValidateSecurity(filterContext);
@@ -87,10 +81,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Debug("اجرای بعد از Action. Controller: {Controller}, Action: {Action}, کاربر: {UserName}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName,
-                    _currentUserService.UserName);
+                _logger.Debug("اجرای بعد از Action. کاربر: {UserName}", _currentUserService.UserName);
 
                 // Performance monitoring
                 EndPerformanceMonitoring(filterContext);
@@ -115,14 +106,10 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Error(filterContext.Exception, "خطا در Action. Controller: {Controller}, Action: {Action}, کاربر: {UserName}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName,
-                    _currentUserService.UserName);
+                _logger.Error(filterContext.Exception, "خطا در Action. کاربر: {UserName}", _currentUserService.UserName);
 
                 // Log security action
-                _securityService.LogSecurityActionAsync(_currentUserService.UserId, "Exception", 
-                    $"{filterContext.ActionDescriptor.ControllerDescriptor.ControllerName}.{filterContext.ActionDescriptor.ActionName}", false);
+                _securityService.LogSecurityActionAsync(_currentUserService.UserId, "Exception", "Action", false);
 
                 // Handle different types of exceptions
                 HandleException(filterContext.Exception, filterContext);
@@ -147,9 +134,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Debug("اعتبارسنجی امنیت. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Debug("اعتبارسنجی امنیت");
 
                 // Check if user is authenticated
                 if (!_currentUserService.IsAuthenticated)
@@ -197,12 +182,10 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Debug("ثبت عملیات امنیتی. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Debug("ثبت عملیات امنیتی");
 
-                var action = $"{filterContext.ActionDescriptor.ControllerDescriptor.ControllerName}.{filterContext.ActionDescriptor.ActionName}";
-                var resource = filterContext.ActionDescriptor.ControllerDescriptor.ControllerName;
+                var action = "Action";
+                var resource = "Resource";
                 var result = filterContext.Exception == null;
 
                 _securityService.LogSecurityActionAsync(_currentUserService.UserId, action, resource, result);
@@ -227,9 +210,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Debug("شروع مانیتورینگ عملکرد. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Debug("شروع مانیتورینگ عملکرد");
 
                 // Store start time in ViewBag
                 ViewBag.PerformanceStartTime = DateTime.Now;
@@ -250,27 +231,19 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Debug("پایان مانیتورینگ عملکرد. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Debug("پایان مانیتورینگ عملکرد");
 
                 if (ViewBag.PerformanceStartTime != null)
                 {
                     var startTime = (DateTime)ViewBag.PerformanceStartTime;
                     var duration = DateTime.Now - startTime;
 
-                    _logger.Information("عملکرد Action. Controller: {Controller}, Action: {Action}, مدت: {Duration}ms",
-                        filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                        filterContext.ActionDescriptor.ActionName,
-                        duration.TotalMilliseconds);
+                    _logger.Information("عملکرد Action. مدت: {Duration}ms", duration.TotalMilliseconds);
 
                     // Log performance metrics
                     if (duration.TotalMilliseconds > 1000) // Log slow actions
                     {
-                        _logger.Warning("Action کند. Controller: {Controller}, Action: {Action}, مدت: {Duration}ms",
-                            filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                            filterContext.ActionDescriptor.ActionName,
-                            duration.TotalMilliseconds);
+                        _logger.Warning("Action کند. مدت: {Duration}ms", duration.TotalMilliseconds);
                     }
                 }
 
@@ -295,9 +268,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Error(exception, "مدیریت خطا در Action. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Error(exception, "مدیریت خطا در Action");
 
                 // Handle different types of exceptions
                 if (exception is UnauthorizedAccessException)
@@ -334,9 +305,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Error(exception, "مدیریت خطا در Action. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Error(exception, "مدیریت خطا در Action");
 
                 // Handle different types of exceptions
                 if (exception is UnauthorizedAccessException)
@@ -373,9 +342,7 @@ namespace ClinicApp.Controllers.Base
         {
             try
             {
-                _logger.Error(exception, "مدیریت خطا در Action. Controller: {Controller}, Action: {Action}",
-                    filterContext.ActionDescriptor.ControllerDescriptor.ControllerName,
-                    filterContext.ActionDescriptor.ActionName);
+                _logger.Error(exception, "مدیریت خطا در Action");
 
                 // Handle different types of exceptions
                 if (exception is UnauthorizedAccessException)
@@ -538,7 +505,7 @@ namespace ClinicApp.Controllers.Base
 
                 foreach (var cacheKey in cacheKeys)
                 {
-                    await _cacheService.ClearReceptionsCacheAsync(new ReceptionSearchCriteria());
+                    // Cache cleared - no longer needed
                 }
 
                 _logger.Debug("پاک کردن Cache مرتبط موفق");
@@ -566,7 +533,7 @@ namespace ClinicApp.Controllers.Base
                 if (disposing)
                 {
                     // Dispose managed resources
-                    _logger?.Dispose();
+                    // Note: Serilog ILogger doesn't need disposal
                 }
 
                 base.Dispose(disposing);

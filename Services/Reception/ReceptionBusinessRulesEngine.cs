@@ -11,6 +11,7 @@ using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Services.Reception
 {

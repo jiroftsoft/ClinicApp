@@ -8,6 +8,7 @@ using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Reception;
 
 namespace ClinicApp.Interfaces
 {
@@ -38,41 +39,41 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="id">شناسه پذیرش</param>
         /// <returns>پذیرش مورد نظر</returns>
-        Task<Reception> GetByIdAsync(int id);
+        Task<Models.Entities.Reception.Reception> GetByIdAsync(int id);
 
         /// <summary>
         /// دریافت پذیرش بر اساس شناسه همراه با جزئیات کامل
         /// </summary>
         /// <param name="id">شناسه پذیرش</param>
         /// <returns>پذیرش با جزئیات کامل</returns>
-        Task<Reception> GetByIdWithDetailsAsync(int id);
+        Task<Models.Entities.Reception.Reception> GetByIdWithDetailsAsync(int id);
 
         /// <summary>
         /// دریافت تمام پذیرش‌های فعال
         /// </summary>
         /// <returns>لیست پذیرش‌های فعال</returns>
-        Task<List<Reception>> GetAllActiveAsync();
+        Task<List<Models.Entities.Reception.Reception>> GetAllActiveAsync();
 
         /// <summary>
         /// دریافت پذیرش‌های بیمار
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
         /// <returns>لیست پذیرش‌های بیمار</returns>
-        Task<List<Reception>> GetByPatientIdAsync(int patientId);
+        Task<List<Models.Entities.Reception.Reception>> GetByPatientIdAsync(int patientId);
 
         /// <summary>
         /// دریافت پذیرش‌های پزشک
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>
         /// <returns>لیست پذیرش‌های پزشک</returns>
-        Task<List<Reception>> GetByDoctorIdAsync(int doctorId);
+        Task<List<Models.Entities.Reception.Reception>> GetByDoctorIdAsync(int doctorId);
 
         /// <summary>
         /// دریافت پذیرش‌های تاریخ مشخص
         /// </summary>
         /// <param name="date">تاریخ پذیرش</param>
         /// <returns>لیست پذیرش‌های تاریخ مشخص</returns>
-        Task<List<Reception>> GetByDateAsync(DateTime date);
+        Task<List<Models.Entities.Reception.Reception>> GetByDateAsync(DateTime date);
 
         /// <summary>
         /// دریافت پذیرش‌های بازه زمانی
@@ -80,7 +81,7 @@ namespace ClinicApp.Interfaces
         /// <param name="startDate">تاریخ شروع</param>
         /// <param name="endDate">تاریخ پایان</param>
         /// <returns>لیست پذیرش‌های بازه زمانی</returns>
-        Task<List<Reception>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
+        Task<List<Models.Entities.Reception.Reception>> GetByDateRangeAsync(DateTime startDate, DateTime endDate);
 
         #endregion
 
@@ -91,34 +92,34 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="nationalCode">کد ملی بیمار</param>
         /// <returns>لیست پذیرش‌های بیمار</returns>
-        Task<List<Reception>> SearchByNationalCodeAsync(string nationalCode);
+        Task<List<Models.Entities.Reception.Reception>> SearchByNationalCodeAsync(string nationalCode);
 
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس نام بیمار
         /// </summary>
         /// <param name="patientName">نام بیمار</param>
         /// <returns>لیست پذیرش‌های بیمار</returns>
-        Task<List<Reception>> SearchByPatientNameAsync(string patientName);
+        Task<List<Models.Entities.Reception.Reception>> SearchByPatientNameAsync(string patientName);
 
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس وضعیت
         /// </summary>
         /// <param name="status">وضعیت پذیرش</param>
         /// <returns>لیست پذیرش‌های با وضعیت مشخص</returns>
-        Task<List<Reception>> GetByStatusAsync(ReceptionStatus status);
+        Task<List<Models.Entities.Reception.Reception>> GetByStatusAsync(ReceptionStatus status);
 
         /// <summary>
         /// جستجوی پذیرش‌ها بر اساس نوع
         /// </summary>
         /// <param name="type">نوع پذیرش</param>
         /// <returns>لیست پذیرش‌های با نوع مشخص</returns>
-        Task<List<Reception>> GetByTypeAsync(ReceptionType type);
+        Task<List<Models.Entities.Reception.Reception>> GetByTypeAsync(ReceptionType type);
 
         /// <summary>
         /// جستجوی پذیرش‌های اورژانس
         /// </summary>
         /// <returns>لیست پذیرش‌های اورژانس</returns>
-        Task<List<Reception>> GetEmergencyReceptionsAsync();
+        Task<List<Models.Entities.Reception.Reception>> GetEmergencyReceptionsAsync();
 
         #endregion
 
@@ -150,19 +151,19 @@ namespace ClinicApp.Interfaces
         /// افزودن پذیرش جدید
         /// </summary>
         /// <param name="reception">پذیرش جدید</param>
-        void Add(Reception reception);
+        void Add(Models.Entities.Reception.Reception reception);
 
         /// <summary>
         /// به‌روزرسانی پذیرش
         /// </summary>
         /// <param name="reception">پذیرش برای به‌روزرسانی</param>
-        void Update(Reception reception);
+        void Update(Models.Entities.Reception.Reception reception);
 
         /// <summary>
         /// حذف نرم پذیرش
         /// </summary>
         /// <param name="reception">پذیرش برای حذف</param>
-        void Delete(Reception reception);
+        void Delete(Models.Entities.Reception.Reception reception);
 
         #endregion
 
@@ -201,7 +202,7 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
         /// <returns>آخرین پذیرش بیمار</returns>
-        Task<Reception> GetLatestByPatientIdAsync(int patientId);
+        Task<Models.Entities.Reception.Reception> GetLatestByPatientIdAsync(int patientId);
 
         /// <summary>
         /// شمارش پذیرش‌های روز
@@ -223,7 +224,7 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="date">Date</param>
         /// <returns>List of receptions</returns>
-        Task<List<Reception>> GetReceptionsByDateAsync(DateTime date);
+        Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDateAsync(DateTime date);
 
         /// <summary>
         /// Get receptions by doctor and date
@@ -231,14 +232,14 @@ namespace ClinicApp.Interfaces
         /// <param name="doctorId">Doctor ID</param>
         /// <param name="date">Date</param>
         /// <returns>List of receptions</returns>
-        Task<List<Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date);
+        Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date);
 
         /// <summary>
         /// Update reception entity
         /// </summary>
         /// <param name="reception">Reception entity</param>
         /// <returns>Updated reception</returns>
-        Task<Reception> UpdateReceptionAsync(Reception reception);
+        Task<Models.Entities.Reception.Reception> UpdateReceptionAsync(Models.Entities.Reception.Reception reception);
 
         /// <summary>
         /// Get reception payments
@@ -246,6 +247,13 @@ namespace ClinicApp.Interfaces
         /// <param name="receptionId">Reception ID</param>
         /// <returns>List of payment transactions</returns>
         Task<List<PaymentTransaction>> GetReceptionPaymentsAsync(int receptionId);
+
+        /// <summary>
+        /// دریافت تعداد پذیرش‌های پزشک
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>تعداد پذیرش‌ها</returns>
+        Task<int> GetReceptionCountByDoctorAsync(int doctorId);
 
         #endregion
     }

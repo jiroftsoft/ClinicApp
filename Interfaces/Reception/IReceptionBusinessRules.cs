@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Interfaces.Reception
 {
@@ -32,14 +33,14 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateReceptionAsync(ReceptionCreateViewModel model);
+        Task<CustomValidationResult> ValidateReceptionAsync(ReceptionCreateViewModel model);
 
         /// <summary>
         /// اعتبارسنجی ویرایش پذیرش
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateReceptionEditAsync(ReceptionEditViewModel model);
+        Task<CustomValidationResult> ValidateReceptionEditAsync(ReceptionEditViewModel model);
 
         #endregion
 
@@ -50,7 +51,7 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidatePatientAsync(int patientId);
+        Task<CustomValidationResult> ValidatePatientAsync(int patientId);
 
         /// <summary>
         /// اعتبارسنجی پزشک
@@ -58,14 +59,14 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateDoctorAsync(int doctorId, DateTime receptionDate);
+        Task<CustomValidationResult> ValidateDoctorAsync(int doctorId, DateTime receptionDate);
 
         /// <summary>
         /// اعتبارسنجی خدمات
         /// </summary>
         /// <param name="serviceIds">شناسه‌های خدمات</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateServicesAsync(List<int> serviceIds);
+        Task<CustomValidationResult> ValidateServicesAsync(List<int> serviceIds);
 
         /// <summary>
         /// اعتبارسنجی بیمه
@@ -73,7 +74,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="patientId">شناسه بیمار</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateInsuranceAsync(int patientId, DateTime receptionDate);
+        Task<CustomValidationResult> ValidateInsuranceAsync(int patientId, DateTime receptionDate);
 
         #endregion
 
@@ -87,7 +88,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <param name="excludeReceptionId">شناسه پذیرش برای حذف از بررسی (در ویرایش)</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidateTimeConflictAsync(int patientId, int doctorId, DateTime receptionDate, int? excludeReceptionId = null);
+        Task<CustomValidationResult> ValidateTimeConflictAsync(int patientId, int doctorId, DateTime receptionDate, int? excludeReceptionId = null);
 
         /// <summary>
         /// بررسی ظرفیت پزشک
@@ -95,21 +96,21 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidateDoctorCapacityAsync(int doctorId, DateTime receptionDate);
+        Task<CustomValidationResult> ValidateDoctorCapacityAsync(int doctorId, DateTime receptionDate);
 
         /// <summary>
         /// بررسی تاریخ پذیرش
         /// </summary>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidateReceptionDateAsync(DateTime receptionDate);
+        Task<CustomValidationResult> ValidateReceptionDateAsync(DateTime receptionDate);
 
         /// <summary>
         /// بررسی ساعات کاری
         /// </summary>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidateWorkingHoursAsync(DateTime receptionDate);
+        Task<CustomValidationResult> ValidateWorkingHoursAsync(DateTime receptionDate);
 
         #endregion
 
@@ -121,7 +122,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="patientId">شناسه بیمار</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidatePatientSpecificRulesAsync(int patientId, DateTime receptionDate);
+        Task<CustomValidationResult> ValidatePatientSpecificRulesAsync(int patientId, DateTime receptionDate);
 
         /// <summary>
         /// بررسی قوانین خاص پزشک
@@ -129,7 +130,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidateDoctorSpecificRulesAsync(int doctorId, DateTime receptionDate);
+        Task<CustomValidationResult> ValidateDoctorSpecificRulesAsync(int doctorId, DateTime receptionDate);
 
         /// <summary>
         /// بررسی قوانین خاص خدمات
@@ -137,7 +138,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="serviceIds">شناسه‌های خدمات</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        Task<ValidationResult> ValidateServiceSpecificRulesAsync(List<int> serviceIds, DateTime receptionDate);
+        Task<CustomValidationResult> ValidateServiceSpecificRulesAsync(List<int> serviceIds, DateTime receptionDate);
 
         #endregion
 
@@ -148,21 +149,21 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateEmergencyReceptionAsync(ReceptionCreateViewModel model);
+        Task<CustomValidationResult> ValidateEmergencyReceptionAsync(ReceptionCreateViewModel model);
 
         /// <summary>
         /// اعتبارسنجی پذیرش آنلاین
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateOnlineReceptionAsync(ReceptionCreateViewModel model);
+        Task<CustomValidationResult> ValidateOnlineReceptionAsync(ReceptionCreateViewModel model);
 
         /// <summary>
         /// اعتبارسنجی پذیرش ویژه
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateSpecialReceptionAsync(ReceptionCreateViewModel model);
+        Task<CustomValidationResult> ValidateSpecialReceptionAsync(ReceptionCreateViewModel model);
 
         #endregion
 
@@ -173,14 +174,14 @@ namespace ClinicApp.Interfaces.Reception
         /// </summary>
         /// <param name="models">مدل‌های پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateBatchReceptionsAsync(List<ReceptionCreateViewModel> models);
+        Task<CustomValidationResult> ValidateBatchReceptionsAsync(List<ReceptionCreateViewModel> models);
 
         /// <summary>
         /// اعتبارسنجی دسته‌ای بیماران
         /// </summary>
         /// <param name="patientIds">شناسه‌های بیماران</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateBatchPatientsAsync(List<int> patientIds);
+        Task<CustomValidationResult> ValidateBatchPatientsAsync(List<int> patientIds);
 
         /// <summary>
         /// اعتبارسنجی دسته‌ای پزشکان
@@ -188,7 +189,7 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="doctorIds">شناسه‌های پزشکان</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        Task<ValidationResult> ValidateBatchDoctorsAsync(List<int> doctorIds, DateTime receptionDate);
+        Task<CustomValidationResult> ValidateBatchDoctorsAsync(List<int> doctorIds, DateTime receptionDate);
 
         #endregion
     }

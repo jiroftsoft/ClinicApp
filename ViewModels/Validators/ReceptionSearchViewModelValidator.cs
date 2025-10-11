@@ -3,6 +3,7 @@ using ClinicApp.Models.Entities;
 using FluentValidation;
 using System;
 using System.Text.RegularExpressions;
+using ClinicApp.ViewModels.Reception;
 
 namespace ClinicApp.ViewModels.Validators
 {

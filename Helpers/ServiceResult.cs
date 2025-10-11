@@ -356,6 +356,16 @@ namespace ClinicApp.Helpers
         }
 
         /// <summary>
+        /// ایجاد نتیجه موفق با داده - نام کوتاه برای Successful
+        /// </summary>
+        public static ServiceResult<T> CreateSuccess(
+            T data,
+            string message = "عملیات با موفقیت انجام شد.")
+        {
+            return Successful(data, message);
+        }
+
+        /// <summary>
         /// ایجاد نتیجه موفق با داده و اطلاعات پزشکی
         /// </summary>
         public static ServiceResult<T> SuccessfulWithMedicalInfo(

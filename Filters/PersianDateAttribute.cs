@@ -65,7 +65,7 @@ namespace ClinicApp.Filters
             ErrorMessage = "تاریخ وارد شده معتبر نیست.";
         }
 
-        protected override ValidationResult IsValid(object value, ValidationContext validationContext)
+        protected override System.ComponentModel.DataAnnotations.ValidationResult IsValid(object value, ValidationContext validationContext)
         {
             // اگر مقدار نال یا خالی باشد
             if (value == null || string.IsNullOrWhiteSpace(value.ToString()))

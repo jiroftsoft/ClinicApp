@@ -14,6 +14,7 @@ using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Services.Reception
 {
@@ -71,7 +72,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="model">مدل ایجاد پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -123,11 +124,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -141,7 +142,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="model">مدل ویرایش پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateReceptionEditAsync(ReceptionEditViewModel model)
+        public async Task<CustomValidationResult> ValidateReceptionEditAsync(ReceptionEditViewModel model)
         {
             try
             {
@@ -193,11 +194,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی ویرایش پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی ویرایش پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -215,7 +216,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="patientId">شناسه بیمار</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidatePatientAsync(int patientId)
+        public async Task<CustomValidationResult> ValidatePatientAsync(int patientId)
         {
             try
             {
@@ -228,7 +229,7 @@ namespace ClinicApp.Services.Reception
                 if (!patientResult.Success)
                 {
                     errors.Add("بیمار مورد نظر یافت نشد.");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 var patient = patientResult.Data;
@@ -248,11 +249,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی بیمار ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی بیمار موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -267,7 +268,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateDoctorAsync(int doctorId, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateDoctorAsync(int doctorId, DateTime receptionDate)
         {
             try
             {
@@ -280,7 +281,7 @@ namespace ClinicApp.Services.Reception
                 if (!doctorResult.Success)
                 {
                     errors.Add("پزشک مورد نظر یافت نشد.");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 var doctor = doctorResult.Data;
@@ -300,11 +301,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پزشک ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پزشک موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -318,7 +319,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="serviceIds">شناسه‌های خدمات</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateServicesAsync(List<int> serviceIds)
+        public async Task<CustomValidationResult> ValidateServicesAsync(List<int> serviceIds)
         {
             try
             {
@@ -329,7 +330,7 @@ namespace ClinicApp.Services.Reception
                 if (serviceIds == null || !serviceIds.Any())
                 {
                     errors.Add("حداقل یک خدمت باید انتخاب شود.");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 // Validate each service
@@ -360,11 +361,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی خدمات ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی خدمات موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -379,7 +380,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="patientId">شناسه بیمار</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateInsuranceAsync(int patientId, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateInsuranceAsync(int patientId, DateTime receptionDate)
         {
             try
             {
@@ -394,7 +395,7 @@ namespace ClinicApp.Services.Reception
                 // 3. Checking insurance limits and restrictions
 
                 _logger.Debug("اعتبارسنجی بیمه موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -415,7 +416,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <param name="excludeReceptionId">شناسه پذیرش برای حذف از بررسی (در ویرایش)</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidateTimeConflictAsync(int patientId, int doctorId, DateTime receptionDate, int? excludeReceptionId = null)
+        public async Task<CustomValidationResult> ValidateTimeConflictAsync(int patientId, int doctorId, DateTime receptionDate, int? excludeReceptionId = null)
         {
             try
             {
@@ -432,7 +433,7 @@ namespace ClinicApp.Services.Reception
                 }
 
                 // Check if doctor has too many receptions on the same date
-                var doctorReceptionCount = await _receptionRepository.GetReceptionCountByDoctorAsync(doctorId, receptionDate);
+                var doctorReceptionCount = await _receptionRepository.GetReceptionCountByDoctorAsync(doctorId);
                 if (doctorReceptionCount >= 50) // Maximum 50 receptions per doctor per day
                 {
                     errors.Add("پزشک در این تاریخ ظرفیت پذیرش ندارد.");
@@ -441,11 +442,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("بررسی تداخل زمانی ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("بررسی تداخل زمانی موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -460,7 +461,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidateDoctorCapacityAsync(int doctorId, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateDoctorCapacityAsync(int doctorId, DateTime receptionDate)
         {
             try
             {
@@ -469,7 +470,7 @@ namespace ClinicApp.Services.Reception
                 var errors = new List<string>();
 
                 // Check doctor's daily capacity
-                var doctorReceptionCount = await _receptionRepository.GetReceptionCountByDoctorAsync(doctorId, receptionDate);
+                var doctorReceptionCount = await _receptionRepository.GetReceptionCountByDoctorAsync(doctorId);
                 if (doctorReceptionCount >= 50) // Maximum 50 receptions per doctor per day
                 {
                     errors.Add("پزشک در این تاریخ ظرفیت پذیرش ندارد.");
@@ -478,11 +479,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("بررسی ظرفیت پزشک ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("بررسی ظرفیت پزشک موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -496,7 +497,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidateReceptionDateAsync(DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateReceptionDateAsync(DateTime receptionDate)
         {
             try
             {
@@ -525,11 +526,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("بررسی تاریخ پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("بررسی تاریخ پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -543,7 +544,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidateWorkingHoursAsync(DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateWorkingHoursAsync(DateTime receptionDate)
         {
             try
             {
@@ -564,11 +565,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("بررسی ساعات کاری ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("بررسی ساعات کاری موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -587,7 +588,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="patientId">شناسه بیمار</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidatePatientSpecificRulesAsync(int patientId, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidatePatientSpecificRulesAsync(int patientId, DateTime receptionDate)
         {
             try
             {
@@ -603,7 +604,7 @@ namespace ClinicApp.Services.Reception
                 // 4. Insurance coverage restrictions
 
                 _logger.Debug("بررسی قوانین خاص بیمار موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -618,7 +619,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="doctorId">شناسه پزشک</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidateDoctorSpecificRulesAsync(int doctorId, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateDoctorSpecificRulesAsync(int doctorId, DateTime receptionDate)
         {
             try
             {
@@ -634,7 +635,7 @@ namespace ClinicApp.Services.Reception
                 // 4. Time slot restrictions
 
                 _logger.Debug("بررسی قوانین خاص پزشک موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -649,7 +650,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="serviceIds">شناسه‌های خدمات</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<ValidationResult> ValidateServiceSpecificRulesAsync(List<int> serviceIds, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateServiceSpecificRulesAsync(List<int> serviceIds, DateTime receptionDate)
         {
             try
             {
@@ -665,7 +666,7 @@ namespace ClinicApp.Services.Reception
                 // 4. Service capacity restrictions
 
                 _logger.Debug("بررسی قوانین خاص خدمات موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -683,7 +684,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateEmergencyReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateEmergencyReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -712,11 +713,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش اورژانس ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش اورژانس موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -730,7 +731,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateOnlineReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateOnlineReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -756,11 +757,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش آنلاین ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش آنلاین موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -774,7 +775,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="model">مدل پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateSpecialReceptionAsync(ReceptionCreateViewModel model)
+        public async Task<CustomValidationResult> ValidateSpecialReceptionAsync(ReceptionCreateViewModel model)
         {
             try
             {
@@ -800,11 +801,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی پذیرش ویژه ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی پذیرش ویژه موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -822,7 +823,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="models">مدل‌های پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateBatchReceptionsAsync(List<ReceptionCreateViewModel> models)
+        public async Task<CustomValidationResult> ValidateBatchReceptionsAsync(List<ReceptionCreateViewModel> models)
         {
             try
             {
@@ -833,7 +834,7 @@ namespace ClinicApp.Services.Reception
                 if (models == null || !models.Any())
                 {
                     errors.Add("لیست پذیرش‌ها نمی‌تواند خالی باشد.");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 // Validate each reception
@@ -843,18 +844,18 @@ namespace ClinicApp.Services.Reception
                     var validation = await ValidateReceptionAsync(model);
                     if (!validation.IsValid)
                     {
-                        errors.Add($"پذیرش {i + 1}: {validation.ErrorMessage}");
+                        errors.Add($"پذیرش {i + 1}: {validation.Message}");
                     }
                 }
 
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی دسته‌ای پذیرش‌ها ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی دسته‌ای پذیرش‌ها موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -868,7 +869,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="patientIds">شناسه‌های بیماران</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateBatchPatientsAsync(List<int> patientIds)
+        public async Task<CustomValidationResult> ValidateBatchPatientsAsync(List<int> patientIds)
         {
             try
             {
@@ -879,7 +880,7 @@ namespace ClinicApp.Services.Reception
                 if (patientIds == null || !patientIds.Any())
                 {
                     errors.Add("لیست بیماران نمی‌تواند خالی باشد.");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 // Validate each patient
@@ -889,18 +890,18 @@ namespace ClinicApp.Services.Reception
                     var validation = await ValidatePatientAsync(patientId);
                     if (!validation.IsValid)
                     {
-                        errors.Add($"بیمار {i + 1} (شناسه: {patientId}): {validation.ErrorMessage}");
+                        errors.Add($"بیمار {i + 1} (شناسه: {patientId}): {validation.Message}");
                     }
                 }
 
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی دسته‌ای بیماران ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی دسته‌ای بیماران موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {
@@ -915,7 +916,7 @@ namespace ClinicApp.Services.Reception
         /// <param name="doctorIds">شناسه‌های پزشکان</param>
         /// <param name="receptionDate">تاریخ پذیرش</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateBatchDoctorsAsync(List<int> doctorIds, DateTime receptionDate)
+        public async Task<CustomValidationResult> ValidateBatchDoctorsAsync(List<int> doctorIds, DateTime receptionDate)
         {
             try
             {
@@ -927,7 +928,7 @@ namespace ClinicApp.Services.Reception
                 if (doctorIds == null || !doctorIds.Any())
                 {
                     errors.Add("لیست پزشکان نمی‌تواند خالی باشد.");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 // Validate each doctor
@@ -937,18 +938,18 @@ namespace ClinicApp.Services.Reception
                     var validation = await ValidateDoctorAsync(doctorId, receptionDate);
                     if (!validation.IsValid)
                     {
-                        errors.Add($"پزشک {i + 1} (شناسه: {doctorId}): {validation.ErrorMessage}");
+                        errors.Add($"پزشک {i + 1} (شناسه: {doctorId}): {validation.Message}");
                     }
                 }
 
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی دسته‌ای پزشکان ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors), errors.ToArray());
                 }
 
                 _logger.Debug("اعتبارسنجی دسته‌ای پزشکان موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success("اعتبارسنجی موفق بود");
             }
             catch (Exception ex)
             {

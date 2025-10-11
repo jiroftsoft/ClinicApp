@@ -36,7 +36,6 @@ namespace ClinicApp.Factories
 
         private readonly IReceptionBusinessRules _businessRules;
         private readonly IReceptionSecurityService _securityService;
-        private readonly IReceptionCacheService _cacheService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
 
@@ -46,13 +45,11 @@ namespace ClinicApp.Factories
         public ReceptionValidationFactory(
             IReceptionBusinessRules businessRules,
             IReceptionSecurityService securityService,
-            IReceptionCacheService cacheService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
             _businessRules = businessRules ?? throw new ArgumentNullException(nameof(businessRules));
             _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
@@ -155,7 +152,7 @@ namespace ClinicApp.Factories
                 _logger.Debug("ایجاد Validator برای پذیرش اورژانس. بیمار: {PatientId}, پزشک: {DoctorId}, کاربر: {UserName}",
                     model?.PatientId, model?.DoctorId, _currentUserService.UserName);
 
-                var validator = new EmergencyReceptionCreateViewModelValidator();
+                var validator = new ReceptionCreateViewModelValidator();
                 
                 // Configure validator for emergency reception
                 await ConfigureEmergencyReceptionValidatorAsync(validator, model);
@@ -182,7 +179,7 @@ namespace ClinicApp.Factories
                 _logger.Debug("ایجاد Validator برای پذیرش آنلاین. بیمار: {PatientId}, پزشک: {DoctorId}, کاربر: {UserName}",
                     model?.PatientId, model?.DoctorId, _currentUserService.UserName);
 
-                var validator = new OnlineReceptionCreateViewModelValidator();
+                var validator = new ReceptionCreateViewModelValidator();
                 
                 // Configure validator for online reception
                 await ConfigureOnlineReceptionValidatorAsync(validator, model);
@@ -209,7 +206,7 @@ namespace ClinicApp.Factories
                 _logger.Debug("ایجاد Validator برای پذیرش ویژه. بیمار: {PatientId}, پزشک: {DoctorId}, کاربر: {UserName}",
                     model?.PatientId, model?.DoctorId, _currentUserService.UserName);
 
-                var validator = new SpecialReceptionCreateViewModelValidator();
+                var validator = new ReceptionCreateViewModelValidator();
                 
                 // Configure validator for special reception
                 await ConfigureSpecialReceptionValidatorAsync(validator, model);

@@ -39,7 +39,7 @@ namespace ClinicApp.Interfaces.Repositories
         /// <param name="doctorId">Doctor ID</param>
         /// <param name="date">Date</param>
         /// <returns>List of receptions</returns>
-        Task<List<Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date);
+        Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date);
 
         /// <summary>
         /// Check if doctor is available on specific date

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Web.Mvc;
 
@@ -66,6 +67,23 @@ namespace ClinicApp.Helpers
             items.AddRange(selectList);
 
             return new SelectList(items, "Value", "Text");
+        }
+
+        /// <summary>
+        /// دریافت نام نمایشی enum از Display attribute
+        /// </summary>
+        /// <typeparam name="T">نوع enum</typeparam>
+        /// <param name="enumValue">مقدار enum</param>
+        /// <returns>نام نمایشی enum</returns>
+        public static string GetDisplayName<T>(this T enumValue) where T : struct
+        {
+            var field = enumValue.GetType().GetField(enumValue.ToString());
+            var attributes = field.GetCustomAttributes(typeof(DisplayAttribute), false);
+
+            if (attributes.Length > 0)
+                return ((DisplayAttribute)attributes[0]).Name;
+
+            return enumValue.ToString();
         }
     }
 }

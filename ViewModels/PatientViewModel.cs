@@ -424,6 +424,9 @@ namespace ClinicApp.ViewModels
         [Display(Name = "ایمیل")]
         public string Email { get; set; }
 
+        [Display(Name = "آیا فعال است")]
+        public bool IsActive { get; set; } = true;
+
         // InsuranceId حذف شد - از PatientInsurance استفاده کنید
 
 
@@ -574,6 +577,9 @@ namespace ClinicApp.ViewModels
 
         [Display(Name = "آخرین بروزرسانی (شمسی)")]
         public string LastUpdatedShamsi => LastUpdated.ToPersianDateTime();
+
+        [Display(Name = "آیا فعال است")]
+        public bool IsActive { get; set; } = true;
     }
 
     /// <summary>

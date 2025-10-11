@@ -4,10 +4,12 @@ using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.Extensions;
+using ClinicApp.Factories;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using FluentValidation;
 using Serilog;
@@ -35,7 +37,6 @@ namespace ClinicApp.Services.Reception
 
         private readonly IReceptionBusinessRules _businessRules;
         private readonly IReceptionSecurityService _securityService;
-        private readonly IReceptionCacheService _cacheService;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
 
@@ -46,17 +47,15 @@ namespace ClinicApp.Services.Reception
         public ReceptionValidationOrchestrator(
             IReceptionBusinessRules businessRules,
             IReceptionSecurityService securityService,
-            IReceptionCacheService cacheService,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
             _businessRules = businessRules ?? throw new ArgumentNullException(nameof(businessRules));
             _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-            _validationFactory = new ReceptionValidationFactory(businessRules, securityService, cacheService, currentUserService, logger);
+            _validationFactory = new ReceptionValidationFactory(businessRules, securityService, currentUserService, logger);
             _businessRulesEngine = new ReceptionBusinessRulesEngine(businessRules, securityService, currentUserService, logger);
         }
 

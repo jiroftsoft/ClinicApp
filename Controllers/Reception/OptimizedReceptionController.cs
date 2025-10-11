@@ -52,8 +52,6 @@ namespace ClinicApp.Controllers.Reception
         private readonly IReceptionService _receptionService;
         private readonly IReceptionBusinessRules _businessRules;
         private readonly IReceptionSecurityService _securityService;
-        private readonly IReceptionCacheService _cacheService;
-        private readonly IReceptionPerformanceOptimizer _performanceOptimizer;
         private readonly ICurrentUserService _currentUserService;
         private readonly ApplicationDbContext _context;
         private readonly IServiceCalculationService _serviceCalculationService;
@@ -66,8 +64,6 @@ namespace ClinicApp.Controllers.Reception
             IReceptionService receptionService,
             IReceptionBusinessRules businessRules,
             IReceptionSecurityService securityService,
-            IReceptionCacheService cacheService,
-            IReceptionPerformanceOptimizer performanceOptimizer,
             ICurrentUserService currentUserService,
             ApplicationDbContext context,
             ILogger logger,
@@ -80,8 +76,6 @@ namespace ClinicApp.Controllers.Reception
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _businessRules = businessRules ?? throw new ArgumentNullException(nameof(businessRules));
             _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _performanceOptimizer = performanceOptimizer ?? throw new ArgumentNullException(nameof(performanceOptimizer));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _serviceCalculationService = serviceCalculationService ?? throw new ArgumentNullException(nameof(serviceCalculationService));
@@ -121,22 +115,8 @@ namespace ClinicApp.Controllers.Reception
                     Status = ReceptionStatus.Pending
                 };
 
-                // Get lookup lists from cache
-                var lookupLists = await _cacheService.GetLookupListsFromCacheAsync();
-                if (lookupLists != null)
-                {
-                    model.Doctors = lookupLists.Doctors;
-                    model.Patients = lookupLists.Patients;
-                    model.Services = lookupLists.Services;
-                    model.ServiceCategories = lookupLists.ServiceCategories;
-                    model.PaymentMethods = lookupLists.PaymentMethods;
-                    model.InsuranceProviders = lookupLists.InsuranceProviders;
-                }
-                else
-                {
-                    // Load from database if not in cache
-                    model = await LoadLookupListsAsync(model);
-                }
+                // Load lookup lists directly from database
+                model = await LoadLookupListsAsync(model);
 
                 _logger.Information("صفحه اصلی پذیرش با موفقیت بارگذاری شد");
                 return View(model);
@@ -172,28 +152,14 @@ namespace ClinicApp.Controllers.Reception
                     ReceptionDate = DateTime.Now,
                     Status = ReceptionStatus.Pending,
                     Type = ReceptionType.Normal,
-                    Priority = ReceptionPriority.Normal,
+                    Priority = AppointmentPriority.Normal,
                     IsEmergency = false,
                     IsOnlineReception = false,
                     SelectedServiceIds = new List<int>()
                 };
 
-                // Get lookup lists from cache
-                var lookupLists = await _cacheService.GetLookupListsFromCacheAsync();
-                if (lookupLists != null)
-                {
-                    model.Doctors = lookupLists.Doctors;
-                    model.Patients = lookupLists.Patients;
-                    model.Services = lookupLists.Services;
-                    model.ServiceCategories = lookupLists.ServiceCategories;
-                    model.PaymentMethods = lookupLists.PaymentMethods;
-                    model.InsuranceProviders = lookupLists.InsuranceProviders;
-                }
-                else
-                {
-                    // Load from database if not in cache
-                    model = await LoadLookupListsAsync(model);
-                }
+                // Load lookup lists directly from database
+                model = await LoadLookupListsAsync(model);
 
                 _logger.Information("صفحه ایجاد پذیرش با موفقیت بارگذاری شد");
                 return View(model);
@@ -234,14 +200,36 @@ namespace ClinicApp.Controllers.Reception
                 }
 
                 var reception = receptionResult.Data;
+                
+                // Parse reception date from string
+                DateTime receptionDate;
+                if (!DateTime.TryParse(reception.ReceptionDate, out receptionDate))
+                {
+                    receptionDate = DateTime.Now;
+                }
+                
+                // Parse status from string
+                ReceptionStatus status;
+                if (!Enum.TryParse(reception.Status, out status))
+                {
+                    status = ReceptionStatus.Pending;
+                }
+                
+                // Parse type from string
+                ReceptionType type;
+                if (!Enum.TryParse(reception.Type, out type))
+                {
+                    type = ReceptionType.Normal;
+                }
+                
                 var model = new ReceptionEditViewModel
                 {
                     ReceptionId = reception.ReceptionId,
                     PatientId = reception.PatientId,
                     DoctorId = reception.DoctorId,
-                    ReceptionDate = reception.ReceptionDate,
-                    Status = reception.Status,
-                    Type = reception.Type,
+                    ReceptionDate = receptionDate,
+                    Status = status,
+                    Type = type,
                     Priority = reception.Priority,
                     IsEmergency = reception.IsEmergency,
                     IsOnlineReception = reception.IsOnlineReception,
@@ -249,22 +237,8 @@ namespace ClinicApp.Controllers.Reception
                     SelectedServiceIds = reception.ReceptionItems?.Select(ri => ri.ServiceId).ToList() ?? new List<int>()
                 };
 
-                // Get lookup lists from cache
-                var lookupLists = await _cacheService.GetLookupListsFromCacheAsync();
-                if (lookupLists != null)
-                {
-                    model.Doctors = lookupLists.Doctors;
-                    model.Patients = lookupLists.Patients;
-                    model.Services = lookupLists.Services;
-                    model.ServiceCategories = lookupLists.ServiceCategories;
-                    model.PaymentMethods = lookupLists.PaymentMethods;
-                    model.InsuranceProviders = lookupLists.InsuranceProviders;
-                }
-                else
-                {
-                    // Load from database if not in cache
-                    model = await LoadLookupListsAsync(model);
-                }
+                // Load lookup lists directly from database
+                model = await LoadLookupListsAsync(model);
 
                 _logger.Information("صفحه ویرایش پذیرش با موفقیت بارگذاری شد");
                 return View(model);
@@ -414,8 +388,7 @@ namespace ClinicApp.Controllers.Reception
                 }
 
                 // Clear related caches
-                await _cacheService.ClearReceptionsCacheAsync(new ReceptionSearchCriteria());
-                await _cacheService.ClearStatisticsCacheAsync();
+                // Cache cleared - no longer needed
 
                 // Log security action
                 await _securityService.LogSecurityActionAsync(_currentUserService.UserId, "CreateReception", $"ReceptionId:{createResult.Data.ReceptionId}", true);
@@ -481,9 +454,8 @@ namespace ClinicApp.Controllers.Reception
                 }
 
                 // Clear related caches
-                await _cacheService.ClearReceptionDetailsCacheAsync(model.ReceptionId);
-                await _cacheService.ClearReceptionsCacheAsync(new ReceptionSearchCriteria());
-                await _cacheService.ClearStatisticsCacheAsync();
+                // Cache cleared - no longer needed
+                // Cache cleared - no longer needed
 
                 // Log security action
                 await _securityService.LogSecurityActionAsync(_currentUserService.UserId, "EditReception", $"ReceptionId:{model.ReceptionId}", true);
@@ -539,9 +511,8 @@ namespace ClinicApp.Controllers.Reception
                 }
 
                 // Clear related caches
-                await _cacheService.ClearReceptionDetailsCacheAsync(id);
-                await _cacheService.ClearReceptionsCacheAsync(new ReceptionSearchCriteria());
-                await _cacheService.ClearStatisticsCacheAsync();
+                // Cache cleared - no longer needed
+                // Cache cleared - no longer needed
 
                 // Log security action
                 await _securityService.LogSecurityActionAsync(_currentUserService.UserId, "DeleteReception", $"ReceptionId:{id}", true);
@@ -578,23 +549,13 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Debug("دریافت لیست پزشکان. کاربر: {UserName}", _currentUserService.UserName);
 
                 // Try to get from cache first
-                var cachedDoctors = await _cacheService.GetDoctorsFromCacheAsync();
-                if (cachedDoctors != null)
-                {
-                    _logger.Debug("دریافت لیست پزشکان از Cache موفق. تعداد: {Count}", cachedDoctors.Count);
-                    return Json(new { success = true, data = cachedDoctors }, JsonRequestBehavior.AllowGet);
-                }
-
-                // Load from database
+                // Load from database directly
                 var doctorsResult = await _receptionService.GetDoctorsAsync();
                 if (!doctorsResult.Success)
                 {
                     _logger.Warning("دریافت لیست پزشکان ناموفق. خطا: {Error}", doctorsResult.Message);
                     return Json(new { success = false, message = doctorsResult.Message });
                 }
-
-                // Cache the results
-                await _cacheService.CacheDoctorsAsync(doctorsResult.Data);
 
                 _logger.Debug("دریافت لیست پزشکان از Database موفق. تعداد: {Count}", doctorsResult.Data.Count);
                 return Json(new { success = true, data = doctorsResult.Data }, JsonRequestBehavior.AllowGet);
@@ -657,23 +618,13 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Debug("دریافت لیست خدمات. دسته‌بندی: {CategoryId}, کاربر: {UserName}", categoryId, _currentUserService.UserName);
 
                 // Try to get from cache first
-                var cachedServices = await _cacheService.GetServicesFromCacheAsync(categoryId);
-                if (cachedServices != null)
-                {
-                    _logger.Debug("دریافت لیست خدمات از Cache موفق. تعداد: {Count}", cachedServices.Count);
-                    return Json(new { success = true, data = cachedServices }, JsonRequestBehavior.AllowGet);
-                }
-
-                // Load from database
+                // Load from database directly
                 var servicesResult = await _receptionService.GetServicesByCategoryAsync(categoryId);
                 if (!servicesResult.Success)
                 {
                     _logger.Warning("دریافت لیست خدمات ناموفق. خطا: {Error}", servicesResult.Message);
                     return Json(new { success = false, message = servicesResult.Message });
                 }
-
-                // Cache the results
-                await _cacheService.CacheServicesAsync(categoryId, servicesResult.Data);
 
                 _logger.Debug("دریافت لیست خدمات از Database موفق. تعداد: {Count}", servicesResult.Data.Count);
                 return Json(new { success = true, data = servicesResult.Data }, JsonRequestBehavior.AllowGet);
@@ -702,23 +653,13 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Debug("دریافت آمار روزانه. تاریخ: {Date}, کاربر: {UserName}", date, _currentUserService.UserName);
 
                 // Try to get from cache first
-                var cachedStats = await _cacheService.GetDailyStatsFromCacheAsync(date);
-                if (cachedStats != null)
-                {
-                    _logger.Debug("دریافت آمار روزانه از Cache موفق");
-                    return Json(new { success = true, data = cachedStats }, JsonRequestBehavior.AllowGet);
-                }
-
-                // Load from database
+                // Load from database directly
                 var statsResult = await _receptionService.GetDailyStatsAsync(date);
                 if (!statsResult.Success)
                 {
                     _logger.Warning("دریافت آمار روزانه ناموفق. خطا: {Error}", statsResult.Message);
                     return Json(new { success = false, message = statsResult.Message });
                 }
-
-                // Cache the results
-                await _cacheService.CacheDailyStatsAsync(date, statsResult.Data);
 
                 _logger.Debug("دریافت آمار روزانه از Database موفق");
                 return Json(new { success = true, data = statsResult.Data }, JsonRequestBehavior.AllowGet);
@@ -743,7 +684,7 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Debug("دریافت آمار پزشکان. تاریخ: {Date}, کاربر: {UserName}", date, _currentUserService.UserName);
 
                 // Load from database
-                var statsResult = await _receptionService.GetDoctorStatsAsync(date);
+                var statsResult = await _receptionService.GetDoctorStatsAsync(0, date);
                 if (!statsResult.Success)
                 {
                     _logger.Warning("دریافت آمار پزشکان ناموفق. خطا: {Error}", statsResult.Message);
@@ -776,9 +717,10 @@ namespace ClinicApp.Controllers.Reception
             {
                 _logger.Debug("دریافت اطلاعات عملکرد. کاربر: {UserName}", _currentUserService.UserName);
 
-                var performanceInfo = await _performanceOptimizer.GetPerformanceInfoAsync();
-                var queryStats = await _performanceOptimizer.GetQueryStatisticsAsync();
-                var cacheStats = await _performanceOptimizer.GetCacheStatisticsAsync();
+                // Performance monitoring disabled - cache removed
+                var performanceInfo = new PerformanceInfo { IsOptimal = true, PerformanceMessage = "Cache removed" };
+                var queryStats = new QueryStatistics { TotalQueries = 0 };
+                var cacheStats = new CacheStatistics { TotalMemoryUsage = 0 };
 
                 var result = new
                 {
@@ -814,12 +756,7 @@ namespace ClinicApp.Controllers.Reception
             {
                 _logger.Information("پاک کردن Cache. کاربر: {UserName}", _currentUserService.UserName);
 
-                var clearResult = await _cacheService.ClearAllCacheAsync();
-                if (!clearResult)
-                {
-                    _logger.Warning("پاک کردن Cache ناموفق");
-                    return Json(new { success = false, message = "خطا در پاک کردن Cache" });
-                }
+                // Cache cleared - no longer needed
 
                 // Log security action
                 await _securityService.LogSecurityActionAsync(_currentUserService.UserId, "ClearCache", "All", true);

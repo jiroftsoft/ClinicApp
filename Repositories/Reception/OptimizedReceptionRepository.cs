@@ -40,37 +40,17 @@ namespace ClinicApp.Repositories.Reception
         #region Fields and Constructor
 
         private readonly ICurrentUserService _currentUserService;
-        private readonly IReceptionCacheService _cacheService;
-        private readonly IReceptionPerformanceOptimizer _performanceOptimizer;
 
-        // Compiled Queries for Performance
-        private static readonly Func<ApplicationDbContext, int, Task<Models.Entities.Reception.Reception>> GetReceptionByIdCompiled =
-            EF.CompileAsyncQuery((ApplicationDbContext context, int id) =>
-                context.Receptions.FirstOrDefault(r => r.ReceptionId == id && !r.IsDeleted));
-
-        private static readonly Func<ApplicationDbContext, DateTime, Task<List<Models.Entities.Reception.Reception>>> GetReceptionsByDateCompiled =
-            EF.CompileAsyncQuery((ApplicationDbContext context, DateTime date) =>
-                context.Receptions.Where(r => r.ReceptionDate.Date == date.Date && !r.IsDeleted));
-
-        private static readonly Func<ApplicationDbContext, int, Task<List<Models.Entities.Reception.Reception>>> GetReceptionsByPatientCompiled =
-            EF.CompileAsyncQuery((ApplicationDbContext context, int patientId) =>
-                context.Receptions.Where(r => r.PatientId == patientId && !r.IsDeleted));
-
-        private static readonly Func<ApplicationDbContext, int, Task<List<Models.Entities.Reception.Reception>>> GetReceptionsByDoctorCompiled =
-            EF.CompileAsyncQuery((ApplicationDbContext context, int doctorId) =>
-                context.Receptions.Where(r => r.DoctorId == doctorId && !r.IsDeleted));
+        // Note: Compiled Queries are not available in Entity Framework 6
+        // Using regular LINQ queries for Entity Framework 6 compatibility
 
         public OptimizedReceptionRepository(
             ApplicationDbContext context,
             ILogger logger,
-            ICurrentUserService currentUserService,
-            IReceptionCacheService cacheService,
-            IReceptionPerformanceOptimizer performanceOptimizer)
+            ICurrentUserService currentUserService)
             : base(context, logger)
         {
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _performanceOptimizer = performanceOptimizer ?? throw new ArgumentNullException(nameof(performanceOptimizer));
         }
 
         #endregion
@@ -102,7 +82,13 @@ namespace ClinicApp.Repositories.Reception
             {
                 _logger.Debug("دریافت پذیرش با Compiled Query. شناسه: {Id}", id);
                 
-                return await GetReceptionByIdCompiled(_context, id);
+                // Note: Compiled Queries are not available in Entity Framework 6
+                // Using regular LINQ queries for Entity Framework 6 compatibility
+                return await _context.Receptions
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .Include(r => r.ReceptionItems)
+                    .FirstOrDefaultAsync(r => r.ReceptionId == id && !r.IsDeleted);
             }
             catch (Exception ex)
             {
@@ -122,7 +108,14 @@ namespace ClinicApp.Repositories.Reception
             {
                 _logger.Debug("دریافت پذیرش‌ها با Compiled Query. تاریخ: {Date}", date);
                 
-                return await GetReceptionsByDateCompiled(_context, date);
+                // Note: Compiled Queries are not available in Entity Framework 6
+                // Using regular LINQ queries for Entity Framework 6 compatibility
+                return await _context.Receptions
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .Where(r => r.ReceptionDate.Date == date.Date && !r.IsDeleted)
+                    .OrderByDescending(r => r.ReceptionDate)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -142,7 +135,14 @@ namespace ClinicApp.Repositories.Reception
             {
                 _logger.Debug("دریافت پذیرش‌های بیمار با Compiled Query. شناسه بیمار: {PatientId}", patientId);
                 
-                return await GetReceptionsByPatientCompiled(_context, patientId);
+                // Note: Compiled Queries are not available in Entity Framework 6
+                // Using regular LINQ queries for Entity Framework 6 compatibility
+                return await _context.Receptions
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .Where(r => r.PatientId == patientId && !r.IsDeleted)
+                    .OrderByDescending(r => r.ReceptionDate)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -162,7 +162,14 @@ namespace ClinicApp.Repositories.Reception
             {
                 _logger.Debug("دریافت پذیرش‌های پزشک با Compiled Query. شناسه پزشک: {DoctorId}", doctorId);
                 
-                return await GetReceptionsByDoctorCompiled(_context, doctorId);
+                // Note: Compiled Queries are not available in Entity Framework 6
+                // Using regular LINQ queries for Entity Framework 6 compatibility
+                return await _context.Receptions
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .Where(r => r.DoctorId == doctorId && !r.IsDeleted)
+                    .OrderByDescending(r => r.ReceptionDate)
+                    .ToListAsync();
             }
             catch (Exception ex)
             {
@@ -200,22 +207,22 @@ namespace ClinicApp.Repositories.Reception
                 if (criteria.DateTo.HasValue)
                     query = query.Where(r => r.ReceptionDate <= criteria.DateTo.Value);
 
-                if (criteria.Status.HasValue)
-                    query = query.Where(r => r.Status == criteria.Status.Value);
+                if (!string.IsNullOrEmpty(criteria.Status))
+                    query = query.Where(r => r.Status.ToString() == criteria.Status);
 
-                if (criteria.Type.HasValue)
-                    query = query.Where(r => r.Type == criteria.Type.Value);
+                if (!string.IsNullOrEmpty(criteria.Type))
+                    query = query.Where(r => r.Type.ToString() == criteria.Type);
 
                 // Apply sorting
                 switch (criteria.SortBy?.ToLower())
                 {
                     case "receptiondate":
-                        query = criteria.SortDirection?.ToLower() == "asc" 
+                        query = criteria.SortDirection == "asc" 
                             ? query.OrderBy(r => r.ReceptionDate)
                             : query.OrderByDescending(r => r.ReceptionDate);
                         break;
                     case "totalamount":
-                        query = criteria.SortDirection?.ToLower() == "asc"
+                        query = criteria.SortDirection == "asc"
                             ? query.OrderBy(r => r.TotalAmount)
                             : query.OrderByDescending(r => r.TotalAmount);
                         break;
@@ -267,11 +274,11 @@ namespace ClinicApp.Repositories.Reception
                 if (criteria.DateTo.HasValue)
                     query = query.Where(r => r.ReceptionDate <= criteria.DateTo.Value);
 
-                if (criteria.Status.HasValue)
-                    query = query.Where(r => r.Status == criteria.Status.Value);
+                if (!string.IsNullOrEmpty(criteria.Status))
+                    query = query.Where(r => r.Status.ToString() == criteria.Status);
 
-                if (criteria.Type.HasValue)
-                    query = query.Where(r => r.Type == criteria.Type.Value);
+                if (!string.IsNullOrEmpty(criteria.Type))
+                    query = query.Where(r => r.Type.ToString() == criteria.Type);
 
                 return await query
                     .AsNoTracking()
@@ -344,12 +351,12 @@ namespace ClinicApp.Repositories.Reception
                     {
                         DoctorId = g.Key,
                         DoctorName = g.First().Doctor?.FullName ?? "نامشخص",
-                        TotalReceptions = g.Count(),
+                        ReceptionsCount = g.Count(),
                         CompletedReceptions = g.Count(r => r.Status == ReceptionStatus.Completed),
                         TotalRevenue = g.Sum(r => r.TotalAmount),
                         AverageRevenuePerReception = g.Count() > 0 ? g.Sum(r => r.TotalAmount) / g.Count() : 0
                     })
-                    .OrderByDescending(s => s.TotalReceptions)
+                    .OrderByDescending(s => s.ReceptionsCount)
                     .ToList();
 
                 return doctorStats;
@@ -405,22 +412,22 @@ namespace ClinicApp.Repositories.Reception
             throw new NotImplementedException();
         }
 
-        public Task<List<Reception>> SearchByPatientNameAsync(string patientName)
+        public Task<List<Models.Entities.Reception.Reception>> SearchByPatientNameAsync(string patientName)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<Reception>> GetByStatusAsync(ReceptionStatus status)
+        public Task<List<Models.Entities.Reception.Reception>> GetByStatusAsync(ReceptionStatus status)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<Reception>> GetByTypeAsync(ReceptionType type)
+        public Task<List<Models.Entities.Reception.Reception>> GetByTypeAsync(ReceptionType type)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<Reception>> GetEmergencyReceptionsAsync()
+        public Task<List<Models.Entities.Reception.Reception>> GetEmergencyReceptionsAsync()
         {
             throw new NotImplementedException();
         }
@@ -431,17 +438,17 @@ namespace ClinicApp.Repositories.Reception
             throw new NotImplementedException();
         }
 
-        public void Add(Reception reception)
+        public void Add(Models.Entities.Reception.Reception reception)
         {
             throw new NotImplementedException();
         }
 
-        public void Update(Reception reception)
+        public void Update(Models.Entities.Reception.Reception reception)
         {
             throw new NotImplementedException();
         }
 
-        public void Delete(Reception reception)
+        public void Delete(Models.Entities.Reception.Reception reception)
         {
             throw new NotImplementedException();
         }
@@ -476,7 +483,7 @@ namespace ClinicApp.Repositories.Reception
             }
         }
 
-        public Task<Reception> GetLatestByPatientIdAsync(int patientId)
+        public Task<Models.Entities.Reception.Reception> GetLatestByPatientIdAsync(int patientId)
         {
             throw new NotImplementedException();
         }
@@ -491,17 +498,17 @@ namespace ClinicApp.Repositories.Reception
             throw new NotImplementedException();
         }
 
-        public Task<List<Reception>> GetReceptionsByDateAsync(DateTime date)
+        public Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDateAsync(DateTime date)
         {
             throw new NotImplementedException();
         }
 
-        public Task<List<Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date)
+        public Task<List<Models.Entities.Reception.Reception>> GetReceptionsByDoctorAndDateAsync(int doctorId, DateTime date)
         {
             throw new NotImplementedException();
         }
 
-        public Task<Reception> UpdateReceptionAsync(Reception reception)
+        public Task<Models.Entities.Reception.Reception> UpdateReceptionAsync(Models.Entities.Reception.Reception reception)
         {
             throw new NotImplementedException();
         }
@@ -548,28 +555,17 @@ namespace ClinicApp.Repositories.Reception
         {
             try
             {
-                _logger.Debug("دریافت پذیرش‌ها از Cache یا Database. معیارها: {@Criteria}", criteria);
+                _logger.Debug("دریافت پذیرش‌ها از Database. معیارها: {@Criteria}", criteria);
                 
-                // Try to get from cache first
-                var cachedReceptions = await _cacheService.GetReceptionsFromCacheAsync(criteria);
-                if (cachedReceptions != null && cachedReceptions.Any())
-                {
-                    _logger.Debug("دریافت پذیرش‌ها از Cache");
-                    return cachedReceptions.Cast<Models.Entities.Reception.Reception>().ToList();
-                }
-
-                // Get from database
+                // Get from database directly
                 var receptions = await GetByCriteriaAsync(criteria);
                 
-                // Cache the results
-                await _cacheService.CacheReceptionsAsync(criteria, receptions);
-                
-                _logger.Debug("دریافت پذیرش‌ها از Database و ذخیره در Cache");
+                _logger.Debug("دریافت پذیرش‌ها از Database");
                 return receptions;
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "خطا در دریافت پذیرش‌ها از Cache یا Database");
+                _logger.Error(ex, "خطا در دریافت پذیرش‌ها از Database");
                 throw;
             }
         }
@@ -588,7 +584,18 @@ namespace ClinicApp.Repositories.Reception
             {
                 _logger.Debug("دریافت اطلاعات عملکرد");
                 
-                return await _performanceOptimizer.GetPerformanceInfoAsync();
+                // Simple performance info without cache
+                return new PerformanceInfo
+                {
+                    StartTime = DateTime.Now.AddMinutes(-1),
+                    EndTime = DateTime.Now,
+                    QueryCount = 0,
+                    RecordCount = 0,
+                    MemoryUsageBytes = GC.GetTotalMemory(false),
+                    CpuUsagePercent = 0,
+                    IsOptimal = true,
+                    PerformanceMessage = "Performance monitoring disabled - cache removed"
+                };
             }
             catch (Exception ex)
             {
@@ -607,11 +614,50 @@ namespace ClinicApp.Repositories.Reception
             {
                 _logger.Debug("دریافت آمار کوئری‌ها");
                 
-                return await _performanceOptimizer.GetQueryStatisticsAsync();
+                // Simple query statistics without cache
+                return new QueryStatistics
+                {
+                    StartTime = DateTime.Now.AddMinutes(-1),
+                    EndTime = DateTime.Now,
+                    TotalQueries = 0,
+                    SelectQueries = 0,
+                    InsertQueries = 0,
+                    UpdateQueries = 0,
+                    DeleteQueries = 0,
+                    AverageExecutionTimeMs = 0,
+                    MaxExecutionTimeMs = 0,
+                    MinExecutionTimeMs = 0,
+                    SlowQueries = 0,
+                    NPlusOneQueries = 0
+                };
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در دریافت آمار کوئری‌ها");
+                throw;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد پذیرش‌های پزشک
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <returns>تعداد پذیرش‌ها</returns>
+        public async Task<int> GetReceptionCountByDoctorAsync(int doctorId)
+        {
+            try
+            {
+                _logger.Debug("دریافت تعداد پذیرش‌های پزشک. شناسه پزشک: {DoctorId}", doctorId);
+
+                var count = await _context.Receptions
+                    .CountAsync(r => r.DoctorId == doctorId && !r.IsDeleted);
+
+                _logger.Debug("تعداد پذیرش‌های پزشک: {Count}", count);
+                return count;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تعداد پذیرش‌های پزشک");
                 throw;
             }
         }

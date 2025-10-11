@@ -4,6 +4,7 @@ using FluentValidation;
 using System;
 using System.Text.RegularExpressions;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Reception;
 
 namespace ClinicApp.ViewModels.Validators
 {

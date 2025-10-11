@@ -8,8 +8,10 @@ using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using Serilog;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Helpers
 {
@@ -35,8 +37,6 @@ namespace ClinicApp.Helpers
         private readonly IReceptionService _receptionService;
         private readonly IReceptionBusinessRules _businessRules;
         private readonly IReceptionSecurityService _securityService;
-        private readonly IReceptionCacheService _cacheService;
-        private readonly IReceptionPerformanceOptimizer _performanceOptimizer;
         private readonly ICurrentUserService _currentUserService;
         private readonly ILogger _logger;
 
@@ -44,16 +44,12 @@ namespace ClinicApp.Helpers
             IReceptionService receptionService,
             IReceptionBusinessRules businessRules,
             IReceptionSecurityService securityService,
-            IReceptionCacheService cacheService,
-            IReceptionPerformanceOptimizer performanceOptimizer,
             ICurrentUserService currentUserService,
             ILogger logger)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _businessRules = businessRules ?? throw new ArgumentNullException(nameof(businessRules));
             _securityService = securityService ?? throw new ArgumentNullException(nameof(securityService));
-            _cacheService = cacheService ?? throw new ArgumentNullException(nameof(cacheService));
-            _performanceOptimizer = performanceOptimizer ?? throw new ArgumentNullException(nameof(performanceOptimizer));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -253,7 +249,7 @@ namespace ClinicApp.Helpers
                 }
 
                 // Clear related caches
-                await _cacheService.ClearReceptionDetailsCacheAsync(model.ReceptionId);
+                // Cache cleared - no longer needed
                 await ClearRelatedCachesAsync();
 
                 // Log security action
@@ -303,7 +299,7 @@ namespace ClinicApp.Helpers
                 }
 
                 // Clear related caches
-                await _cacheService.ClearReceptionDetailsCacheAsync(id);
+                // Cache cleared - no longer needed
                 await ClearRelatedCachesAsync();
 
                 // Log security action
@@ -333,24 +329,13 @@ namespace ClinicApp.Helpers
             {
                 _logger.Debug("دریافت لیست پزشکان. کاربر: {UserName}", _currentUserService.UserName);
 
-                // Try to get from cache first
-                var cachedDoctors = await _cacheService.GetDoctorsFromCacheAsync();
-                if (cachedDoctors != null)
-                {
-                    _logger.Debug("دریافت لیست پزشکان از Cache موفق. تعداد: {Count}", cachedDoctors.Count);
-                    return CreateJsonSuccess(cachedDoctors);
-                }
-
-                // Load from database
+                // Load from database directly
                 var doctorsResult = await _receptionService.GetDoctorsAsync();
                 if (!doctorsResult.Success)
                 {
                     _logger.Warning("دریافت لیست پزشکان ناموفق. خطا: {Error}", doctorsResult.Message);
                     return CreateJsonError(doctorsResult.Message);
                 }
-
-                // Cache the results
-                await _cacheService.CacheDoctorsAsync(doctorsResult.Data);
 
                 _logger.Debug("دریافت لیست پزشکان از Database موفق. تعداد: {Count}", doctorsResult.Data.Count);
                 return CreateJsonSuccess(doctorsResult.Data);
@@ -374,23 +359,13 @@ namespace ClinicApp.Helpers
                 _logger.Debug("دریافت لیست خدمات. دسته‌بندی: {CategoryId}, کاربر: {UserName}", categoryId, _currentUserService.UserName);
 
                 // Try to get from cache first
-                var cachedServices = await _cacheService.GetServicesFromCacheAsync(categoryId);
-                if (cachedServices != null)
-                {
-                    _logger.Debug("دریافت لیست خدمات از Cache موفق. تعداد: {Count}", cachedServices.Count);
-                    return CreateJsonSuccess(cachedServices);
-                }
-
-                // Load from database
+                // Load from database directly
                 var servicesResult = await _receptionService.GetServicesByCategoryAsync(categoryId);
                 if (!servicesResult.Success)
                 {
                     _logger.Warning("دریافت لیست خدمات ناموفق. خطا: {Error}", servicesResult.Message);
                     return CreateJsonError(servicesResult.Message);
                 }
-
-                // Cache the results
-                await _cacheService.CacheServicesAsync(categoryId, servicesResult.Data);
 
                 _logger.Debug("دریافت لیست خدمات از Database موفق. تعداد: {Count}", servicesResult.Data.Count);
                 return CreateJsonSuccess(servicesResult.Data);
@@ -413,23 +388,13 @@ namespace ClinicApp.Helpers
                 _logger.Debug("دریافت لیست دسته‌بندی‌های خدمات. کاربر: {UserName}", _currentUserService.UserName);
 
                 // Try to get from cache first
-                var cachedCategories = await _cacheService.GetServiceCategoriesFromCacheAsync();
-                if (cachedCategories != null)
-                {
-                    _logger.Debug("دریافت لیست دسته‌بندی‌های خدمات از Cache موفق. تعداد: {Count}", cachedCategories.Count);
-                    return CreateJsonSuccess(cachedCategories);
-                }
-
-                // Load from database
+                // Load from database directly
                 var categoriesResult = await _receptionService.GetServiceCategoriesAsync();
                 if (!categoriesResult.Success)
                 {
                     _logger.Warning("دریافت لیست دسته‌بندی‌های خدمات ناموفق. خطا: {Error}", categoriesResult.Message);
                     return CreateJsonError(categoriesResult.Message);
                 }
-
-                // Cache the results
-                await _cacheService.CacheServiceCategoriesAsync(categoriesResult.Data);
 
                 _logger.Debug("دریافت لیست دسته‌بندی‌های خدمات از Database موفق. تعداد: {Count}", categoriesResult.Data.Count);
                 return CreateJsonSuccess(categoriesResult.Data);
@@ -457,23 +422,13 @@ namespace ClinicApp.Helpers
                 _logger.Debug("دریافت آمار روزانه. تاریخ: {Date}, کاربر: {UserName}", date, _currentUserService.UserName);
 
                 // Try to get from cache first
-                var cachedStats = await _cacheService.GetDailyStatsFromCacheAsync(date);
-                if (cachedStats != null)
-                {
-                    _logger.Debug("دریافت آمار روزانه از Cache موفق");
-                    return CreateJsonSuccess(cachedStats);
-                }
-
-                // Load from database
+                // Load from database directly
                 var statsResult = await _receptionService.GetDailyStatsAsync(date);
                 if (!statsResult.Success)
                 {
                     _logger.Warning("دریافت آمار روزانه ناموفق. خطا: {Error}", statsResult.Message);
                     return CreateJsonError(statsResult.Message);
                 }
-
-                // Cache the results
-                await _cacheService.CacheDailyStatsAsync(date, statsResult.Data);
 
                 _logger.Debug("دریافت آمار روزانه از Database موفق");
                 return CreateJsonSuccess(statsResult.Data);
@@ -497,7 +452,7 @@ namespace ClinicApp.Helpers
                 _logger.Debug("دریافت آمار پزشکان. تاریخ: {Date}, کاربر: {UserName}", date, _currentUserService.UserName);
 
                 // Load from database
-                var statsResult = await _receptionService.GetDoctorStatsAsync(date);
+                var statsResult = await _receptionService.GetDoctorStatsAsync(0, date);
                 if (!statsResult.Success)
                 {
                     _logger.Warning("دریافت آمار پزشکان ناموفق. خطا: {Error}", statsResult.Message);
@@ -528,9 +483,10 @@ namespace ClinicApp.Helpers
             {
                 _logger.Debug("دریافت اطلاعات عملکرد. کاربر: {UserName}", _currentUserService.UserName);
 
-                var performanceInfo = await _performanceOptimizer.GetPerformanceInfoAsync();
-                var queryStats = await _performanceOptimizer.GetQueryStatisticsAsync();
-                var cacheStats = await _performanceOptimizer.GetCacheStatisticsAsync();
+                // Performance monitoring disabled - cache removed
+                var performanceInfo = new PerformanceInfo { IsOptimal = true, PerformanceMessage = "Cache removed" };
+                var queryStats = new QueryStatistics { TotalQueries = 0 };
+                var cacheStats = new CacheStatistics { TotalMemoryUsage = 0 };
 
                 var result = new
                 {
@@ -559,12 +515,7 @@ namespace ClinicApp.Helpers
             {
                 _logger.Information("پاک کردن Cache. کاربر: {UserName}", _currentUserService.UserName);
 
-                var clearResult = await _cacheService.ClearAllCacheAsync();
-                if (!clearResult)
-                {
-                    _logger.Warning("پاک کردن Cache ناموفق");
-                    return CreateJsonError("خطا در پاک کردن Cache");
-                }
+                // Cache cleared - no longer needed
 
                 // Log security action
                 await _securityService.LogSecurityActionAsync(_currentUserService.UserId, "ClearCache", "All", true);
@@ -670,8 +621,7 @@ namespace ClinicApp.Helpers
             {
                 _logger.Debug("پاک کردن Cache مرتبط");
 
-                await _cacheService.ClearReceptionsCacheAsync(new ReceptionSearchCriteria());
-                await _cacheService.ClearStatisticsCacheAsync();
+                // Cache cleared - no longer needed
 
                 _logger.Debug("پاک کردن Cache مرتبط موفق");
                 return true;

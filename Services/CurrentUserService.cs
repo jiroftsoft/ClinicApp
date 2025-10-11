@@ -153,7 +153,7 @@ namespace ClinicApp.Services
                            patient.ApplicationUserId == UserId;
                 }
 
-                if (entity is Reception reception)
+                if (entity is Models.Entities.Reception.Reception reception)
                 {
                     return reception.CreatedByUserId == UserId ||
                            reception.DoctorId.ToString() == UserId;

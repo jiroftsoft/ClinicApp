@@ -11,6 +11,7 @@ using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using Microsoft.AspNet.Identity;
 using Serilog;
+using ClinicApp.Helpers;
 
 namespace ClinicApp.Services.Reception
 {
@@ -398,7 +399,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="input">ورودی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateReceptionInputAsync(string input)
+        public async Task<CustomValidationResult> ValidateReceptionInputAsync(string input)
         {
             try
             {
@@ -409,7 +410,7 @@ namespace ClinicApp.Services.Reception
                 if (string.IsNullOrWhiteSpace(input))
                 {
                     errors.Add("ورودی نمی‌تواند خالی باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors));
                 }
 
                 // XSS Protection
@@ -438,11 +439,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی ورودی‌های پذیرش ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors));
                 }
 
                 _logger.Debug("اعتبارسنجی ورودی‌های پذیرش موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success();
             }
             catch (Exception ex)
             {
@@ -456,7 +457,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="input">ورودی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidatePatientInputAsync(string input)
+        public async Task<CustomValidationResult> ValidatePatientInputAsync(string input)
         {
             try
             {
@@ -467,7 +468,7 @@ namespace ClinicApp.Services.Reception
                 if (string.IsNullOrWhiteSpace(input))
                 {
                     errors.Add("ورودی نمی‌تواند خالی باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors));
                 }
 
                 // XSS Protection
@@ -490,11 +491,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی ورودی‌های بیمار ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors));
                 }
 
                 _logger.Debug("اعتبارسنجی ورودی‌های بیمار موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success();
             }
             catch (Exception ex)
             {
@@ -508,7 +509,7 @@ namespace ClinicApp.Services.Reception
         /// </summary>
         /// <param name="input">ورودی</param>
         /// <returns>نتیجه اعتبارسنجی</returns>
-        public async Task<ValidationResult> ValidateDoctorInputAsync(string input)
+        public async Task<CustomValidationResult> ValidateDoctorInputAsync(string input)
         {
             try
             {
@@ -519,7 +520,7 @@ namespace ClinicApp.Services.Reception
                 if (string.IsNullOrWhiteSpace(input))
                 {
                     errors.Add("ورودی نمی‌تواند خالی باشد");
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors));
                 }
 
                 // XSS Protection
@@ -542,11 +543,11 @@ namespace ClinicApp.Services.Reception
                 if (errors.Any())
                 {
                     _logger.Warning("اعتبارسنجی ورودی‌های پزشک ناموفق. خطاها: {@Errors}", errors);
-                    return ValidationResult.Failed(string.Join(", ", errors));
+                    return CustomValidationResult.Failed(string.Join(", ", errors));
                 }
 
                 _logger.Debug("اعتبارسنجی ورودی‌های پزشک موفق");
-                return ValidationResult.Success();
+                return CustomValidationResult.Success();
             }
             catch (Exception ex)
             {
@@ -928,18 +929,18 @@ namespace ClinicApp.Services.Reception
         /// <param name="action">عملیات</param>
         /// <param name="resource">منبع</param>
         /// <returns>نتیجه بررسی</returns>
-        public async Task<SecurityValidationResult> ValidateAdvancedSecurityAsync(string userId, string action, string resource)
+        public async Task<SecurityCustomValidationResult> ValidateAdvancedSecurityAsync(string userId, string action, string resource)
         {
             try
             {
                 _logger.Debug("بررسی امنیت پیشرفته. کاربر: {UserId}, عملیات: {Action}, منبع: {Resource}",
                     userId, action, resource);
 
-                var result = new SecurityValidationResult
+                var result = new SecurityCustomValidationResult
                 {
                     IsValid = true,
                     Message = "اعتبارسنجی امنیت موفق",
-                    Level = SecurityLevel.Low,
+                    Level = ClinicApp.Core.SecurityLevel.Low,
                     Errors = new List<string>(),
                     Warnings = new List<string>()
                 };
@@ -957,11 +958,11 @@ namespace ClinicApp.Services.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "خطا در بررسی امنیت پیشرفته. کاربر: {UserId}, عملیات: {Action}", userId, action);
-                return new SecurityValidationResult
+                return new SecurityCustomValidationResult
                 {
                     IsValid = false,
                     Message = "خطا در بررسی امنیت",
-                    Level = SecurityLevel.Critical,
+                    Level = ClinicApp.Core.SecurityLevel.Critical,
                     Errors = new List<string> { ex.Message }
                 };
             }
