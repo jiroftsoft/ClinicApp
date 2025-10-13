@@ -16,6 +16,7 @@ namespace ClinicApp.Controllers.Reception
     /// کنترلر تخصصی مدیریت بیماران در پذیرش - رعایت اصل SRP
     /// مسئولیت: فقط مدیریت بیماران (جستجو، ایجاد، ویرایش)
     /// </summary>
+    [RoutePrefix("Reception/Patient")]
     public class ReceptionPatientController : BaseController
     {
         private readonly IReceptionService _receptionService;
@@ -36,6 +37,7 @@ namespace ClinicApp.Controllers.Reception
         /// جستجوی بیمار بر اساس کد ملی
         /// </summary>
         [HttpPost]
+        [Route("SearchByNationalCode")]
         public async Task<JsonResult> SearchByNationalCode(string nationalCode)
         {
             try
@@ -72,6 +74,7 @@ namespace ClinicApp.Controllers.Reception
         /// جستجوی بیمار بر اساس نام
         /// </summary>
         [HttpPost]
+        [Route("SearchByName")]
         public async Task<JsonResult> SearchByName(string searchTerm, int pageNumber = 1, int pageSize = 10)
         {
             try
@@ -110,6 +113,7 @@ namespace ClinicApp.Controllers.Reception
         /// ایجاد بیمار جدید در حین پذیرش
         /// </summary>
         [HttpPost]
+        [Route("CreatePatient")]
         public async Task<JsonResult> CreatePatient(PatientCreateEditViewModel model)
         {
             try

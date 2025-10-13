@@ -494,12 +494,17 @@
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
-    <Compile Include="Controllers\Reception\OptimizedReceptionController.cs" />
-    <Compile Include="Controllers\Reception\ReceptionCoreController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceController.cs" />
     <Compile Include="Controllers\Reception\ReceptionPatientController.cs" />
     <Compile Include="Controllers\Reception\ReceptionServiceController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionTriageIntegrationController.cs" />
     <Compile Include="Controllers\TokenTestController.cs" />
+    <Compile Include="Controllers\Triage\TriageController.cs" />
+    <Compile Include="Controllers\Triage\TriageDashboardController.cs" />
+    <Compile Include="Controllers\Triage\TriageProtocolController.cs" />
+    <Compile Include="Controllers\Triage\TriageQueueController.cs" />
+    <Compile Include="Controllers\Triage\TriageReassessmentController.cs" />
+    <Compile Include="Controllers\Triage\TriageReportController.cs" />
     <Compile Include="Core\ErrorCategory.cs" />
     <Compile Include="Core\OperationStatus.cs" />
     <Compile Include="Core\SecurityLevel.cs" />
@@ -533,7 +538,7 @@
     <Compile Include="Helpers\StructuredLogger.cs" />
     <Compile Include="Helpers\SystemUsers.cs" />
     <Compile Include="Infrastructure\AuthSettingsFromConfig.cs" />
-    <Compile Include="Infrastructure\FakeAuthenticationManager.cs" />
+    <Compile Include="Infrastructure\ITimeProvider.cs" />
     <Compile Include="Infrastructure\QueryExtensions.cs" />
     <Compile Include="Infrastructure\Reception\ReceptionCompiledQueries.cs" />
     <Compile Include="Interfaces\Base\IBaseRepository.cs" />
@@ -565,6 +570,7 @@
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationRepository.cs" />
     <Compile Include="Interfaces\ClinicAdmin\ISpecializationService.cs" />
     <Compile Include="Interfaces\IAppSettings.cs" />
+    <Compile Include="Interfaces\IBusinessRule.cs" />
     <Compile Include="Interfaces\IExternalInquiryService.cs" />
     <Compile Include="Interfaces\IFactorSettingService.cs" />
     <Compile Include="Interfaces\IInsuranceTariffCalculationService.cs" />
@@ -612,8 +618,10 @@
     <Compile Include="Interfaces\Payment\Reporting\IPaymentReportingService.cs" />
     <Compile Include="Interfaces\Payment\Validation\IPaymentValidationService.cs" />
     <Compile Include="Interfaces\Payment\Web\IWebPaymentService.cs" />
+    <Compile Include="Interfaces\Reception\IMedicalEmergencyService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionBusinessRules.cs" />
     <Compile Include="Interfaces\Reception\IReceptionSecurityService.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionWorkflowService.cs" />
     <Compile Include="Interfaces\Repositories\IDoctorRepository.cs" />
     <Compile Include="Interfaces\Repositories\IInsuranceRepository.cs" />
     <Compile Include="Interfaces\Repositories\IPatientRepository.cs" />
@@ -790,6 +798,14 @@
     <Compile Include="Migrations\202510051915319_ChageDb14040178.Designer.cs">
       <DependentUpon>202510051915319_ChageDb14040178.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510121615046_FixTriageUserRelations.cs" />
+    <Compile Include="Migrations\202510121615046_FixTriageUserRelations.Designer.cs">
+      <DependentUpon>202510121615046_FixTriageUserRelations.cs</DependentUpon>
+    </Compile>
+    <Compile Include="Migrations\202510131534101_14040721-01.cs" />
+    <Compile Include="Migrations\202510131534101_14040721-01.Designer.cs">
+      <DependentUpon>202510131534101_14040721-01.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -837,6 +853,11 @@
     <Compile Include="Models\Entities\Insurance\InsuranceProvider.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceTariff.cs" />
     <Compile Include="Models\Entities\Insurance\InsuranceType.cs" />
+    <Compile Include="Models\Entities\Triage\TriageAssessment.cs" />
+    <Compile Include="Models\Entities\Triage\TriageProtocol.cs" />
+    <Compile Include="Models\Entities\Triage\TriageQueue.cs" />
+    <Compile Include="Models\Entities\Triage\TriageReassessment.cs" />
+    <Compile Include="Models\Entities\Triage\TriageVitalSigns.cs" />
     <Compile Include="Models\Enums\AssignmentHistoryImportance.cs" />
     <Compile Include="Models\Enums\BreakType.cs" />
     <Compile Include="Models\Enums\EmergencyBookingStatus.cs" />
@@ -852,6 +873,7 @@
     <Compile Include="Models\Entities\Notification\NotificationTemplate.cs" />
     <Compile Include="Models\Enums\ServiceComponentType.cs" />
     <Compile Include="Models\Enums\ServicePriceCalculationType.cs" />
+    <Compile Include="Models\Enums\TriageEnums.cs" />
     <Compile Include="Models\Enums\WorkLifeBalanceStatus.cs" />
     <Compile Include="Models\Enums\WorkloadBalanceStatus.cs" />
     <Compile Include="Models\Entities\Patient\PatientInsurance.cs" />
@@ -998,10 +1020,27 @@
     <Compile Include="Services\Payment\Validation\PaymentValidationService.cs" />
     <Compile Include="Services\Payment\Web\WebPaymentService.cs" />
     <Compile Include="Services\ReceptionService.cs" />
+    <Compile Include="Services\Reception\EventHandlers\AnalyticsEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\AuditLoggingEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\EmailNotificationEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\InsuranceValidationEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\NotificationSendingEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\PatientValidationEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\PaymentProcessingEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\PushNotificationEventHandler.cs" />
+    <Compile Include="Services\Reception\EventHandlers\SmsNotificationEventHandler.cs" />
+    <Compile Include="Services\Reception\EventStore.cs" />
+    <Compile Include="Interfaces\Reception\IEventHandler.cs" />
+    <Compile Include="Services\Reception\MedicalEmergencyService.cs" />
     <Compile Include="Services\Reception\ReceptionBusinessRules.cs" />
     <Compile Include="Services\Reception\ReceptionBusinessRulesEngine.cs" />
+    <Compile Include="Services\Reception\ReceptionEventHandler.cs" />
     <Compile Include="Services\Reception\ReceptionSecurityService.cs" />
+    <Compile Include="Services\Reception\ReceptionStateMachine.cs" />
+    <Compile Include="Services\Reception\ReceptionTransitionRules.cs" />
+    <Compile Include="Services\Reception\ReceptionTriageIntegrationService.cs" />
     <Compile Include="Services\Reception\ReceptionValidationOrchestrator.cs" />
+    <Compile Include="Services\Reception\ReceptionWorkflowService.cs" />
     <Compile Include="Services\SecurityTokenService.cs" />
     <Compile Include="Services\ServiceCalculationService.cs" />
     <Compile Include="Services\ServiceCategoryService.cs" />
@@ -1011,6 +1050,11 @@
     <Compile Include="Services\SharedServiceManagementService.cs" />
     <Compile Include="Services\SystemSettings\ISystemSettingService.cs" />
     <Compile Include="Services\SystemSettings\SystemSettingService.cs" />
+    <Compile Include="Services\Triage\ITriageQueueService.cs" />
+    <Compile Include="Services\Triage\ITriageService.cs" />
+    <Compile Include="Services\Triage\TriageQueueService.cs" />
+    <Compile Include="Services\Triage\TriageService.cs" />
+    <Compile Include="Services\Triage\TriageWorkflowIntegration.cs" />
     <Compile Include="Services\UserContext\IUserContextService.cs" />
     <Compile Include="Services\UserContext\UserContextService.cs" />
     <Compile Include="Validators\InsuranceTariffValidator.cs" />
@@ -1115,10 +1159,19 @@
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
+    <Compile Include="ViewModels\Reception\EmergencyReceptionViewModel.cs" />
+    <Compile Include="ViewModels\Reception\IntegratedReportViewModel.cs" />
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionComponentViewModels.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionCreateViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionDetailsViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionDoctorStatsViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionEditViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionMonthlyStatsViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionReportDataViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionReportSummaryViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionReportViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionSearchCriteria.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModel.cs" />
     <Compile Include="ViewModels\Reception\PerformanceInfo.cs" />
@@ -1127,8 +1180,9 @@
     <Compile Include="ViewModels\Reception\ReceptionIndexViewModel.cs" />
     <Compile Include="ViewModels\Reception\PatientSearchComponentViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionFormComponentViewModel.cs" />
-    <Compile Include="ViewModels\Reception\ReceptionHistoryComponentViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionSearchViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionViewModel.cs" />
+    <Compile Include="ViewModels\Reception\TriageToReceptionTransferViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Controllers\AccountController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
@@ -1182,6 +1236,19 @@
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationIndexPageViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationIndexViewModel.cs" />
     <Compile Include="ViewModels\SpecializationManagementVM\SpecializationSearchViewModel.cs" />
+    <Compile Include="ViewModels\Triage\AdmissionPrefillDto.cs" />
+    <Compile Include="ViewModels\Triage\LookupItemViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageCreateViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageDashboardViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageEditViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageProtocolViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageQueueItemDto.cs" />
+    <Compile Include="ViewModels\Triage\TriageQueueStats.cs" />
+    <Compile Include="ViewModels\Triage\TriageQueueViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageReassessmentDto.cs" />
+    <Compile Include="ViewModels\Triage\TriageReportViewModel.cs" />
+    <Compile Include="ViewModels\Triage\TriageSummaryDto.cs" />
+    <Compile Include="ViewModels\Triage\TriageVitalSignsDto.cs" />
     <Compile Include="ViewModels\Validators\Class1.cs" />
     <Compile Include="ViewModels\Validators\ClinicCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
@@ -4036,6 +4103,13 @@
     <Content Include="CONTRACTS\SYSTEM_SEED_CONTROLLER_ANALYSIS.md" />
     <Content Include="Areas\Admin\Views\InsuranceTypeUpdate\Index.cshtml" />
     <Content Include="Docs\Database-Connection-Guide.md" />
+    <Content Include="Documentation\DeploymentGuide.md" />
+    <Content Include="Documentation\InsuranceTariffBestPractices.md" />
+    <Content Include="Documentation\SerilogConfiguration.md" />
+    <Content Include="Documentation\SupplementaryInsuranceAPI.md" />
+    <Content Include="Documentation\TariffCodesAndGroups.md" />
+    <Content Include="Documentation\TechnicalDocumentation.md" />
+    <Content Include="Documentation\UserGuide.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4238,6 +4312,12 @@
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
     <Content Include="Scripts\toastr.min.js" />
+    <Content Include="Scripts\triage\triage-dashboard.js" />
+    <Content Include="Scripts\triage\triage-protocols.js" />
+    <Content Include="Scripts\triage\triage-reports.js" />
+    <Content Include="Scripts\triage\triage.ajax.js" />
+    <Content Include="Scripts\triage\triage.forms.js" />
+    <Content Include="Scripts\triage\triage.queue.js" />
     <Content Include="SQL\CheckCurrentData.sql" />
     <Content Include="SQL\CurrentDataResults.txt" />
     <Content Include="SQL\FixInsuranceData.sql" />
@@ -4315,6 +4395,29 @@
     <Content Include="Views\Reception\Components\_PatientSearchComponent.cshtml" />
     <Content Include="Views\Reception\Components\_ReceptionFormComponent.cshtml" />
     <Content Include="Views\Reception\Components\_ReceptionHistoryComponent.cshtml" />
+    <Content Include="Views\Triage\Create.cshtml" />
+    <Content Include="Views\Triage\Details.cshtml" />
+    <Content Include="Views\Triage\Index.cshtml" />
+    <Content Include="Views\Triage\Edit.cshtml" />
+    <Content Include="Views\Triage\Queue\Index.cshtml" />
+    <Content Include="Views\Triage\Queue\_QueueListPartial.cshtml" />
+    <Content Include="Views\Triage\Reports\Index.cshtml" />
+    <Content Include="Views\Triage\Reports\_ReportPartial.cshtml" />
+    <Content Include="Views\Triage\Dashboard\Index.cshtml" />
+    <Content Include="Views\Triage\Dashboard\_StatsPartial.cshtml" />
+    <Content Include="Views\Triage\Protocol\Index.cshtml" />
+    <Content Include="Scripts\README.md" />
+    <Content Include="Views\Triage\Protocol\Create.cshtml" />
+    <Content Include="Views\Triage\Protocol\Edit.cshtml" />
+    <Content Include="Views\Triage\Protocol\Details.cshtml" />
+    <Content Include="Views\Triage\Dashboard\_RecentAssessmentsPartial.cshtml" />
+    <Content Include="Views\Triage\Dashboard\_ActiveAlertsPartial.cshtml" />
+    <Content Include="Views\Triage\Queue\_QueueItemPartial.cshtml" />
+    <Content Include="Views\Triage\Reports\_ReportFiltersPartial.cshtml" />
+    <Content Include="Views\Reception\ReceptionTriageIntegration\EmergencyReception.cshtml" />
+    <Content Include="Views\Reception\ReceptionTriageIntegration\TransferIndex.cshtml" />
+    <Content Include="Views\Reception\ReceptionTriageIntegration\IntegratedReport.cshtml" />
+    <Content Include="Views\Reception\SearchResults.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -4477,6 +4580,12 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510051915319_ChageDb14040178.resx">
       <DependentUpon>202510051915319_ChageDb14040178.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510121615046_FixTriageUserRelations.resx">
+      <DependentUpon>202510121615046_FixTriageUserRelations.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510131534101_14040721-01.resx">
+      <DependentUpon>202510131534101_14040721-01.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

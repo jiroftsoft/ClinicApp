@@ -15,6 +15,7 @@ namespace ClinicApp.Controllers.Reception
     /// کنترلر تخصصی مدیریت بیمه در پذیرش - رعایت اصل SRP
     /// مسئولیت: فقط مدیریت بیمه (اعتبارسنجی، محاسبه، استعلام)
     /// </summary>
+    [RoutePrefix("Reception/Insurance")]
     public class ReceptionInsuranceController : BaseController
     {
         private readonly IReceptionService _receptionService;

@@ -1,4 +1,6 @@
-﻿namespace ClinicApp.ViewModels;
+﻿using System;
+
+namespace ClinicApp.ViewModels;
 
 /// <summary>
 /// ویومدل پایه برای آیتم‌های لیست در کامبو باکس‌ها
@@ -34,10 +36,72 @@ public class LookupItemViewModel
     /// <summary>
     /// Value برای SelectList (شناسه آیتم)
     /// </summary>
-    public int Value => Id;
+    public object Value { get; set; }
 
     /// <summary>
     /// Text برای SelectList (نام آیتم)
     /// </summary>
-    public string Text => Name;
+    public string Text { get; set; }
+
+    /// <summary>
+    /// Constructor پیش‌فرض
+    /// </summary>
+    public LookupItemViewModel()
+    {
+    }
+
+    /// <summary>
+    /// Constructor با پارامترهای اصلی
+    /// </summary>
+    public LookupItemViewModel(int id, string name, string title = null, string code = null, string description = null)
+    {
+        Id = id;
+        Name = name;
+        Title = title;
+        Code = code;
+        Description = description;
+        Value = id;
+        Text = name;
+    }
+
+    /// <summary>
+    /// Constructor با Value سفارشی
+    /// </summary>
+    public LookupItemViewModel(object value, string text, string name = null, string title = null, string code = null, string description = null)
+    {
+        Value = value;
+        Text = text;
+        Name = name ?? text;
+        Title = title;
+        Code = code;
+        Description = description;
+        Id = value is int intValue ? intValue : 0;
+    }
+
+    /// <summary>
+    /// Factory Method برای ایجاد از Entity
+    /// </summary>
+    public static LookupItemViewModel FromEntity<T>(T entity, Func<T, int> idSelector, Func<T, string> nameSelector, Func<T, string> titleSelector = null, Func<T, string> codeSelector = null, Func<T, string> descriptionSelector = null) where T : class
+    {
+        if (entity == null) return null;
+        
+        return new LookupItemViewModel
+        {
+            Id = idSelector(entity),
+            Name = nameSelector(entity),
+            Title = titleSelector?.Invoke(entity),
+            Code = codeSelector?.Invoke(entity),
+            Description = descriptionSelector?.Invoke(entity),
+            Value = idSelector(entity),
+            Text = nameSelector(entity)
+        };
+    }
+
+    /// <summary>
+    /// Factory Method برای ایجاد با Value سفارشی
+    /// </summary>
+    public static LookupItemViewModel Create(object value, string text, string name = null, string title = null, string code = null, string description = null)
+    {
+        return new LookupItemViewModel(value, text, name, title, code, description);
+    }
 }

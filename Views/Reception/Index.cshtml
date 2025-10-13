@@ -1,3 +1,4 @@
+@using ClinicApp.ViewModels.Reception
 @model ClinicApp.ViewModels.Reception.ReceptionIndexViewModel
 
 @{
@@ -39,7 +40,7 @@
                     </h5>
                 </div>
                 <div class="column-content">
-                    @Html.Partial("Components/_PatientSearchComponent", new ClinicApp.ViewModels.Reception.PatientSearchComponentViewModel())
+                    @Html.Partial("Components/_PatientSearchComponent", new PatientSearchComponentViewModel())
                 </div>
             </div>
 
@@ -52,7 +53,7 @@
                     </h5>
                 </div>
                 <div class="column-content">
-                    @Html.Partial("Components/_ReceptionFormComponent", new ClinicApp.ViewModels.Reception.ReceptionFormComponentViewModel())
+                    @Html.Partial("Components/_ReceptionFormComponent", new ReceptionFormComponentViewModel())
                 </div>
             </div>
         </div>
@@ -66,7 +67,7 @@
                 </h5>
             </div>
             <div class="section-content">
-                @Html.Partial("Components/_ReceptionHistoryComponent", new ClinicApp.ViewModels.Reception.ReceptionHistoryComponentViewModel())
+                @Html.Partial("Components/_ReceptionHistoryComponent", new ReceptionComponentViewModels.ReceptionHistoryComponentViewModel())
             </div>
         </div>
     </div>
@@ -393,10 +394,37 @@
 
 <!-- Global JavaScript -->
 <script>
-$(document).ready(function() {
-    // Initialize Reception Dashboard
-    initializeReceptionDashboard();
-});
+// محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+(function() {
+    function ensureJQuery(callback) {
+        if (typeof jQuery !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function() {
+                ensureJQuery(callback);
+            }, 50);
+        }
+    }
+
+    // راه‌اندازی پس از بارگذاری jQuery
+    ensureJQuery(function() {
+        $(document).ready(function() {
+            // Initialize Reception Dashboard
+            initializeReceptionDashboard();
+        });
+    });
+    
+    // محافظت اضافی برای تمام کدهای jQuery
+    window.jQueryReady = function(callback) {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function() {
+                window.jQueryReady(callback);
+            }, 50);
+        }
+    };
+})();
 
 function initializeReceptionDashboard() {
     // Initialize components
@@ -417,7 +445,8 @@ function initializeReceptionDashboard() {
 
 function initializeComponents() {
     // Initialize all components
-    $('[data-component]').each(function() {
+    window.jQueryReady(function() {
+        $('[data-component]').each(function() {
         const component = $(this);
         const componentName = component.data('component');
         
@@ -436,6 +465,7 @@ function initializeComponents() {
                 // Already initialized in component
                 break;
         }
+        });
     });
 }
 
@@ -678,26 +708,39 @@ function showQuickSearchModal() {
     $('#quickSearchModal').modal('show');
 }
 
-// Global error handler
-$(document).ajaxError(function(event, xhr, settings, thrownError) {
-    console.error('AJAX Error:', thrownError);
-    showNotification('خطا در ارتباط با سرور', 'error');
-});
+// Global error handler - با محافظت jQuery
+(function() {
+    function setupAjaxHandlers() {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            // Global error handler
+            $(document).ajaxError(function(event, xhr, settings, thrownError) {
+                console.error('AJAX Error:', thrownError);
+                showNotification('خطا در ارتباط با سرور', 'error');
+            });
 
-// Global success handler
-$(document).ajaxSuccess(function(event, xhr, settings) {
-    if (xhr.responseJSON && xhr.responseJSON.success) {
-        // Component-specific success handling
-        const url = settings.url;
-        if (url.includes('ReceptionPatient')) {
-            // Patient-related success
-        } else if (url.includes('ReceptionService')) {
-            // Service-related success
-        } else if (url.includes('ReceptionInsurance')) {
-            // Insurance-related success
+            // Global success handler
+            $(document).ajaxSuccess(function(event, xhr, settings) {
+                if (xhr.responseJSON && xhr.responseJSON.success) {
+                    // Component-specific success handling
+                    const url = settings.url;
+                    if (url.includes('ReceptionPatient')) {
+                        // Patient-related success
+                    } else if (url.includes('ReceptionService')) {
+                        // Service-related success
+                    } else if (url.includes('ReceptionInsurance')) {
+                        // Insurance-related success
+                    }
+                }
+            });
+        } else {
+            console.warn('jQuery not ready, retrying AJAX handlers setup...');
+            setTimeout(setupAjaxHandlers, 100);
         }
     }
-});
+    
+    // راه‌اندازی با تاخیر برای اطمینان از بارگذاری jQuery
+    setTimeout(setupAjaxHandlers, 200);
+})();
 </script>
 
 <!-- Notification Styles -->

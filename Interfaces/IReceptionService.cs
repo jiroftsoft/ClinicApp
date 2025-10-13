@@ -157,6 +157,44 @@ namespace ClinicApp.Interfaces
             int pageNumber = 1,
             int pageSize = 10);
 
+        /// <summary>
+        /// دریافت پذیرش‌ها بر اساس بازه زمانی
+        /// </summary>
+        /// <param name="startDate">تاریخ شروع</param>
+        /// <param name="endDate">تاریخ پایان</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست پذیرش‌ها در بازه زمانی</returns>
+        Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetReceptionsByDateRangeAsync(
+            DateTime startDate,
+            DateTime endDate,
+            int pageNumber = 1,
+            int pageSize = 10);
+
+        /// <summary>
+        /// دریافت پذیرش‌های بیمار بر اساس شناسه
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست پذیرش‌های بیمار</returns>
+        Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetReceptionsByPatientIdAsync(
+            int patientId,
+            int pageNumber = 1,
+            int pageSize = 10);
+
+        /// <summary>
+        /// دریافت پذیرش‌های پزشک بر اساس شناسه
+        /// </summary>
+        /// <param name="doctorId">شناسه پزشک</param>
+        /// <param name="pageNumber">شماره صفحه</param>
+        /// <param name="pageSize">اندازه صفحه</param>
+        /// <returns>لیست پذیرش‌های پزشک</returns>
+        Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetReceptionsByDoctorIdAsync(
+            int doctorId,
+            int pageNumber = 1,
+            int pageSize = 10);
+
         #endregion
 
         #region Patient Lookup Operations

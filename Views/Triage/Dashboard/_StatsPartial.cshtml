@@ -1,0 +1,184 @@
+@model ClinicApp.ViewModels.Triage.TriageDailyStats
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.TotalAssessments</h4>
+                        <p class="mb-0">کل ارزیابی‌ها</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.CompletedAssessments</h4>
+                        <p class="mb-0">تکمیل شده</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.PendingAssessments</h4>
+                        <p class="mb-0">در انتظار</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@Model.AverageWaitTimeMinutes</h4>
+                        <p class="mb-0">میانگین انتظار (دقیقه)</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-hourglass-half fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- نمودار توزیع سطوح -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">توزیع سطوح تریاژ</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="level-distribution-chart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">وضعیت ارزیابی‌ها</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="status-distribution-chart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- آمار تکمیلی -->
+<div class="row mt-4">
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="text-danger">@Model.CriticalLevel</h4>
+                <p class="mb-0">بحرانی (ESI-1)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="text-warning">@Model.HighLevel</h4>
+                <p class="mb-0">فوری (ESI-2)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="text-info">@Model.MediumLevel</h4>
+                <p class="mb-0">عاجل (ESI-3)</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card">
+            <div class="card-body text-center">
+                <h4 class="text-success">@Model.LowLevel</h4>
+                <p class="mb-0">کم‌عاجل (ESI-4)</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // ایجاد نمودار توزیع سطوح
+    function createLevelDistributionChart() {
+        var ctx = document.getElementById('level-distribution-chart').getContext('2d');
+        var data = {
+            labels: ['بحرانی (ESI-1)', 'فوری (ESI-2)', 'عاجل (ESI-3)', 'کم‌عاجل (ESI-4)', 'غیرعاجل (ESI-5)'],
+            datasets: [{
+                data: [@Model.CriticalLevel, @Model.HighLevel, @Model.MediumLevel, @Model.LowLevel, @Model.VeryLowLevel],
+                backgroundColor: ['#dc3545', '#fd7e14', '#20c997', '#28a745', '#6c757d']
+            }]
+        };
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // ایجاد نمودار توزیع وضعیت
+    function createStatusDistributionChart() {
+        var ctx = document.getElementById('status-distribution-chart').getContext('2d');
+        var data = {
+            labels: ['تکمیل شده', 'در انتظار'],
+            datasets: [{
+                data: [@Model.CompletedAssessments, @Model.PendingAssessments],
+                backgroundColor: ['#28a745', '#ffc107']
+            }]
+        };
+        
+        new Chart(ctx, {
+            type: 'pie',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+    }
+
+    // راه‌اندازی نمودارها
+    $(document).ready(function() {
+        createLevelDistributionChart();
+        createStatusDistributionChart();
+    });
+</script>

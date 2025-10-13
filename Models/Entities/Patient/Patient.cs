@@ -241,6 +241,18 @@ public class Patient : ISoftDelete, ITrackable
     /// </summary>
     public virtual ICollection<MedicalHistory> MedicalHistories { get; set; } = new HashSet<MedicalHistory>();
 
+    /// <summary>
+    /// لیست ارزیابی‌های تریاژ بیمار
+    /// این لیست برای نمایش تمام ارزیابی‌های تریاژ انجام شده برای این بیمار استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<Triage.TriageAssessment> TriageAssessments { get; set; } = new HashSet<Triage.TriageAssessment>();
+
+    /// <summary>
+    /// لیست صف تریاژ بیمار
+    /// این لیست برای نمایش تمام صف‌های تریاژ این بیمار استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<Triage.TriageQueue> TriageQueues { get; set; } = new HashSet<Triage.TriageQueue>();
+
     #endregion
 }
 

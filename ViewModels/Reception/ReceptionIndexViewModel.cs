@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.ViewModels.Reception
 {
@@ -49,6 +50,33 @@ namespace ClinicApp.ViewModels.Reception
 
         [Display(Name = "بیمار")]
         public string Patient { get; set; }
+
+        [Display(Name = "شناسه بیمار")]
+        public int PatientId { get; set; }
+
+        [Display(Name = "تلفن بیمار")]
+        public string PatientPhoneNumber { get; set; }
+
+        [Display(Name = "شناسه پزشک")]
+        public int DoctorId { get; set; }
+
+        [Display(Name = "سهم بیمار")]
+        public decimal PatientCoPay { get; set; }
+
+        [Display(Name = "سهم بیمه")]
+        public decimal InsurerShareAmount { get; set; }
+
+        [Display(Name = "اولویت")]
+        public AppointmentPriority Priority { get; set; }
+
+        [Display(Name = "اورژانس")]
+        public bool IsEmergency { get; set; }
+
+        [Display(Name = "پذیرش آنلاین")]
+        public bool IsOnlineReception { get; set; }
+
+        [Display(Name = "نام بخش")]
+        public string DepartmentName { get; set; }
 
         [Display(Name = "لیست پذیرش‌ها")]
         public List<ReceptionListItemViewModel> Receptions { get; set; } = new List<ReceptionListItemViewModel>();

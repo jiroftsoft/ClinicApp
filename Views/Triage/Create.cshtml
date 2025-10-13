@@ -1,0 +1,266 @@
+@model ClinicApp.ViewModels.Triage.TriageCreateViewModel
+@{
+    ViewBag.Title = "ایجاد ارزیابی تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-plus"></i>
+                        ایجاد ارزیابی تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("Create", "Triage", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.PatientId)
+                        @Html.HiddenFor(m => m.PatientFullName)
+
+                        <div class="row">
+                            <!-- اطلاعات بیمار -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-user"></i>
+                                            اطلاعات بیمار
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label class="control-label">نام بیمار:</label>
+                                            <p class="form-control-static">@Model.PatientDisplayName</p>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.ChiefComplaint, new { @class = "control-label" })
+                                            @Html.TextBoxFor(m => m.ChiefComplaint, new { @class = "form-control", placeholder = "شکایت اصلی بیمار را وارد کنید" })
+                                            @Html.ValidationMessageFor(m => m.ChiefComplaint, "", new { @class = "text-danger" })
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.AssessmentNotes, new { @class = "control-label" })
+                                            @Html.TextAreaFor(m => m.AssessmentNotes, new { @class = "form-control", rows = 3, placeholder = "یادداشت‌های ارزیابی" })
+                                            @Html.ValidationMessageFor(m => m.AssessmentNotes, "", new { @class = "text-danger" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- علائم حیاتی -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-heartbeat"></i>
+                                            علائم حیاتی
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.SBP, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.SBP, new { @class = "form-control", placeholder = "120" })
+                                                    @Html.ValidationMessageFor(m => m.SBP, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.DBP, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.DBP, new { @class = "form-control", placeholder = "80" })
+                                                    @Html.ValidationMessageFor(m => m.DBP, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.HR, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.HR, new { @class = "form-control", placeholder = "72" })
+                                                    @Html.ValidationMessageFor(m => m.HR, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.RR, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.RR, new { @class = "form-control", placeholder = "16" })
+                                                    @Html.ValidationMessageFor(m => m.RR, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.TempC, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.TempC, new { @class = "form-control", placeholder = "37.0" })
+                                                    @Html.ValidationMessageFor(m => m.TempC, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.SpO2, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.SpO2, new { @class = "form-control", placeholder = "98" })
+                                                    @Html.ValidationMessageFor(m => m.SpO2, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- GCS و اکسیژن -->
+                        <div class="row mt-3">
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-brain"></i>
+                                            GCS (Glasgow Coma Scale)
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.GcsE, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.GcsE, new { @class = "form-control", placeholder = "4" })
+                                                    @Html.ValidationMessageFor(m => m.GcsE, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.GcsV, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.GcsV, new { @class = "form-control", placeholder = "5" })
+                                                    @Html.ValidationMessageFor(m => m.GcsV, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                            <div class="col-md-4">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.GcsM, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.GcsM, new { @class = "form-control", placeholder = "6" })
+                                                    @Html.ValidationMessageFor(m => m.GcsM, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label">مجموع GCS:</label>
+                                            <p class="form-control-static" id="gcsTotal">@Model.GcsTotal</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-lungs"></i>
+                                            اکسیژن درمانی
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                @Html.CheckBoxFor(m => m.OnOxygen, new { @class = "form-check-input" })
+                                                @Html.LabelFor(m => m.OnOxygen, new { @class = "form-check-label" })
+                                            </div>
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.OxygenDevice, new { @class = "control-label" })
+                                            @Html.DropDownListFor(m => m.OxygenDevice, new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.Triage.OxygenDevice)), Model.OxygenDevice), "انتخاب کنید", new { @class = "form-control" })
+                                            @Html.ValidationMessageFor(m => m.OxygenDevice, "", new { @class = "text-danger" })
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.O2FlowLpm, new { @class = "control-label" })
+                                            @Html.TextBoxFor(m => m.O2FlowLpm, new { @class = "form-control", placeholder = "2" })
+                                            @Html.ValidationMessageFor(m => m.O2FlowLpm, "", new { @class = "text-danger" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- هشدارها -->
+                        @if (Model.RequiresImmediateAttention)
+                        {
+                            <div class="alert alert-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>هشدار:</strong> این بیمار نیاز به توجه فوری دارد!
+                            </div>
+                        }
+
+                        <!-- دکمه‌های عملیات -->
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="form-group text-center">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-save"></i>
+                                        ایجاد ارزیابی تریاژ
+                                    </button>
+                                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                                        <i class="fas fa-times"></i>
+                                        لغو
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // محاسبه GCS Total
+            function calculateGcsTotal() {
+                var gcsE = parseInt($('#GcsE').val()) || 0;
+                var gcsV = parseInt($('#GcsV').val()) || 0;
+                var gcsM = parseInt($('#GcsM').val()) || 0;
+                var total = gcsE + gcsV + gcsM;
+                $('#gcsTotal').text(total);
+            }
+
+            $('#GcsE, #GcsV, #GcsM').on('input', calculateGcsTotal);
+
+            // بررسی هشدارها
+            function checkAlerts() {
+                var spO2 = parseInt($('#SpO2').val()) || 0;
+                var hr = parseInt($('#HR').val()) || 0;
+                var sbp = parseInt($('#SBP').val()) || 0;
+                var temp = parseFloat($('#TempC').val()) || 0;
+                var rr = parseInt($('#RR').val()) || 0;
+                var gcsTotal = parseInt($('#gcsTotal').text()) || 0;
+
+                var hasAlert = (spO2 < 90) || (hr > 120 || hr < 50) || (sbp < 90) || 
+                              (temp > 39 || temp < 35) || (rr > 30 || rr < 10) || (gcsTotal < 8);
+
+                if (hasAlert) {
+                    if ($('.alert-danger').length === 0) {
+                        $('<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i><strong>هشدار:</strong> این بیمار نیاز به توجه فوری دارد!</div>').insertBefore('.form-group.text-center');
+                    }
+                } else {
+                    $('.alert-danger').remove();
+                }
+            }
+
+            $('#SpO2, #HR, #SBP, #TempC, #RR').on('input', checkAlerts);
+            $('#GcsE, #GcsV, #GcsM').on('input', function() {
+                calculateGcsTotal();
+                checkAlerts();
+            });
+        });
+    </script>
+}

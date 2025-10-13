@@ -1,0 +1,156 @@
+@model ClinicApp.ViewModels.Triage.TriageReportViewModel
+@{
+    var model = Model ?? new ClinicApp.ViewModels.Triage.TriageReportViewModel();
+}
+
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title">
+            <i class="fas fa-filter"></i>
+            فیلترهای گزارش
+        </h5>
+    </div>
+    <div class="card-body">
+        <form id="report-filters-form" method="post">
+            <div class="row">
+                <!-- تاریخ شروع -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="StartDate" class="control-label">تاریخ شروع:</label>
+                        <input type="date" id="StartDate" name="StartDate" class="form-control" 
+                               value="@model.StartDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                
+                <!-- تاریخ پایان -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="EndDate" class="control-label">تاریخ پایان:</label>
+                        <input type="date" id="EndDate" name="EndDate" class="form-control" 
+                               value="@model.EndDate.ToString("yyyy-MM-dd")" />
+                    </div>
+                </div>
+                
+                <!-- بخش -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="DepartmentId" class="control-label">بخش:</label>
+                        <select id="DepartmentId" name="DepartmentId" class="form-control">
+                            <option value="">همه بخش‌ها</option>
+                            @if (model.Departments != null)
+                            {
+                                @foreach (var dept in model.Departments)
+                                {
+                                    <option value="@dept.Value" @(model.DepartmentId?.ToString() == dept.Value ? "selected" : "")>
+                                        @dept.Text
+                                    </option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- سطح تریاژ -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="Level" class="control-label">سطح تریاژ:</label>
+                        <select id="Level" name="Level" class="form-control">
+                            <option value="">همه سطوح</option>
+                            <option value="ESI1" @(model.Level?.ToString() == "ESI1" ? "selected" : "")>بحرانی (ESI1)</option>
+                            <option value="ESI2" @(model.Level?.ToString() == "ESI2" ? "selected" : "")>فوری (ESI2)</option>
+                            <option value="ESI3" @(model.Level?.ToString() == "ESI3" ? "selected" : "")>عاجل (ESI3)</option>
+                            <option value="ESI4" @(model.Level?.ToString() == "ESI4" ? "selected" : "")>کم‌عاجل (ESI4)</option>
+                            <option value="ESI5" @(model.Level?.ToString() == "ESI5" ? "selected" : "")>غیرعاجل (ESI5)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row">
+                <!-- وضعیت -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="Status" class="control-label">وضعیت:</label>
+                        <select id="Status" name="Status" class="form-control">
+                            <option value="">همه وضعیت‌ها</option>
+                            <option value="Pending" @(model.Status?.ToString() == "Pending" ? "selected" : "")>در انتظار</option>
+                            <option value="InProgress" @(model.Status?.ToString() == "InProgress" ? "selected" : "")>در حال انجام</option>
+                            <option value="Completed" @(model.Status?.ToString() == "Completed" ? "selected" : "")>تکمیل شده</option>
+                            <option value="Cancelled" @(model.Status?.ToString() == "Cancelled" ? "selected" : "")>لغو شده</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- نوع گزارش -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="ReportType" class="control-label">نوع گزارش:</label>
+                        <select id="ReportType" name="ReportType" class="form-control">
+                            <option value="Summary" @(model.ReportType.ToString() == "Summary" ? "selected" : "")>خلاصه</option>
+                            <option value="Detailed" @(model.ReportType.ToString() == "Detailed" ? "selected" : "")>جزئی</option>
+                            <option value="Statistical" @(model.ReportType.ToString() == "Statistical" ? "selected" : "")>آماری</option>
+                            <option value="Performance" @(model.ReportType.ToString() == "Performance" ? "selected" : "")>عملکرد</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- فرمت خروجی -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="ExportFormat" class="control-label">فرمت خروجی:</label>
+                        <select id="ExportFormat" name="ExportFormat" class="form-control">
+                            <option value="Html" @(model.ExportFormat.ToString() == "Html" ? "selected" : "")>HTML</option>
+                            <option value="Excel" @(model.ExportFormat.ToString() == "Excel" ? "selected" : "")>Excel</option>
+                            <option value="Pdf" @(model.ExportFormat.ToString() == "Pdf" ? "selected" : "")>PDF</option>
+                            <option value="Csv" @(model.ExportFormat.ToString() == "Csv" ? "selected" : "")>CSV</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- دکمه‌های عملیات -->
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label class="control-label">&nbsp;</label>
+                        <div class="btn-group-vertical d-grid gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i>
+                                تولید گزارش
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="TriageReports.resetFilters()">
+                                <i class="fas fa-undo"></i>
+                                بازنشانی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    $(document).ready(function() {
+        // تنظیم تاریخ پیش‌فرض
+        var today = new Date();
+        var lastWeek = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+        
+        if (!$('#StartDate').val()) {
+            $('#StartDate').val(lastWeek.toISOString().split('T')[0]);
+        }
+        if (!$('#EndDate').val()) {
+            $('#EndDate').val(today.toISOString().split('T')[0]);
+        }
+        
+        // اعتبارسنجی تاریخ
+        $('#StartDate, #EndDate').on('change', function() {
+            var startDate = new Date($('#StartDate').val());
+            var endDate = new Date($('#EndDate').val());
+            
+            if (startDate > endDate) {
+                alert('تاریخ شروع نمی‌تواند بعد از تاریخ پایان باشد');
+                $('#StartDate').val('');
+                $('#EndDate').val('');
+            }
+        });
+    });
+</script>

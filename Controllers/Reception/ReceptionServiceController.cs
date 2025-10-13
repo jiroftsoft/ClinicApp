@@ -14,6 +14,7 @@ namespace ClinicApp.Controllers.Reception
     /// کنترلر تخصصی مدیریت خدمات در پذیرش - رعایت اصل SRP
     /// مسئولیت: فقط مدیریت خدمات (دسته‌بندی، انتخاب، محاسبه)
     /// </summary>
+    [RoutePrefix("Reception/Service")]
     public class ReceptionServiceController : BaseController
     {
         private readonly IReceptionService _receptionService;

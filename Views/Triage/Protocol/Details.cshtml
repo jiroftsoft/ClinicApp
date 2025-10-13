@@ -1,0 +1,249 @@
+@model ClinicApp.Models.Entities.Triage.TriageProtocol
+@{
+    ViewBag.Title = "جزئیات پروتکل تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-info-circle"></i>
+                        جزئیات پروتکل تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Edit", new { id = Model.TriageProtocolId })" class="btn btn-warning btn-sm">
+                            <i class="fas fa-edit"></i>
+                            ویرایش
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <!-- اطلاعات اصلی -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">اطلاعات اصلی</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="control-label">نام پروتکل:</label>
+                                                <p class="form-control-plaintext"><strong>@Model.Name</strong></p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="control-label">نوع پروتکل:</label>
+                                                <p class="form-control-plaintext">
+                                                    <span class="badge badge-@(Model.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.General ? "primary" : 
+                                                                                    Model.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Cardiac ? "danger" :
+                                                                                    Model.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Respiratory ? "info" :
+                                                                                    Model.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Neurological ? "warning" :
+                                                                                    Model.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Trauma ? "secondary" : "success")">
+                                                        @Model.ProtocolType
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="control-label">اولویت:</label>
+                                                <p class="form-control-plaintext">
+                                                    <span class="badge badge-@(Model.Priority <= 3 ? "danger" : Model.Priority <= 6 ? "warning" : "info")">
+                                                        @Model.Priority
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label class="control-label">وضعیت:</label>
+                                                <p class="form-control-plaintext">
+                                                    <span class="badge badge-@(Model.IsActive ? "success" : "secondary")">
+                                                        @(Model.IsActive ? "فعال" : "غیرفعال")
+                                                    </span>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(Model.Description))
+                                    {
+                                        <div class="form-group">
+                                            <label class="control-label">توضیحات:</label>
+                                            <p class="form-control-plaintext">@Model.Description</p>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- معیارهای پروتکل -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title">معیارهای پروتکل</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="control-label">شرایط و معیارهای اعمال:</label>
+                                        <div class="form-control-plaintext">
+                                            <pre class="bg-light p-3 rounded">@Model.Criteria</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- اقدامات پروتکل -->
+                            <div class="card mt-3">
+                                <div class="card-header">
+                                    <h5 class="card-title">اقدامات پروتکل</h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label class="control-label">مراحل و اقدامات اجرایی:</label>
+                                        <div class="form-control-plaintext">
+                                            <pre class="bg-light p-3 rounded">@Model.Actions</pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <!-- اطلاعات سیستم -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-info-circle"></i>
+                                        اطلاعات سیستم
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-6">
+                                            <small class="text-muted">شناسه:</small><br>
+                                            <strong>#@Model.TriageProtocolId</strong>
+                                        </div>
+                                        <div class="col-6">
+                                            <small class="text-muted">وضعیت:</small><br>
+                                            <span class="badge badge-@(Model.IsActive ? "success" : "secondary")">
+                                                @(Model.IsActive ? "فعال" : "غیرفعال")
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <small class="text-muted">تاریخ ایجاد:</small><br>
+                                            <small>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small>
+                                        </div>
+                                    </div>
+                                    @if (Model.UpdatedAt.HasValue)
+                                    {
+                                        <div class="row mt-2">
+                                            <div class="col-12">
+                                                <small class="text-muted">آخرین ویرایش:</small><br>
+                                                <small>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</small>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- آمار استفاده -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-bar"></i>
+                                        آمار استفاده
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row text-center">
+                                        <div class="col-6">
+                                            <h4 class="text-primary">0</h4>
+                                            <small class="text-muted">استفاده امروز</small>
+                                        </div>
+                                        <div class="col-6">
+                                            <h4 class="text-success">0</h4>
+                                            <small class="text-muted">استفاده این ماه</small>
+                                        </div>
+                                    </div>
+                                    <hr>
+                                    <div class="row text-center">
+                                        <div class="col-12">
+                                            <h4 class="text-info">0</h4>
+                                            <small class="text-muted">کل استفاده</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- عملیات -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-cogs"></i>
+                                        عملیات
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="d-grid gap-2">
+                                        <a href="@Url.Action("Edit", new { id = Model.TriageProtocolId })" class="btn btn-warning">
+                                            <i class="fas fa-edit"></i>
+                                            ویرایش پروتکل
+                                        </a>
+                                        
+                                        @if (Model.IsActive)
+                                        {
+                                            <button type="button" class="btn btn-secondary" onclick="TriageProtocol.toggleStatus(@Model.TriageProtocolId, true)">
+                                                <i class="fas fa-pause"></i>
+                                                غیرفعال کردن
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            <button type="button" class="btn btn-success" onclick="TriageProtocol.toggleStatus(@Model.TriageProtocolId, false)">
+                                                <i class="fas fa-play"></i>
+                                                فعال کردن
+                                            </button>
+                                        }
+                                        
+                                        <button type="button" class="btn btn-danger" onclick="TriageProtocol.deleteProtocol(@Model.TriageProtocolId)">
+                                            <i class="fas fa-trash"></i>
+                                            حذف پروتکل
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage-protocols.js"></script>
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی مدیریت پروتکل‌ها
+            if (typeof TriageProtocol !== 'undefined') {
+                TriageProtocol.init();
+            }
+        });
+    </script>
+}

@@ -2534,5 +2534,195 @@ namespace ClinicApp.Services
         }
 
         #endregion
+
+        #region Missing Methods Implementation
+
+        /// <summary>
+        /// دریافت پذیرش‌ها بر اساس بازه زمانی
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetReceptionsByDateRangeAsync(
+            DateTime startDate,
+            DateTime endDate,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            try
+            {
+                _logger.Information("📅 دریافت پذیرش‌ها بر اساس بازه زمانی: {StartDate} تا {EndDate}, کاربر: {UserName}",
+                    startDate, endDate, _currentUserService.UserName);
+
+                var query = _context.Receptions
+                    .Where(r => !r.IsDeleted && 
+                               r.ReceptionDate >= startDate && 
+                               r.ReceptionDate <= endDate)
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .OrderByDescending(r => r.ReceptionDate);
+
+                var totalCount = await query.CountAsync();
+                var receptions = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var receptionViewModels = receptions.Select(r => new ReceptionIndexViewModel
+                {
+                    ReceptionId = r.ReceptionId,
+                    PatientId = r.PatientId,
+                    PatientFullName = $"{r.Patient.FirstName} {r.Patient.LastName}",
+                    PatientPhoneNumber = r.Patient.PhoneNumber,
+                    DoctorId = r.DoctorId,
+                    DoctorFullName = $"{r.Doctor.FirstName} {r.Doctor.LastName}",
+                    ReceptionDate = r.ReceptionDate.ToPersianDateTime(),
+                    Status = GetReceptionStatusText(r.Status),
+                    TotalAmount = r.TotalAmount,
+                    PatientCoPay = r.PatientCoPay,
+                    InsurerShareAmount = r.InsurerShareAmount,
+                    Priority = r.Priority,
+                    IsEmergency = r.IsEmergency,
+                    IsOnlineReception = r.IsOnlineReception
+                }).ToList();
+
+                var pagedResult = new PagedResult<ReceptionIndexViewModel>(
+                    receptionViewModels, 
+                    totalCount, 
+                    pageNumber, 
+                    pageSize);
+
+                _logger.Information("دریافت پذیرش‌ها بر اساس بازه زمانی موفق. تعداد: {Count}, کاربر: {UserName}",
+                    receptionViewModels.Count, _currentUserService.UserName);
+
+                return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Successful(pagedResult, "لیست پذیرش‌ها دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پذیرش‌ها بر اساس بازه زمانی");
+                return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Failed("خطا در دریافت پذیرش‌ها: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// دریافت پذیرش‌های بیمار بر اساس شناسه
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetReceptionsByPatientIdAsync(
+            int patientId,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            try
+            {
+                _logger.Information("👤 دریافت پذیرش‌های بیمار: {PatientId}, کاربر: {UserName}",
+                    patientId, _currentUserService.UserName);
+
+                var query = _context.Receptions
+                    .Where(r => !r.IsDeleted && r.PatientId == patientId)
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .OrderByDescending(r => r.ReceptionDate);
+
+                var totalCount = await query.CountAsync();
+                var receptions = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var receptionViewModels = receptions.Select(r => new ReceptionIndexViewModel
+                {
+                    ReceptionId = r.ReceptionId,
+                    PatientId = r.PatientId,
+                    PatientFullName = $"{r.Patient.FirstName} {r.Patient.LastName}",
+                    PatientPhoneNumber = r.Patient.PhoneNumber,
+                    DoctorId = r.DoctorId,
+                    DoctorFullName = $"{r.Doctor.FirstName} {r.Doctor.LastName}",
+                    ReceptionDate = r.ReceptionDate.ToPersianDateTime(),
+                    Status = GetReceptionStatusText(r.Status),
+                    TotalAmount = r.TotalAmount,
+                    PatientCoPay = r.PatientCoPay,
+                    InsurerShareAmount = r.InsurerShareAmount,
+                    Priority = r.Priority,
+                    IsEmergency = r.IsEmergency,
+                    IsOnlineReception = r.IsOnlineReception
+                }).ToList();
+
+                var pagedResult = new PagedResult<ReceptionIndexViewModel>(
+                    receptionViewModels, 
+                    totalCount, 
+                    pageNumber, 
+                    pageSize);
+
+                _logger.Information("دریافت پذیرش‌های بیمار موفق. تعداد: {Count}, کاربر: {UserName}",
+                    receptionViewModels.Count, _currentUserService.UserName);
+
+                return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Successful(pagedResult, "لیست پذیرش‌های بیمار دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پذیرش‌های بیمار");
+                return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Failed("خطا در دریافت پذیرش‌های بیمار: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// دریافت پذیرش‌های پزشک بر اساس شناسه
+        /// </summary>
+        public async Task<ServiceResult<PagedResult<ReceptionIndexViewModel>>> GetReceptionsByDoctorIdAsync(
+            int doctorId,
+            int pageNumber = 1,
+            int pageSize = 10)
+        {
+            try
+            {
+                _logger.Information("👨‍⚕️ دریافت پذیرش‌های پزشک: {DoctorId}, کاربر: {UserName}",
+                    doctorId, _currentUserService.UserName);
+
+                var query = _context.Receptions
+                    .Where(r => !r.IsDeleted && r.DoctorId == doctorId)
+                    .Include(r => r.Patient)
+                    .Include(r => r.Doctor)
+                    .OrderByDescending(r => r.ReceptionDate);
+
+                var totalCount = await query.CountAsync();
+                var receptions = await query
+                    .Skip((pageNumber - 1) * pageSize)
+                    .Take(pageSize)
+                    .ToListAsync();
+
+                var receptionViewModels = receptions.Select(r => new ReceptionIndexViewModel
+                {
+                    ReceptionId = r.ReceptionId,
+                    PatientId = r.PatientId,
+                    PatientFullName = $"{r.Patient.FirstName} {r.Patient.LastName}",
+                    PatientPhoneNumber = r.Patient.PhoneNumber,
+                    DoctorId = r.DoctorId,
+                    DoctorFullName = $"{r.Doctor.FirstName} {r.Doctor.LastName}",
+                    ReceptionDate = r.ReceptionDate.ToPersianDateTime(),
+                    Status = GetReceptionStatusText(r.Status),
+                    TotalAmount = r.TotalAmount,
+                    PatientCoPay = r.PatientCoPay,
+                    InsurerShareAmount = r.InsurerShareAmount,
+                    Priority = r.Priority,
+                    IsEmergency = r.IsEmergency,
+                    IsOnlineReception = r.IsOnlineReception
+                }).ToList();
+
+                var pagedResult = new PagedResult<ReceptionIndexViewModel>(
+                    receptionViewModels, 
+                    totalCount, 
+                    pageNumber, 
+                    pageSize);
+
+                _logger.Information("دریافت پذیرش‌های پزشک موفق. تعداد: {Count}, کاربر: {UserName}",
+                    receptionViewModels.Count, _currentUserService.UserName);
+
+                return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Successful(pagedResult, "لیست پذیرش‌های پزشک دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت پذیرش‌های پزشک");
+                return ServiceResult<PagedResult<ReceptionIndexViewModel>>.Failed("خطا در دریافت پذیرش‌های پزشک: " + ex.Message);
+            }
+        }
+
+        #endregion
     }
 }

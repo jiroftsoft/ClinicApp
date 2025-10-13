@@ -1,0 +1,149 @@
+@model ClinicApp.ViewModels.Triage.TriageQueueViewModel
+@{
+    ViewBag.Title = "مدیریت صف تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-list"></i>
+                        مدیریت صف تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="TriageQueue.callNext()">
+                            <i class="fas fa-bell"></i>
+                            فراخوانی بعدی
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm" onclick="TriageQueue.refreshQueue()">
+                            <i class="fas fa-sync"></i>
+                            به‌روزرسانی
+                        </button>
+                        <button type="button" class="btn btn-warning btn-sm" onclick="TriageQueue.reorderQueue()">
+                            <i class="fas fa-sort"></i>
+                            مرتب‌سازی
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- فیلترها -->
+                    <div class="row mb-3">
+                        <div class="col-md-3">
+                            <label class="control-label">بخش:</label>
+                            @Html.DropDownListFor(m => m.DepartmentId, 
+                                new SelectList(Model.Departments, "Value", "Text", Model.DepartmentId), 
+                                new { @class = "form-control", @onchange = "TriageQueue.filterQueue()" })
+                        </div>
+                        <div class="col-md-2">
+                            <label class="control-label">وضعیت:</label>
+                            @Html.DropDownListFor(m => m.Status, 
+                                new SelectList(Model.StatusOptions, "Value", "Text", Model.Status), 
+                                new { @class = "form-control", @onchange = "TriageQueue.filterQueue()" })
+                        </div>
+                        <div class="col-md-2">
+                            <label class="control-label">اولویت:</label>
+                            @Html.DropDownListFor(m => m.Priority, 
+                                new SelectList(Model.PriorityOptions, "Value", "Text", Model.Priority), 
+                                new { @class = "form-control", @onchange = "TriageQueue.filterQueue()" })
+                        </div>
+                        <div class="col-md-2">
+                            <label class="control-label">سطح:</label>
+                            @Html.DropDownListFor(m => m.Level, 
+                                new SelectList(Model.LevelOptions, "Value", "Text", Model.Level), 
+                                new { @class = "form-control", @onchange = "TriageQueue.filterQueue()" })
+                        </div>
+                        <div class="col-md-3">
+                            <label class="control-label">جستجو:</label>
+                            <div class="input-group">
+                                @Html.TextBoxFor(m => m.SearchTerm, new { @class = "form-control", @placeholder = "جستجو در نام بیمار یا شکایت" })
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="TriageQueue.searchQueue()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آمار صف -->
+                    <div class="row mb-3">
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-users"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کل بیماران</span>
+                                    <span class="info-box-number">@Model.TotalItems</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بحرانی</span>
+                                    <span class="info-box-number">@Model.CriticalItems</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">اولویت بالا</span>
+                                    <span class="info-box-number">@Model.HighPriorityItems</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-secondary">
+                                    <i class="fas fa-hourglass-end"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">تأخیر</span>
+                                    <span class="info-box-number">@Model.OverdueItems</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="alert alert-@(Model.HasOverdueItems ? "warning" : "success")">
+                                <i class="fas fa-@(Model.HasOverdueItems ? "exclamation-triangle" : "check-circle")"></i>
+                                @Model.UrgencyMessage
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- لیست صف -->
+                    <div id="queue-list">
+                        @Html.Partial("_QueueListPartial", Model.QueueItems)
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage.queue.js"></script>
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی مدیریت صف
+            TriageQueue.init();
+            
+            // به‌روزرسانی خودکار هر 30 ثانیه
+            setInterval(function() {
+                TriageQueue.refreshQueue();
+            }, 30000);
+        });
+    </script>
+}

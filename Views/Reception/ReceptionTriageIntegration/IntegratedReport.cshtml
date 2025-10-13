@@ -1,0 +1,323 @@
+@model ClinicApp.ViewModels.Reception.IntegratedReportViewModel
+@{
+    ViewBag.Title = "گزارش یکپارچه تریاژ و پذیرش";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-line"></i>
+                        گزارش یکپارچه تریاژ و پذیرش
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- فیلتر تاریخ -->
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <form method="get" class="form-inline">
+                                <div class="form-group mr-3">
+                                    <label for="startDate" class="mr-2">از تاریخ:</label>
+                                    <input type="date" class="form-control" name="startDate" value="@Model.StartDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
+                                </div>
+                                <div class="form-group mr-3">
+                                    <label for="endDate" class="mr-2">تا تاریخ:</label>
+                                    <input type="date" class="form-control" name="endDate" value="@Model.EndDate.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture)" />
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    جستجو
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>@Model.IntegratedStats.TotalTriageAssessments</h3>
+                                    <p>کل ارزیابی‌های تریاژ</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>@Model.IntegratedStats.TotalReceptions</h3>
+                                    <p>کل پذیرش‌ها</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>@Model.IntegratedStats.EmergencyTriageCount</h3>
+                                    <p>تریاژ اورژانس</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>@Model.IntegratedStats.EmergencyReceptionCount</h3>
+                                    <p>پذیرش اورژانس</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-ambulance"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آمار عملکرد -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">میانگین زمان تریاژ</span>
+                                    <span class="info-box-number">@Model.IntegratedStats.AverageTriageTime.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) دقیقه</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-stopwatch"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">میانگین زمان پذیرش</span>
+                                    <span class="info-box-number">@Model.IntegratedStats.AverageReceptionTime.ToString("F1", System.Globalization.CultureInfo.InvariantCulture) دقیقه</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-percentage"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">نرخ تبدیل</span>
+                                    <span class="info-box-number">@Model.IntegratedStats.ConversionRate.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودارها -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">شکایت‌های برتر</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="complaintsChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">توزیع بخش‌ها</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="departmentsChart" width="400" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- جدول شکایت‌های برتر -->
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">شکایت‌های برتر</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>شکایت</th>
+                                                    <th>تعداد</th>
+                                                    <th>درصد</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var complaint in Model.IntegratedStats.TopComplaints.Take(10))
+                                                {
+                                                    <tr>
+                                                        <td>@complaint.Complaint</td>
+                                                        <td>@complaint.Count</td>
+                                                        <td>@complaint.Percentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">توزیع بخش‌ها</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-bordered">
+                                            <thead>
+                                                <tr>
+                                                    <th>بخش</th>
+                                                    <th>تعداد</th>
+                                                    <th>درصد</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                @foreach (var department in Model.IntegratedStats.DepartmentDistribution)
+                                                {
+                                                    <tr>
+                                                        <td>@department.DepartmentName</td>
+                                                        <td>@department.Count</td>
+                                                        <td>@department.Percentage.ToString("F1", System.Globalization.CultureInfo.InvariantCulture)%</td>
+                                                    </tr>
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودار توزیع زمانی -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">توزیع زمانی</h3>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="timeDistributionChart" width="800" height="300"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // نمودار شکایت‌های برتر
+            var complaintsCtx = document.getElementById('complaintsChart').getContext('2d');
+            var complaintsData = @Html.Raw(Json.Encode(Model.IntegratedStats.TopComplaints.Take(5).Select(c => new { complaint = c.Complaint, count = c.Count })));
+            
+            new Chart(complaintsCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: complaintsData.map(c => c.complaint),
+                    datasets: [{
+                        data: complaintsData.map(c => c.count),
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+
+            // نمودار توزیع بخش‌ها
+            var departmentsCtx = document.getElementById('departmentsChart').getContext('2d');
+            var departmentsData = @Html.Raw(Json.Encode(Model.IntegratedStats.DepartmentDistribution.Select(d => new { department = d.DepartmentName, count = d.Count })));
+            
+            new Chart(departmentsCtx, {
+                type: 'bar',
+                data: {
+                    labels: departmentsData.map(d => d.department),
+                    datasets: [{
+                        label: 'تعداد پذیرش',
+                        data: departmentsData.map(d => d.count),
+                        backgroundColor: '#36A2EB'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            // نمودار توزیع زمانی
+            var timeCtx = document.getElementById('timeDistributionChart').getContext('2d');
+            var timeData = @Html.Raw(Json.Encode(Model.IntegratedStats.TimeDistribution.Select(t => new { hour = t.Hour, receptionCount = t.ReceptionCount, triageCount = t.TriageCount })));
+            
+            new Chart(timeCtx, {
+                type: 'line',
+                data: {
+                    labels: timeData.map(t => t.hour + ':00'),
+                    datasets: [{
+                        label: 'پذیرش',
+                        data: timeData.map(t => t.receptionCount),
+                        borderColor: '#36A2EB',
+                        backgroundColor: 'rgba(54, 162, 235, 0.1)',
+                        tension: 0.1
+                    }, {
+                        label: 'تریاژ',
+                        data: timeData.map(t => t.triageCount),
+                        borderColor: '#FF6384',
+                        backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

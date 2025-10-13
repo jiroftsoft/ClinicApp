@@ -119,10 +119,26 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // Initialize Patient Search Component
-    initializePatientSearchComponent();
-});
+// محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+(function() {
+    function ensureJQuery(callback) {
+        if (typeof jQuery !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function() {
+                ensureJQuery(callback);
+            }, 50);
+        }
+    }
+
+    // راه‌اندازی پس از بارگذاری jQuery
+    ensureJQuery(function() {
+        $(document).ready(function() {
+            // Initialize Patient Search Component
+            initializePatientSearchComponent();
+        });
+    });
+})();
 
 function initializePatientSearchComponent() {
     const component = $('[data-component="patient-search"]');
@@ -174,7 +190,7 @@ function searchPatientByNationalCode() {
     setComponentLoading(true);
     
     $.ajax({
-        url: '/Reception/ReceptionPatient/SearchByNationalCode',
+        url: '/Reception/Patient/SearchByNationalCode',
         type: 'POST',
         data: { nationalCode: nationalCode },
         success: function(response) {
@@ -204,7 +220,7 @@ function searchPatientByName() {
     setComponentLoading(true);
     
     $.ajax({
-        url: '/Reception/ReceptionPatient/SearchByName',
+        url: '/Reception/Patient/SearchByName',
         type: 'POST',
         data: { 
             searchTerm: searchTerm,
@@ -264,7 +280,7 @@ function createPatientItem(patient) {
 function selectPatient(patientId) {
     // Load patient details and select
     $.ajax({
-        url: '/Reception/ReceptionPatient/GetPatientDetails',
+        url: '/Reception/Patient/GetPatientDetails',
         type: 'POST',
         data: { patientId: patientId },
         success: function(response) {

@@ -1,0 +1,330 @@
+@model ClinicApp.ViewModels.Triage.TriageReportViewModel
+@{
+    var reportItems = Model.ReportItems ?? new List<ClinicApp.ViewModels.Triage.TriageReportItem>();
+    var summary = Model.Summary ?? new ClinicApp.ViewModels.Triage.TriageReportSummary();
+}
+
+<!-- خلاصه گزارش -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@summary.TotalAssessments</h4>
+                        <p class="mb-0">کل ارزیابی‌ها</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@summary.CompletedAssessments</h4>
+                        <p class="mb-0">تکمیل شده</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@summary.AverageWaitTimeDisplay</h4>
+                        <p class="mb-0">میانگین انتظار</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clock fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-danger text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4>@summary.CriticalAssessments</h4>
+                        <p class="mb-0">بحرانی</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- جدول نتایج -->
+<div class="table-responsive">
+    <table class="table table-striped table-hover" id="report-table">
+        <thead class="thead-dark">
+            <tr>
+                <th>شناسه</th>
+                <th>نام بیمار</th>
+                <th>شکایت اصلی</th>
+                <th>سطح تریاژ</th>
+                <th>اولویت</th>
+                <th>وضعیت</th>
+                <th>زمان ورود</th>
+                <th>زمان شروع</th>
+                <th>زمان پایان</th>
+                <th>مدت زمان</th>
+                <th>پایش مجدد</th>
+                <th>بخش</th>
+                <th>پزشک</th>
+                <th>ایزوله</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (reportItems.Any())
+            {
+                @foreach (var item in reportItems)
+                {
+                    <tr>
+                        <td>
+                            <a href="@Url.Action("Details", "Triage", new { id = item.AssessmentId })" class="text-primary">
+                                #@item.AssessmentId
+                            </a>
+                        </td>
+                        <td>
+                            <strong>@item.PatientFullName</strong>
+                            <br>
+                            <small class="text-muted">#@item.PatientId</small>
+                        </td>
+                        <td>
+                            <span class="text-truncate" style="max-width: 200px;" title="@item.ChiefComplaint">
+                                @item.ChiefComplaint
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-@(item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 ? "danger" : 
+                                                      item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 ? "warning" : 
+                                                      item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 ? "info" : 
+                                                      item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 ? "success" : "secondary")">
+                                @item.LevelDisplay
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-@(item.Priority <= 2 ? "danger" : item.Priority <= 4 ? "warning" : "info")">
+                                @item.Priority
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-@(item.Status == ClinicApp.Models.Entities.Triage.TriageStatus.Completed ? "success" : 
+                                                      item.Status == ClinicApp.Models.Entities.Triage.TriageStatus.Pending ? "warning" : 
+                                                      item.Status == ClinicApp.Models.Entities.Triage.TriageStatus.InProgress ? "info" : "secondary")">
+                                @item.StatusDisplay
+                            </span>
+                        </td>
+                        <td>
+                            <small>@item.ArrivalAt.ToString("HH:mm")</small>
+                            <br>
+                            <small class="text-muted">@item.ArrivalAt.ToString("yyyy/MM/dd")</small>
+                        </td>
+                        <td>
+                            <small>@item.TriageStartAt.ToString("HH:mm")</small>
+                            <br>
+                            <small class="text-muted">@item.TriageStartAt.ToString("yyyy/MM/dd")</small>
+                        </td>
+                        <td>
+                            @if (item.TriageEndAt.HasValue)
+                            {
+                                <small>@item.TriageEndAt.Value.ToString("HH:mm")</small>
+                                <br>
+                                <small class="text-muted">@item.TriageEndAt.Value.ToString("yyyy/MM/dd")</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.TotalTime.HasValue)
+                            {
+                                <span class="badge badge-@(item.TotalTime.Value.TotalMinutes > 60 ? "warning" : "success")">
+                                    @item.TotalTimeDisplay
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.ReassessmentCount > 0)
+                            {
+                                <span class="badge badge-info">@item.ReassessmentCount</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.DepartmentName))
+                            {
+                                <span class="badge badge-secondary">@item.DepartmentName</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (!string.IsNullOrEmpty(item.DoctorName))
+                            {
+                                <small>@item.DoctorName</small>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                        <td>
+                            @if (item.HasIsolation)
+                            {
+                                <span class="badge badge-warning">
+                                    <i class="fas fa-shield-alt"></i>
+                                    @item.Isolation
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">-</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            else
+            {
+                <tr>
+                    <td colspan="14" class="text-center text-muted">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <br>
+                        هیچ داده‌ای برای نمایش وجود ندارد
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@if (reportItems.Any())
+{
+    <!-- خلاصه آماری -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">توزیع سطوح تریاژ</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="level-distribution-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title">وضعیت ارزیابی‌ها</h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="status-distribution-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آمار تکمیلی -->
+    <div class="row mt-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4 class="text-primary">@summary.CompletionPercentage.ToString("F1")%</h4>
+                    <p class="mb-0">نرخ تکمیل</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4 class="text-warning">@summary.CriticalPercentage.ToString("F1")%</h4>
+                    <p class="mb-0">درصد بحرانی</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h4 class="text-info">@summary.ReassessmentCount</h4>
+                    <p class="mb-0">تعداد پایش مجدد</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<script>
+    // ایجاد نمودار توزیع سطوح
+    function createLevelDistributionChart() {
+        var ctx = document.getElementById('level-distribution-chart').getContext('2d');
+        var data = {
+            labels: ['بحرانی', 'فوری', 'عاجل', 'کم‌عاجل', 'غیرعاجل'],
+            datasets: [{
+                data: [@summary.CriticalAssessments, @summary.HighPriorityAssessments, 0, 0, 0], // TODO: محاسبه دقیق
+                backgroundColor: ['#dc3545', '#fd7e14', '#20c997', '#28a745', '#6c757d']
+            }]
+        };
+        
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // ایجاد نمودار توزیع وضعیت
+    function createStatusDistributionChart() {
+        var ctx = document.getElementById('status-distribution-chart').getContext('2d');
+        var data = {
+            labels: ['تکمیل شده', 'در انتظار', 'در حال انجام', 'لغو شده'],
+            datasets: [{
+                data: [@summary.CompletedAssessments, @summary.PendingAssessments, 0, 0], // TODO: محاسبه دقیق
+                backgroundColor: ['#28a745', '#ffc107', '#17a2b8', '#6c757d']
+            }]
+        };
+        
+        new Chart(ctx, {
+            type: 'pie',
+            data: data,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // راه‌اندازی نمودارها
+    $(document).ready(function() {
+        createLevelDistributionChart();
+        createStatusDistributionChart();
+    });
+</script>

@@ -1,0 +1,121 @@
+@model ClinicApp.ViewModels.Triage.TriageQueueItemDto
+@{
+    var item = Model;
+    var waitTime = DateTime.UtcNow - item.QueueTimeUtc;
+    var waitTimeMinutes = (int)waitTime.TotalMinutes;
+    var isOverdue = item.NextReassessmentDueAtUtc.HasValue && DateTime.UtcNow > item.NextReassessmentDueAtUtc.Value;
+}
+
+<div class="queue-item card mb-3 @(isOverdue ? "border-danger" : "")" data-queue-id="@item.QueueId">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="queue-number badge badge-@(item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 ? "danger" : 
+                                                      item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 ? "warning" :
+                                                      item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 ? "info" :
+                                                      item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 ? "success" : "secondary") badge-lg">
+                        #@item.QueueId
+                    </div>
+                    <small class="text-muted d-block mt-1">اولویت: @item.Priority</small>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <h6 class="mb-1">
+                    <a href="@Url.Action("Details", "Triage", new { id = item.TriageAssessmentId })" class="text-decoration-none">
+                        @item.PatientFullName
+                    </a>
+                </h6>
+                <small class="text-muted">شناسه بیمار: #@item.PatientId</small>
+                <br>
+                <small class="text-muted">شناسه ارزیابی: #@item.TriageAssessmentId</small>
+            </div>
+            
+            <div class="col-md-2">
+                <span class="badge badge-@(item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 ? "danger" : 
+                                          item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 ? "warning" :
+                                          item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 ? "info" :
+                                          item.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 ? "success" : "secondary")">
+                    @item.Level
+                </span>
+                <br>
+                <small class="text-muted">سطح تریاژ</small>
+            </div>
+            
+            <div class="col-md-2">
+                <div class="text-center">
+                    <div class="wait-time @(waitTimeMinutes > 60 ? "text-danger" : waitTimeMinutes > 30 ? "text-warning" : "text-success")">
+                        <i class="fas fa-clock"></i>
+                        @waitTimeMinutes دقیقه
+                    </div>
+                    <small class="text-muted">زمان انتظار</small>
+                </div>
+            </div>
+            
+            <div class="col-md-2">
+                <div class="text-center">
+                    @if (item.ReassessmentCount > 0)
+                    {
+                        <span class="badge badge-info">@item.ReassessmentCount</span>
+                        <br>
+                        <small class="text-muted">پایش مجدد</small>
+                    }
+                    else
+                    {
+                        <span class="badge badge-secondary">0</span>
+                        <br>
+                        <small class="text-muted">پایش مجدد</small>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        @if (isOverdue)
+        {
+            <div class="row mt-2">
+                <div class="col-12">
+                    <div class="alert alert-danger alert-sm mb-0">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>تأخیر در پایش مجدد!</strong>
+                        زمان پایش مجدد گذشته است.
+                        @if (item.NextReassessmentDueAtUtc.HasValue)
+                        {
+                            <small>زمان مقرر: @item.NextReassessmentDueAtUtc.Value.ToString("HH:mm")</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        
+        <div class="row mt-2">
+            <div class="col-12">
+                <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="TriageQueue.callNext(@item.QueueId)">
+                        <i class="fas fa-phone"></i>
+                        فراخوانی
+                    </button>
+                    
+                    <a href="@Url.Action("Details", "Triage", new { id = item.TriageAssessmentId })" 
+                       class="btn btn-info btn-sm">
+                        <i class="fas fa-eye"></i>
+                        جزئیات
+                    </a>
+                    
+                    <button type="button" class="btn btn-success btn-sm" onclick="TriageQueue.complete(@item.QueueId)">
+                        <i class="fas fa-check"></i>
+                        تکمیل
+                    </button>
+                    
+                    @if (item.ReassessmentCount == 0)
+                    {
+                        <button type="button" class="btn btn-warning btn-sm" onclick="TriageQueue.reassess(@item.TriageAssessmentId)">
+                            <i class="fas fa-redo"></i>
+                            پایش مجدد
+                        </button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

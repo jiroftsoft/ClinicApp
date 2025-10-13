@@ -94,18 +94,18 @@ namespace ClinicApp.ViewModels.Validators
             });
 
             // اعتبارسنجی وضعیت پذیرش
-            When(x => x.Status.HasValue, () =>
+            When(x => x.StatusEnum.HasValue, () =>
             {
-                RuleFor(x => x.Status)
+                RuleFor(x => x.StatusEnum)
                     .IsInEnum()
                     .WithMessage("وضعیت پذیرش نامعتبر است.")
                     .WithErrorCode("INVALID_RECEPTION_STATUS");
             });
 
             // اعتبارسنجی نوع پذیرش
-            When(x => x.Type.HasValue, () =>
+            When(x => x.TypeEnum.HasValue, () =>
             {
-                RuleFor(x => x.Type)
+                RuleFor(x => x.TypeEnum)
                     .IsInEnum()
                     .WithMessage("نوع پذیرش نامعتبر است.")
                     .WithErrorCode("INVALID_RECEPTION_TYPE");

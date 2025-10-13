@@ -688,6 +688,10 @@ namespace ClinicApp.Repositories
             }
         }
 
+        #endregion
+
+        #region Additional Methods
+
         /// <summary>
         /// Get receptions by date
         /// </summary>

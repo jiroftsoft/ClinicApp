@@ -1,0 +1,243 @@
+@model ClinicApp.ViewModels.Reception.EmergencyReceptionViewModel
+@{
+    ViewBag.Title = "پذیرش اورژانس";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-exclamation-triangle text-danger"></i>
+                        پذیرش اورژانس
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @using (Html.BeginForm("CreateEmergencyReception", "ReceptionTriageIntegration", FormMethod.Post, new { @class = "form-horizontal" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.PatientId, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.PatientId, new SelectList(new List<object>(), "Value", "Text"), 
+                                        "انتخاب بیمار", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.PatientId, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.EmergencyType, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.EmergencyType, new SelectList(Model.EmergencyTypes), 
+                                        "انتخاب نوع اورژانس", new { @class = "form-control", required = "required" })
+                                    @Html.ValidationMessageFor(m => m.EmergencyType, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.SelectedSymptoms, new { @class = "control-label" })
+                                    <div class="row">
+                                        @foreach (var symptom in Model.Symptoms)
+                                        {
+                                            <div class="col-md-3 col-sm-4 col-6">
+                                                <div class="form-check">
+                                                    <input type="checkbox" class="form-check-input" 
+                                                           name="SelectedSymptoms" value="@symptom" id="symptom_@symptom.Replace(" ", "_")" />
+                                                    <label class="form-check-label" for="symptom_@symptom.Replace(" ", "_")">
+                                                        @symptom
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.AdditionalSymptoms, new { @class = "control-label" })
+                                    @Html.TextAreaFor(m => m.AdditionalSymptoms, new { @class = "form-control", rows = "3", placeholder = "علائم اضافی را اینجا بنویسید..." })
+                                    @Html.ValidationMessageFor(m => m.AdditionalSymptoms, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.EmergencyNotes, new { @class = "control-label" })
+                                    @Html.TextAreaFor(m => m.EmergencyNotes, new { @class = "form-control", rows = "3", placeholder = "یادداشت‌های اورژانس..." })
+                                    @Html.ValidationMessageFor(m => m.EmergencyNotes, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Priority, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.Priority, 
+                                        new SelectList(new[] {
+                                            new { Value = "Critical", Text = "بحرانی" },
+                                            new { Value = "High", Text = "بالا" },
+                                            new { Value = "Medium", Text = "متوسط" },
+                                            new { Value = "Low", Text = "پایین" }
+                                        }, "Value", "Text", Model.Priority), 
+                                        new { @class = "form-control" })
+                                    @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <div class="form-check mt-4">
+                                        @Html.CheckBoxFor(m => m.IsUrgent, new { @class = "form-check-input" })
+                                        @Html.LabelFor(m => m.IsUrgent, new { @class = "form-check-label" })
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label class="control-label">زمان ایجاد:</label>
+                                    <input type="text" class="form-control" value="@DateTime.Now.ToString("yyyy/MM/dd HH:mm", System.Globalization.CultureInfo.InvariantCulture)" readonly />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="alert alert-warning">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>توجه:</strong> پذیرش اورژانس با اولویت بحرانی ایجاد می‌شود و بلافاصله به بخش اورژانس ارجاع داده می‌شود.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-danger btn-lg">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                ایجاد پذیرش اورژانس
+                            </button>
+                            <a href="@Url.Action("Index", "Reception")" class="btn btn-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i>
+                                بازگشت
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال انتخاب بیمار -->
+<div class="modal fade" id="patientSelectionModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user"></i>
+                    انتخاب بیمار
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>جستجوی بیمار:</label>
+                    <input type="text" class="form-control" id="patientSearch" placeholder="نام، کد ملی یا شماره تلفن..." />
+                </div>
+                <div id="patientSearchResults">
+                    <div class="text-center text-muted">
+                        <i class="fas fa-search"></i>
+                        برای جستجوی بیمار، نام، کد ملی یا شماره تلفن را وارد کنید
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // تنظیم اولویت پیش‌فرض
+            $('#Priority').val('Critical');
+            
+            // تنظیم چک‌باکس فوری
+            $('#IsUrgent').prop('checked', true);
+            
+            // جستجوی بیمار
+            $('#patientSearch').on('input', function() {
+                var searchTerm = $(this).val();
+                if (searchTerm.length >= 2) {
+                    searchPatients(searchTerm);
+                } else {
+                    $('#patientSearchResults').html('<div class="text-center text-muted"><i class="fas fa-search"></i> برای جستجوی بیمار، نام، کد ملی یا شماره تلفن را وارد کنید</div>');
+                }
+            });
+        });
+
+        // جستجوی بیماران
+        function searchPatients(searchTerm) {
+            $('#patientSearchResults').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> در حال جستجو...</div>');
+            
+            $.ajax({
+                url: '@Url.Action("SearchPatients", "Patient")',
+                type: 'GET',
+                data: { searchTerm: searchTerm },
+                success: function(data) {
+                    if (data.success && data.patients.length > 0) {
+                        var html = '<div class="list-group">';
+                        data.patients.forEach(function(patient) {
+                            html += `
+                                <a href="#" class="list-group-item list-group-item-action" onclick="selectPatient(${patient.patientId}, '${patient.fullName}')">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">${patient.fullName}</h6>
+                                        <small>${patient.nationalCode}</small>
+                                    </div>
+                                    <p class="mb-1">تلفن: ${patient.phoneNumber}</p>
+                                </a>
+                            `;
+                        });
+                        html += '</div>';
+                        $('#patientSearchResults').html(html);
+                    } else {
+                        $('#patientSearchResults').html('<div class="text-center text-muted"><i class="fas fa-user-slash"></i> هیچ بیمار یافت نشد</div>');
+                    }
+                },
+                error: function() {
+                    $('#patientSearchResults').html('<div class="alert alert-danger">خطا در جستجوی بیماران</div>');
+                }
+            });
+        }
+
+        // انتخاب بیمار
+        function selectPatient(patientId, patientName) {
+            $('#PatientId').val(patientId);
+            $('#patientSelectionModal').modal('hide');
+            
+            // نمایش نام بیمار در فیلد
+            var option = new Option(patientName, patientId, true, true);
+            $('#PatientId').append(option).trigger('change');
+        }
+
+        // نمایش مودال انتخاب بیمار
+        $('#PatientId').on('focus', function() {
+            $('#patientSelectionModal').modal('show');
+        });
+    </script>
+}

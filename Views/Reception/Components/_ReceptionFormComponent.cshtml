@@ -1,6 +1,6 @@
 @using ClinicApp.ViewModels.Reception
 @using ClinicApp.Models.Enums
-@model ClinicApp.ViewModels.Reception.ReceptionFormComponentViewModel
+@model ReceptionFormComponentViewModel
 
 <div class="reception-component reception-form-component" data-component="reception-form">
     <div class="component-header">
@@ -32,7 +32,7 @@
                                    class="form-control persian-datepicker" 
                                    id="receptionDate" 
                                    name="ReceptionDate"
-                                   value="@Model.ReceptionDate.ToString("yyyy/MM/dd")"
+                                   value="@Model.ReceptionDate"
                                    data-validate="required">
                         </div>
                     </div>
@@ -43,7 +43,7 @@
                                    class="form-control" 
                                    id="receptionTime" 
                                    name="ReceptionTime"
-                                   value="@DateTime.Now.ToString("HH:mm")"
+                                   value="@DateTime.Now.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)"
                                    data-validate="required">
                         </div>
                     </div>
@@ -55,13 +55,13 @@
                             <label for="receptionType" class="form-label">نوع پذیرش *</label>
                             <select class="form-select" 
                                     id="receptionType" 
-                                    name="ReceptionType"
+                                    name="Type"
                                     data-validate="required">
                                 <option value="">انتخاب کنید</option>
-                                <option value="Normal" @(Model.ReceptionType == "Normal" ? "selected" : "")>عادی</option>
-                                <option value="Emergency" @(Model.ReceptionType == "Emergency" ? "selected" : "")>اورژانس</option>
-                                <option value="Special" @(Model.ReceptionType == "Special" ? "selected" : "")>ویژه</option>
-                                <option value="Online" @(Model.ReceptionType == "Online" ? "selected" : "")>آنلاین</option>
+                                <option value="Normal" @(Model.Type == ReceptionType.Normal ? "selected" : "")>عادی</option>
+                                <option value="Emergency" @(Model.Type == ReceptionType.Emergency ? "selected" : "")>اورژانس</option>
+                                <option value="Special" @(Model.Type == ReceptionType.Special ? "selected" : "")>ویژه</option>
+                                <option value="Online" @(Model.Type == ReceptionType.Online ? "selected" : "")>آنلاین</option>
                             </select>
                         </div>
                     </div>
@@ -71,9 +71,9 @@
                             <select class="form-select" 
                                     id="priority" 
                                     name="Priority">
-                                <option value="Normal" @(Model.Priority == "Normal" ? "selected" : "")>عادی</option>
-                                <option value="High" @(Model.Priority == "High" ? "selected" : "")>بالا</option>
-                                <option value="Urgent" @(Model.Priority == "Urgent" ? "selected" : "")>فوری</option>
+                                <option value="Normal" @(Model.Priority == AppointmentPriority.Normal ? "selected" : "")>عادی</option>
+                                <option value="High" @(Model.Priority == AppointmentPriority.High ? "selected" : "")>بالا</option>
+                                <option value="Urgent" @(Model.Priority == AppointmentPriority.Urgent ? "selected" : "")>فوری</option>
                             </select>
                         </div>
                     </div>
@@ -223,10 +223,26 @@
 </div>
 
 <script>
-$(document).ready(function() {
-    // Initialize Reception Form Component
-    initializeReceptionFormComponent();
-});
+// محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+(function() {
+    function ensureJQuery(callback) {
+        if (typeof jQuery !== 'undefined') {
+            callback();
+        } else {
+            setTimeout(function() {
+                ensureJQuery(callback);
+            }, 50);
+        }
+    }
+
+    // راه‌اندازی پس از بارگذاری jQuery
+    ensureJQuery(function() {
+        $(document).ready(function() {
+            // Initialize Reception Form Component
+            initializeReceptionFormComponent();
+        });
+    });
+})();
 
 function initializeReceptionFormComponent() {
     const component = $('[data-component="reception-form"]');
@@ -461,11 +477,11 @@ function validatePatientInsurance(patientId) {
         success: function(response) {
             if (response.success) {
                 displayInsuranceStatus(response.data);
-        } else {
-            showInsuranceError(response.message);
-        }
-        setFormLoading(false);
-    },
+            } else {
+                showInsuranceError(response.message);
+            }
+            setFormLoading(false);
+        },
     error: function() {
         showInsuranceError('خطا در بررسی بیمه بیمار');
         setFormLoading(false);
@@ -549,7 +565,7 @@ function getFormData() {
         ServiceId: $('#serviceId').val(),
         ReceptionDate: $('#receptionDate').val(),
         ReceptionTime: $('#receptionTime').val(),
-        ReceptionType: $('#receptionType').val(),
+        Type: $('#receptionType').val(),
         Priority: $('#priority').val(),
         Notes: $('#notes').val()
     };

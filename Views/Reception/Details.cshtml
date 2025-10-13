@@ -132,16 +132,16 @@
                                     <tr>
                                         <td>@service.ServiceName</td>
                                         <td>@service.ServiceCategory</td>
-                                        <td>@service.Price.ToString("N0") تومان</td>
+                                        <td>@service.Price.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</td>
                                         <td>@service.Quantity</td>
-                                        <td>@service.TotalPrice.ToString("N0") تومان</td>
+                                        <td>@service.TotalPrice.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</td>
                                     </tr>
                                 }
                             </tbody>
                             <tfoot class="table-light">
                                 <tr>
                                     <th colspan="4">مجموع کل:</th>
-                                    <th>@Model.TotalAmount.ToString("N0") تومان</th>
+                                    <th>@Model.TotalAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</th>
                                 </tr>
                             </tfoot>
                         </table>
@@ -174,20 +174,20 @@
                     <div class="info-row border-secondary">
                         <label class="info-label border-secondary">مبلغ کل:</label>
                         <span class="info-value">
-                            <span class="badge badge-primary">@Model.TotalAmount.ToString("N0") تومان</span>
+                            <span class="badge badge-primary">@Model.TotalAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</span>
                         </span>
                     </div>
                     <div class="info-row border-secondary">
                         <label class="info-label border-secondary">مبلغ پرداخت شده:</label>
                         <span class="info-value">
-                            <span class="badge badge-success">@Model.PaidAmount.ToString("N0") تومان</span>
+                            <span class="badge badge-success">@Model.PaidAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</span>
                         </span>
                     </div>
                     <div class="info-row border-secondary">
                         <label class="info-label border-secondary">مبلغ باقی‌مانده:</label>
                         <span class="info-value">
                             <span class="badge badge-@(Model.RemainingAmount > 0 ? "warning" : "success")">
-                                @Model.RemainingAmount.ToString("N0") تومان
+                                @Model.RemainingAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان
                             </span>
                         </span>
                     </div>
@@ -231,13 +231,13 @@
                         <div class="info-row border-info">
                             <label class="info-label border-info">سهم بیمه:</label>
                             <span class="info-value">
-                                <span class="badge badge-info">@Model.InsuranceShare.ToString("N0") تومان</span>
+                                <span class="badge badge-info">@Model.InsuranceShare.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</span>
                             </span>
                         </div>
                         <div class="info-row border-info">
                             <label class="info-label border-info">سهم بیمار:</label>
                             <span class="info-value">
-                                <span class="badge badge-warning">@Model.PatientShare.ToString("N0") تومان</span>
+                                <span class="badge badge-warning">@Model.PatientShare.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</span>
                             </span>
                         </div>
                     </div>

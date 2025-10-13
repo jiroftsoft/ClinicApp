@@ -302,6 +302,12 @@ public class Doctor : ISoftDelete, ITrackable
     /// این رابطه برای مشخص کردن تخصص‌های پزشک استفاده می‌شود
     /// </summary>
     public virtual ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new HashSet<DoctorSpecialization>();
+
+    /// <summary>
+    /// لیست ارزیابی‌های تریاژ انجام شده توسط این پزشک (به عنوان پزشک پیشنهادی)
+    /// این لیست برای نمایش تمام ارزیابی‌های تریاژ که این پزشک به عنوان پزشک پیشنهادی در آن‌ها ذکر شده است
+    /// </summary>
+    public virtual ICollection<Triage.TriageAssessment> RecommendedTriageAssessments { get; set; } = new HashSet<Triage.TriageAssessment>();
     #endregion
 }
 

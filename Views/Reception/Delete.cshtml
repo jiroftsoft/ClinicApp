@@ -124,15 +124,15 @@
                             <div class="row g-3">
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">مبلغ کل:</label>
-                                    <p class="form-control-plaintext">@Model.TotalAmount.ToString("N0") تومان</p>
+                                    <p class="form-control-plaintext">@Model.TotalAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</p>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">مبلغ پرداخت شده:</label>
-                                    <p class="form-control-plaintext">@Model.PaidAmount.ToString("N0") تومان</p>
+                                    <p class="form-control-plaintext">@Model.PaidAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</p>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">مبلغ باقی‌مانده:</label>
-                                    <p class="form-control-plaintext">@Model.RemainingAmount.ToString("N0") تومان</p>
+                                    <p class="form-control-plaintext">@Model.RemainingAmount.ToString("N0", System.Globalization.CultureInfo.InvariantCulture) تومان</p>
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label fw-bold">روش پرداخت:</label>

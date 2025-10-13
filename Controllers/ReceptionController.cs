@@ -7,14 +7,10 @@ using ClinicApp.Core;
 using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
-using ClinicApp.Models.Entities;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
 using ClinicApp.ViewModels.Validators;
-using FluentValidation;
 using Serilog;
-using Microsoft.AspNet.Identity;
-using ClinicApp.Services;
 using ClinicApp.Models;
 using System.Data.Entity;
 using ClinicApp.Interfaces.Insurance;
@@ -94,16 +90,31 @@ namespace ClinicApp.Controllers
 
         try
         {
-            var model = new ReceptionSearchViewModel
+            var model = new ReceptionIndexViewModel
             {
-                StartDate = DateTime.Today,
-                EndDate = DateTime.Today.AddDays(7),
-                StartDateShamsi = "", // مقدار اولیه خالی
-                EndDateShamsi = "", // مقدار اولیه خالی
-                StatusList = GetReceptionStatusList(),
-                TypeList = GetReceptionTypeList(),
-                PaymentMethodList = GetPaymentMethodList(),
-                InsuranceList = GetInsuranceList()
+                ReceptionId = 0,
+                PatientFullName = "",
+                DoctorFullName = "",
+                ReceptionDate = DateTime.Now.ToString("yyyy/MM/dd"),
+                TotalAmount = 0,
+                Status = "آماده",
+                Type = "عادی",
+                PatientId = 0,
+                DoctorId = 0,
+                Priority = Models.Enums.AppointmentPriority.Normal,
+                IsEmergency = false,
+                IsOnlineReception = false,
+                DepartmentName = "",
+                Receptions = new List<ReceptionListItemViewModel>(),
+                DailyStats = new ReceptionDailyStatsViewModel(),
+                DoctorStats = new List<ReceptionDoctorStatsViewModel>(),
+                SearchCriteria = new ReceptionSearchCriteria
+                {
+                    StartDate = DateTime.Today,
+                    EndDate = DateTime.Today.AddDays(7),
+                    PageNumber = 1,
+                    PageSize = 10
+                }
             };
 
             return View(model);
@@ -958,7 +969,18 @@ namespace ClinicApp.Controllers
 
             try
             {
-                var result = await _receptionService.GetReceptionsAsync(null, null, null, null, pageNumber, pageSize);
+                // تنظیم پارامترهای جستجو
+                model.PageNumber = pageNumber;
+                model.PageSize = pageSize;
+
+                // دریافت نتایج جستجو
+                var result = await _receptionService.GetReceptionsAsync(
+                    model.PatientId, 
+                    model.DoctorId, 
+                    null, // status
+                    model.SearchTerm, 
+                    pageNumber, 
+                    pageSize);
 
                 if (!result.Success)
                 {
@@ -966,17 +988,41 @@ namespace ClinicApp.Controllers
                     return RedirectToAction("Index");
                 }
 
-                var viewModel = new ReceptionIndexViewModel
+                // تنظیم نتایج جستجو
+                model.SearchResults = result.Data?.Items?.Select(r => new ReceptionIndexViewModel
                 {
-                    ReceptionId = 0, // Multiple receptions handled in search results
-                    PatientFullName = "نتایج جستجو",
-                    DoctorFullName = "",
-                    ReceptionDate = DateTime.Now.ToString("yyyy/MM/dd"),
-                    TotalAmount = result.Data?.Items?.Sum(r => r.TotalAmount) ?? 0,
-                    Status = "نتایج جستجو"
-                };
+                    ReceptionId = r.ReceptionId,
+                    PatientFullName = r.PatientFullName,
+                    PatientNationalCode = r.PatientNationalCode,
+                    DoctorFullName = r.DoctorFullName,
+                    ReceptionDate = r.ReceptionDate,
+                    TotalAmount = r.TotalAmount,
+                    PaidAmount = r.PaidAmount,
+                    RemainingAmount = r.RemainingAmount,
+                    Status = r.Status,
+                    Type = r.Type,
+                    PatientId = r.PatientId,
+                    DoctorId = r.DoctorId,
+                    Priority = r.Priority,
+                    IsEmergency = r.IsEmergency,
+                    IsOnlineReception = r.IsOnlineReception,
+                    DepartmentName = r.DepartmentName
+                }).ToList() ?? new List<ReceptionIndexViewModel>();
 
-                return View("Index", viewModel);
+                model.TotalResults = result.Data?.TotalItems ?? 0;
+                model.TotalPages = result.Data?.TotalPages ?? 0;
+                model.HasResults = model.SearchResults.Any();
+                model.SearchMessage = model.HasResults ? 
+                    $"تعداد {model.TotalResults} نتیجه یافت شد" : 
+                    "هیچ نتیجه‌ای یافت نشد";
+
+                // پر کردن Lookup Lists
+                model.StatusList = GetReceptionStatusList();
+                model.TypeList = GetReceptionTypeList();
+                model.PaymentMethodList = GetPaymentMethodList();
+                model.InsuranceList = GetInsuranceList();
+
+                return View("SearchResults", model);
             }
             catch (Exception ex)
             {

@@ -1,0 +1,341 @@
+@model ClinicApp.ViewModels.Reception.TriageToReceptionTransferViewModel
+@{
+    ViewBag.Title = "انتقال بیماران از تریاژ به پذیرش";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-exchange-alt"></i>
+                        انتقال بیماران از تریاژ به پذیرش
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-tool" data-card-widget="collapse">
+                            <i class="fas fa-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-info">
+                                <div class="inner">
+                                    <h3>@Model.TotalAssessments</h3>
+                                    <p>کل ارزیابی‌ها</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-clipboard-list"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-success">
+                                <div class="inner">
+                                    <h3>@Model.ReadyPatientsCount</h3>
+                                    <p>آماده برای انتقال</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-user-check"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-danger">
+                                <div class="inner">
+                                    <h3>@Model.EmergencyPatientsCount</h3>
+                                    <p>اورژانس</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-6">
+                            <div class="small-box bg-warning">
+                                <div class="inner">
+                                    <h3>@Model.NormalPatientsCount</h3>
+                                    <p>عادی</p>
+                                </div>
+                                <div class="icon">
+                                    <i class="fas fa-user"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- جدول بیماران آماده -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped" id="readyPatientsTable">
+                            <thead>
+                                <tr>
+                                    <th>ردیف</th>
+                                    <th>نام بیمار</th>
+                                    <th>سطح تریاژ</th>
+                                    <th>اولویت</th>
+                                    <th>شکایت اصلی</th>
+                                    <th>زمان تریاژ</th>
+                                    <th>زمان انتظار</th>
+                                    <th>بخش پیشنهادی</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.ReadyPatients.Any())
+                                {
+                                    @foreach (var patient in Model.ReadyPatients)
+                                    {
+                                        <tr class="@(patient.IsEmergency ? "table-danger" : "")">
+                                            <td>@(Model.ReadyPatients.IndexOf(patient) + 1)</td>
+                                            <td>
+                                                <strong>@patient.PatientFullName</strong>
+                                                @if (patient.IsEmergency)
+                                                {
+                                                    <span class="badge badge-danger">اورژانس</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-@patient.TriageLevelCssClass">
+                                                    @patient.TriageLevelText
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-info">@patient.Priority</span>
+                                            </td>
+                                            <td>@patient.ChiefComplaint</td>
+                                            <td>@patient.TriageDateTime.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)</td>
+                                            <td>@patient.EstimatedWaitTimeText</td>
+                                            <td>@patient.RecommendedDepartment</td>
+                                            <td>
+                                                <button type="button" class="btn btn-primary btn-sm" 
+                                                        onclick="showTransferModal(@patient.TriageAssessmentId, @patient.PatientId, '@patient.PatientFullName')">
+                                                    <i class="fas fa-exchange-alt"></i>
+                                                    انتقال
+                                                </button>
+                                                <button type="button" class="btn btn-info btn-sm" 
+                                                        onclick="showPatientDetails(@patient.TriageAssessmentId)">
+                                                    <i class="fas fa-eye"></i>
+                                                    جزئیات
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="9" class="text-center text-muted">
+                                            <i class="fas fa-info-circle"></i>
+                                            هیچ بیمار آماده‌ای برای انتقال یافت نشد
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- مودال انتقال بیمار -->
+<div class="modal fade" id="transferModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-exchange-alt"></i>
+                    انتقال بیمار به پذیرش
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <form id="transferForm" method="post" action="@Url.Action("TransferPatient", "ReceptionTriageIntegration")">
+                <div class="modal-body">
+                    <input type="hidden" id="triageAssessmentId" name="triageAssessmentId" />
+                    <input type="hidden" name="transferData.PatientId" id="patientId" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>نام بیمار:</label>
+                                <input type="text" class="form-control" id="patientName" readonly />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>بخش:</label>
+                                <select class="form-control" name="transferData.DepartmentId" required>
+                                    <option value="">انتخاب کنید</option>
+                                    <option value="1">اورژانس</option>
+                                    <option value="2">درمانگاه</option>
+                                    <option value="3">بخش داخلی</option>
+                                    <option value="4">بخش جراحی</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>پزشک:</label>
+                                <select class="form-control" name="transferData.DoctorId" required>
+                                    <option value="">انتخاب کنید</option>
+                                    <option value="1">دکتر احمدی</option>
+                                    <option value="2">دکتر رضایی</option>
+                                    <option value="3">دکتر محمدی</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>مبلغ کل:</label>
+                                <input type="number" class="form-control" name="transferData.TotalAmount" 
+                                       step="0.01" min="0" required />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>سهم بیمار:</label>
+                                <input type="number" class="form-control" name="transferData.PatientCoPay" 
+                                       step="0.01" min="0" required />
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label>سهم بیمه:</label>
+                                <input type="number" class="form-control" name="transferData.InsurerShareAmount" 
+                                       step="0.01" min="0" required />
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>یادداشت‌ها:</label>
+                        <textarea class="form-control" name="transferData.Notes" rows="3"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">انصراف</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-exchange-alt"></i>
+                        انتقال
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- مودال جزئیات بیمار -->
+<div class="modal fade" id="patientDetailsModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-user"></i>
+                    جزئیات بیمار
+                </h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="patientDetailsContent">
+                <div class="text-center">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    در حال بارگذاری...
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">بستن</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // تنظیم جدول
+            $('#readyPatientsTable').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.10.24/i18n/Persian.json"
+                },
+                "order": [[3, "asc"]], // مرتب‌سازی بر اساس اولویت
+                "pageLength": 25
+            });
+        });
+
+        // نمایش مودال انتقال
+        function showTransferModal(triageAssessmentId, patientId, patientName) {
+            $('#triageAssessmentId').val(triageAssessmentId);
+            $('#patientId').val(patientId);
+            $('#patientName').val(patientName);
+            $('#transferModal').modal('show');
+        }
+
+        // نمایش جزئیات بیمار
+        function showPatientDetails(triageAssessmentId) {
+            $('#patientDetailsContent').html('<div class="text-center"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری...</div>');
+            $('#patientDetailsModal').modal('show');
+            
+            $.ajax({
+                url: '@Url.Action("GetPatientDetails", "ReceptionTriageIntegration")',
+                type: 'GET',
+                data: { triageAssessmentId: triageAssessmentId },
+                success: function(data) {
+                    if (data.success) {
+                        var content = `
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6><strong>اطلاعات بیمار:</strong></h6>
+                                    <p><strong>نام:</strong> ${data.patientName}</p>
+                                    <p><strong>کد ملی:</strong> ${data.nationalCode}</p>
+                                    <p><strong>تلفن:</strong> ${data.phoneNumber}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><strong>اطلاعات تریاژ:</strong></h6>
+                                    <p><strong>سطح:</strong> <span class="badge badge-${data.triageLevel === 'ESI1' || data.triageLevel === 'ESI2' ? 'danger' : 'info'}">${data.triageLevel}</span></p>
+                                    <p><strong>اولویت:</strong> ${data.priority}</p>
+                                    <p><strong>شکایت اصلی:</strong> ${data.chiefComplaint}</p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-12">
+                                    <h6><strong>علائم:</strong></h6>
+                                    <p>${data.symptoms || 'ثبت نشده'}</p>
+                                </div>
+                            </div>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <h6><strong>سابقه پزشکی:</strong></h6>
+                                    <p>${data.medicalHistory || 'ثبت نشده'}</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6><strong>حساسیت‌ها:</strong></h6>
+                                    <p>${data.allergies || 'ثبت نشده'}</p>
+                                </div>
+                            </div>
+                        `;
+                        $('#patientDetailsContent').html(content);
+                    } else {
+                        $('#patientDetailsContent').html('<div class="alert alert-danger">خطا در دریافت جزئیات بیمار: ' + data.message + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#patientDetailsContent').html('<div class="alert alert-danger">خطا در ارتباط با سرور</div>');
+                }
+            });
+        }
+    </script>
+}

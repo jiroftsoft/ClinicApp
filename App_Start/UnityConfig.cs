@@ -43,6 +43,7 @@ using ClinicApp.Services.DataSeeding;
 using ClinicApp.Services.UserContext;
 using ClinicApp.Services.SystemSettings;
 using ClinicApp.Services.Interfaces;
+using ClinicApp.Services.Triage;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -95,6 +96,9 @@ namespace ClinicApp
                 // ثبت DbContext با مدیریت صحیح Lifetime
                 container.RegisterType<DbContext, ApplicationDbContext>(new PerRequestLifetimeManager());
                 container.RegisterType<ApplicationDbContext>(new PerRequestLifetimeManager());
+                
+                // ثبت TimeProvider برای مدیریت زمان
+                container.RegisterType<ITimeProvider, DefaultTimeProvider>(new ContainerControlledLifetimeManager());
 
                 // ثبت Identity با پشتیبانی از محیط‌های مختلف
                 RegisterIdentityServices(container);
@@ -193,7 +197,7 @@ namespace ClinicApp
 
                 // برای محیط‌های غیر-وب، یک AuthenticationManager مجازی برمی‌گردانیم
                 _log.Warning("در حال استفاده از AuthenticationManager مجازی برای محیط غیر-وب");
-                return new FakeAuthenticationManager();
+                return null;
             }
             catch (Exception ex)
             {
@@ -314,6 +318,10 @@ namespace ClinicApp
                 container.RegisterType<IServiceService, ServiceService>(new HierarchicalLifetimeManager());
                 container.RegisterType<IAuthService, AuthService>(new HierarchicalLifetimeManager());
                 container.RegisterType<ApplicationUserManager>();
+
+                // ثبت سرویس‌های تریاژ
+                container.RegisterType<ITriageService, TriageService>(new PerRequestLifetimeManager());
+                container.RegisterType<ITriageQueueService, TriageQueueService>(new PerRequestLifetimeManager());
 
                 // ثبت سرویس‌های Seed Data
                 container.RegisterType<FactorSettingSeedService>(new PerRequestLifetimeManager());

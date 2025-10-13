@@ -1,0 +1,278 @@
+@model ClinicApp.ViewModels.Triage.TriageProtocolViewModel
+@{
+    ViewBag.Title = "ویرایش پروتکل تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-edit"></i>
+                        ویرایش پروتکل تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Details", new { id = Model.TriageProtocolId })" class="btn btn-info btn-sm">
+                            <i class="fas fa-eye"></i>
+                            مشاهده جزئیات
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @using (Html.BeginForm("Edit", "TriageProtocol", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.TriageProtocolId)
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <!-- اطلاعات اصلی -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">اطلاعات اصلی</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Name, new { @class = "control-label" })
+                                            @Html.TextBoxFor(m => m.Name, new { @class = "form-control", placeholder = "نام پروتکل" })
+                                            @Html.ValidationMessageFor(m => m.Name, "", new { @class = "text-danger" })
+                                        </div>
+
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Description, new { @class = "control-label" })
+                                            @Html.TextAreaFor(m => m.Description, new { @class = "form-control", rows = 3, placeholder = "توضیحات پروتکل" })
+                                            @Html.ValidationMessageFor(m => m.Description, "", new { @class = "text-danger" })
+                                        </div>
+
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.ProtocolType, new { @class = "control-label" })
+                                                    @Html.DropDownListFor(m => m.ProtocolType, ViewBag.ProtocolTypes as IEnumerable<SelectListItem>, "انتخاب نوع پروتکل", new { @class = "form-control" })
+                                                    @Html.ValidationMessageFor(m => m.ProtocolType, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="form-group">
+                                                    @Html.LabelFor(m => m.Priority, new { @class = "control-label" })
+                                                    @Html.TextBoxFor(m => m.Priority, new { @class = "form-control", type = "number", min = "1", max = "10", placeholder = "اولویت (1-10)" })
+                                                    @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div class="form-group">
+                                            <div class="form-check">
+                                                @Html.CheckBoxFor(m => m.IsActive, new { @class = "form-check-input" })
+                                                @Html.LabelFor(m => m.IsActive, new { @class = "form-check-label" })
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- معیارها -->
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h5 class="card-title">معیارهای پروتکل</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Criteria, new { @class = "control-label" })
+                                            @Html.TextAreaFor(m => m.Criteria, new { @class = "form-control", rows = 6, placeholder = "شرایط و معیارهای اعمال پروتکل" })
+                                            @Html.ValidationMessageFor(m => m.Criteria, "", new { @class = "text-danger" })
+                                            <small class="form-text text-muted">
+                                                معیارهای تشخیصی و شرایط اعمال این پروتکل را مشخص کنید
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- اقدامات -->
+                                <div class="card mt-3">
+                                    <div class="card-header">
+                                        <h5 class="card-title">اقدامات پروتکل</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Actions, new { @class = "control-label" })
+                                            @Html.TextAreaFor(m => m.Actions, new { @class = "form-control", rows = 6, placeholder = "اقدامات و مراحل اجرای پروتکل" })
+                                            @Html.ValidationMessageFor(m => m.Actions, "", new { @class = "text-danger" })
+                                            <small class="form-text text-muted">
+                                                مراحل و اقدامات مورد نیاز برای اجرای این پروتکل را مشخص کنید
+                                            </small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="col-md-4">
+                                <!-- اطلاعات پروتکل -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-info-circle"></i>
+                                            اطلاعات پروتکل
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-6">
+                                                <small class="text-muted">شناسه:</small><br>
+                                                <strong>#@Model.TriageProtocolId</strong>
+                                            </div>
+                                            <div class="col-6">
+                                                <small class="text-muted">وضعیت:</small><br>
+                                                <span class="badge badge-@(Model.IsActive ? "success" : "secondary")">
+                                                    @(Model.IsActive ? "فعال" : "غیرفعال")
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-12">
+                                                <small class="text-muted">تاریخ ایجاد:</small><br>
+                                                <small>@Model.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small>
+                                            </div>
+                                        </div>
+                                        @if (Model.UpdatedAt.HasValue)
+                                        {
+                                            <div class="row mt-2">
+                                                <div class="col-12">
+                                                    <small class="text-muted">آخرین ویرایش:</small><br>
+                                                    <small>@Model.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</small>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+
+                                <!-- راهنمای ویرایش -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-edit"></i>
+                                            راهنمای ویرایش
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="alert alert-info">
+                                            <h6><i class="fas fa-lightbulb"></i> نکات مهم:</h6>
+                                            <ul class="mb-0">
+                                                <li>تغییرات بلافاصله در سیستم اعمال می‌شوند</li>
+                                                <li>پروتکل‌های فعال قابل استفاده هستند</li>
+                                                <li>معیارها و اقدامات را با دقت بررسی کنید</li>
+                                                <li>اولویت بالاتر = اهمیت بیشتر</li>
+                                            </ul>
+                                        </div>
+
+                                        <div class="alert alert-warning">
+                                            <h6><i class="fas fa-exclamation-triangle"></i> هشدار:</h6>
+                                            <p class="mb-0">تغییرات در پروتکل‌های فعال بر ارزیابی‌های جاری تأثیر می‌گذارد</p>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- پیش‌نمایش -->
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-eye"></i>
+                                            پیش‌نمایش
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div id="protocol-preview">
+                                            <h6 class="text-muted">پیش‌نمایش پروتکل</h6>
+                                            <p class="text-muted">اطلاعات را ویرایش کنید تا پیش‌نمایش به‌روزرسانی شود</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- دکمه‌های عملیات -->
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <div class="form-group text-center">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-save"></i>
+                                        ذخیره تغییرات
+                                    </button>
+                                    <a href="@Url.Action("Details", new { id = Model.TriageProtocolId })" class="btn btn-info btn-lg">
+                                        <i class="fas fa-eye"></i>
+                                        مشاهده جزئیات
+                                    </a>
+                                    <a href="@Url.Action("Index")" class="btn btn-secondary btn-lg">
+                                        <i class="fas fa-times"></i>
+                                        انصراف
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage-protocols.js"></script>
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی مدیریت پروتکل‌ها
+            if (typeof TriageProtocol !== 'undefined') {
+                TriageProtocol.init();
+            }
+
+            // پیش‌نمایش زنده
+            $('input, textarea, select').on('input change', function() {
+                updateProtocolPreview();
+            });
+
+            // بارگذاری اولیه پیش‌نمایش
+            updateProtocolPreview();
+        });
+
+        function updateProtocolPreview() {
+            var name = $('#Name').val() || 'نام پروتکل';
+            var description = $('#Description').val() || 'توضیحات پروتکل';
+            var protocolType = $('#ProtocolType option:selected').text() || 'نوع پروتکل';
+            var priority = $('#Priority').val() || '5';
+            var criteria = $('#Criteria').val() || 'معیارهای پروتکل';
+            var actions = $('#Actions').val() || 'اقدامات پروتکل';
+            var isActive = $('#IsActive').is(':checked');
+
+            var preview = '<div class="protocol-preview-item">' +
+                '<h6><strong>' + name + '</strong></h6>' +
+                '<p class="text-muted">' + description + '</p>' +
+                '<div class="row">' +
+                '<div class="col-6"><small><strong>نوع:</strong> ' + protocolType + '</small></div>' +
+                '<div class="col-6"><small><strong>اولویت:</strong> ' + priority + '</small></div>' +
+                '</div>' +
+                '<div class="mt-2">' +
+                '<small><strong>معیارها:</strong></small><br>' +
+                '<small class="text-muted">' + criteria + '</small>' +
+                '</div>' +
+                '<div class="mt-2">' +
+                '<small><strong>اقدامات:</strong></small><br>' +
+                '<small class="text-muted">' + actions + '</small>' +
+                '</div>' +
+                '<div class="mt-2">' +
+                '<span class="badge badge-' + (isActive ? 'success' : 'secondary') + '">' +
+                (isActive ? 'فعال' : 'غیرفعال') +
+                '</span>' +
+                '</div>' +
+                '</div>';
+
+            $('#protocol-preview').html(preview);
+        }
+    </script>
+}

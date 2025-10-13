@@ -1,0 +1,212 @@
+@model ClinicApp.ViewModels.Triage.TriageReportViewModel
+@{
+    ViewBag.Title = "گزارش‌گیری تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-chart-bar"></i>
+                        گزارش‌گیری تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-success btn-sm" onclick="TriageReports.exportExcel()">
+                            <i class="fas fa-file-excel"></i>
+                            خروجی Excel
+                        </button>
+                        <button type="button" class="btn btn-danger btn-sm" onclick="TriageReports.exportPdf()">
+                            <i class="fas fa-file-pdf"></i>
+                            خروجی PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @using (Html.BeginForm("GenerateReport", "TriageReport", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+
+                        <!-- فیلترهای گزارش -->
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.StartDate, new { @class = "control-label" })
+                                    @Html.TextBoxFor(m => m.StartDate, new { @class = "form-control", @type = "date" })
+                                    @Html.ValidationMessageFor(m => m.StartDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.EndDate, new { @class = "control-label" })
+                                    @Html.TextBoxFor(m => m.EndDate, new { @class = "form-control", @type = "date" })
+                                    @Html.ValidationMessageFor(m => m.EndDate, "", new { @class = "text-danger" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.DepartmentId, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.DepartmentId, 
+                                        new SelectList(Model.Departments, "Value", "Text", Model.DepartmentId), 
+                                        new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Level, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.Level, 
+                                        new SelectList(Model.LevelOptions, "Value", "Text", Model.Level), 
+                                        new { @class = "form-control" })
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.Status, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.Status, 
+                                        new SelectList(Model.StatusOptions, "Value", "Text", Model.Status), 
+                                        new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.ReportType, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.ReportType, 
+                                        new SelectList(Model.ReportTypeOptions, "Value", "Text", Model.ReportType), 
+                                        new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    @Html.LabelFor(m => m.ExportFormat, new { @class = "control-label" })
+                                    @Html.DropDownListFor(m => m.ExportFormat, 
+                                        new SelectList(Model.ExportFormatOptions, "Value", "Text", Model.ExportFormat), 
+                                        new { @class = "form-control" })
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="control-label">&nbsp;</label>
+                                    <div>
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fas fa-search"></i>
+                                            تولید گزارش
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" onclick="TriageReports.resetFilters()">
+                                            <i class="fas fa-undo"></i>
+                                            بازنشانی
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- آمار سریع -->
+                    <div class="row mb-4" id="quick-stats">
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-users"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کل ارزیابی‌ها</span>
+                                    <span class="info-box-number" id="total-assessments">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">تکمیل شده</span>
+                                    <span class="info-box-number" id="completed-assessments">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">میانگین انتظار</span>
+                                    <span class="info-box-number" id="average-wait-time">-</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بحرانی</span>
+                                    <span class="info-box-number" id="critical-count">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودار روند -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">روند تریاژ</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="trend-chart" height="100"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نتایج گزارش -->
+                    @if (Model.HasData)
+                    {
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            نتایج گزارش
+                                            <span class="badge badge-info">@Model.TotalItems مورد</span>
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        @Html.Partial("_ReportPartial", Model)
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage-reports.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی گزارش‌گیری
+            TriageReports.init();
+            
+            // بارگذاری آمار سریع
+            TriageReports.loadQuickStats();
+            
+            // بارگذاری نمودار روند
+            TriageReports.loadTrendChart();
+        });
+    </script>
+}

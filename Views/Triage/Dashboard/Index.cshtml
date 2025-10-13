@@ -1,0 +1,262 @@
+@model ClinicApp.ViewModels.Triage.TriageDashboardViewModel
+@{
+    ViewBag.Title = "داشبورد تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-tachometer-alt"></i>
+                        داشبورد تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <button type="button" class="btn btn-primary btn-sm" onclick="TriageDashboard.refreshStats()">
+                            <i class="fas fa-sync"></i>
+                            به‌روزرسانی
+                        </button>
+                        <button type="button" class="btn btn-info btn-sm" onclick="TriageDashboard.exportDashboard()">
+                            <i class="fas fa-download"></i>
+                            خروجی
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- وضعیت سیستم -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <div class="alert alert-@Model.SystemStatusClass">
+                                <i class="fas fa-@(Model.IsSystemHealthy ? "check-circle" : "exclamation-triangle")"></i>
+                                <strong>وضعیت سیستم:</strong> @Model.SystemStatusMessage
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="text-right">
+                                <small class="text-muted">
+                                    آخرین به‌روزرسانی: <span id="last-update">@DateTime.Now.ToString("HH:mm:ss")</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-primary">
+                                    <i class="fas fa-users"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کل ارزیابی‌ها</span>
+                                    <span class="info-box-number">@Model.DailyStats.TotalAssessments</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">تکمیل شده</span>
+                                    <span class="info-box-number">@Model.DailyStats.CompletedAssessments</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">در انتظار</span>
+                                    <span class="info-box-number">@Model.DailyStats.PendingAssessments</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بحرانی</span>
+                                    <span class="info-box-number">@Model.CriticalPatients</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-chart-line"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">نرخ تکمیل</span>
+                                    <span class="info-box-number">@Model.CompletionRate.ToString("F1")%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-secondary">
+                                    <i class="fas fa-hourglass-half"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">میانگین انتظار</span>
+                                    <span class="info-box-number">@Model.DailyStats.AverageWaitTimeMinutes دقیقه</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- هشدارها و وضعیت‌های فوری -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        بیماران بحرانی
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-@Model.UrgencyClass">
+                                        <i class="fas fa-@(Model.HasUrgentPatients ? "exclamation-triangle" : "check-circle")"></i>
+                                        @Model.UrgencyMessage
+                                    </div>
+                                    @if (Model.UrgentQueue.Any())
+                                    {
+                                        <div class="list-group">
+                                            @foreach (var patient in Model.UrgentQueue.Take(5))
+                                            {
+                                                <div class="list-group-item">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <h6 class="mb-1">@patient.PatientFullName</h6>
+                                                        <small>@patient.QueueTimeUtc.ToString("HH:mm")</small>
+                                                    </div>
+                                                    <p class="mb-1">@patient.ChiefComplaint</p>
+                                                    <small>
+                                                        <span class="badge badge-@(patient.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 ? "danger" : "warning")">
+                                                            @patient.LevelDisplayName
+                                                        </span>
+                                                    </small>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-hourglass-end"></i>
+                                        بیماران تأخیری
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="alert alert-@Model.OverdueClass">
+                                        <i class="fas fa-@(Model.HasOverduePatients ? "exclamation-triangle" : "check-circle")"></i>
+                                        @Model.OverdueMessage
+                                    </div>
+                                    @if (Model.OverdueQueue.Any())
+                                    {
+                                        <div class="list-group">
+                                            @foreach (var patient in Model.OverdueQueue.Take(5))
+                                            {
+                                                <div class="list-group-item">
+                                                    <div class="d-flex w-100 justify-content-between">
+                                                        <h6 class="mb-1">@patient.PatientFullName</h6>
+                                                        <small class="text-danger">@patient.WaitTimeDisplay</small>
+                                                    </div>
+                                                    <p class="mb-1">@patient.ChiefComplaint</p>
+                                                    <small>
+                                                        <span class="badge badge-warning">تأخیر</span>
+                                                    </small>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- نمودارها و آمار -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">توزیع سطوح تریاژ</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="level-distribution-chart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">روند روزانه</h5>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="daily-trend-chart" height="200"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- ارزیابی‌های اخیر -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">ارزیابی‌های اخیر</h5>
+                                </div>
+                                <div class="card-body">
+                                    @Html.Partial("_RecentAssessmentsPartial", Model.RecentAssessments)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">هشدارهای فعال</h5>
+                                </div>
+                                <div class="card-body">
+                                    @Html.Partial("_ActiveAlertsPartial", Model.ActiveAlerts)
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage-dashboard.js"></script>
+    <script src="~/Scripts/chart.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی داشبورد
+            TriageDashboard.init();
+            
+            // ایجاد نمودارها
+            TriageDashboard.createLevelDistributionChart();
+            TriageDashboard.createDailyTrendChart();
+            
+            // به‌روزرسانی خودکار هر 30 ثانیه
+            setInterval(function() {
+                TriageDashboard.refreshStats();
+            }, 30000);
+        });
+    </script>
+}

@@ -1,0 +1,243 @@
+@using ClinicApp.Models.Enums
+@model List<ClinicApp.Models.Entities.Triage.TriageAssessment>
+@{
+    ViewBag.Title = "داشبورد تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-stethoscope"></i>
+                        داشبورد تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Create", "Triage")" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i>
+                            ارزیابی جدید
+                        </a>
+                        <a href="@Url.Action("Index", "TriageQueue")" class="btn btn-info btn-sm">
+                            <i class="fas fa-list"></i>
+                            مدیریت صف
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- آمار کلی -->
+                    <div class="row mb-4">
+                        <div class="col-lg-3 col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-info">
+                                    <i class="fas fa-user-injured"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">کل ارزیابی‌ها</span>
+                                    <span class="info-box-number">@Model.Count</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-warning">
+                                    <i class="fas fa-clock"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">در انتظار</span>
+                                    <span class="info-box-number">@Model.Count(a => a.Status == TriageStatus.Pending)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-success">
+                                    <i class="fas fa-check-circle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">تکمیل شده</span>
+                                    <span class="info-box-number">@Model.Count(a => a.Status == TriageStatus.Completed)</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-lg-3 col-md-6">
+                            <div class="info-box">
+                                <span class="info-box-icon bg-danger">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                </span>
+                                <div class="info-box-content">
+                                    <span class="info-box-text">بحرانی</span>
+                                    <span class="info-box-number">@Model.Count(a => a.Level == TriageLevel.ESI1)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- فیلترها -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <form method="get" class="form-inline">
+                                <div class="form-group mr-2">
+                                    <label for="departmentId" class="sr-only">بخش</label>
+                                    <select name="departmentId" id="departmentId" class="form-control">
+                                        <option value="">همه بخش‌ها</option>
+                                        <option value="1">اورژانس</option>
+                                        <option value="2">اطفال</option>
+                                        <option value="3">زنان و زایمان</option>
+                                    </select>
+                                </div>
+                                <div class="form-group mr-2">
+                                    <label for="status" class="sr-only">وضعیت</label>
+                                    <select name="status" id="status" class="form-control">
+                                        <option value="All">همه وضعیت‌ها</option>
+                                        <option value="Pending">در انتظار</option>
+                                        <option value="InProgress">در حال انجام</option>
+                                        <option value="Completed">تکمیل شده</option>
+                                        <option value="Cancelled">لغو شده</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-search"></i>
+                                    جستجو
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- جدول ارزیابی‌ها -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>شناسه</th>
+                                    <th>بیمار</th>
+                                    <th>شکایت اصلی</th>
+                                    <th>سطح</th>
+                                    <th>وضعیت</th>
+                                    <th>زمان ورود</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var assessment in Model)
+                                {
+                                    <tr>
+                                        <td>@assessment.TriageAssessmentId</td>
+                                        <td>@assessment.PatientId</td>
+                                        <td>@assessment.ChiefComplaint</td>
+                                        <td>
+                                            <span class="badge @GetLevelBadgeClass(assessment.Level)">
+                                                @GetLevelDisplayName(assessment.Level)
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @GetStatusBadgeClass(assessment.Status)">
+                                                @GetStatusDisplayName(assessment.Status)
+                                            </span>
+                                        </td>
+                                        <td>@assessment.ArrivalAt.ToString("HH:mm")</td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="@Url.Action("Details", new { id = assessment.TriageAssessmentId })"
+                                                   class="btn btn-info btn-sm" title="جزئیات">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if (assessment.IsOpen)
+                                                {
+                                                    <a href="@Url.Action("Edit", new { id = assessment.TriageAssessmentId })"
+                                                       class="btn btn-warning btn-sm" title="ویرایش">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                }
+                                                @if (assessment.Status == TriageStatus.Pending)
+                                                {
+                                                    <a href="@Url.Action("Complete", new { id = assessment.TriageAssessmentId })"
+                                                       class="btn btn-success btn-sm" title="تکمیل"
+                                                       onclick="return confirm('آیا از تکمیل این ارزیابی اطمینان دارید؟')">
+                                                        <i class="fas fa-check"></i>
+                                                    </a>
+                                                }
+                                            </div>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    @if (!Model.Any())
+                    {
+                        <div class="alert alert-info text-center">
+                            <i class="fas fa-info-circle"></i>
+                            هیچ ارزیابی تریاژی یافت نشد.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Auto-refresh every 30 seconds
+            setInterval(function () {
+                location.reload();
+            }, 30000);
+        });
+    </script>
+}
+
+@functions {
+    string GetLevelBadgeClass(TriageLevel level)
+    {
+        return level switch
+        {
+            TriageLevel.ESI1 => "badge-danger",
+            TriageLevel.ESI2 => "badge-warning",
+            TriageLevel.ESI3 => "badge-info",
+            TriageLevel.ESI4 => "badge-success",
+            TriageLevel.ESI5 => "badge-secondary",
+            _ => "badge-light"
+        };
+    }
+
+    string GetStatusBadgeClass(TriageStatus status)
+    {
+        return status switch
+        {
+            TriageStatus.Pending => "badge-warning",
+            TriageStatus.InProgress => "badge-info",
+            TriageStatus.Completed => "badge-success",
+            TriageStatus.Cancelled => "badge-danger",
+            _ => "badge-light"
+        };
+    }
+
+    string GetLevelDisplayName(TriageLevel level)
+    {
+        return level switch
+        {
+            TriageLevel.ESI1 => "بحرانی (ESI-1)",
+            TriageLevel.ESI2 => "فوری (ESI-2)",
+            TriageLevel.ESI3 => "عاجل (ESI-3)",
+            TriageLevel.ESI4 => "کم‌عاجل (ESI-4)",
+            TriageLevel.ESI5 => "غیرعاجل (ESI-5)",
+
+        };
+    }
+
+    string GetStatusDisplayName(TriageStatus status)
+    {
+        return status switch
+        {
+            TriageStatus.Pending => "در انتظار",
+            TriageStatus.InProgress => "در حال انجام",
+            TriageStatus.Completed => "تکمیل شده",
+            TriageStatus.Cancelled => "لغو شده",
+            _ => "نامشخص"
+        };
+    }
+}

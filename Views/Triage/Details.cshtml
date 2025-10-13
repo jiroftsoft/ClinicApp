@@ -1,0 +1,332 @@
+@model ClinicApp.Models.Entities.Triage.TriageAssessment
+@{
+    ViewBag.Title = "جزئیات ارزیابی تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-user-md"></i>
+                        جزئیات ارزیابی تریاژ #@Model.TriageAssessmentId
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت
+                        </a>
+                        @if (Model.IsOpen)
+                        {
+                            <a href="@Url.Action("Edit", new { id = Model.TriageAssessmentId })" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i>
+                                ویرایش
+                            </a>
+                        }
+                        @if (Model.Status == ClinicApp.Models.Entities.Triage.TriageStatus.Pending)
+                        {
+                            <a href="@Url.Action("Complete", new { id = Model.TriageAssessmentId })" 
+                               class="btn btn-success btn-sm"
+                               onclick="return confirm('آیا از تکمیل این ارزیابی اطمینان دارید؟')">
+                                <i class="fas fa-check"></i>
+                                تکمیل
+                            </a>
+                        }
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- اطلاعات کلی -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-info-circle"></i>
+                                        اطلاعات کلی
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-borderless">
+                                        <tr>
+                                            <td><strong>شناسه ارزیابی:</strong></td>
+                                            <td>@Model.TriageAssessmentId</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>شناسه بیمار:</strong></td>
+                                            <td>@Model.PatientId</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>شکایت اصلی:</strong></td>
+                                            <td>@Model.ChiefComplaint</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>سطح تریاژ:</strong></td>
+                                            <td>
+                                                <span class="badge @GetLevelBadgeClass(Model.Level)">
+                                                    @GetLevelDisplayName(Model.Level)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>اولویت:</strong></td>
+                                            <td>@Model.Priority</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>وضعیت:</strong></td>
+                                            <td>
+                                                <span class="badge @GetStatusBadgeClass(Model.Status)">
+                                                    @GetStatusDisplayName(Model.Status)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>زمان ورود:</strong></td>
+                                            <td>@Model.ArrivalAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>زمان شروع تریاژ:</strong></td>
+                                            <td>@Model.TriageStartAt.ToString("yyyy/MM/dd HH:mm")</td>
+                                        </tr>
+                                        @if (Model.TriageEndAt.HasValue)
+                                        {
+                                            <tr>
+                                                <td><strong>زمان پایان تریاژ:</strong></td>
+                                                <td>@Model.TriageEndAt.Value.ToString("yyyy/MM/dd HH:mm")</td>
+                                            </tr>
+                                        }
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- علائم حیاتی -->
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-heartbeat"></i>
+                                        علائم حیاتی
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="vitalSignsContainer">
+                                        <!-- علائم حیاتی از طریق AJAX بارگذاری می‌شود -->
+                                        <div class="text-center">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            در حال بارگذاری...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- یادداشت‌ها -->
+                    @if (!string.IsNullOrEmpty(Model.AssessmentNotes))
+                    {
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">
+                                            <i class="fas fa-sticky-note"></i>
+                                            یادداشت‌های ارزیابی
+                                        </h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <p>@Model.AssessmentNotes</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+
+                    <!-- پایش‌های مجدد -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-redo"></i>
+                                        پایش‌های مجدد
+                                    </h5>
+                                    <div class="card-tools">
+                                        <a href="@Url.Action("Create", "TriageReassessment", new { assessmentId = Model.TriageAssessmentId })" 
+                                           class="btn btn-primary btn-sm">
+                                            <i class="fas fa-plus"></i>
+                                            پایش مجدد جدید
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div id="reassessmentsContainer">
+                                        <!-- پایش‌های مجدد از طریق AJAX بارگذاری می‌شود -->
+                                        <div class="text-center">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            در حال بارگذاری...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- خلاصه ارزیابی -->
+                    <div class="row mt-3">
+                        <div class="col-12">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-chart-line"></i>
+                                        خلاصه ارزیابی
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div id="summaryContainer">
+                                        <!-- خلاصه از طریق AJAX بارگذاری می‌شود -->
+                                        <div class="text-center">
+                                            <i class="fas fa-spinner fa-spin"></i>
+                                            در حال بارگذاری...
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var assessmentId = @Model.TriageAssessmentId;
+
+            // بارگذاری علائم حیاتی
+            loadVitalSigns(assessmentId);
+
+            // بارگذاری پایش‌های مجدد
+            loadReassessments(assessmentId);
+
+            // بارگذاری خلاصه
+            loadSummary(assessmentId);
+
+            // Auto-refresh every 30 seconds
+            setInterval(function() {
+                loadVitalSigns(assessmentId);
+                loadReassessments(assessmentId);
+                loadSummary(assessmentId);
+            }, 30000);
+        });
+
+        function loadVitalSigns(assessmentId) {
+            $.ajax({
+                url: '@Url.Action("GetVitalSigns", "Triage")',
+                type: 'POST',
+                data: { assessmentId: assessmentId },
+                success: function(response) {
+                    if (response.success) {
+                        $('#vitalSignsContainer').html(response.data);
+                    } else {
+                        $('#vitalSignsContainer').html('<div class="alert alert-warning">' + response.message + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#vitalSignsContainer').html('<div class="alert alert-danger">خطا در بارگذاری علائم حیاتی</div>');
+                }
+            });
+        }
+
+        function loadReassessments(assessmentId) {
+            $.ajax({
+                url: '@Url.Action("GetReassessments", "TriageReassessment")',
+                type: 'POST',
+                data: { assessmentId: assessmentId },
+                success: function(response) {
+                    if (response.success) {
+                        $('#reassessmentsContainer').html(response.data);
+                    } else {
+                        $('#reassessmentsContainer').html('<div class="alert alert-warning">' + response.message + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#reassessmentsContainer').html('<div class="alert alert-danger">خطا در بارگذاری پایش‌های مجدد</div>');
+                }
+            });
+        }
+
+        function loadSummary(assessmentId) {
+            $.ajax({
+                url: '@Url.Action("GetSummary", "Triage")',
+                type: 'POST',
+                data: { assessmentId: assessmentId },
+                success: function(response) {
+                    if (response.success) {
+                        $('#summaryContainer').html(response.data);
+                    } else {
+                        $('#summaryContainer').html('<div class="alert alert-warning">' + response.message + '</div>');
+                    }
+                },
+                error: function() {
+                    $('#summaryContainer').html('<div class="alert alert-danger">خطا در بارگذاری خلاصه</div>');
+                }
+            });
+        }
+    </script>
+}
+
+@functions {
+    string GetLevelBadgeClass(ClinicApp.Models.Entities.Triage.TriageLevel level)
+    {
+        return level switch
+        {
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 => "badge-danger",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 => "badge-warning",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 => "badge-info",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 => "badge-success",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI5 => "badge-secondary",
+            _ => "badge-light"
+        };
+    }
+
+    string GetStatusBadgeClass(ClinicApp.Models.Entities.Triage.TriageStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Entities.Triage.TriageStatus.Pending => "badge-warning",
+            ClinicApp.Models.Entities.Triage.TriageStatus.InProgress => "badge-info",
+            ClinicApp.Models.Entities.Triage.TriageStatus.Completed => "badge-success",
+            ClinicApp.Models.Entities.Triage.TriageStatus.Cancelled => "badge-danger",
+            _ => "badge-light"
+        };
+    }
+
+    string GetLevelDisplayName(ClinicApp.Models.Entities.Triage.TriageLevel level)
+    {
+        return level switch
+        {
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 => "بحرانی (ESI-1)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 => "فوری (ESI-2)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 => "عاجل (ESI-3)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 => "کم‌عاجل (ESI-4)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI5 => "غیرعاجل (ESI-5)",
+            _ => "نامشخص"
+        };
+    }
+
+    string GetStatusDisplayName(ClinicApp.Models.Entities.Triage.TriageStatus status)
+    {
+        return status switch
+        {
+            ClinicApp.Models.Entities.Triage.TriageStatus.Pending => "در انتظار",
+            ClinicApp.Models.Entities.Triage.TriageStatus.InProgress => "در حال انجام",
+            ClinicApp.Models.Entities.Triage.TriageStatus.Completed => "تکمیل شده",
+            ClinicApp.Models.Entities.Triage.TriageStatus.Cancelled => "لغو شده",
+            _ => "نامشخص"
+        };
+    }
+}

@@ -1,5 +1,8 @@
 ﻿using ClinicApp.Helpers;
 using ClinicApp.Models.Entities;
+using ClinicApp.Models.Entities.Triage;
+using ClinicApp.Models.Entities.Doctor;
+using ClinicApp.Models.Entities.Appointment;
 using EntityFramework.DynamicFilters;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
@@ -33,6 +36,7 @@ using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Receipt;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Entities.Report;
+using ClinicApp.Models.Entities.Triage;
 using ClinicApp.Models.Enums;
 using ClinicApp.Services;
 
@@ -128,6 +132,16 @@ namespace ClinicApp.Models
         public DbSet<MedicalHistory> MedicalHistories { get; set; }
         public DbSet<Report> Reports { get; set; }
 
+        // ========== موجودیت‌های جدید برای ماژول تریاژ ==========
+        public DbSet<TriageAssessment> TriageAssessments { get; set; }
+        public DbSet<TriageQueue> TriageQueues { get; set; }
+        public DbSet<TriageVitalSigns> TriageVitalSigns { get; set; }
+        public DbSet<TriageProtocol> TriageProtocols { get; set; }
+        public DbSet<TriageReassessment> TriageReassessments { get; set; }
+
+        // ========== موجودیت‌های Identity ==========
+        public DbSet<IdentityUserRole> UserRoles { get; set; }
+
         #endregion
 
         #region Core Overrides (سیستم‌های حیاتی)
@@ -143,8 +157,7 @@ namespace ClinicApp.Models
             modelBuilder.Conventions.Remove<OneToManyCascadeDeleteConvention>();
             modelBuilder.Conventions.Remove<ManyToManyCascadeDeleteConvention>();
 
-            // 3. تنظیم کانفیگ‌های موجودیت‌ها
-            RegisterEntityConfigurations(modelBuilder);
+            // 3. تنظیم کانفیگ‌های موجودیت‌ها (حذف شد - در انتها فراخوانی می‌شود)
 
             // 4. اعمال فیلتر سراسری Soft Delete برای سیستم‌های پزشکی
             // حذف فیزیکی اطلاعات پزشکی مجاز نیست
@@ -180,6 +193,13 @@ namespace ClinicApp.Models
             modelBuilder.Filter("ActiveMedicalHistories", (MedicalHistory mh) => mh.IsActive, true);
             modelBuilder.Filter("DownloadableReports", (Report r) => r.IsDownloadable, true);
 
+            // ========== فیلترهای جدید برای ماژول تریاژ ==========
+            modelBuilder.Filter("ActiveTriageProtocols", (TriageProtocol tp) => tp.IsActive, true);
+            // فیلتر ValidTriageProtocols حذف شد - مشکل‌ساز بود (استفاده از DateTime.Now)
+
+            // ========== نگاشت صریح Many-to-Many برای پروتکل‌های تریاژ ==========
+            // این نگاشت در TriageAssessmentConfig انجام می‌شود
+
             // ========== فیلترهای جدید برای پرداخت‌های آنلاین ==========
             modelBuilder.Filter("ActivePaymentGateways", (PaymentGateway pg) => pg.IsActive, true);
             modelBuilder.Filter("ActivePosTerminals", (PosTerminal pt) => pt.IsActive, true);
@@ -189,6 +209,9 @@ namespace ClinicApp.Models
             // 7. افزودن پشتیبانی از نسخه‌بندی دیتابیس
             modelBuilder.Entity<DatabaseVersion>()
                 .HasKey(dv => dv.VersionId);
+
+            // 8. پیکربندی خودکار موجودیت‌ها (از جمله تریاژ)
+            RegisterEntityConfigurations(modelBuilder);
 
             base.OnModelCreating(modelBuilder);
         }
@@ -349,8 +372,16 @@ namespace ClinicApp.Models
 
             foreach (var type in configTypes)
             {
-                dynamic config = Activator.CreateInstance(type);
-                modelBuilder.Configurations.Add(config);
+                try
+                {
+                    dynamic config = Activator.CreateInstance(type);
+                    modelBuilder.Configurations.Add(config);
+                }
+                catch (Exception ex)
+                {
+                    // Log the error but continue with other configurations
+                    System.Diagnostics.Debug.WriteLine($"Error loading configuration {type.Name}: {ex.Message}");
+                }
             }
         }
 

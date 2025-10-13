@@ -1,0 +1,242 @@
+@model ClinicApp.ViewModels.Triage.TriageEditViewModel
+@{
+    ViewBag.Title = "ویرایش ارزیابی تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-edit"></i>
+                        ویرایش ارزیابی تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Details", new { id = Model.AssessmentId })" class="btn btn-info btn-sm">
+                            <i class="fas fa-eye"></i>
+                            مشاهده جزئیات
+                        </a>
+                        <a href="@Url.Action("Index")" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-arrow-right"></i>
+                            بازگشت به لیست
+                        </a>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    @using (Html.BeginForm("Edit", "Triage", FormMethod.Post, new { @class = "form-horizontal", role = "form" }))
+                    {
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(m => m.AssessmentId)
+                        @Html.HiddenFor(m => m.PatientId)
+
+                        <div class="row">
+                            <!-- اطلاعات بیمار -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">اطلاعات بیمار</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label class="control-label">نام بیمار:</label>
+                                            <p class="form-control-static">@Model.PatientFullName</p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label">شناسه بیمار:</label>
+                                            <p class="form-control-static">#@Model.PatientId</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- وضعیت ارزیابی -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">وضعیت ارزیابی</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            <label class="control-label">سطح تریاژ:</label>
+                                            <p class="form-control-static">
+                                                <span class="badge badge-@(Model.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 ? "danger" : 
+                                                                        Model.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 ? "warning" : 
+                                                                        Model.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 ? "info" : 
+                                                                        Model.Level == ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 ? "success" : "secondary")">
+                                                    @Model.LevelDisplayName
+                                                </span>
+                                            </p>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="control-label">وضعیت:</label>
+                                            <p class="form-control-static">
+                                                <span class="badge badge-@(Model.Status == ClinicApp.Models.Entities.Triage.TriageStatus.Completed ? "success" : 
+                                                                        Model.Status == ClinicApp.Models.Entities.Triage.TriageStatus.Pending ? "warning" : 
+                                                                        Model.Status == ClinicApp.Models.Entities.Triage.TriageStatus.InProgress ? "info" : "secondary")">
+                                                    @Model.StatusDisplayName
+                                                </span>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- شکایت اصلی -->
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">شکایت اصلی</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.ChiefComplaint, new { @class = "control-label" })
+                                            @Html.TextAreaFor(m => m.ChiefComplaint, new { @class = "form-control", rows = 3, placeholder = "شکایت اصلی بیمار را وارد کنید" })
+                                            @Html.ValidationMessageFor(m => m.ChiefComplaint, "", new { @class = "text-danger" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- سطح تریاژ و اولویت -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">سطح تریاژ</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Level, new { @class = "control-label" })
+                                            @Html.DropDownListFor(m => m.Level, 
+                                                new SelectList(Enum.GetValues(typeof(ClinicApp.Models.Entities.Triage.TriageLevel))
+                                                    .Cast<ClinicApp.Models.Entities.Triage.TriageLevel>()
+                                                    .Select(e => new { Value = e, Text = GetLevelDisplayName(e) }), 
+                                                    "Value", "Text", Model.Level), 
+                                                new { @class = "form-control" })
+                                            @Html.ValidationMessageFor(m => m.Level, "", new { @class = "text-danger" })
+                                        </div>
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.Priority, new { @class = "control-label" })
+                                            @Html.TextBoxFor(m => m.Priority, new { @class = "form-control", type = "number", min = "1", max = "10" })
+                                            @Html.ValidationMessageFor(m => m.Priority, "", new { @class = "text-danger" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- پرچم‌های قرمز -->
+                            <div class="col-md-6">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">پرچم‌های قرمز</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(m => m.RedFlag_Sepsis, new { @class = "form-check-input" })
+                                            @Html.LabelFor(m => m.RedFlag_Sepsis, new { @class = "form-check-label" })
+                                        </div>
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(m => m.RedFlag_Stroke, new { @class = "form-check-input" })
+                                            @Html.LabelFor(m => m.RedFlag_Stroke, new { @class = "form-check-label" })
+                                        </div>
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(m => m.RedFlag_ACS, new { @class = "form-check-input" })
+                                            @Html.LabelFor(m => m.RedFlag_ACS, new { @class = "form-check-label" })
+                                        </div>
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(m => m.RedFlag_Trauma, new { @class = "form-check-input" })
+                                            @Html.LabelFor(m => m.RedFlag_Trauma, new { @class = "form-check-label" })
+                                        </div>
+                                        <div class="form-check">
+                                            @Html.CheckBoxFor(m => m.IsPregnant, new { @class = "form-check-input" })
+                                            @Html.LabelFor(m => m.IsPregnant, new { @class = "form-check-label" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- یادداشت‌های ارزیابی -->
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">یادداشت‌های ارزیابی</h5>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="form-group">
+                                            @Html.LabelFor(m => m.AssessmentNotes, new { @class = "control-label" })
+                                            @Html.TextAreaFor(m => m.AssessmentNotes, new { @class = "form-control", rows = 4, placeholder = "یادداشت‌های ارزیابی را وارد کنید" })
+                                            @Html.ValidationMessageFor(m => m.AssessmentNotes, "", new { @class = "text-danger" })
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- دکمه‌های عملیات -->
+                            <div class="col-12">
+                                <div class="card">
+                                    <div class="card-body">
+                                        <div class="form-group text-center">
+                                            <button type="submit" class="btn btn-primary btn-lg">
+                                                <i class="fas fa-save"></i>
+                                                ذخیره تغییرات
+                                            </button>
+                                            <a href="@Url.Action("Details", new { id = Model.AssessmentId })" class="btn btn-secondary btn-lg">
+                                                <i class="fas fa-times"></i>
+                                                انصراف
+                                            </a>
+                                            @if (Model.CanComplete)
+                                            {
+                                                <a href="@Url.Action("Complete", new { id = Model.AssessmentId })" class="btn btn-success btn-lg">
+                                                    <i class="fas fa-check"></i>
+                                                    تکمیل ارزیابی
+                                                </a>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage.forms.js"></script>
+    <script>
+        $(document).ready(function() {
+            // اعتبارسنجی فرم
+            TriageForms.initValidation();
+            
+            // مدیریت تغییرات
+            TriageForms.initChangeTracking();
+        });
+    </script>
+}
+
+@functions {
+    string GetLevelDisplayName(ClinicApp.Models.Entities.Triage.TriageLevel level)
+    {
+        return level switch
+        {
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI1 => "بحرانی (ESI-1)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI2 => "فوری (ESI-2)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI3 => "عاجل (ESI-3)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI4 => "کم‌عاجل (ESI-4)",
+            ClinicApp.Models.Entities.Triage.TriageLevel.ESI5 => "غیرعاجل (ESI-5)",
+            _ => "نامشخص"
+        };
+    }
+}

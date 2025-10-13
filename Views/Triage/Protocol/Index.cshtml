@@ -1,0 +1,190 @@
+@model List<ClinicApp.Models.Entities.Triage.TriageProtocol>
+@{
+    ViewBag.Title = "مدیریت پروتکل‌های تریاژ";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-clipboard-list"></i>
+                        مدیریت پروتکل‌های تریاژ
+                    </h3>
+                    <div class="card-tools">
+                        <a href="@Url.Action("Create")" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i>
+                            پروتکل جدید
+                        </a>
+                        <button type="button" class="btn btn-info btn-sm" onclick="TriageProtocol.refreshProtocols()">
+                            <i class="fas fa-sync"></i>
+                            به‌روزرسانی
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card-body">
+                    <!-- فیلترها -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="control-label">نوع پروتکل:</label>
+                            <select class="form-control" id="protocol-type-filter" onchange="TriageProtocol.filterProtocols()">
+                                <option value="">همه انواع</option>
+                                <option value="1">پروتکل عمومی</option>
+                                <option value="2">پروتکل قلبی</option>
+                                <option value="3">پروتکل تنفسی</option>
+                                <option value="4">پروتکل عصبی</option>
+                                <option value="5">پروتکل تروما</option>
+                                <option value="6">پروتکل اطفال</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="control-label">وضعیت:</label>
+                            <select class="form-control" id="status-filter" onchange="TriageProtocol.filterProtocols()">
+                                <option value="">همه وضعیت‌ها</option>
+                                <option value="true">فعال</option>
+                                <option value="false">غیرفعال</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="control-label">جستجو:</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="search-term" placeholder="جستجو در نام یا توضیحات">
+                                <div class="input-group-append">
+                                    <button type="button" class="btn btn-outline-secondary" onclick="TriageProtocol.searchProtocols()">
+                                        <i class="fas fa-search"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- لیست پروتکل‌ها -->
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="protocols-table">
+                            <thead class="thead-dark">
+                                <tr>
+                                    <th>نام پروتکل</th>
+                                    <th>نوع</th>
+                                    <th>اولویت</th>
+                                    <th>وضعیت</th>
+                                    <th>تاریخ ایجاد</th>
+                                    <th>آخرین به‌روزرسانی</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (Model.Any())
+                                {
+                                    foreach (var protocol in Model)
+                                    {
+                                        <tr data-protocol-id="@protocol.TriageProtocolId" data-protocol-type="@((int)protocol.ProtocolType)" data-is-active="@protocol.IsActive.ToString().ToLower()">
+                                            <td>
+                                                <strong>@protocol.Name</strong>
+                                                @if (!string.IsNullOrEmpty(protocol.Description))
+                                                {
+                                                    <br>
+                                                    <small class="text-muted">@protocol.Description</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-@(protocol.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.General ? "primary" : 
+                                                                      protocol.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Cardiac ? "danger" : 
+                                                                      protocol.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Respiratory ? "info" : 
+                                                                      protocol.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Neurological ? "warning" : 
+                                                                      protocol.ProtocolType == ClinicApp.Models.Enums.TriageProtocolType.Trauma ? "secondary" : "success")">
+                                                    @GetProtocolTypeDisplay(protocol.ProtocolType)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-@(protocol.Priority <= 3 ? "danger" : protocol.Priority <= 6 ? "warning" : "info")">
+                                                    @protocol.Priority
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge badge-@(protocol.IsActive ? "success" : "secondary")">
+                                                    @(protocol.IsActive ? "فعال" : "غیرفعال")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <small>@protocol.CreatedAt.ToString("yyyy/MM/dd HH:mm")</small>
+                                            </td>
+                                            <td>
+                                                @if (protocol.UpdatedAt.HasValue)
+                                                {
+                                                    <small>@protocol.UpdatedAt.Value.ToString("yyyy/MM/dd HH:mm")</small>
+                                                }
+                                                else
+                                                {
+                                                    <small class="text-muted">-</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="@Url.Action("Details", new { id = protocol.TriageProtocolId })" class="btn btn-info btn-sm" title="مشاهده جزئیات">
+                                                        <i class="fas fa-eye"></i>
+                                                    </a>
+                                                    <a href="@Url.Action("Edit", new { id = protocol.TriageProtocolId })" class="btn btn-warning btn-sm" title="ویرایش">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <button type="button" class="btn btn-@(protocol.IsActive ? "secondary" : "success") btn-sm" 
+                                                            onclick="TriageProtocol.toggleStatus(@protocol.TriageProtocolId, @protocol.IsActive.ToString().ToLower())" 
+                                                            title="@(protocol.IsActive ? "غیرفعال کردن" : "فعال کردن")">
+                                                        <i class="fas fa-@(protocol.IsActive ? "pause" : "play")"></i>
+                                                    </button>
+                                                    <button type="button" class="btn btn-danger btn-sm" 
+                                                            onclick="TriageProtocol.deleteProtocol(@protocol.TriageProtocolId)" 
+                                                            title="حذف">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center text-muted">
+                                            <i class="fas fa-inbox fa-2x mb-2"></i>
+                                            <br>
+                                            هیچ پروتکلی یافت نشد
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/Scripts/triage/triage-protocols.js"></script>
+    <script>
+        $(document).ready(function() {
+            // راه‌اندازی مدیریت پروتکل‌ها
+            TriageProtocol.init();
+        });
+    </script>
+}
+
+@functions {
+    string GetProtocolTypeDisplay(ClinicApp.Models.Enums.TriageProtocolType protocolType)
+    {
+        return protocolType switch
+        {
+            ClinicApp.Models.Enums.TriageProtocolType.General => "عمومی",
+            ClinicApp.Models.Enums.TriageProtocolType.Cardiac => "قلبی",
+            ClinicApp.Models.Enums.TriageProtocolType.Respiratory => "تنفسی",
+            ClinicApp.Models.Enums.TriageProtocolType.Neurological => "عصبی",
+            ClinicApp.Models.Enums.TriageProtocolType.Trauma => "تروما",
+            ClinicApp.Models.Enums.TriageProtocolType.Pediatric => "اطفال",
+            _ => "نامشخص"
+        };
+    }
+}
