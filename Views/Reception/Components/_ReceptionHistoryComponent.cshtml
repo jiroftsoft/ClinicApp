@@ -207,7 +207,7 @@ function loadPatientHistory(patientId) {
     setHistoryLoading(true);
     
     $.ajax({
-        url: '/Reception/Patient/GetPatientReceptionHistory',
+        url: '@Url.Action("GetPatientReceptionHistory", "ReceptionPatient")',
         type: 'POST',
         data: { 
             patientId: patientId,
@@ -352,7 +352,7 @@ function loadPatientHistoryWithFilters(patientId, filters) {
     setHistoryLoading(true);
     
     $.ajax({
-        url: '/Reception/Core/SearchReceptions',
+        url: '@Url.Action("SearchReceptions", "ReceptionCore")',
         type: 'POST',
         data: {
             patientId: patientId,
@@ -383,7 +383,7 @@ function viewReceptionDetails(receptionId) {
     setHistoryLoading(true);
     
     $.ajax({
-        url: '/Reception/Core/Details',
+        url: '@Url.Action("Details", "ReceptionCore")',
         type: 'GET',
         data: { id: receptionId },
         success: function(response) {

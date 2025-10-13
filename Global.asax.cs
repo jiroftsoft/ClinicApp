@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using ClinicApp.Filters;
 using ClinicApp.Helpers;
 using ClinicApp.Infrastructure;
 using ClinicApp.Models;
@@ -33,6 +34,10 @@ namespace ClinicApp
             
             AreaRegistration.RegisterAllAreas();
             FilterConfig.RegisterGlobalFilters(GlobalFilters.Filters);
+            
+            // Medical Environment: Global No-Cache Filter
+            GlobalFilters.Filters.Add(new NoCacheFilter());
+            
             RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
             

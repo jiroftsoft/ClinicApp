@@ -427,31 +427,62 @@
 })();
 
 function initializeReceptionDashboard() {
-    // Initialize components
-    initializeComponents();
+    const startTime = performance.now();
     
-    // Initialize event handlers
-    initializeEventHandlers();
-    
-    // Initialize status bar
-    initializeStatusBar();
-    
-    // Initialize quick actions
-    initializeQuickActions();
-    
-    // Start real-time updates
-    startRealTimeUpdates();
+    try {
+        // Initialize components
+        initializeComponents();
+        
+        // Initialize event handlers
+        initializeEventHandlers();
+        
+        // Initialize status bar
+        initializeStatusBar();
+        
+        // Initialize quick actions
+        initializeQuickActions();
+        
+        // Start real-time updates
+        startRealTimeUpdates();
+        
+        // Log performance
+        const endTime = performance.now();
+        const duration = Math.round(endTime - startTime);
+        
+        if (window.ClinicLogger) {
+            window.ClinicLogger.logPerformance('ReceptionDashboard_Initialization', duration, 'Dashboard initialization completed');
+        }
+    } catch (error) {
+        // Enhanced error logging for medical environment
+        if (window.ClinicLogger) {
+            window.ClinicLogger.error('ReceptionDashboard_Initialization_Failed', {
+                error: error.message,
+                stack: error.stack,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href
+            });
+        }
+        
+        console.error('ReceptionDashboard initialization failed:', error);
+        
+        // Show user-friendly error message
+        if (typeof showNotification === 'function') {
+            showNotification('خطا در راه‌اندازی سیستم پذیرش. لطفاً صفحه را بازخوانی کنید.', 'error');
+        }
+    }
 }
 
 function initializeComponents() {
-    // Initialize all components
-    window.jQueryReady(function() {
-        $('[data-component]').each(function() {
-        const component = $(this);
-        const componentName = component.data('component');
-        
-        // Add fade-in animation
-        component.addClass('fade-in');
+    try {
+        // Initialize all components
+        window.jQueryReady(function() {
+            $('[data-component]').each(function() {
+            const component = $(this);
+            const componentName = component.data('component');
+            
+            // Add fade-in animation
+            component.addClass('fade-in');
         
         // Initialize component-specific functionality
         switch (componentName) {
@@ -467,6 +498,15 @@ function initializeComponents() {
         }
         });
     });
+    } catch (error) {
+        console.error('Error initializing components:', error);
+        if (window.ClinicLogger) {
+            window.ClinicLogger.error('Components_Initialization_Failed', {
+                error: error.message,
+                stack: error.stack
+            });
+        }
+    }
 }
 
 function initializeEventHandlers() {
@@ -715,6 +755,19 @@ function showQuickSearchModal() {
             // Global error handler
             $(document).ajaxError(function(event, xhr, settings, thrownError) {
                 console.error('AJAX Error:', thrownError);
+                
+                // Enhanced logging
+                if (window.ClinicLogger) {
+                    window.ClinicLogger.error('AJAX Error occurred', {
+                        url: settings.url,
+                        method: settings.type,
+                        status: xhr.status,
+                        statusText: xhr.statusText,
+                        responseText: xhr.responseText,
+                        thrownError: thrownError
+                    });
+                }
+                
                 showNotification('خطا در ارتباط با سرور', 'error');
             });
 
@@ -725,10 +778,19 @@ function showQuickSearchModal() {
                     const url = settings.url;
                     if (url.includes('ReceptionPatient')) {
                         // Patient-related success
+                        if (window.ClinicLogger) {
+                            window.ClinicLogger.logBusinessOperation('Patient_Operation_Success', 'Patient operation completed successfully', { url, response: xhr.responseJSON });
+                        }
                     } else if (url.includes('ReceptionService')) {
                         // Service-related success
+                        if (window.ClinicLogger) {
+                            window.ClinicLogger.logBusinessOperation('Service_Operation_Success', 'Service operation completed successfully', { url, response: xhr.responseJSON });
+                        }
                     } else if (url.includes('ReceptionInsurance')) {
                         // Insurance-related success
+                        if (window.ClinicLogger) {
+                            window.ClinicLogger.logBusinessOperation('Insurance_Operation_Success', 'Insurance operation completed successfully', { url, response: xhr.responseJSON });
+                        }
                     }
                 }
             });

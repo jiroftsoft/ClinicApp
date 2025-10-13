@@ -490,6 +490,7 @@
     <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
     <Compile Include="Controllers\HealthController.cs" />
+    <Compile Include="Controllers\LogController.cs" />
     <Compile Include="Controllers\Payment\Gateway\PaymentGatewayController.cs" />
     <Compile Include="Controllers\Payment\PaymentController.cs" />
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
@@ -1306,6 +1307,7 @@
     <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\css\supplementary-tariff-styles.css" />
+    <Content Include="Content\favicon.ico" />
     <Content Include="Content\Images\default-avatar.png" />
     <Content Include="Content\Images\Doctors\doctor_profile_14040606_011423_b7cd6656f50d47d8a0072ed2246bf4bc.jpg" />
     <Content Include="Content\Images\Doctors\doctor_profile_14040606_083717_24500d7fa71c4234b0d65cbb6d0c73bb.png" />

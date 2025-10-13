@@ -27,7 +27,6 @@ namespace ClinicApp
                       "~/Scripts/persian-date.min.js",
                       "~/Scripts/persian-datepicker.min.js",
                       "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
-
                       ));
             // --- CSS Bundle ---
             bundles.Add(new StyleBundle("~/Content/plugins/css").Include(
@@ -46,7 +45,6 @@ namespace ClinicApp
                 "~/Content/plugins/select2/js/select2.full.min.js",
                 "~/Content/plugins/select2/js/fa.min.js",
                 "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
-               
             ));
 
             // Admin Layout CSS Bundle

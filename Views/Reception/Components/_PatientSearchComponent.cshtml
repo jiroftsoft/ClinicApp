@@ -190,7 +190,7 @@ function searchPatientByNationalCode() {
     setComponentLoading(true);
     
     $.ajax({
-        url: '/Reception/Patient/SearchByNationalCode',
+        url: '@Url.Action("SearchByNationalCode", "ReceptionPatient")',
         type: 'POST',
         data: { nationalCode: nationalCode },
         success: function(response) {
@@ -220,7 +220,7 @@ function searchPatientByName() {
     setComponentLoading(true);
     
     $.ajax({
-        url: '/Reception/Patient/SearchByName',
+        url: '@Url.Action("SearchByName", "ReceptionPatient")',
         type: 'POST',
         data: { 
             searchTerm: searchTerm,
@@ -280,7 +280,7 @@ function createPatientItem(patient) {
 function selectPatient(patientId) {
     // Load patient details and select
     $.ajax({
-        url: '/Reception/Patient/GetPatientDetails',
+        url: '@Url.Action("GetPatientDetails", "ReceptionPatient")',
         type: 'POST',
         data: { patientId: patientId },
         success: function(response) {

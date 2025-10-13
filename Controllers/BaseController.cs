@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
 using Serilog;
@@ -26,6 +27,52 @@ namespace ClinicApp.Controllers
         protected BaseController(ILogger logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        /// <summary>
+        /// Medical Environment: Disable all caching
+        /// اجرا قبل از هر Action
+        /// </summary>
+        protected override void OnActionExecuting(ActionExecutingContext filterContext)
+        {
+            base.OnActionExecuting(filterContext);
+            
+            // Medical Environment: Disable all caching
+            if (Response != null)
+            {
+                try
+                {
+                    Response.Cache.SetCacheability(HttpCacheability.NoCache);
+                    Response.Cache.SetNoStore();
+                    Response.Cache.SetRevalidation(HttpCacheRevalidation.AllCaches);
+                    Response.Cache.SetExpires(DateTime.MinValue);
+                    Response.Cache.SetValidUntilExpires(false);
+                    Response.Cache.SetLastModified(DateTime.Now);
+                    
+                    // Only set ETag if not already set
+                    if (string.IsNullOrEmpty(Response.Headers["ETag"]))
+                    {
+                        Response.Cache.SetETag(Guid.NewGuid().ToString());
+                    }
+                }
+                catch (InvalidOperationException ex)
+                {
+                    // Log the error but don't break the application
+                    _logger.Warning("Cache headers already set: {Message}", ex.Message);
+                }
+                
+                // Additional headers for medical safety (always safe to add)
+                try
+                {
+                    Response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+                    Response.Headers.Add("Pragma", "no-cache");
+                    Response.Headers.Add("Expires", "0");
+                }
+                catch (Exception ex)
+                {
+                    _logger.Warning("Failed to add cache headers: {Message}", ex.Message);
+                }
+            }
         }
 
         /// <summary>

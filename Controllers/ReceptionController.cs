@@ -409,7 +409,7 @@ namespace ClinicApp.Controllers
         /// دریافت لیست پزشکان (AJAX)
         /// </summary>
         /// <returns>لیست پزشکان</returns>
-        [HttpGet]
+        [HttpPost]
         public async Task<JsonResult> GetDoctors()
         {
             _logger.Information(
@@ -441,7 +441,7 @@ namespace ClinicApp.Controllers
         /// </summary>
         /// <param name="doctorId">شناسه پزشک</param>
         /// <returns>لیست دپارتمان‌های پزشک</returns>
-        [HttpGet]
+        [HttpPost]
         public async Task<JsonResult> GetDoctorDepartments(int doctorId)
         {
             _logger.Information(

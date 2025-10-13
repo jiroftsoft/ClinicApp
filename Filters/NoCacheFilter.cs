@@ -1,66 +1,62 @@
 using System;
-using System.Web;
 using System.Web.Mvc;
 
 namespace ClinicApp.Filters
 {
     /// <summary>
-    /// فیلتر ضد کش برای مسیرهای درمانی - Real-time data for clinical safety
+    /// فیلتر حذف کامل Cache برای محیط درمانی
+    /// طبق AI_COMPLIANCE_CONTRACT: قانون 23 - پرهیز از پیچیدگی
     /// 
-    /// این فیلتر تمام هدرهای ضد کش را برای اطمینان از نمایش داده‌های real-time
-    /// در محیط‌های درمانی اعمال می‌کند.
+    /// ویژگی‌های کلیدی:
+    /// 1. حذف کامل Cache در تمام صفحات
+    /// 2. امنیت داده‌های بیماران
+    /// 3. جلوگیری از نمایش اطلاعات قدیمی
+    /// 4. سازگاری با محیط درمانی حساس
     /// </summary>
     public class NoCacheFilter : ActionFilterAttribute
     {
-        public override void OnResultExecuting(ResultExecutingContext filterContext)
-        {
-            var response = filterContext.HttpContext.Response;
-            var cache = response.Cache;
-
-            // 🏥 MEDICAL: Set aggressive no-cache headers for clinical safety
-            cache.SetCacheability(HttpCacheability.NoCache);
-            cache.SetNoStore();
-            cache.SetRevalidation(HttpCacheRevalidation.AllCaches);
-            cache.SetExpires(DateTime.UtcNow.AddSeconds(-1));
-            cache.AppendCacheExtension("must-revalidate, proxy-revalidate");
-
-            // Additional headers for maximum compatibility
-            response.Headers.Add("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0");
-            response.Headers.Add("Pragma", "no-cache");
-            response.Headers.Add("Expires", "0");
-
-            base.OnResultExecuting(filterContext);
-        }
-
         public override void OnActionExecuting(ActionExecutingContext filterContext)
         {
-            // 🏥 MEDICAL: Log cache prevention for audit trail
-            var controllerName = filterContext.ActionDescriptor.ControllerDescriptor.ControllerName;
-            var actionName = filterContext.ActionDescriptor.ActionName;
+            var response = filterContext.HttpContext.Response;
             
-            // Only log for clinical controllers to avoid noise
-            if (IsClinicalController(controllerName))
+            try
             {
-                System.Diagnostics.Debug.WriteLine($"🏥 MEDICAL: NoCache applied to {controllerName}.{actionName}");
+                // Medical Environment: Complete Cache Disable
+                response.Cache.SetCacheability(System.Web.HttpCacheability.NoCache);
+                response.Cache.SetNoStore();
+                response.Cache.SetRevalidation(System.Web.HttpCacheRevalidation.AllCaches);
+                response.Cache.SetExpires(DateTime.MinValue);
+                response.Cache.SetValidUntilExpires(false);
+                response.Cache.SetLastModified(DateTime.Now);
+                
+                // Only set ETag if not already set
+                if (string.IsNullOrEmpty(response.Headers["ETag"]))
+                {
+                    response.Cache.SetETag(Guid.NewGuid().ToString());
+                }
             }
-
-            base.OnActionExecuting(filterContext);
-        }
-
-        /// <summary>
-        /// تشخیص کنترلرهای درمانی برای لاگ‌گیری
-        /// </summary>
-        private bool IsClinicalController(string controllerName)
-        {
-            var clinicalControllers = new[]
+            catch (InvalidOperationException)
             {
-                "InsuranceTariff", "SupplementaryTariff", "CombinedInsuranceCalculation",
-                "InsuranceCalculation", "PatientInsurance", "Reception",
-                "Doctor", "Appointment", "EmergencyBooking", "ScheduleOptimization"
-            };
-
-            return Array.Exists(clinicalControllers, name => 
-                controllerName.IndexOf(name, StringComparison.OrdinalIgnoreCase) >= 0);
+                // ETag or other cache headers already set - ignore
+            }
+            
+            // Additional headers for medical safety (always safe to add)
+            try
+            {
+                response.Headers.Add("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+                response.Headers.Add("Pragma", "no-cache");
+                response.Headers.Add("Expires", "0");
+                response.Headers.Add("Last-Modified", DateTime.Now.ToString("R"));
+                response.Headers.Add("X-Content-Type-Options", "nosniff");
+                response.Headers.Add("X-Frame-Options", "DENY");
+                response.Headers.Add("X-XSS-Protection", "1; mode=block");
+            }
+            catch (Exception)
+            {
+                // Headers already set - ignore
+            }
+            
+            base.OnActionExecuting(filterContext);
         }
     }
 }

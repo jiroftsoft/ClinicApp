@@ -308,7 +308,7 @@ function initializeForm() {
 
 function loadDoctors() {
     $.ajax({
-        url: '/Reception/ReceptionDoctor/GetDoctors',
+        url: '@Url.Action("GetDoctors", "Reception")',
         type: 'POST',
         success: function(response) {
             if (response.success) {
@@ -328,7 +328,7 @@ function loadDoctors() {
 
 function loadServiceCategories() {
     $.ajax({
-        url: '/Reception/ReceptionService/GetServiceCategories',
+        url: '@Url.Action("GetServiceCategories", "ReceptionService")',
         type: 'POST',
         success: function(response) {
             if (response.success) {
@@ -353,7 +353,7 @@ function loadDoctorDepartments(doctorId) {
     }
     
     $.ajax({
-        url: '/Reception/ReceptionDoctor/GetDoctorDepartments',
+        url: '@Url.Action("GetDoctorDepartments", "Reception")',
         type: 'POST',
         data: { doctorId: doctorId },
         success: function(response) {
@@ -381,7 +381,7 @@ function loadServicesByCategory(categoryId) {
     }
     
     $.ajax({
-        url: '/Reception/ReceptionService/GetServicesByCategory',
+        url: '@Url.Action("GetServicesByCategory", "ReceptionService")',
         type: 'POST',
         data: { categoryId: categoryId },
         success: function(response) {
@@ -407,7 +407,7 @@ function loadServiceDetails(serviceId) {
     }
     
     $.ajax({
-        url: '/Reception/ReceptionService/GetServiceCalculationDetails',
+        url: '@Url.Action("GetServiceCalculationDetails", "ReceptionService")',
         type: 'POST',
         data: { serviceId: serviceId },
         success: function(response) {
@@ -447,7 +447,7 @@ function displayServiceDetails(serviceData) {
 
 function calculateServicePrice(serviceId) {
     $.ajax({
-        url: '/Reception/ReceptionService/CalculateServicePrice',
+        url: '@Url.Action("CalculateServicePrice", "ReceptionService")',
         type: 'POST',
         data: { serviceId: serviceId },
         success: function(response) {
@@ -471,7 +471,7 @@ function validatePatientInsurance(patientId) {
     setFormLoading(true);
     
     $.ajax({
-        url: '/Reception/ReceptionInsurance/ValidatePatientInsurance',
+        url: '@Url.Action("ValidatePatientInsurance", "ReceptionInsurance")',
         type: 'POST',
         data: { patientId: patientId },
         success: function(response) {
@@ -482,9 +482,10 @@ function validatePatientInsurance(patientId) {
             }
             setFormLoading(false);
         },
-    error: function() {
-        showInsuranceError('خطا در بررسی بیمه بیمار');
-        setFormLoading(false);
+        error: function() {
+            showInsuranceError('خطا در بررسی بیمه بیمار');
+            setFormLoading(false);
+        }
     });
 }
 
@@ -523,7 +524,7 @@ function saveReception() {
     setFormLoading(true);
     
     $.ajax({
-        url: '/Reception/ReceptionCore/CreateReception',
+        url: '@Url.Action("CreateReception", "ReceptionCore")',
         type: 'POST',
         data: formData,
         success: function(response) {

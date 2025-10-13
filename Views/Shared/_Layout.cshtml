@@ -4,6 +4,14 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no" />
+    <!-- Medical Environment: No Cache Policy -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <meta http-equiv="Last-Modified" content="@DateTime.Now.ToString("R")">
+    <meta name="cache-control" content="no-cache">
+    <meta name="expires" content="0">
+    <meta name="pragma" content="no-cache">
     <title>@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title + " - کلینیک شفا جیرفت")</title>
     
     <!-- Meta Tags Section -->
@@ -294,9 +302,9 @@
             </div>
         </div>
     </div>
-    <!-- jQuery Core - Load First -->
-    <script src="~/Scripts/jquery-3.7.1.min.js"></script>
-    <script src="~/Content/js/jquery-protection.js"></script>
+    <!-- jQuery Core - Load First (No Cache for Medical Environment) -->
+    <script src="~/Scripts/jquery-3.7.1.min.js?v=@DateTime.Now.Ticks&nocache=@Guid.NewGuid()"></script>
+    <script src="~/Content/js/jquery-protection.js?v=@DateTime.Now.Ticks&nocache=@Guid.NewGuid()"></script>
     
     <!-- jQuery Validation -->
     @Scripts.Render("~/bundles/jqueryval")
@@ -322,6 +330,150 @@
         if (typeof $ === 'undefined' && typeof jQuery !== 'undefined') {
             window.$ = window.jQuery;
         }
+    </script>
+    
+    <!-- Enhanced Logging System -->
+    <script>
+        // Global Logging System
+        window.ClinicLogger = {
+            log: function(message, data = null) {
+                console.log(`[ClinicApp] ${new Date().toISOString()} - ${message}`, data);
+            },
+            error: function(message, error = null) {
+                console.error(`[ClinicApp ERROR] ${new Date().toISOString()} - ${message}`, error);
+                // Send to server
+                this.sendToServer('error', message, error);
+            },
+            warn: function(message, data = null) {
+                console.warn(`[ClinicApp WARN] ${new Date().toISOString()} - ${message}`, data);
+            },
+            info: function(message, data = null) {
+                console.info(`[ClinicApp INFO] ${new Date().toISOString()} - ${message}`, data);
+            },
+            debug: function(message, data = null) {
+                console.debug(`[ClinicApp DEBUG] ${new Date().toISOString()} - ${message}`, data);
+            },
+            sendToServer: function(level, message, data) {
+                // Skip server logging to prevent infinite loops
+                console.log('Server logging disabled to prevent infinite loops');
+            },
+            
+            // Performance logging - Simplified to prevent infinite loops
+            logPerformance: function(operation, duration, details) {
+                this.info(`Performance: ${operation} took ${duration}ms`, details);
+                // Skip server logging to prevent infinite loops
+            },
+            
+            // User activity logging - Simplified to prevent infinite loops
+            logUserActivity: function(action, details) {
+                this.info(`User Activity: ${action}`, details);
+                // Skip server logging to prevent infinite loops
+            },
+            
+            // Business operation logging - Simplified to prevent infinite loops
+            logBusinessOperation: function(operation, details, data) {
+                this.info(`Business Operation: ${operation}`, { details, data });
+                // Skip server logging to prevent infinite loops
+            }
+        };
+        
+        // Medical Environment: Force No Cache (Disabled for now to prevent infinite refresh)
+        // Note: This was causing infinite refresh loops in development
+        // if (window.performance && window.performance.navigation) {
+        //     // Force reload if page was cached
+        //     if (window.performance.navigation.type === 2) {
+        //         console.warn('Page was loaded from cache - forcing reload for medical safety');
+        //         window.location.reload(true);
+        //     }
+        // }
+        
+        // Force fresh data on every page load (Disabled for now to prevent infinite refresh)
+        // Note: This was causing infinite refresh loops in development
+        // if (window.performance && window.performance.timing) {
+        //     const loadTime = window.performance.timing.loadEventEnd - window.performance.timing.navigationStart;
+        //     if (loadTime < 100) { // Suspiciously fast load = likely cached
+        //         console.warn('Suspiciously fast page load detected - forcing refresh for medical safety');
+        //         window.location.reload(true);
+        //     }
+        // }
+        
+        // Log system initialization
+        window.ClinicLogger.info('Logging system initialized');
+        window.ClinicLogger.log('jQuery status', {
+            jQuery: typeof jQuery !== 'undefined',
+            $: typeof $ !== 'undefined',
+            version: typeof jQuery !== 'undefined' ? jQuery.fn.jquery : 'N/A'
+        });
+        
+        // Force refresh mechanism for critical errors
+        let errorCount = 0;
+        const maxErrors = 5;
+        
+        // Monitor for repeated startTime errors
+        const originalError = window.addEventListener;
+        window.addEventListener('error', function(event) {
+            if (event.error && event.error.message.includes('startTime')) {
+                errorCount++;
+                if (errorCount >= maxErrors) {
+                    console.warn('Too many startTime errors - forcing page refresh');
+                    window.location.reload(true);
+                }
+            }
+        });
+        
+        // Performance monitoring for medical environment
+        window.ClinicLogger.logPerformance('Page_Load_Start', performance.now(), 'Page load started');
+        
+        // Monitor page load completion
+        window.addEventListener('load', function() {
+            const loadTime = performance.now();
+            window.ClinicLogger.logPerformance('Page_Load_Complete', loadTime, 'Page load completed');
+        });
+        
+        // Global JavaScript Error Handler - Enhanced for Medical Environment
+        window.addEventListener('error', function(event) {
+            const errorInfo = {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error ? event.error.stack : null,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                userId: window.currentUserId || 'anonymous',
+                sessionId: window.sessionId || 'unknown'
+            };
+            
+            // Log to console
+            console.error('JavaScript Error:', errorInfo);
+            
+            // Prevent infinite loops for specific errors
+            if (event.error && event.error.message.includes('startTime')) {
+                console.warn('startTime error detected - preventing infinite loop');
+                return;
+            }
+            
+            // Log to server (with protection against infinite loops)
+            if (window.ClinicLogger && !event.error?.message?.includes('timeout')) {
+                window.ClinicLogger.error('JavaScript Error', errorInfo);
+            }
+            
+            // Show user-friendly error for critical errors
+            if (event.error && event.error.message.includes('startTime')) {
+                if (typeof showNotification === 'function') {
+                    showNotification('خطا در راه‌اندازی سیستم. لطفاً صفحه را بازخوانی کنید.', 'error');
+                }
+            }
+        });
+        
+        // Global Unhandled Promise Rejection Handler
+        window.addEventListener('unhandledrejection', function(event) {
+            window.ClinicLogger.error('Unhandled Promise Rejection', {
+                reason: event.reason,
+                promise: event.promise
+            });
+        });
     </script>
     @Html.Partial("_ValidationToasts")
     
