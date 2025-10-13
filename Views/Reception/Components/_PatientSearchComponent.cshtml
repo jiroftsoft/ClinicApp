@@ -195,7 +195,8 @@ function searchPatientByNationalCode() {
         data: { nationalCode: nationalCode },
         success: function(response) {
             if (response.success) {
-                displayPatientSearchResults([response.data]);
+                // برای جستجوی کد ملی، بیمار مستقیماً انتخاب می‌شود
+                displaySelectedPatient(response.data);
             } else {
                 showComponentError(response.message);
             }
