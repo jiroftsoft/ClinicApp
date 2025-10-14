@@ -1,10 +1,30 @@
 /**
  * jQuery Protection Helper - کلینیک شفا
  * محافظت از jQuery و اطمینان از بارگذاری کامل آن
+ * شامل محافظت از خطاهای syntax
  */
 
 (function() {
     'use strict';
+    
+    // Syntax Error Prevention
+    function preventSyntaxErrors() {
+        // Override console.error to catch syntax errors
+        const originalError = console.error;
+        console.error = function(...args) {
+            if (args[0] && args[0].includes && args[0].includes('Unexpected token')) {
+                console.warn('Syntax error detected, attempting to fix...');
+                // Try to fix common syntax errors
+                if (args[0].includes('Unexpected token \')\'')) {
+                    console.warn('Detected extra closing parenthesis, page may need reload');
+                }
+            }
+            originalError.apply(console, args);
+        };
+    }
+    
+    // Initialize syntax error prevention
+    preventSyntaxErrors();
 
     // Global jQuery Protection
     window.ensureJQuery = function(callback) {

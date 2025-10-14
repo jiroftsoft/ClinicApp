@@ -145,6 +145,29 @@
     window.safeJQuery = safeJQuery;
 })();
 (function() {
+    // CSRF Setup for AJAX
+    (function(){
+        if (window.__csrfSetupDone) return; 
+        window.__csrfSetupDone = true;
+        function setup(){
+            if (typeof $ === 'undefined') { 
+                setTimeout(setup, 100); 
+                return; 
+            }
+            var $t = $('input[name="__RequestVerificationToken"]');
+            if (!$t.length) { 
+                setTimeout(setup, 100); 
+                return; 
+            }
+            $.ajaxSetup({ 
+                headers: { 
+                    'RequestVerificationToken': $t.val() 
+                } 
+            });
+        }
+        setup();
+    })();
+    
     function ensureJQuery(callback) {
         if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
             callback();
@@ -186,6 +209,15 @@ function initializeReceptionHistoryComponent() {
     
     component.on('click', '[data-action="filter"]', function() {
         toggleFilters();
+    });
+    
+    // Input sanitization for security
+    component.on('input', '#filterStartDate, #filterEndDate', function() {
+        sanitizeDateInput($(this));
+    });
+    
+    component.on('change', '#filterStatus, #filterType', function() {
+        sanitizeSelectInput($(this));
     });
     
     component.on('click', '[data-action="apply-filters"]', function() {
@@ -387,7 +419,7 @@ function loadPatientHistoryWithFilters(patientId, filters) {
     $.ajax({
         url: '@Url.Action("SearchReceptions", "ReceptionCore")',
         type: 'POST',
-        data: {
+        data: sanitizePagingParams({
             patientId: patientId,
             startDate: filters.startDate,
             endDate: filters.endDate,
@@ -395,7 +427,7 @@ function loadPatientHistoryWithFilters(patientId, filters) {
             type: filters.type,
             pageNumber: 1,
             pageSize: 10
-        },
+        }),
         success: function(response) {
             if (response.success) {
                 displayHistoryItems(response.data);
@@ -537,6 +569,50 @@ function setHistoryLoading(loading) {
         statusIndicator.removeClass('loading');
         statusText.text('آماده');
     }
+}
+
+// Security: Input sanitization functions
+function sanitizeDateInput($input) {
+    let value = $input.val();
+    // Remove any non-numeric characters except /
+    value = value.replace(/[^0-9/]/g, '');
+    // Limit length to prevent buffer overflow
+    if (value.length > 10) {
+        value = value.substring(0, 10);
+    }
+    $input.val(value);
+}
+
+function sanitizeSelectInput($select) {
+    const allowedValues = $select.find('option').map(function() {
+        return $(this).val();
+    }).get();
+    
+    const currentValue = $select.val();
+    if (currentValue && !allowedValues.includes(currentValue)) {
+        $select.val('');
+        console.warn('Invalid select value detected and cleared');
+    }
+}
+
+function sanitizePagingParams(params) {
+    // Sanitize page number
+    if (params.pageNumber) {
+        params.pageNumber = Math.max(1, Math.min(1000, parseInt(params.pageNumber) || 1));
+    }
+    
+    // Sanitize page size
+    if (params.pageSize) {
+        params.pageSize = Math.max(1, Math.min(100, parseInt(params.pageSize) || 10));
+    }
+    
+    // Sanitize sort field
+    const allowedSortFields = ['date', 'status', 'type', 'patientName'];
+    if (params.sort && !allowedSortFields.includes(params.sort)) {
+        params.sort = 'date'; // default
+    }
+    
+    return params;
 }
 
 function updateHistorySummary(totalCount, currentPage, totalPages) {

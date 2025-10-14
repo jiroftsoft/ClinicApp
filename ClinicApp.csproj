@@ -517,6 +517,7 @@
     <Compile Include="Filters\CultureFilter.cs" />
     <Compile Include="Filters\MedicalEnvironmentFilter.cs" />
     <Compile Include="Filters\NoCacheFilter.cs" />
+    <Compile Include="Filters\NoStoreAttribute.cs" />
     <Compile Include="Filters\PersianDateAttribute.cs" />
     <Compile Include="Filters\ValidateAntiForgeryTokenOnPostsAttribute.cs" />
     <Compile Include="Helpers\AgeCalculationHelper.cs" />

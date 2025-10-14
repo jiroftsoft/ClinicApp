@@ -1,5 +1,4 @@
-﻿@using Org.BouncyCastle.Asn1.Ocsp
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="fa" dir="rtl">
 <head>
     <meta charset="utf-8" />
@@ -8,7 +7,7 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
     <meta http-equiv="Pragma" content="no-cache">
     <meta http-equiv="Expires" content="0">
-    <meta http-equiv="Last-Modified" content="@DateTime.Now.ToString("R")">
+    <meta http-equiv="Last-Modified" content="@DateTime.UtcNow.ToString("R")">
     <meta name="cache-control" content="no-cache">
     <meta name="expires" content="0">
     <meta name="pragma" content="no-cache">
@@ -26,34 +25,134 @@
     <meta property="og:title" content="@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title)" />
     <meta property="og:description" content="رزرو آنلاین نوبت و مشاوره با پزشکان متخصص کلینیک شفا در جیرفت." />
     <meta property="og:type" content="website" />
-    <meta property="og:url" content="@(Request.Url?.AbsoluteUri ?? "https://shafa-jiroft.com")" />
-    <meta property="og:image" content="@Url.Content("~/Content/Images/shafa-logo.png")" />
+    @{
+        var baseUrl = $"{Request.Url?.Scheme}://{Request.Url?.Authority}";
+        var logoAbs = baseUrl + Url.Content("~/Content/Images/shafa-logo.png");
+        var pageUrl = Request.Url?.AbsoluteUri ?? (baseUrl + Url.Content("~/"));
+    }
+    <meta property="og:url" content="@pageUrl" />
+    <meta property="og:image" content="@logoAbs" />
     <meta property="og:site_name" content="کلینیک شفا جیرفت" />
     <meta property="og:locale" content="fa_IR" />
+    
+    <!-- Canonical URL for SEO -->
+    <link rel="canonical" href="@pageUrl">
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="@(string.IsNullOrEmpty(ViewBag.Title) ? "کلینیک شفا جیرفت | بهترین خدمات درمانی" : ViewBag.Title)">
+    <meta name="twitter:description" content="رزرو آنلاین نوبت و مشاوره با پزشکان متخصص کلینیک شفا در جیرفت.">
+    <meta name="twitter:image" content="@logoAbs">
     <script type="application/ld+json">
     {
         "@@context": "https://schema.org",
         "@@type": "MedicalOrganization",
         "name": "کلینیک شفا جیرفت",
-        "url": "https://shafa-jiroft.com",
-        "logo": "@Url.Content("~/Content/Images/shafa-logo.png")",
+        "url": "@pageUrl",
+        "logo": {
+            "@@type": "ImageObject",
+            "url": "@logoAbs",
+            "width": 200,
+            "height": 200
+        },
         "telephone": "+983432221234",
+        "email": "info@shafa-jiroft.com",
         "address": {
             "@@type": "PostalAddress",
             "streetAddress": "جیرفت، خیابان اصلی، کوچه شفا، پلاک 10",
             "addressLocality": "جیرفت",
+            "addressRegion": "کرمان",
             "postalCode": "78511",
             "addressCountry": "IR"
+        },
+        "openingHours": [
+            "Mo-Fr 08:00-20:00",
+            "Sa 08:00-16:00"
+        ],
+        "medicalSpecialty": [
+            "General Medicine",
+            "Cardiology",
+            "Dentistry",
+            "Laboratory Services"
+        ],
+        "sameAs": [
+            "https://www.instagram.com/shafa_jiroft",
+            "https://www.telegram.me/shafa_jiroft"
+        ],
+        "hasOfferCatalog": {
+            "@@type": "OfferCatalog",
+            "name": "خدمات درمانی",
+            "itemListElement": [
+                {
+                    "@@type": "Offer",
+                    "itemOffered": {
+                        "@@type": "MedicalProcedure",
+                        "name": "معاینه عمومی"
+                    }
+                },
+                {
+                    "@@type": "Offer",
+                    "itemOffered": {
+                        "@@type": "MedicalProcedure",
+                        "name": "آزمایشگاه"
+                    }
+                }
+            ]
         }
     }
-
     </script>
     <meta name="theme-color" content="#2c6e7d" />
+    
+    <!-- Content Security Policy for Production (Optimized for Local Fonts) -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' cdnjs.cloudflare.com fonts.googleapis.com fonts.gstatic.com 'unsafe-inline'; style-src 'self' cdnjs.cloudflare.com fonts.googleapis.com fonts.gstatic.com 'unsafe-inline'; img-src 'self' data:; font-src 'self' fonts.gstatic.com fonts.googleapis.com; connect-src 'self'; frame-src 'none'; object-src 'none'; base-uri 'self'; form-action 'self';">
     <link rel="icon" href="@Url.Content("~/Content/favicon.ico")" type="image/x-icon">
     <link rel="apple-touch-icon" href="@Url.Content("~/Content/apple-touch-icon.png")">
     <link rel="manifest" href="@Url.Content("~/site.webmanifest")" type="application/manifest+json">
-    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <!-- Local Vazirmatn Font (Better Performance & Security) -->
+    <style>
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Regular.woff2")') format('woff2'),
+                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir.woff2")') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Bold.woff2")') format('woff2'),
+                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Bold.woff2")') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Medium.woff2")') format('woff2'),
+                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Medium.woff2")') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-Light.woff2")') format('woff2'),
+                 url('@Url.Content("~/Content/Fonts/vazirmatn/Vazir-Light.woff2")') format('woff2');
+            font-weight: 300;
+            font-style: normal;
+            font-display: swap;
+        }
+        @@font-face {
+            font-family: 'Vazirmatn';
+            src: url('@Url.Content("~/Content/Fonts/vazirmatn/Vazirmatn-SemiBold.woff2")') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+            font-display: swap;
+        }
+    </style>
+    <!-- Font Awesome Local (Better Performance & Security) -->
+    <link rel="stylesheet" href="@Url.Content("~/Content/Fonts/fontawesome-free-6.7.2-web/css/all.min.css")" />
     @Styles.Render("~/Content/css")
     @Styles.Render("~/Content/plugins/css")
     @RenderSection("styles", required: false)
@@ -194,10 +293,13 @@
             display: inline-block;
         }
 
-            .footer-links a:hover {
-                color: var(--accent-color);
-                transform: translateX(5px);
-            }
+        .footer-links a:hover,
+        .footer-links a:focus-visible {
+            color: var(--accent-color);
+            transform: translateX(5px);
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
 
         .social-icon {
             display: flex;
@@ -211,10 +313,13 @@
             transition: var(--transition);
         }
 
-            .social-icon:hover {
-                background: var(--accent-color);
-                transform: translateY(-4px);
-            }
+        .social-icon:hover,
+        .social-icon:focus-visible {
+            background: var(--accent-color);
+            transform: translateY(-4px);
+            outline: 2px solid var(--accent-color);
+            outline-offset: 2px;
+        }
 
         .copyright {
             text-align: center;
@@ -236,34 +341,34 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-dark main-navbar">
             <div class="container">
-                <a class="navbar-brand" href="@Url.Action("Index", "Home")">
-                    <i class="fas fa-heartbeat"></i> کلینیک شفا جیرفت
+                <a class="navbar-brand" href="@Url.Action("Index", "Home")" aria-label="کلینیک شفا جیرفت - صفحه اصلی">
+                    <i class="fas fa-heartbeat" aria-hidden="true"></i> کلینیک شفا جیرفت
                 </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav-collapse" aria-controls="main-nav-collapse" aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav-collapse" aria-controls="main-nav-collapse" aria-expanded="false" aria-label="باز کردن منوی اصلی">
+                    <span class="navbar-toggler-icon" aria-hidden="true"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="main-nav-collapse">
                     <ul class="navbar-nav mx-auto">
                         <li class="nav-item">@Html.ActionLink("خانه", "Index", "Home", null, new { @class = "nav-link" })</li>
                         <li class="nav-item dropdown">
-                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown">خدمات</a>
-                            <div class="dropdown-menu megamenu">
+                            <a class="nav-link dropdown-toggle" href="#" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true" id="servicesDropdown">خدمات</a>
+                            <div class="dropdown-menu megamenu" aria-labelledby="servicesDropdown">
                                 <div class="row">
                                     <div class="col-lg-4">
-                                        <h6 class="megamenu-header"><i class="fas fa-stethoscope"></i> خدمات عمومی</h6>
+                                        <h6 class="megamenu-header"><i class="fas fa-stethoscope" aria-hidden="true"></i> خدمات عمومی</h6>
                                         <a href="#" class="megamenu-link">معاینه عمومی</a>
                                         <a href="#" class="megamenu-link">آزمایشگاه</a>
                                     </div>
                                     <div class="col-lg-4">
-                                        <h6 class="megamenu-header"><i class="fas fa-user-md"></i> خدمات تخصصی</h6>
+                                        <h6 class="megamenu-header"><i class="fas fa-user-md" aria-hidden="true"></i> خدمات تخصصی</h6>
                                         <a href="#" class="megamenu-link">دندانپزشکی</a>
                                         <a href="#" class="megamenu-link">قلب و عروق</a>
                                     </div>
                                     <div class="col-lg-4">
                                         <div class="megamenu-featured">
-                                            <h5><i class="fas fa-bolt"></i> ویژه امروز</h5>
+                                            <h5><i class="fas fa-bolt" aria-hidden="true"></i> ویژه امروز</h5>
                                             <p>مشاوره آنلاین با 30% تخفیف.</p>
-                                            <a href="#" class="btn btn-light btn-sm">دریافت تخفیف</a>
+                                            <a href="#" class="btn btn-light btn-sm" aria-label="دریافت تخفیف مشاوره آنلاین">دریافت تخفیف</a>
                                         </div>
                                     </div>
                                 </div>
@@ -303,8 +408,8 @@
         </div>
     </div>
     <!-- jQuery Core - Load First (No Cache for Medical Environment) -->
-    <script src="~/Scripts/jquery-3.7.1.min.js?v=@DateTime.Now.Ticks&nocache=@Guid.NewGuid()"></script>
-    <script src="~/Content/js/jquery-protection.js?v=@DateTime.Now.Ticks&nocache=@Guid.NewGuid()"></script>
+    <script src="~/Scripts/jquery-3.7.1.min.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
+    <script src="~/Content/js/jquery-protection.js?v=@System.Configuration.ConfigurationManager.AppSettings["AppVersion"]"></script>
     
     <!-- Force Cache Clear for Medical Environment -->
     <script>
@@ -317,45 +422,116 @@
             });
         }
         
-        // Force reload if cached
-        if (window.performance && window.performance.navigation.type === 2) {
-            window.location.reload(true);
+        // Force reload if cached (using modern API)
+        const navEntry = performance.getEntriesByType('navigation')[0];
+        if (navEntry && navEntry.type === 'back_forward') {
+            window.location.reload();
         }
         
-        // Syntax Error Detection and Auto-Fix
+        // Global Error Handler - Consolidated
         window.addEventListener('error', function(event) {
+            const errorInfo = {
+                message: event.message,
+                filename: event.filename,
+                lineno: event.lineno,
+                colno: event.colno,
+                error: event.error ? event.error.stack : null,
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                userId: window.currentUserId || 'anonymous',
+                sessionId: window.sessionId || 'unknown'
+            };
+            
+            // Log to console
+            console.error('JavaScript Error:', errorInfo);
+            
+            // Handle syntax errors
             if (event.error && event.error.message.includes('Unexpected token')) {
                 console.warn('Syntax error detected, forcing page reload');
                 setTimeout(function() {
-                    window.location.reload(true);
+                    window.location.reload();
                 }, 1000);
+                return;
+            }
+            
+            // Handle startTime errors
+            if (event.error && event.error.message.includes('startTime')) {
+                errorCount++;
+                if (errorCount >= maxErrors) {
+                    console.warn('Too many startTime errors - forcing page refresh');
+                    window.location.reload();
+                }
+                return;
+            }
+            
+            // Prevent infinite loops for specific errors
+            if (event.error && event.error.message.includes('startTime')) {
+                console.warn('startTime error detected - preventing infinite loop');
+                return;
+            }
+            
+            // Log to server (with protection against infinite loops)
+            if (window.ClinicLogger && !event.error?.message?.includes('timeout')) {
+                window.ClinicLogger.error('JavaScript Error', errorInfo);
+            }
+            
+            // Show user-friendly error for critical errors
+            if (event.error && event.error.message.includes('startTime')) {
+                if (typeof showNotification === 'function') {
+                    showNotification('خطا در راه‌اندازی سیستم. لطفاً صفحه را بازخوانی کنید.', 'error');
+                }
             }
         });
+        
+        // JavaScript Syntax Validation
+        function validateJavaScriptSyntax(code) {
+            try {
+                new Function(code);
+                return true;
+            } catch (e) {
+                console.error('JavaScript syntax error detected:', e.message);
+                return false;
+            }
+        }
+        
+        // Global Syntax Error Prevention
+        window.preventSyntaxErrors = function() {
+            // Override console.error to catch syntax errors
+            const originalError = console.error;
+            console.error = function(...args) {
+                if (args[0] && args[0].includes && args[0].includes('Unexpected token')) {
+                    console.warn('Syntax error prevented, reloading page...');
+                setTimeout(function() {
+                    window.location.reload();
+                }, 500);
+                }
+                originalError.apply(console, args);
+            };
+        };
+        
+        // Initialize syntax error prevention
+        window.preventSyntaxErrors();
     </script>
     
     <!-- jQuery Verification and Protection -->
     <script>
-        // محافظت اضافی برای jQuery
-        (function() {
-            function waitForJQuery(callback) {
-                if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-                    console.log('jQuery verified and ready');
-                    callback();
-                } else {
-                    console.warn('jQuery not ready, retrying...');
-                    setTimeout(function() {
-                        waitForJQuery(callback);
-                    }, 50);
-                }
+        // Standardized jQuery Guard Function
+        window.whenJQ = function(cb) {
+            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+                console.log('jQuery verified and ready');
+                cb();
+            } else {
+                console.warn('jQuery not ready, retrying...');
+                setTimeout(() => window.whenJQ(cb), 50);
             }
-            
-            // اطمینان از بارگذاری jQuery
-            waitForJQuery(function() {
-                // jQuery is ready
-                window.jQueryReady = true;
-                console.log('jQuery is fully loaded and ready');
-            });
-        })();
+        };
+        
+        // اطمینان از بارگذاری jQuery
+        window.whenJQ(function() {
+            window.jQueryReady = true;
+            console.log('jQuery is fully loaded and ready');
+        });
     </script>
     
     <!-- jQuery Validation -->
@@ -363,7 +539,6 @@
     
     <!-- Bootstrap -->
     @Scripts.Render("~/bundles/bootstrap")
-    <script src="~/Scripts/bootstrap.bundle.min.js"></script>
     
     <!-- Other Scripts -->
     @Scripts.Render("~/bundles/modernizr")
@@ -461,18 +636,6 @@
         let errorCount = 0;
         const maxErrors = 5;
         
-        // Monitor for repeated startTime errors
-        const originalError = window.addEventListener;
-        window.addEventListener('error', function(event) {
-            if (event.error && event.error.message.includes('startTime')) {
-                errorCount++;
-                if (errorCount >= maxErrors) {
-                    console.warn('Too many startTime errors - forcing page refresh');
-                    window.location.reload(true);
-                }
-            }
-        });
-        
         // Performance monitoring for medical environment
         window.ClinicLogger.logPerformance('Page_Load_Start', performance.now(), 'Page load started');
         
@@ -482,42 +645,7 @@
             window.ClinicLogger.logPerformance('Page_Load_Complete', loadTime, 'Page load completed');
         });
         
-        // Global JavaScript Error Handler - Enhanced for Medical Environment
-        window.addEventListener('error', function(event) {
-            const errorInfo = {
-                message: event.message,
-                filename: event.filename,
-                lineno: event.lineno,
-                colno: event.colno,
-                error: event.error ? event.error.stack : null,
-                timestamp: new Date().toISOString(),
-                userAgent: navigator.userAgent,
-                url: window.location.href,
-                userId: window.currentUserId || 'anonymous',
-                sessionId: window.sessionId || 'unknown'
-            };
-            
-            // Log to console
-            console.error('JavaScript Error:', errorInfo);
-            
-            // Prevent infinite loops for specific errors
-            if (event.error && event.error.message.includes('startTime')) {
-                console.warn('startTime error detected - preventing infinite loop');
-                return;
-            }
-            
-            // Log to server (with protection against infinite loops)
-            if (window.ClinicLogger && !event.error?.message?.includes('timeout')) {
-                window.ClinicLogger.error('JavaScript Error', errorInfo);
-            }
-            
-            // Show user-friendly error for critical errors
-            if (event.error && event.error.message.includes('startTime')) {
-                if (typeof showNotification === 'function') {
-                    showNotification('خطا در راه‌اندازی سیستم. لطفاً صفحه را بازخوانی کنید.', 'error');
-                }
-            }
-        });
+        // Global JavaScript Error Handler - Enhanced for Medical Environment (moved to consolidated handler above)
         
         // Global Unhandled Promise Rejection Handler
         window.addEventListener('unhandledrejection', function(event) {
@@ -531,22 +659,8 @@
     
     <!-- محافظت jQuery و Persian DatePicker -->
     <script>
-        // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-        (function() {
-            function ensureJQuery(callback) {
-                if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-                    console.log('jQuery is ready, executing callback');
-                    callback();
-                } else {
-                    console.warn('jQuery not loaded, retrying in 100ms...');
-                    setTimeout(function() {
-                        ensureJQuery(callback);
-                    }, 100);
-                }
-            }
-
-            // راه‌اندازی Persian DatePicker پس از بارگذاری jQuery
-            ensureJQuery(function() {
+        // راه‌اندازی Persian DatePicker پس از بارگذاری jQuery
+        window.whenJQ(function() {
                 if (typeof $.fn.persianDatepicker !== 'undefined') {
                     // راه‌اندازی خودکار Persian DatePicker برای کلاس‌های مشخص
                     $('.persian-date').each(function() {
@@ -568,7 +682,9 @@
                                     clearBtn: { enabled: true, text: { fa: 'پاک کردن' } }
                                 },
                                 onSelect: function(unix) {
-                                    var date = new Date(unix);
+                                    // Fix for Unix timestamp unit (seconds vs milliseconds)
+                                    var ts = unix < 2e10 ? unix * 1000 : unix;
+                                    var date = new Date(ts);
                                     var persianDate = date.getFullYear() + '/' + 
                                         String(date.getMonth() + 1).padStart(2, '0') + '/' + 
                                         String(date.getDate()).padStart(2, '0');
@@ -579,8 +695,7 @@
                         }
                     });
                 }
-            });
-        })();
+        });
     </script>
     
     @RenderSection("scripts", required: false)
@@ -588,28 +703,26 @@
     <script>
         document.addEventListener("DOMContentLoaded", function() {
             // --- 1. Initialize AOS (Animate on Scroll) for animations ---
-            document.addEventListener("DOMContentLoaded", function () {
-                if (typeof AOS !== "undefined") {
-                    AOS.init({
-                        duration: 700,
-                        once: true,
-                        offset: 100,
+            if (typeof AOS !== "undefined") {
+                AOS.init({
+                    duration: 700,
+                    once: true,
+                    offset: 100,
+                });
+
+                // Lazy AOS: فقط وقتی المان دیده شد اجرا شود
+                const elements = document.querySelectorAll("[data-aos]");
+                const observer = new IntersectionObserver((entries, obs) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add("aos-animate");
+                            obs.unobserve(entry.target);
+                        }
                     });
+                }, { threshold: 0.1 });
 
-                    // Lazy AOS: فقط وقتی المان دیده شد اجرا شود
-                    const elements = document.querySelectorAll("[data-aos]");
-                    const observer = new IntersectionObserver((entries, obs) => {
-                        entries.forEach(entry => {
-                            if (entry.isIntersecting) {
-                                entry.target.classList.add("aos-animate");
-                                obs.unobserve(entry.target);
-                            }
-                        });
-                    }, { threshold: 0.1 });
-
-                    elements.forEach(el => observer.observe(el));
-                }
-            });
+                elements.forEach(el => observer.observe(el));
+            }
 
             // --- 2. Navbar color change on scroll ---
             const navbar = document.querySelector('.main-navbar');
@@ -714,27 +827,9 @@
 
         });
         
-        // محافظت اضافی برای تمام کدهای jQuery
-        window.jQueryReady = function(callback) {
-            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-                callback();
-            } else {
-                setTimeout(function() {
-                    window.jQueryReady(callback);
-                }, 100);
-            }
-        };
-        
-        // محافظت اضافی برای تمام کدهای jQuery در کامپوننت‌ها
-        window.ensureJQuery = function(callback) {
-            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-                callback();
-            } else {
-                setTimeout(function() {
-                    window.ensureJQuery(callback);
-                }, 100);
-            }
-        };
+        // Standardized jQuery Guard Functions (using whenJQ)
+        window.jQueryReady = window.whenJQ;
+        window.ensureJQuery = window.whenJQ;
     </script>
 </body>
 </html>

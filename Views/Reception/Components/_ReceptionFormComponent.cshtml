@@ -17,13 +17,21 @@
     </div>
 
     <div class="component-body">
-        <form id="receptionForm" data-form="reception">
+        <form id="receptionForm" data-form="reception" method="post" action="@Url.Action("Create", "Reception")">
             @Html.AntiForgeryToken()
+            
+            <!-- Validation Summary -->
+            <div class="validation-summary-valid text-danger" data-valmsg-summary="true">
+                @Html.ValidationSummary(true, "", new { @class = "text-danger" })
+            </div>
             
             <!-- فیلدهای مخفی برای اطلاعات بیمار -->
             <input type="hidden" id="patientId" name="PatientId" value="">
             <input type="hidden" id="patientName" name="PatientName" value="">
             <input type="hidden" id="patientNationalCode" name="PatientNationalCode" value="">
+            
+            <!-- فیلد مخفی برای تاریخ میلادی -->
+            <input type="hidden" name="ReceptionDateTime" id="receptionDateTime" />
             
             <!-- اطلاعات هویتی بیمار -->
             <div class="form-section" id="patientInfoSection" data-section="patient-info">
@@ -39,7 +47,12 @@
                                    name="PatientNationalCode"
                                    maxlength="10"
                                    placeholder="کد ملی بیمار"
-                                   data-validate="required,national-code">
+                                   data-val="true" 
+                                   data-val-required="کد ملی الزامی است"
+                                   data-val-length="کد ملی باید 10 رقم باشد"
+                                   data-val-length-min="10"
+                                   data-val-length-max="10">
+                            @Html.ValidationMessage("PatientNationalCode", "", new { @class = "text-danger" })
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -50,7 +63,9 @@
                                    id="patientFirstName" 
                                    name="PatientFirstName"
                                    placeholder="نام بیمار"
-                                   data-validate="required">
+                                   data-val="true" 
+                                   data-val-required="نام الزامی است">
+                            @Html.ValidationMessage("PatientFirstName", "", new { @class = "text-danger" })
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -61,7 +76,9 @@
                                    id="patientLastName" 
                                    name="PatientLastName"
                                    placeholder="نام خانوادگی بیمار"
-                                   data-validate="required">
+                                   data-val="true" 
+                                   data-val-required="نام خانوادگی الزامی است">
+                            @Html.ValidationMessage("PatientLastName", "", new { @class = "text-danger" })
                         </div>
                     </div>
                 </div>
@@ -196,7 +213,9 @@
                                    id="receptionDate" 
                                    name="ReceptionDate"
                                    value="@Model.ReceptionDate"
-                                   data-validate="required">
+                                   data-val="true" 
+                                   data-val-required="تاریخ پذیرش الزامی است">
+                            @Html.ValidationMessage("ReceptionDate", "", new { @class = "text-danger" })
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -207,7 +226,9 @@
                                    id="receptionTime" 
                                    name="ReceptionTime"
                                    value="@DateTime.Now.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)"
-                                   data-validate="required">
+                                   data-val="true" 
+                                   data-val-required="ساعت پذیرش الزامی است">
+                            @Html.ValidationMessage("ReceptionTime", "", new { @class = "text-danger" })
                         </div>
                     </div>
                 </div>
@@ -388,6 +409,47 @@
 <script>
 // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
 (function() {
+    // Syntax Error Prevention
+    function preventSyntaxErrors() {
+        const originalError = console.error;
+        console.error = function(...args) {
+            if (args[0] && args[0].includes && args[0].includes('Unexpected token')) {
+                console.warn('Syntax error detected in Reception Form, attempting to fix...');
+                // Try to fix common syntax errors
+                if (args[0].includes('Unexpected token \')\'')) {
+                    console.warn('Detected extra closing parenthesis in AJAX callbacks');
+                }
+            }
+            originalError.apply(console, args);
+        };
+    }
+    
+    // Initialize syntax error prevention
+    preventSyntaxErrors();
+    
+    // CSRF Setup for AJAX
+    (function(){
+        if (window.__csrfSetupDone) return; 
+        window.__csrfSetupDone = true;
+        function setup(){
+            if (typeof $ === 'undefined') { 
+                setTimeout(setup, 100); 
+                return; 
+            }
+            var $t = $('input[name="__RequestVerificationToken"]');
+            if (!$t.length) { 
+                setTimeout(setup, 100); 
+                return; 
+            }
+            $.ajaxSetup({ 
+                headers: { 
+                    'RequestVerificationToken': $t.val() 
+                } 
+            });
+        }
+        setup();
+    })();
+    
     function ensureJQuery(callback) {
         if (typeof jQuery !== 'undefined') {
             callback();
@@ -444,6 +506,16 @@ function initializeReceptionFormComponent() {
         }
     });
     
+    // Convert Persian date to ISO format before form submission
+    component.on('change', '#receptionDate, #receptionTime', function() {
+        const dateFa = $('#receptionDate').val();
+        const time = $('#receptionTime').val();
+        const isoDateTime = toIso(dateFa, time);
+        if (isoDateTime) {
+            $('#receptionDateTime').val(isoDateTime);
+        }
+    });
+    
     // Patient selection event
     $(document).on('patientSelected', function(event, patient) {
         // نمایش اطلاعات بیمار در فرم
@@ -454,6 +526,51 @@ function initializeReceptionFormComponent() {
     
     // Initialize form
     initializeForm();
+}
+
+// تابع تبدیل تاریخ شمسی به میلادی
+function toIso(dateFa, time) {
+    try {
+        // اگر تاریخ شمسی است، تبدیل به میلادی
+        if (dateFa && dateFa.includes('/')) {
+            var parts = dateFa.split('/');
+            if (parts.length === 3) {
+                var year = parseInt(parts[0]);
+                var month = parseInt(parts[1]) - 1; // ماه در JavaScript از 0 شروع می‌شود
+                var day = parseInt(parts[2]);
+                
+                // تبدیل شمسی به میلادی (تقریبی)
+                var gregorianDate = new Date(year + 621, month, day);
+                
+                // اگر زمان هم داده شده، اضافه کن
+                if (time) {
+                    var timeParts = time.split(':');
+                    if (timeParts.length === 2) {
+                        gregorianDate.setHours(parseInt(timeParts[0]));
+                        gregorianDate.setMinutes(parseInt(timeParts[1]));
+                    }
+                }
+                
+                return gregorianDate.toISOString();
+            }
+        }
+        
+        // اگر تاریخ میلادی است، مستقیماً استفاده کن
+        if (dateFa && dateFa.includes('-')) {
+            var dateTime = dateFa;
+            if (time) {
+                dateTime += 'T' + time + ':00';
+            } else {
+                dateTime += 'T00:00:00';
+            }
+            return new Date(dateTime).toISOString();
+        }
+        
+        return null;
+    } catch (e) {
+        console.error('Error converting date:', e);
+        return null;
+    }
 }
 
 function initializeForm() {

@@ -47,7 +47,8 @@
                        class="form-control" 
                        id="patientNameInput" 
                        placeholder="نام یا نام خانوادگی بیمار"
-                       data-validate="patient-name">
+                       data-validate="patient-name"
+                       autocomplete="off">
                 <button class="btn btn-outline-primary" 
                         type="button" 
                         data-action="search-by-name">
@@ -65,8 +66,22 @@
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="results-body">
+            <div class="results-body" id="patientSearchResultsBody">
                 <!-- نتایج به صورت AJAX بارگذاری می‌شود -->
+            </div>
+            <!-- Loading Spinner -->
+            <div class="search-loading" id="searchLoading" style="display: none;">
+                <div class="text-center py-3">
+                    <i class="fas fa-spinner fa-spin me-2"></i>
+                    در حال جستجو...
+                </div>
+            </div>
+            <!-- Empty State -->
+            <div class="search-empty" id="searchEmpty" style="display: none;">
+                <div class="text-center py-4 text-muted">
+                    <i class="fas fa-search me-2"></i>
+                    هیچ بیمار یافت نشد
+                </div>
             </div>
         </div>
 
@@ -142,6 +157,29 @@
     window.safeJQuery = safeJQuery;
 })();
 (function() {
+    // CSRF Setup for AJAX
+    (function(){
+        if (window.__csrfSetupDone) return; 
+        window.__csrfSetupDone = true;
+        function setup(){
+            if (typeof $ === 'undefined') { 
+                setTimeout(setup, 100); 
+                return; 
+            }
+            var $t = $('input[name="__RequestVerificationToken"]');
+            if (!$t.length) { 
+                setTimeout(setup, 100); 
+                return; 
+            }
+            $.ajaxSetup({ 
+                headers: { 
+                    'RequestVerificationToken': $t.val() 
+                } 
+            });
+        }
+        setup();
+    })();
+    
     function ensureJQuery(callback) {
         if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
             callback();
@@ -183,6 +221,22 @@ function initializePatientSearchComponent() {
     
     component.on('click', '[data-action="search-by-name"]', function() {
         searchPatientByName();
+    });
+    
+    // Debounced search for name input
+    let searchTimeout;
+    component.on('input', '#patientNameInput', function() {
+        clearTimeout(searchTimeout);
+        const query = $(this).val().trim();
+        
+        if (query.length < 2) {
+            $('#patientSearchResults').hide();
+            return;
+        }
+        
+        searchTimeout = setTimeout(function() {
+            searchPatientByName(query);
+        }, 300); // 300ms debounce
     });
     
     component.on('click', '[data-action="clear-results"]', function() {
@@ -243,15 +297,16 @@ function searchPatientByNationalCode() {
     });
 }
 
-function searchPatientByName() {
-    const searchTerm = $('#patientNameInput').val().trim();
+function searchPatientByName(query) {
+    const searchTerm = query || $('#patientNameInput').val().trim();
     
-    if (!searchTerm) {
-        showComponentError('نام بیمار الزامی است');
+    if (!searchTerm || searchTerm.length < 2) {
+        $('#patientSearchResults').hide();
         return;
     }
     
     setComponentLoading(true);
+    $('#searchEmpty').hide();
     
     $.ajax({
         url: '@Url.Action("SearchByName", "ReceptionPatient")',
@@ -263,7 +318,11 @@ function searchPatientByName() {
         },
         success: function(response) {
             if (response.success) {
-                displayPatientSearchResults(response.data);
+                if (response.data && response.data.length > 0) {
+                    displayPatientSearchResults(response.data);
+                } else {
+                    showEmptyState();
+                }
             } else {
                 showComponentError(response.message);
             }
@@ -350,11 +409,21 @@ function setComponentLoading(loading) {
         component.addClass('loading');
         statusIndicator.addClass('loading');
         statusText.text('در حال جستجو...');
+        $('#searchLoading').show();
+        $('#searchEmpty').hide();
     } else {
         component.removeClass('loading');
         statusIndicator.removeClass('loading');
         statusText.text('آماده');
+        $('#searchLoading').hide();
     }
+}
+
+function showEmptyState() {
+    $('#patientSearchResults').show();
+    $('#searchEmpty').show();
+    $('#searchLoading').hide();
+    $('#patientSearchResultsBody').empty();
 }
 
 function showComponentError(message) {
