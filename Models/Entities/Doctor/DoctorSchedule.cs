@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
 using ClinicApp.Models.Entities.Appointment;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Models.Entities.Doctor;
 
@@ -117,6 +118,29 @@ public class DoctorSchedule : ISoftDelete, ITrackable
     /// </summary>
     [Range(0, 50, ErrorMessage = "حداکثر بیماران بدون رزرو باید بین 0 تا 50 باشد.")]
     public int MaxWalkInPatientsPerDay { get; set; } = 5;
+
+    // ========== ویژگی‌های جدید برای مدیریت شیفت کاری ==========
+
+    /// <summary>
+    /// نوع شیفت کاری
+    /// </summary>
+    [Required(ErrorMessage = "نوع شیفت الزامی است.")]
+    public ShiftType ShiftType { get; set; } = ShiftType.Morning;
+
+    /// <summary>
+    /// آیا شیفت فعال است
+    /// </summary>
+    public bool IsShiftActive { get; set; } = true;
+
+    /// <summary>
+    /// زمان شروع شیفت
+    /// </summary>
+    public TimeSpan ShiftStartTime { get; set; } = new TimeSpan(6, 0, 0);
+
+    /// <summary>
+    /// زمان پایان شیفت
+    /// </summary>
+    public TimeSpan ShiftEndTime { get; set; } = new TimeSpan(14, 0, 0);
 
     /// <summary>
     /// وضعیت حذف نرم

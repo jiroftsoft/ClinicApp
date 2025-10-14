@@ -242,5 +242,136 @@ namespace ClinicApp.Controllers.Reception
         }
 
         #endregion
+
+        #region Insurance Management
+
+        /// <summary>
+        /// دریافت بیمه‌های پایه و تکمیلی
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetInsuranceProviders()
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت بیمه‌های پایه و تکمیلی, کاربر: {UserName}", _currentUserService.UserName);
+
+                var result = await _receptionService.GetInsuranceProvidersAsync();
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = "بیمه‌ها با موفقیت دریافت شدند"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت بیمه‌ها");
+                return Json(new { success = false, message = "خطا در دریافت بیمه‌ها" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های تکمیلی بر اساس بیمه پایه
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetSupplementaryInsurances(int baseInsuranceId)
+        {
+            try
+            {
+                _logger.Information("🔄 دریافت بیمه‌های تکمیلی برای بیمه پایه: {BaseInsuranceId}, کاربر: {UserName}", 
+                    baseInsuranceId, _currentUserService.UserName);
+
+                var result = await _receptionService.GetSupplementaryInsurancesAsync(baseInsuranceId);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = "بیمه‌های تکمیلی با موفقیت دریافت شدند"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت بیمه‌های تکمیلی: {BaseInsuranceId}", baseInsuranceId);
+                return Json(new { success = false, message = "خطا در دریافت بیمه‌های تکمیلی" });
+            }
+        }
+
+        /// <summary>
+        /// محاسبه بیمه برای پذیرش
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> CalculateInsurance(int baseInsuranceId, int? supplementaryInsuranceId, int serviceId)
+        {
+            try
+            {
+                _logger.Information("💰 محاسبه بیمه: پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, خدمت {ServiceId}, کاربر: {UserName}", 
+                    baseInsuranceId, supplementaryInsuranceId, serviceId, _currentUserService.UserName);
+
+                var result = await _receptionService.CalculateInsuranceAsync(baseInsuranceId, supplementaryInsuranceId, serviceId);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = "محاسبه بیمه با موفقیت انجام شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در محاسبه بیمه: پایه {BaseInsuranceId}, خدمت {ServiceId}", 
+                    baseInsuranceId, serviceId);
+                return Json(new { success = false, message = "خطا در محاسبه بیمه" });
+            }
+        }
+
+        /// <summary>
+        /// تغییر بیمه بیمار
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> ChangePatientInsurance(int patientId, int baseInsuranceId, int? supplementaryInsuranceId)
+        {
+            try
+            {
+                _logger.Information("🔄 تغییر بیمه بیمار: {PatientId}, پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, کاربر: {UserName}", 
+                    patientId, baseInsuranceId, supplementaryInsuranceId, _currentUserService.UserName);
+
+                var result = await _receptionService.ChangePatientInsuranceAsync(patientId, baseInsuranceId, supplementaryInsuranceId);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    message = "بیمه بیمار با موفقیت تغییر کرد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در تغییر بیمه بیمار: {PatientId}", patientId);
+                return Json(new { success = false, message = "خطا در تغییر بیمه بیمار" });
+            }
+        }
+
+        #endregion
     }
 }

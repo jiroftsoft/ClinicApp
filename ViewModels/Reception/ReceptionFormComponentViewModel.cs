@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using ClinicApp.Models.Enums;
+using System;
 
 namespace ClinicApp.ViewModels.Reception
 {
@@ -105,6 +106,20 @@ namespace ClinicApp.ViewModels.Reception
 
         [Display(Name = "لیست بیمه‌ها")]
         public List<InsuranceLookupViewModel> Insurances { get; set; } = new List<InsuranceLookupViewModel>();
+
+        // ========== ویژگی‌های جدید برای مدیریت شیفت کاری ==========
+
+        [Display(Name = "نوع شیفت کاری")]
+        public ShiftType ShiftType { get; set; } = ShiftType.Morning;
+
+        [Display(Name = "آیا شیفت فعال")]
+        public bool IsShiftActive { get; set; } = true;
+
+        [Display(Name = "زمان شروع شیفت")]
+        public TimeSpan ShiftStartTime { get; set; } = new TimeSpan(6, 0, 0);
+
+        [Display(Name = "زمان پایان شیفت")]
+        public TimeSpan ShiftEndTime { get; set; } = new TimeSpan(14, 0, 0);
     }
 
     /// <summary>

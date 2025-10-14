@@ -395,19 +395,46 @@
 <!-- Global JavaScript -->
 <script>
 // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+// محافظت اضافی برای تمام توابع jQuery
+(function() {
+    // محافظت اضافی برای تمام توابع jQuery
+    const original$ = window.$;
+    const originaljQuery = window.jQuery;
+    
+    // محافظت اضافی برای تمام توابع jQuery
+    function safeJQuery(callback) {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            callback();
+        } else {
+            console.warn('jQuery not loaded, retrying in 100ms...');
+            setTimeout(function() {
+                safeJQuery(callback);
+            }, 100);
+        }
+    }
+    
+    // محافظت اضافی برای تمام توابع jQuery
+    window.safeJQuery = safeJQuery;
+})();
 (function() {
     function ensureJQuery(callback) {
-        if (typeof jQuery !== 'undefined') {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
             callback();
         } else {
             setTimeout(function() {
                 ensureJQuery(callback);
-            }, 50);
+            }, 100);
         }
     }
 
     // راه‌اندازی پس از بارگذاری jQuery
     ensureJQuery(function() {
+        // محافظت اضافی برای jQuery
+        if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+            console.error('jQuery not loaded in ensureJQuery callback');
+            return;
+        }
+        
         $(document).ready(function() {
             // Initialize Reception Dashboard
             initializeReceptionDashboard();
@@ -421,12 +448,18 @@
         } else {
             setTimeout(function() {
                 window.jQueryReady(callback);
-            }, 50);
+            }, 100);
         }
     };
 })();
 
 function initializeReceptionDashboard() {
+    // محافظت اضافی برای jQuery
+    if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+        console.error('jQuery not loaded in initializeReceptionDashboard');
+        return;
+    }
+    
     const startTime = performance.now();
     
     try {
@@ -478,26 +511,26 @@ function initializeComponents() {
         // Initialize all components
         window.jQueryReady(function() {
             $('[data-component]').each(function() {
-            const component = $(this);
-            const componentName = component.data('component');
+                const component = $(this);
+                const componentName = component.data('component');
+                
+                // Add fade-in animation
+                component.addClass('fade-in');
             
-            // Add fade-in animation
-            component.addClass('fade-in');
-        
-        // Initialize component-specific functionality
-        switch (componentName) {
-            case 'patient-search':
-                // Already initialized in component
-                break;
-            case 'reception-form':
-                // Already initialized in component
-                break;
-            case 'reception-history':
-                // Already initialized in component
-                break;
-        }
+                // Initialize component-specific functionality
+                switch (componentName) {
+                    case 'patient-search':
+                        // Already initialized in component
+                        break;
+                    case 'reception-form':
+                        // Already initialized in component
+                        break;
+                    case 'reception-history':
+                        // Already initialized in component
+                        break;
+                }
+            });
         });
-    });
     } catch (error) {
         console.error('Error initializing components:', error);
         if (window.ClinicLogger) {

@@ -44,6 +44,7 @@ using ClinicApp.Services.UserContext;
 using ClinicApp.Services.SystemSettings;
 using ClinicApp.Services.Interfaces;
 using ClinicApp.Services.Triage;
+using ClinicApp.Services;
 using Unity;
 using Unity.AspNet.Mvc;
 using Unity.Injection;
@@ -474,6 +475,9 @@ namespace ClinicApp
                 // ثبت سرویس‌های پذیرش
                 container.RegisterType<IReceptionRepository, ReceptionRepository>(new PerRequestLifetimeManager());
                 container.RegisterType<IReceptionService, ReceptionService>(new PerRequestLifetimeManager());
+                
+                // ثبت سرویس‌های شیفت کاری
+                container.RegisterType<ShiftHelperService>(new PerRequestLifetimeManager());
 
                 // ثبت سرویس‌های پرداخت
                 container.RegisterType<IPaymentTransactionRepository, PaymentTransactionRepository>(new PerRequestLifetimeManager());

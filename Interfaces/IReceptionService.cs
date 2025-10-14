@@ -410,5 +410,105 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult<PatientInquiryViewModel>> InquiryPatientIdentityAsync(string nationalCode, DateTime birthDate);
 
         #endregion
+
+        #region Clinic and Department Management
+
+        /// <summary>
+        /// دریافت کلینیک‌های فعال
+        /// </summary>
+        /// <returns>لیست کلینیک‌های فعال</returns>
+        Task<ServiceResult<List<ReceptionClinicLookupViewModel>>> GetActiveClinicsAsync();
+
+        /// <summary>
+        /// دریافت دپارتمان‌های کلینیک
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک</param>
+        /// <returns>لیست دپارتمان‌های کلینیک</returns>
+        Task<ServiceResult<List<ReceptionDepartmentLookupViewModel>>> GetClinicDepartmentsAsync(int clinicId);
+
+        #endregion
+
+        #region Shift Management
+
+        /// <summary>
+        /// دریافت شیفت فعلی
+        /// </summary>
+        /// <returns>نوع شیفت فعلی</returns>
+        Task<ServiceResult<ShiftType>> GetCurrentShiftAsync();
+
+        /// <summary>
+        /// دریافت اطلاعات شیفت
+        /// </summary>
+        /// <param name="shiftType">نوع شیفت</param>
+        /// <returns>اطلاعات شیفت</returns>
+        Task<ServiceResult<ShiftInfo>> GetShiftInfoAsync(ShiftType shiftType);
+
+        /// <summary>
+        /// دریافت پزشکان بر اساس شیفت
+        /// </summary>
+        /// <param name="shiftType">نوع شیفت</param>
+        /// <returns>لیست پزشکان شیفت</returns>
+        Task<ServiceResult<List<ReceptionDoctorLookupViewModel>>> GetDoctorsByShiftAsync(ShiftType shiftType);
+
+        #endregion
+
+        #region Patient Field Management
+
+        /// <summary>
+        /// به‌روزرسانی فیلد بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="fieldName">نام فیلد</param>
+        /// <param name="fieldValue">مقدار جدید</param>
+        /// <returns>نتیجه به‌روزرسانی</returns>
+        Task<ServiceResult<bool>> UpdatePatientFieldAsync(int patientId, string fieldName, string fieldValue);
+
+        #endregion
+
+        #region Insurance Management
+
+        /// <summary>
+        /// دریافت بیمه‌های پایه و تکمیلی
+        /// </summary>
+        /// <returns>لیست بیمه‌های پایه و تکمیلی</returns>
+        Task<ServiceResult<InsuranceProvidersViewModel>> GetInsuranceProvidersAsync();
+
+        /// <summary>
+        /// دریافت بیمه‌های تکمیلی بر اساس بیمه پایه
+        /// </summary>
+        /// <param name="baseInsuranceId">شناسه بیمه پایه</param>
+        /// <returns>لیست بیمه‌های تکمیلی</returns>
+        Task<ServiceResult<List<ReceptionInsuranceLookupViewModel>>> GetSupplementaryInsurancesAsync(int baseInsuranceId);
+
+        /// <summary>
+        /// محاسبه بیمه برای پذیرش
+        /// </summary>
+        /// <param name="baseInsuranceId">شناسه بیمه پایه</param>
+        /// <param name="supplementaryInsuranceId">شناسه بیمه تکمیلی</param>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>نتیجه محاسبه بیمه</returns>
+        Task<ServiceResult<ClinicApp.ViewModels.Reception.InsuranceCalculationViewModel>> CalculateInsuranceAsync(int baseInsuranceId, int? supplementaryInsuranceId, int serviceId);
+
+        /// <summary>
+        /// تغییر بیمه بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="baseInsuranceId">شناسه بیمه پایه</param>
+        /// <param name="supplementaryInsuranceId">شناسه بیمه تکمیلی</param>
+        /// <returns>نتیجه تغییر بیمه</returns>
+        Task<ServiceResult<bool>> ChangePatientInsuranceAsync(int patientId, int baseInsuranceId, int? supplementaryInsuranceId);
+
+        #endregion
+
+        #region Service Search
+
+        /// <summary>
+        /// جستجوی خدمات بر اساس کد یا نام
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <returns>نتایج جستجوی خدمات</returns>
+        Task<ServiceResult<List<ServiceSearchResultViewModel>>> SearchServicesAsync(string searchTerm);
+
+        #endregion
     }
 }

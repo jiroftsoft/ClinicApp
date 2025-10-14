@@ -235,5 +235,43 @@ namespace ClinicApp.Controllers.Reception
         }
 
         #endregion
+
+        #region Service Search
+
+        /// <summary>
+        /// جستجوی خدمات بر اساس کد یا نام (AJAX)
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <returns>نتایج جستجوی خدمات</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> SearchServices(string searchTerm)
+        {
+            try
+            {
+                _logger.Information("🔍 جستجوی خدمات: {SearchTerm}, کاربر: {UserName}", 
+                    searchTerm, _currentUserService.UserName);
+
+                var result = await _receptionService.SearchServicesAsync(searchTerm);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = $"تعداد {result.Data.Count} خدمت یافت شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در جستجوی خدمات: {SearchTerm}", searchTerm);
+                return Json(new { success = false, message = "خطا در جستجوی خدمات" });
+            }
+        }
+
+        #endregion
     }
 }

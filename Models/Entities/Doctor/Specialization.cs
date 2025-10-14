@@ -138,8 +138,13 @@ public class SpecializationConfig : EntityTypeConfiguration<Specialization>
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_Specialization_DeletedByUserId")));
 
-        // روابط - حذف شده به دلیل تداخل با DoctorSpecialization entity
+        // روابط Many-to-Many با پزشکان
+        HasMany(s => s.DoctorSpecializations)
+            .WithRequired(ds => ds.Specialization)
+            .HasForeignKey(ds => ds.SpecializationId)
+            .WillCascadeOnDelete(false);
 
+        // روابط Audit
         HasOptional(s => s.CreatedByUser)
             .WithMany()
             .HasForeignKey(s => s.CreatedByUserId)

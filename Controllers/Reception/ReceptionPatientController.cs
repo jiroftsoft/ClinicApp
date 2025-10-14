@@ -189,5 +189,45 @@ namespace ClinicApp.Controllers.Reception
         }
 
         #endregion
+
+        #region Patient Information Management
+
+        /// <summary>
+        /// به‌روزرسانی اطلاعات بیمار (Real-time)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="fieldName">نام فیلد</param>
+        /// <param name="fieldValue">مقدار جدید</param>
+        /// <returns>نتیجه به‌روزرسانی</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> UpdatePatientInfo(int patientId, string fieldName, string fieldValue)
+        {
+            try
+            {
+                _logger.Information("👤 به‌روزرسانی اطلاعات بیمار: {PatientId}, فیلد: {FieldName}, کاربر: {UserName}", 
+                    patientId, fieldName, _currentUserService.UserName);
+
+                var result = await _receptionService.UpdatePatientFieldAsync(patientId, fieldName, fieldValue);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    message = "اطلاعات بیمار با موفقیت به‌روزرسانی شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در به‌روزرسانی اطلاعات بیمار: {PatientId}, فیلد: {FieldName}", 
+                    patientId, fieldName);
+                return Json(new { success = false, message = "خطا در به‌روزرسانی اطلاعات بیمار" });
+            }
+        }
+
+        #endregion
     }
 }

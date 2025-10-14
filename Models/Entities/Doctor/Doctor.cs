@@ -6,6 +6,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Entity.Infrastructure.Annotations;
 using System.Data.Entity.ModelConfiguration;
+using System.Linq;
 
 namespace ClinicApp.Models.Entities.Doctor;
 
@@ -304,6 +305,30 @@ public class Doctor : ISoftDelete, ITrackable
     public virtual ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new HashSet<DoctorSpecialization>();
 
     /// <summary>
+    /// تخصص اصلی پزشک (برای دسترسی مستقیم)
+    /// </summary>
+    [NotMapped]
+    public string SpecializationName
+    {
+        get
+        {
+            return DoctorSpecializations?.FirstOrDefault()?.Specialization?.Name ?? "";
+        }
+    }
+
+    /// <summary>
+    /// لیست نام‌های تخصص‌های پزشک (برای دسترسی مستقیم)
+    /// </summary>
+    [NotMapped]
+    public IEnumerable<string> SpecializationNames
+    {
+        get
+        {
+            return DoctorSpecializations?.Select(ds => ds.Specialization?.Name).Where(name => !string.IsNullOrEmpty(name)) ?? Enumerable.Empty<string>();
+        }
+    }
+
+    /// <summary>
     /// لیست ارزیابی‌های تریاژ انجام شده توسط این پزشک (به عنوان پزشک پیشنهادی)
     /// این لیست برای نمایش تمام ارزیابی‌های تریاژ که این پزشک به عنوان پزشک پیشنهادی در آن‌ها ذکر شده است
     /// </summary>
@@ -503,6 +528,12 @@ public class DoctorConfig : EntityTypeConfiguration<Doctor>
         HasMany(d => d.Appointments)
             .WithRequired(a => a.Doctor)
             .HasForeignKey(a => a.DoctorId)
+            .WillCascadeOnDelete(false);
+
+        // رابطه Many-to-Many با تخصص‌ها
+        HasMany(d => d.DoctorSpecializations)
+            .WithRequired(ds => ds.Doctor)
+            .HasForeignKey(ds => ds.DoctorId)
             .WillCascadeOnDelete(false);
 
         // روابط Audit

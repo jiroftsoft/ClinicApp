@@ -306,6 +306,58 @@
     <script src="~/Scripts/jquery-3.7.1.min.js?v=@DateTime.Now.Ticks&nocache=@Guid.NewGuid()"></script>
     <script src="~/Content/js/jquery-protection.js?v=@DateTime.Now.Ticks&nocache=@Guid.NewGuid()"></script>
     
+    <!-- Force Cache Clear for Medical Environment -->
+    <script>
+        // Force clear all caches
+        if ('caches' in window) {
+            caches.keys().then(function(names) {
+                names.forEach(function(name) {
+                    caches.delete(name);
+                });
+            });
+        }
+        
+        // Force reload if cached
+        if (window.performance && window.performance.navigation.type === 2) {
+            window.location.reload(true);
+        }
+        
+        // Syntax Error Detection and Auto-Fix
+        window.addEventListener('error', function(event) {
+            if (event.error && event.error.message.includes('Unexpected token')) {
+                console.warn('Syntax error detected, forcing page reload');
+                setTimeout(function() {
+                    window.location.reload(true);
+                }, 1000);
+            }
+        });
+    </script>
+    
+    <!-- jQuery Verification and Protection -->
+    <script>
+        // محافظت اضافی برای jQuery
+        (function() {
+            function waitForJQuery(callback) {
+                if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+                    console.log('jQuery verified and ready');
+                    callback();
+                } else {
+                    console.warn('jQuery not ready, retrying...');
+                    setTimeout(function() {
+                        waitForJQuery(callback);
+                    }, 50);
+                }
+            }
+            
+            // اطمینان از بارگذاری jQuery
+            waitForJQuery(function() {
+                // jQuery is ready
+                window.jQueryReady = true;
+                console.log('jQuery is fully loaded and ready');
+            });
+        })();
+    </script>
+    
     <!-- jQuery Validation -->
     @Scripts.Render("~/bundles/jqueryval")
     
@@ -486,10 +538,10 @@
                     console.log('jQuery is ready, executing callback');
                     callback();
                 } else {
-                    console.warn('jQuery not loaded, retrying in 50ms...');
+                    console.warn('jQuery not loaded, retrying in 100ms...');
                     setTimeout(function() {
                         ensureJQuery(callback);
-                    }, 50);
+                    }, 100);
                 }
             }
 
@@ -654,13 +706,35 @@
 
             // --- 5. Display TempData messages from the server ---
             @if (TempData["SuccessMessage"] != null) {
-                <text>toastr.success("@Html.Raw(TempData["SuccessMessage"])", "موفقیت");</text>
+                <text>toastr.success(@Html.Raw(Json.Encode(TempData["SuccessMessage"])), "موفقیت");</text>
             }
             @if (TempData["ErrorMessage"] != null) {
-                <text>toastr.error("@Html.Raw(TempData["ErrorMessage"])", "خطا");</text>
+                <text>toastr.error(@Html.Raw(Json.Encode(TempData["ErrorMessage"])), "خطا");</text>
             }
 
         });
+        
+        // محافظت اضافی برای تمام کدهای jQuery
+        window.jQueryReady = function(callback) {
+            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    window.jQueryReady(callback);
+                }, 100);
+            }
+        };
+        
+        // محافظت اضافی برای تمام کدهای jQuery در کامپوننت‌ها
+        window.ensureJQuery = function(callback) {
+            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+                callback();
+            } else {
+                setTimeout(function() {
+                    window.ensureJQuery(callback);
+                }, 100);
+            }
+        };
     </script>
 </body>
 </html>

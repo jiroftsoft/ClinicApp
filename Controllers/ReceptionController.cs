@@ -16,6 +16,7 @@ using System.Data.Entity;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.DTOs.Insurance;
 using ClinicApp.ViewModels;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Controllers
 {
@@ -2189,6 +2190,196 @@ namespace ClinicApp.Controllers
 
                 return Json(ServiceResult.Failed("خطای سیستمی در دریافت وضعیت بیمه بیمار"), JsonRequestBehavior.AllowGet);
             }
+        }
+
+        #endregion
+
+        #region Shift Management
+
+        /// <summary>
+        /// دریافت پزشکان بر اساس شیفت (AJAX)
+        /// </summary>
+        /// <param name="shiftType">نوع شیفت</param>
+        /// <returns>لیست پزشکان شیفت</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetDoctorsByShift(ShiftType shiftType)
+        {
+            try
+            {
+                _logger.Information("👨‍⚕️ دریافت پزشکان شیفت: {ShiftType}, کاربر: {UserName}", 
+                    shiftType, _currentUserService.UserName);
+
+                var result = await _receptionService.GetDoctorsByShiftAsync(shiftType);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = $"پزشکان شیفت {GetShiftDisplayName(shiftType)} با موفقیت دریافت شدند"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت پزشکان شیفت: {ShiftType}", shiftType);
+                return Json(new { success = false, message = "خطا در دریافت پزشکان شیفت" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت شیفت فعلی (AJAX)
+        /// </summary>
+        /// <returns>نوع شیفت فعلی</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetCurrentShift()
+        {
+            try
+            {
+                _logger.Information("🕐 دریافت شیفت فعلی, کاربر: {UserName}", _currentUserService.UserName);
+
+                var result = await _receptionService.GetCurrentShiftAsync();
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    displayName = GetShiftDisplayName(result.Data),
+                    message = "شیفت فعلی با موفقیت دریافت شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت شیفت فعلی");
+                return Json(new { success = false, message = "خطا در دریافت شیفت فعلی" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات شیفت (AJAX)
+        /// </summary>
+        /// <param name="shiftType">نوع شیفت</param>
+        /// <returns>اطلاعات شیفت</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetShiftInfo(ShiftType shiftType)
+        {
+            try
+            {
+                _logger.Information("📋 دریافت اطلاعات شیفت: {ShiftType}, کاربر: {UserName}", 
+                    shiftType, _currentUserService.UserName);
+
+                var result = await _receptionService.GetShiftInfoAsync(shiftType);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = $"اطلاعات شیفت {GetShiftDisplayName(shiftType)} با موفقیت دریافت شد"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت اطلاعات شیفت: {ShiftType}", shiftType);
+                return Json(new { success = false, message = "خطا در دریافت اطلاعات شیفت" });
+            }
+        }
+
+        #endregion
+
+        #region Clinic Management
+
+        /// <summary>
+        /// دریافت لیست کلینیک‌ها (AJAX)
+        /// </summary>
+        /// <returns>لیست کلینیک‌های فعال</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetClinics()
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت کلینیک‌ها, کاربر: {UserName}", _currentUserService.UserName);
+
+                var result = await _receptionService.GetActiveClinicsAsync();
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = "کلینیک‌ها با موفقیت دریافت شدند"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت کلینیک‌ها");
+                return Json(new { success = false, message = "خطا در دریافت کلینیک‌ها" });
+            }
+        }
+
+        /// <summary>
+        /// دریافت دپارتمان‌های کلینیک (AJAX)
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک</param>
+        /// <returns>لیست دپارتمان‌های کلینیک</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetClinicDepartments(int clinicId)
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت دپارتمان‌های کلینیک: {ClinicId}, کاربر: {UserName}", 
+                    clinicId, _currentUserService.UserName);
+
+                var result = await _receptionService.GetClinicDepartmentsAsync(clinicId);
+                
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message });
+                }
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
+                    message = "دپارتمان‌های کلینیک با موفقیت دریافت شدند"
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت دپارتمان‌های کلینیک: {ClinicId}", clinicId);
+                return Json(new { success = false, message = "خطا در دریافت دپارتمان‌های کلینیک" });
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private string GetShiftDisplayName(ShiftType shiftType)
+        {
+            return shiftType switch
+            {
+                ShiftType.Morning => "صبح",
+                ShiftType.Evening => "عصر",
+                ShiftType.Night => "شب",
+                _ => "نامشخص"
+            };
         }
 
         #endregion

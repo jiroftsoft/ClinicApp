@@ -120,19 +120,46 @@
 
 <script>
 // محافظت jQuery - اطمینان از بارگذاری کامل jQuery
+// محافظت اضافی برای تمام توابع jQuery
+(function() {
+    // محافظت اضافی برای تمام توابع jQuery
+    const original$ = window.$;
+    const originaljQuery = window.jQuery;
+    
+    // محافظت اضافی برای تمام توابع jQuery
+    function safeJQuery(callback) {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            callback();
+        } else {
+            console.warn('jQuery not loaded, retrying in 100ms...');
+            setTimeout(function() {
+                safeJQuery(callback);
+            }, 100);
+        }
+    }
+    
+    // محافظت اضافی برای تمام توابع jQuery
+    window.safeJQuery = safeJQuery;
+})();
 (function() {
     function ensureJQuery(callback) {
-        if (typeof jQuery !== 'undefined') {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
             callback();
         } else {
             setTimeout(function() {
                 ensureJQuery(callback);
-            }, 50);
+            }, 100);
         }
     }
 
     // راه‌اندازی پس از بارگذاری jQuery
     ensureJQuery(function() {
+        // محافظت اضافی برای jQuery
+        if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+            console.error('jQuery not loaded in ensureJQuery callback');
+            return;
+        }
+        
         $(document).ready(function() {
             // Initialize Patient Search Component
             initializePatientSearchComponent();
@@ -141,6 +168,12 @@
 })();
 
 function initializePatientSearchComponent() {
+    // محافظت اضافی برای jQuery
+    if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
+        console.error('jQuery not loaded in initializePatientSearchComponent');
+        return;
+    }
+    
     const component = $('[data-component="patient-search"]');
     
     // Event handlers

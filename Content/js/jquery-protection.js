@@ -8,12 +8,12 @@
 
     // Global jQuery Protection
     window.ensureJQuery = function(callback) {
-        if (typeof jQuery !== 'undefined' && typeof $.fn !== 'undefined') {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
             callback();
         } else {
             setTimeout(function() {
                 window.ensureJQuery(callback);
-            }, 50);
+            }, 100);
         }
     };
 

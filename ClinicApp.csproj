@@ -807,6 +807,10 @@
     <Compile Include="Migrations\202510131534101_14040721-01.Designer.cs">
       <DependentUpon>202510131534101_14040721-01.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510132050140_FixDoctorSpecializationRelationships.cs" />
+    <Compile Include="Migrations\202510132050140_FixDoctorSpecializationRelationships.Designer.cs">
+      <DependentUpon>202510132050140_FixDoctorSpecializationRelationships.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -874,6 +878,7 @@
     <Compile Include="Models\Entities\Notification\NotificationTemplate.cs" />
     <Compile Include="Models\Enums\ServiceComponentType.cs" />
     <Compile Include="Models\Enums\ServicePriceCalculationType.cs" />
+    <Compile Include="Models\Enums\ShiftType.cs" />
     <Compile Include="Models\Enums\TriageEnums.cs" />
     <Compile Include="Models\Enums\WorkLifeBalanceStatus.cs" />
     <Compile Include="Models\Enums\WorkloadBalanceStatus.cs" />
@@ -1049,6 +1054,8 @@
     <Compile Include="Services\ServiceService.cs" />
     <Compile Include="Services\ServiceTemplateService.cs" />
     <Compile Include="Services\SharedServiceManagementService.cs" />
+    <Compile Include="Services\ShiftHelperService.cs" />
+    <Compile Include="Services\ShiftInfo.cs" />
     <Compile Include="Services\SystemSettings\ISystemSettingService.cs" />
     <Compile Include="Services\SystemSettings\SystemSettingService.cs" />
     <Compile Include="Services\Triage\ITriageQueueService.cs" />
@@ -1160,14 +1167,21 @@
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
+    <Compile Include="ViewModels\Reception\ClinicLookupViewModel.cs" />
+    <Compile Include="ViewModels\Reception\DepartmentLookupViewModel.cs" />
     <Compile Include="ViewModels\Reception\EmergencyReceptionViewModel.cs" />
+    <Compile Include="ViewModels\Reception\InsuranceCalculationViewModel.cs" />
+    <Compile Include="ViewModels\Reception\InsuranceProvidersViewModel.cs" />
     <Compile Include="ViewModels\Reception\IntegratedReportViewModel.cs" />
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionClinicLookupViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionComponentViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionCreateViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionDepartmentLookupViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionDetailsViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionDoctorStatsViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionEditViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionInsuranceLookupViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionMonthlyStatsViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionReportDataViewModel.cs" />
@@ -1183,6 +1197,8 @@
     <Compile Include="ViewModels\Reception\ReceptionFormComponentViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionSearchViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ServiceSearchResultViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ShiftInfo.cs" />
     <Compile Include="ViewModels\Reception\TriageToReceptionTransferViewModel.cs" />
     <Compile Include="ViewModels\ServiceReportViewModel.cs" />
     <Compile Include="Controllers\AccountController.cs" />
@@ -4588,6 +4604,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510131534101_14040721-01.resx">
       <DependentUpon>202510131534101_14040721-01.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510132050140_FixDoctorSpecializationRelationships.resx">
+      <DependentUpon>202510132050140_FixDoctorSpecializationRelationships.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

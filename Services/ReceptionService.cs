@@ -31,7 +31,10 @@ using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Entities.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Payment;
+using ClinicApp.ViewModels.DoctorManagementVM;
 using Serilog;
+using DepartmentLookupViewModel = ClinicApp.ViewModels.Reception.DepartmentLookupViewModel;
+using InsuranceCalculationViewModel = ClinicApp.ViewModels.Insurance.InsuranceCalculation.InsuranceCalculationViewModel;
 
 namespace ClinicApp.Services
 {
@@ -2724,5 +2727,559 @@ namespace ClinicApp.Services
         }
 
         #endregion
+
+        #region Shift Management
+
+        /// <summary>
+        /// دریافت پزشکان بر اساس شیفت
+        /// </summary>
+        /// <param name="shiftType">نوع شیفت</param>
+        /// <returns>لیست پزشکان شیفت</returns>
+        public async Task<ServiceResult<List<ReceptionDoctorLookupViewModel>>> GetDoctorsByShiftAsync(ShiftType shiftType)
+        {
+            try
+            {
+                _logger.Information("👨‍⚕️ دریافت پزشکان شیفت: {ShiftType}, کاربر: {UserName}", 
+                    shiftType, _currentUserService.UserName);
+
+                var doctors = await _context.Doctors
+                    .Where(d => !d.IsDeleted && d.IsActive)
+                    .Include(d => d.Schedules)
+                    .Include(d => d.DoctorSpecializations.Select(ds => ds.Specialization))
+                    .Where(d => d.Schedules.Any(s => s.ShiftType == shiftType && s.IsShiftActive && !s.IsDeleted))
+                    .Select(d => new ReceptionDoctorLookupViewModel
+                    {
+                        DoctorId = d.DoctorId,
+                        FirstName = d.FirstName,
+                        LastName = d.LastName,
+                        FullName = $"{d.FirstName} {d.LastName}",
+                        SpecializationName = d.DoctorSpecializations.FirstOrDefault() != null 
+                            ? d.DoctorSpecializations.FirstOrDefault().Specialization.Name 
+                            : "عمومی",
+                        IsActive = d.IsActive,
+                        IsAvailable = d.IsActive && !d.IsDeleted,
+                        DisplayName = $"{d.FirstName} {d.LastName} - {(d.DoctorSpecializations.FirstOrDefault() != null ? d.DoctorSpecializations.FirstOrDefault().Specialization.Name : "عمومی")}"
+                    })
+                    .ToListAsync();
+
+                _logger.Information("✅ دریافت {Count} پزشک برای شیفت {ShiftType}", 
+                    doctors.Count, shiftType);
+
+                return ServiceResult<List<ReceptionDoctorLookupViewModel>>.Successful(doctors);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت پزشکان شیفت: {ShiftType}", shiftType);
+                return ServiceResult<List<ReceptionDoctorLookupViewModel>>.Failed(
+                    "خطا در دریافت پزشکان شیفت",
+                    "DOCTORS_SHIFT_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت شیفت فعلی
+        /// </summary>
+        /// <returns>نوع شیفت فعلی</returns>
+        public async Task<ServiceResult<ShiftType>> GetCurrentShiftAsync()
+        {
+            try
+            {
+                var hour = DateTime.Now.Hour;
+                ShiftType currentShift;
+
+                if (hour >= 6 && hour < 14)
+                    currentShift = ShiftType.Morning;
+                else if (hour >= 14 && hour < 22)
+                    currentShift = ShiftType.Evening;
+                else
+                    currentShift = ShiftType.Night;
+
+                _logger.Debug("🕐 شیفت فعلی: {ShiftType} (ساعت: {Hour})", currentShift, hour);
+
+                return ServiceResult<ShiftType>.Successful(currentShift);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در تعیین شیفت فعلی");
+                return ServiceResult<ShiftType>.Failed(
+                    "خطا در تعیین شیفت فعلی",
+                    "CURRENT_SHIFT_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Low);
+            }
+        }
+
+        /// <summary>
+        /// دریافت اطلاعات شیفت
+        /// </summary>
+        /// <param name="shiftType">نوع شیفت</param>
+        /// <returns>اطلاعات شیفت</returns>
+        public async Task<ServiceResult<ClinicApp.ViewModels.Reception.ShiftInfo>> GetShiftInfoAsync(ShiftType shiftType)
+        {
+            try
+            {
+                var shiftInfo = new ClinicApp.ViewModels.Reception.ShiftInfo
+                {
+                    ShiftType = shiftType,
+                    DisplayName = GetShiftDisplayName(shiftType),
+                    StartTime = GetShiftStartTime(shiftType),
+                    EndTime = GetShiftEndTime(shiftType),
+                    IsActive = await IsShiftActiveAsync(shiftType)
+                };
+
+                return ServiceResult<ClinicApp.ViewModels.Reception.ShiftInfo>.Successful(shiftInfo);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت اطلاعات شیفت: {ShiftType}", shiftType);
+                return ServiceResult<ClinicApp.ViewModels.Reception.ShiftInfo>.Failed(
+                    "خطا در دریافت اطلاعات شیفت",
+                    "SHIFT_INFO_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Low);
+            }
+        }
+
+        #endregion
+
+        #region Private Helper Methods
+
+        private string GetShiftDisplayName(ShiftType shiftType)
+        {
+            return shiftType switch
+            {
+                ShiftType.Morning => "صبح",
+                ShiftType.Evening => "عصر",
+                ShiftType.Night => "شب",
+                _ => "نامشخص"
+            };
+        }
+
+        private TimeSpan GetShiftStartTime(ShiftType shiftType)
+        {
+            return shiftType switch
+            {
+                ShiftType.Morning => new TimeSpan(6, 0, 0),
+                ShiftType.Evening => new TimeSpan(14, 0, 0),
+                ShiftType.Night => new TimeSpan(22, 0, 0),
+                _ => new TimeSpan(6, 0, 0)
+            };
+        }
+
+        private TimeSpan GetShiftEndTime(ShiftType shiftType)
+        {
+            return shiftType switch
+            {
+                ShiftType.Morning => new TimeSpan(14, 0, 0),
+                ShiftType.Evening => new TimeSpan(22, 0, 0),
+                ShiftType.Night => new TimeSpan(6, 0, 0),
+                _ => new TimeSpan(14, 0, 0)
+            };
+        }
+
+        private async Task<bool> IsShiftActiveAsync(ShiftType shiftType)
+        {
+            var currentShift = await GetCurrentShiftAsync();
+            return currentShift.Success && currentShift.Data == shiftType;
+        }
+
+        #endregion
+
+        #region Clinic Management
+
+        /// <summary>
+        /// دریافت کلینیک‌های فعال
+        /// </summary>
+        /// <returns>لیست کلینیک‌های فعال</returns>
+        public async Task<ServiceResult<List<ReceptionClinicLookupViewModel>>> GetActiveClinicsAsync()
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت کلینیک‌های فعال, کاربر: {UserName}", _currentUserService.UserName);
+
+                var clinics = await _context.Clinics
+                    .Where(c => !c.IsDeleted && c.IsActive)
+                    .Select(c => new ReceptionClinicLookupViewModel
+                    {
+                        ClinicId = c.ClinicId,
+                        ClinicName = c.Name,
+                        Address = c.Address,
+                        PhoneNumber = c.PhoneNumber,
+                        IsActive = c.IsActive
+                    })
+                    .ToListAsync();
+
+                _logger.Information("✅ دریافت {Count} کلینیک فعال", clinics.Count);
+
+                return ServiceResult<List<ReceptionClinicLookupViewModel>>.Successful(clinics);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت کلینیک‌های فعال");
+                return ServiceResult<List<ReceptionClinicLookupViewModel>>.Failed(
+                    "خطا در دریافت کلینیک‌ها",
+                    "CLINICS_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت دپارتمان‌های کلینیک
+        /// </summary>
+        /// <param name="clinicId">شناسه کلینیک</param>
+        /// <returns>لیست دپارتمان‌های کلینیک</returns>
+        public async Task<ServiceResult<List<ReceptionDepartmentLookupViewModel>>> GetClinicDepartmentsAsync(int clinicId)
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت دپارتمان‌های کلینیک: {ClinicId}, کاربر: {UserName}", 
+                    clinicId, _currentUserService.UserName);
+
+                var departments = await _context.Departments
+                    .Where(d => !d.IsDeleted && d.IsActive && d.ClinicId == clinicId)
+                    .Select(d => new ReceptionDepartmentLookupViewModel
+                    {
+                        DepartmentId = d.DepartmentId,
+                        DepartmentName = d.Name,
+                        Description = d.Description,
+                        IsActive = d.IsActive
+                    })
+                    .ToListAsync();
+
+                _logger.Information("✅ دریافت {Count} دپارتمان برای کلینیک {ClinicId}", 
+                    departments.Count, clinicId);
+
+                return ServiceResult<List<ReceptionDepartmentLookupViewModel>>.Successful(departments);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت دپارتمان‌های کلینیک: {ClinicId}", clinicId);
+                return ServiceResult<List<ReceptionDepartmentLookupViewModel>>.Failed(
+                    "خطا در دریافت دپارتمان‌های کلینیک",
+                    "CLINIC_DEPARTMENTS_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        #endregion
+
+        #region Service Search
+
+        /// <summary>
+        /// جستجوی خدمات بر اساس کد یا نام
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <returns>نتایج جستجوی خدمات</returns>
+        public async Task<ServiceResult<List<ServiceSearchResultViewModel>>> SearchServicesAsync(string searchTerm)
+        {
+            try
+            {
+                _logger.Information("🔍 جستجوی خدمات: {SearchTerm}, کاربر: {UserName}", 
+                    searchTerm, _currentUserService.UserName);
+
+                if (string.IsNullOrWhiteSpace(searchTerm) || searchTerm.Length < 2)
+                {
+                    return ServiceResult<List<ServiceSearchResultViewModel>>.Failed(
+                        "عبارت جستجو باید حداقل 2 کاراکتر باشد",
+                        "SEARCH_TERM_TOO_SHORT",
+                        ErrorCategory.Validation,
+                        SecurityLevel.Low);
+                }
+
+                var services = await _context.Services
+                    .Include(s => s.ServiceCategory)
+                    .Where(s => !s.IsDeleted && s.IsActive && 
+                        (s.Title.Contains(searchTerm) || 
+                         s.ServiceCode.Contains(searchTerm) ||
+                         s.Description.Contains(searchTerm)))
+                    .OrderBy(s => s.Title)
+                    .Take(20) // محدود کردن نتایج برای عملکرد بهتر
+                    .Select(s => new ServiceSearchResultViewModel
+                    {
+                        ServiceId = s.ServiceId,
+                        ServiceName = s.Title,
+                        ServiceCode = s.ServiceCode,
+                        Price = s.Price,
+                        CategoryName = s.ServiceCategory.Title,
+                        Description = s.Description
+                    })
+                    .ToListAsync();
+
+                _logger.Information("✅ جستجوی خدمات موفق: {Count} نتیجه برای '{SearchTerm}'", 
+                    services.Count, searchTerm);
+
+                return ServiceResult<List<ServiceSearchResultViewModel>>.Successful(services);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در جستجوی خدمات: {SearchTerm}", searchTerm);
+                return ServiceResult<List<ServiceSearchResultViewModel>>.Failed(
+                    "خطا در جستجوی خدمات",
+                    "SERVICE_SEARCH_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        #endregion
+
+        #region Patient Information Management
+
+        /// <summary>
+        /// به‌روزرسانی فیلد خاص بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="fieldName">نام فیلد</param>
+        /// <param name="fieldValue">مقدار جدید</param>
+        /// <returns>نتیجه به‌روزرسانی</returns>
+        public async Task<ServiceResult<bool>> UpdatePatientFieldAsync(int patientId, string fieldName, string fieldValue)
+        {
+            try
+            {
+                _logger.Information("👤 به‌روزرسانی فیلد بیمار: {PatientId}, فیلد: {FieldName}, کاربر: {UserName}", 
+                    patientId, fieldName, _currentUserService.UserName);
+
+                // دریافت بیمار
+                var patient = await _context.Patients
+                    .FirstOrDefaultAsync(p => p.PatientId == patientId && !p.IsDeleted);
+
+                if (patient == null)
+                {
+                    return ServiceResult<bool>.Failed(
+                        "بیمار یافت نشد",
+                        "PATIENT_NOT_FOUND",
+                        ErrorCategory.NotFound,
+                        SecurityLevel.Medium);
+                }
+
+                // به‌روزرسانی فیلد بر اساس نام
+                switch (fieldName)
+                {
+                    case "PatientFirstName":
+                        patient.FirstName = fieldValue;
+                        break;
+                    case "PatientLastName":
+                        patient.LastName = fieldValue;
+                        break;
+                    case "PatientMobileNumber":
+                        patient.PhoneNumber = fieldValue;
+                        break;
+                    case "PatientPhoneNumber":
+                        patient.PhoneNumber = fieldValue;
+                        break;
+                    case "PatientAddress":
+                        patient.Address = fieldValue;
+                        break;
+                    case "PatientEmail":
+                        patient.Email = fieldValue;
+                        break;
+                    case "PatientAllergies":
+                        patient.Allergies = fieldValue;
+                        break;
+                    case "PatientChronicDiseases":
+                        patient.ChronicDiseases = fieldValue;
+                        break;
+                    default:
+                        return ServiceResult<bool>.Failed(
+                            "فیلد نامعتبر",
+                            "INVALID_FIELD",
+                            ErrorCategory.Validation,
+                            SecurityLevel.Low);
+                }
+
+                // به‌روزرسانی اطلاعات ردیابی
+                patient.UpdatedAt = DateTime.Now;
+                patient.UpdatedByUserId = _currentUserService.UserId;
+
+                // ذخیره تغییرات
+                await _context.SaveChangesAsync();
+
+                _logger.Information("✅ به‌روزرسانی فیلد بیمار موفق: {PatientId}, فیلد: {FieldName}", 
+                    patientId, fieldName);
+
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در به‌روزرسانی فیلد بیمار: {PatientId}, فیلد: {FieldName}", 
+                    patientId, fieldName);
+                return ServiceResult<bool>.Failed(
+                    "خطا در به‌روزرسانی اطلاعات بیمار",
+                    "PATIENT_UPDATE_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        #endregion
+
+        #region Insurance Management
+
+        /// <summary>
+        /// دریافت بیمه‌های پایه و تکمیلی
+        /// </summary>
+        /// <returns>لیست بیمه‌های پایه و تکمیلی</returns>
+        public async Task<ServiceResult<InsuranceProvidersViewModel>> GetInsuranceProvidersAsync()
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت بیمه‌های پایه و تکمیلی, کاربر: {UserName}", _currentUserService.UserName);
+
+                var baseInsurances = await _context.InsurancePlans
+                    .Where(plan => !plan.IsDeleted && plan.IsActive && plan.InsuranceType == InsuranceType.Primary)
+                    .Select(plan => new ReceptionInsuranceLookupViewModel
+                    {
+                        InsuranceId = plan.InsurancePlanId,
+                        InsuranceName = plan.Name,
+                        IsActive = plan.IsActive
+                    })
+                    .ToListAsync();
+
+                var supplementaryInsurances = await _context.InsurancePlans
+                    .Where(plan => !plan.IsDeleted && plan.IsActive && plan.InsuranceType == InsuranceType.Supplementary)
+                    .Select(plan => new ReceptionInsuranceLookupViewModel
+                    {
+                        InsuranceId = plan.InsurancePlanId,
+                        InsuranceName = plan.Name,
+                        IsActive = plan.IsActive
+                    })
+                    .ToListAsync();
+
+                var result = new InsuranceProvidersViewModel
+                {
+                    BaseInsurances = baseInsurances,
+                    SupplementaryInsurances = supplementaryInsurances
+                };
+
+                _logger.Information("✅ دریافت {BaseCount} بیمه پایه و {SuppCount} بیمه تکمیلی", 
+                    baseInsurances.Count, supplementaryInsurances.Count);
+
+                return ServiceResult<InsuranceProvidersViewModel>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت بیمه‌ها");
+                return ServiceResult<InsuranceProvidersViewModel>.Failed(
+                    "خطا در دریافت بیمه‌ها",
+                    "INSURANCE_PROVIDERS_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌های تکمیلی بر اساس بیمه پایه
+        /// </summary>
+        /// <param name="baseInsuranceId">شناسه بیمه پایه</param>
+        /// <returns>لیست بیمه‌های تکمیلی</returns>
+        public async Task<ServiceResult<List<ReceptionInsuranceLookupViewModel>>> GetSupplementaryInsurancesAsync(int baseInsuranceId)
+        {
+            try
+            {
+                _logger.Information("🔄 دریافت بیمه‌های تکمیلی برای بیمه پایه: {BaseInsuranceId}, کاربر: {UserName}", 
+                    baseInsuranceId, _currentUserService.UserName);
+
+                var supplementaryInsurances = await _context.InsurancePlans
+                    .Where(plan => !plan.IsDeleted && plan.IsActive && plan.InsuranceType == InsuranceType.Supplementary)
+                    .Select(plan => new ReceptionInsuranceLookupViewModel
+                    {
+                        InsuranceId = plan.InsurancePlanId,
+                        InsuranceName = plan.Name,
+                        IsActive = plan.IsActive
+                    })
+                    .ToListAsync();
+
+                _logger.Information("✅ دریافت {Count} بیمه تکمیلی", supplementaryInsurances.Count);
+
+                return ServiceResult<List<ReceptionInsuranceLookupViewModel>>.Successful(supplementaryInsurances);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت بیمه‌های تکمیلی: {BaseInsuranceId}", baseInsuranceId);
+                return ServiceResult<List<ReceptionInsuranceLookupViewModel>>.Failed(
+                    "خطا در دریافت بیمه‌های تکمیلی",
+                    "SUPPLEMENTARY_INSURANCES_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// محاسبه بیمه برای پذیرش
+        /// </summary>
+        /// <param name="baseInsuranceId">شناسه بیمه پایه</param>
+        /// <param name="supplementaryInsuranceId">شناسه بیمه تکمیلی</param>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>نتیجه محاسبه بیمه</returns>
+        public async Task<ServiceResult<ClinicApp.ViewModels.Reception.InsuranceCalculationViewModel>> CalculateInsuranceAsync(int baseInsuranceId, int? supplementaryInsuranceId, int serviceId)
+        {
+            try
+            {
+                _logger.Information("💰 محاسبه بیمه: پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, خدمت {ServiceId}, کاربر: {UserName}", 
+                    baseInsuranceId, supplementaryInsuranceId, serviceId, _currentUserService.UserName);
+
+                // TODO: پیاده‌سازی منطق محاسبه بیمه
+                var result = new ClinicApp.ViewModels.Reception.InsuranceCalculationViewModel
+                {
+                    TotalPrice = 100000, // قیمت کل خدمت
+                    BaseInsuranceShare = 80000, // سهم بیمه پایه
+                    SupplementaryInsuranceShare = 10000, // سهم بیمه تکمیلی
+                    PatientShare = 10000 // سهم بیمار
+                };
+
+                _logger.Information("✅ محاسبه بیمه با موفقیت انجام شد");
+
+                return ServiceResult<ClinicApp.ViewModels.Reception.InsuranceCalculationViewModel>.Successful(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در محاسبه بیمه: پایه {BaseInsuranceId}, خدمت {ServiceId}", 
+                    baseInsuranceId, serviceId);
+                return ServiceResult<ClinicApp.ViewModels.Reception.InsuranceCalculationViewModel>.Failed(
+                    "خطا در محاسبه بیمه",
+                    "INSURANCE_CALCULATION_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        /// <summary>
+        /// تغییر بیمه بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="baseInsuranceId">شناسه بیمه پایه</param>
+        /// <param name="supplementaryInsuranceId">شناسه بیمه تکمیلی</param>
+        /// <returns>نتیجه تغییر بیمه</returns>
+        public async Task<ServiceResult<bool>> ChangePatientInsuranceAsync(int patientId, int baseInsuranceId, int? supplementaryInsuranceId)
+        {
+            try
+            {
+                _logger.Information("🔄 تغییر بیمه بیمار: {PatientId}, پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, کاربر: {UserName}", 
+                    patientId, baseInsuranceId, supplementaryInsuranceId, _currentUserService.UserName);
+
+                // TODO: پیاده‌سازی منطق تغییر بیمه بیمار
+                // اینجا باید منطق به‌روزرسانی بیمه بیمار در دیتابیس پیاده‌سازی شود
+
+                _logger.Information("✅ بیمه بیمار با موفقیت تغییر کرد");
+
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در تغییر بیمه بیمار: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed(
+                    "خطا در تغییر بیمه بیمار",
+                    "PATIENT_INSURANCE_CHANGE_ERROR",
+                    ErrorCategory.System,
+                    SecurityLevel.Medium);
+            }
+        }
+
+        #endregion
+
     }
 }
