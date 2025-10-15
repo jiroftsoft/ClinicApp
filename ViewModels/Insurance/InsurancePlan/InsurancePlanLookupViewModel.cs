@@ -39,6 +39,12 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
         [Display(Name = "فرانشیز")]
         public decimal Deductible { get; set; }
 
+        [Display(Name = "توضیحات")]
+        public string Description { get; set; }
+
+        [Display(Name = "فعال")]
+        public bool IsActive { get; set; }
+
         /// <summary>
         /// Value برای SelectList (شناسه طرح)
         /// </summary>
@@ -63,7 +69,9 @@ namespace ClinicApp.ViewModels.Insurance.InsurancePlan
                 PlanCode = entity.PlanCode,
                 InsuranceProviderName = entity.InsuranceProvider?.Name,
                 CoveragePercent = entity.CoveragePercent,
-                Deductible = entity.Deductible
+                Deductible = entity.Deductible,
+                Description = entity.Description,
+                IsActive = entity.IsActive
             };
         }
     }

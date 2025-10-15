@@ -59,19 +59,19 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
                 return Json(new { 
                     success = true, 
                     data = result.Data,
                     message = "بیمه‌گذاران با موفقیت دریافت شدند"
-                });
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت بیمه‌گذاران");
-                return Json(new { success = false, message = "خطا در دریافت بیمه‌گذاران" });
+                return Json(new { success = false, message = "خطا در دریافت بیمه‌گذاران" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -90,19 +90,19 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
                 return Json(new { 
                     success = true, 
                     data = result.Data,
                     message = "بیمه‌گذاران با موفقیت دریافت شدند"
-                });
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت بیمه‌گذاران نوع {InsuranceType}", insuranceType);
-                return Json(new { success = false, message = "خطا در دریافت بیمه‌گذاران" });
+                return Json(new { success = false, message = "خطا در دریافت بیمه‌گذاران" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -125,7 +125,7 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
                 return Json(new { 
@@ -155,7 +155,7 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
                 return Json(new { 
@@ -190,7 +190,7 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
                 return Json(new { 
@@ -252,7 +252,7 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (!result.Success)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
                 }
 
                 return Json(new { 

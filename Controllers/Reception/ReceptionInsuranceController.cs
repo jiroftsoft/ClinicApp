@@ -373,5 +373,43 @@ namespace ClinicApp.Controllers.Reception
         }
 
         #endregion
+
+        #region Insurance Status
+
+        /// <summary>
+        /// دریافت وضعیت بیمه‌ها برای سایدبار
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetInsuranceStatus()
+        {
+            try
+            {
+                _logger.Information("🏥 دریافت وضعیت بیمه‌ها برای سایدبار. کاربر: {UserName}", _currentUserService.UserName);
+
+                // دریافت آمار بیمه‌ها
+                var activeInsurances = await _patientInsuranceService.GetActiveInsurancesCountAsync();
+                var expiredInsurances = await _patientInsuranceService.GetExpiredInsurancesCountAsync();
+
+                var result = new
+                {
+                    success = true,
+                    data = new
+                    {
+                        activeInsurances = activeInsurances,
+                        expiredInsurances = expiredInsurances
+                    }
+                };
+
+                _logger.Information("✅ وضعیت بیمه‌ها دریافت شد: فعال={Active}, منقضی={Expired}", activeInsurances, expiredInsurances);
+                return Json(result, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در دریافت وضعیت بیمه‌ها");
+                return Json(new { success = false, message = "خطا در دریافت وضعیت بیمه‌ها" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        #endregion
     }
 }

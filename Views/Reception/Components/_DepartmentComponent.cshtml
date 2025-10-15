@@ -1,0 +1,557 @@
+@using ClinicApp.ViewModels.Reception
+
+<!-- Department & Doctor Component - Medical Environment -->
+<div class="department-component" id="departmentComponent">
+    <div class="component-header">
+        <h6 class="component-title">
+            <i class="fas fa-hospital me-2"></i>
+            دپارتمان و پزشک
+        </h6>
+        <div class="component-status" id="departmentStatus">
+            <i class="fas fa-circle text-muted"></i>
+            <span>آماده</span>
+        </div>
+    </div>
+
+    <div class="component-content">
+        <div class="row">
+            <div class="col-md-6">
+                <div class="department-selection">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-building me-1"></i>
+                            دپارتمان
+                        </label>
+                        <select id="departmentId" name="DepartmentId" class="form-control">
+                            <option value="">انتخاب دپارتمان...</option>
+                        </select>
+                        <div class="form-feedback" id="departmentFeedback"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="doctor-selection">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-user-md me-1"></i>
+                            پزشک
+                        </label>
+                        <select id="doctorId" name="DoctorId" class="form-control">
+                            <option value="">ابتدا دپارتمان را انتخاب کنید...</option>
+                        </select>
+                        <div class="form-feedback" id="doctorFeedback"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Doctor Information Display -->
+        <div class="doctor-info-display" id="doctorInfoDisplay" style="display: none;">
+            <div class="doctor-card">
+                <div class="doctor-avatar">
+                    <i class="fas fa-user-md"></i>
+                </div>
+                <div class="doctor-details">
+                    <h6 class="doctor-name" id="doctorName"></h6>
+                    <p class="doctor-specialty" id="doctorSpecialty"></p>
+                    <div class="doctor-info">
+                        <span class="info-item" id="doctorExperience"></span>
+                        <span class="info-item" id="doctorSchedule"></span>
+                    </div>
+                </div>
+                <div class="doctor-actions">
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="viewDoctorProfileBtn">
+                        <i class="fas fa-eye me-1"></i>
+                        مشاهده پروفایل
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Department Information Display -->
+        <div class="department-info-display" id="departmentInfoDisplay" style="display: none;">
+            <div class="department-card">
+                <div class="department-header">
+                    <h6 class="department-name" id="departmentName"></h6>
+                    <span class="department-status" id="departmentStatusBadge">
+                        <i class="fas fa-circle text-success"></i>
+                        فعال
+                    </span>
+                </div>
+                <div class="department-details">
+                    <div class="detail-item">
+                        <span class="detail-label">تعداد پزشکان:</span>
+                        <span class="detail-value" id="doctorCount"></span>
+                    </div>
+                    <div class="detail-item">
+                        <span class="detail-label">ساعات کاری:</span>
+                        <span class="detail-value" id="workingHours"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Department Component Styles -->
+<style>
+    .department-component {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .component-header {
+        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .component-title {
+        margin: 0;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .component-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .component-content {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .form-feedback {
+        margin-top: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .doctor-card {
+        display: flex;
+        align-items: center;
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        gap: 1rem;
+        margin-top: 1rem;
+    }
+
+    .doctor-avatar {
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #28a745;
+        font-size: 1.5rem;
+    }
+
+    .doctor-details {
+        flex: 1;
+    }
+
+    .doctor-name {
+        margin: 0;
+        font-weight: 600;
+        color: #212529;
+        font-size: 1.1rem;
+    }
+
+    .doctor-specialty {
+        margin: 0.25rem 0;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .doctor-info {
+        display: flex;
+        gap: 1rem;
+        margin-top: 0.5rem;
+    }
+
+    .info-item {
+        font-size: 0.8rem;
+        color: #6c757d;
+        background: #e9ecef;
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+    }
+
+    .doctor-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .department-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+
+    .department-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .department-name {
+        margin: 0;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .department-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .department-details {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem;
+        background: white;
+        border-radius: 6px;
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+
+    /* Medical Environment Specific */
+    .department-component.medical-critical {
+        border-left: 4px solid #dc3545;
+    }
+
+    .department-component.medical-critical .component-header {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    }
+
+    .department-component.medical-critical .component-title {
+        color: #c62828;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .doctor-card {
+            flex-direction: column;
+            text-align: center;
+        }
+        
+        .doctor-actions {
+            justify-content: center;
+            margin-top: 1rem;
+        }
+        
+        .department-details {
+            grid-template-columns: 1fr;
+        }
+        
+        .doctor-info {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+    }
+</style>
+
+<!-- Department Component JavaScript -->
+<script>
+    // Wait for jQuery to be available
+    function waitForJQueryDepartment() {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            $(document).ready(function() {
+                initializeDepartmentComponent();
+            });
+        } else {
+            setTimeout(waitForJQueryDepartment, 50);
+        }
+    }
+    
+    // Start waiting for jQuery
+    waitForJQueryDepartment();
+
+    function initializeDepartmentComponent() {
+        console.log('🏥 Department Component Initialized');
+        
+        // Setup event handlers
+        setupDepartmentSelection();
+        setupDoctorSelection();
+        setupDoctorActions();
+        
+        // Load departments
+        loadDepartments();
+    }
+
+    function setupDepartmentSelection() {
+        $('#departmentId').on('change', function() {
+            const departmentId = $(this).val();
+            if (departmentId) {
+                loadDoctors(departmentId);
+                loadDepartmentInfo(departmentId);
+                updateComponentStatus('completed');
+            } else {
+                $('#doctorId').html('<option value="">ابتدا دپارتمان را انتخاب کنید...</option>');
+                $('#doctorInfoDisplay').hide();
+                $('#departmentInfoDisplay').hide();
+                updateComponentStatus('pending');
+            }
+        });
+    }
+
+    function setupDoctorSelection() {
+        $('#doctorId').on('change', function() {
+            const doctorId = $(this).val();
+            if (doctorId) {
+                loadDoctorInfo(doctorId);
+            } else {
+                $('#doctorInfoDisplay').hide();
+            }
+        });
+    }
+
+    function setupDoctorActions() {
+        $('#viewDoctorProfileBtn').on('click', function() {
+            const doctorId = $('#doctorId').val();
+            if (doctorId) {
+                // Open doctor profile modal or redirect
+                window.open('@Url.Action("Profile", "Doctor")/' + doctorId, '_blank');
+            }
+        });
+    }
+
+    function loadDepartments() {
+        console.log('🏥 Loading departments...');
+        
+        $.ajax({
+            url: '@Url.Action("GetDepartments", "ReceptionDepartment")',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    populateDepartments(response.data);
+                }
+            },
+            error: function() {
+                console.error('Error loading departments');
+                showError('خطا در بارگذاری دپارتمان‌ها');
+            }
+        });
+    }
+
+    function populateDepartments(departments) {
+        const select = $('#departmentId');
+        select.find('option:not(:first)').remove();
+        
+        departments.forEach(function(department) {
+            const option = `<option value="${department.departmentId}">${department.departmentName}</option>`;
+            select.append(option);
+        });
+    }
+
+    function loadDoctors(departmentId) {
+        console.log('🏥 Loading doctors for department:', departmentId);
+        
+        $.ajax({
+            url: '@Url.Action("GetDoctorsByDepartment", "ReceptionDepartment")',
+            type: 'GET',
+            data: { departmentId: departmentId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    populateDoctors(response.data);
+                }
+            },
+            error: function() {
+                console.error('Error loading doctors');
+                showError('خطا در بارگذاری پزشکان');
+            }
+        });
+    }
+
+    function populateDoctors(doctors) {
+        const select = $('#doctorId');
+        select.find('option:not(:first)').remove();
+        
+        doctors.forEach(function(doctor) {
+            const option = `<option value="${doctor.doctorId}">${doctor.fullName}</option>`;
+            select.append(option);
+        });
+    }
+
+    function loadDepartmentInfo(departmentId) {
+        console.log('🏥 Loading department info:', departmentId);
+        
+        $.ajax({
+            url: '@Url.Action("GetDepartmentInfo", "ReceptionDepartment")',
+            type: 'GET',
+            data: { departmentId: departmentId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    displayDepartmentInfo(response.data);
+                }
+            },
+            error: function() {
+                console.error('Error loading department info');
+            }
+        });
+    }
+
+    function displayDepartmentInfo(departmentInfo) {
+        $('#departmentName').text(departmentInfo.departmentName);
+        $('#doctorCount').text(departmentInfo.doctorCount);
+        $('#workingHours').text(departmentInfo.workingHours);
+        $('#departmentInfoDisplay').show();
+    }
+
+    function loadDoctorInfo(doctorId) {
+        console.log('🏥 Loading doctor info:', doctorId);
+        
+        $.ajax({
+            url: '@Url.Action("GetDoctorInfo", "ReceptionDepartment")',
+            type: 'GET',
+            data: { doctorId: doctorId },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    displayDoctorInfo(response.data);
+                }
+            },
+            error: function() {
+                console.error('Error loading doctor info');
+            }
+        });
+    }
+
+    function displayDoctorInfo(doctorInfo) {
+        $('#doctorName').text(doctorInfo.fullName);
+        $('#doctorSpecialty').text(doctorInfo.specialty);
+        $('#doctorExperience').text(`تجربه: ${doctorInfo.experience} سال`);
+        $('#doctorSchedule').text(`ساعات: ${doctorInfo.schedule}`);
+        $('#doctorInfoDisplay').show();
+    }
+
+    function updateComponentStatus(status) {
+        const statusElement = $('#departmentStatus');
+        const statusIcon = statusElement.find('i');
+        const statusText = statusElement.find('span');
+        
+        statusElement.removeClass('text-muted text-success text-warning text-danger');
+        statusIcon.removeClass('fa-circle fa-check fa-exclamation fa-times');
+        
+        switch (status) {
+            case 'completed':
+                statusElement.addClass('text-success');
+                statusIcon.addClass('fa-check');
+                statusText.text('تکمیل شده');
+                break;
+            case 'error':
+                statusElement.addClass('text-danger');
+                statusIcon.addClass('fa-times');
+                statusText.text('خطا');
+                break;
+            case 'warning':
+                statusElement.addClass('text-warning');
+                statusIcon.addClass('fa-exclamation');
+                statusText.text('هشدار');
+                break;
+            default:
+                statusElement.addClass('text-muted');
+                statusIcon.addClass('fa-circle');
+                statusText.text('آماده');
+        }
+    }
+
+    function showError(message) {
+        console.error('❌ Error:', message);
+        // You can implement a toast notification here
+    }
+
+    function showSuccess(message) {
+        console.log('✅ Success:', message);
+        // You can implement a toast notification here
+    }
+
+    // Public API for external components
+    window.DepartmentComponent = {
+        getDepartmentId: function() {
+            return $('#departmentId').val();
+        },
+        getDoctorId: function() {
+            return $('#doctorId').val();
+        },
+        getSelectionData: function() {
+            return {
+                departmentId: $('#departmentId').val(),
+                doctorId: $('#doctorId').val()
+            };
+        },
+        clearSelection: function() {
+            $('#departmentId').val('');
+            $('#doctorId').html('<option value="">ابتدا دپارتمان را انتخاب کنید...</option>');
+            $('#doctorInfoDisplay').hide();
+            $('#departmentInfoDisplay').hide();
+            updateComponentStatus('pending');
+        }
+    };
+</script>

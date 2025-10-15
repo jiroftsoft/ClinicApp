@@ -17,5 +17,6 @@ public enum ReceptionStatus : byte
     InProgress = 3,
     [Display(Name = "نیاز به پرداخت بیشتر")]
     NeedsAdditionalPayment = 4,
-    NoShow
+    NoShow,
+    Confirmed
 }

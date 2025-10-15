@@ -1842,7 +1842,7 @@ namespace ClinicApp.Services
                     Amount = paymentModel.Amount,
                     Method = paymentModel.Method,
                     CreatedAt = DateTime.Now,
-                    Status = PaymentStatus.Completed,
+                    Status = Models.Enums.PaymentStatus.Completed,
                     ReferenceCode = paymentModel.ReferenceNumber ?? Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper(),
                     Description = paymentModel.Notes ?? string.Empty,
                     CreatedByUserId = _currentUserService.UserId,

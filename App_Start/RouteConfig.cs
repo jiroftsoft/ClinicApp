@@ -16,6 +16,58 @@ namespace ClinicApp
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
 
+            // 🏥 Reception Module Routes - مسیرهای ماژول پذیرش
+            routes.MapRoute(
+                name: "ReceptionAlert",
+                url: "Reception/Alert/{action}",
+                defaults: new { controller = "ReceptionAlert", action = "GetMedicalAlerts" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionStatistics",
+                url: "Reception/Statistics/{action}",
+                defaults: new { controller = "ReceptionStatistics", action = "GetStatistics" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionInsuranceStatus",
+                url: "Reception/Insurance/{action}",
+                defaults: new { controller = "ReceptionInsurance", action = "GetInsuranceStatus" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionPaymentStatus",
+                url: "Reception/Payment/{action}",
+                defaults: new { controller = "ReceptionPayment", action = "GetPaymentStatus" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionDepartmentList",
+                url: "Reception/Department/{action}",
+                defaults: new { controller = "ReceptionDepartment", action = "GetDepartments" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            // 🧮 Reception Calculation Routes - مسیرهای محاسبات پذیرش
+            routes.MapRoute(
+                name: "ReceptionCalculation",
+                url: "Reception/Calculation/{action}",
+                defaults: new { controller = "ReceptionCalculation", action = "CalculateReception" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            // 📋 Reception Form Routes - مسیرهای فرم پذیرش
+            routes.MapRoute(
+                name: "ReceptionForm",
+                url: "Reception/Form/{action}",
+                defaults: new { controller = "ReceptionForm", action = "CreateReception" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
             // 🔒 Medical Environment Routes - با اطمینان 100%
             routes.MapRoute(
                 name: "ServiceIndex",

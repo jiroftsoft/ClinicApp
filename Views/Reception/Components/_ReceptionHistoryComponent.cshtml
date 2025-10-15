@@ -1,741 +1,209 @@
 @using ClinicApp.ViewModels.Reception
-@model ReceptionComponentViewModels.ReceptionHistoryComponentViewModel
+@model ReceptionHistoryViewModel
 
-<div class="reception-component reception-history-component" data-component="reception-history">
+<!-- Reception History Component - Professional Medical Environment -->
+<div class="reception-history-component" id="receptionHistoryComponent">
     <div class="component-header">
         <h5 class="component-title">
             <i class="fas fa-history me-2"></i>
-            تاریخچه پذیرش‌ها
+            سوابق پذیرش بیماران
         </h5>
         <div class="component-actions">
-            <button type="button" class="btn btn-sm btn-outline-primary" data-action="refresh">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="refreshHistoryBtn">
                 <i class="fas fa-sync-alt"></i>
-            </button>
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-action="filter">
-                <i class="fas fa-filter"></i>
+                بروزرسانی
             </button>
         </div>
     </div>
 
-    <div class="component-body">
-        <!-- فیلترها -->
-        <div class="history-filters" id="historyFilters" style="display: none;">
+    <div class="component-content">
+        <!-- Advanced Search Filters -->
+        <div class="search-filters">
             <div class="row">
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">از تاریخ</label>
-                        <input type="text" class="form-control persian-datepicker" id="filterStartDate">
+                        <input type="text" id="dateFrom" class="form-control persian-datepicker" placeholder="انتخاب تاریخ">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
                         <label class="form-label">تا تاریخ</label>
-                        <input type="text" class="form-control persian-datepicker" id="filterEndDate">
+                        <input type="text" id="dateTo" class="form-control persian-datepicker" placeholder="انتخاب تاریخ">
                     </div>
                 </div>
-                <div class="col-md-3">
+            </div>
+            <div class="row">
+                <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">وضعیت</label>
-                        <select class="form-select" id="filterStatus">
-                            <option value="">همه</option>
-                            <option value="Completed">تکمیل شده</option>
-                            <option value="Pending">در انتظار</option>
-                            <option value="Cancelled">لغو شده</option>
-                        </select>
+                        <label class="form-label">کد ملی بیمار</label>
+                        <input type="text" id="nationalCodeFilter" class="form-control" placeholder="کد ملی">
                     </div>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <div class="form-group">
-                        <label class="form-label">نوع</label>
-                        <select class="form-select" id="filterType">
+                        <label class="form-label">وضعیت پذیرش</label>
+                        <select id="statusFilter" class="form-control">
                             <option value="">همه</option>
-                            <option value="Normal">عادی</option>
-                            <option value="Emergency">اورژانس</option>
-                            <option value="Special">ویژه</option>
-                            <option value="Online">آنلاین</option>
+                            <option value="completed">تکمیل شده</option>
+                            <option value="pending">در انتظار</option>
+                            <option value="cancelled">لغو شده</option>
                         </select>
                     </div>
                 </div>
             </div>
-            <div class="filter-actions">
-                <button type="button" class="btn btn-primary" data-action="apply-filters">
+            <div class="search-actions">
+                <button type="button" class="btn btn-primary" id="searchHistoryBtn">
                     <i class="fas fa-search me-1"></i>
-                    اعمال فیلتر
+                    جستجو
                 </button>
-                <button type="button" class="btn btn-outline-secondary" data-action="clear-filters">
+                <button type="button" class="btn btn-outline-secondary" id="clearFiltersBtn">
                     <i class="fas fa-times me-1"></i>
                     پاک کردن
                 </button>
             </div>
         </div>
 
-        <!-- لیست پذیرش‌ها -->
-        <div class="history-list" id="historyList">
-            <div class="history-loading" id="historyLoading" style="display: none;">
-                <div class="loading-spinner">
-                    <i class="fas fa-spinner fa-spin"></i>
-                    <span>در حال بارگذاری...</span>
-                </div>
+        <!-- History Results -->
+        <div class="history-results" id="historyResults">
+            <div class="results-header">
+                <h6>نتایج جستجو</h6>
+                <span class="results-count" id="resultsCount">0 مورد یافت شد</span>
             </div>
-
-            <div class="history-items" id="historyItems">
-                <!-- آیتم‌های تاریخچه به صورت AJAX بارگذاری می‌شوند -->
+            <div class="results-list" id="resultsList">
+                <!-- Dynamic content will be loaded here -->
             </div>
-
-            <div class="history-pagination" id="historyPagination">
-                <!-- صفحه‌بندی به صورت AJAX بارگذاری می‌شود -->
-            </div>
-        </div>
-
-        <!-- جزئیات پذیرش -->
-        <div class="reception-details-modal" id="receptionDetailsModal" style="display: none;">
-            <div class="modal-overlay">
-                <div class="modal-content">
-                    <div class="modal-header">
-                        <h6 class="modal-title">جزئیات پذیرش</h6>
-                        <button type="button" class="btn-close" data-action="close-modal">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    </div>
-                    <div class="modal-body" id="receptionDetailsContent">
-                        <!-- محتوای جزئیات به صورت AJAX بارگذاری می‌شود -->
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-action="close-modal">بستن</button>
-                        <button type="button" class="btn btn-primary" data-action="edit-reception">ویرایش</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="component-footer">
-        <div class="history-summary" id="historySummary">
-            <span class="summary-text">تعداد کل: <strong id="totalCount">0</strong></span>
-            <span class="summary-text">صفحه: <strong id="currentPage">1</strong> از <strong id="totalPages">1</strong></span>
-        </div>
-        <div class="component-status">
-            <span class="status-indicator" id="historyStatus"></span>
-            <span class="status-text" id="historyStatusText">آماده</span>
         </div>
     </div>
 </div>
 
-<script>
-// محافظت jQuery - اطمینان از بارگذاری کامل jQuery
-// محافظت اضافی برای تمام توابع jQuery
-(function() {
-    // محافظت اضافی برای تمام توابع jQuery
-    const original$ = window.$;
-    const originaljQuery = window.jQuery;
-    
-    // محافظت اضافی برای تمام توابع jQuery
-    function safeJQuery(callback) {
-        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-            callback();
-        } else {
-            console.warn('jQuery not loaded, retrying in 100ms...');
-            setTimeout(function() {
-                safeJQuery(callback);
-            }, 100);
-        }
-    }
-    
-    // محافظت اضافی برای تمام توابع jQuery
-    window.safeJQuery = safeJQuery;
-})();
-(function() {
-    // CSRF Setup for AJAX
-    (function(){
-        if (window.__csrfSetupDone) return; 
-        window.__csrfSetupDone = true;
-        function setup(){
-            if (typeof $ === 'undefined') { 
-                setTimeout(setup, 100); 
-                return; 
-            }
-            var $t = $('input[name="__RequestVerificationToken"]');
-            if (!$t.length) { 
-                setTimeout(setup, 100); 
-                return; 
-            }
-            $.ajaxSetup({ 
-                headers: { 
-                    'RequestVerificationToken': $t.val() 
-                } 
-            });
-        }
-        setup();
-    })();
-    
-    function ensureJQuery(callback) {
-        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-            callback();
-        } else {
-            setTimeout(function() {
-                ensureJQuery(callback);
-            }, 100);
-        }
-    }
-
-    // راه‌اندازی پس از بارگذاری jQuery
-    ensureJQuery(function() {
-        // محافظت اضافی برای jQuery
-        if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
-            console.error('jQuery not loaded in ensureJQuery callback');
-            return;
-        }
-        
-        $(document).ready(function() {
-            // Initialize Reception History Component
-            initializeReceptionHistoryComponent();
-        });
-    });
-})();
-
-function initializeReceptionHistoryComponent() {
-    // محافظت اضافی برای jQuery
-    if (typeof jQuery === 'undefined' || typeof $ === 'undefined') {
-        console.error('jQuery not loaded in initializeReceptionHistoryComponent');
-        return;
-    }
-    
-    const component = $('[data-component="reception-history"]');
-    
-    // Event handlers
-    component.on('click', '[data-action="refresh"]', function() {
-        refreshHistory();
-    });
-    
-    component.on('click', '[data-action="filter"]', function() {
-        toggleFilters();
-    });
-    
-    // Input sanitization for security
-    component.on('input', '#filterStartDate, #filterEndDate', function() {
-        sanitizeDateInput($(this));
-    });
-    
-    component.on('change', '#filterStatus, #filterType', function() {
-        sanitizeSelectInput($(this));
-    });
-    
-    component.on('click', '[data-action="apply-filters"]', function() {
-        applyFilters();
-    });
-    
-    component.on('click', '[data-action="clear-filters"]', function() {
-        clearFilters();
-    });
-    
-    component.on('click', '[data-action="close-modal"]', function() {
-        closeDetailsModal();
-    });
-    
-    component.on('click', '[data-action="edit-reception"]', function() {
-        editReception();
-    });
-    
-    // Patient selection event
-    $(document).on('patientSelected', function(event, patient) {
-        loadPatientHistory(patient.patientId);
-    });
-    
-    // Initialize component
-    initializeHistory();
-}
-
-function initializeHistory() {
-    // Initialize Persian DatePicker
-    $('.persian-datepicker').persianDatepicker({
-        format: 'YYYY/MM/DD',
-        observer: true,
-        timePicker: {
-            enabled: false
-        }
-    });
-    
-    // Set default date range (last 30 days)
-    const endDate = new Date();
-    const startDate = new Date();
-    startDate.setDate(startDate.getDate() - 30);
-    
-    $('#filterStartDate').val(startDate.toLocaleDateString('fa-IR'));
-    $('#filterEndDate').val(endDate.toLocaleDateString('fa-IR'));
-}
-
-function loadPatientHistory(patientId) {
-    if (!patientId) {
-        return;
-    }
-    
-    setHistoryLoading(true);
-    
-    $.ajax({
-        url: '@Url.Action("GetPatientReceptionHistory", "ReceptionPatient")',
-        type: 'POST',
-        data: { 
-            patientId: patientId,
-            pageNumber: 1,
-            pageSize: 10
-        },
-        success: function(response) {
-            if (response.success) {
-                displayHistoryItems(response.data);
-                updateHistorySummary(response.totalCount, 1, Math.ceil(response.totalCount / 10));
-            } else {
-                showHistoryError(response.message);
-            }
-            setHistoryLoading(false);
-        },
-        error: function() {
-            showHistoryError('خطا در بارگذاری تاریخچه');
-            setHistoryLoading(false);
-        }
-    });
-}
-
-function displayHistoryItems(receptions) {
-    const container = $('#historyItems');
-    container.empty();
-    
-    if (receptions.length === 0) {
-        container.html('<div class="no-history">تاریخچه‌ای یافت نشد</div>');
-        return;
-    }
-    
-    receptions.forEach(function(reception) {
-        const historyItem = createHistoryItem(reception);
-        container.append(historyItem);
-    });
-}
-
-function createHistoryItem(reception) {
-    const statusClass = getStatusClass(reception.status);
-    const typeClass = getTypeClass(reception.type);
-    
-    return $(`
-        <div class="history-item" data-reception-id="${reception.receptionId}">
-            <div class="history-item-header">
-                <div class="reception-info">
-                    <h6 class="reception-title">پذیرش شماره ${reception.receptionId}</h6>
-                    <span class="reception-date">${reception.receptionDate}</span>
-                </div>
-                <div class="reception-status">
-                    <span class="status-badge ${statusClass}">${reception.statusText}</span>
-                    <span class="type-badge ${typeClass}">${reception.typeText}</span>
-                </div>
-            </div>
-            <div class="history-item-body">
-                <div class="reception-details">
-                    <div class="detail-item">
-                        <span class="detail-label">پزشک:</span>
-                        <span class="detail-value">${reception.doctorName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">خدمت:</span>
-                        <span class="detail-value">${reception.serviceName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">مبلغ:</span>
-                        <span class="detail-value">${reception.totalAmount} ریال</span>
-                    </div>
-                </div>
-                <div class="reception-actions">
-                    <button type="button" class="btn btn-sm btn-outline-primary" data-action="view-details">
-                        <i class="fas fa-eye me-1"></i>
-                        جزئیات
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-secondary" data-action="edit-reception">
-                        <i class="fas fa-edit me-1"></i>
-                        ویرایش
-                    </button>
-                </div>
-            </div>
-        </div>
-    `);
-}
-
-function getStatusClass(status) {
-    switch (status) {
-        case 'Completed': return 'status-completed';
-        case 'Pending': return 'status-pending';
-        case 'Cancelled': return 'status-cancelled';
-        default: return 'status-default';
-    }
-}
-
-function getTypeClass(type) {
-    switch (type) {
-        case 'Normal': return 'type-normal';
-        case 'Emergency': return 'type-emergency';
-        case 'Special': return 'type-special';
-        case 'Online': return 'type-online';
-        default: return 'type-default';
-    }
-}
-
-function refreshHistory() {
-    const selectedPatientId = getSelectedPatientId();
-    if (selectedPatientId) {
-        loadPatientHistory(selectedPatientId);
-    }
-}
-
-function toggleFilters() {
-    const filters = $('#historyFilters');
-    filters.toggle();
-}
-
-function applyFilters() {
-    const filters = {
-        startDate: $('#filterStartDate').val(),
-        endDate: $('#filterEndDate').val(),
-        status: $('#filterStatus').val(),
-        type: $('#filterType').val()
-    };
-    
-    const selectedPatientId = getSelectedPatientId();
-    if (selectedPatientId) {
-        loadPatientHistoryWithFilters(selectedPatientId, filters);
-    }
-}
-
-function clearFilters() {
-    $('#filterStartDate').val('');
-    $('#filterEndDate').val('');
-    $('#filterStatus').val('');
-    $('#filterType').val('');
-    
-    const selectedPatientId = getSelectedPatientId();
-    if (selectedPatientId) {
-        loadPatientHistory(selectedPatientId);
-    }
-}
-
-function loadPatientHistoryWithFilters(patientId, filters) {
-    setHistoryLoading(true);
-    
-    $.ajax({
-        url: '@Url.Action("SearchReceptions", "ReceptionCore")',
-        type: 'POST',
-        data: sanitizePagingParams({
-            patientId: patientId,
-            startDate: filters.startDate,
-            endDate: filters.endDate,
-            status: filters.status,
-            type: filters.type,
-            pageNumber: 1,
-            pageSize: 10
-        }),
-        success: function(response) {
-            if (response.success) {
-                displayHistoryItems(response.data);
-                updateHistorySummary(response.totalCount, 1, Math.ceil(response.totalCount / 10));
-            } else {
-                showHistoryError(response.message);
-            }
-            setHistoryLoading(false);
-        },
-        error: function() {
-            showHistoryError('خطا در جستجوی تاریخچه');
-            setHistoryLoading(false);
-        }
-    });
-}
-
-function viewReceptionDetails(receptionId) {
-    setHistoryLoading(true);
-    
-    $.ajax({
-        url: '@Url.Action("Details", "ReceptionCore")',
-        type: 'GET',
-        data: { id: receptionId },
-        success: function(response) {
-            if (response.success) {
-                displayDetailsModal(response.data);
-            } else {
-                showHistoryError(response.message);
-            }
-            setHistoryLoading(false);
-        },
-        error: function() {
-            showHistoryError('خطا در بارگذاری جزئیات');
-            setHistoryLoading(false);
-        }
-    });
-}
-
-function displayDetailsModal(receptionData) {
-    const modal = $('#receptionDetailsModal');
-    const content = $('#receptionDetailsContent');
-    
-    content.html(`
-        <div class="reception-details">
-            <div class="details-section">
-                <h6 class="section-title">اطلاعات پذیرش</h6>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">شماره پذیرش:</span>
-                        <span class="detail-value">${receptionData.receptionId}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">تاریخ:</span>
-                        <span class="detail-value">${receptionData.receptionDate}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">وضعیت:</span>
-                        <span class="detail-value">${receptionData.statusText}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">نوع:</span>
-                        <span class="detail-value">${receptionData.typeText}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="details-section">
-                <h6 class="section-title">اطلاعات بیمار</h6>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">نام:</span>
-                        <span class="detail-value">${receptionData.patientName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">کد ملی:</span>
-                        <span class="detail-value">${receptionData.patientNationalCode}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="details-section">
-                <h6 class="section-title">اطلاعات پزشک</h6>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">نام:</span>
-                        <span class="detail-value">${receptionData.doctorName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">تخصص:</span>
-                        <span class="detail-value">${receptionData.doctorSpecialization}</span>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="details-section">
-                <h6 class="section-title">اطلاعات خدمت</h6>
-                <div class="details-grid">
-                    <div class="detail-item">
-                        <span class="detail-label">نام خدمت:</span>
-                        <span class="detail-value">${receptionData.serviceName}</span>
-                    </div>
-                    <div class="detail-item">
-                        <span class="detail-label">مبلغ:</span>
-                        <span class="detail-value">${receptionData.totalAmount} ریال</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `);
-    
-    modal.show();
-}
-
-function closeDetailsModal() {
-    $('#receptionDetailsModal').hide();
-}
-
-function editReception() {
-    const receptionId = $('.history-item.active').data('reception-id');
-    if (receptionId) {
-        window.location.href = `/Reception/Core/Edit/${receptionId}`;
-    }
-}
-
-function setHistoryLoading(loading) {
-    const component = $('[data-component="reception-history"]');
-    const loadingElement = $('#historyLoading');
-    const statusIndicator = $('#historyStatus');
-    const statusText = $('#historyStatusText');
-    
-    if (loading) {
-        component.addClass('loading');
-        loadingElement.show();
-        statusIndicator.addClass('loading');
-        statusText.text('در حال بارگذاری...');
-    } else {
-        component.removeClass('loading');
-        loadingElement.hide();
-        statusIndicator.removeClass('loading');
-        statusText.text('آماده');
-    }
-}
-
-// Security: Input sanitization functions
-function sanitizeDateInput($input) {
-    let value = $input.val();
-    // Remove any non-numeric characters except /
-    value = value.replace(/[^0-9/]/g, '');
-    // Limit length to prevent buffer overflow
-    if (value.length > 10) {
-        value = value.substring(0, 10);
-    }
-    $input.val(value);
-}
-
-function sanitizeSelectInput($select) {
-    const allowedValues = $select.find('option').map(function() {
-        return $(this).val();
-    }).get();
-    
-    const currentValue = $select.val();
-    if (currentValue && !allowedValues.includes(currentValue)) {
-        $select.val('');
-        console.warn('Invalid select value detected and cleared');
-    }
-}
-
-function sanitizePagingParams(params) {
-    // Sanitize page number
-    if (params.pageNumber) {
-        params.pageNumber = Math.max(1, Math.min(1000, parseInt(params.pageNumber) || 1));
-    }
-    
-    // Sanitize page size
-    if (params.pageSize) {
-        params.pageSize = Math.max(1, Math.min(100, parseInt(params.pageSize) || 10));
-    }
-    
-    // Sanitize sort field
-    const allowedSortFields = ['date', 'status', 'type', 'patientName'];
-    if (params.sort && !allowedSortFields.includes(params.sort)) {
-        params.sort = 'date'; // default
-    }
-    
-    return params;
-}
-
-function updateHistorySummary(totalCount, currentPage, totalPages) {
-    $('#totalCount').text(totalCount);
-    $('#currentPage').text(currentPage);
-    $('#totalPages').text(totalPages);
-}
-
-function showHistoryError(message) {
-    const statusIndicator = $('#historyStatus');
-    const statusText = $('#historyStatusText');
-    
-    statusIndicator.addClass('error');
-    statusText.text(message);
-    
-    setTimeout(function() {
-        statusIndicator.removeClass('error');
-        statusText.text('آماده');
-    }, 5000);
-}
-
-function getSelectedPatientId() {
-    // Get selected patient ID from patient search component
-    return $('#selectedPatient').data('patient-id');
-}
-</script>
-
+<!-- Reception History Styles -->
 <style>
-.reception-history-component {
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    .reception-history-component {
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        margin-bottom: 1rem;
+    }
+
+    .component-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .component-title {
+        margin: 0;
+        font-size: 1.1rem;
+        font-weight: 600;
+    }
+
+    .component-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .component-content {
+        padding: 1rem;
+    }
+
+    .search-filters {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
+
+    .search-actions {
+        display: flex;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .history-results {
     background: #fff;
-    margin-bottom: 20px;
-    transition: all 0.3s ease;
-}
-
-.reception-history-component.loading {
-    opacity: 0.7;
-    pointer-events: none;
-}
-
-.history-filters {
-    background: #f8f9fa;
-    border: 1px solid #e0e0e0;
+        border: 1px solid #e9ecef;
     border-radius: 6px;
-    padding: 20px;
-    margin-bottom: 20px;
+        overflow: hidden;
 }
 
-.filter-actions {
+    .results-header {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
-}
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.75rem 1rem;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+    }
 
-.history-list {
-    min-height: 200px;
-}
-
-.history-loading {
-    text-align: center;
-    padding: 40px;
-}
-
-.loading-spinner {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
+    .results-count {
+        font-size: 0.9rem;
     color: #6c757d;
 }
 
-.loading-spinner i {
-    font-size: 24px;
-}
-
-.history-items {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    .results-list {
+        max-height: 400px;
+        overflow-y: auto;
 }
 
 .history-item {
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    background: #fff;
-    transition: all 0.2s ease;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem;
+        border-bottom: 1px solid #f1f3f4;
+        transition: background-color 0.2s;
 }
 
 .history-item:hover {
-    border-color: #007bff;
-    box-shadow: 0 2px 4px rgba(0, 123, 255, 0.1);
-}
+        background-color: #f8f9fa;
+    }
 
-.history-item-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-bottom: 1px solid #f0f0f0;
-    background: #f8f9fa;
-}
+    .history-item:last-child {
+        border-bottom: none;
+    }
 
-.reception-info h6 {
-    margin: 0 0 5px 0;
+    .history-info {
+        flex: 1;
+    }
+
+    .history-patient {
     font-weight: 600;
-    color: #333;
+        color: #2c3e50;
+        margin-bottom: 0.25rem;
 }
 
-.reception-date {
-    font-size: 14px;
+    .history-details {
+        font-size: 0.9rem;
     color: #6c757d;
-}
+        margin-bottom: 0.25rem;
+    }
 
-.reception-status {
+    .history-date {
+        font-size: 0.8rem;
+        color: #95a5a6;
+    }
+
+    .history-actions {
     display: flex;
-    gap: 10px;
+        gap: 0.5rem;
 }
 
-.status-badge, .type-badge {
-    padding: 4px 8px;
+    .btn-action {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
     border-radius: 4px;
-    font-size: 12px;
+    }
+
+    .status-badge {
+        padding: 0.25rem 0.5rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
     font-weight: 500;
 }
 
@@ -754,189 +222,193 @@ function getSelectedPatientId() {
     color: #721c24;
 }
 
-.type-normal {
-    background: #e2e3e5;
-    color: #383d41;
-}
-
-.type-emergency {
-    background: #f8d7da;
-    color: #721c24;
-}
-
-.type-special {
-    background: #d1ecf1;
-    color: #0c5460;
-}
-
-.type-online {
-    background: #d4edda;
-    color: #155724;
-}
-
-.history-item-body {
-    padding: 20px;
-}
-
-.reception-details {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-bottom: 15px;
-}
-
-.detail-item {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-}
-
-.detail-label {
-    font-size: 12px;
+    .no-results {
+        text-align: center;
+        padding: 2rem;
     color: #6c757d;
-    font-weight: 500;
-}
+    }
 
-.detail-value {
-    font-size: 14px;
-    color: #333;
-    font-weight: 600;
-}
-
-.reception-actions {
-    display: flex;
-    gap: 10px;
-}
-
-.reception-details-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1050;
-}
-
-.modal-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.5);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.modal-content {
-    background: #fff;
-    border-radius: 8px;
-    width: 90%;
-    max-width: 600px;
-    max-height: 80vh;
-    overflow-y: auto;
-}
-
-.modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px;
-    border-bottom: 1px solid #e0e0e0;
-}
-
-.modal-title {
-    margin: 0;
-    font-weight: 600;
-    color: #333;
-}
-
-.btn-close {
-    background: none;
-    border: none;
-    font-size: 18px;
-    color: #6c757d;
-    cursor: pointer;
-}
-
-.modal-body {
-    padding: 20px;
-}
-
-.details-section {
-    margin-bottom: 25px;
-}
-
-.section-title {
-    margin-bottom: 15px;
-    font-size: 16px;
-    font-weight: 600;
-    color: #333;
-    border-bottom: 2px solid #007bff;
-    padding-bottom: 8px;
-}
-
-.details-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-.modal-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 10px;
-    padding: 20px;
-    border-top: 1px solid #e0e0e0;
-}
-
-.history-summary {
-    display: flex;
-    gap: 20px;
-    font-size: 14px;
-    color: #6c757d;
-}
-
-.summary-text strong {
-    color: #333;
-}
-
-.component-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px 20px;
-    border-top: 1px solid #e0e0e0;
-    background: #f8f9fa;
-}
-
-.component-status {
-    display: flex;
-    align-items: center;
-    font-size: 14px;
-}
-
-.status-indicator {
-    width: 8px;
-    height: 8px;
-    border-radius: 50%;
-    background: #28a745;
-    margin-left: 8px;
-}
-
-.status-indicator.loading {
-    background: #ffc107;
-    animation: pulse 1s infinite;
-}
-
-.status-indicator.error {
-    background: #dc3545;
-}
-
-@@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
+    .no-results i {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #dee2e6;
+    }
 </style>
+
+<!-- Reception History JavaScript -->
+<script>
+    // Wait for jQuery to be available
+    function waitForJQueryReceptionHistory() {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            $(document).ready(function() {
+                initializeReceptionHistoryComponent();
+            });
+        } else {
+            setTimeout(waitForJQueryReceptionHistory, 50);
+        }
+    }
+    
+    // Start waiting for jQuery
+    waitForJQueryReceptionHistory();
+
+    function initializeReceptionHistoryComponent() {
+        console.log('🏥 Reception History Component Initialized');
+        
+        // Setup event handlers
+        setupHistorySearch();
+        setupHistoryActions();
+        
+        // Load initial data
+        loadReceptionHistory();
+    }
+
+    function setupHistorySearch() {
+        $('#searchHistoryBtn').on('click', function() {
+            searchReceptionHistory();
+        });
+
+        $('#clearFiltersBtn').on('click', function() {
+            clearFilters();
+        });
+
+        // Enter key support
+        $('#nationalCodeFilter').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchReceptionHistory();
+            }
+        });
+    }
+
+    function setupHistoryActions() {
+        $('#refreshHistoryBtn').on('click', function() {
+            loadReceptionHistory();
+        });
+    }
+
+    function searchReceptionHistory() {
+        const filters = {
+            dateFrom: $('#dateFrom').val(),
+            dateTo: $('#dateTo').val(),
+            nationalCode: $('#nationalCodeFilter').val(),
+            status: $('#statusFilter').val()
+        };
+
+        console.log('🔍 Searching reception history with filters:', filters);
+
+        $.ajax({
+            url: '@Url.Action("SearchReceptionHistory", "ReceptionHistory")',
+            type: 'POST',
+            data: filters,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    displayHistoryResults(response.data);
+                } else {
+                    showError('خطا در جستجوی سوابق: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Error searching reception history:', error);
+                showError('خطا در جستجوی سوابق پذیرش');
+            }
+        });
+    }
+
+    function loadReceptionHistory() {
+        console.log('📋 Loading reception history...');
+
+        $.ajax({
+            url: '@Url.Action("GetReceptionHistory", "ReceptionHistory")',
+            type: 'GET',
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    displayHistoryResults(response.data);
+                } else {
+                    showError('خطا در بارگذاری سوابق: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('❌ Error loading reception history:', error);
+                showError('خطا در بارگذاری سوابق پذیرش');
+            }
+        });
+    }
+
+    function displayHistoryResults(data) {
+        const resultsList = $('#resultsList');
+        const resultsCount = $('#resultsCount');
+        
+        resultsCount.text(data.length + ' مورد یافت شد');
+        
+        if (data.length === 0) {
+            resultsList.html(`
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <p>هیچ سابقه‌ای یافت نشد</p>
+                </div>
+            `);
+            return;
+        }
+
+        let html = '';
+        data.forEach(function(item) {
+            html += `
+                <div class="history-item">
+                    <div class="history-info">
+                        <div class="history-patient">${item.patientName}</div>
+                        <div class="history-details">
+                            کد ملی: ${item.nationalCode} | 
+                            خدمت: ${item.serviceName} | 
+                            پزشک: ${item.doctorName}
+                        </div>
+                        <div class="history-date">${item.receptionDate}</div>
+                    </div>
+                    <div class="history-actions">
+                        <span class="status-badge status-${item.status}">${item.statusText}</span>
+                        <button class="btn btn-outline-primary btn-action" onclick="viewReceptionDetails(${item.receptionId})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-outline-success btn-action" onclick="editReception(${item.receptionId})">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-outline-info btn-action" onclick="printReceipt(${item.receptionId})">
+                            <i class="fas fa-print"></i>
+                        </button>
+                    </div>
+                </div>
+            `;
+        });
+
+        resultsList.html(html);
+    }
+
+    function clearFilters() {
+        $('#dateFrom').val('');
+        $('#dateTo').val('');
+        $('#nationalCodeFilter').val('');
+        $('#statusFilter').val('');
+        loadReceptionHistory();
+    }
+
+    // Global functions for actions
+    window.viewReceptionDetails = function(receptionId) {
+        console.log('👁️ Viewing reception details:', receptionId);
+        // Open reception details modal or navigate to details page
+    };
+
+    window.editReception = function(receptionId) {
+        console.log('✏️ Editing reception:', receptionId);
+        // Open reception edit form
+    };
+
+    window.printReceipt = function(receptionId) {
+        console.log('🖨️ Printing receipt for reception:', receptionId);
+        // Open print dialog for receipt
+    };
+
+    function showError(message) {
+        console.error('❌ Error:', message);
+        // Show error notification to user
+    }
+</script>

@@ -38,6 +38,9 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
         [Display(Name = "نام طرح بیمه")]
         public string InsurancePlanName { get; set; }
 
+        [Display(Name = "شناسه ارائه‌دهنده بیمه")]
+        public int InsuranceProviderId { get; set; }
+
         [Display(Name = "ارائه‌دهنده بیمه")]
         public string InsuranceProviderName { get; set; }
 
@@ -55,6 +58,12 @@ namespace ClinicApp.ViewModels.Insurance.PatientInsurance
 
         [Display(Name = "فعال")]
         public bool IsActive { get; set; }
+
+        [Display(Name = "شماره کارت")]
+        public string CardNumber { get; set; }
+
+        [Display(Name = "فرانشیز")]
+        public decimal? Deductible { get; set; }
 
         /// <summary>
         /// ✅ (Factory Method) یک ViewModel جدید از روی یک Entity می‌سازد.

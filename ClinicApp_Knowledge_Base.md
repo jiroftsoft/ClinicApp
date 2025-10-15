@@ -220,6 +220,20 @@ public class Service : ISoftDelete, ITrackable
 - **Repository ها**: IInsuranceCalculationRepository
 - **View ها**: Areas/Admin/Views/InsuranceCalculation, Areas/Admin/Views/CombinedInsuranceCalculation
 
+### **6️⃣ ماژول تنظیمات FactorSettings** ✅
+- **مدل‌های دیتابیس**: FactorSetting
+- **کنترلرها**: FactorSettingController
+- **سرویس‌ها**: FactorSettingService
+- **Repository ها**: IFactorSettingService
+- **View ها**: Areas/Admin/Views/FactorSetting
+
+### **7️⃣ ماژول محاسبات بیمه پایه** ✅
+- **مدل‌های دیتابیس**: InsuranceCalculation
+- **کنترلرها**: InsuranceCalculationController
+- **سرویس‌ها**: InsuranceCalculationService
+- **Repository ها**: IInsuranceCalculationService, IInsuranceCalculationRepository
+- **View ها**: Areas/Admin/Views/InsuranceCalculation
+
 ### **🔄 ماژول‌های در انتظار بررسی:**
 - [ ] **ماژول پذیرش (Reception)**
 - [ ] **ماژول نوبت‌دهی (Appointment)**

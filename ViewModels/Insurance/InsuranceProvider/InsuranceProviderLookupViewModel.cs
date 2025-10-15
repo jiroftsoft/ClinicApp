@@ -30,6 +30,12 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
         [Display(Name = "کد")]
         public string Code { get; set; }
 
+        [Display(Name = "توضیحات")]
+        public string Description { get; set; }
+
+        [Display(Name = "فعال")]
+        public bool IsActive { get; set; }
+
         /// <summary>
         /// Value برای SelectList (شناسه ارائه‌دهنده)
         /// </summary>
@@ -51,7 +57,9 @@ namespace ClinicApp.ViewModels.Insurance.InsuranceProvider
             {
                 InsuranceProviderId = entity.InsuranceProviderId,
                 Name = entity.Name,
-                Code = entity.Code
+                Code = entity.Code,
+                Description = entity.Name, // Using Name as Description since Description property doesn't exist
+                IsActive = entity.IsActive
             };
         }
     }

@@ -295,5 +295,21 @@ namespace ClinicApp.Interfaces.Insurance
         Task<ServiceResult<int>> AddSupplementaryInsuranceToExistingAsync(PatientInsuranceCreateEditViewModel model);
 
         #endregion
+
+        #region Statistics Methods
+
+        /// <summary>
+        /// دریافت تعداد بیمه‌های فعال
+        /// </summary>
+        /// <returns>تعداد بیمه‌های فعال</returns>
+        Task<int> GetActiveInsurancesCountAsync();
+
+        /// <summary>
+        /// دریافت تعداد بیمه‌های منقضی
+        /// </summary>
+        /// <returns>تعداد بیمه‌های منقضی</returns>
+        Task<int> GetExpiredInsurancesCountAsync();
+
+        #endregion
     }
 }

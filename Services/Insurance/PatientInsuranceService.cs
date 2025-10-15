@@ -1586,5 +1586,59 @@ namespace ClinicApp.Services.Insurance
         }
 
         #endregion
+
+        #region Statistics Methods
+
+        /// <summary>
+        /// دریافت تعداد بیمه‌های فعال
+        /// </summary>
+        /// <returns>تعداد بیمه‌های فعال</returns>
+        public async Task<int> GetActiveInsurancesCountAsync()
+        {
+            try
+            {
+                _log.Information("📊 دریافت تعداد بیمه‌های فعال. کاربر: {UserName}", _currentUserService.UserName);
+
+                var today = DateTime.Today;
+                var activeInsurances = await _patientInsuranceRepository.GetAllAsync();
+                var activeCount = activeInsurances.Count(pi => pi.IsActive && !pi.IsDeleted && 
+                    (pi.EndDate == null || pi.EndDate >= today));
+
+                _log.Information("✅ تعداد بیمه‌های فعال: {Count}", activeCount);
+                return activeCount;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در GetActiveInsurancesCountAsync");
+                return 0;
+            }
+        }
+
+        /// <summary>
+        /// دریافت تعداد بیمه‌های منقضی
+        /// </summary>
+        /// <returns>تعداد بیمه‌های منقضی</returns>
+        public async Task<int> GetExpiredInsurancesCountAsync()
+        {
+            try
+            {
+                _log.Information("📊 دریافت تعداد بیمه‌های منقضی. کاربر: {UserName}", _currentUserService.UserName);
+
+                var today = DateTime.Today;
+                var allInsurances = await _patientInsuranceRepository.GetAllAsync();
+                var expiredCount = allInsurances.Count(pi => !pi.IsDeleted && 
+                    pi.EndDate.HasValue && pi.EndDate < today);
+
+                _log.Information("✅ تعداد بیمه‌های منقضی: {Count}", expiredCount);
+                return expiredCount;
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در GetExpiredInsurancesCountAsync");
+                return 0;
+            }
+        }
+
+        #endregion
     }
 }

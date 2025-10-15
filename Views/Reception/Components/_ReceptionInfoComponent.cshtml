@@ -1,0 +1,780 @@
+@using ClinicApp.ViewModels.Reception
+@model ReceptionInformationViewModel
+
+<!-- Reception Information Component - Medical Environment -->
+<div class="reception-info-component" id="receptionInfoComponent">
+    <div class="component-header">
+        <h6 class="component-title">
+            <i class="fas fa-clipboard-list me-2"></i>
+            اطلاعات پذیرش
+        </h6>
+        <div class="component-status" id="receptionInfoStatus">
+            <i class="fas fa-circle text-muted"></i>
+            <span>آماده</span>
+        </div>
+    </div>
+
+    <div class="component-content">
+        <!-- Reception Details -->
+        <div class="reception-details">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-calendar me-1"></i>
+                            تاریخ پذیرش
+                        </label>
+                        <input type="text" id="receptionDate" class="form-control" readonly>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-clock me-1"></i>
+                            زمان پذیرش
+                        </label>
+                        <input type="text" id="receptionTime" class="form-control" readonly>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-tag me-1"></i>
+                            نوع پذیرش
+                        </label>
+                        <select id="receptionType" class="form-control">
+                            <option value="normal">عادی</option>
+                            <option value="emergency">اورژانس</option>
+                            <option value="special">ویژه</option>
+                            <option value="online">آنلاین</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">
+                            <i class="fas fa-exclamation-triangle me-1"></i>
+                            اولویت
+                        </label>
+                        <select id="receptionPriority" class="form-control">
+                            <option value="normal">عادی</option>
+                            <option value="high">بالا</option>
+                            <option value="urgent">فوری</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reception Summary -->
+        <div class="reception-summary" id="receptionSummary">
+            <div class="summary-card">
+                <div class="summary-header">
+                    <h6 class="summary-title">
+                        <i class="fas fa-info-circle me-2"></i>
+                        خلاصه پذیرش
+                    </h6>
+                </div>
+                <div class="summary-body">
+                    <div class="summary-row">
+                        <span class="summary-label">بیمار:</span>
+                        <span class="summary-value" id="patientSummary">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">دپارتمان:</span>
+                        <span class="summary-value" id="departmentSummary">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">پزشک:</span>
+                        <span class="summary-value" id="doctorSummary">-</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">تعداد خدمات:</span>
+                        <span class="summary-value" id="servicesCount">0</span>
+                    </div>
+                    <div class="summary-row">
+                        <span class="summary-label">وضعیت بیمه:</span>
+                        <span class="summary-value" id="insuranceStatus">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reception Notes -->
+        <div class="reception-notes">
+            <div class="form-group">
+                <label class="form-label">
+                    <i class="fas fa-sticky-note me-1"></i>
+                    یادداشت‌های پذیرش
+                </label>
+                <textarea id="receptionNotes" class="form-control" rows="3" placeholder="یادداشت‌های مربوط به پذیرش (اختیاری)"></textarea>
+            </div>
+        </div>
+
+        <!-- Reception Actions -->
+        <div class="reception-actions">
+            <div class="row">
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-primary w-100" id="saveReceptionBtn">
+                        <i class="fas fa-save me-1"></i>
+                        ذخیره
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-info w-100" id="previewReceptionBtn">
+                        <i class="fas fa-eye me-1"></i>
+                        پیش‌نمایش
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-warning w-100" id="editReceptionBtn">
+                        <i class="fas fa-edit me-1"></i>
+                        ویرایش
+                    </button>
+                </div>
+                <div class="col-md-3">
+                    <button type="button" class="btn btn-outline-danger w-100" id="cancelReceptionBtn">
+                        <i class="fas fa-times me-1"></i>
+                        لغو
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Reception Status -->
+        <div class="reception-status" id="receptionStatus">
+            <div class="status-indicators">
+                <div class="status-item" id="patientStatus">
+                    <i class="fas fa-user text-muted"></i>
+                    <span>بیمار</span>
+                </div>
+                <div class="status-item" id="insuranceStatus">
+                    <i class="fas fa-shield-alt text-muted"></i>
+                    <span>بیمه</span>
+                </div>
+                <div class="status-item" id="departmentStatus">
+                    <i class="fas fa-hospital text-muted"></i>
+                    <span>دپارتمان</span>
+                </div>
+                <div class="status-item" id="serviceStatus">
+                    <i class="fas fa-stethoscope text-muted"></i>
+                    <span>خدمات</span>
+                </div>
+                <div class="status-item" id="paymentStatus">
+                    <i class="fas fa-credit-card text-muted"></i>
+                    <span>پرداخت</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reception Info Component Styles -->
+<style>
+    .reception-info-component {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+        margin-bottom: 1.5rem;
+    }
+
+    .component-header {
+        background: #f8f9fa;
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .component-title {
+        margin: 0;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .component-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.9rem;
+    }
+
+    .component-content {
+        padding: 1.5rem;
+    }
+
+    .reception-details {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+
+    .reception-summary {
+        margin-bottom: 1.5rem;
+    }
+
+    .summary-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .summary-header {
+        background: #e9ecef;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .summary-title {
+        margin: 0;
+        font-weight: 600;
+        color: #495057;
+        font-size: 0.9rem;
+    }
+
+    .summary-body {
+        padding: 1rem;
+    }
+
+    .summary-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .summary-row:last-child {
+        border-bottom: none;
+    }
+
+    .summary-label {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .summary-value {
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .reception-notes {
+        margin-bottom: 1.5rem;
+    }
+
+    .reception-actions {
+        margin-bottom: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .reception-status {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+    }
+
+    .status-indicators {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .status-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        border-radius: 6px;
+        transition: all 0.3s ease;
+        min-width: 80px;
+    }
+
+    .status-item.completed {
+        background: #e8f5e8;
+        border: 1px solid #28a745;
+    }
+
+    .status-item.completed i {
+        color: #28a745 !important;
+    }
+
+    .status-item.error {
+        background: #ffebee;
+        border: 1px solid #dc3545;
+    }
+
+    .status-item.error i {
+        color: #dc3545 !important;
+    }
+
+    .status-item.warning {
+        background: #fff3cd;
+        border: 1px solid #ffc107;
+    }
+
+    .status-item.warning i {
+        color: #ffc107 !important;
+    }
+
+    .status-item i {
+        font-size: 1.5rem;
+    }
+
+    .status-item span {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: #6c757d;
+    }
+
+    .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+    }
+
+    .btn-info {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        border: none;
+    }
+
+    .btn-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        border: none;
+    }
+
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        border: none;
+    }
+
+    /* Medical Environment Specific */
+    .reception-info-component.medical-critical {
+        border-left: 4px solid #dc3545;
+    }
+
+    .reception-info-component.medical-critical .component-header {
+        background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    }
+
+    .reception-info-component.medical-critical .component-title {
+        color: #c62828;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .status-indicators {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .status-item {
+            flex-direction: row;
+            justify-content: flex-start;
+            min-width: auto;
+            width: 100%;
+        }
+        
+        .reception-actions .row {
+            flex-direction: column;
+        }
+        
+        .reception-actions .col-md-3 {
+            margin-bottom: 0.5rem;
+        }
+    }
+</style>
+
+<!-- Reception Info Component JavaScript -->
+<script>
+    // Wait for jQuery to be available
+    function waitForJQueryReceptionInfo() {
+        if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+            $(document).ready(function() {
+                initializeReceptionInfoComponent();
+            });
+        } else {
+            setTimeout(waitForJQueryReceptionInfo, 50);
+        }
+    }
+    
+    // Start waiting for jQuery
+    waitForJQueryReceptionInfo();
+
+    function initializeReceptionInfoComponent() {
+        console.log('🏥 Reception Info Component Initialized');
+        
+        // Setup event handlers
+        setupReceptionDetails();
+        setupReceptionActions();
+        setupStatusMonitoring();
+        
+        // Initialize with current date/time
+        initializeReceptionDateTime();
+        
+        // Listen for component updates
+        setupComponentListeners();
+    }
+
+    function setupReceptionDetails() {
+        // Reception type change
+        $('#receptionType').on('change', function() {
+            updateReceptionSummary();
+        });
+
+        // Reception priority change
+        $('#receptionPriority').on('change', function() {
+            updateReceptionSummary();
+        });
+
+        // Reception notes change
+        $('#receptionNotes').on('input', function() {
+            updateReceptionSummary();
+        });
+    }
+
+    function setupReceptionActions() {
+        // Save reception
+        $('#saveReceptionBtn').on('click', function() {
+            saveReception();
+        });
+
+        // Preview reception
+        $('#previewReceptionBtn').on('click', function() {
+            previewReception();
+        });
+
+        // Edit reception
+        $('#editReceptionBtn').on('click', function() {
+            editReception();
+        });
+
+        // Cancel reception
+        $('#cancelReceptionBtn').on('click', function() {
+            cancelReception();
+        });
+    }
+
+    function setupStatusMonitoring() {
+        // Monitor component statuses
+        setInterval(updateComponentStatuses, 1000);
+    }
+
+    function setupComponentListeners() {
+        // Listen for patient selection
+        $(document).on('patientSelected', function(event, patient) {
+            updatePatientSummary(patient);
+            updateStatusIndicator('patientStatus', 'completed');
+        });
+
+        // Listen for insurance updates
+        $(document).on('insuranceUpdated', function(event, insurance) {
+            updateInsuranceSummary(insurance);
+            updateStatusIndicator('insuranceStatus', 'completed');
+        });
+
+        // Listen for department selection
+        $(document).on('departmentSelected', function(event, department) {
+            updateDepartmentSummary(department);
+            updateStatusIndicator('departmentStatus', 'completed');
+        });
+
+        // Listen for service selection
+        $(document).on('servicesUpdated', function(event, services) {
+            updateServicesSummary(services);
+            updateStatusIndicator('serviceStatus', 'completed');
+        });
+
+        // Listen for payment updates
+        $(document).on('paymentUpdated', function(event, payment) {
+            updatePaymentSummary(payment);
+            updateStatusIndicator('paymentStatus', 'completed');
+        });
+    }
+
+    function initializeReceptionDateTime() {
+        const now = new Date();
+        const dateOptions = {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        };
+        const timeOptions = {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        };
+        
+        $('#receptionDate').val(now.toLocaleDateString('fa-IR', dateOptions));
+        $('#receptionTime').val(now.toLocaleTimeString('fa-IR', timeOptions));
+    }
+
+    function updateReceptionSummary() {
+        const receptionType = $('#receptionType option:selected').text();
+        const receptionPriority = $('#receptionPriority option:selected').text();
+        
+        console.log('📋 Reception summary updated:', { receptionType, receptionPriority });
+    }
+
+    function updatePatientSummary(patient) {
+        $('#patientSummary').text(`${patient.firstName} ${patient.lastName} (${patient.nationalCode})`);
+    }
+
+    function updateInsuranceSummary(insurance) {
+        if (insurance && insurance.primaryInsurance) {
+            $('#insuranceStatus').text('بیمه پایه: ' + insurance.primaryInsurance.providerName);
+        } else {
+            $('#insuranceStatus').text('بدون بیمه');
+        }
+    }
+
+    function updateDepartmentSummary(department) {
+        $('#departmentSummary').text(department.departmentName);
+    }
+
+    function updateServicesSummary(services) {
+        $('#servicesCount').text(services.length);
+    }
+
+    function updatePaymentSummary(payment) {
+        // This would be called when payment is updated
+        console.log('💳 Payment summary updated:', payment);
+    }
+
+    function updateComponentStatuses() {
+        // Check each component status
+        const patientId = window.PatientIdentityComponent?.getPatientId();
+        const departmentId = window.DepartmentComponent?.getDepartmentId();
+        const services = window.ServiceComponent?.getSelectedServices() || [];
+        const paymentSummary = window.PaymentComponent?.getPaymentSummary();
+
+        // Update status indicators
+        updateStatusIndicator('patientStatus', patientId ? 'completed' : 'pending');
+        updateStatusIndicator('departmentStatus', departmentId ? 'completed' : 'pending');
+        updateStatusIndicator('serviceStatus', services.length > 0 ? 'completed' : 'pending');
+        updateStatusIndicator('paymentStatus', paymentSummary?.remainingAmount <= 0 ? 'completed' : 'pending');
+    }
+
+    function updateStatusIndicator(statusId, status) {
+        const statusElement = $(`#${statusId}`);
+        const statusIcon = statusElement.find('i');
+        
+        // Remove previous status classes
+        statusElement.removeClass('completed error warning');
+        statusIcon.removeClass('text-success text-danger text-warning text-muted');
+        
+        switch (status) {
+            case 'completed':
+                statusElement.addClass('completed');
+                statusIcon.addClass('text-success');
+                break;
+            case 'error':
+                statusElement.addClass('error');
+                statusIcon.addClass('text-danger');
+                break;
+            case 'warning':
+                statusElement.addClass('warning');
+                statusIcon.addClass('text-warning');
+                break;
+            default:
+                statusIcon.addClass('text-muted');
+        }
+    }
+
+    function saveReception() {
+        const receptionData = getReceptionData();
+        
+        if (!validateReceptionData(receptionData)) {
+            return;
+        }
+        
+        console.log('💾 Saving reception:', receptionData);
+        
+        // Show loading state
+        $('#saveReceptionBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin me-1"></i>در حال ذخیره...');
+        
+        // Simulate save operation
+        setTimeout(() => {
+            showSuccess('پذیرش با موفقیت ذخیره شد');
+            updateComponentStatus('completed');
+            $('#saveReceptionBtn').prop('disabled', false).html('<i class="fas fa-save me-1"></i>ذخیره');
+        }, 1500);
+    }
+
+    function previewReception() {
+        const receptionData = getReceptionData();
+        console.log('👁️ Previewing reception:', receptionData);
+        
+        // Here you would show a preview modal or redirect to preview page
+        showSuccess('پیش‌نمایش پذیرش');
+    }
+
+    function editReception() {
+        console.log('✏️ Editing reception...');
+        
+        // Enable editing mode
+        $('#receptionType, #receptionPriority, #receptionNotes').prop('disabled', false);
+        $('#editReceptionBtn').hide();
+        $('#saveReceptionBtn').show();
+    }
+
+    function cancelReception() {
+        if (confirm('آیا از لغو پذیرش اطمینان دارید؟')) {
+            console.log('❌ Cancelling reception...');
+            
+            // Clear all form data
+            clearReceptionData();
+            showSuccess('پذیرش لغو شد');
+        }
+    }
+
+    function getReceptionData() {
+        return {
+            receptionDate: $('#receptionDate').val(),
+            receptionTime: $('#receptionTime').val(),
+            receptionType: $('#receptionType').val(),
+            receptionPriority: $('#receptionPriority').val(),
+            receptionNotes: $('#receptionNotes').val(),
+            patientId: window.PatientIdentityComponent?.getPatientId(),
+            departmentId: window.DepartmentComponent?.getDepartmentId(),
+            doctorId: window.DepartmentComponent?.getDoctorId(),
+            services: window.ServiceComponent?.getSelectedServices() || [],
+            paymentSummary: window.PaymentComponent?.getPaymentSummary()
+        };
+    }
+
+    function validateReceptionData(data) {
+        if (!data.patientId) {
+            showError('ابتدا بیمار را انتخاب کنید');
+            return false;
+        }
+        
+        if (!data.departmentId) {
+            showError('ابتدا دپارتمان را انتخاب کنید');
+            return false;
+        }
+        
+        if (!data.doctorId) {
+            showError('ابتدا پزشک را انتخاب کنید');
+            return false;
+        }
+        
+        if (!data.services || data.services.length === 0) {
+            showError('ابتدا خدمات را انتخاب کنید');
+            return false;
+        }
+        
+        return true;
+    }
+
+    function clearReceptionData() {
+        $('#receptionNotes').val('');
+        $('#receptionType').val('normal');
+        $('#receptionPriority').val('normal');
+        
+        // Clear other components
+        if (window.PatientIdentityComponent) {
+            window.PatientIdentityComponent.clearPatient();
+        }
+        if (window.DepartmentComponent) {
+            window.DepartmentComponent.clearSelection();
+        }
+        if (window.ServiceComponent) {
+            window.ServiceComponent.clearSelectedServices();
+        }
+        
+        // Reset status indicators
+        $('.status-item').removeClass('completed error warning');
+        $('.status-item i').removeClass('text-success text-danger text-warning').addClass('text-muted');
+        
+        updateComponentStatus('pending');
+    }
+
+    function updateComponentStatus(status) {
+        const statusElement = $('#receptionInfoStatus');
+        const statusIcon = statusElement.find('i');
+        const statusText = statusElement.find('span');
+        
+        statusElement.removeClass('text-muted text-success text-warning text-danger');
+        statusIcon.removeClass('fa-circle fa-check fa-exclamation fa-times');
+        
+        switch (status) {
+            case 'completed':
+                statusElement.addClass('text-success');
+                statusIcon.addClass('fa-check');
+                statusText.text('تکمیل شده');
+                break;
+            case 'error':
+                statusElement.addClass('text-danger');
+                statusIcon.addClass('fa-times');
+                statusText.text('خطا');
+                break;
+            case 'warning':
+                statusElement.addClass('text-warning');
+                statusIcon.addClass('fa-exclamation');
+                statusText.text('هشدار');
+                break;
+            default:
+                statusElement.addClass('text-muted');
+                statusIcon.addClass('fa-circle');
+                statusText.text('آماده');
+        }
+    }
+
+    function showError(message) {
+        console.error('❌ Error:', message);
+        // You can implement a toast notification here
+    }
+
+    function showSuccess(message) {
+        console.log('✅ Success:', message);
+        // You can implement a toast notification here
+    }
+
+    // Public API for external components
+    window.ReceptionInfoComponent = {
+        getReceptionData: function() {
+            return getReceptionData();
+        },
+        updateReceptionSummary: function() {
+            updateReceptionSummary();
+        },
+        clearReceptionData: function() {
+            clearReceptionData();
+        }
+    };
+</script>
