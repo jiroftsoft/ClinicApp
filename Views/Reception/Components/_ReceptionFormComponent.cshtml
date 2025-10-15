@@ -8,201 +8,270 @@
             <i class="fas fa-clipboard-list me-2"></i>
             فرم پذیرش
         </h5>
-        <div class="component-actions">
-            <button type="button" class="btn btn-sm btn-outline-primary" data-action="save-draft">
-                <i class="fas fa-save me-1"></i>
-                ذخیره پیش‌نویس
-            </button>
-        </div>
+        <!-- دکمه ذخیره پیش‌نویس حذف شد - غیرضروری در سیستم پذیرش -->
     </div>
 
     <div class="component-body">
-        <form id="receptionForm" data-form="reception" method="post" action="@Url.Action("Create", "Reception")">
+        <form id="receptionForm" data-form="reception" method="post" action="@Url.Action("CreateReception", "ReceptionCore")">
             @Html.AntiForgeryToken()
             
             <!-- Validation Summary -->
             <div class="validation-summary-valid text-danger" data-valmsg-summary="true">
                 @Html.ValidationSummary(true, "", new { @class = "text-danger" })
             </div>
-            
+
             <!-- فیلدهای مخفی برای اطلاعات بیمار -->
             <input type="hidden" id="patientId" name="PatientId" value="">
             <input type="hidden" id="patientName" name="PatientName" value="">
-            <input type="hidden" id="patientNationalCode" name="PatientNationalCode" value="">
-            
+            <input type="hidden" id="patientNationalCodeHidden" name="PatientNationalCodeHidden" value="">
+
             <!-- فیلد مخفی برای تاریخ میلادی -->
             <input type="hidden" name="ReceptionDateTime" id="receptionDateTime" />
-            
-            <!-- اطلاعات هویتی بیمار -->
-            <div class="form-section" id="patientInfoSection" data-section="patient-info">
-                <h6 class="section-title">اطلاعات هویتی بیمار</h6>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="patientNationalCode" class="form-label">کد ملی *</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="patientNationalCode" 
-                                   name="PatientNationalCode"
-                                   maxlength="10"
-                                   placeholder="کد ملی بیمار"
-                                   data-val="true" 
-                                   data-val-required="کد ملی الزامی است"
-                                   data-val-length="کد ملی باید 10 رقم باشد"
-                                   data-val-length-min="10"
-                                   data-val-length-max="10">
-                            @Html.ValidationMessage("PatientNationalCode", "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="patientFirstName" class="form-label">نام *</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="patientFirstName" 
-                                   name="PatientFirstName"
-                                   placeholder="نام بیمار"
-                                   data-val="true" 
-                                   data-val-required="نام الزامی است">
-                            @Html.ValidationMessage("PatientFirstName", "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="patientLastName" class="form-label">نام خانوادگی *</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="patientLastName" 
-                                   name="PatientLastName"
-                                   placeholder="نام خانوادگی بیمار"
-                                   data-val="true" 
-                                   data-val-required="نام خانوادگی الزامی است">
-                            @Html.ValidationMessage("PatientLastName", "", new { @class = "text-danger" })
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="patientMobileNumber" class="form-label">شماره همراه</label>
-                            <input type="tel" 
-                                   class="form-control" 
-                                   id="patientMobileNumber" 
-                                   name="PatientMobileNumber"
-                                   placeholder="09xxxxxxxxx"
-                                   data-validate="mobile">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="patientPhoneNumber" class="form-label">شماره تلفن</label>
-                            <input type="tel" 
-                                   class="form-control" 
-                                   id="patientPhoneNumber" 
-                                   name="PatientPhoneNumber"
-                                   placeholder="شماره تلفن ثابت">
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="form-group">
-                            <label for="patientBirthDate" class="form-label">تاریخ تولد *</label>
-                            <input type="text" 
-                                   class="form-control persian-datepicker" 
-                                   id="patientBirthDate" 
-                                   name="PatientBirthDate"
-                                   placeholder="تاریخ تولد"
-                                   data-validate="required">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="patientGender" class="form-label">جنسیت *</label>
-                            <select class="form-select" 
-                                    id="patientGender" 
-                                    name="PatientGender"
-                                    data-validate="required">
-                                <option value="">انتخاب کنید</option>
-                                <option value="1">مرد</option>
-                                <option value="2">زن</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-3">
-                        <div class="form-group">
-                            <label for="patientBloodType" class="form-label">گروه خونی</label>
-                            <select class="form-select" 
-                                    id="patientBloodType" 
-                                    name="PatientBloodType">
-                                <option value="">انتخاب کنید</option>
-                                <option value="A+">A+</option>
-                                <option value="A-">A-</option>
-                                <option value="B+">B+</option>
-                                <option value="B-">B-</option>
-                                <option value="AB+">AB+</option>
-                                <option value="AB-">AB-</option>
-                                <option value="O+">O+</option>
-                                <option value="O-">O-</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="patientAddress" class="form-label">آدرس</label>
-                            <textarea class="form-control" 
-                                      id="patientAddress" 
-                                      name="PatientAddress"
-                                      rows="2" 
-                                      placeholder="آدرس کامل بیمار"></textarea>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="patientEmail" class="form-label">ایمیل</label>
-                            <input type="email" 
-                                   class="form-control" 
-                                   id="patientEmail" 
-                                   name="PatientEmail"
-                                   placeholder="ایمیل بیمار"
-                                   data-validate="email">
-                        </div>
-                    </div>
-                    <div class="col-md-6">
-                        <div class="form-group">
-                            <label for="patientAllergies" class="form-label">آلرژی‌ها</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="patientAllergies" 
-                                   name="PatientAllergies"
-                                   placeholder="آلرژی‌های بیمار (اختیاری)">
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="row">
-                    <div class="col-md-12">
-                        <div class="form-group">
-                            <label for="patientChronicDiseases" class="form-label">بیماری‌های مزمن</label>
-                            <textarea class="form-control" 
-                                      id="patientChronicDiseases" 
-                                      name="PatientChronicDiseases"
-                                      rows="2" 
-                                      placeholder="بیماری‌های مزمن بیمار (اختیاری)"></textarea>
-                        </div>
+
+            <!-- خلاصه اطلاعات بیمار -->
+            <div id="patientInfoSection" class="alert alert-light d-none mb-3">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-user-check text-success me-2"></i>
+                    <div>
+                        <strong id="selectedPatientName"></strong>
+                        <span id="selectedPatientNationalCode" class="ms-2 text-muted"></span>
+                        <span id="selectedPatientBirthDate" class="ms-2 text-muted"></span>
                     </div>
                 </div>
             </div>
-            
+
+            <!-- Accordion Container -->
+            <div class="reception-accordion" id="receptionAccordion">
+
+                <!-- اطلاعات هویتی بیمار -->
+                <div class="accordion-item" data-section="patient-info">
+                    <div class="accordion-header" id="patientInfoHeader">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#patientInfoCollapse" aria-expanded="true" aria-controls="patientInfoCollapse">
+                            <div class="accordion-title">
+                                <i class="fas fa-user-circle accordion-icon"></i>
+                                <span class="accordion-text">اطلاعات هویتی بیمار</span>
+                            </div>
+                            <div class="accordion-status">
+                                <span class="status-badge" id="patientInfoStatus">در انتظار</span>
+                                <i class="fas fa-chevron-down accordion-arrow"></i>
+                            </div>
+                        </button>
+                    </div>
+                    <div id="patientInfoCollapse" class="accordion-collapse collapse show" aria-labelledby="patientInfoHeader">
+                        <div class="accordion-body">
+
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="form-group medical-critical">
+                                        <label for="patientNationalCode" class="form-label">
+                                            <i class="fas fa-id-card text-danger me-1"></i>
+                                            کد ملی *
+                                        </label>
+                                        <div class="input-group">
+                                            <input type="text"
+                                                   class="form-control"
+                                                   id="patientNationalCode"
+                                                   name="PatientNationalCode"
+                                                   maxlength="10"
+                                                   placeholder="کد ملی بیمار"
+                                                   data-val="true"
+                                                   data-val-required="کد ملی الزامی است"
+                                                   data-val-length="کد ملی باید 10 رقم باشد"
+                                                   data-val-length-min="10"
+                                                   data-val-length-max="10">
+                                            <button class="btn btn-outline-primary"
+                                                    type="button"
+                                                    id="searchPatientBtn"
+                                                    data-action="search-patient"
+                                                    title="جستجوی بیمار">
+                                                <i class="fas fa-search"></i>
+                                            </button>
+                                        </div>
+                                        @Html.ValidationMessage("PatientNationalCode", "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group medical-critical">
+                                        <label for="patientFirstName" class="form-label">
+                                            <i class="fas fa-user text-primary me-1"></i>
+                                            نام *
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="patientFirstName"
+                                               name="PatientFirstName"
+                                               placeholder="نام بیمار"
+                                               data-val="true"
+                                               data-val-required="نام الزامی است">
+                                        @Html.ValidationMessage("PatientFirstName", "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="form-group medical-critical">
+                                        <label for="patientLastName" class="form-label">
+                                            <i class="fas fa-user text-primary me-1"></i>
+                                            نام خانوادگی *
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="patientLastName"
+                                               name="PatientLastName"
+                                               placeholder="نام خانوادگی بیمار"
+                                               data-val="true"
+                                               data-val-required="نام خانوادگی الزامی است">
+                                        @Html.ValidationMessage("PatientLastName", "", new { @class = "text-danger" })
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="patientPhoneNumber" class="form-label">
+                                            <i class="fas fa-mobile-alt text-primary me-1"></i>
+                                            شماره همراه
+                                        </label>
+                                        <input type="tel"
+                                               class="form-control"
+                                               id="patientPhoneNumber"
+                                               name="PhoneNumber"
+                                               placeholder="09xxxxxxxxx"
+                                               inputmode="numeric"
+                                               pattern="^09\d{9}$"
+                                               dir="ltr"
+                                               data-validate="mobile">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group medical-critical">
+                                        <label for="patientBirthDate" class="form-label">
+                                            <i class="fas fa-calendar text-danger me-1"></i>
+                                            تاریخ تولد *
+                                        </label>
+                                        <input type="text"
+                                               class="form-control persian-datepicker"
+                                               id="patientBirthDate"
+                                               name="PatientBirthDate"
+                                               placeholder="تاریخ تولد"
+                                               data-validate="required">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-3">
+                                    <div class="form-group medical-critical">
+                                        <label for="patientGender" class="form-label">
+                                            <i class="fas fa-venus-mars text-danger me-1"></i>
+                                            جنسیت *
+                                        </label>
+                                        <select class="form-select"
+                                                id="patientGender"
+                                                name="Gender"
+                                                data-validate="required">
+                                            <option value="">انتخاب کنید</option>
+                                            <option value="1">مرد</option>
+                                            <option value="2">زن</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="patientBloodType" class="form-label">
+                                            <i class="fas fa-tint text-danger me-1"></i>
+                                            گروه خونی
+                                        </label>
+                                        <select class="form-select"
+                                                id="patientBloodType"
+                                                name="BloodType">
+                                            <option value="">انتخاب کنید</option>
+                                            <option value="@("A+")">A+</option>
+                                            <option value="@("A-")">A-</option>
+                                            <option value="@("B+")">B+</option>
+                                            <option value="@("B-")">B-</option>
+                                            <option value="@("AB+")">AB+</option>
+                                            <option value="@("AB-")">AB-</option>
+                                            <option value="@("O+")">O+</option>
+                                            <option value="@("O-")">O-</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="patientEmail" class="form-label">
+                                            <i class="fas fa-envelope text-info me-1"></i>
+                                            ایمیل
+                                        </label>
+                                        <input type="email"
+                                               class="form-control"
+                                               id="patientEmail"
+                                               name="Email"
+                                               placeholder="ایمیل بیمار (اختیاری)"
+                                               dir="ltr">
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="form-group">
+                                        <label for="patientAddress" class="form-label">
+                                            <i class="fas fa-map-marker-alt text-primary me-1"></i>
+                                            آدرس
+                                        </label>
+                                        <textarea class="form-control"
+                                                  id="patientAddress"
+                                                  name="Address"
+                                                  rows="2"
+                                                  placeholder="آدرس کامل بیمار"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="patientAllergies" class="form-label">
+                                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                                            آلرژی‌ها
+                                        </label>
+                                        <input type="text"
+                                               class="form-control"
+                                               id="patientAllergies"
+                                               name="Allergies"
+                                               placeholder="آلرژی‌های بیمار (اختیاری)">
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="form-group">
+                                        <label for="patientChronicDiseases" class="form-label">
+                                            <i class="fas fa-heartbeat text-danger me-1"></i>
+                                            بیماری‌های مزمن
+                                        </label>
+                                        <textarea class="form-control"
+                                                  id="patientChronicDiseases"
+                                                  name="ChronicDiseases"
+                                                  rows="2"
+                                                  placeholder="بیماری‌های مزمن بیمار (اختیاری)"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div> <!-- End patient-info accordion-item -->
             <!-- اطلاعات پذیرش -->
-            <div class="form-section" data-section="reception-info">
-                <h6 class="section-title">اطلاعات پذیرش</h6>
+                <div class="accordion-item" data-section="reception-info">
+                    <div class="accordion-header" id="receptionInfoHeader">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#receptionInfoCollapse" aria-expanded="false" aria-controls="receptionInfoCollapse">
+                            <div class="accordion-title">
+                                <i class="fas fa-calendar-alt accordion-icon"></i>
+                                <span class="accordion-text">اطلاعات پذیرش</span>
+                            </div>
+                            <div class="accordion-status">
+                                <span class="status-badge" id="receptionInfoStatus">در انتظار</span>
+                                <i class="fas fa-chevron-down accordion-arrow"></i>
+                            </div>
+                        </button>
+                    </div>
+                    <div id="receptionInfoCollapse" class="accordion-collapse collapse" aria-labelledby="receptionInfoHeader">
+                        <div class="accordion-body">
                 
                 <div class="row">
                     <div class="col-md-6">
@@ -213,9 +282,9 @@
                                    id="receptionDate" 
                                    name="ReceptionDate"
                                    value="@Model.ReceptionDate"
-                                   data-val="true" 
-                                   data-val-required="تاریخ پذیرش الزامی است">
-                            @Html.ValidationMessage("ReceptionDate", "", new { @class = "text-danger" })
+                                               data-val="true"
+                                               data-val-required="تاریخ پذیرش الزامی است">
+                                        @Html.ValidationMessage("ReceptionDate", "", new { @class = "text-danger" })
                         </div>
                     </div>
                     <div class="col-md-6">
@@ -226,9 +295,9 @@
                                    id="receptionTime" 
                                    name="ReceptionTime"
                                    value="@DateTime.Now.ToString("HH:mm", System.Globalization.CultureInfo.InvariantCulture)"
-                                   data-val="true" 
-                                   data-val-required="ساعت پذیرش الزامی است">
-                            @Html.ValidationMessage("ReceptionTime", "", new { @class = "text-danger" })
+                                               data-val="true"
+                                               data-val-required="ساعت پذیرش الزامی است">
+                                        @Html.ValidationMessage("ReceptionTime", "", new { @class = "text-danger" })
                         </div>
                     </div>
                 </div>
@@ -272,10 +341,68 @@
                               placeholder="یادداشت‌های اضافی...">@Model.Notes</textarea>
                 </div>
             </div>
+                    </div>
+                </div>
+            </div> <!-- End reception-info accordion-item -->
+            <!-- اطلاعات بیمه -->
+            <div class="accordion-item" data-section="insurance-info">
+                <div class="accordion-header" id="insuranceInfoHeader">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#insuranceInfoCollapse" aria-expanded="false" aria-controls="insuranceInfoCollapse">
+                        <div class="accordion-title">
+                            <i class="fas fa-shield-alt accordion-icon"></i>
+                            <span class="accordion-text">اطلاعات بیمه</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="insuranceInfoStatus">در انتظار</span>
+                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                        </div>
+                    </button>
+                </div>
+                <div id="insuranceInfoCollapse" class="accordion-collapse collapse" aria-labelledby="insuranceInfoHeader">
+                    <div class="accordion-body">
 
+                        <div class="insurance-status" id="insuranceStatus">
+                            <div class="insurance-status-header">
+                                <span class="status-indicator" id="insuranceStatusIndicator"></span>
+                                <span class="status-text" id="insuranceStatusText">در حال بررسی...</span>
+                            </div>
+                            <div class="insurance-details" id="insuranceDetails" style="display: none;">
+                                <!-- جزئیات بیمه به صورت AJAX بارگذاری می‌شود -->
+                            </div>
+                        </div>
+
+                   <!-- فرم مدیریت بیمه بیمار -->
+                   <div class="insurance-management-form" id="insuranceManagementForm" style="display: none;">
+                       <div class="form-section-header">
+                           <i class="fas fa-edit text-primary"></i>
+                           <h5>مدیریت بیمه بیمار</h5>
+                           <button type="button" class="btn btn-sm btn-outline-primary" id="editInsuranceBtn">
+                               <i class="fas fa-edit"></i> ویرایش بیمه
+                           </button>
+                       </div>
+                       
+                       <!-- کامپوننت تخصصی بیمه برای پذیرش -->
+                       @Html.Partial("~/Views/Reception/Components/_ReceptionInsuranceFormComponent.cshtml", new ClinicApp.ViewModels.Insurance.PatientInsurance.PatientInsuranceReceptionFormViewModel())
+                   </div>
+                    </div>
+                </div>
+            </div> <!-- End insurance-info accordion-item -->
             <!-- اطلاعات پزشک -->
-            <div class="form-section" data-section="doctor-info">
-                <h6 class="section-title">انتخاب پزشک</h6>
+            <div class="accordion-item" data-section="doctor-info">
+                <div class="accordion-header" id="doctorInfoHeader">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#doctorInfoCollapse" aria-expanded="false" aria-controls="doctorInfoCollapse">
+                        <div class="accordion-title">
+                            <i class="fas fa-user-md accordion-icon"></i>
+                            <span class="accordion-text">انتخاب پزشک</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="doctorInfoStatus">در انتظار</span>
+                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                        </div>
+                    </button>
+                </div>
+                <div id="doctorInfoCollapse" class="accordion-collapse collapse" aria-labelledby="doctorInfoHeader">
+                    <div class="accordion-body">
                 
                 <div class="row">
                     <div class="col-md-6">
@@ -304,10 +431,24 @@
                     </div>
                 </div>
             </div>
-
+                </div>
+            </div> <!-- End doctor-info accordion-item -->
             <!-- اطلاعات خدمات -->
-            <div class="form-section" data-section="service-info">
-                <h6 class="section-title">انتخاب خدمات</h6>
+            <div class="accordion-item" data-section="service-info">
+                <div class="accordion-header" id="serviceInfoHeader">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#serviceInfoCollapse" aria-expanded="false" aria-controls="serviceInfoCollapse">
+                        <div class="accordion-title">
+                            <i class="fas fa-stethoscope accordion-icon"></i>
+                            <span class="accordion-text">انتخاب خدمات</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="serviceInfoStatus">در انتظار</span>
+                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                        </div>
+                    </button>
+                </div>
+                <div id="serviceInfoCollapse" class="accordion-collapse collapse" aria-labelledby="serviceInfoHeader">
+                    <div class="accordion-body">
                 
                 <div class="row">
                     <div class="col-md-6">
@@ -350,25 +491,24 @@
                     </div>
                 </div>
             </div>
-
-            <!-- اطلاعات بیمه -->
-            <div class="form-section" data-section="insurance-info">
-                <h6 class="section-title">اطلاعات بیمه</h6>
-                
-                <div class="insurance-status" id="insuranceStatus">
-                    <div class="insurance-status-header">
-                        <span class="status-indicator" id="insuranceStatusIndicator"></span>
-                        <span class="status-text" id="insuranceStatusText">در حال بررسی...</span>
                     </div>
-                    <div class="insurance-details" id="insuranceDetails" style="display: none;">
-                        <!-- جزئیات بیمه به صورت AJAX بارگذاری می‌شود -->
-                    </div>
-                </div>
-            </div>
-
+            </div> <!-- End service-info accordion-item -->
             <!-- محاسبات -->
-            <div class="form-section" data-section="calculations">
-                <h6 class="section-title">محاسبات</h6>
+            <div class="accordion-item" data-section="calculations">
+                <div class="accordion-header" id="calculationsHeader">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#calculationsCollapse" aria-expanded="false" aria-controls="calculationsCollapse">
+                        <div class="accordion-title">
+                            <i class="fas fa-calculator accordion-icon"></i>
+                            <span class="accordion-text">محاسبات</span>
+                    </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="calculationsStatus">در انتظار</span>
+                            <i class="fas fa-chevron-down accordion-arrow"></i>
+                </div>
+                    </button>
+            </div>
+                <div id="calculationsCollapse" class="accordion-collapse collapse" aria-labelledby="calculationsHeader">
+                    <div class="accordion-body">
                 
                 <div class="calculation-summary" id="calculationSummary">
                     <div class="calculation-item">
@@ -385,6 +525,9 @@
                     </div>
                 </div>
             </div>
+                </div>
+            </div> <!-- End calculations accordion-item -->
+
         </form>
     </div>
 
@@ -399,7 +542,7 @@
                 ذخیره پذیرش
             </button>
         </div>
-        <div class="component-status">
+        <div class="component-status" aria-live="polite" role="status">
             <span class="status-indicator" id="receptionFormStatus"></span>
             <span class="status-text" id="receptionFormStatusText">آماده</span>
         </div>
@@ -423,33 +566,34 @@
             originalError.apply(console, args);
         };
     }
-    
+
     // Initialize syntax error prevention
     preventSyntaxErrors();
-    
+
     // CSRF Setup for AJAX
     (function(){
-        if (window.__csrfSetupDone) return; 
+        if (window.__csrfSetupDone) return;
         window.__csrfSetupDone = true;
         function setup(){
-            if (typeof $ === 'undefined') { 
-                setTimeout(setup, 100); 
-                return; 
+            if (typeof $ === 'undefined') {
+                setTimeout(setup, 100);
+                return;
             }
             var $t = $('input[name="__RequestVerificationToken"]');
-            if (!$t.length) { 
-                setTimeout(setup, 100); 
-                return; 
+            if (!$t.length) {
+                setTimeout(setup, 100);
+                return;
             }
-            $.ajaxSetup({ 
-                headers: { 
-                    'RequestVerificationToken': $t.val() 
-                } 
+            $.ajaxSetup({
+                headers: {
+                    'RequestVerificationToken': $t.val(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
             });
         }
         setup();
     })();
-    
+
     function ensureJQuery(callback) {
         if (typeof jQuery !== 'undefined') {
             callback();
@@ -465,6 +609,12 @@
         $(document).ready(function() {
             // Initialize Reception Form Component
             initializeReceptionFormComponent();
+
+            // Initialize accordion functionality
+            initializeAccordion();
+
+            // Initialize accordion status tracking
+            initializeAccordionStatus();
         });
     });
 })();
@@ -478,34 +628,88 @@ function initializeReceptionFormComponent() {
     });
     
     component.on('click', '[data-action="cancel"]', function() {
-        cancelReception();
+        resetForm();
     });
     
-    component.on('click', '[data-action="save-draft"]', function() {
-        saveDraft();
-    });
+    // Event handler برای save-draft حذف شد - غیرضروری
     
     // Form field changes
     component.on('change', '#doctorId', function() {
         loadDoctorDepartments($(this).val());
+        // Update accordion status
+        updateAccordionStatus('doctor-info', 'completed');
+        autoAdvanceAccordion();
     });
     
     component.on('change', '#serviceCategoryId', function() {
         loadServicesByCategory($(this).val());
     });
-    
-    component.on('change', '#serviceId', function() {
-        loadServiceDetails($(this).val());
+
+    // Auto-update accordion status on field changes
+    component.on('change', '#patientNationalCode, #patientFirstName, #patientLastName', function() {
+        if (isSectionCompleted($('.accordion-item[data-section="patient-info"]'))) {
+            updateAccordionStatus('patient-info', 'completed');
+            autoAdvanceAccordion();
+        }
+    });
+
+    component.on('change', '#receptionDate, #receptionTime', function() {
+        if (isSectionCompleted($('.accordion-item[data-section="reception-info"]'))) {
+            updateAccordionStatus('reception-info', 'completed');
+            autoAdvanceAccordion();
+        }
     });
     
-    // Auto-search by national code
+    component.on('change', '#serviceId', function() {
+        const val = $(this).val();
+        if (val) {
+            loadServiceDetails(val);
+            if (isSectionCompleted($('.accordion-item[data-section="service-info"]'))) {
+                updateAccordionStatus('service-info', 'completed');
+                autoAdvanceAccordion();
+            }
+        } else {
+            $('#serviceDetails').hide();
+        }
+    });
+
+    component.on('change', '#baseInsuranceId', function() {
+        if (isSectionCompleted($('.accordion-item[data-section="insurance-info"]'))) {
+            updateAccordionStatus('insurance-info', 'completed');
+            autoAdvanceAccordion();
+        }
+    });
+
+    // Search patient by national code - Button click
+    component.on('click', '[data-action="search-patient"]', function() {
+        const nationalCode = $('#patientNationalCode').val().trim();
+        if (nationalCode && nationalCode.length === 10) {
+            searchPatientByNationalCode(nationalCode);
+        } else {
+            showFormError('لطفاً کد ملی 10 رقمی وارد کنید');
+        }
+    });
+
+    // Search patient by national code - Enter key
+    component.on('keypress', '#patientNationalCode', function(e) {
+        if (e.which === 13) { // Enter key
+            const nationalCode = $(this).val().trim();
+            if (nationalCode && nationalCode.length === 10) {
+                searchPatientByNationalCode(nationalCode);
+            } else {
+                showFormError('لطفاً کد ملی 10 رقمی وارد کنید');
+            }
+        }
+    });
+
+    // Auto-search by national code (blur - fallback)
     component.on('blur', '#patientNationalCode', function() {
         const nationalCode = $(this).val().trim();
         if (nationalCode && nationalCode.length === 10) {
             searchPatientByNationalCode(nationalCode);
         }
     });
-    
+
     // Convert Persian date to ISO format before form submission
     component.on('change', '#receptionDate, #receptionTime', function() {
         const dateFa = $('#receptionDate').val();
@@ -521,28 +725,355 @@ function initializeReceptionFormComponent() {
         // نمایش اطلاعات بیمار در فرم
         displayPatientInForm(patient);
         // بررسی بیمه بیمار
-        validatePatientInsurance(patient.patientId);
+        const patientId = patient.PatientId || patient.patientId;
+        validatePatientInsurance(patientId);
     });
     
     // Initialize form
     initializeForm();
+
+    // Initialize enhanced validation system
+    initializeEnhancedValidation();
+    
+    // Initialize insurance form management
+    initializeInsuranceForm();
+}
+
+// اعتبارسنجی کدملی
+function isValidNationalCode(code) {
+    if (!/^\d{10}$/.test(code)) return false;
+    const check = parseInt(code[9], 10);
+    const sum = code.substr(0, 9).split('').reduce((acc, d, i) => acc + parseInt(d, 10) * (10 - i), 0);
+    const r = sum % 11;
+    return (r < 2 && check === r) || (r >= 2 && check === (11 - r));
+}
+
+// سیستم Validation پیشرفته برای محیط درمانی
+function initializeEnhancedValidation() {
+    const component = $('[data-component="reception-form"]');
+
+    // Real-time validation برای فیلدهای مهم
+    component.on('blur change', '#patientNationalCode', function() {
+        validateNationalCodeField($(this));
+    });
+
+    component.on('blur change', '#patientFirstName, #patientLastName', function() {
+        validateNameField($(this));
+    });
+
+    component.on('blur change', '#patientPhoneNumber', function() {
+        validateMobileField($(this));
+    });
+
+    component.on('blur change', '#patientEmail', function() {
+        validateEmailField($(this));
+    });
+
+
+    component.on('blur change', '#receptionDate', function() {
+        validateDateField($(this));
+    });
+
+    component.on('blur change', '#doctorId', function() {
+        validateDoctorField($(this));
+    });
+
+    component.on('blur change', '#serviceId', function() {
+        validateServiceField($(this));
+    });
+
+    // Visual feedback برای validation
+    component.on('focus', 'input, select, textarea', function() {
+        $(this).removeClass('is-invalid is-valid').closest('.form-group').find('.validation-message').remove();
+    });
+
+    // Progress tracking برای validation - فقط برای فیلدهای مهم
+    component.on('blur change', '#patientNationalCode, #patientFirstName, #patientLastName, #receptionDate, #doctorId, #serviceId', function() {
+        updateValidationProgress();
+    });
+}
+
+// اعتبارسنجی کدملی با پیام‌های دقیق
+function validateNationalCodeField(field) {
+    const value = field.val().trim();
+    const fieldGroup = field.closest('.form-group');
+
+    // حذف پیام‌های قبلی
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        showFieldValidation(field, 'کد ملی الزامی است', 'error');
+        return false;
+    }
+
+    if (!/^\d{10}$/.test(value)) {
+        showFieldValidation(field, 'کد ملی باید دقیقاً 10 رقم باشد', 'error');
+        return false;
+    }
+
+    if (!isValidNationalCode(value)) {
+        showFieldValidation(field, 'کد ملی وارد شده صحیح نیست', 'error');
+        return false;
+    }
+
+    showFieldValidation(field, 'کد ملی صحیح است', 'success');
+    return true;
+}
+
+// اعتبارسنجی نام با پیام‌های دقیق
+function validateNameField(field) {
+    const value = field.val().trim();
+    const fieldGroup = field.closest('.form-group');
+    const fieldName = field.attr('id').includes('FirstName') ? 'نام' : 'نام خانوادگی';
+
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        showFieldValidation(field, `${fieldName} الزامی است`, 'error');
+        return false;
+    }
+
+    if (value.length < 2) {
+        showFieldValidation(field, `${fieldName} باید حداقل 2 کاراکتر باشد`, 'error');
+        return false;
+    }
+
+    if (value.length > 50) {
+        showFieldValidation(field, `${fieldName} نمی‌تواند بیش از 50 کاراکتر باشد`, 'error');
+        return false;
+    }
+
+    if (!/^[\u0600-\u06FF\s]+$/.test(value)) {
+        showFieldValidation(field, `${fieldName} باید به فارسی باشد`, 'error');
+        return false;
+    }
+
+    showFieldValidation(field, `${fieldName} صحیح است`, 'success');
+    return true;
+}
+
+// اعتبارسنجی شماره همراه
+function validateMobileField(field) {
+    const value = field.val().trim();
+    const fieldGroup = field.closest('.form-group');
+
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        // شماره همراه اختیاری است
+        return true;
+    }
+
+    if (!/^09\d{9}$/.test(value)) {
+        showFieldValidation(field, 'شماره همراه باید با 09 شروع شده و 11 رقم باشد', 'error');
+        return false;
+    }
+
+    showFieldValidation(field, 'شماره همراه صحیح است', 'success');
+    return true;
+}
+
+// اعتبارسنجی ایمیل
+function validateEmailField(field) {
+    const value = field.val().trim();
+    const fieldGroup = field.closest('.form-group');
+
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        // ایمیل اختیاری است
+        return true;
+    }
+
+    // ساده‌ترین روش validation برای ایمیل
+    if (value.indexOf('@@') === -1 || value.indexOf('.') === -1) {
+        showFieldValidation(field, 'فرمت ایمیل صحیح نیست', 'error');
+        return false;
+    }
+    
+    const atPos = value.indexOf('@@');
+    const dotPos = value.lastIndexOf('.');
+    if (atPos < 1 || dotPos < atPos + 2 || dotPos + 2 >= value.length) {
+        showFieldValidation(field, 'فرمت ایمیل صحیح نیست', 'error');
+        return false;
+    }
+
+    showFieldValidation(field, 'ایمیل صحیح است', 'success');
+    return true;
+}
+
+
+// اعتبارسنجی تاریخ
+function validateDateField(field) {
+    const value = field.val().trim();
+    const fieldGroup = field.closest('.form-group');
+
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        showFieldValidation(field, 'تاریخ پذیرش الزامی است', 'error');
+        return false;
+    }
+
+    // بررسی فرمت تاریخ شمسی
+    if (!/^\d{4}\/\d{2}\/\d{2}$/.test(value)) {
+        showFieldValidation(field, 'فرمت تاریخ صحیح نیست (مثال: 1403/01/01)', 'error');
+        return false;
+    }
+
+    showFieldValidation(field, 'تاریخ صحیح است', 'success');
+    return true;
+}
+
+// اعتبارسنجی پزشک
+function validateDoctorField(field) {
+    const value = field.val();
+    const fieldGroup = field.closest('.form-group');
+
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        showFieldValidation(field, 'انتخاب پزشک الزامی است', 'error');
+        return false;
+    }
+
+    showFieldValidation(field, 'پزشک انتخاب شد', 'success');
+    return true;
+}
+
+// اعتبارسنجی خدمت
+function validateServiceField(field) {
+    const value = field.val();
+    const fieldGroup = field.closest('.form-group');
+
+    fieldGroup.find('.validation-message').remove();
+    field.removeClass('is-invalid is-valid');
+
+    if (!value) {
+        showFieldValidation(field, 'انتخاب خدمت الزامی است', 'error');
+        return false;
+    }
+
+    showFieldValidation(field, 'خدمت انتخاب شد', 'success');
+    return true;
+}
+
+// نمایش پیام validation
+function showFieldValidation(field, message, type) {
+    const fieldGroup = field.closest('.form-group');
+    const existingMessage = fieldGroup.find('.validation-message');
+
+    if (existingMessage.length) {
+        existingMessage.remove();
+    }
+
+    const messageClass = type === 'error' ? 'text-danger' : 'text-success';
+    const iconClass = type === 'error' ? 'fas fa-exclamation-circle' : 'fas fa-check-circle';
+
+    const messageHtml = `
+        <div class="validation-message ${messageClass} mt-1">
+            <i class="${iconClass} me-1"></i>
+            <small>${message}</small>
+        </div>
+    `;
+
+    fieldGroup.append(messageHtml);
+    field.addClass(type === 'error' ? 'is-invalid' : 'is-valid');
+}
+
+// به‌روزرسانی پیشرفت validation
+function updateValidationProgress() {
+    const totalFields = $('[data-validate="required"], #patientNationalCode, #patientFirstName, #patientLastName, #receptionDate, #doctorId, #serviceId').length;
+    const validFields = $('.is-valid').length;
+    const invalidFields = $('.is-invalid').length;
+    const progress = Math.round((validFields / totalFields) * 100);
+
+    // به‌روزرسانی status indicator
+    const statusIndicator = $('#receptionFormStatus');
+    const statusText = $('#receptionFormStatusText');
+
+    if (invalidFields > 0) {
+        statusIndicator.removeClass('success').addClass('error');
+        statusText.text(`${invalidFields} خطا - ${progress}% تکمیل`);
+    } else if (validFields === totalFields) {
+        statusIndicator.removeClass('error').addClass('success');
+        statusText.text('فرم آماده ارسال است');
+    } else {
+        statusIndicator.removeClass('error success');
+        statusText.text(`${progress}% تکمیل شده`);
+    }
+
+    // به‌روزرسانی accordion status
+    updateAccordionValidationStatus();
+}
+
+// به‌روزرسانی وضعیت validation در accordion
+function updateAccordionValidationStatus() {
+    $('.accordion-item').each(function() {
+        const section = $(this);
+        const sectionType = section.data('section');
+        const statusBadge = section.find('.status-badge');
+
+        let hasErrors = false;
+        let hasValidFields = false;
+
+        section.find('input, select, textarea').each(function() {
+            if ($(this).hasClass('is-invalid')) {
+                hasErrors = true;
+            }
+            if ($(this).hasClass('is-valid')) {
+                hasValidFields = true;
+            }
+        });
+
+        if (hasErrors) {
+            statusBadge.removeClass('pending in-progress completed').addClass('error');
+            statusBadge.text('خطا دارد');
+            section.removeClass('pending in-progress completed').addClass('error');
+        } else if (hasValidFields && isSectionCompleted(section)) {
+            statusBadge.removeClass('pending in-progress error').addClass('completed');
+            statusBadge.text('تکمیل شد');
+            section.removeClass('pending in-progress error').addClass('completed');
+        } else if (hasValidFields) {
+            statusBadge.removeClass('pending error completed').addClass('in-progress');
+            statusBadge.text('در حال تکمیل');
+            section.removeClass('pending error completed').addClass('in-progress');
+        }
+    });
 }
 
 // تابع تبدیل تاریخ شمسی به میلادی
 function toIso(dateFa, time) {
     try {
-        // اگر تاریخ شمسی است، تبدیل به میلادی
+        // استفاده از persianDate اگر موجود است
+        if (typeof persianDate !== 'undefined' && dateFa && dateFa.includes('/')) {
+            const p = new persianDate().parse(dateFa);
+            let g = new Date(p.toDate());
+            if (time) {
+                const [hh, mm] = time.split(':');
+                g.setHours(parseInt(hh, 10));
+                g.setMinutes(parseInt(mm, 10));
+                g.setSeconds(0);
+                g.setMilliseconds(0);
+            }
+            return g.toISOString();
+        }
+
+        // Fallback: تبدیل تقریبی (برای سازگاری)
         if (dateFa && dateFa.includes('/')) {
             var parts = dateFa.split('/');
             if (parts.length === 3) {
                 var year = parseInt(parts[0]);
-                var month = parseInt(parts[1]) - 1; // ماه در JavaScript از 0 شروع می‌شود
+                var month = parseInt(parts[1]) - 1;
                 var day = parseInt(parts[2]);
-                
-                // تبدیل شمسی به میلادی (تقریبی)
                 var gregorianDate = new Date(year + 621, month, day);
-                
-                // اگر زمان هم داده شده، اضافه کن
+
                 if (time) {
                     var timeParts = time.split(':');
                     if (timeParts.length === 2) {
@@ -550,11 +1081,10 @@ function toIso(dateFa, time) {
                         gregorianDate.setMinutes(parseInt(timeParts[1]));
                     }
                 }
-                
                 return gregorianDate.toISOString();
             }
         }
-        
+
         // اگر تاریخ میلادی است، مستقیماً استفاده کن
         if (dateFa && dateFa.includes('-')) {
             var dateTime = dateFa;
@@ -565,7 +1095,7 @@ function toIso(dateFa, time) {
             }
             return new Date(dateTime).toISOString();
         }
-        
+
         return null;
     } catch (e) {
         console.error('Error converting date:', e);
@@ -611,7 +1141,8 @@ function loadDoctors() {
                 });
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading doctors:', error);
             showFormError('خطا در بارگذاری لیست پزشکان');
         }
     });
@@ -631,7 +1162,8 @@ function loadServiceCategories() {
                 });
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading service categories:', error);
             showFormError('خطا در بارگذاری دسته‌بندی‌های خدمات');
         }
     });
@@ -659,7 +1191,8 @@ function loadDoctorDepartments(doctorId) {
                 departmentSelect.prop('disabled', false);
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading doctor departments:', error);
             showFormError('خطا در بارگذاری دپارتمان‌های پزشک');
         }
     });
@@ -685,7 +1218,8 @@ function loadServicesByCategory(categoryId) {
                 });
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading services:', error);
             showFormError('خطا در بارگذاری خدمات');
         }
     });
@@ -707,7 +1241,8 @@ function loadServiceDetails(serviceId) {
                 calculateServicePrice(serviceId);
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error loading service details:', error);
             showFormError('خطا در بارگذاری جزئیات خدمت');
         }
     });
@@ -715,7 +1250,8 @@ function loadServiceDetails(serviceId) {
 
 function displayServiceDetails(serviceData) {
     $('#serviceName').text(serviceData.serviceName);
-    $('#servicePrice').text(serviceData.price + ' ریال');
+    const fmt = new Intl.NumberFormat('fa-IR');
+    $('#servicePrice').text(fmt.format(serviceData.price) + ' ریال');
     $('#serviceDescription').text(serviceData.description);
     
     // Display service components
@@ -746,7 +1282,8 @@ function calculateServicePrice(serviceId) {
                 updateCalculationSummary(response.data);
             }
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error calculating service price:', error);
             showFormError('خطا در محاسبه قیمت خدمت');
         }
     });
@@ -760,135 +1297,784 @@ function updateCalculationSummary(calculationData) {
 
 function searchPatientByNationalCode(nationalCode) {
     if (!nationalCode || nationalCode.length !== 10) {
+        showFormError('لطفاً کد ملی 10 رقمی وارد کنید');
         return;
     }
-    
+
     setFormLoading(true);
-    
+    $('#searchPatientBtn').prop('disabled', true).html('<i class="fas fa-spinner fa-spin"></i>');
+
     $.ajax({
         url: '@Url.Action("SearchByNationalCode", "ReceptionPatient")',
         type: 'POST',
+        dataType: 'json',
         data: { nationalCode: nationalCode },
         success: function(response) {
-            if (response.success) {
+            console.log('Search response received:', response);
+            console.log('Response success value:', response.success);
+            console.log('Response success type:', typeof response.success);
+            console.log('Response keys:', Object.keys(response));
+
+            // بررسی response structure
+            let successValue = false;
+            let patientData = null;
+
+            if (response && typeof response === 'object') {
+                if (response.success !== undefined) {
+                    successValue = response.success;
+                    patientData = response.data;
+                } else if (response.Success !== undefined) {
+                    successValue = response.Success;
+                    patientData = response.Data;
+                } else if (response.data && response.data.success !== undefined) {
+                    successValue = response.data.success;
+                    patientData = response.data.data;
+                } else {
+                    // Fallback: اگر response structure متفاوت است
+                    console.log('Unknown response structure, trying to parse...');
+                    try {
+                        // بررسی آیا response string است
+                        if (typeof response === 'string') {
+                            const parsedResponse = JSON.parse(response);
+                            successValue = parsedResponse.success;
+                            patientData = parsedResponse.data;
+                        } else {
+                            // بررسی تمام properties
+                            for (let key in response) {
+                                if (key.toLowerCase().includes('success')) {
+                                    successValue = response[key];
+                                }
+                                if (key.toLowerCase().includes('data')) {
+                                    patientData = response[key];
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        console.error('Error parsing response:', e);
+                    }
+                }
+            }
+
+            console.log('Parsed success value:', successValue);
+            console.log('Parsed patient data:', patientData);
+
+            if (successValue === true || successValue === 'true' || successValue === 1) {
+                console.log('Patient found, binding data:', patientData);
                 // بیمار یافت شد - پر کردن فیلدها
-                fillPatientFields(response.data);
-                showPatientFoundMessage(response.data);
+                displayPatientInForm(patientData);
+                showPatientFoundMessage(patientData);
+
+                // بارگذاری اطلاعات بیمه
+                const patientId = patientData.PatientId || patientData.patientId;
+                if (patientId) {
+                    validatePatientInsurance(patientId);
+                }
             } else {
+                console.log('Patient not found, showing add form');
                 // بیمار یافت نشد - نمایش فرم افزودن بیمار
                 showAddPatientForm(nationalCode);
             }
         },
         error: function(xhr, status, error) {
+            console.error('AJAX Error:', { xhr, status, error });
+            console.error('Response Text:', xhr.responseText);
             showFormError('خطا در جستجوی بیمار');
         },
         complete: function() {
             setFormLoading(false);
+            $('#searchPatientBtn').prop('disabled', false).html('<i class="fas fa-search"></i>');
         }
     });
 }
 
-function fillPatientFields(patient) {
-    // پر کردن فیلدهای اطلاعات بیمار
-    $('#patientId').val(patient.patientId);
-    $('#patientFirstName').val(patient.firstName);
-    $('#patientLastName').val(patient.lastName);
-    $('#patientNationalCode').val(patient.nationalCode);
-    $('#patientMobileNumber').val(patient.mobileNumber || '');
-    $('#patientPhoneNumber').val(patient.phoneNumber || '');
-    $('#patientBirthDate').val(patient.birthDateShamsi || patient.birthDate);
-    $('#patientGender').val(patient.gender);
-    $('#patientBloodType').val(patient.bloodType || '');
-    $('#patientAddress').val(patient.address || '');
-    $('#patientEmail').val(patient.email || '');
-    $('#patientAllergies').val(patient.allergies || '');
-    $('#patientChronicDiseases').val(patient.chronicDiseases || '');
-    
-    // غیرفعال کردن فیلدها (بیمار موجود است)
-    $('#patientFirstName, #patientLastName, #patientNationalCode, #patientBirthDate, #patientGender').prop('disabled', true);
-    
-    // نمایش پیام موفقیت
-    showPatientFoundMessage(patient);
-}
 
 function showPatientFoundMessage(patient) {
-    const message = `بیمار ${patient.firstName} ${patient.lastName} یافت شد و اطلاعات پر شد`;
+    const firstName = patient.FirstName || patient.firstName;
+    const lastName = patient.LastName || patient.lastName;
+    const message = `بیمار ${firstName} ${lastName} یافت شد و اطلاعات پر شد`;
     showFormSuccess(message);
 }
 
 function showAddPatientForm(nationalCode) {
     const message = `بیمار با کد ملی ${nationalCode} یافت نشد. لطفاً اطلاعات بیمار را تکمیل کنید.`;
     showFormInfo(message);
-    
+
     // فعال کردن فیلدهای مورد نیاز
     $('#patientFirstName, #patientLastName, #patientBirthDate, #patientGender').prop('disabled', false).prop('required', true);
 }
 
 function displayPatientInForm(patient) {
-    // نمایش اطلاعات بیمار در فرم
-    $('#selectedPatientName').text(`${patient.firstName} ${patient.lastName}`);
-    $('#selectedPatientNationalCode').text(`کد ملی: ${patient.nationalCode}`);
-    $('#selectedPatientBirthDate').text(`تاریخ تولد: ${patient.birthDateShamsi || patient.birthDate}`);
-    
-    // ذخیره اطلاعات بیمار در فرم
-    $('#patientId').val(patient.patientId);
-    $('#patientName').val(`${patient.firstName} ${patient.lastName}`);
-    $('#patientNationalCode').val(patient.nationalCode);
-    
+    console.log('displayPatientInForm called with:', patient);
+
+    // نمایش اطلاعات بیمار در فرم - با mapping صحیح
+    const firstName = patient.FirstName || patient.firstName;
+    const lastName = patient.LastName || patient.lastName;
+    const nationalCode = patient.NationalCode || patient.nationalCode;
+    const birthDate = patient.BirthDateShamsi || patient.birthDateShamsi || patient.birthDate;
+    const patientId = patient.PatientId || patient.patientId;
+    const phoneNumber = patient.PhoneNumber || patient.phoneNumber || '';
+    const gender = patient.Gender || patient.gender;
+    const bloodType = patient.BloodType || patient.bloodType || '';
+    const email = patient.Email || patient.email || '';
+    const address = patient.Address || patient.address || '';
+    const allergies = patient.Allergies || patient.allergies || '';
+    const chronicDiseases = patient.ChronicDiseases || patient.chronicDiseases || '';
+
+    console.log('Extracted values:', {
+        firstName, lastName, nationalCode, birthDate, patientId,
+        phoneNumber, gender, bloodType, email, address, allergies, chronicDiseases
+    });
+
+    // پر کردن فیلدهای اصلی فرم
+    console.log('Setting form fields...');
+    $('#patientId').val(patientId);
+    $('#patientFirstName').val(firstName);
+    $('#patientLastName').val(lastName);
+    $('#patientNationalCode').val(nationalCode);
+    $('#patientPhoneNumber').val(phoneNumber);
+    $('#patientBirthDate').val(birthDate);
+    $('#patientGender').val(gender);
+    $('#patientBloodType').val(bloodType);
+    $('#patientEmail').val(email);
+    $('#patientAddress').val(address);
+    $('#patientAllergies').val(allergies);
+    $('#patientChronicDiseases').val(chronicDiseases);
+
+    console.log('Form fields set. Checking values...');
+    console.log('patientId field value:', $('#patientId').val());
+    console.log('firstName field value:', $('#patientFirstName').val());
+    console.log('lastName field value:', $('#patientLastName').val());
+    console.log('nationalCode field value:', $('#patientNationalCode').val());
+
+    // ذخیره اطلاعات بیمار در فیلدهای مخفی
+    $('#patientName').val(`${firstName} ${lastName}`);
+    $('#patientNationalCodeHidden').val(nationalCode);
+
+    // نمایش بخش خلاصه اطلاعات بیمار
+    console.log('Setting patient summary...');
+    $('#selectedPatientName').text(`${firstName} ${lastName}`);
+    $('#selectedPatientNationalCode').text(`کد ملی: ${nationalCode}`);
+    $('#selectedPatientBirthDate').text(`تاریخ تولد: ${birthDate}`);
+
+    console.log('Patient summary set:', {
+        name: `${firstName} ${lastName}`,
+        nationalCode: `کد ملی: ${nationalCode}`,
+        birthDate: `تاریخ تولد: ${birthDate}`
+    });
+
     // نمایش بخش اطلاعات بیمار
-    $('#patientInfoSection').show();
-    
+    console.log('Showing patient info section...');
+    $('#patientInfoSection').removeClass('d-none');
+    console.log('Patient info section visible:', !$('#patientInfoSection').hasClass('d-none'));
+
+    // غیرفعال کردن فیلدهای اصلی (بیمار موجود است)
+    $('#patientFirstName, #patientLastName, #patientNationalCode, #patientBirthDate, #patientGender')
+        .prop('readonly', true).prop('disabled', false);
+
     // لاگ برای دیباگ
-    console.log('Patient selected:', patient);
+    console.log('Patient data bound to form:', {
+        patientId: patientId,
+        firstName: firstName,
+        lastName: lastName,
+        nationalCode: nationalCode,
+        birthDate: birthDate
+    });
 }
 
 function validatePatientInsurance(patientId) {
+    console.log('Validating patient insurance for patientId:', patientId);
     setFormLoading(true);
+
+    // نمایش وضعیت در حال بررسی
+    $('#insuranceStatusIndicator').removeClass('success error').addClass('loading');
+    $('#insuranceStatusText').text('در حال بررسی بیمه...');
     
     $.ajax({
         url: '@Url.Action("ValidatePatientInsurance", "ReceptionInsurance")',
         type: 'POST',
+        dataType: 'json',
         data: { patientId: patientId },
         success: function(response) {
-            if (response.success) {
-                displayInsuranceStatus(response.data);
+            console.log('Insurance validation response:', response);
+            console.log('Response type:', typeof response);
+            console.log('Response keys:', Object.keys(response));
+            console.log('Response success:', response.success);
+            console.log('Response data:', response.data);
+            
+            // بررسی response structure
+            let successValue = false;
+            let patientData = null;
+            
+            if (response && typeof response === 'object') {
+                if (response.success !== undefined) {
+                    successValue = response.success;
+                    patientData = response.data;
+                } else if (response.Success !== undefined) {
+                    successValue = response.Success;
+                    patientData = response.Data;
+                }
+            }
+            
+            console.log('Parsed success value:', successValue);
+            console.log('Parsed patient data:', patientData);
+            
+            if (successValue === true && patientData) {
+                console.log('Calling displayInsuranceStatus with:', patientData);
+                displayInsuranceStatus(patientData);
+                // به‌روزرسانی وضعیت accordion
+                updateAccordionStatus('insurance-info', 'completed');
             } else {
-                showInsuranceError(response.message);
+                console.log('Insurance validation failed, showing error');
+                showInsuranceError(response.message || 'خطا در بررسی بیمه بیمار');
+                updateAccordionStatus('insurance-info', 'error');
             }
             setFormLoading(false);
         },
-        error: function() {
-            showInsuranceError('خطا در بررسی بیمه بیمار');
-            setFormLoading(false);
+        error: function(xhr, status, error) {
+            console.error('Insurance validation error:', { xhr, status, error });
+        showInsuranceError('خطا در بررسی بیمه بیمار');
+            updateAccordionStatus('insurance-info', 'error');
+        setFormLoading(false);
         }
     });
 }
 
-function displayInsuranceStatus(insuranceData) {
-    const statusIndicator = $('#insuranceStatusIndicator');
-    const statusText = $('#insuranceStatusText');
-    const detailsContainer = $('#insuranceDetails');
-    
-    if (insuranceData.isValid) {
-        statusIndicator.removeClass('invalid').addClass('valid');
-        statusText.text('بیمه معتبر است');
-        detailsContainer.html(`
-            <div class="insurance-info">
-                <p><strong>بیمه‌گذار:</strong> ${insuranceData.insuranceProvider}</p>
-                <p><strong>شماره بیمه:</strong> ${insuranceData.policyNumber}</p>
-                <p><strong>تاریخ انقضا:</strong> ${insuranceData.expiryDate}</p>
-            </div>
-        `).show();
+// تابع نمایش خطای بیمه
+function showInsuranceError(message) {
+    console.log('Insurance error:', message);
+
+    // نمایش پیام خطا
+    if (typeof showFormError === 'function') {
+        showFormError(message);
     } else {
-        statusIndicator.removeClass('valid').addClass('invalid');
-        statusText.text('بیمه نامعتبر است');
-        detailsContainer.html(`
-            <div class="insurance-error">
-                <p>${insuranceData.message}</p>
+        // Fallback notification
+        if (typeof showNotification === 'function') {
+            showNotification(message, 'error');
+        } else {
+            alert(message);
+        }
+    }
+
+    // به‌روزرسانی وضعیت بیمه
+    $('#insuranceStatusIndicator').removeClass('success error').addClass('error');
+    $('#insuranceStatusText').text('خطا در بررسی بیمه');
+    $('#insuranceDetails').hide();
+}
+
+    // تابع نمایش وضعیت بیمه - بهبود یافته برای محیط درمانی
+    function displayInsuranceStatus(insuranceData) {
+        console.log('Displaying insurance status:', insuranceData);
+        console.log('insuranceData type:', typeof insuranceData);
+        console.log('insuranceData keys:', insuranceData ? Object.keys(insuranceData) : 'No data');
+        
+        // بررسی IsValid در هر دو حالت
+        let isValid = false;
+        if (insuranceData) {
+            if (insuranceData.IsValid !== undefined) {
+                isValid = insuranceData.IsValid;
+            } else if (insuranceData.isValid !== undefined) {
+                isValid = insuranceData.isValid;
+            }
+        }
+        
+        console.log('insuranceData.IsValid:', isValid);
+
+        if (insuranceData && isValid === true) {
+            // نمایش دکمه ویرایش بیمه
+            $('#editInsuranceBtn').show();
+            
+            // بارگذاری بیمه فعلی بیمار
+            loadPatientCurrentInsurance(insuranceData.PatientId || $('#patientIdHidden').val());
+            
+            $('#insuranceStatusIndicator').removeClass('error').addClass('success');
+            $('#insuranceStatusText').text('بیمه معتبر');
+            $('#insuranceDetails').show();
+
+        // نمایش جزئیات بیمه پایه
+        if (insuranceData.PrimaryInsurance) {
+            $('#primaryInsuranceSection').show();
+            $('#primaryInsuranceDetails').html(`
+                <div class="insurance-info-item">
+                    <span class="info-label">نام بیمه:</span>
+                    <span class="info-value">${insuranceData.PrimaryInsurance.InsuranceName || 'نامشخص'}</span>
             </div>
-        `).show();
+                <div class="insurance-info-item">
+                    <span class="info-label">شماره بیمه:</span>
+                    <span class="info-value">${insuranceData.PrimaryInsurance.InsuranceNumber || 'نامشخص'}</span>
+            </div>
+                <div class="insurance-info-item">
+                    <span class="info-label">تاریخ انقضا:</span>
+                    <span class="info-value">${insuranceData.PrimaryInsurance.ExpiryDate || 'نامشخص'}</span>
+                </div>
+                <div class="insurance-info-item">
+                    <span class="info-label">درصد پوشش:</span>
+                    <span class="info-value">${insuranceData.PrimaryInsurance.CoveragePercentage || 'نامشخص'}%</span>
+                </div>
+            `);
+        }
+
+        // نمایش جزئیات بیمه تکمیلی
+        if (insuranceData.SupplementaryInsurance) {
+            $('#supplementaryInsuranceSection').show();
+            $('#supplementaryInsuranceDetails').html(`
+                <div class="insurance-info-item">
+                    <span class="info-label">نام بیمه:</span>
+                    <span class="info-value">${insuranceData.SupplementaryInsurance.InsuranceName || 'نامشخص'}</span>
+                </div>
+                <div class="insurance-info-item">
+                    <span class="info-label">شماره بیمه:</span>
+                    <span class="info-value">${insuranceData.SupplementaryInsurance.InsuranceNumber || 'نامشخص'}</span>
+                </div>
+                <div class="insurance-info-item">
+                    <span class="info-label">تاریخ انقضا:</span>
+                    <span class="info-value">${insuranceData.SupplementaryInsurance.ExpiryDate || 'نامشخص'}</span>
+                </div>
+                <div class="insurance-info-item">
+                    <span class="info-label">درصد پوشش:</span>
+                    <span class="info-value">${insuranceData.SupplementaryInsurance.CoveragePercentage || 'نامشخص'}%</span>
+                </div>
+            `);
+        }
+
+        // نمایش خلاصه بیمه
+        $('#insuranceDetails').html(`
+            <div class="insurance-summary">
+                <div class="summary-item">
+                    <i class="fas fa-check-circle text-success"></i>
+                    <span>بیمه معتبر و فعال</span>
+                </div>
+                <div class="summary-item">
+                    <i class="fas fa-calendar text-info"></i>
+                    <span>تاریخ اعتبار: ${insuranceData.ReceptionDate ? new Date(parseInt(insuranceData.ReceptionDate.substr(6))).toLocaleDateString('fa-IR') : 'نامشخص'}</span>
+                </div>
+                <div class="summary-item">
+                    <i class="fas fa-user text-primary"></i>
+                    <span>بیمار: ${insuranceData.PatientId || 'نامشخص'}</span>
+                </div>
+            </div>
+        `);
+
+        console.log('Insurance status displayed successfully');
+
+    } else {
+        console.log('Insurance data is invalid or missing');
+        $('#insuranceStatusIndicator').removeClass('success').addClass('error');
+        $('#insuranceStatusText').text('بیمه نامعتبر یا غیرفعال');
+        $('#insuranceDetails').hide();
+        $('#primaryInsuranceSection').hide();
+        $('#supplementaryInsuranceSection').hide();
     }
 }
+
+    // تابع به‌روزرسانی وضعیت accordion
+    function updateAccordionStatus(sectionName, status) {
+        const section = $(`[data-section="${sectionName}"]`);
+        const statusBadge = section.find('.status-badge');
+        
+        statusBadge.removeClass('pending in-progress completed error');
+        
+        switch(status) {
+            case 'completed':
+                statusBadge.addClass('completed').text('تکمیل شد');
+                break;
+            case 'error':
+                statusBadge.addClass('error').text('خطا');
+                break;
+            case 'in-progress':
+                statusBadge.addClass('in-progress').text('در حال انجام');
+                break;
+            default:
+                statusBadge.addClass('pending').text('در انتظار');
+        }
+    }
+
+    // مدیریت فرم بیمه
+    function initializeInsuranceForm() {
+        console.log('Initializing insurance form management...');
+        
+        // Event handlers برای checkbox ها
+        $('#hasPrimaryInsurance').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            if (isChecked) {
+                $('#primaryInsuranceFields').slideDown(300);
+                $('#primaryInsuranceForm').addClass('primary');
+            } else {
+                $('#primaryInsuranceFields').slideUp(300);
+                $('#primaryInsuranceForm').removeClass('primary');
+                // پاک کردن فیلدها
+                $('#primaryInsuranceFields input, #primaryInsuranceFields select').val('');
+            }
+        });
+
+        $('#hasSupplementaryInsurance').on('change', function() {
+            const isChecked = $(this).is(':checked');
+            if (isChecked) {
+                $('#supplementaryInsuranceFields').slideDown(300);
+                $('#supplementaryInsuranceForm').addClass('supplementary');
+            } else {
+                $('#supplementaryInsuranceFields').slideUp(300);
+                $('#supplementaryInsuranceForm').removeClass('supplementary');
+                // پاک کردن فیلدها
+                $('#supplementaryInsuranceFields input, #supplementaryInsuranceFields select').val('');
+            }
+        });
+
+        // Event handler برای دکمه ویرایش بیمه
+        $('#editInsuranceBtn').on('click', function() {
+            $('#insuranceManagementForm').slideDown(300);
+            loadInsuranceProviders();
+        });
+
+        // Event handler برای دکمه ذخیره بیمه
+        $('#saveInsuranceBtn').on('click', function() {
+            savePatientInsurance();
+        });
+
+        // Event handler برای دکمه لغو
+        $('#cancelInsuranceBtn').on('click', function() {
+            $('#insuranceManagementForm').slideUp(300);
+        });
+
+        // Event handler برای دکمه اعتبارسنجی
+        $('#validateInsuranceBtn').on('click', function() {
+            validateCurrentInsurance();
+        });
+
+        // Event handlers برای تغییر بیمه‌گذار
+        $('#primaryInsuranceProvider').on('change', function() {
+            const providerId = $(this).val();
+            if (providerId) {
+                loadInsurancePlans(providerId, 'primary');
+            }
+        });
+
+        $('#supplementaryInsuranceProvider').on('change', function() {
+            const providerId = $(this).val();
+            if (providerId) {
+                loadInsurancePlans(providerId, 'supplementary');
+            }
+        });
+    }
+
+    // بارگذاری بیمه‌گذاران
+    function loadInsuranceProviders() {
+        console.log('Loading insurance providers...');
+        
+        // بارگذاری بیمه‌گذاران پایه
+        $.ajax({
+            url: '@Url.Action("GetInsuranceProvidersByType", "ReceptionInsuranceForm")',
+            type: 'POST',
+            data: { insuranceType: 1 }, // Primary insurance
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    const primarySelect = $('#primaryInsuranceProvider');
+                    primarySelect.find('option:not(:first)').remove();
+                    
+                    response.data.forEach(function(provider) {
+                        const option = `<option value="${provider.InsuranceProviderId}">${provider.Name}</option>`;
+                        primarySelect.append(option);
+                    });
+                    
+                    console.log('Primary insurance providers loaded successfully');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading primary insurance providers:', error);
+            }
+        });
+        
+        // بارگذاری بیمه‌گذاران تکمیلی
+        $.ajax({
+            url: '@Url.Action("GetInsuranceProvidersByType", "ReceptionInsuranceForm")',
+            type: 'POST',
+            data: { insuranceType: 2 }, // Supplementary insurance
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    const supplementarySelect = $('#supplementaryInsuranceProvider');
+                    supplementarySelect.find('option:not(:first)').remove();
+                    
+                    response.data.forEach(function(provider) {
+                        const option = `<option value="${provider.InsuranceProviderId}">${provider.Name}</option>`;
+                        supplementarySelect.append(option);
+                    });
+                    
+                    console.log('Supplementary insurance providers loaded successfully');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading supplementary insurance providers:', error);
+            }
+        });
+    }
+
+    // بارگذاری طرح‌های بیمه
+    function loadInsurancePlans(providerId, type) {
+        console.log(`Loading insurance plans for provider ${providerId}, type: ${type}`);
+        
+        $.ajax({
+            url: '@Url.Action("GetInsurancePlans", "ReceptionInsuranceForm")',
+            type: 'GET',
+            data: { providerId: providerId, insuranceType: type === 'primary' ? 1 : 2 },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success && response.data) {
+                    const selectId = type === 'primary' ? '#primaryInsurancePlan' : '#supplementaryInsurancePlan';
+                    const select = $(selectId);
+                    
+                    // پاک کردن گزینه‌های قبلی
+                    select.find('option:not(:first)').remove();
+                    
+                    // اضافه کردن گزینه‌های جدید
+                    response.data.forEach(function(plan) {
+                        const option = `<option value="${plan.InsurancePlanId}">${plan.Name}</option>`;
+                        select.append(option);
+                    });
+                    
+                    console.log(`Insurance plans loaded for ${type}`);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error(`Error loading insurance plans for ${type}:`, error);
+                showFormError('خطا در بارگذاری طرح‌های بیمه');
+            }
+        });
+    }
+
+    // ذخیره بیمه بیمار
+    function savePatientInsurance() {
+        const patientId = $('#patientIdHidden').val();
+        if (!patientId) {
+            showFormError('ابتدا بیمار را انتخاب کنید');
+            return;
+        }
+
+        const insuranceData = {
+            PatientId: patientId,
+            HasPrimaryInsurance: $('#hasPrimaryInsurance').is(':checked'),
+            HasSupplementaryInsurance: $('#hasSupplementaryInsurance').is(':checked'),
+            PrimaryInsuranceProviderId: $('#primaryInsuranceProvider').val(),
+            PrimaryInsurancePlanId: $('#primaryInsurancePlan').val(),
+            PrimaryPolicyNumber: $('#primaryPolicyNumber').val(),
+            PrimaryCardNumber: $('#primaryCardNumber').val(),
+            PrimaryStartDate: $('#primaryStartDate').val(),
+            PrimaryEndDate: $('#primaryEndDate').val(),
+            SupplementaryInsuranceProviderId: $('#supplementaryInsuranceProvider').val(),
+            SupplementaryInsurancePlanId: $('#supplementaryInsurancePlan').val(),
+            SupplementaryPolicyNumber: $('#supplementaryPolicyNumber').val(),
+            SupplementaryCardNumber: $('#supplementaryCardNumber').val(),
+            SupplementaryStartDate: $('#supplementaryStartDate').val(),
+            SupplementaryEndDate: $('#supplementaryEndDate').val()
+        };
+
+        console.log('Saving patient insurance:', insuranceData);
+
+        $.ajax({
+            url: '@Url.Action("SavePatientInsurance", "ReceptionInsuranceForm")',
+            type: 'POST',
+            data: insuranceData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showFormSuccess('اطلاعات بیمه با موفقیت ذخیره شد');
+                    $('#insuranceManagementForm').slideUp(300);
+                    // به‌روزرسانی نمایش بیمه
+                    validatePatientInsurance(patientId);
+                } else {
+                    showFormError(response.message || 'خطا در ذخیره اطلاعات بیمه');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error saving patient insurance:', error);
+                showFormError('خطا در ذخیره اطلاعات بیمه');
+            }
+        });
+    }
+
+    // اعتبارسنجی بیمه فعلی
+    function validateCurrentInsurance() {
+        const patientId = $('#patientIdHidden').val();
+        if (!patientId) {
+            showFormError('ابتدا بیمار را انتخاب کنید');
+            return;
+        }
+
+        console.log('Validating current insurance for patient:', patientId);
+        validatePatientInsurance(patientId);
+    }
+
+    // بارگذاری بیمه فعلی بیمار
+    function loadPatientCurrentInsurance(patientId) {
+        if (!patientId) {
+            console.log('No patient ID provided for loading insurance');
+            return;
+        }
+
+        console.log('Loading current insurance for patient:', patientId);
+
+        $.ajax({
+            url: '@Url.Action("GetPatientInsurances", "ReceptionInsuranceForm")',
+            type: 'POST',
+            data: { patientId: patientId },
+            dataType: 'json',
+            success: function(response) {
+                console.log('Current insurance response:', response);
+                console.log('Response success:', response.success);
+                console.log('Response data:', response.data);
+                console.log('Response data type:', typeof response.data);
+                
+                if (response.success && response.data) {
+                    console.log('Response data keys:', Object.keys(response.data));
+                    console.log('Response data Insurances:', response.data.Insurances);
+                    console.log('Response data Insurances type:', typeof response.data.Insurances);
+                    console.log('Response data Insurances length:', response.data.Insurances ? response.data.Insurances.length : 'undefined');
+                    
+                    displayCurrentInsuranceDetails(response.data);
+                } else {
+                    console.log('No current insurance found for patient');
+                    showNoInsuranceMessage();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error loading current insurance:', error);
+                console.error('XHR status:', xhr.status);
+                console.error('XHR responseText:', xhr.responseText);
+                showNoInsuranceMessage();
+            }
+        });
+    }
+
+    // نمایش جزئیات بیمه فعلی
+    function displayCurrentInsuranceDetails(insuranceData) {
+        console.log('Displaying current insurance details:', insuranceData);
+        
+        let insuranceHtml = '<div class="current-insurance-details">';
+        
+        // بررسی وجود بیمه‌ها - بررسی هم آرایه و هم آبجکت
+        let insurances = [];
+        if (Array.isArray(insuranceData)) {
+            insurances = insuranceData;
+        } else if (insuranceData && insuranceData.Insurances && Array.isArray(insuranceData.Insurances)) {
+            insurances = insuranceData.Insurances;
+        } else if (insuranceData && insuranceData.Insurances && insuranceData.Insurances.length > 0) {
+            insurances = insuranceData.Insurances;
+        }
+        
+        console.log('Processed insurances array:', insurances);
+        
+        if (insurances && insurances.length > 0) {
+            insurances.forEach(function(insurance) {
+                console.log('Processing insurance:', insurance);
+                
+                const isPrimary = insurance.IsPrimary;
+                const sectionClass = isPrimary ? 'primary-insurance' : 'supplementary-insurance';
+                const iconClass = isPrimary ? 'fas fa-shield-alt text-primary' : 'fas fa-plus-circle text-success';
+                const title = isPrimary ? 'بیمه پایه' : 'بیمه تکمیلی';
+                
+                insuranceHtml += `
+                    <div class="insurance-section ${sectionClass}">
+                        <div class="section-header">
+                            <i class="${iconClass}"></i>
+                            <h6>${title}</h6>
+                        </div>
+                        <div class="insurance-info">
+                            <div class="info-row">
+                                <span class="info-label">بیمه‌گذار:</span>
+                                <span class="info-value">${insurance.InsuranceProviderName || 'نامشخص'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">طرح بیمه:</span>
+                                <span class="info-value">${insurance.InsurancePlanName || 'نامشخص'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">شماره بیمه‌نامه:</span>
+                                <span class="info-value">${insurance.PolicyNumber || 'نامشخص'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">شماره کارت:</span>
+                                <span class="info-value">${insurance.CardNumber || 'نامشخص'}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">تاریخ شروع:</span>
+                                <span class="info-value">${formatPersianDate(insurance.StartDate)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">تاریخ پایان:</span>
+                                <span class="info-value">${formatPersianDate(insurance.EndDate)}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">وضعیت:</span>
+                                <span class="info-value">${insurance.IsActive ? 'فعال' : 'غیرفعال'}</span>
+                            </div>
+                            ${insurance.SupplementaryInsuranceProviderName ? `
+                            <div class="info-row">
+                                <span class="info-label">بیمه‌گذار تکمیلی:</span>
+                                <span class="info-value">${insurance.SupplementaryInsuranceProviderName}</span>
+                            </div>
+                            ` : ''}
+                            ${insurance.SupplementaryPolicyNumber ? `
+                            <div class="info-row">
+                                <span class="info-label">شماره بیمه‌نامه تکمیلی:</span>
+                                <span class="info-value">${insurance.SupplementaryPolicyNumber}</span>
+                            </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            insuranceHtml += `
+                <div class="no-insurance-message">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>هیچ بیمه‌ای برای این بیمار ثبت نشده است</strong>
+                        <p>برای اضافه کردن بیمه، روی دکمه "ویرایش بیمه" کلیک کنید.</p>
+                    </div>
+                </div>
+            `;
+        }
+        
+        insuranceHtml += '</div>';
+        
+        // نمایش جزئیات بیمه
+        $('#insuranceDetails').html(insuranceHtml);
+        
+        // نمایش دکمه ویرایش
+        $('#editInsuranceBtn').show();
+    }
+
+    // نمایش پیام عدم وجود بیمه
+    function showNoInsuranceMessage() {
+        const noInsuranceHtml = `
+            <div class="no-insurance-message">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>هیچ بیمه‌ای برای این بیمار ثبت نشده است</strong>
+                    <p>برای اضافه کردن بیمه، روی دکمه "ویرایش بیمه" کلیک کنید.</p>
+                </div>
+            </div>
+        `;
+        
+        $('#insuranceDetails').html(noInsuranceHtml);
+        $('#editInsuranceBtn').show();
+    }
+
+    // فرمت تاریخ شمسی
+    function formatPersianDate(date) {
+        if (!date) return 'نامشخص';
+        
+        try {
+            if (typeof persianDate !== 'undefined') {
+                const p = new persianDate(new Date(date));
+                return p.format('YYYY/MM/DD');
+            }
+            return new Date(date).toLocaleDateString('fa-IR');
+        } catch (e) {
+            return 'نامشخص';
+        }
+    }
+
 
 function saveReception() {
     if (!validateForm()) {
@@ -911,7 +2097,8 @@ function saveReception() {
             }
             setFormLoading(false);
         },
-        error: function() {
+        error: function(xhr, status, error) {
+            console.error('Error creating reception:', error);
             showFormError('خطا در ایجاد پذیرش');
             setFormLoading(false);
         }
@@ -921,15 +2108,50 @@ function saveReception() {
 function validateForm() {
     let isValid = true;
     
-    // Validate required fields
-    $('[data-validate="required"]').each(function() {
-        if (!$(this).val()) {
-            $(this).addClass('is-invalid');
+    // اعتبارسنجی فیلدهای مهم با سیستم جدید
+    const criticalFields = [
+        { id: '#patientNationalCode', validator: validateNationalCodeField },
+        { id: '#patientFirstName', validator: validateNameField },
+        { id: '#patientLastName', validator: validateNameField },
+        { id: '#receptionDate', validator: validateDateField },
+        { id: '#doctorId', validator: validateDoctorField },
+        { id: '#serviceId', validator: validateServiceField }
+    ];
+
+    criticalFields.forEach(field => {
+        const element = $(field.id);
+        if (element.length && !field.validator(element)) {
             isValid = false;
-        } else {
-            $(this).removeClass('is-invalid');
         }
     });
+
+    // اعتبارسنجی فیلدهای اختیاری
+    const optionalFields = [
+        { id: '#patientPhoneNumber', validator: validateMobileField },
+        { id: '#patientEmail', validator: validateEmailField }
+    ];
+
+    optionalFields.forEach(field => {
+        const element = $(field.id);
+        if (element.length && element.val().trim()) {
+            field.validator(element);
+        }
+    });
+
+    // نمایش خلاصه validation
+    if (!isValid) {
+        showFormError('لطفاً خطاهای فرم را برطرف کنید');
+        // اسکرول به اولین فیلد دارای خطا
+        const firstError = $('.is-invalid').first();
+        if (firstError.length) {
+            firstError.focus();
+            $('html, body').animate({
+                scrollTop: firstError.offset().top - 100
+            }, 500);
+        }
+    } else {
+        showFormSuccess('فرم آماده ارسال است');
+    }
     
     return isValid;
 }
@@ -977,6 +2199,14 @@ function showFormError(message) {
 }
 
 function showFormSuccess(message) {
+    // نمایش پیام موفقیت
+    if (typeof showNotification === 'function') {
+        showNotification(message, 'success');
+    } else {
+        alert(message);
+    }
+
+    // Update status indicator
     const statusIndicator = $('#receptionFormStatus');
     const statusText = $('#receptionFormStatusText');
     
@@ -989,15 +2219,6 @@ function showFormSuccess(message) {
     }, 3000);
 }
 
-function showFormSuccess(message) {
-    // نمایش پیام موفقیت
-    if (typeof showNotification === 'function') {
-        showNotification(message, 'success');
-    } else {
-        alert(message);
-    }
-}
-
 function showFormInfo(message) {
     // نمایش پیام اطلاعاتی
     if (typeof showNotification === 'function') {
@@ -1007,23 +2228,196 @@ function showFormInfo(message) {
     }
 }
 
-function showFormError(message) {
-    // نمایش پیام خطا
-    if (typeof showNotification === 'function') {
-        showNotification(message, 'error');
-    } else {
-        alert(message);
-    }
-}
+// Duplicate function removed - using the first definition above
 
 function resetForm() {
     $('#receptionForm')[0].reset();
     $('#serviceDetails').hide();
     $('#insuranceDetails').hide();
     $('.select2').val(null).trigger('change');
-    
+
     // فعال کردن مجدد فیلدهای بیمار
-    $('#patientFirstName, #patientLastName, #patientNationalCode, #patientBirthDate, #patientGender').prop('disabled', false);
+    $('#patientFirstName, #patientLastName, #patientNationalCode, #patientBirthDate, #patientGender')
+        .prop('readonly', false).prop('disabled', false);
+}
+
+// ===== ACCORDION MANAGEMENT FUNCTIONS =====
+
+function initializeAccordion() {
+    // Auto-expand first section
+    $('#patientInfoCollapse').addClass('show');
+    $('#patientInfoHeader .accordion-button').removeClass('collapsed');
+
+    // Handle accordion collapse events
+    $('.accordion-collapse').on('show.bs.collapse', function() {
+        const section = $(this).closest('.accordion-item');
+        const statusBadge = section.find('.status-badge');
+
+        // Update status to in-progress
+        statusBadge.removeClass('pending completed error').addClass('in-progress');
+        statusBadge.text('در حال تکمیل');
+
+        // Add progress indicator
+        if (!section.find('.accordion-progress').length) {
+            section.append('<div class="accordion-progress" style="width: 0%"></div>');
+        }
+
+        // Update accordion item class
+        section.removeClass('pending error').addClass('in-progress');
+    });
+
+    $('.accordion-collapse').on('shown.bs.collapse', function() {
+        const section = $(this).closest('.accordion-item');
+        const progressBar = section.find('.accordion-progress');
+
+        // Animate progress bar
+        progressBar.animate({width: '100%'}, 500);
+    });
+
+    $('.accordion-collapse').on('hide.bs.collapse', function() {
+        const section = $(this).closest('.accordion-item');
+        const statusBadge = section.find('.status-badge');
+
+        // Check if section is completed
+        if (isSectionCompleted(section)) {
+            statusBadge.removeClass('pending in-progress error').addClass('completed');
+            statusBadge.text('تکمیل شده');
+            section.removeClass('pending in-progress error').addClass('completed');
+        } else {
+            statusBadge.removeClass('pending completed error').addClass('in-progress');
+            statusBadge.text('در حال تکمیل');
+            section.removeClass('pending in-progress error').addClass('in-progress');
+        }
+    });
+}
+
+function initializeAccordionStatus() {
+    // Initialize all sections as pending
+    $('.accordion-item').each(function() {
+        const section = $(this);
+        const statusBadge = section.find('.status-badge');
+
+        statusBadge.removeClass('pending in-progress completed error').addClass('pending');
+        statusBadge.text('در انتظار');
+        section.removeClass('pending in-progress completed error').addClass('pending');
+    });
+
+    // Auto-advance to next section when current is completed
+    $('.accordion-collapse').on('hidden.bs.collapse', function() {
+        const currentSection = $(this).closest('.accordion-item');
+        const nextSection = currentSection.next('.accordion-item');
+
+        if (nextSection.length && isSectionCompleted(currentSection)) {
+            // Auto-expand next section
+            const nextCollapse = nextSection.find('.accordion-collapse');
+            const nextButton = nextSection.find('.accordion-button');
+
+            if (nextCollapse.length && nextButton.length) {
+                nextButton.removeClass('collapsed');
+                nextCollapse.addClass('show');
+            }
+        }
+    });
+}
+
+function isSectionCompleted(section) {
+    const sectionType = section.data('section');
+    let isCompleted = false;
+
+    switch(sectionType) {
+        case 'patient-info':
+            isCompleted = $('#patientNationalCode').val().length >= 10 &&
+                         $('#patientFirstName').val().trim() !== '' &&
+                         $('#patientLastName').val().trim() !== '';
+            break;
+        case 'reception-info':
+            isCompleted = $('#receptionDate').val().trim() !== '' &&
+                      $('#receptionTime').val().trim() !== '';
+            break;
+        case 'doctor-info':
+            isCompleted = $('#doctorId').val() !== '';
+            break;
+        case 'service-info':
+            isCompleted = $('#serviceId').val() !== '';
+            break;
+        case 'insurance-info':
+            isCompleted = $('#insuranceDetails:visible').length > 0 &&
+                         !$('#insuranceStatusIndicator').hasClass('invalid');
+            break;
+        case 'calculations':
+            isCompleted = $('#payableAmount').text() !== '0 ریال';
+            break;
+    }
+
+    return isCompleted;
+}
+
+function updateAccordionStatus(sectionType, status) {
+    const section = $(`.accordion-item[data-section="${sectionType}"]`);
+    const statusBadge = section.find('.status-badge');
+
+    if (status === 'completed') {
+        statusBadge.removeClass('pending in-progress error').addClass('completed');
+        statusBadge.text('تکمیل شده');
+        section.removeClass('pending in-progress error').addClass('completed');
+    } else if (status === 'error') {
+        statusBadge.removeClass('pending in-progress completed').addClass('error');
+        statusBadge.text('خطا');
+        section.removeClass('pending in-progress error').addClass('error');
+    } else if (status === 'in-progress') {
+        statusBadge.removeClass('pending completed error').addClass('in-progress');
+        statusBadge.text('در حال تکمیل');
+        section.removeClass('pending in-progress error').addClass('in-progress');
+    }
+}
+
+function resetAccordionStatus() {
+    $('.accordion-item').each(function() {
+        const section = $(this);
+        const statusBadge = section.find('.status-badge');
+
+        statusBadge.removeClass('pending in-progress completed error').addClass('pending');
+        statusBadge.text('در انتظار');
+        section.removeClass('pending in-progress completed error').addClass('pending');
+
+        // Collapse all sections except first
+        if (!section.is(':first')) {
+            const collapse = section.find('.accordion-collapse');
+            const button = section.find('.accordion-button');
+
+            collapse.removeClass('show');
+            button.addClass('collapsed');
+        }
+    });
+}
+
+function autoAdvanceAccordion() {
+    // Find current active section based on visible accordion
+    const activeSection = $('.accordion-collapse.show').closest('.accordion-item');
+
+    if (activeSection.length && isSectionCompleted(activeSection)) {
+        const nextSection = activeSection.next('.accordion-item');
+
+        if (nextSection.length) {
+            // Collapse current section
+            const currentCollapse = activeSection.find('.accordion-collapse');
+            const currentButton = activeSection.find('.accordion-button');
+
+            currentCollapse.removeClass('show');
+            currentButton.addClass('collapsed');
+
+            // Expand next section
+            const nextCollapse = nextSection.find('.accordion-collapse');
+            const nextButton = nextSection.find('.accordion-button');
+
+            nextCollapse.addClass('show');
+            nextButton.removeClass('collapsed');
+
+            // Update status
+            updateAccordionStatus(activeSection.data('section'), 'completed');
+            updateAccordionStatus(nextSection.data('section'), 'in-progress');
+        }
+    }
 }
 </script>
 
@@ -1034,6 +2428,276 @@ function resetForm() {
     background: #fff;
     margin-bottom: 20px;
     transition: all 0.3s ease;
+}
+
+    .component-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #f0f0f0;
+        background: #f8f9fa;
+    }
+
+        .component-header:has(.component-actions:empty) {
+            padding: 15px 20px;
+        }
+
+    .component-title {
+        margin: 0;
+        font-size: 16px;
+        font-weight: 600;
+        color: #333;
+    }
+
+    /* ===== ACCORDION STYLES ===== */
+    .reception-accordion {
+        border: none;
+        box-shadow: none;
+    }
+
+    .accordion-item {
+        border: 1px solid #e9ecef;
+        border-radius: 12px;
+        margin-bottom: 15px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+        .accordion-item:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .accordion-item.completed {
+            border-color: #28a745;
+            background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+        }
+
+        .accordion-item.in-progress {
+            border-color: #007bff;
+            background: linear-gradient(135deg, #f0f8ff 0%, #e6f3ff 100%);
+        }
+
+        .accordion-item.error {
+            border-color: #dc3545;
+            background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+        }
+
+    .accordion-header {
+        background: transparent;
+        border: none;
+        padding: 0;
+    }
+
+    .accordion-button {
+        width: 100%;
+        padding: 20px 25px;
+        background: transparent;
+        border: none;
+        text-align: right;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .accordion-button:not(.collapsed) {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .accordion-button:focus {
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+            border: none;
+        }
+
+        .accordion-button::after {
+            display: none;
+        }
+
+    .accordion-title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-grow: 1;
+    }
+
+    .accordion-icon {
+        font-size: 20px;
+        width: 24px;
+        text-align: center;
+        transition: all 0.3s ease;
+    }
+
+    .accordion-text {
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+
+    .accordion-status {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .status-badge {
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        transition: all 0.3s ease;
+    }
+
+        .status-badge.pending {
+            background: #f8f9fa;
+            color: #6c757d;
+            border: 1px solid #dee2e6;
+        }
+
+        .status-badge.in-progress {
+            background: #cce5ff;
+            color: #0056b3;
+            border: 1px solid #007bff;
+        }
+
+        .status-badge.completed {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #28a745;
+        }
+
+        .status-badge.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #dc3545;
+        }
+
+    .accordion-arrow {
+        font-size: 14px;
+        transition: transform 0.3s ease;
+    }
+
+    .accordion-button:not(.collapsed) .accordion-arrow {
+        transform: rotate(180deg);
+    }
+
+    .accordion-button:not(.collapsed) .accordion-icon {
+        transform: scale(1.1);
+    }
+
+    .accordion-collapse {
+        border: none;
+    }
+
+    .accordion-body {
+        padding: 25px;
+        background: #fafbfc;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    /* ===== PROGRESS INDICATOR ===== */
+    .accordion-progress {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        height: 3px;
+        background: linear-gradient(90deg, #28a745 0%, #20c997 100%);
+        transition: width 0.3s ease;
+        border-radius: 0 0 12px 12px;
+    }
+
+    /* ===== ANIMATIONS ===== */
+    @@keyframes slideDown {
+        from {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @@keyframes slideUp {
+        from {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateY(-10px);
+        }
+    }
+
+    .accordion-collapse.collapsing {
+        animation: slideDown 0.3s ease;
+    }
+
+    .accordion-collapse.collapse.show {
+        animation: slideDown 0.3s ease;
+    }
+
+    /* ===== RESPONSIVE DESIGN ===== */
+    @@media (max-width: 768px) {
+        .accordion-button {
+            padding: 15px 20px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+
+        .accordion-title {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .accordion-status {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .accordion-body {
+            padding: 20px 15px;
+        }
+    }
+
+    /* ===== MEDICAL ENVIRONMENT ENHANCEMENTS ===== */
+    .accordion-item.medical-priority {
+        border-left: 4px solid #dc3545;
+        background: linear-gradient(135deg, #fff5f5 0%, #ffe6e6 100%);
+    }
+
+        .accordion-item.medical-priority .accordion-button {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+        }
+
+        .accordion-item.medical-priority .status-badge {
+            background: #dc3545;
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.05);
+        }
+
+        100% {
+            transform: scale(1);
+        }
 }
 
 .reception-form-component.loading {
@@ -1216,8 +2880,582 @@ function resetForm() {
 }
 
 @@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
-}
+        0% {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.5;
+        }
+
+        100% {
+            opacity: 1;
+        }
+    }
+
+    /* Search Button Styles */
+    #searchPatientBtn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: 0;
+        transition: all 0.3s ease;
+    }
+
+        #searchPatientBtn:hover {
+            background-color: #007bff;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        #searchPatientBtn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+    /* Input Group Enhancement */
+    .input-group .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+        .input-group .form-control:focus + #searchPatientBtn {
+            border-color: #007bff;
+        }
+
+    /* Enhanced Validation Styles */
+    .validation-message {
+        display: flex;
+        align-items: center;
+        font-size: 0.875rem;
+        margin-top: 0.25rem;
+        animation: fadeInUp 0.3s ease;
+    }
+
+        .validation-message.text-danger {
+            color: #dc3545 !important;
+        }
+
+        .validation-message.text-success {
+            color: #28a745 !important;
+        }
+
+    .form-control.is-valid {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+    .form-control.is-valid:focus {
+        border-color: #28a745;
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
+    }
+
+    .form-control.is-invalid:focus {
+        border-color: #dc3545;
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+
+    /* Medical Environment Validation Enhancements */
+    .form-group.medical-critical .form-control.is-invalid {
+        border-left: 4px solid #dc3545;
+        background-color: #fff5f5;
+        box-shadow: 0 0 10px rgba(220, 53, 69, 0.1);
+    }
+
+    .form-group.medical-critical .form-control.is-valid {
+        border-left: 4px solid #28a745;
+        background-color: #f8fff9;
+        box-shadow: 0 0 10px rgba(40, 167, 69, 0.1);
+    }
+
+    /* Medical Priority Indicators */
+    .form-label i {
+        font-size: 0.9rem;
+        margin-right: 0.25rem;
+    }
+
+    /* Enhanced Medical UX */
+    .medical-critical .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        border-left: 4px solid #007bff;
+    }
+
+    /* حذف تمام تیک‌های سبز از داخل input ها */
+    .form-control::after,
+    .form-control::before {
+        display: none !important;
+    }
+
+    /* فقط validation message نمایش داده شود */
+    .validation-message {
+        position: relative;
+        z-index: 10;
+    }
+
+    /* Medical Environment Status */
+    .component-status.medical-ready {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: 600;
+    }
+
+    .component-status.medical-error {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        color: white;
+        border-radius: 20px;
+        padding: 8px 16px;
+        font-weight: 600;
+    }
+
+    /* Patient Info Section Enhancement */
+    #patientInfoSection {
+        border: 2px solid #28a745;
+        border-radius: 10px;
+        background: linear-gradient(135deg, #f8fff9 0%, #e8f5e8 100%);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.1);
+        transition: all 0.3s ease;
+    }
+
+        #patientInfoSection:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(40, 167, 69, 0.15);
+        }
+
+        #patientInfoSection .alert {
+            border: none;
+            background: transparent;
+            margin-bottom: 0;
+            padding: 15px;
+        }
+
+        #patientInfoSection .fas {
+            font-size: 1.2rem;
+            margin-left: 8px;
+        }
+
+    #selectedPatientName {
+        font-weight: 600;
+        color: #28a745;
+        font-size: 1.1rem;
+    }
+
+    #selectedPatientNationalCode,
+    #selectedPatientBirthDate {
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* Insurance Status Styles */
+    .insurance-status {
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+    }
+
+    .insurance-status-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .status-indicator {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-left: 10px;
+        display: inline-block;
+    }
+
+        .status-indicator.success {
+            background-color: #28a745;
+            box-shadow: 0 0 10px rgba(40, 167, 69, 0.3);
+        }
+
+        .status-indicator.error {
+            background-color: #dc3545;
+            box-shadow: 0 0 10px rgba(220, 53, 69, 0.3);
+        }
+
+    .status-text {
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .insurance-details {
+        background-color: #f8f9fa;
+        border-radius: 6px;
+        padding: 10px;
+        margin-top: 10px;
+    }
+
+    .insurance-info h6 {
+        color: #28a745;
+        font-weight: 600;
+        margin-bottom: 8px;
+    }
+
+    .insurance-info p {
+        margin-bottom: 5px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    /* Insurance Cards - Medical Environment */
+    .insurance-section {
+        margin-top: 15px;
+    }
+
+    .insurance-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        background: #ffffff;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+
+    .insurance-card:hover {
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+
+    .insurance-card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .insurance-card-header h6 {
+        margin: 0;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .insurance-card-header i {
+        font-size: 1.1rem;
+    }
+
+    .insurance-card-body {
+        padding: 15px;
+    }
+
+    .insurance-info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .insurance-info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        color: #495057;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .insurance-summary {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        border-radius: 6px;
+        padding: 12px;
+        margin-top: 10px;
+    }
+
+    .summary-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 5px;
+        font-size: 0.9rem;
+        color: #155724;
+    }
+
+    .summary-item:last-child {
+        margin-bottom: 0;
+    }
+
+    .summary-item i {
+        font-size: 1rem;
+    }
+
+    /* Validation Animation */
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* Real-time validation feedback */
+    .form-control:focus {
+        transition: all 0.3s ease;
+    }
+
+    .validation-message i {
+        font-size: 0.75rem;
+    }
+
+    /* Medical priority validation */
+    .accordion-item.error .form-control.is-invalid {
+        border-color: #dc3545;
+        background-color: #fff5f5;
+        animation: pulse 1s infinite;
+    }
+
+    /* Success state enhancement - فقط برای فیلدهای مهم */
+    .form-group.medical-critical:has(.is-valid) {
+        position: relative;
+    }
+
+    /* حذف تیک سبز از داخل input ها - فقط validation message نمایش داده شود */
+    .form-group.medical-critical:has(.is-valid)::after {
+        display: none;
+    }
+
+    /* فرم مدیریت بیمه */
+    .insurance-management-form {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 20px;
+        margin-top: 15px;
+    }
+
+    .form-section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #e9ecef;
+    }
+
+    .form-section-header h5 {
+        margin: 0;
+        color: #495057;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-section-header h5 i {
+        margin-left: 8px;
+        color: #007bff;
+    }
+
+    .insurance-form-section {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .section-header h6 {
+        margin: 0;
+        color: #495057;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-header h6 i {
+        margin-left: 8px;
+    }
+
+    .form-check-switch .form-check-input {
+        width: 2.5rem;
+        height: 1.25rem;
+    }
+
+    .insurance-form-fields {
+        background: #f8f9fa;
+        border-radius: 4px;
+        padding: 15px;
+    }
+
+    .insurance-actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .insurance-actions .btn {
+        min-width: 120px;
+    }
+
+    /* استایل‌های مخصوص محیط درمانی */
+    .insurance-form-section.primary {
+        border-left: 4px solid #007bff;
+    }
+
+    .insurance-form-section.supplementary {
+        border-left: 4px solid #28a745;
+    }
+
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 5px;
+    }
+
+    .form-label i {
+        margin-left: 5px;
+        width: 16px;
+    }
+
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    /* انیمیشن برای نمایش/مخفی کردن فیلدها */
+    .insurance-form-fields {
+        transition: all 0.3s ease;
+        overflow: hidden;
+    }
+
+    .insurance-form-fields[style*="display: none"] {
+        max-height: 0;
+        padding: 0 15px;
+        margin: 0;
+    }
+
+    .insurance-form-fields:not([style*="display: none"]) {
+        max-height: 500px;
+    }
+
+    /* نمایش بیمه فعلی */
+    .current-insurance-details {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 10px;
+    }
+
+    .insurance-section {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+
+    .insurance-section.primary-insurance {
+        border-left: 4px solid #007bff;
+    }
+
+    .insurance-section.supplementary-insurance {
+        border-left: 4px solid #28a745;
+    }
+
+    .insurance-section .section-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .insurance-section .section-header h6 {
+        margin: 0;
+        color: #495057;
+        display: flex;
+        align-items: center;
+    }
+
+    .insurance-section .section-header h6 i {
+        margin-left: 8px;
+    }
+
+    .insurance-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 10px;
+    }
+
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid #f1f3f4;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 14px;
+    }
+
+    .info-value {
+        color: #495057;
+        font-size: 14px;
+        text-align: left;
+    }
+
+    .no-insurance-message {
+        text-align: center;
+        padding: 20px;
+    }
+
+    .no-insurance-message .alert {
+        border-radius: 8px;
+        border: none;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .no-insurance-message .alert i {
+        margin-left: 8px;
+        font-size: 18px;
+    }
+
+    /* دکمه ویرایش بیمه */
+    #editInsuranceBtn {
+        display: none;
+        margin-top: 10px;
+    }
+
+    #editInsuranceBtn i {
+        margin-left: 5px;
+    }
 </style>

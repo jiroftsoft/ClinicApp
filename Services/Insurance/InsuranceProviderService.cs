@@ -749,5 +749,56 @@ namespace ClinicApp.Services.Insurance
         }
 
         #endregion
+
+        #region Reception Form Specific Methods
+
+        /// <summary>
+        /// دریافت تمام بیمه‌گذاران فعال برای فرم پذیرش
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetAllActiveProvidersAsync()
+        {
+            try
+            {
+                _log.Information("🏥 دریافت بیمه‌گذاران فعال برای فرم پذیرش. کاربر: {UserName}", _currentUserService.UserName);
+
+                var providers = await _insuranceProviderRepository.GetAllActiveAsync();
+                var lookupViewModels = providers.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information("✅ {Count} بیمه‌گذار فعال یافت شد", lookupViewModels.Count);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(lookupViewModels);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در دریافت بیمه‌گذاران فعال");
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Failed("خطا در دریافت بیمه‌گذاران");
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران بر اساس نوع بیمه برای فرم پذیرش
+        /// </summary>
+        public async Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetProvidersByTypeAsync(InsuranceType insuranceType)
+        {
+            try
+            {
+                _log.Information("🏥 دریافت بیمه‌گذاران نوع {InsuranceType} برای فرم پذیرش. کاربر: {UserName}", 
+                    insuranceType, _currentUserService.UserName);
+
+                var providers = await _insuranceProviderRepository.GetByTypeAsync(insuranceType);
+                var lookupViewModels = providers.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information("✅ {Count} بیمه‌گذار نوع {InsuranceType} یافت شد", lookupViewModels.Count, insuranceType);
+
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Successful(lookupViewModels);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در دریافت بیمه‌گذاران نوع {InsuranceType}", insuranceType);
+                return ServiceResult<List<InsuranceProviderLookupViewModel>>.Failed("خطا در دریافت بیمه‌گذاران");
+            }
+        }
+
+        #endregion
     }
 }

@@ -496,6 +496,7 @@
     <Compile Include="Controllers\Payment\POS\PosManagementController.cs" />
     <Compile Include="Controllers\ReceptionController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionInsuranceFormController.cs" />
     <Compile Include="Controllers\Reception\ReceptionPatientController.cs" />
     <Compile Include="Controllers\Reception\ReceptionServiceController.cs" />
     <Compile Include="Controllers\Reception\ReceptionTriageIntegrationController.cs" />
@@ -1144,6 +1145,7 @@
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceIndexViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceListPartialViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceLookupViewModel.cs" />
+    <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceReceptionFormViewModel.cs" />
     <Compile Include="ViewModels\Insurance\PatientInsurance\PatientInsuranceViewModel.cs" />
     <Compile Include="ViewModels\Insurance\SupplementaryInsuranceDetail.cs" />
     <Compile Include="ViewModels\Insurance\Supplementary\BulkSupplementaryTariffViewModel.cs" />
@@ -4437,6 +4439,7 @@
     <Content Include="Views\Reception\ReceptionTriageIntegration\TransferIndex.cshtml" />
     <Content Include="Views\Reception\ReceptionTriageIntegration\IntegratedReport.cshtml" />
     <Content Include="Views\Reception\SearchResults.cshtml" />
+    <Content Include="Views\Reception\Components\_ReceptionInsuranceFormComponent.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

@@ -457,6 +457,60 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت تمام بیمه‌گذاران فعال
+        /// </summary>
+        public async Task<List<InsuranceProvider>> GetAllActiveAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت تمام بیمه‌گذاران فعال");
+
+                var providers = await _context.InsuranceProviders
+                    .Where(p => p.IsActive && !p.IsDeleted)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("تمام بیمه‌گذاران فعال دریافت شد. تعداد: {Count}", providers.Count);
+
+                return providers;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تمام بیمه‌گذاران فعال");
+                throw new InvalidOperationException("خطا در دریافت تمام بیمه‌گذاران فعال", ex);
+            }
+        }
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران بر اساس نوع بیمه
+        /// </summary>
+        public async Task<List<InsuranceProvider>> GetByTypeAsync(InsuranceType insuranceType)
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت بیمه‌گذاران نوع {InsuranceType}", insuranceType);
+
+                var providers = await _context.InsuranceProviders
+                    .Where(p => p.IsActive && 
+                               !p.IsDeleted &&
+                               p.InsurancePlans.Any(plan => plan.InsuranceType == insuranceType && 
+                                                           plan.IsActive && 
+                                                           !plan.IsDeleted))
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("بیمه‌گذاران نوع {InsuranceType} دریافت شد. تعداد: {Count}", insuranceType, providers.Count);
+
+                return providers;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمه‌گذاران نوع {InsuranceType}", insuranceType);
+                throw new InvalidOperationException($"خطا در دریافت بیمه‌گذاران نوع {insuranceType}", ex);
+            }
+        }
+
         #endregion
     }
 }

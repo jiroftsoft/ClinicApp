@@ -148,6 +148,12 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>لیست طرح‌های بیمه مطابق با جستجو</returns>
         Task<List<InsurancePlan>> SearchByProviderAsync(int providerId, string searchTerm);
 
+        /// <summary>
+        /// دریافت تمام طرح‌های بیمه فعال
+        /// </summary>
+        /// <returns>لیست طرح‌های بیمه فعال</returns>
+        Task<List<InsurancePlan>> GetAllActiveAsync();
+
         #endregion
 
         #region CRUD Operations

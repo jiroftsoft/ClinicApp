@@ -1123,5 +1123,58 @@ namespace ClinicApp.Services.Insurance
         }
 
         #endregion
+
+        #region Reception Form Specific Methods
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه بر اساس بیمه‌گذار و نوع بیمه برای فرم پذیرش
+        /// </summary>
+        public async Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetPlansByProviderAndTypeAsync(int providerId, InsuranceType insuranceType)
+        {
+            try
+            {
+                _log.Information("🏥 دریافت طرح‌های بیمه برای بیمه‌گذار {ProviderId} و نوع {InsuranceType} برای فرم پذیرش. کاربر: {UserName}", 
+                    providerId, insuranceType, _currentUserService.UserName);
+
+                var plans = await _insurancePlanRepository.GetByProviderIdAsync(providerId);
+                var filteredPlans = plans.Where(p => p.InsuranceType == insuranceType && p.IsActive).ToList();
+                var lookupViewModels = filteredPlans.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information("✅ {Count} طرح بیمه نوع {InsuranceType} برای بیمه‌گذار {ProviderId} یافت شد", 
+                    lookupViewModels.Count, insuranceType, providerId);
+
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Successful(lookupViewModels);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در دریافت طرح‌های بیمه برای بیمه‌گذار {ProviderId} و نوع {InsuranceType}", providerId, insuranceType);
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Failed("خطا در دریافت طرح‌های بیمه");
+            }
+        }
+
+        /// <summary>
+        /// دریافت تمام طرح‌های بیمه فعال برای فرم پذیرش
+        /// </summary>
+        public async Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetAllActivePlansAsync()
+        {
+            try
+            {
+                _log.Information("🏥 دریافت تمام طرح‌های بیمه فعال برای فرم پذیرش. کاربر: {UserName}", _currentUserService.UserName);
+
+                var plans = await _insurancePlanRepository.GetAllActiveAsync();
+                var lookupViewModels = plans.Select(ConvertToLookupViewModel).ToList();
+
+                _log.Information("✅ {Count} طرح بیمه فعال یافت شد", lookupViewModels.Count);
+
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Successful(lookupViewModels);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در دریافت طرح‌های بیمه فعال");
+                return ServiceResult<List<InsurancePlanLookupViewModel>>.Failed("خطا در دریافت طرح‌های بیمه");
+            }
+        }
+
+        #endregion
     }
 }

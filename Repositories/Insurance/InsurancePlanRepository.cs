@@ -539,6 +539,33 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت تمام طرح‌های بیمه فعال
+        /// </summary>
+        public async Task<List<InsurancePlan>> GetAllActiveAsync()
+        {
+            try
+            {
+                _logger.Information("درخواست دریافت تمام طرح‌های بیمه فعال");
+
+                var plans = await _context.InsurancePlans
+                    .Where(p => p.IsActive && !p.IsDeleted)
+                    .Include(p => p.InsuranceProvider)
+                    .OrderBy(p => p.InsuranceProvider.Name)
+                    .ThenBy(p => p.Name)
+                    .ToListAsync();
+
+                _logger.Information("تمام طرح‌های بیمه فعال دریافت شد. تعداد: {Count}", plans.Count);
+
+                return plans;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت تمام طرح‌های بیمه فعال");
+                throw new InvalidOperationException("خطا در دریافت تمام طرح‌های بیمه فعال", ex);
+            }
+        }
+
         #endregion
     }
 }

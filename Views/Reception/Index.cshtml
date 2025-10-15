@@ -17,44 +17,23 @@
             <p class="dashboard-subtitle">سیستم مدیریت پذیرش بیماران - کامپوننت محور و بدون رفرش صفحه</p>
         </div>
         <div class="header-actions">
-            <button type="button" class="btn btn-primary" data-action="new-reception">
-                <i class="fas fa-plus me-2"></i>
-                پذیرش جدید
-            </button>
-            <button type="button" class="btn btn-outline-primary" data-action="quick-search">
-                <i class="fas fa-search me-2"></i>
-                جستجوی سریع
-            </button>
+            <!-- دکمه‌های اضافی حذف شدند - عملکرد در فرم پذیرش موجود است -->
         </div>
     </div>
 
     <!-- Main Content -->
     <div class="dashboard-content">
-        <div class="content-grid">
-            <!-- Left Column - Patient Search -->
-            <div class="content-column">
-                <div class="column-header">
-                    <h5 class="column-title">
-                        <i class="fas fa-user-search me-2"></i>
-                        انتخاب بیمار
-                    </h5>
-                </div>
-                <div class="column-content">
-                    @Html.Partial("Components/_PatientSearchComponent", new PatientSearchComponentViewModel())
-                </div>
+        <!-- Reception Form - Full Width -->
+        <div class="reception-form-section">
+            <div class="section-header">
+                <h5 class="section-title">
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    فرم پذیرش
+                </h5>
+                <!-- دکمه پذیرش جدید حذف شد - عملکرد در فرم موجود است -->
             </div>
-
-            <!-- Right Column - Reception Form -->
-            <div class="content-column">
-                <div class="column-header">
-                    <h5 class="column-title">
-                        <i class="fas fa-clipboard-list me-2"></i>
-                        فرم پذیرش
-                    </h5>
-                </div>
-                <div class="column-content">
-                    @Html.Partial("Components/_ReceptionFormComponent", new ReceptionFormComponentViewModel())
-                </div>
+            <div class="section-content">
+                @Html.Partial("Components/_ReceptionFormComponent", new ReceptionFormComponentViewModel())
             </div>
         </div>
 
@@ -166,6 +145,11 @@
     gap: 10px;
 }
 
+/* Hide header actions when empty */
+.header-actions:empty {
+    display: none;
+}
+
 .dashboard-content {
     display: flex;
     flex-direction: column;
@@ -223,6 +207,39 @@
 }
 
 .section-content {
+    padding: 0;
+}
+
+/* Reception Form Section - Full Width */
+.reception-form-section {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+    overflow: hidden;
+}
+
+.reception-form-section .section-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 20px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.reception-form-section .section-title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.reception-form-section .section-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.reception-form-section .section-content {
     padding: 0;
 }
 
@@ -543,15 +560,7 @@ function initializeComponents() {
 }
 
 function initializeEventHandlers() {
-    // New reception button
-    $('[data-action="new-reception"]').on('click', function() {
-        createNewReception();
-    });
-    
-    // Quick search button
-    $('[data-action="quick-search"]').on('click', function() {
-        openQuickSearch();
-    });
+    // Event handlers for remaining functionality
     
     // Refresh all button
     $('[data-action="refresh-all"]').on('click', function() {
@@ -608,22 +617,7 @@ function startRealTimeUpdates() {
     }, 30000); // Update every 30 seconds
 }
 
-function createNewReception() {
-    // Reset form and show new reception
-    $('[data-component="reception-form"]').trigger('reset');
-    $('[data-component="patient-search"]').trigger('clear');
-    
-    // Show success message
-    showNotification('آماده برای پذیرش جدید', 'success');
-}
-
-function openQuickSearch() {
-    // Focus on patient search
-    $('[data-component="patient-search"] #nationalCodeInput').focus();
-    
-    // Show quick search modal if needed
-    showQuickSearchModal();
-}
+// توابع createNewReception و openQuickSearch حذف شدند - عملکرد در فرم پذیرش موجود است
 
 function refreshAllComponents() {
     // Refresh all components

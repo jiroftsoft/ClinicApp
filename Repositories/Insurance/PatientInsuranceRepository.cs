@@ -137,13 +137,26 @@ namespace ClinicApp.Repositories.Insurance
         {
             try
             {
-                return await _context.PatientInsurances
+                _logger.Information("🔍 جستجوی بیمه‌های بیمار {PatientId} در دیتابیس", patientId);
+                
+                var result = await _context.PatientInsurances
                     .Where(pi => pi.PatientId == patientId)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
                     .OrderBy(pi => pi.IsPrimary ? 0 : 1)
                     .ThenBy(pi => pi.StartDate)
                     .AsNoTracking()
                     .ToListAsync();
+                    
+                _logger.Information("📊 {Count} بیمه برای بیمار {PatientId} یافت شد", result.Count, patientId);
+                
+                foreach (var insurance in result)
+                {
+                    _logger.Information("📋 بیمه: ID={InsuranceId}, Plan={PlanId}, Provider={ProviderId}, IsPrimary={IsPrimary}, IsActive={IsActive}, IsDeleted={IsDeleted}", 
+                        insurance.PatientInsuranceId, insurance.InsurancePlanId, insurance.InsurancePlan?.InsuranceProviderId, 
+                        insurance.IsPrimary, insurance.IsActive, insurance.IsDeleted);
+                }
+                
+                return result;
             }
             catch (Exception ex)
             {

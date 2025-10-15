@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 
@@ -167,6 +168,24 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="planId">شناسه طرح بیمه</param>
         /// <returns>طرح بیمه</returns>
         Task<ServiceResult<Models.Entities.Insurance.InsurancePlan>> GetByIdAsync(int planId);
+
+        #endregion
+
+        #region Reception Form Specific Methods
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه بر اساس بیمه‌گذار و نوع بیمه برای فرم پذیرش
+        /// </summary>
+        /// <param name="providerId">شناسه بیمه‌گذار</param>
+        /// <param name="insuranceType">نوع بیمه (Primary/Supplementary)</param>
+        /// <returns>لیست طرح‌های بیمه</returns>
+        Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetPlansByProviderAndTypeAsync(int providerId, InsuranceType insuranceType);
+
+        /// <summary>
+        /// دریافت تمام طرح‌های بیمه فعال برای فرم پذیرش
+        /// </summary>
+        /// <returns>لیست طرح‌های بیمه فعال</returns>
+        Task<ServiceResult<List<InsurancePlanLookupViewModel>>> GetAllActivePlansAsync();
 
         #endregion
     }

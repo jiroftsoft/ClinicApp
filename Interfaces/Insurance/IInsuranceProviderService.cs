@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Helpers;
 using ClinicApp.Models;
+using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.ViewModels.Insurance.InsuranceProvider;
 
 namespace ClinicApp.Interfaces.Insurance
@@ -112,6 +113,23 @@ namespace ClinicApp.Interfaces.Insurance
         /// <param name="excludeId">شناسه ارائه‌دهنده بیمه برای حذف از بررسی</param>
         /// <returns>نتیجه بررسی</returns>
         Task<ServiceResult<bool>> DoesNameExistAsync(string name, int? excludeId = null);
+
+        #endregion
+
+        #region Reception Form Specific Methods
+
+        /// <summary>
+        /// دریافت تمام بیمه‌گذاران فعال برای فرم پذیرش
+        /// </summary>
+        /// <returns>لیست بیمه‌گذاران فعال</returns>
+        Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetAllActiveProvidersAsync();
+
+        /// <summary>
+        /// دریافت بیمه‌گذاران بر اساس نوع بیمه برای فرم پذیرش
+        /// </summary>
+        /// <param name="insuranceType">نوع بیمه (Primary/Supplementary)</param>
+        /// <returns>لیست بیمه‌گذاران</returns>
+        Task<ServiceResult<List<InsuranceProviderLookupViewModel>>> GetProvidersByTypeAsync(InsuranceType insuranceType);
 
         #endregion
     }

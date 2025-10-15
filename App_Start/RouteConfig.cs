@@ -172,6 +172,21 @@ namespace ClinicApp
                 }
             );
 
+            // 🏥 Reception Insurance Form Routes - مسیرهای تخصصی بیمه در فرم پذیرش
+            routes.MapRoute(
+                name: "ReceptionInsuranceForm",
+                url: "Reception/InsuranceForm/{action}",
+                defaults: new { 
+                    controller = "ReceptionInsuranceForm", 
+                    action = "GetInsuranceProviders", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(GetInsuranceProviders|GetInsuranceProvidersByType|GetInsurancePlans|GetAllInsurancePlans|GetPatientInsurances|SavePatientInsurance|CalculateInsuranceShare)$"
+                }
+            );
+
             routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",

@@ -217,8 +217,64 @@ namespace ClinicApp.Services.Insurance
         /// <returns>لیست بیمه‌های بیمار</returns>
         public async Task<ServiceResult<object>> GetPatientInsurancesForReceptionAsync(int patientId)
         {
-            // TODO: پیاده‌سازی منطق دریافت بیمه‌های بیمار برای پذیرش
-            return ServiceResult<object>.Successful(new { PatientId = patientId, Insurances = new List<object>() });
+            try
+            {
+                _log.Information("📋 دریافت بیمه‌های بیمار برای پذیرش: {PatientId}, کاربر: {UserName}", 
+                    patientId, _currentUserService.UserName);
+
+                // دریافت بیمه‌های فعال بیمار
+                var patientInsurances = await _patientInsuranceRepository.GetByPatientIdAsync(patientId);
+                _log.Information("📊 دریافت {Count} بیمه از دیتابیس برای بیمار {PatientId}", patientInsurances.Count, patientId);
+                
+                var activeInsurances = patientInsurances.Where(pi => pi.IsActive && !pi.IsDeleted).ToList();
+                _log.Information("📊 {Count} بیمه فعال از {Total} بیمه برای بیمار {PatientId}", activeInsurances.Count, patientInsurances.Count, patientId);
+
+                if (!activeInsurances.Any())
+                {
+                    _log.Information("هیچ بیمه فعالی برای بیمار {PatientId} یافت نشد", patientId);
+                    return ServiceResult<object>.Successful(new { PatientId = patientId, Insurances = new List<object>() });
+                }
+
+                // تبدیل به فرمت مناسب برای نمایش
+                var insuranceList = new List<object>();
+                
+                foreach (var insurance in activeInsurances)
+                {
+                    var insuranceData = new
+                    {
+                        PatientInsuranceId = insurance.PatientInsuranceId,
+                        PatientId = insurance.PatientId,
+                        InsurancePlanId = insurance.InsurancePlanId,
+                        InsurancePlanName = insurance.InsurancePlan?.Name ?? "نامشخص",
+                        InsuranceProviderId = insurance.InsurancePlan?.InsuranceProviderId,
+                        InsuranceProviderName = insurance.InsurancePlan?.InsuranceProvider?.Name ?? "نامشخص",
+                        PolicyNumber = insurance.PolicyNumber,
+                        CardNumber = insurance.CardNumber,
+                        StartDate = insurance.StartDate,
+                        EndDate = insurance.EndDate,
+                        IsPrimary = insurance.IsPrimary,
+                        IsActive = insurance.IsActive,
+                        Priority = insurance.Priority,
+                        SupplementaryPolicyNumber = insurance.SupplementaryPolicyNumber,
+                        SupplementaryInsuranceProviderId = insurance.SupplementaryInsuranceProviderId,
+                        SupplementaryInsurancePlanId = insurance.SupplementaryInsurancePlanId,
+                        SupplementaryInsuranceProviderName = insurance.SupplementaryInsuranceProvider?.Name ?? "نامشخص",
+                        SupplementaryInsurancePlanName = insurance.SupplementaryInsurancePlan?.Name ?? "نامشخص"
+                    };
+                    
+                    insuranceList.Add(insuranceData);
+                }
+
+                _log.Information("✅ {Count} بیمه فعال برای بیمار {PatientId} یافت شد", 
+                    insuranceList.Count, patientId);
+
+                return ServiceResult<object>.Successful(new { PatientId = patientId, Insurances = insuranceList });
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در دریافت بیمه‌های بیمار برای پذیرش: {PatientId}", patientId);
+                return ServiceResult<object>.Failed("خطا در دریافت بیمه‌های بیمار");
+            }
         }
 
 
