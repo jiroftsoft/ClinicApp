@@ -1360,5 +1360,142 @@ namespace ClinicApp.Services.Payment
         }
 
         #endregion
+
+        #region Missing Interface Methods
+
+        /// <summary>
+        /// ایجاد تراکنش پرداخت
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <param name="amount">مبلغ</param>
+        /// <param name="paymentMethod">روش پرداخت</param>
+        /// <param name="description">توضیحات</param>
+        /// <returns>نتیجه ایجاد تراکنش</returns>
+        public async Task<ServiceResult<PaymentTransaction>> CreatePaymentTransactionAsync(int receptionId, decimal amount, PaymentMethod paymentMethod, string description)
+        {
+            try
+            {
+                _logger.Information("ایجاد تراکنش پرداخت. ReceptionId: {ReceptionId}, Amount: {Amount}, Method: {Method}", 
+                    receptionId, amount, paymentMethod);
+
+                var transaction = new PaymentTransaction
+                {
+                    ReceptionId = receptionId,
+                    Amount = amount,
+                    Method = paymentMethod,
+                    Description = description,
+                    Status = PaymentStatus.Pending,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _paymentTransactionRepository.AddAsync(transaction);
+
+                return ServiceResult<PaymentTransaction>.Successful(transaction);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ایجاد تراکنش پرداخت");
+                return ServiceResult<PaymentTransaction>.Failed("خطا در ایجاد تراکنش پرداخت");
+            }
+        }
+
+        /// <summary>
+        /// تکمیل پرداخت نقدی
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <param name="cashierName">نام صندوقدار</param>
+        /// <returns>نتیجه تکمیل پرداخت</returns>
+        public async Task<ServiceResult<PaymentTransaction>> CompleteCashPaymentAsync(int transactionId, string cashierName)
+        {
+            try
+            {
+                _logger.Information("تکمیل پرداخت نقدی. TransactionId: {TransactionId}, Cashier: {Cashier}", 
+                    transactionId, cashierName);
+
+                var transaction = await _paymentTransactionRepository.GetByIdAsync(transactionId);
+                if (transaction == null)
+                {
+                    return ServiceResult<PaymentTransaction>.Failed("تراکنش یافت نشد");
+                }
+
+                transaction.Status = PaymentStatus.Completed;
+                transaction.UpdatedAt = DateTime.UtcNow;
+
+                await _paymentTransactionRepository.UpdateAsync(transaction);
+
+                return ServiceResult<PaymentTransaction>.Successful(transaction);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تکمیل پرداخت نقدی");
+                return ServiceResult<PaymentTransaction>.Failed("خطا در تکمیل پرداخت نقدی");
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات پرداخت
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <returns>جزئیات پرداخت</returns>
+        public async Task<ServiceResult<PaymentTransaction>> GetPaymentDetailsAsync(int transactionId)
+        {
+            try
+            {
+                _logger.Information("دریافت جزئیات پرداخت. TransactionId: {TransactionId}", transactionId);
+
+                var transaction = await _paymentTransactionRepository.GetByIdAsync(transactionId);
+                if (transaction == null)
+                {
+                    return ServiceResult<PaymentTransaction>.Failed("تراکنش یافت نشد");
+                }
+
+                return ServiceResult<PaymentTransaction>.Successful(transaction);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت جزئیات پرداخت");
+                return ServiceResult<PaymentTransaction>.Failed("خطا در دریافت جزئیات پرداخت");
+            }
+        }
+
+        /// <summary>
+        /// دریافت رسید پرداخت
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <returns>رسید پرداخت</returns>
+        public async Task<ServiceResult<ViewModels.Reception.PaymentReceiptViewModel>> GetPaymentReceiptAsync(int transactionId)
+        {
+            try
+            {
+                _logger.Information("دریافت رسید پرداخت. TransactionId: {TransactionId}", transactionId);
+
+                var transaction = await _paymentTransactionRepository.GetByIdAsync(transactionId);
+                if (transaction == null)
+                {
+                    return ServiceResult<ViewModels.Reception.PaymentReceiptViewModel>.Failed("تراکنش یافت نشد");
+                }
+
+                var receipt = new ViewModels.Reception.PaymentReceiptViewModel
+                {
+                    TransactionId = transaction.PaymentTransactionId,
+                    Amount = transaction.Amount,
+                    PaymentMethod = transaction.Method.ToString(),
+                    Status = transaction.Status.ToString(),
+                    CreatedAt = transaction.CreatedAt,
+                    CompletedAt = transaction.UpdatedAt,
+                    Description = transaction.Description
+                };
+
+                return ServiceResult<ViewModels.Reception.PaymentReceiptViewModel>.Successful(receipt);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت رسید پرداخت");
+                return ServiceResult<ViewModels.Reception.PaymentReceiptViewModel>.Failed("خطا در دریافت رسید پرداخت");
+            }
+        }
+
+        #endregion
+
     }
 }

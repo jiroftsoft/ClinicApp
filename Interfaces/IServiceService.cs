@@ -1,5 +1,6 @@
 ﻿using ClinicApp.Helpers;
 using ClinicApp.ViewModels;
+using ClinicApp.ViewModels.Reception;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -59,7 +60,7 @@ namespace ClinicApp.Interfaces
         /// </summary>
         /// <param name="serviceId">شناسه خدمات مورد نظر</param>
         /// <returns>مدل جزئیات کامل خدمات</returns>
-        Task<ServiceResult<ServiceDetailsViewModel>> GetServiceDetailsAsync(int serviceId);
+        Task<ServiceResult<ViewModels.Reception.ServiceDetailsViewModel>> GetServiceDetailsAsync(int serviceId);
 
         /// <summary>
         /// جستجو و صفحه‌بندی خدمات با رعایت فیلترهای ضروری و عملکرد بهینه
@@ -165,6 +166,20 @@ namespace ClinicApp.Interfaces
         /// <param name="serviceId">شناسه خدمت</param>
         /// <returns>نتیجه عملیات</returns>
         Task<ServiceResult<decimal>> UpdateServicePriceAsync(int serviceId);
+
+        /// <summary>
+        /// دریافت خدمات بر اساس دسته‌بندی
+        /// </summary>
+        /// <param name="categoryId">شناسه دسته‌بندی</param>
+        /// <returns>لیست خدمات دسته‌بندی</returns>
+        Task<ServiceResult<List<ServiceLookupViewModel>>> GetServicesByCategoryAsync(int categoryId);
+
+        /// <summary>
+        /// دریافت خدمت بر اساس شناسه
+        /// </summary>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <returns>خدمت مورد نظر</returns>
+        Task<ServiceResult<ServiceLookupViewModel>> GetServiceByIdAsync(int serviceId);
     }
 
     /// <summary>

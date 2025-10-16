@@ -3187,10 +3187,10 @@ correlationId, model.Statistics);
                         patientPercent = Math.Round(patientPercent * 100, 0, MidpointRounding.AwayFromZero),
                         planName = plan.Name,
                         planCode = plan.PlanCode,
-                        serviceName = service.Title,
+                        serviceName = service.ServiceName,
                         serviceCode = service.ServiceCode
                     },
-                    message = $"محاسبه تعرفه بیمه اصلی با موفقیت انجام شد - خدمت: {service.Title}, طرح: {plan.Name}"
+                    message = $"محاسبه تعرفه بیمه اصلی با موفقیت انجام شد - خدمت: {service.ServiceName}, طرح: {plan.Name}"
                 });
             }
             catch (Exception ex)

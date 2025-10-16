@@ -299,6 +299,20 @@ namespace ClinicApp
             );
 
             routes.MapRoute(
+                name: "ReceptionServiceManagement",
+                url: "Reception/ServiceManagement/{action}",
+                defaults: new { controller = "ReceptionServiceManagement", action = "GetServiceCategories" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionPayment",
+                url: "Reception/Payment/{action}",
+                defaults: new { controller = "ReceptionPayment", action = "GetPaymentInfo" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
                 name: "Default",
                 url: "{controller}/{action}/{id}",
                 defaults: new { controller = "Home", action = "Index", id = UrlParameter.Optional },

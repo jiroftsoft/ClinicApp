@@ -38,6 +38,12 @@ public class Department : ISoftDelete, ITrackable
     public string Name { get; set; }
 
     /// <summary>
+    /// کد دپارتمان
+    /// </summary>
+    [MaxLength(20, ErrorMessage = "کد دپارتمان نمی‌تواند بیش از 20 کاراکتر باشد.")]
+    public string Code { get; set; }
+
+    /// <summary>
     /// شناسه کلینیک مرتبط با این دپارتمان
     /// این فیلد ارتباط با جدول کلینیک‌ها را برقرار می‌کند
     /// </summary>

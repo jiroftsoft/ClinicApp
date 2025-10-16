@@ -20,21 +20,6 @@ namespace ClinicApp.ViewModels.Reception
     }
 
     /// <summary>
-    /// نتیجه محاسبه یک خدمت
-    /// </summary>
-    public class ServiceCalculationResult
-    {
-        public int ServiceId { get; set; }
-        public string ServiceName { get; set; }
-        public string ServiceCode { get; set; }
-        public decimal ServiceAmount { get; set; }
-        public decimal InsuranceCoverage { get; set; }
-        public decimal PatientShare { get; set; }
-        public bool HasInsurance { get; set; }
-        public object InsuranceDetails { get; set; }
-    }
-
-    /// <summary>
     /// محاسبه سریع پذیرش
     /// </summary>
     public class QuickReceptionCalculation

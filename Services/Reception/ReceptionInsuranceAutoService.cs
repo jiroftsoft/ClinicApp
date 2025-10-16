@@ -137,7 +137,7 @@ namespace ClinicApp.Services.Reception
 
                 var providers = providersResult.Data.Select(p => new InsuranceProviderLookupViewModel
                 {
-                    Id = p.Id,
+                    Id = p.InsuranceProviderId,
                     Name = p.Name,
                     Code = p.Code,
                     IsActive = p.IsActive
@@ -180,11 +180,11 @@ namespace ClinicApp.Services.Reception
 
                 var plans = plansResult.Data.Select(p => new InsurancePlanLookupViewModel
                 {
-                    Id = p.Id,
+                    Id = p.InsurancePlanId,
                     Name = p.Name,
-                    Code = p.Code,
-                    ProviderId = p.InsuranceProviderId,
-                    ProviderName = p.InsuranceProvider?.Name,
+                    Code = p.PlanCode,
+                    ProviderId = 0, // TODO: Add InsuranceProviderId to InsurancePlanIndexViewModel
+                    ProviderName = p.InsuranceProviderName,
                     IsActive = p.IsActive
                 }).ToList();
 

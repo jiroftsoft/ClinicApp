@@ -12,6 +12,7 @@ using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using ClinicApp.Constants;
+using ClinicApp.Extensions;
 using Serilog;
 
 namespace ClinicApp.Controllers.Reception
@@ -153,7 +154,7 @@ namespace ClinicApp.Controllers.Reception
                     FirstName = model.FirstName?.Trim(),
                     LastName = model.LastName?.Trim(),
                     BirthDate = model.BirthDate,
-                    Gender = model.Gender,
+                    Gender = GenderParsing.ParseOrDefault(model.Gender),
                     PhoneNumber = model.PhoneNumber?.Trim(),
                     Address = model.Address?.Trim()
                 };
@@ -220,7 +221,7 @@ namespace ClinicApp.Controllers.Reception
                     FirstName = model.FirstName?.Trim(),
                     LastName = model.LastName?.Trim(),
                     BirthDate = model.BirthDate,
-                    Gender = model.Gender,
+                    Gender = GenderParsing.ParseOrDefault(model.Gender),
                     PhoneNumber = model.PhoneNumber?.Trim(),
                     Address = model.Address?.Trim()
                 };

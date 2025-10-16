@@ -3,211 +3,285 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using ClinicApp.Controllers;
-using ClinicApp.Core;
-using ClinicApp.Interfaces;
-using ClinicApp.Services.Reception;
+using ClinicApp.Interfaces.Reception;
 using ClinicApp.ViewModels.Reception;
+using ClinicApp.Constants;
+using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Controllers.Reception
 {
     /// <summary>
-    /// کنترلر تخصصی مدیریت سرفصل‌ها و خدمات در فرم پذیرش
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. بارگذاری سرفصل‌ها بر اساس دپارتمان
-    /// 2. بارگذاری خدمات بر اساس سرفصل
-    /// 3. جستجو با کد خدمت
-    /// 4. مدیریت cascade loading
-    /// 5. بهینه‌سازی برای محیط درمانی
-    /// 
-    /// نکته حیاتی: این کنترلر از سرویس‌های تخصصی استفاده می‌کند
+    /// کنترلر مدیریت خدمات در ماژول پذیرش
     /// </summary>
-    [RoutePrefix("Reception/ServiceManagement")]
     public class ReceptionServiceManagementController : BaseController
     {
-        private readonly ReceptionServiceManagementService _serviceManagementService;
+        private readonly IReceptionServiceManagementService _serviceManagementService;
         private readonly ILogger _logger;
-        private readonly ICurrentUserService _currentUserService;
 
         public ReceptionServiceManagementController(
-            ReceptionServiceManagementService serviceManagementService,
-            ILogger logger,
-            ICurrentUserService currentUserService) : base(logger)
+            IReceptionServiceManagementService serviceManagementService,
+            ILogger logger) : base(logger)
         {
-            _serviceManagementService = serviceManagementService ?? throw new ArgumentNullException(nameof(serviceManagementService));
-            _logger = logger.ForContext<ReceptionServiceManagementController>();
-            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _serviceManagementService = serviceManagementService;
+            _logger = logger;
         }
 
-        #region Service Category Management
-
         /// <summary>
-        /// دریافت سرفصل‌های دپارتمان برای فرم پذیرش
+        /// دریافت دسته‌بندی‌های خدمات
         /// </summary>
-        /// <param name="departmentId">شناسه دپارتمان</param>
-        /// <returns>لیست سرفصل‌های دپارتمان</returns>
-        [HttpPost]
-        [Route("GetDepartmentServiceCategories")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> GetDepartmentServiceCategories(int departmentId)
+        [HttpGet]
+        public async Task<JsonResult> GetServiceCategories()
         {
             try
             {
-                _logger.Information("📋 دریافت سرفصل‌های دپارتمان برای فرم پذیرش. DepartmentId: {DepartmentId}, User: {UserName}", 
-                    departmentId, _currentUserService.UserName);
+                _logger.Information("دریافت دسته‌بندی‌های خدمات");
 
-                var result = await _serviceManagementService.GetDepartmentServiceCategoriesForReceptionAsync(departmentId);
-                
+                var result = await _serviceManagementService.GetServiceCategoriesAsync();
+
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "دسته‌بندی‌ها با موفقیت بارگذاری شدند"
+                    }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در دریافت سرفصل‌های دپارتمان. DepartmentId: {DepartmentId}", departmentId);
-                return Json(new { success = false, message = "خطا در دریافت سرفصل‌ها" }, JsonRequestBehavior.AllowGet);
+                _logger.Error(ex, "خطا در دریافت دسته‌بندی‌های خدمات");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری دسته‌بندی‌ها"
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 
-        #endregion
-
-        #region Service Management
-
         /// <summary>
-        /// دریافت خدمات سرفصل برای فرم پذیرش
+        /// دریافت تمام خدمات
         /// </summary>
-        /// <param name="categoryId">شناسه سرفصل</param>
-        /// <returns>لیست خدمات سرفصل</returns>
-        [HttpPost]
-        [Route("GetCategoryServices")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> GetCategoryServices(int categoryId)
+        [HttpGet]
+        public async Task<JsonResult> GetAllServices()
         {
             try
             {
-                _logger.Information("🔧 دریافت خدمات سرفصل برای فرم پذیرش. CategoryId: {CategoryId}, User: {UserName}", 
-                    categoryId, _currentUserService.UserName);
+                _logger.Information("دریافت تمام خدمات");
 
-                var result = await _serviceManagementService.GetCategoryServicesForReceptionAsync(categoryId);
-                
+                var result = await _serviceManagementService.GetAllServicesAsync();
+
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "خدمات با موفقیت بارگذاری شدند"
+                    }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در دریافت خدمات سرفصل. CategoryId: {CategoryId}", categoryId);
-                return Json(new { success = false, message = "خطا در دریافت خدمات" }, JsonRequestBehavior.AllowGet);
+                _logger.Error(ex, "خطا در دریافت خدمات");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری خدمات"
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 
         /// <summary>
-        /// جستجوی خدمت با کد خدمت
+        /// دریافت خدمات بر اساس دسته‌بندی
         /// </summary>
-        /// <param name="serviceCode">کد خدمت</param>
-        /// <returns>اطلاعات خدمت</returns>
-        [HttpPost]
-        [Route("SearchServiceByCode")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> SearchServiceByCode(string serviceCode)
+        [HttpGet]
+        public async Task<JsonResult> GetServicesByCategory(int categoryId)
         {
             try
             {
-                _logger.Information("🔍 جستجوی خدمت با کد. ServiceCode: {ServiceCode}, User: {UserName}", 
-                    serviceCode, _currentUserService.UserName);
+                _logger.Information("دریافت خدمات برای دسته‌بندی {CategoryId}", categoryId);
 
-                var result = await _serviceManagementService.SearchServiceByCodeAsync(serviceCode);
-                
+                var result = await _serviceManagementService.GetServicesByCategoryAsync(categoryId);
+
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "خدمات با موفقیت بارگذاری شدند"
+                    }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در جستجوی خدمت با کد. ServiceCode: {ServiceCode}", serviceCode);
-                return Json(new { success = false, message = "خطا در جستجوی خدمت" }, JsonRequestBehavior.AllowGet);
+                _logger.Error(ex, "خطا در دریافت خدمات دسته‌بندی {CategoryId}", categoryId);
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری خدمات"
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 
         /// <summary>
-        /// دریافت اطلاعات کامل خدمت
+        /// جستجوی خدمات
         /// </summary>
-        /// <param name="serviceId">شناسه خدمت</param>
-        /// <returns>اطلاعات کامل خدمت</returns>
+        [HttpGet]
+        public async Task<JsonResult> SearchServices(string searchTerm)
+        {
+            try
+            {
+                _logger.Information("جستجوی خدمات با عبارت: {SearchTerm}", searchTerm);
+
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "عبارت جستجو نمی‌تواند خالی باشد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _serviceManagementService.SearchServicesAsync(searchTerm);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "نتایج جستجو با موفقیت بارگذاری شدند"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در جستجوی خدمات");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در جستجوی خدمات"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// محاسبه هزینه خدمات
+        /// </summary>
         [HttpPost]
-        [Route("GetServiceDetails")]
-        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> CalculateServiceCosts(List<int> services, string patientId)
+        {
+            try
+            {
+                _logger.Information("محاسبه هزینه خدمات برای {ServiceCount} خدمت", services?.Count ?? 0);
+
+                if (services == null || !services.Any())
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "هیچ خدمتی انتخاب نشده است"
+                    });
+                }
+
+                var request = new ServiceCalculationRequest
+                {
+                    ServiceIds = services,
+                    PatientId = int.Parse(patientId)
+                };
+                var result = await _serviceManagementService.CalculateServiceCostsAsync(request);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "محاسبه با موفقیت انجام شد"
+                    });
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در محاسبه هزینه خدمات");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در محاسبه هزینه‌ها"
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات خدمت
+        /// </summary>
+        [HttpGet]
         public async Task<JsonResult> GetServiceDetails(int serviceId)
         {
             try
             {
-                _logger.Information("🔧 دریافت اطلاعات خدمت برای فرم پذیرش. ServiceId: {ServiceId}, User: {UserName}", 
-                    serviceId, _currentUserService.UserName);
+                _logger.Information("دریافت جزئیات خدمت {ServiceId}", serviceId);
 
-                var result = await _serviceManagementService.GetServiceDetailsForReceptionAsync(serviceId);
-                
+                var result = await _serviceManagementService.GetServiceDetailsAsync(serviceId);
+
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "جزئیات خدمت با موفقیت بارگذاری شد"
+                    }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در دریافت اطلاعات خدمت. ServiceId: {ServiceId}", serviceId);
-                return Json(new { success = false, message = "خطا در دریافت اطلاعات خدمت" }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        #endregion
-
-        #region Cascade Loading
-
-        /// <summary>
-        /// بارگذاری cascade: دپارتمان → سرفصل → خدمت
-        /// </summary>
-        /// <param name="departmentId">شناسه دپارتمان</param>
-        /// <param name="categoryId">شناسه سرفصل (اختیاری)</param>
-        /// <param name="serviceId">شناسه خدمت (اختیاری)</param>
-        /// <returns>اطلاعات کامل cascade</returns>
-        [HttpPost]
-        [Route("LoadServiceCascade")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> LoadServiceCascade(int departmentId, int? categoryId = null, int? serviceId = null)
-        {
-            try
-            {
-                _logger.Information("🔄 بارگذاری cascade خدمات برای فرم پذیرش. DepartmentId: {DepartmentId}, CategoryId: {CategoryId}, ServiceId: {ServiceId}, User: {UserName}", 
-                    departmentId, categoryId, serviceId, _currentUserService.UserName);
-
-                var result = await _serviceManagementService.LoadServiceCascadeForReceptionAsync(departmentId, categoryId, serviceId);
-                
-                if (result.Success)
+                _logger.Error(ex, "خطا در دریافت جزئیات خدمت {ServiceId}", serviceId);
+                return Json(new
                 {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
-                }
-
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "❌ خطا در بارگذاری cascade خدمات. DepartmentId: {DepartmentId}", departmentId);
-                return Json(new { success = false, message = "خطا در بارگذاری cascade خدمات" }, JsonRequestBehavior.AllowGet);
+                    success = false,
+                    message = "خطا در بارگذاری جزئیات خدمت"
+                }, JsonRequestBehavior.AllowGet);
             }
         }
-
-        #endregion
     }
 }

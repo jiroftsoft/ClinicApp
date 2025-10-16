@@ -46,6 +46,12 @@ public class Clinic : AuditableEntity
     [MaxLength(50, ErrorMessage = "شماره تلفن کلینیک نمی‌تواند بیش از 50 کاراکتر باشد.")]
     public string PhoneNumber { get; set; }
 
+    /// <summary>
+    /// کد کلینیک
+    /// </summary>
+    [MaxLength(20, ErrorMessage = "کد کلینیک نمی‌تواند بیش از 20 کاراکتر باشد.")]
+    public string Code { get; set; }
+
     #region پیاده‌سازی ISoftDelete (سیستم حذف نرم)
     /// <summary>
     /// نشان‌دهنده وضعیت حذف شدن کلینیک

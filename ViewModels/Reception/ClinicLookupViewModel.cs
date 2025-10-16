@@ -29,6 +29,11 @@ namespace ClinicApp.ViewModels.Reception
         public string PhoneNumber { get; set; }
 
         /// <summary>
+        /// کد کلینیک
+        /// </summary>
+        public string ClinicCode { get; set; }
+
+        /// <summary>
         /// وضعیت فعال بودن کلینیک
         /// </summary>
         public bool IsActive { get; set; }

@@ -1,224 +1,301 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using ClinicApp.Controllers;
-using ClinicApp.Core;
-using ClinicApp.Interfaces;
-using ClinicApp.Services.Reception;
+using ClinicApp.Interfaces.Reception;
 using ClinicApp.ViewModels.Reception;
+using ClinicApp.Constants;
+using ClinicApp.Helpers;
 using Serilog;
 
 namespace ClinicApp.Controllers.Reception
 {
     /// <summary>
-    /// کنترلر تخصصی مدیریت پرداخت POS در فرم پذیرش
-    /// 
-    /// ویژگی‌های کلیدی:
-    /// 1. پرداخت با دستگاه POS
-    /// 2. مدیریت تراکنش‌ها
-    /// 3. تأیید پرداخت
-    /// 4. مدیریت خطاهای پرداخت
-    /// 5. بهینه‌سازی برای محیط درمانی
-    /// 
-    /// نکته حیاتی: این کنترلر از سرویس‌های تخصصی استفاده می‌کند
+    /// کنترلر پرداخت در ماژول پذیرش
     /// </summary>
-    [RoutePrefix("Reception/Payment")]
     public class ReceptionPaymentController : BaseController
     {
-        private readonly ReceptionPaymentService _paymentService;
+        private readonly IReceptionPaymentService _paymentService;
         private readonly ILogger _logger;
-        private readonly ICurrentUserService _currentUserService;
 
         public ReceptionPaymentController(
-            ReceptionPaymentService paymentService,
-            ILogger logger,
-            ICurrentUserService currentUserService) : base(logger)
+            IReceptionPaymentService paymentService,
+            ILogger logger) : base(logger)
         {
-            _paymentService = paymentService ?? throw new ArgumentNullException(nameof(paymentService));
-            _logger = logger.ForContext<ReceptionPaymentController>();
-            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
+            _paymentService = paymentService;
+            _logger = logger;
         }
 
-        #region POS Payment Processing
-
         /// <summary>
-        /// پردازش پرداخت با دستگاه POS
-        /// </summary>
-        /// <param name="paymentRequest">درخواست پرداخت</param>
-        /// <returns>نتیجه پرداخت</returns>
-        [HttpPost]
-        [Route("ProcessPosPayment")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> ProcessPosPayment(ReceptionPaymentRequestViewModel paymentRequest)
-        {
-            try
-            {
-                _logger.Information("💳 پردازش پرداخت POS برای فرم پذیرش. PatientId: {PatientId}, Amount: {Amount}, User: {UserName}", 
-                    paymentRequest.PatientId, paymentRequest.Amount, _currentUserService.UserName);
-
-                var result = await _paymentService.ProcessPosPaymentAsync(paymentRequest);
-                
-                if (result.Success)
-                {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
-                }
-
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "❌ خطا در پردازش پرداخت POS. PatientId: {PatientId}, Amount: {Amount}", 
-                    paymentRequest.PatientId, paymentRequest.Amount);
-                return Json(new { success = false, message = "خطا در پردازش پرداخت POS" }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        #endregion
-
-        #region Payment Verification
-
-        /// <summary>
-        /// تأیید پرداخت
-        /// </summary>
-        /// <param name="paymentId">شناسه پرداخت</param>
-        /// <returns>نتیجه تأیید</returns>
-        [HttpPost]
-        [Route("VerifyPayment")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> VerifyPayment(string paymentId)
-        {
-            try
-            {
-                _logger.Information("✅ تأیید پرداخت برای فرم پذیرش. PaymentId: {PaymentId}, User: {UserName}", 
-                    paymentId, _currentUserService.UserName);
-
-                var result = await _paymentService.VerifyPaymentAsync(paymentId);
-                
-                if (result.Success)
-                {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
-                }
-
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "❌ خطا در تأیید پرداخت. PaymentId: {PaymentId}", paymentId);
-                return Json(new { success = false, message = "خطا در تأیید پرداخت" }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        #endregion
-
-        #region Payment History
-
-        /// <summary>
-        /// دریافت تاریخچه پرداخت‌های بیمار
-        /// </summary>
-        /// <param name="patientId">شناسه بیمار</param>
-        /// <returns>تاریخچه پرداخت‌ها</returns>
-        [HttpPost]
-        [Route("GetPatientPaymentHistory")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> GetPatientPaymentHistory(int patientId)
-        {
-            try
-            {
-                _logger.Information("📋 دریافت تاریخچه پرداخت‌های بیمار برای فرم پذیرش. PatientId: {PatientId}, User: {UserName}", 
-                    patientId, _currentUserService.UserName);
-
-                var result = await _paymentService.GetPatientPaymentHistoryAsync(patientId);
-                
-                if (result.Success)
-                {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
-                }
-
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "❌ خطا در دریافت تاریخچه پرداخت‌های بیمار. PatientId: {PatientId}", patientId);
-                return Json(new { success = false, message = "خطا در دریافت تاریخچه پرداخت‌ها" }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        #endregion
-
-        #region Payment Error Handling
-
-        /// <summary>
-        /// مدیریت خطاهای پرداخت
-        /// </summary>
-        /// <param name="errorCode">کد خطا</param>
-        /// <param name="errorMessage">پیام خطا</param>
-        /// <returns>اطلاعات خطا</returns>
-        [HttpPost]
-        [Route("HandlePaymentError")]
-        [ValidateAntiForgeryToken]
-        public JsonResult HandlePaymentError(string errorCode, string errorMessage)
-        {
-            try
-            {
-                _logger.Warning("⚠️ مدیریت خطای پرداخت. ErrorCode: {ErrorCode}, ErrorMessage: {ErrorMessage}, User: {UserName}", 
-                    errorCode, errorMessage, _currentUserService.UserName);
-
-                var result = _paymentService.HandlePaymentError(errorCode, errorMessage);
-                
-                if (result.Success)
-                {
-                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
-                }
-
-                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex, "❌ خطا در مدیریت خطای پرداخت. ErrorCode: {ErrorCode}", errorCode);
-                return Json(new { success = false, message = "خطا در مدیریت خطای پرداخت" }, JsonRequestBehavior.AllowGet);
-            }
-        }
-
-        #endregion
-
-        #region Payment Status
-
-        /// <summary>
-        /// دریافت وضعیت پرداخت‌ها برای سایدبار
+        /// دریافت اطلاعات پرداخت
         /// </summary>
         [HttpGet]
-        public async Task<JsonResult> GetPaymentStatus()
+        public async Task<JsonResult> GetPaymentInfo(string patientId, decimal amount)
         {
             try
             {
-                _logger.Information("🏥 دریافت وضعیت پرداخت‌ها برای سایدبار. کاربر: {UserName}", _currentUserService.UserName);
+                _logger.Information("دریافت اطلاعات پرداخت برای بیمار {PatientId} با مبلغ {Amount}", patientId, amount);
 
-                // دریافت آمار پرداخت‌ها
-                var todayPayments = await _paymentService.GetTodayPaymentsCountAsync();
-                var totalAmount = await _paymentService.GetTodayTotalAmountAsync();
+                var result = await _paymentService.GetPaymentInfoAsync(int.Parse(patientId));
 
-                var result = new
+                if (result.Success)
                 {
-                    success = true,
-                    data = new
+                    return Json(new
                     {
-                        todayPayments = todayPayments,
-                        totalAmount = totalAmount
-                    }
-                };
+                        success = true,
+                        data = result.Data,
+                        message = "اطلاعات پرداخت با موفقیت بارگذاری شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
 
-                _logger.Information("✅ وضعیت پرداخت‌ها دریافت شد: تعداد={Count}, مبلغ={Amount}", todayPayments, totalAmount);
-                return Json(result, JsonRequestBehavior.AllowGet);
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در دریافت وضعیت پرداخت‌ها");
-                return Json(new { success = false, message = "خطا در دریافت وضعیت پرداخت‌ها" }, JsonRequestBehavior.AllowGet);
+                _logger.Error(ex, "خطا در دریافت اطلاعات پرداخت");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری اطلاعات پرداخت"
+                }, JsonRequestBehavior.AllowGet);
             }
         }
 
-        #endregion
+        /// <summary>
+        /// شروع پرداخت آنلاین
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> StartOnlinePayment(PaymentRequestViewModel paymentRequest)
+        {
+            try
+            {
+                _logger.Information("شروع پرداخت آنلاین برای مبلغ {Amount}", paymentRequest.Amount);
+
+                var result = await _paymentService.StartOnlinePaymentAsync(paymentRequest);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "پرداخت آنلاین با موفقیت شروع شد"
+                    });
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در شروع پرداخت آنلاین");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در شروع پرداخت آنلاین"
+                });
+            }
+        }
+
+        /// <summary>
+        /// تایید پرداخت آنلاین
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> ConfirmOnlinePayment(string transactionId, string verificationCode)
+        {
+            try
+            {
+                _logger.Information("تایید پرداخت آنلاین برای تراکنش {TransactionId}", transactionId);
+
+                var result = await _paymentService.ConfirmOnlinePaymentAsync(transactionId, verificationCode);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "پرداخت آنلاین با موفقیت تایید شد"
+                    });
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تایید پرداخت آنلاین");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در تایید پرداخت آنلاین"
+                });
+            }
+        }
+
+        /// <summary>
+        /// تکمیل پرداخت نقدی
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> CompleteCashPayment(CashPaymentRequestViewModel cashPaymentRequest)
+        {
+            try
+            {
+                _logger.Information("تکمیل پرداخت نقدی برای مبلغ {Amount}", cashPaymentRequest.Amount);
+
+                var result = await _paymentService.CompleteCashPaymentAsync(cashPaymentRequest);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "پرداخت نقدی با موفقیت تکمیل شد"
+                    });
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در تکمیل پرداخت نقدی");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در تکمیل پرداخت نقدی"
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت وضعیت پرداخت
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetPaymentStatus(string transactionId)
+        {
+            try
+            {
+                _logger.Information("دریافت وضعیت پرداخت برای تراکنش {TransactionId}", transactionId);
+
+                var result = await _paymentService.GetPaymentStatusAsync(int.Parse(transactionId));
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "وضعیت پرداخت با موفقیت بارگذاری شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت وضعیت پرداخت");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری وضعیت پرداخت"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// لغو پرداخت
+        /// </summary>
+        [HttpPost]
+        public async Task<JsonResult> CancelPayment(string transactionId, string reason)
+        {
+            try
+            {
+                _logger.Information("لغو پرداخت برای تراکنش {TransactionId} با دلیل {Reason}", transactionId, reason);
+
+                var result = await _paymentService.CancelPaymentAsync(int.Parse(transactionId), reason);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "پرداخت با موفقیت لغو شد"
+                    });
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در لغو پرداخت");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در لغو پرداخت"
+                });
+            }
+        }
+
+        /// <summary>
+        /// دریافت رسید پرداخت
+        /// </summary>
+        [HttpGet]
+        public async Task<JsonResult> GetPaymentReceipt(string transactionId)
+        {
+            try
+            {
+                _logger.Information("دریافت رسید پرداخت برای تراکنش {TransactionId}", transactionId);
+
+                var result = await _paymentService.GetPaymentReceiptAsync(transactionId);
+
+                if (result.Success)
+                {
+                    return Json(new
+                    {
+                        success = true,
+                        data = result.Data,
+                        message = "رسید پرداخت با موفقیت بارگذاری شد"
+                    }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new
+                {
+                    success = false,
+                    message = result.Message
+                }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت رسید پرداخت");
+                return Json(new
+                {
+                    success = false,
+                    message = "خطا در بارگذاری رسید پرداخت"
+                }, JsonRequestBehavior.AllowGet);
+            }
+        }
     }
 }

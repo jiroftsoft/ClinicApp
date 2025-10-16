@@ -1016,7 +1016,7 @@ namespace ClinicApp.Services
                     LastName = d.LastName,
                     SpecializationId = null, // DoctorIndexViewModel doesn't have SpecializationId
                     SpecializationName = d.SpecializationNames?.FirstOrDefault() ?? "", // Use first specialization
-                    DepartmentId = null, // DoctorIndexViewModel doesn't have DepartmentId
+                    DepartmentId = 0, // DoctorIndexViewModel doesn't have DepartmentId
                     DepartmentName = "", // DoctorIndexViewModel doesn't have DepartmentName
                     IsActive = d.IsActive,
                     FullName = $"{d.FirstName} {d.LastName}",

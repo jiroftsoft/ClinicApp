@@ -125,23 +125,7 @@ namespace ClinicApp.ViewModels.Reception
     /// <summary>
     /// ViewModel برای نمایش خدمت در لیست
     /// </summary>
-    public class ServiceLookupViewModel
-    {
-        [Display(Name = "شناسه خدمت")]
-        public int ServiceId { get; set; }
-
-        [Display(Name = "نام خدمت")]
-        public string ServiceName { get; set; }
-
-        [Display(Name = "دسته‌بندی")]
-        public string Category { get; set; }
-
-        [Display(Name = "قیمت")]
-        public decimal Price { get; set; }
-
-        [Display(Name = "آیا فعال")]
-        public bool IsActive { get; set; } = true;
-    }
+ 
 
     /// <summary>
     /// ViewModel برای نمایش پزشک در لیست

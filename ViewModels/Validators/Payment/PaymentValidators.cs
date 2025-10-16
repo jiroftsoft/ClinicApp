@@ -196,7 +196,7 @@ namespace ClinicApp.ViewModels.Validators.Payment
     /// <summary>
     /// Validator برای رسید پرداخت
     /// </summary>
-    public class PaymentReceiptViewModelValidator : AbstractValidator<PaymentReceiptViewModel>
+    public class PaymentReceiptViewModelValidator : AbstractValidator<ClinicApp.ViewModels.Payment.PaymentReceiptViewModel>
     {
         public PaymentReceiptViewModelValidator()
         {

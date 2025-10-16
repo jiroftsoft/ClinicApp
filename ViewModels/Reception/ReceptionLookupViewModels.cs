@@ -170,9 +170,9 @@ namespace ClinicApp.ViewModels.Reception
     }
 
     /// <summary>
-    /// ViewModel برای جستجوی پزشکان در پذیرش
+    /// ViewModel برای جستجوی پزشکان در پذیرش (Legacy - استفاده از فایل جداگانه)
     /// </summary>
-    public class ReceptionDoctorLookupViewModel
+    public class LegacyReceptionDoctorLookupViewModel
     {
         [Display(Name = "شناسه پزشک")]
         public int DoctorId { get; set; }
@@ -488,23 +488,7 @@ namespace ClinicApp.ViewModels.Reception
     /// <summary>
     /// ViewModel برای جستجوی تخصص‌ها
     /// </summary>
-    public class SpecializationLookupViewModel
-    {
-        [Display(Name = "شناسه تخصص")]
-        public int SpecializationId { get; set; }
-
-        [Display(Name = "نام تخصص")]
-        public string Name { get; set; }
-
-        [Display(Name = "توضیحات")]
-        public string Description { get; set; }
-
-        [Display(Name = "آیا فعال است")]
-        public bool IsActive { get; set; }
-
-        [Display(Name = "تعداد پزشکان")]
-        public int DoctorsCount { get; set; }
-    }
+   
 
     /// <summary>
     /// ViewModel برای دپارتمان‌های پزشک در پذیرش

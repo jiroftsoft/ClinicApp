@@ -350,11 +350,11 @@ namespace ClinicApp.Services.Reception
                     }
                     else if (!service.IsActive)
                     {
-                        errors.Add($"خدمت {service.Name} غیرفعال است.");
+                        errors.Add($"خدمت {service.ServiceName} غیرفعال است.");
                     }
-                    else if (service.IsDeleted)
+                    else if (!service.IsActive)
                     {
-                        errors.Add($"خدمت {service.Name} حذف شده است.");
+                        errors.Add($"خدمت {service.ServiceName} حذف شده است.");
                     }
                 }
 

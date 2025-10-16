@@ -46,6 +46,7 @@ using ClinicApp.Services.Interfaces;
 using ClinicApp.Services.Triage;
 using ClinicApp.Services;
 using ClinicApp.Interfaces.Reception;
+using ClinicApp.Repositories.Reception;
 using ClinicApp.Services.Reception;
 using Unity;
 using Unity.AspNet.Mvc;
@@ -494,6 +495,13 @@ namespace ClinicApp
             container.RegisterType<IReceptionNavigationService, ReceptionNavigationService>(new PerRequestLifetimeManager());
             container.RegisterType<ReceptionInsuranceAutoService, ReceptionInsuranceAutoService>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionDepartmentDoctorService, Services.Reception.ReceptionDepartmentDoctorService>(new PerRequestLifetimeManager());
+            container.RegisterType<IReceptionServiceManagementService, Services.Reception.ReceptionServiceManagementService>(new PerRequestLifetimeManager());
+            container.RegisterType<IReceptionPaymentService, Services.Reception.ReceptionPaymentService>(new PerRequestLifetimeManager());
+            
+            // ثبت Repository های تخصصی پذیرش
+            container.RegisterType<IClinicManagementRepository, Repositories.Reception.ClinicManagementRepository>(new PerRequestLifetimeManager());
+            container.RegisterType<IDoctorManagementRepository, Repositories.Reception.DoctorManagementRepository>(new PerRequestLifetimeManager());
+            container.RegisterType<IShiftManagementRepository, Repositories.Reception.ShiftManagementRepository>(new PerRequestLifetimeManager());
                 
                 // ثبت سرویس‌های شیفت کاری
                 container.RegisterType<ShiftHelperService>(new PerRequestLifetimeManager());

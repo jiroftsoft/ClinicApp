@@ -2,6 +2,7 @@ using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.ViewModels.Reception;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -84,7 +85,7 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="status">وضعیت جدید</param>
         /// <param name="userId">شناسه کاربر</param>
         /// <returns>نتیجه به‌روزرسانی</returns>
-        Task<ServiceResult> UpdatePaymentStatusAsync(int transactionId, PaymentStatus status, string userId);
+        Task<ServiceResult> UpdatePaymentStatusAsync(int transactionId, Models.Enums.PaymentStatus status, string userId);
 
         #endregion
 
@@ -139,7 +140,7 @@ namespace ClinicApp.Interfaces.Payment
         /// </summary>
         /// <param name="transactionId">شناسه تراکنش</param>
         /// <returns>وضعیت پرداخت</returns>
-        Task<ServiceResult<PaymentStatus>> GetPaymentStatusAsync(int transactionId);
+        Task<ServiceResult<Models.Enums.PaymentStatus>> GetPaymentStatusAsync(int transactionId);
 
         #endregion
 
@@ -198,8 +199,8 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="paymentMethod">روش پرداخت</param>
         /// <param name="status">وضعیت پرداخت</param>
         /// <returns>آمار پرداخت‌ها</returns>
-        Task<ServiceResult<PaymentStatistics>> GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate, PaymentMethod? paymentMethod, PaymentStatus? status);
-        Task<ServiceResult<PaymentStatistics>> GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate, PaymentMethod? paymentMethod, PaymentStatus? status, int? patientId);
+        Task<ServiceResult<PaymentStatistics>> GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate, PaymentMethod? paymentMethod, Models.Enums.PaymentStatus? status);
+        Task<ServiceResult<PaymentStatistics>> GetPaymentStatisticsAsync(DateTime startDate, DateTime endDate, PaymentMethod? paymentMethod, Models.Enums.PaymentStatus? status, int? patientId);
 
         /// <summary>
         /// دریافت آمار پرداخت‌های روزانه
@@ -249,7 +250,7 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="pageSize">اندازه صفحه</param>
         /// <returns>لیست تراکنش‌ها</returns>
         Task<ServiceResult<PagedResult<PaymentTransaction>>> GetTransactionsAsync(int pageNumber = 1, int pageSize = 50);
-        Task<ServiceResult<PagedResult<PaymentTransaction>>> GetTransactionsAsync(int? patientId, int? receptionId, int? appointmentId, PaymentMethod? method, PaymentStatus? status, decimal? minAmount, decimal? maxAmount, DateTime? startDate, DateTime? endDate, string? patientName, string? doctorName, string? transactionId, string? referenceCode, int pageNumber = 1, int pageSize = 50);
+        Task<ServiceResult<PagedResult<PaymentTransaction>>> GetTransactionsAsync(int? patientId, int? receptionId, int? appointmentId, PaymentMethod? method, Models.Enums.PaymentStatus? status, decimal? minAmount, decimal? maxAmount, DateTime? startDate, DateTime? endDate, string? patientName, string? doctorName, string? transactionId, string? referenceCode, int pageNumber = 1, int pageSize = 50);
 
         /// <summary>
         /// دریافت تراکنش پرداخت بر اساس شناسه
@@ -279,6 +280,38 @@ namespace ClinicApp.Interfaces.Payment
         /// <param name="userId">شناسه کاربر</param>
         /// <returns>نتیجه حذف</returns>
         Task<ServiceResult> DeleteTransactionAsync(int transactionId, string userId);
+
+        /// <summary>
+        /// ایجاد تراکنش پرداخت جدید
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <param name="amount">مبلغ</param>
+        /// <param name="paymentMethod">روش پرداخت</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>نتیجه ایجاد</returns>
+        Task<ServiceResult<PaymentTransaction>> CreatePaymentTransactionAsync(int receptionId, decimal amount, PaymentMethod paymentMethod, string userId);
+
+        /// <summary>
+        /// تکمیل پرداخت نقدی
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <param name="userId">شناسه کاربر</param>
+        /// <returns>نتیجه تکمیل</returns>
+        Task<ServiceResult<PaymentTransaction>> CompleteCashPaymentAsync(int transactionId, string userId);
+
+        /// <summary>
+        /// دریافت جزئیات پرداخت
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <returns>جزئیات پرداخت</returns>
+        Task<ServiceResult<PaymentTransaction>> GetPaymentDetailsAsync(int transactionId);
+
+        /// <summary>
+        /// دریافت رسید پرداخت
+        /// </summary>
+        /// <param name="transactionId">شناسه تراکنش</param>
+        /// <returns>رسید پرداخت</returns>
+        Task<ServiceResult<PaymentReceiptViewModel>> GetPaymentReceiptAsync(int transactionId);
 
         #endregion
     }
@@ -367,7 +400,7 @@ namespace ClinicApp.Interfaces.Payment
         public int? ReceptionId { get; set; }
         public int? PatientId { get; set; }
         public PaymentMethod? PaymentMethod { get; set; }
-        public PaymentStatus? Status { get; set; }
+        public Models.Enums.PaymentStatus? Status { get; set; }
         public decimal? MinAmount { get; set; }
         public decimal? MaxAmount { get; set; }
         public DateTime? StartDate { get; set; }

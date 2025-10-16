@@ -24,6 +24,21 @@ namespace ClinicApp.ViewModels.Reception
         public string Description { get; set; }
 
         /// <summary>
+        /// کد دپارتمان
+        /// </summary>
+        public string DepartmentCode { get; set; }
+
+        /// <summary>
+        /// شناسه کلینیک
+        /// </summary>
+        public int ClinicId { get; set; }
+
+        /// <summary>
+        /// نام کلینیک
+        /// </summary>
+        public string ClinicName { get; set; }
+
+        /// <summary>
         /// وضعیت فعال بودن دپارتمان
         /// </summary>
         public bool IsActive { get; set; }

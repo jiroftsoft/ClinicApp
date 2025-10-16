@@ -1056,4 +1056,48 @@ public class ServiceCategoryService : IServiceCategoryService
         }
     }
 
+    /// <summary>
+        /// دریافت لیست دسته‌بندی‌های فعال
+        /// </summary>
+        public async Task<ServiceResult<List<ServiceCategorySelectItem>>> GetActiveCategoriesAsync()
+        {
+            try
+            {
+                _log.Information("درخواست دریافت لیست دسته‌بندی‌های فعال. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName,
+                    _currentUserService.UserId);
+
+                var activeCategories = await _context.ServiceCategories
+                    .Where(sc => !sc.IsDeleted && sc.IsActive)
+                    .Select(sc => new ServiceCategorySelectItem
+                    {
+                        ServiceCategoryId = sc.ServiceCategoryId,
+                        Title = sc.Title,
+                        DepartmentId = sc.DepartmentId,
+                        DepartmentName = sc.Department.Name,
+                        ServiceCount = sc.Services.Count(s => !s.IsDeleted && s.IsActive)
+                    })
+                    .OrderBy(sc => sc.Title)
+                    .ToListAsync();
+
+                _log.Information("لیست دسته‌بندی‌های فعال با موفقیت دریافت شد. تعداد: {Count}. User: {UserName} (Id: {UserId})",
+                    activeCategories.Count,
+                    _currentUserService.UserName,
+                    _currentUserService.UserId);
+
+                return ServiceResult<List<ServiceCategorySelectItem>>.Successful(activeCategories, "لیست دسته‌بندی‌های فعال با موفقیت دریافت شد");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex,
+                    "خطا در دریافت لیست دسته‌بندی‌های فعال. User: {UserName} (Id: {UserId})",
+                    _currentUserService.UserName,
+                    _currentUserService.UserId);
+
+                return ServiceResult<List<ServiceCategorySelectItem>>.Failed("خطا در دریافت لیست دسته‌بندی‌های فعال");
+            }
+        }
+    
+
+   
 }

@@ -131,6 +131,12 @@ namespace ClinicApp.Interfaces
         /// <returns>آیا دسته‌بندی خدمات فعال وجود دارد؟</returns>
         Task<bool> IsActiveServiceCategoryExistsAsync(int serviceCategoryId);
 
+        /// <summary>
+        /// دریافت لیست دسته‌بندی‌های فعال
+        /// </summary>
+        /// <returns>لیست دسته‌بندی‌های فعال</returns>
+        Task<ServiceResult<List<ServiceCategorySelectItem>>> GetActiveCategoriesAsync();
+
     }
 
     /// <summary>

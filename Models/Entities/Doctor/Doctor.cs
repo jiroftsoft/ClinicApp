@@ -44,6 +44,12 @@ public class Doctor : ISoftDelete, ITrackable
     public string LastName { get; set; }
 
     /// <summary>
+    /// کد پزشک
+    /// </summary>
+    [MaxLength(20, ErrorMessage = "کد پزشک نمی‌تواند بیش از 20 کاراکتر باشد.")]
+    public string DoctorCode { get; set; }
+
+    /// <summary>
     /// وضعیت فعال/غیرفعال بودن پزشک
     /// پزشکان غیرفعال در سیستم نوبت‌دهی نمایش داده نمی‌شوند
     /// </summary>
@@ -303,6 +309,12 @@ public class Doctor : ISoftDelete, ITrackable
     /// این رابطه برای مشخص کردن تخصص‌های پزشک استفاده می‌شود
     /// </summary>
     public virtual ICollection<DoctorSpecialization> DoctorSpecializations { get; set; } = new HashSet<DoctorSpecialization>();
+
+    /// <summary>
+    /// لیست برنامه‌های کاری پزشک
+    /// این رابطه برای مدیریت برنامه‌های کاری هفتگی پزشک استفاده می‌شود
+    /// </summary>
+    public virtual ICollection<DoctorSchedule> DoctorSchedules { get; set; } = new HashSet<DoctorSchedule>();
 
     /// <summary>
     /// تخصص اصلی پزشک (برای دسترسی مستقیم)

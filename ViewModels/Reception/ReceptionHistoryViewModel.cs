@@ -120,7 +120,7 @@ namespace ClinicApp.ViewModels.Reception
     /// <summary>
     /// ViewModel برای اطلاعات پرداخت در جزئیات پذیرش
     /// </summary>
-    public class PaymentInfoViewModel
+    public class ReceptionPaymentInfoViewModel
     {
         public string PaymentMethod { get; set; }
         public decimal TotalAmount { get; set; }

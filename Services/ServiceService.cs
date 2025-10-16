@@ -674,7 +674,7 @@ public class ServiceService : IServiceService
     /// </summary>
     /// <param name="serviceId">شناسه خدمات مورد نظر</param>
     /// <returns>مدل جزئیات کامل خدمات</returns>
-    public async Task<ServiceResult<ServiceDetailsViewModel>> GetServiceDetailsAsync(int serviceId)
+    public async Task<ServiceResult<ViewModels.Reception.ServiceDetailsViewModel>> GetServiceDetailsAsync(int serviceId)
     {
         _log.Information(
             "درخواست دریافت جزئیات خدمات. ServiceId: {ServiceId}. User: {UserName} (Id: {UserId})",
@@ -692,7 +692,7 @@ public class ServiceService : IServiceService
                     serviceId,
                     _currentUserService.UserName,
                     _currentUserService.UserId);
-                return ServiceResult<ServiceDetailsViewModel>.Failed("شناسه خدمات معتبر نیست.");
+                return ServiceResult<ViewModels.Reception.ServiceDetailsViewModel>.Failed("شناسه خدمات معتبر نیست.");
             }
 
             // دریافت خدمات با روابط مورد نیاز - استفاده صحیح از ThenInclude
@@ -710,7 +710,7 @@ public class ServiceService : IServiceService
                     serviceId,
                     _currentUserService.UserName,
                     _currentUserService.UserId);
-                return ServiceResult<ServiceDetailsViewModel>.Failed("خدمات مشخص‌شده پیدا نشد یا حذف شده است.");
+                return ServiceResult<ViewModels.Reception.ServiceDetailsViewModel>.Failed("خدمات مشخص‌شده پیدا نشد یا حذف شده است.");
             }
 
             // دریافت اطلاعات کاربران مرتبط به صورت یکجا برای کاهش تعداد کوئری‌ها
@@ -744,20 +744,28 @@ public class ServiceService : IServiceService
             }
 
             // ساخت ViewModel به صورت دستی
-            var details = new ServiceDetailsViewModel
+            var details = new ViewModels.Reception.ServiceDetailsViewModel
             {
                 ServiceId = service.ServiceId,
                 Title = service.Title,
+                ServiceName = service.Title,
                 ServiceCode = service.ServiceCode,
                 ServiceCategoryTitle = service.ServiceCategory?.Title,
                 DepartmentTitle = service.ServiceCategory?.Department?.Name,
                 ClinicTitle = service.ServiceCategory?.Department?.Clinic?.Name,
                 Price = service.Price,
+                BasePrice = service.Price,
                 Description = service.Description,
                 IsActive = !service.IsDeleted,
                 CreatedAt = service.CreatedAt,
-                UpdatedAt = service.UpdatedAt,
-                DeletedAt = service.DeletedAt
+                UpdatedAt = service.UpdatedAt ?? DateTime.MinValue,
+                DeletedAt = service.DeletedAt,
+                // افزودن فیلدهای مورد نیاز
+                ServiceCategoryId = service.ServiceCategoryId,
+                DepartmentId = service.ServiceCategory?.DepartmentId ?? 0,
+                ClinicId = service.ServiceCategory?.Department?.ClinicId ?? 0,
+                DepartmentName = service.ServiceCategory?.Department?.Name,
+                ClinicName = service.ServiceCategory?.Department?.Clinic?.Name
             };
 
             // تنظیم اطلاعات کاربران
@@ -767,8 +775,8 @@ public class ServiceService : IServiceService
 
             // تبدیل تاریخ به شمسی برای محیط‌های پزشکی ایرانی
             details.CreatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.CreatedAt);
-            if (details.UpdatedAt.HasValue)
-                details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt.Value);
+            if (details.UpdatedAt != DateTime.MinValue)
+                details.UpdatedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.UpdatedAt);
             if (details.DeletedAt.HasValue)
                 details.DeletedAtShamsi = DateTimeExtensions.ToPersianDateTime(details.DeletedAt.Value);
             if (details.LastUsageDate.HasValue)
@@ -787,7 +795,7 @@ public class ServiceService : IServiceService
                 _currentUserService.UserName,
                 _currentUserService.UserId);
 
-            return ServiceResult<ServiceDetailsViewModel>.Successful(details);
+            return ServiceResult<ViewModels.Reception.ServiceDetailsViewModel>.Successful(details);
         }
         catch (Exception ex)
         {
@@ -798,7 +806,7 @@ public class ServiceService : IServiceService
                 _currentUserService.UserName,
                 _currentUserService.UserId);
 
-            return ServiceResult<ServiceDetailsViewModel>.Failed(
+            return ServiceResult<ViewModels.Reception.ServiceDetailsViewModel>.Failed(
                 "خطای سیستم رخ داده است. لطفاً بعداً مجدداً تلاش کنید و در صورت تکرار خطا با پشتیبانی تماس بگیرید.");
         }
     }
@@ -1791,5 +1799,87 @@ public class ServiceService : IServiceService
             return ServiceResult<decimal>.Failed("خطا در به‌روزرسانی قیمت خدمت");
         }
     }
+
+    /// <summary>
+    /// دریافت خدمات بر اساس دسته‌بندی
+    /// </summary>
+    /// <param name="categoryId">شناسه دسته‌بندی</param>
+    /// <returns>لیست خدمات</returns>
+    public async Task<ServiceResult<List<ViewModels.Reception.ServiceLookupViewModel>>> GetServicesByCategoryAsync(int categoryId)
+    {
+        try
+        {
+            _log.Information("درخواست دریافت خدمات بر اساس دسته‌بندی. CategoryId: {CategoryId}", categoryId);
+
+            var services = await _context.Services
+                .Where(s => s.ServiceCategoryId == categoryId && s.IsActive && !s.IsDeleted)
+                .Select(s => new ViewModels.Reception.ServiceLookupViewModel
+                {
+                    ServiceId = s.ServiceId,
+                    ServiceName = s.Title,
+                    ServiceCode = s.ServiceCode,
+                    BasePrice = s.Price,
+                    CategoryId = s.ServiceCategoryId,
+                    CategoryName = s.ServiceCategory.Title,
+                    IsActive = s.IsActive,
+                    Description = s.Description,
+                    RequiresSpecialization = false,
+                    RequiresDoctor = false,
+                    DisplayName = s.Title
+                })
+                .ToListAsync();
+
+            return ServiceResult<List<ViewModels.Reception.ServiceLookupViewModel>>.Successful(services);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "خطا در دریافت خدمات بر اساس دسته‌بندی. CategoryId: {CategoryId}", categoryId);
+            return ServiceResult<List<ViewModels.Reception.ServiceLookupViewModel>>.Failed("خطا در دریافت خدمات");
+        }
+    }
+
+    /// <summary>
+    /// دریافت خدمت بر اساس شناسه
+    /// </summary>
+    /// <param name="serviceId">شناسه خدمت</param>
+    /// <returns>خدمت</returns>
+    public async Task<ServiceResult<ViewModels.Reception.ServiceLookupViewModel>> GetServiceByIdAsync(int serviceId)
+    {
+        try
+        {
+            _log.Information("درخواست دریافت خدمت. ServiceId: {ServiceId}", serviceId);
+
+            var service = await _context.Services
+                .Where(s => s.ServiceId == serviceId && s.IsActive && !s.IsDeleted)
+                .Select(s => new ViewModels.Reception.ServiceLookupViewModel
+                {
+                    ServiceId = s.ServiceId,
+                    ServiceName = s.Title,
+                    ServiceCode = s.ServiceCode,
+                    BasePrice = s.Price,
+                    CategoryId = s.ServiceCategoryId,
+                    CategoryName = s.ServiceCategory.Title,
+                    IsActive = s.IsActive,
+                    Description = s.Description,
+                    RequiresSpecialization = false,
+                    RequiresDoctor = false,
+                    DisplayName = s.Title
+                })
+                .FirstOrDefaultAsync();
+
+            if (service == null)
+            {
+                return ServiceResult<ViewModels.Reception.ServiceLookupViewModel>.Failed("خدمت یافت نشد");
+            }
+
+            return ServiceResult<ViewModels.Reception.ServiceLookupViewModel>.Successful(service);
+        }
+        catch (Exception ex)
+        {
+            _log.Error(ex, "خطا در دریافت خدمت. ServiceId: {ServiceId}", serviceId);
+            return ServiceResult<ViewModels.Reception.ServiceLookupViewModel>.Failed("خطا در دریافت خدمت");
+        }
+    }
+
 }
 
