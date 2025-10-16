@@ -195,12 +195,14 @@ namespace ClinicApp.Services.Reception
                 {
                     actions.Add(new QuickAction
                     {
-                        Id = actionId++,
+                        ActionId = $"quick-action-{actionId++}",
                         Title = actionSample.Title,
-                        Description = actionSample.Description,
                         Icon = actionSample.Icon,
+                        Controller = "Reception",
                         Action = actionSample.Action,
-                        IsEnabled = true
+                        CssClass = "btn-primary",
+                        IsVisible = true,
+                        Tooltip = actionSample.Description
                     });
                 }
 

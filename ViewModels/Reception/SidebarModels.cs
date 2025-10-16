@@ -51,16 +51,4 @@ namespace ClinicApp.ViewModels.Reception
         public DateTime LastUpdated { get; set; }
     }
 
-    /// <summary>
-    /// اقدام سریع
-    /// </summary>
-    public class QuickAction
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public string Icon { get; set; }
-        public string Action { get; set; }
-        public bool IsEnabled { get; set; }
-    }
 }

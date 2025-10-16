@@ -1,5 +1,5 @@
 @using ClinicApp.ViewModels.Reception
-@model ClinicApp.ViewModels.Reception.ReceptionIndexViewModel
+@model ClinicApp.ViewModels.Reception.MedicalNavigationViewModel
 
 @{
     ViewBag.Title = "سیستم پذیرش بیماران";
@@ -25,38 +25,32 @@
                     </span>
                     <div class="medical-time" id="currentTime"></div>
                 </div>
-            </div>
+        </div>
+        </div>
         </div>
     </div>
-</div>
 
 <!-- Main Reception Interface -->
 <div class="reception-interface">
     <div class="container-fluid">
         <div class="row">
             <!-- Left Panel - Patient Search & Info -->
-            <div class="col-lg-4">
+            <div class="col-lg-3">
                 <div class="medical-panel patient-panel">
-                    <div class="panel-header">
-                        <h5 class="panel-title">
-                            <i class="fas fa-user-md me-2"></i>
-                            اطلاعات بیمار
-                        </h5>
-                    </div>
                     <div class="panel-body">
                         @Html.Partial("Components/_PatientIdentityComponent", new ReceptionFormPatientViewModel())
-                    </div>
+                </div>
                 </div>
             </div>
 
             <!-- Center Panel - Main Reception Form -->
-            <div class="col-lg-8">
+            <div class="col-lg-9">
                 <div class="medical-panel reception-panel">
                     <div class="panel-header">
                         <h5 class="panel-title">
-                            <i class="fas fa-clipboard-list me-2"></i>
-                            فرم پذیرش
-                        </h5>
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        فرم پذیرش
+                    </h5>
                         <div class="panel-actions">
                             <button type="button" class="btn btn-outline-primary btn-sm" id="saveDraftBtn">
                                 <i class="fas fa-save me-1"></i>
@@ -67,14 +61,9 @@
                     <div class="panel-body">
                         <!-- Main Reception Form Components -->
                         <div class="reception-form-components">
-                            @Html.Partial("Components/_PatientIdentityComponent", new ReceptionFormPatientViewModel())
-                            @Html.Partial("Components/_InsuranceComponent")
-                            @Html.Partial("Components/_DepartmentComponent")
-                            @Html.Partial("Components/_ServiceComponent")
-                            @Html.Partial("Components/_PaymentComponent")
-                            @Html.Partial("Components/_ReceptionInfoComponent", new ReceptionInformationViewModel())
+                            @Html.Partial("Components/_ReceptionAccordionForm", new ReceptionAccordionViewModel())
                         </div>
-                    </div>
+                </div>
                 </div>
             </div>
         </div>
@@ -146,11 +135,11 @@
         box-shadow: 0 2px 10px rgba(0,0,0,0.08);
         border: 1px solid #e9ecef;
         margin-bottom: 1.5rem;
-        overflow: hidden;
-    }
+    overflow: hidden;
+}
 
     .panel-header {
-        background: #f8f9fa;
+    background: #f8f9fa;
         padding: 1.25rem 1.5rem;
         border-bottom: 1px solid #e9ecef;
         display: flex;
@@ -159,8 +148,8 @@
     }
 
     .panel-title {
-        margin: 0;
-        font-weight: 600;
+    margin: 0;
+    font-weight: 600;
         color: #495057;
         font-size: 1.1rem;
     }
@@ -187,10 +176,10 @@
     }
 
     .sidebar-toggle-container {
-        position: fixed;
-        top: 50%;
-        right: 20px;
-        transform: translateY(-50%);
+    position: fixed;
+    top: 50%;
+    right: 20px;
+    transform: translateY(-50%);
         z-index: 1040;
     }
 
@@ -210,7 +199,34 @@
     .reception-form-components {
         display: flex;
         flex-direction: column;
-        gap: 1.5rem;
+        gap: 2rem;
+        padding: 1.5rem;
+        min-height: 80vh;
+    }
+
+    /* Optimized Panel Layout */
+    .medical-panel {
+        height: 100%;
+        min-height: 85vh;
+    }
+
+    .patient-panel {
+        height: 100%;
+        min-height: 85vh;
+    }
+
+    .reception-panel {
+        height: 100%;
+        min-height: 85vh;
+    }
+
+    /* Enhanced Form Components */
+    .reception-form-components > div {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
     }
 
     .medical-error-alert {
@@ -222,7 +238,7 @@
     }
 
     .production-monitoring {
-        position: fixed;
+    position: fixed;
         bottom: 20px;
         left: 20px;
         background: rgba(0,0,0,0.8);
@@ -230,8 +246,8 @@
         padding: 0.5rem 1rem;
         border-radius: 6px;
         font-size: 0.8rem;
-        z-index: 1000;
-    }
+    z-index: 1000;
+}
 
     /* Performance optimizations */
     .lazy-load {
@@ -246,11 +262,11 @@
     /* Medical Environment Responsive */
     @@media (max-width: 992px) {
         .medical-header .row {
-            text-align: center;
-        }
-        
+        text-align: center;
+    }
+    
         .medical-status {
-            text-align: center;
+        text-align: center;
             margin-top: 1rem;
         }
     }
@@ -274,7 +290,7 @@
         .reception-form-components {
             gap: 1rem;
         }
-    }
+}
 </style>
 
 <!-- Medical Environment JavaScript -->
@@ -304,10 +320,18 @@
                 // Medical environment initialization
                 initializeMedicalEnvironment();
                 
+                // Initialize sidebar
+                initializeSidebar();
+                
                 // Setup sidebar toggle
                 $('#mainSidebarToggle').on('click', function() {
                     showSidebar();
                 });
+                
+                // Expose global functions
+                window.showSidebar = showSidebar;
+                window.hideSidebar = hideSidebar;
+                window.toggleSidebar = toggleSidebar;
             });
         } else {
             setTimeout(waitForJQueryIndex, 50);
@@ -350,17 +374,183 @@
     // Global functions for sidebar
     function showSidebar() {
         try {
-            console.log('🏥 Showing sidebar...');
-            $('#medicalSidebar').addClass('open');
-            $('.sidebar-toggle-container').addClass('active');
+            console.log('🏥 Showing navigation sidebar...');
+            
+            // Debug: Check if elements exist
+            const sidebar = document.getElementById('medicalNavigationSidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            console.log('🔍 Debug - Sidebar element:', sidebar);
+            console.log('🔍 Debug - Toggle element:', toggle);
+            
+            if (sidebar && toggle) {
+                sidebar.classList.add('show');
+                toggle.innerHTML = '<i class="fas fa-chevron-right"></i>';
+                $('.sidebar-toggle-container').addClass('active');
+                console.log('✅ Navigation sidebar shown successfully');
+            } else {
+                console.error('❌ Sidebar elements not found!');
+                console.log('Available elements with "sidebar" in ID:', 
+                    Array.from(document.querySelectorAll('[id*="sidebar"]')).map(el => el.id));
+                console.log('Available elements with "navigation" in ID:', 
+                    Array.from(document.querySelectorAll('[id*="navigation"]')).map(el => el.id));
+                
+                // Try to create a fallback sidebar
+                createFallbackSidebar();
+            }
         } catch (error) {
-            console.error('❌ Error showing sidebar:', error);
+            console.error('❌ Error showing navigation sidebar:', error);
         }
     }
 
     function setupMedicalValidation() {
         // Medical-specific validation rules
         console.log('✅ Medical validation setup complete');
+    }
+
+    function hideSidebar() {
+        try {
+            console.log('🏥 Hiding navigation sidebar...');
+            
+            const sidebar = document.getElementById('medicalNavigationSidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            if (sidebar && toggle) {
+                sidebar.classList.remove('show');
+                toggle.innerHTML = '<i class="fas fa-chevron-left"></i>';
+                $('.sidebar-toggle-container').removeClass('active');
+                console.log('✅ Navigation sidebar hidden successfully');
+            }
+        } catch (error) {
+            console.error('❌ Error hiding navigation sidebar:', error);
+        }
+    }
+
+    function toggleSidebar() {
+        try {
+            const sidebar = document.getElementById('medicalNavigationSidebar');
+            if (sidebar && sidebar.classList.contains('show')) {
+                hideSidebar();
+            } else {
+                showSidebar();
+            }
+        } catch (error) {
+            console.error('❌ Error toggling navigation sidebar:', error);
+        }
+    }
+
+    function createFallbackSidebar() {
+        try {
+            console.log('🔧 Creating fallback sidebar...');
+            
+            // Create a simple fallback sidebar
+            const fallbackSidebar = document.createElement('div');
+            fallbackSidebar.id = 'medicalNavigationSidebar';
+            fallbackSidebar.className = 'medical-navigation-sidebar';
+            fallbackSidebar.innerHTML = `
+                <div class="sidebar-header">
+                    <div class="sidebar-title">
+                        <i class="fas fa-bars me-2"></i>
+                        <span>ناوبری پذیرش</span>
+                    </div>
+                    <button type="button" class="sidebar-toggle" id="sidebarToggle">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                </div>
+                <div class="sidebar-content">
+                    <div class="navigation-section">
+                        <div class="section-header">
+                            <h6 class="section-title">
+                                <i class="fas fa-home me-2"></i>
+                                صفحه اصلی
+                            </h6>
+                        </div>
+                        <nav class="navigation-menu">
+                            <a href="/Reception" class="nav-item">
+                                <i class="fas fa-home"></i>
+                                <span>داشبورد پذیرش</span>
+                            </a>
+                            <a href="/Reception/PatientSearch" class="nav-item">
+                                <i class="fas fa-search"></i>
+                                <span>جستجوی بیمار</span>
+                            </a>
+                            <a href="/Reception/ReceptionList" class="nav-item">
+                                <i class="fas fa-list"></i>
+                                <span>لیست پذیرش‌ها</span>
+                            </a>
+                        </nav>
+                    </div>
+                </div>
+            `;
+            
+            // Add to body
+            document.body.appendChild(fallbackSidebar);
+            
+            // Setup toggle functionality
+            const toggle = document.getElementById('sidebarToggle');
+            if (toggle) {
+                toggle.addEventListener('click', function() {
+                    toggleSidebar();
+                });
+            }
+            
+            // Now show the sidebar
+            fallbackSidebar.classList.add('show');
+            toggle.innerHTML = '<i class="fas fa-chevron-right"></i>';
+            $('.sidebar-toggle-container').addClass('active');
+            
+            console.log('✅ Fallback sidebar created and shown');
+        } catch (error) {
+            console.error('❌ Error creating fallback sidebar:', error);
+        }
+    }
+
+    function initializeSidebar() {
+        try {
+            console.log('🔧 Initializing sidebar...');
+            
+            // Check if sidebar exists
+            const sidebar = document.getElementById('medicalNavigationSidebar');
+            const toggle = document.getElementById('sidebarToggle');
+            
+            if (sidebar && toggle) {
+                console.log('✅ Sidebar elements found');
+                
+                // Setup toggle functionality
+                toggle.addEventListener('click', function() {
+                    toggleSidebar();
+                });
+                
+                // Setup keyboard shortcuts
+                document.addEventListener('keydown', function(e) {
+                    // Ctrl + B to toggle sidebar
+                    if (e.ctrlKey && e.key === 'b') {
+                        e.preventDefault();
+                        toggleSidebar();
+                    }
+                    
+                    // Escape to close sidebar
+                    if (e.key === 'Escape' && sidebar.classList.contains('show')) {
+                        hideSidebar();
+                    }
+                });
+                
+                // Auto-hide when clicking outside
+                document.addEventListener('click', function(event) {
+                    if (!sidebar.contains(event.target) && 
+                        !document.getElementById('mainSidebarToggle').contains(event.target) &&
+                        sidebar.classList.contains('show')) {
+                        hideSidebar();
+                    }
+                });
+                
+                console.log('✅ Sidebar initialization complete');
+            } else {
+                console.warn('⚠️ Sidebar elements not found, will create fallback when needed');
+            }
+        } catch (error) {
+            console.error('❌ Error initializing sidebar:', error);
+        }
     }
 
     function setupMedicalNotifications() {

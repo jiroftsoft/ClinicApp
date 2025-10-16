@@ -65,16 +65,16 @@ namespace ClinicApp.Controllers.Reception
                 {
                     _logger.Information("✅ بیمار یافت شد: {PatientId}, نام: {FullName}", 
                         result.Data.PatientId, result.Data.FullName);
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
                 _logger.Warning("⚠️ بیمار یافت نشد: {NationalCode}", nationalCode);
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
-                return Json(new { success = false, message = "خطا در جستجوی بیمار" });
+                return Json(new { success = false, message = "خطا در جستجوی بیمار" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -101,15 +101,15 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت بیمه‌گذاران نوع {InsuranceType}", insuranceType);
-                return Json(new { success = false, message = "خطا در دریافت بیمه‌گذاران" });
+                return Json(new { success = false, message = "خطا در دریافت بیمه‌گذاران" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -133,15 +133,15 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت طرح‌های بیمه. ProviderId: {ProviderId}, Type: {InsuranceType}", providerId, insuranceType);
-                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" });
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -172,15 +172,15 @@ namespace ClinicApp.Controllers.Reception
                 if (result.Success)
                 {
                     _logger.Information("✅ بیمه بیمار با موفقیت تغییر یافت. PatientId: {PatientId}", patientId);
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در تغییر بیمه بیمار. PatientId: {PatientId}", patientId);
-                return Json(new { success = false, message = "خطا در تغییر بیمه بیمار" });
+                return Json(new { success = false, message = "خطا در تغییر بیمه بیمار" }, JsonRequestBehavior.AllowGet);
             }
         }
 

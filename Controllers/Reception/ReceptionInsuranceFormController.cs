@@ -137,7 +137,7 @@ namespace ClinicApp.Controllers.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت طرح‌های بیمه برای بیمه‌گذار {ProviderId}", providerId);
-                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" });
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -167,7 +167,7 @@ namespace ClinicApp.Controllers.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت طرح‌های بیمه");
-                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" });
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -202,7 +202,7 @@ namespace ClinicApp.Controllers.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت بیمه‌های بیمار {PatientId}", patientId);
-                return Json(new { success = false, message = "خطا در دریافت بیمه‌های بیمار" });
+                return Json(new { success = false, message = "خطا در دریافت بیمه‌های بیمار" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -228,7 +228,7 @@ namespace ClinicApp.Controllers.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در ذخیره بیمه بیمار {PatientId}", model.PatientId);
-                return Json(new { success = false, message = "خطا در ذخیره بیمه بیمار" });
+                return Json(new { success = false, message = "خطا در ذخیره بیمه بیمار" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -264,7 +264,7 @@ namespace ClinicApp.Controllers.Reception
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در محاسبه سهم بیمه: بیمار {PatientId}, خدمت {ServiceId}", patientId, serviceId);
-                return Json(new { success = false, message = "خطا در محاسبه سهم بیمه" });
+                return Json(new { success = false, message = "خطا در محاسبه سهم بیمه" }, JsonRequestBehavior.AllowGet);
             }
         }
 

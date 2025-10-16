@@ -227,7 +227,7 @@ namespace ClinicApp
             // 🏥 Reception Insurance Form Routes - مسیرهای تخصصی بیمه در فرم پذیرش
             routes.MapRoute(
                 name: "ReceptionInsuranceForm",
-                url: "Reception/InsuranceForm/{action}",
+                url: "ReceptionInsuranceForm/{action}",
                 defaults: new { 
                     controller = "ReceptionInsuranceForm", 
                     action = "GetInsuranceProviders", 
@@ -237,6 +237,65 @@ namespace ClinicApp
                     httpMethod = new HttpMethodConstraint("GET", "POST"),
                     action = @"^(GetInsuranceProviders|GetInsuranceProvidersByType|GetInsurancePlans|GetAllInsurancePlans|GetPatientInsurances|SavePatientInsurance|CalculateInsuranceShare)$"
                 }
+            );
+
+            // 🏥 Reception Patient Search Routes - مسیرهای جستجوی بیمار
+            routes.MapRoute(
+                name: "ReceptionPatientSearch",
+                url: "Reception/PatientSearch/{action}",
+                defaults: new { 
+                    controller = "ReceptionPatientSearch", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|SearchPatients)$"
+                }
+            );
+
+            // 🏥 Reception List Routes - مسیرهای لیست پذیرش‌ها
+            routes.MapRoute(
+                name: "ReceptionList",
+                url: "Reception/ReceptionList/{action}",
+                defaults: new { 
+                    controller = "ReceptionList", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|GetReceptionList)$"
+                }
+            );
+
+            // 🏥 Reception History Routes - مسیرهای سوابق پذیرش
+            routes.MapRoute(
+                name: "ReceptionHistory",
+                url: "Reception/ReceptionHistory/{action}",
+                defaults: new { 
+                    controller = "ReceptionHistory", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|SearchHistory)$"
+                }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionInsuranceAuto",
+                url: "Reception/InsuranceAuto/{action}",
+                defaults: new { controller = "ReceptionInsuranceAuto", action = "AutoBindPatientInsurance" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
+            );
+
+            routes.MapRoute(
+                name: "ReceptionDepartmentDoctor",
+                url: "Reception/DepartmentDoctor/{action}",
+                defaults: new { controller = "ReceptionDepartmentDoctor", action = "GetActiveClinics" },
+                constraints: new { httpMethod = new HttpMethodConstraint("GET", "POST") }
             );
 
             routes.MapRoute(

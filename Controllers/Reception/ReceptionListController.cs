@@ -10,14 +10,14 @@ using Serilog;
 namespace ClinicApp.Controllers.Reception
 {
     /// <summary>
-    /// کنترلر سوابق پذیرش - تخصصی برای ماژول پذیرش
+    /// کنترلر لیست پذیرش‌ها - تخصصی برای ماژول پذیرش
     /// </summary>
-    [RoutePrefix("Reception/ReceptionHistory")]
-    public class ReceptionHistoryController : BaseController
+    [RoutePrefix("Reception/ReceptionList")]
+    public class ReceptionListController : BaseController
     {
         private readonly IReceptionService _receptionService;
 
-        public ReceptionHistoryController(
+        public ReceptionListController(
             IReceptionService receptionService,
             ILogger logger) : base(logger)
         {
@@ -25,36 +25,35 @@ namespace ClinicApp.Controllers.Reception
         }
 
         /// <summary>
-        /// صفحه سوابق پذیرش
+        /// صفحه لیست پذیرش‌ها
         /// </summary>
         [HttpGet]
         public ActionResult Index()
         {
             try
             {
-                _logger.Information("🏥 نمایش صفحه سوابق پذیرش");
+                _logger.Information("🏥 نمایش صفحه لیست پذیرش‌ها");
                 return View();
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در نمایش صفحه سوابق پذیرش");
+                _logger.Error(ex, "❌ خطا در نمایش صفحه لیست پذیرش‌ها");
                 return View("Error");
             }
         }
 
         /// <summary>
-        /// جستجوی سوابق پذیرش
+        /// دریافت لیست پذیرش‌ها
         /// </summary>
-        [HttpPost]
-        public async Task<JsonResult> SearchHistory(string patientNationalCode, string fromDate, string toDate, string status)
+        [HttpGet]
+        public async Task<JsonResult> GetReceptionList()
         {
             try
             {
-                _logger.Information("🔍 جستجوی سوابق پذیرش - کد ملی: {NationalCode}, از: {FromDate}, تا: {ToDate}", 
-                    patientNationalCode, fromDate, toDate);
+                _logger.Information("📋 دریافت لیست پذیرش‌ها");
 
-                // TODO: Implement history search logic
-                var result = ServiceResult<List<object>>.Successful(new List<object>(), "جستجوی سوابق با موفقیت انجام شد");
+                // TODO: Implement reception list logic
+                var result = ServiceResult<List<object>>.Successful(new List<object>(), "لیست پذیرش‌ها با موفقیت دریافت شد");
 
                 return Json(new { 
                     success = result.Success, 
@@ -64,10 +63,10 @@ namespace ClinicApp.Controllers.Reception
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در جستجوی سوابق پذیرش");
+                _logger.Error(ex, "❌ خطا در دریافت لیست پذیرش‌ها");
                 return Json(new { 
                     success = false, 
-                    message = "خطا در جستجوی سوابق پذیرش" 
+                    message = "خطا در دریافت لیست پذیرش‌ها" 
                 }, JsonRequestBehavior.AllowGet);
             }
         }

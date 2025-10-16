@@ -1,0 +1,661 @@
+@using ClinicApp.ViewModels.Reception
+@using ClinicApp.Constants
+@model PatientAccordionViewModel
+
+<!-- بخش اطلاعات بیمار - آکاردئون -->
+<div class="patient-accordion-section" id="patientAccordionSection">
+    
+    <!-- Header بخش -->
+    <div class="section-header">
+        <div class="section-title">
+            <h5 class="mb-0">
+                <i class="fas fa-user me-2"></i>
+                اطلاعات هویتی بیمار
+            </h5>
+            <p class="section-subtitle mb-0">جستجو و ثبت اطلاعات کامل بیمار</p>
+        </div>
+        <div class="section-actions">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="searchPatientBtn">
+                <i class="fas fa-search me-1"></i>
+                جستجو
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" id="savePatientBtn">
+                <i class="fas fa-save me-1"></i>
+                ذخیره
+            </button>
+        </div>
+    </div>
+
+    <!-- محتوای بخش -->
+    <div class="section-content">
+        <div class="row">
+            <!-- ستون چپ: جستجوی بیمار -->
+            <div class="col-lg-6">
+                <div class="patient-search-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-search me-2"></i>
+                            جستجوی بیمار
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- فیلد کد ملی -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-id-card me-1"></i>
+                                کد ملی <span class="text-danger">*</span>
+                            </label>
+                            <div class="input-group">
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="patientNationalCode" 
+                                       name="NationalCode"
+                                       placeholder="کد ملی 10 رقمی"
+                                       maxlength="10"
+                                       value="@Model.NationalCode">
+                                <button class="btn btn-outline-primary" type="button" id="searchByNationalCodeBtn">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                            <div class="form-text">کد ملی 10 رقمی بیمار را وارد کنید</div>
+                        </div>
+
+                        <!-- نتایج جستجو -->
+                        <div class="search-results" id="patientSearchResults" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                <span id="searchResultMessage">در حال جستجو...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ستون راست: اطلاعات بیمار -->
+            <div class="col-lg-6">
+                <div class="patient-info-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-user-circle me-2"></i>
+                            اطلاعات بیمار
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form id="patientInfoForm">
+                            <!-- نام -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    نام <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="patientFirstName" 
+                                       name="FirstName"
+                                       placeholder="نام بیمار"
+                                       value="@Model.FirstName"
+                                       required>
+                            </div>
+
+                            <!-- نام خانوادگی -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    نام خانوادگی <span class="text-danger">*</span>
+                                </label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="patientLastName" 
+                                       name="LastName"
+                                       placeholder="نام خانوادگی بیمار"
+                                       value="@Model.LastName"
+                                       required>
+                            </div>
+
+                            <!-- تاریخ تولد -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    تاریخ تولد
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="patientBirthDate" 
+                                       name="BirthDate"
+                                       value="@(Model.BirthDate?.ToString("yyyy-MM-dd"))">
+                            </div>
+
+                            <!-- جنسیت -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-venus-mars me-1"></i>
+                                    جنسیت
+                                </label>
+                                <select class="form-select" id="patientGender" name="Gender">
+                                    <option value="">انتخاب کنید</option>
+                                    <option value="Male" @(Model.Gender == "Male" ? "selected" : "")>مرد</option>
+                                    <option value="Female" @(Model.Gender == "Female" ? "selected" : "")>زن</option>
+                                </select>
+                            </div>
+
+                            <!-- شماره تلفن -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-phone me-1"></i>
+                                    شماره تلفن
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="patientPhone" 
+                                       name="PhoneNumber"
+                                       placeholder="09123456789"
+                                       value="@Model.PhoneNumber">
+                            </div>
+
+                            <!-- آدرس -->
+                            <div class="form-group mb-3">
+                                <label class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    آدرس
+                                </label>
+                                <textarea class="form-control" 
+                                          id="patientAddress" 
+                                          name="Address"
+                                          rows="3"
+                                          placeholder="آدرس کامل بیمار">@Model.Address</textarea>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- وضعیت بخش -->
+        <div class="section-status">
+            <div class="status-indicators">
+                <div class="status-item">
+                    <span class="status-icon">
+                        <i class="fas fa-user @(Model.IsPatientFound ? "text-success" : "text-muted")"></i>
+                    </span>
+                    <span class="status-text">@(Model.IsPatientFound ? "بیمار یافت شد" : "بیمار جدید")</span>
+                </div>
+                <div class="status-item">
+                    <span class="status-icon">
+                        <i class="fas fa-check-circle @(Model.IsValid ? "text-success" : "text-muted")"></i>
+                    </span>
+                    <span class="status-text">@(Model.IsValid ? "اطلاعات کامل" : "اطلاعات ناقص")</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS تخصصی بخش بیمار -->
+<style>
+    .patient-accordion-section {
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .section-title h5 {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .section-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .section-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .section-content {
+        padding: 2rem;
+    }
+
+    .patient-search-card,
+    .patient-info-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        height: 100%;
+    }
+
+    .card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding: 1rem 1.5rem;
+    }
+
+    .card-title {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    .form-label {
+        font-weight: 500;
+        color: #333;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-control,
+    .form-select {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.3s ease;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+
+    .form-control.is-valid {
+        border-color: #28a745;
+    }
+
+    .form-control.is-invalid {
+        border-color: #dc3545;
+    }
+
+    .input-group .btn {
+        border-left: none;
+    }
+
+    .search-results {
+        margin-top: 1rem;
+    }
+
+    .section-status {
+        margin-top: 2rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .status-indicators {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .status-icon i {
+        font-size: 1.1rem;
+    }
+
+    .status-text {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .section-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .section-actions {
+            justify-content: center;
+        }
+
+        .section-content {
+            padding: 1rem;
+        }
+
+        .status-indicators {
+            flex-direction: column;
+            gap: 1rem;
+        }
+    }
+</style>
+
+<!-- JavaScript تخصصی بخش بیمار -->
+<script>
+    $(document).ready(function() {
+        initializePatientSection();
+    });
+
+    function initializePatientSection() {
+        console.log('👤 Initializing Patient Section...');
+        
+        // تنظیمات اولیه
+        setupPatientSearch();
+        setupPatientValidation();
+        setupPatientActions();
+        
+        console.log('✅ Patient Section initialized successfully');
+    }
+
+    function setupPatientSearch() {
+        // جستجو با کد ملی
+        $('#searchByNationalCodeBtn').on('click', function() {
+            searchPatientByNationalCode();
+        });
+
+        // جستجو با Enter
+        $('#patientNationalCode').on('keypress', function(e) {
+            if (e.which === 13) {
+                searchPatientByNationalCode();
+            }
+        });
+
+        // اعتبارسنجی Real-time کد ملی
+        $('#patientNationalCode').on('input', function() {
+            const value = $(this).val();
+            if (value.length === 10) {
+                validateNationalCode(value);
+            }
+        });
+    }
+
+    function setupPatientValidation() {
+        // اعتبارسنجی Real-time فیلدها
+        $('#patientFirstName, #patientLastName').on('blur', function() {
+            validateRequiredField($(this));
+        });
+
+        $('#patientPhone').on('blur', function() {
+            validatePhoneNumber($(this));
+        });
+
+        $('#patientBirthDate').on('change', function() {
+            validateBirthDate($(this));
+        });
+    }
+
+    function setupPatientActions() {
+        // دکمه جستجو
+        $('#searchPatientBtn').on('click', function() {
+            searchPatientByNationalCode();
+        });
+
+        // دکمه ذخیره
+        $('#savePatientBtn').on('click', function() {
+            savePatient();
+        });
+    }
+
+    function searchPatientByNationalCode() {
+        const nationalCode = $('#patientNationalCode').val().trim();
+        
+        if (!nationalCode) {
+            showNotification('لطفاً کد ملی را وارد کنید', 'warning');
+            return;
+        }
+
+        if (nationalCode.length !== 10) {
+            showNotification('کد ملی باید 10 رقم باشد', 'error');
+            return;
+        }
+
+        if (!validateNationalCode(nationalCode)) {
+            showNotification('کد ملی نامعتبر است', 'error');
+            return;
+        }
+
+        // نمایش Loading
+        showSearchLoading();
+
+        // AJAX جستجو
+        $.ajax({
+            url: '@Url.Action("SearchByNationalCode", "ReceptionPatient")',
+            type: 'POST',
+            data: { nationalCode: nationalCode },
+            dataType: 'json',
+            success: function(response) {
+                hideSearchLoading();
+                
+                if (response.success) {
+                    if (response.data && response.data.isPatientFound) {
+                        // بیمار یافت شد
+                        displayPatientInfo(response.data);
+                        showSearchResult('بیمار با موفقیت یافت شد', 'success');
+                    } else {
+                        // بیمار یافت نشد
+                        showSearchResult('بیمار یافت نشد - می‌توانید اطلاعات جدید وارد کنید', 'info');
+                        clearPatientForm();
+                    }
+                } else {
+                    showSearchResult(response.message || 'خطا در جستجوی بیمار', 'error');
+                }
+            },
+            error: function() {
+                hideSearchLoading();
+                showSearchResult('خطا در ارتباط با سرور', 'error');
+            }
+        });
+    }
+
+    function validateNationalCode(nationalCode) {
+        // اعتبارسنجی کد ملی ایرانی
+        if (!/^\d{10}$/.test(nationalCode)) {
+            return false;
+        }
+
+        const check = parseInt(nationalCode.charAt(9));
+        const sum = nationalCode.split('').slice(0, 9).reduce((acc, digit, index) => {
+            return acc + parseInt(digit) * (10 - index);
+        }, 0);
+
+        const remainder = sum % 11;
+        const calculatedCheck = remainder < 2 ? remainder : 11 - remainder;
+
+        return check === calculatedCheck;
+    }
+
+    function validateRequiredField(field) {
+        const value = field.val().trim();
+        if (value.length < 2) {
+            field.addClass('is-invalid').removeClass('is-valid');
+            return false;
+        } else {
+            field.addClass('is-valid').removeClass('is-invalid');
+            return true;
+        }
+    }
+
+    function validatePhoneNumber(field) {
+        const value = field.val().trim();
+        if (value && !/^(\+98|0)?9\d{9}$/.test(value)) {
+            field.addClass('is-invalid').removeClass('is-valid');
+            return false;
+        } else {
+            field.addClass('is-valid').removeClass('is-invalid');
+            return true;
+        }
+    }
+
+    function validateBirthDate(field) {
+        const value = field.val();
+        if (value) {
+            const birthDate = new Date(value);
+            const today = new Date();
+            const age = today.getFullYear() - birthDate.getFullYear();
+            
+            if (age < 0 || age > 150) {
+                field.addClass('is-invalid').removeClass('is-valid');
+                return false;
+            }
+        }
+        field.addClass('is-valid').removeClass('is-invalid');
+        return true;
+    }
+
+    function showSearchLoading() {
+        $('#searchResultMessage').html('<i class="fas fa-spinner fa-spin me-2"></i>در حال جستجو...');
+        $('#patientSearchResults').show();
+        $('#searchByNationalCodeBtn').prop('disabled', true);
+    }
+
+    function hideSearchLoading() {
+        $('#searchByNationalCodeBtn').prop('disabled', false);
+    }
+
+    function showSearchResult(message, type) {
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+
+        $('#patientSearchResults .alert').removeClass('alert-success alert-danger alert-warning alert-info')
+                                        .addClass(alertClass);
+        $('#searchResultMessage').html(message);
+        $('#patientSearchResults').show();
+    }
+
+    function displayPatientInfo(patientData) {
+        // پر کردن فرم با اطلاعات بیمار
+        $('#patientFirstName').val(patientData.firstName || '');
+        $('#patientLastName').val(patientData.lastName || '');
+        $('#patientBirthDate').val(patientData.birthDate || '');
+        $('#patientGender').val(patientData.gender || '');
+        $('#patientPhone').val(patientData.phoneNumber || '');
+        $('#patientAddress').val(patientData.address || '');
+
+        // به‌روزرسانی وضعیت
+        updatePatientStatus(true);
+        
+        // نمایش پیام وضعیت
+        if (patientData.statusMessage) {
+            showSearchResult(patientData.statusMessage, patientData.isPatientFound ? 'success' : 'info');
+        }
+    }
+
+    function clearPatientForm() {
+        // پاک کردن فرم
+        $('#patientFirstName, #patientLastName, #patientBirthDate, #patientPhone, #patientAddress').val('');
+        $('#patientGender').val('');
+
+        // به‌روزرسانی وضعیت
+        updatePatientStatus(false);
+    }
+
+    function updatePatientStatus(isFound) {
+        const statusIcon = $('.status-item:first-child .status-icon i');
+        const statusText = $('.status-item:first-child .status-text');
+        
+        if (isFound) {
+            statusIcon.removeClass('text-muted').addClass('text-success');
+            statusText.text('بیمار یافت شد');
+        } else {
+            statusIcon.removeClass('text-success').addClass('text-muted');
+            statusText.text('بیمار جدید');
+        }
+    }
+
+    function savePatient() {
+        // اعتبارسنجی فرم
+        if (!validatePatientForm()) {
+            showNotification('لطفاً تمام فیلدهای الزامی را پر کنید', 'warning');
+            return;
+        }
+
+        const patientData = collectPatientData();
+
+        $.ajax({
+            url: '@Url.Action("SavePatient", "ReceptionPatient")',
+            type: 'POST',
+            data: patientData,
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showNotification('اطلاعات بیمار با موفقیت ذخیره شد', 'success');
+                    if (response.data) {
+                        displayPatientInfo(response.data);
+                    }
+                    updatePatientStatus(true);
+                } else {
+                    showNotification(response.message || 'خطا در ذخیره اطلاعات بیمار', 'error');
+                }
+            },
+            error: function() {
+                showNotification('خطا در ذخیره اطلاعات بیمار', 'error');
+            }
+        });
+    }
+
+    function validatePatientForm() {
+        let isValid = true;
+
+        // اعتبارسنجی فیلدهای الزامی
+        if (!validateRequiredField($('#patientFirstName'))) isValid = false;
+        if (!validateRequiredField($('#patientLastName'))) isValid = false;
+        if (!validatePhoneNumber($('#patientPhone'))) isValid = false;
+        if (!validateBirthDate($('#patientBirthDate'))) isValid = false;
+
+        return isValid;
+    }
+
+    function collectPatientData() {
+        return {
+            NationalCode: $('#patientNationalCode').val(),
+            FirstName: $('#patientFirstName').val(),
+            LastName: $('#patientLastName').val(),
+            BirthDate: $('#patientBirthDate').val(),
+            Gender: $('#patientGender').val(),
+            PhoneNumber: $('#patientPhone').val(),
+            Address: $('#patientAddress').val()
+        };
+    }
+
+    function showNotification(message, type) {
+        // نمایش اعلان
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+        
+        const alert = $(`
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        // اضافه کردن به بالای بخش
+        $('#patientAccordionSection').prepend(alert);
+        
+        // حذف خودکار بعد از 5 ثانیه
+        setTimeout(function() {
+            alert.alert('close');
+        }, 5000);
+    }
+</script>

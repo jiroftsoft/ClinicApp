@@ -1,0 +1,110 @@
+@{
+    ViewBag.Title = "سوابق پذیرش";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h2><i class="fas fa-history me-2"></i>سوابق پذیرش</h2>
+                <p class="text-muted">مشاهده و جستجوی سوابق پذیرش بیماران</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter me-2"></i>فیلترهای جستجو</h5>
+                </div>
+                <div class="card-body">
+                    <form id="receptionHistoryForm">
+                        <div class="mb-3">
+                            <label for="patientNationalCode" class="form-label">کد ملی بیمار</label>
+                            <input type="text" class="form-control" id="patientNationalCode" placeholder="کد ملی بیمار">
+                        </div>
+                        <div class="mb-3">
+                            <label for="fromDate" class="form-label">از تاریخ</label>
+                            <input type="date" class="form-control" id="fromDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="toDate" class="form-label">تا تاریخ</label>
+                            <input type="date" class="form-control" id="toDate">
+                        </div>
+                        <div class="mb-3">
+                            <label for="status" class="form-label">وضعیت</label>
+                            <select class="form-select" id="status">
+                                <option value="">همه وضعیت‌ها</option>
+                                <option value="تکمیل شده">تکمیل شده</option>
+                                <option value="در انتظار">در انتظار</option>
+                                <option value="لغو شده">لغو شده</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>جستجو
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list me-2"></i>نتایج جستجو</h5>
+                </div>
+                <div class="card-body">
+                    <div id="historyResults">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-history fa-3x mb-3"></i>
+                            <p>برای شروع جستجو، فیلترهای بالا را پر کنید</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    // Set default dates
+    const today = new Date();
+    const lastMonth = new Date(today.getFullYear(), today.getMonth() - 1, today.getDate());
+    
+    $('#fromDate').val(lastMonth.toISOString().split('T')[0]);
+    $('#toDate').val(today.toISOString().split('T')[0]);
+    
+    $('#receptionHistoryForm').on('submit', function(e) {
+        e.preventDefault();
+        searchReceptionHistory();
+    });
+});
+
+function searchReceptionHistory() {
+    const searchData = {
+        patientNationalCode: $('#patientNationalCode').val(),
+        fromDate: $('#fromDate').val(),
+        toDate: $('#toDate').val(),
+        status: $('#status').val()
+    };
+    
+    $.ajax({
+        url: '/Reception/ReceptionHistory/SearchHistory',
+        type: 'POST',
+        data: searchData,
+        success: function(response) {
+            displayHistoryResults(response);
+        },
+        error: function(xhr, status, error) {
+            console.error('خطا در جستجوی سوابق:', error);
+        }
+    });
+}
+
+function displayHistoryResults(results) {
+    const container = $('#historyResults');
+    // Display history results
+}
+</script>

@@ -490,6 +490,11 @@ namespace ClinicApp
                 // ثبت سرویس دامنه پذیرش
                 container.RegisterType<IReceptionDomainService, ReceptionDomainService>(new PerRequestLifetimeManager());
                 
+                // ثبت سرویس ناوبری پذیرش
+            container.RegisterType<IReceptionNavigationService, ReceptionNavigationService>(new PerRequestLifetimeManager());
+            container.RegisterType<ReceptionInsuranceAutoService, ReceptionInsuranceAutoService>(new PerRequestLifetimeManager());
+            container.RegisterType<IReceptionDepartmentDoctorService, Services.Reception.ReceptionDepartmentDoctorService>(new PerRequestLifetimeManager());
+                
                 // ثبت سرویس‌های شیفت کاری
                 container.RegisterType<ShiftHelperService>(new PerRequestLifetimeManager());
 

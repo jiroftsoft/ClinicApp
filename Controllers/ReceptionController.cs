@@ -7,6 +7,7 @@ using ClinicApp.Core;
 using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models.Enums;
 using ClinicApp.ViewModels.Reception;
 using ClinicApp.ViewModels.Validators;
@@ -16,7 +17,6 @@ using System.Data.Entity;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.DTOs.Insurance;
 using ClinicApp.ViewModels;
-using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Controllers
 {
@@ -52,6 +52,7 @@ namespace ClinicApp.Controllers
         private readonly IPatientInsuranceService _patientInsuranceService;
         private readonly IPatientInsuranceValidationService _patientInsuranceValidationService;
         private readonly IPatientInsuranceManagementService _patientInsuranceManagementService;
+        private readonly IReceptionNavigationService _receptionNavigationService;
 
         public ReceptionController(
             IReceptionService receptionService,
@@ -62,7 +63,8 @@ namespace ClinicApp.Controllers
             ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
             IPatientInsuranceService patientInsuranceService,
             IPatientInsuranceValidationService patientInsuranceValidationService,
-            IPatientInsuranceManagementService patientInsuranceManagementService) : base(logger)
+            IPatientInsuranceManagementService patientInsuranceManagementService,
+            IReceptionNavigationService receptionNavigationService) : base(logger)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -72,6 +74,7 @@ namespace ClinicApp.Controllers
             _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
             _patientInsuranceValidationService = patientInsuranceValidationService ?? throw new ArgumentNullException(nameof(patientInsuranceValidationService));
             _patientInsuranceManagementService = patientInsuranceManagementService ?? throw new ArgumentNullException(nameof(patientInsuranceManagementService));
+            _receptionNavigationService = receptionNavigationService ?? throw new ArgumentNullException(nameof(receptionNavigationService));
         }
 
         #endregion
@@ -83,7 +86,7 @@ namespace ClinicApp.Controllers
         /// </summary>
         /// <returns>صفحه پذیرش</returns>
     [HttpGet]
-    public ActionResult Index()
+    public async Task<ActionResult> Index()
     {
         _logger.Information(
             "ورود به صفحه اصلی پذیرش. کاربر: {UserName}",
@@ -91,31 +94,26 @@ namespace ClinicApp.Controllers
 
         try
         {
-            var model = new ReceptionIndexViewModel
+            // دریافت ناوبری پزشکی تخصصی
+            var navigationResult = await _receptionNavigationService.GetMedicalNavigationAsync("Reception", "Index");
+            
+            if (!navigationResult.Success)
             {
-                ReceptionId = 0,
-                PatientFullName = "",
-                DoctorFullName = "",
-                ReceptionDate = DateTime.Now.ToString("yyyy/MM/dd"),
-                TotalAmount = 0,
-                Status = "آماده",
-                Type = "عادی",
-                PatientId = 0,
-                DoctorId = 0,
-                Priority = Models.Enums.AppointmentPriority.Normal,
-                IsEmergency = false,
-                IsOnlineReception = false,
-                DepartmentName = "",
-                Receptions = new List<ReceptionListItemViewModel>(),
-                DailyStats = new ReceptionDailyStatsViewModel(),
-                DoctorStats = new List<ReceptionDoctorStatsViewModel>(),
-                SearchCriteria = new ReceptionSearchCriteria
-                {
-                    StartDate = DateTime.Today,
-                    EndDate = DateTime.Today.AddDays(7),
-                    PageNumber = 1,
-                    PageSize = 10
-                }
+                _logger.Warning("⚠️ خطا در دریافت ناوبری پزشکی: {Message}", navigationResult.Message);
+            }
+
+            var model = navigationResult.Data ?? new MedicalNavigationViewModel
+            {
+                CurrentController = "Reception",
+                CurrentAction = "Index",
+                UserName = _currentUserService.UserName,
+                UserRole = "Receptionist",
+                ClinicName = "کلینیک تخصصی",
+                CurrentDate = DateTime.Now,
+                CurrentShift = GetCurrentShiftForNavigation(),
+                IsEmergencyMode = false,
+                Sections = new List<NavigationSection>(),
+                QuickActions = new List<QuickAction>()
             };
 
             return View(model);
@@ -129,7 +127,21 @@ namespace ClinicApp.Controllers
             TempData["ErrorMessage"] = "خطا در نمایش صفحه پذیرش. لطفاً مجدداً تلاش کنید.";
             return RedirectToAction("Index", "Home");
         }
-    }
+        }
+
+        /// <summary>
+        /// تعیین شیفت فعلی برای ناوبری
+        /// </summary>
+        private string GetCurrentShiftForNavigation()
+        {
+            var hour = DateTime.Now.Hour;
+            if (hour >= 6 && hour < 14)
+                return "صبح";
+            else if (hour >= 14 && hour < 22)
+                return "عصر";
+            else
+                return "شب";
+        }
 
         /// <summary>
         /// صفحه ایجاد پذیرش جدید
@@ -1690,7 +1702,7 @@ namespace ClinicApp.Controllers
                     $"خطاهای اعتبارسنجی: {string.Join(", ", errors)}",
                     "MODEL_VALIDATION_FAILED",
                     ErrorCategory.Validation,
-                    SecurityLevel.Low);
+                    ClinicApp.Core.SecurityLevel.Low);
             }
 
             return ServiceResult<bool>.Successful(true);

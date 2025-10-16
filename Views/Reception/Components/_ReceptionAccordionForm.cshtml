@@ -1,0 +1,860 @@
+@using ClinicApp.ViewModels.Reception
+@using ClinicApp.Constants
+@model ReceptionAccordionViewModel
+
+<!-- فرم پذیرش آکاردئون فوق حرفه‌ای - محیط درمانی -->
+<div class="reception-accordion-form" id="receptionAccordionForm">
+    
+    <!-- Header فرم -->
+    <div class="accordion-form-header">
+        <div class="form-title-section">
+            <h2 class="form-title">
+                <i class="fas fa-clipboard-list me-3"></i>
+                فرم پذیرش بیمار
+            </h2>
+            <p class="form-subtitle">سیستم یکپارچه پذیرش - محیط درمانی حرفه‌ای</p>
+        </div>
+        <div class="form-status-section">
+            <div class="status-indicator" id="formStatusIndicator">
+                <span class="status-icon">
+                    <i class="fas fa-circle"></i>
+                </span>
+                <span class="status-text">آماده</span>
+            </div>
+            <div class="progress-indicator">
+                <span class="progress-text">
+                    <span id="completedSections">0</span> از <span id="totalSections">5</span> بخش تکمیل شده
+                </span>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- آکاردئون اصلی -->
+    <div class="accordion" id="receptionAccordion" role="tablist">
+        
+        <!-- بخش 1: اطلاعات بیمار -->
+        <div class="accordion-item" id="patientAccordionItem">
+            <h2 class="accordion-header" id="patientAccordionHeader">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#patientAccordionCollapse" aria-expanded="true" 
+                        aria-controls="patientAccordionCollapse" id="patientAccordionButton">
+                    <div class="accordion-button-content">
+                        <div class="accordion-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="accordion-title">
+                            <span class="title-text">اطلاعات بیمار</span>
+                            <span class="title-subtitle">جستجو و ثبت اطلاعات هویتی</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="patientStatusBadge">
+                                <i class="fas fa-circle"></i>
+                                <span>آماده</span>
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="patientAccordionCollapse" class="accordion-collapse collapse show" 
+                 aria-labelledby="patientAccordionHeader" data-bs-parent="#receptionAccordion">
+                <div class="accordion-body">
+                    @Html.Partial("Components/_PatientAccordionSection", Model.Patient)
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش 2: اطلاعات بیمه -->
+        <div class="accordion-item" id="insuranceAccordionItem">
+            <h2 class="accordion-header" id="insuranceAccordionHeader">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#insuranceAccordionCollapse" aria-expanded="false" 
+                        aria-controls="insuranceAccordionCollapse" id="insuranceAccordionButton">
+                    <div class="accordion-button-content">
+                        <div class="accordion-icon">
+                            <i class="fas fa-shield-alt"></i>
+                        </div>
+                        <div class="accordion-title">
+                            <span class="title-text">اطلاعات بیمه</span>
+                            <span class="title-subtitle">بیمه پایه و تکمیلی</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="insuranceStatusBadge">
+                                <i class="fas fa-circle"></i>
+                                <span>در انتظار</span>
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="insuranceAccordionCollapse" class="accordion-collapse collapse" 
+                 aria-labelledby="insuranceAccordionHeader" data-bs-parent="#receptionAccordion">
+                <div class="accordion-body">
+                    @Html.Partial("Components/_InsuranceAccordionSection", Model.Insurance)
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش 3: دپارتمان و پزشک -->
+        <div class="accordion-item" id="departmentAccordionItem">
+            <h2 class="accordion-header" id="departmentAccordionHeader">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#departmentAccordionCollapse" aria-expanded="false" 
+                        aria-controls="departmentAccordionCollapse" id="departmentAccordionButton">
+                    <div class="accordion-button-content">
+                        <div class="accordion-icon">
+                            <i class="fas fa-hospital"></i>
+                        </div>
+                        <div class="accordion-title">
+                            <span class="title-text">دپارتمان و پزشک</span>
+                            <span class="title-subtitle">انتخاب تخصص و پزشک معالج</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="departmentStatusBadge">
+                                <i class="fas fa-circle"></i>
+                                <span>در انتظار</span>
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="departmentAccordionCollapse" class="accordion-collapse collapse" 
+                 aria-labelledby="departmentAccordionHeader" data-bs-parent="#receptionAccordion">
+                <div class="accordion-body">
+                    @Html.Partial("Components/_DepartmentAccordionSection", Model.Department)
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش 4: انتخاب خدمات -->
+        <div class="accordion-item" id="serviceAccordionItem">
+            <h2 class="accordion-header" id="serviceAccordionHeader">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#serviceAccordionCollapse" aria-expanded="false" 
+                        aria-controls="serviceAccordionCollapse" id="serviceAccordionButton">
+                    <div class="accordion-button-content">
+                        <div class="accordion-icon">
+                            <i class="fas fa-stethoscope"></i>
+                        </div>
+                        <div class="accordion-title">
+                            <span class="title-text">انتخاب خدمات</span>
+                            <span class="title-subtitle">خدمات درمانی و محاسبه هزینه</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="serviceStatusBadge">
+                                <i class="fas fa-circle"></i>
+                                <span>در انتظار</span>
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="serviceAccordionCollapse" class="accordion-collapse collapse" 
+                 aria-labelledby="serviceAccordionHeader" data-bs-parent="#receptionAccordion">
+                <div class="accordion-body">
+                    @Html.Partial("Components/_ServiceAccordionSection", Model.Service)
+                </div>
+            </div>
+        </div>
+
+        <!-- بخش 5: پرداخت -->
+        <div class="accordion-item" id="paymentAccordionItem">
+            <h2 class="accordion-header" id="paymentAccordionHeader">
+                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" 
+                        data-bs-target="#paymentAccordionCollapse" aria-expanded="false" 
+                        aria-controls="paymentAccordionCollapse" id="paymentAccordionButton">
+                    <div class="accordion-button-content">
+                        <div class="accordion-icon">
+                            <i class="fas fa-credit-card"></i>
+                        </div>
+                        <div class="accordion-title">
+                            <span class="title-text">پرداخت</span>
+                            <span class="title-subtitle">پرداخت آنلاین و نقدی</span>
+                        </div>
+                        <div class="accordion-status">
+                            <span class="status-badge" id="paymentStatusBadge">
+                                <i class="fas fa-circle"></i>
+                                <span>در انتظار</span>
+                            </span>
+                        </div>
+                    </div>
+                </button>
+            </h2>
+            <div id="paymentAccordionCollapse" class="accordion-collapse collapse" 
+                 aria-labelledby="paymentAccordionHeader" data-bs-parent="#receptionAccordion">
+                <div class="accordion-body">
+                    @Html.Partial("Components/_PaymentAccordionSection", Model.Payment)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer فرم -->
+    <div class="accordion-form-footer">
+        <div class="form-actions">
+            <button type="button" class="btn btn-outline-secondary" id="clearFormBtn">
+                <i class="fas fa-eraser me-2"></i>
+                پاک کردن فرم
+            </button>
+            <button type="button" class="btn btn-outline-primary" id="saveDraftBtn">
+                <i class="fas fa-save me-2"></i>
+                ذخیره پیش‌نویس
+            </button>
+            <button type="button" class="btn btn-success" id="submitFormBtn" disabled>
+                <i class="fas fa-check me-2"></i>
+                ثبت پذیرش
+            </button>
+        </div>
+        <div class="form-summary">
+            <div class="summary-item">
+                <span class="summary-label">مبلغ کل:</span>
+                <span class="summary-value" id="totalAmount">0 ریال</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">سهم بیمه:</span>
+                <span class="summary-value" id="insuranceShare">0 ریال</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">سهم بیمار:</span>
+                <span class="summary-value" id="patientShare">0 ریال</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS تخصصی آکاردئون -->
+<style>
+    /* استایل‌های اصلی آکاردئون */
+    .reception-accordion-form {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    /* Header فرم */
+    .accordion-form-header {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        color: white;
+        padding: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-title-section .form-title {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    .form-title-section .form-subtitle {
+        font-size: 1rem;
+        opacity: 0.9;
+        margin: 0.5rem 0 0 0;
+    }
+
+    .form-status-section {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.75rem;
+    }
+
+    .status-indicator {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 0.5rem 1rem;
+        border-radius: 25px;
+        font-size: 0.9rem;
+    }
+
+    .status-icon i {
+        color: #28a745;
+    }
+
+    .progress-indicator {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        gap: 0.25rem;
+        min-width: 200px;
+    }
+
+    .progress-text {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #20c997);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+    }
+
+    /* آکاردئون */
+    .accordion {
+        border: none;
+    }
+
+    .accordion-item {
+        border: none;
+        border-bottom: 1px solid #e9ecef;
+        background: #ffffff;
+    }
+
+    .accordion-item:last-child {
+        border-bottom: none;
+    }
+
+    .accordion-button {
+        background: #f8f9fa;
+        border: none;
+        padding: 0;
+        box-shadow: none;
+        border-radius: 0;
+        transition: all 0.3s ease;
+    }
+
+    .accordion-button:not(.collapsed) {
+        background: #e3f2fd;
+        color: #1976d2;
+        box-shadow: none;
+    }
+
+    .accordion-button:focus {
+        box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+        border-color: transparent;
+    }
+
+    .accordion-button-content {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 1.5rem 2rem;
+        gap: 1rem;
+    }
+
+    .accordion-icon {
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        flex-shrink: 0;
+    }
+
+    .accordion-button:not(.collapsed) .accordion-icon {
+        background: #1976d2;
+    }
+
+    .accordion-title {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .title-text {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .title-subtitle {
+        font-size: 0.9rem;
+        color: #666;
+        opacity: 0.8;
+    }
+
+    .accordion-button:not(.collapsed) .title-text {
+        color: #1976d2;
+    }
+
+    .accordion-status {
+        display: flex;
+        align-items: center;
+    }
+
+    .status-badge {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 20px;
+        font-size: 0.85rem;
+        font-weight: 500;
+    }
+
+    .status-badge i {
+        font-size: 0.75rem;
+    }
+
+    /* وضعیت‌های مختلف */
+    .status-badge.status-ready {
+        background: #e9ecef;
+        color: #6c757d;
+    }
+
+    .status-badge.status-active {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .status-badge.status-warning {
+        background: #fff3cd;
+        color: #856404;
+    }
+
+    .status-badge.status-error {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    /* محتوای آکاردئون */
+    .accordion-body {
+        padding: 2rem;
+        background: #ffffff;
+        border-top: 1px solid #e9ecef;
+    }
+
+    /* Footer فرم */
+    .accordion-form-footer {
+        background: #f8f9fa;
+        padding: 1.5rem 2rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+    }
+
+    .form-actions .btn {
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .form-summary {
+        display: flex;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .summary-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .summary-label {
+        font-size: 0.85rem;
+        color: #666;
+        font-weight: 500;
+    }
+
+    .summary-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .accordion-form-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .form-status-section {
+            align-items: flex-start;
+        }
+
+        .accordion-button-content {
+            padding: 1rem;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .accordion-title {
+            width: 100%;
+        }
+
+        .accordion-body {
+            padding: 1rem;
+        }
+
+        .accordion-form-footer {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .form-actions {
+            justify-content: center;
+        }
+
+        .form-summary {
+            justify-content: center;
+        }
+    }
+
+    /* انیمیشن‌های حرفه‌ای */
+    .accordion-button::after {
+        transition: transform 0.3s ease;
+    }
+
+    .accordion-collapse {
+        transition: height 0.3s ease;
+    }
+
+    /* Hover Effects */
+    .accordion-button:hover {
+        background: #e3f2fd;
+    }
+
+    .form-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Focus States */
+    .accordion-button:focus {
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    }
+
+    /* Loading States */
+    .loading .accordion-icon {
+        animation: pulse 1.5s infinite;
+    }
+
+    @@keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+</style>
+
+<!-- JavaScript تخصصی آکاردئون -->
+<script>
+    $(document).ready(function() {
+        initializeReceptionAccordion();
+    });
+
+    function initializeReceptionAccordion() {
+        console.log('🎨 Initializing Reception Accordion Form...');
+        
+        // تنظیمات اولیه
+        setupAccordionEvents();
+        setupFormValidation();
+        setupProgressTracking();
+        setupFormActions();
+        
+        console.log('✅ Reception Accordion Form initialized successfully');
+    }
+
+    function setupAccordionEvents() {
+        // رویداد تغییر وضعیت آکاردئون
+        $('#receptionAccordion').on('show.bs.collapse', function (e) {
+            const target = $(e.target);
+            const button = target.prev().find('.accordion-button');
+            
+            // به‌روزرسانی وضعیت
+            updateAccordionStatus(target.attr('id'), 'active');
+            
+            // انیمیشن آیکون
+            button.find('.accordion-icon').addClass('loading');
+        });
+
+        $('#receptionAccordion').on('shown.bs.collapse', function (e) {
+            const target = $(e.target);
+            const button = target.prev().find('.accordion-button');
+            
+            // حذف انیمیشن
+            button.find('.accordion-icon').removeClass('loading');
+            
+            // فوکوس روی اولین فیلد
+            const firstInput = target.find('input, select, textarea').first();
+            if (firstInput.length) {
+                firstInput.focus();
+            }
+        });
+
+        $('#receptionAccordion').on('hide.bs.collapse', function (e) {
+            const target = $(e.target);
+            updateAccordionStatus(target.attr('id'), 'ready');
+        });
+    }
+
+    function setupFormValidation() {
+        // اعتبارسنجی Real-time
+        $('#receptionAccordionForm').on('input change', 'input, select, textarea', function() {
+            validateCurrentSection();
+            updateFormProgress();
+        });
+    }
+
+    function setupProgressTracking() {
+        // ردیابی پیشرفت فرم
+        updateFormProgress();
+    }
+
+    function setupFormActions() {
+        // دکمه پاک کردن فرم
+        $('#clearFormBtn').on('click', function() {
+            if (confirm('آیا مطمئن هستید که می‌خواهید تمام اطلاعات فرم را پاک کنید؟')) {
+                clearForm();
+            }
+        });
+
+        // دکمه ذخیره پیش‌نویس
+        $('#saveDraftBtn').on('click', function() {
+            saveDraft();
+        });
+
+        // دکمه ثبت پذیرش
+        $('#submitFormBtn').on('click', function() {
+            submitForm();
+        });
+    }
+
+    function updateAccordionStatus(sectionId, status) {
+        const statusBadge = $(`#${sectionId.replace('Collapse', '')}StatusBadge`);
+        const icon = statusBadge.find('i');
+        const text = statusBadge.find('span').last();
+        
+        // حذف کلاس‌های قبلی
+        statusBadge.removeClass('status-ready status-active status-warning status-error');
+        
+        // اضافه کردن کلاس جدید
+        statusBadge.addClass(`status-${status}`);
+        
+        // به‌روزرسانی متن
+        const statusTexts = {
+            'ready': 'آماده',
+            'active': 'فعال',
+            'warning': 'هشدار',
+            'error': 'خطا'
+        };
+        
+        text.text(statusTexts[status] || 'نامشخص');
+    }
+
+    function validateCurrentSection() {
+        // اعتبارسنجی بخش فعلی
+        const activeSection = $('.accordion-collapse.show');
+        if (activeSection.length) {
+            const sectionId = activeSection.attr('id');
+            validateSection(sectionId);
+        }
+    }
+
+    function validateSection(sectionId) {
+        // اعتبارسنجی بخش خاص
+        let isValid = true;
+        const section = $(`#${sectionId}`);
+        
+        // اعتبارسنجی فیلدهای الزامی
+        section.find('[required]').each(function() {
+            const field = $(this);
+            const value = field.val();
+            
+            if (!value || value.trim() === '') {
+                isValid = false;
+                field.addClass('is-invalid');
+            } else {
+                field.removeClass('is-invalid').addClass('is-valid');
+            }
+        });
+        
+        // به‌روزرسانی وضعیت
+        updateAccordionStatus(sectionId, isValid ? 'active' : 'warning');
+        
+        return isValid;
+    }
+
+    function updateFormProgress() {
+        // محاسبه پیشرفت فرم
+        let completedSections = 0;
+        const totalSections = 5;
+        
+        // بررسی هر بخش
+        $('#receptionAccordion .accordion-item').each(function() {
+            const sectionId = $(this).find('.accordion-collapse').attr('id');
+            if (validateSection(sectionId)) {
+                completedSections++;
+            }
+        });
+        
+        // به‌روزرسانی نمایش
+        $('#completedSections').text(completedSections);
+        $('#totalSections').text(totalSections);
+        
+        const progressPercentage = (completedSections / totalSections) * 100;
+        $('#progressFill').css('width', `${progressPercentage}%`);
+        
+        // فعال/غیرفعال کردن دکمه ثبت
+        const isFormComplete = completedSections === totalSections;
+        $('#submitFormBtn').prop('disabled', !isFormComplete);
+        
+        if (isFormComplete) {
+            $('#formStatusIndicator .status-text').text('آماده ثبت');
+            $('#formStatusIndicator .status-icon i').removeClass('fa-circle').addClass('fa-check-circle');
+        }
+    }
+
+    function clearForm() {
+        // پاک کردن تمام فیلدها
+        $('#receptionAccordionForm input, #receptionAccordionForm select, #receptionAccordionForm textarea').val('');
+        
+        // بازنشانی وضعیت‌ها
+        $('#receptionAccordion .accordion-item').each(function() {
+            const sectionId = $(this).find('.accordion-collapse').attr('id');
+            updateAccordionStatus(sectionId, 'ready');
+        });
+        
+        // بازنشانی پیشرفت
+        updateFormProgress();
+        
+        // نمایش پیام
+        showNotification('فرم با موفقیت پاک شد', 'success');
+    }
+
+    function saveDraft() {
+        // ذخیره پیش‌نویس
+        const formData = collectFormData();
+        
+        $.ajax({
+            url: '@Url.Action("SaveDraft", "ReceptionForm")',
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    showNotification('پیش‌نویس با موفقیت ذخیره شد', 'success');
+                } else {
+                    showNotification('خطا در ذخیره پیش‌نویس', 'error');
+                }
+            },
+            error: function() {
+                showNotification('خطا در ذخیره پیش‌نویس', 'error');
+            }
+        });
+    }
+
+    function submitForm() {
+        // ثبت نهایی پذیرش
+        if (!validateAllSections()) {
+            showNotification('لطفاً تمام بخش‌های الزامی را تکمیل کنید', 'warning');
+            return;
+        }
+        
+        const formData = collectFormData();
+        
+        $.ajax({
+            url: '@Url.Action("SubmitReception", "ReceptionForm")',
+            type: 'POST',
+            data: formData,
+            success: function(response) {
+                if (response.success) {
+                    showNotification('پذیرش با موفقیت ثبت شد', 'success');
+                    // هدایت به صفحه تایید
+                    window.location.href = '@Url.Action("Confirmation", "Reception")';
+                } else {
+                    showNotification(response.message || 'خطا در ثبت پذیرش', 'error');
+                }
+            },
+            error: function() {
+                showNotification('خطا در ثبت پذیرش', 'error');
+            }
+        });
+    }
+
+    function validateAllSections() {
+        let allValid = true;
+        
+        $('#receptionAccordion .accordion-item').each(function() {
+            const sectionId = $(this).find('.accordion-collapse').attr('id');
+            if (!validateSection(sectionId)) {
+                allValid = false;
+            }
+        });
+        
+        return allValid;
+    }
+
+    function collectFormData() {
+        // جمع‌آوری داده‌های فرم
+        const formData = {};
+        
+        $('#receptionAccordionForm input, #receptionAccordionForm select, #receptionAccordionForm textarea').each(function() {
+            const field = $(this);
+            const name = field.attr('name');
+            const value = field.val();
+            
+            if (name) {
+                formData[name] = value;
+            }
+        });
+        
+        return formData;
+    }
+
+    function showNotification(message, type) {
+        // نمایش اعلان
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+        
+        const alert = $(`
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        // اضافه کردن به بالای فرم
+        $('#receptionAccordionForm').prepend(alert);
+        
+        // حذف خودکار بعد از 5 ثانیه
+        setTimeout(function() {
+            alert.alert('close');
+        }, 5000);
+    }
+</script>

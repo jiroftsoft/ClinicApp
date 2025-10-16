@@ -25,9 +25,10 @@ namespace ClinicApp.ViewModels.Reception
     }
 
     /// <summary>
-    /// مدل خدمت انتخاب شده
+    /// مدل خدمت انتخاب شده (Legacy - استفاده از ReceptionAccordionViewModel.SelectedServiceViewModel)
     /// </summary>
-    public class SelectedServiceViewModel
+    [Obsolete("استفاده از ReceptionAccordionViewModel.SelectedServiceViewModel")]
+    public class LegacySelectedServiceViewModel
     {
         public int ServiceId { get; set; }
         public string ServiceName { get; set; }

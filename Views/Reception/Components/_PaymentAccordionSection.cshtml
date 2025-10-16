@@ -1,0 +1,891 @@
+@using ClinicApp.ViewModels.Reception
+@using ClinicApp.Constants
+@model PaymentAccordionViewModel
+
+<!-- بخش پرداخت - آکاردئون -->
+<div class="payment-accordion-section" id="paymentAccordionSection">
+    
+    <!-- Header بخش -->
+    <div class="section-header">
+        <div class="section-title">
+            <h5 class="mb-0">
+                <i class="fas fa-credit-card me-2"></i>
+                پرداخت
+            </h5>
+            <p class="section-subtitle mb-0">پرداخت آنلاین و نقدی</p>
+        </div>
+        <div class="section-actions">
+            <button type="button" class="btn btn-outline-primary btn-sm" id="refreshPaymentBtn">
+                <i class="fas fa-sync me-1"></i>
+                به‌روزرسانی
+            </button>
+            <button type="button" class="btn btn-outline-success btn-sm" id="processPaymentBtn">
+                <i class="fas fa-credit-card me-1"></i>
+                پردازش پرداخت
+            </button>
+        </div>
+    </div>
+
+    <!-- محتوای بخش -->
+    <div class="section-content">
+        <div class="row">
+            <!-- ستون چپ: انتخاب روش پرداخت -->
+            <div class="col-lg-6">
+                <div class="payment-method-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-credit-card me-2"></i>
+                            روش پرداخت
+                        </h6>
+                        <span class="badge bg-primary">الزامی</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- نوع پرداخت -->
+                        <div class="form-group mb-3">
+                            <label class="form-label">
+                                <i class="fas fa-credit-card me-1"></i>
+                                نوع پرداخت <span class="text-danger">*</span>
+                            </label>
+                            <div class="payment-methods">
+                                <div class="payment-method-item">
+                                    <input type="radio" 
+                                           class="form-check-input" 
+                                           id="paymentOnline" 
+                                           name="PaymentType" 
+                                           value="Online"
+                                           @(Model.PaymentType == "Online" ? "checked" : "")>
+                                    <label class="form-check-label" for="paymentOnline">
+                                        <div class="payment-method-content">
+                                            <div class="payment-icon">
+                                                <i class="fas fa-credit-card"></i>
+                                            </div>
+                                            <div class="payment-info">
+                                                <div class="payment-title">پرداخت آنلاین</div>
+                                                <div class="payment-description">پرداخت با کارت بانکی</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                                
+                                <div class="payment-method-item">
+                                    <input type="radio" 
+                                           class="form-check-input" 
+                                           id="paymentCash" 
+                                           name="PaymentType" 
+                                           value="Cash"
+                                           @(Model.PaymentType == "Cash" ? "checked" : "")>
+                                    <label class="form-check-label" for="paymentCash">
+                                        <div class="payment-method-content">
+                                            <div class="payment-icon">
+                                                <i class="fas fa-money-bill-wave"></i>
+                                            </div>
+                                            <div class="payment-info">
+                                                <div class="payment-title">پرداخت نقدی</div>
+                                                <div class="payment-description">پرداخت در محل</div>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات پرداخت آنلاین -->
+                        <div class="online-payment-info" id="onlinePaymentInfo" style="display: none;">
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <h6 class="info-title">اطلاعات پرداخت آنلاین</h6>
+                                </div>
+                                <div class="info-body">
+                                    <div class="info-item">
+                                        <span class="info-label">درگاه پرداخت:</span>
+                                        <span class="info-value">پوز آنلاین</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">وضعیت:</span>
+                                        <span class="info-value">
+                                            <span class="badge bg-success">فعال</span>
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">امنیت:</span>
+                                        <span class="info-value">
+                                            <i class="fas fa-shield-alt text-success"></i>
+                                            SSL فعال
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- اطلاعات پرداخت نقدی -->
+                        <div class="cash-payment-info" id="cashPaymentInfo" style="display: none;">
+                            <div class="info-card">
+                                <div class="info-header">
+                                    <h6 class="info-title">اطلاعات پرداخت نقدی</h6>
+                                </div>
+                                <div class="info-body">
+                                    <div class="info-item">
+                                        <span class="info-label">محل پرداخت:</span>
+                                        <span class="info-value">صندوق کلینیک</span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">وضعیت:</span>
+                                        <span class="info-value">
+                                            <span class="badge bg-success">فعال</span>
+                                        </span>
+                                    </div>
+                                    <div class="info-item">
+                                        <span class="info-label">رسید:</span>
+                                        <span class="info-value">
+                                            <i class="fas fa-receipt text-primary"></i>
+                                            چاپ خودکار
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ستون راست: خلاصه پرداخت -->
+            <div class="col-lg-6">
+                <div class="payment-summary-card">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">
+                            <i class="fas fa-calculator me-2"></i>
+                            خلاصه پرداخت
+                        </h6>
+                        <span class="badge bg-success">محاسبه شده</span>
+                    </div>
+                    <div class="card-body">
+                        <!-- جزئیات مبلغ -->
+                        <div class="payment-details">
+                            <div class="detail-item">
+                                <span class="detail-label">مبلغ کل خدمات:</span>
+                                <span class="detail-value" id="totalServiceAmount">0 ریال</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">سهم بیمه:</span>
+                                <span class="detail-value" id="insuranceShareAmount">0 ریال</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="detail-label">سهم بیمار:</span>
+                                <span class="detail-value" id="patientShareAmount">0 ریال</span>
+                            </div>
+                            <div class="detail-item total">
+                                <span class="detail-label">مبلغ قابل پرداخت:</span>
+                                <span class="detail-value" id="payableAmount">0 ریال</span>
+                            </div>
+                        </div>
+
+                        <!-- وضعیت پرداخت -->
+                        <div class="payment-status">
+                            <div class="status-item">
+                                <span class="status-icon">
+                                    <i class="fas fa-clock text-warning"></i>
+                                </span>
+                                <span class="status-text">در انتظار پرداخت</span>
+                            </div>
+                        </div>
+
+                        <!-- دکمه‌های پرداخت -->
+                        <div class="payment-actions">
+                            <button type="button" class="btn btn-success btn-lg w-100" id="payOnlineBtn" disabled>
+                                <i class="fas fa-credit-card me-2"></i>
+                                پرداخت آنلاین
+                            </button>
+                            <button type="button" class="btn btn-primary btn-lg w-100" id="payCashBtn" disabled>
+                                <i class="fas fa-money-bill-wave me-2"></i>
+                                پرداخت نقدی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal پرداخت آنلاین -->
+        <div class="modal fade" id="onlinePaymentModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-credit-card me-2"></i>
+                            پرداخت آنلاین
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="payment-process">
+                            <div class="process-step active" id="step1">
+                                <div class="step-icon">
+                                    <i class="fas fa-credit-card"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h6>اطلاعات کارت</h6>
+                                    <p>شماره کارت و CVV را وارد کنید</p>
+                                </div>
+                            </div>
+                            <div class="process-step" id="step2">
+                                <div class="step-icon">
+                                    <i class="fas fa-shield-alt"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h6>تایید امنیتی</h6>
+                                    <p>کد تایید از بانک دریافت کنید</p>
+                                </div>
+                            </div>
+                            <div class="process-step" id="step3">
+                                <div class="step-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="step-content">
+                                    <h6>تکمیل پرداخت</h6>
+                                    <p>پرداخت با موفقیت انجام شد</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+                        <button type="button" class="btn btn-success" id="confirmPaymentBtn">تایید پرداخت</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CSS تخصصی بخش پرداخت -->
+<style>
+    .payment-accordion-section {
+        background: #ffffff;
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .section-header {
+        background: #f8f9fa;
+        padding: 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .section-title h5 {
+        color: #333;
+        font-weight: 600;
+    }
+
+    .section-subtitle {
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .section-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .section-content {
+        padding: 2rem;
+    }
+
+    .payment-method-card,
+    .payment-summary-card {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        height: 100%;
+        transition: all 0.3s ease;
+    }
+
+    .payment-method-card:hover,
+    .payment-summary-card:hover {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .payment-method-card {
+        border-left: 4px solid #007bff;
+    }
+
+    .payment-summary-card {
+        border-left: 4px solid #28a745;
+    }
+
+    .card-header {
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+        padding: 1rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .card-title {
+        color: #333;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.25rem 0.5rem;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    .payment-methods {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .payment-method-item {
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+
+    .payment-method-item:hover {
+        border-color: #007bff;
+        background: #f8f9fa;
+    }
+
+    .payment-method-item input[type="radio"]:checked + label {
+        color: #007bff;
+    }
+
+    .payment-method-item input[type="radio"]:checked ~ .payment-method-content {
+        border-color: #007bff;
+    }
+
+    .payment-method-item input[type="radio"]:checked {
+        border-color: #007bff;
+    }
+
+    .payment-method-content {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .payment-icon {
+        width: 50px;
+        height: 50px;
+        background: #007bff;
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+    }
+
+    .payment-info {
+        flex: 1;
+    }
+
+    .payment-title {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.25rem;
+    }
+
+    .payment-description {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .info-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        overflow: hidden;
+        margin-top: 1rem;
+    }
+
+    .info-header {
+        background: #e9ecef;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .info-title {
+        margin: 0;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #333;
+    }
+
+    .info-body {
+        padding: 1rem;
+    }
+
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .info-item:last-child {
+        border-bottom: none;
+    }
+
+    .info-label {
+        font-weight: 500;
+        color: #666;
+        font-size: 0.9rem;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #333;
+        font-size: 0.9rem;
+    }
+
+    .payment-details {
+        background: #f8f9fa;
+        border-radius: 6px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .detail-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+
+    .detail-item:last-child {
+        border-bottom: none;
+    }
+
+    .detail-item.total {
+        border-top: 2px solid #007bff;
+        margin-top: 0.5rem;
+        padding-top: 0.75rem;
+        font-weight: 700;
+        color: #333;
+    }
+
+    .detail-label {
+        font-size: 0.9rem;
+        color: #666;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #333;
+    }
+
+    .detail-item.total .detail-value {
+        color: #007bff;
+        font-size: 1.1rem;
+    }
+
+    .payment-status {
+        margin-bottom: 1.5rem;
+    }
+
+    .status-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem;
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+    }
+
+    .status-icon i {
+        font-size: 1.1rem;
+    }
+
+    .status-text {
+        font-weight: 500;
+        color: #856404;
+    }
+
+    .payment-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
+    .payment-actions .btn {
+        padding: 0.75rem 1.5rem;
+        font-weight: 600;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+    }
+
+    .payment-actions .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Modal Styles */
+    .payment-process {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 2rem 0;
+    }
+
+    .process-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        flex: 1;
+        position: relative;
+        opacity: 0.5;
+        transition: all 0.3s ease;
+    }
+
+    .process-step.active {
+        opacity: 1;
+    }
+
+    .process-step.completed {
+        opacity: 1;
+    }
+
+    .step-icon {
+        width: 60px;
+        height: 60px;
+        background: #e9ecef;
+        color: #666;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+        transition: all 0.3s ease;
+    }
+
+    .process-step.active .step-icon {
+        background: #007bff;
+        color: white;
+    }
+
+    .process-step.completed .step-icon {
+        background: #28a745;
+        color: white;
+    }
+
+    .step-content h6 {
+        font-weight: 600;
+        color: #333;
+        margin-bottom: 0.25rem;
+    }
+
+    .step-content p {
+        font-size: 0.9rem;
+        color: #666;
+        margin: 0;
+    }
+
+    /* Responsive Design */
+    @@media (max-width: 768px) {
+        .section-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .section-actions {
+            justify-content: center;
+        }
+
+        .section-content {
+            padding: 1rem;
+        }
+
+        .payment-method-content {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .payment-process {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .process-step {
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- JavaScript تخصصی بخش پرداخت -->
+<script>
+    $(document).ready(function() {
+        initializePaymentSection();
+    });
+
+    function initializePaymentSection() {
+        console.log('💳 Initializing Payment Section...');
+        
+        // تنظیمات اولیه
+        setupPaymentEvents();
+        setupPaymentValidation();
+        setupPaymentActions();
+        
+        // بارگذاری اطلاعات پرداخت
+        loadPaymentInfo();
+        
+        console.log('✅ Payment Section initialized successfully');
+    }
+
+    function setupPaymentEvents() {
+        // تغییر نوع پرداخت
+        $('input[name="PaymentType"]').on('change', function() {
+            const paymentType = $(this).val();
+            updatePaymentMethod(paymentType);
+        });
+
+        // دکمه پرداخت آنلاین
+        $('#payOnlineBtn').on('click', function() {
+            processOnlinePayment();
+        });
+
+        // دکمه پرداخت نقدی
+        $('#payCashBtn').on('click', function() {
+            processCashPayment();
+        });
+
+        // تایید پرداخت آنلاین
+        $('#confirmPaymentBtn').on('click', function() {
+            confirmOnlinePayment();
+        });
+    }
+
+    function setupPaymentValidation() {
+        // اعتبارسنجی Real-time
+        $('input[name="PaymentType"]').on('change', function() {
+            validatePaymentSelection();
+        });
+    }
+
+    function setupPaymentActions() {
+        // دکمه به‌روزرسانی
+        $('#refreshPaymentBtn').on('click', function() {
+            loadPaymentInfo();
+        });
+
+        // دکمه پردازش پرداخت
+        $('#processPaymentBtn').on('click', function() {
+            processPayment();
+        });
+    }
+
+    function loadPaymentInfo() {
+        // بارگذاری اطلاعات پرداخت از بخش‌های قبلی
+        const totalAmount = parseFloat($('#totalServiceAmount').text().replace(/[^\d]/g, '')) || 0;
+        const insuranceShare = parseFloat($('#totalInsuranceShare').text().replace(/[^\d]/g, '')) || 0;
+        const patientShare = parseFloat($('#totalPatientShare').text().replace(/[^\d]/g, '')) || 0;
+        
+        updatePaymentDetails(totalAmount, insuranceShare, patientShare);
+    }
+
+    function updatePaymentDetails(totalAmount, insuranceShare, patientShare) {
+        $('#totalServiceAmount').text(formatCurrency(totalAmount));
+        $('#insuranceShareAmount').text(formatCurrency(insuranceShare));
+        $('#patientShareAmount').text(formatCurrency(patientShare));
+        $('#payableAmount').text(formatCurrency(patientShare));
+        
+        // فعال/غیرفعال کردن دکمه‌ها
+        const hasAmount = patientShare > 0;
+        $('#payOnlineBtn').prop('disabled', !hasAmount);
+        $('#payCashBtn').prop('disabled', !hasAmount);
+    }
+
+    function updatePaymentMethod(paymentType) {
+        // مخفی کردن تمام اطلاعات
+        $('.online-payment-info, .cash-payment-info').hide();
+        
+        // نمایش اطلاعات مربوطه
+        if (paymentType === 'Online') {
+            $('#onlinePaymentInfo').show();
+        } else if (paymentType === 'Cash') {
+            $('#cashPaymentInfo').show();
+        }
+        
+        validatePaymentSelection();
+    }
+
+    function validatePaymentSelection() {
+        const paymentType = $('input[name="PaymentType"]:checked').val();
+        return paymentType && paymentType !== '';
+    }
+
+    function processOnlinePayment() {
+        if (!validatePaymentSelection()) {
+            showNotification('لطفاً نوع پرداخت را انتخاب کنید', 'warning');
+            return;
+        }
+        
+        // نمایش Modal پرداخت آنلاین
+        $('#onlinePaymentModal').modal('show');
+        
+        // شروع فرآیند پرداخت
+        startOnlinePaymentProcess();
+    }
+
+    function processCashPayment() {
+        if (!validatePaymentSelection()) {
+            showNotification('لطفاً نوع پرداخت را انتخاب کنید', 'warning');
+            return;
+        }
+        
+        // تایید پرداخت نقدی
+        if (confirm('آیا مطمئن هستید که می‌خواهید پرداخت نقدی را تایید کنید؟')) {
+            completeCashPayment();
+        }
+    }
+
+    function startOnlinePaymentProcess() {
+        // مرحله 1: اطلاعات کارت
+        $('#step1').addClass('active');
+        $('#step2, #step3').removeClass('active completed');
+        
+        // شبیه‌سازی فرآیند پرداخت
+        setTimeout(function() {
+            $('#step1').removeClass('active').addClass('completed');
+            $('#step2').addClass('active');
+            
+            // مرحله 2: تایید امنیتی
+            setTimeout(function() {
+                $('#step2').removeClass('active').addClass('completed');
+                $('#step3').addClass('active');
+                
+                // مرحله 3: تکمیل
+                setTimeout(function() {
+                    $('#step3').addClass('completed');
+                    $('#confirmPaymentBtn').prop('disabled', false);
+                }, 1000);
+            }, 2000);
+        }, 1000);
+    }
+
+    function confirmOnlinePayment() {
+        // تایید پرداخت آنلاین
+        $.ajax({
+            url: '@Url.Action("ConfirmOnlinePayment", "ReceptionPayment")',
+            type: 'POST',
+            data: {
+                amount: $('#payableAmount').text(),
+                paymentType: 'Online'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showNotification('پرداخت آنلاین با موفقیت انجام شد', 'success');
+                    $('#onlinePaymentModal').modal('hide');
+                    updatePaymentStatus('completed');
+                } else {
+                    showNotification(response.message || 'خطا در پرداخت آنلاین', 'error');
+                }
+            },
+            error: function() {
+                showNotification('خطا در پرداخت آنلاین', 'error');
+            }
+        });
+    }
+
+    function completeCashPayment() {
+        // تکمیل پرداخت نقدی
+        $.ajax({
+            url: '@Url.Action("CompleteCashPayment", "ReceptionPayment")',
+            type: 'POST',
+            data: {
+                amount: $('#payableAmount').text(),
+                paymentType: 'Cash'
+            },
+            dataType: 'json',
+            success: function(response) {
+                if (response.success) {
+                    showNotification('پرداخت نقدی با موفقیت انجام شد', 'success');
+                    updatePaymentStatus('completed');
+                } else {
+                    showNotification(response.message || 'خطا در پرداخت نقدی', 'error');
+                }
+            },
+            error: function() {
+                showNotification('خطا در پرداخت نقدی', 'error');
+            }
+        });
+    }
+
+    function updatePaymentStatus(status) {
+        const statusItem = $('.payment-status .status-item');
+        const statusIcon = statusItem.find('.status-icon i');
+        const statusText = statusItem.find('.status-text');
+        
+        if (status === 'completed') {
+            statusIcon.removeClass('fa-clock text-warning').addClass('fa-check-circle text-success');
+            statusText.text('پرداخت تکمیل شد');
+            statusItem.removeClass('bg-warning border-warning').addClass('bg-success border-success');
+        } else if (status === 'processing') {
+            statusIcon.removeClass('fa-clock text-warning').addClass('fa-spinner fa-spin text-primary');
+            statusText.text('در حال پردازش...');
+        }
+    }
+
+    function processPayment() {
+        const paymentType = $('input[name="PaymentType"]:checked').val();
+        
+        if (!paymentType) {
+            showNotification('لطفاً نوع پرداخت را انتخاب کنید', 'warning');
+            return;
+        }
+        
+        if (paymentType === 'Online') {
+            processOnlinePayment();
+        } else if (paymentType === 'Cash') {
+            processCashPayment();
+        }
+    }
+
+    function formatCurrency(amount) {
+        return new Intl.NumberFormat('fa-IR').format(amount) + ' ریال';
+    }
+
+    function showNotification(message, type) {
+        const alertClass = {
+            'success': 'alert-success',
+            'error': 'alert-danger',
+            'warning': 'alert-warning',
+            'info': 'alert-info'
+        }[type] || 'alert-info';
+        
+        const alert = $(`
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `);
+        
+        $('#paymentAccordionSection').prepend(alert);
+        
+        setTimeout(function() {
+            alert.alert('close');
+        }, 5000);
+    }
+</script>

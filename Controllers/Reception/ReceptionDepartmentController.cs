@@ -97,12 +97,12 @@ namespace ClinicApp.Controllers.Reception
                     return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت دپارتمان‌های کلینیک. ClinicId: {ClinicId}", clinicId);
-                return Json(new { success = false, message = "خطا در دریافت دپارتمان‌ها" });
+                return Json(new { success = false, message = "خطا در دریافت دپارتمان‌ها" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -132,12 +132,12 @@ namespace ClinicApp.Controllers.Reception
                     return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت پزشکان دپارتمان. DepartmentId: {DepartmentId}", departmentId);
-                return Json(new { success = false, message = "خطا در دریافت پزشکان" });
+                return Json(new { success = false, message = "خطا در دریافت پزشکان" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -163,12 +163,12 @@ namespace ClinicApp.Controllers.Reception
                     return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت اطلاعات پزشک. DoctorId: {DoctorId}", doctorId);
-                return Json(new { success = false, message = "خطا در دریافت اطلاعات پزشک" });
+                return Json(new { success = false, message = "خطا در دریافت اطلاعات پزشک" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -200,12 +200,12 @@ namespace ClinicApp.Controllers.Reception
                     return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در بارگذاری cascade. ClinicId: {ClinicId}", clinicId);
-                return Json(new { success = false, message = "خطا در بارگذاری cascade" });
+                return Json(new { success = false, message = "خطا در بارگذاری cascade" }, JsonRequestBehavior.AllowGet);
             }
         }
 

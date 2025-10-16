@@ -1,0 +1,99 @@
+@{
+    ViewBag.Title = "جستجوی بیمار";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h2><i class="fas fa-search me-2"></i>جستجوی بیمار</h2>
+                <p class="text-muted">جستجوی پیشرفته بیماران در سیستم</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-filter me-2"></i>فیلترهای جستجو</h5>
+                </div>
+                <div class="card-body">
+                    <form id="patientSearchForm">
+                        <div class="mb-3">
+                            <label for="nationalCode" class="form-label">کد ملی</label>
+                            <input type="text" class="form-control" id="nationalCode" placeholder="کد ملی بیمار">
+                        </div>
+                        <div class="mb-3">
+                            <label for="firstName" class="form-label">نام</label>
+                            <input type="text" class="form-control" id="firstName" placeholder="نام بیمار">
+                        </div>
+                        <div class="mb-3">
+                            <label for="lastName" class="form-label">نام خانوادگی</label>
+                            <input type="text" class="form-control" id="lastName" placeholder="نام خانوادگی بیمار">
+                        </div>
+                        <div class="mb-3">
+                            <label for="phoneNumber" class="form-label">شماره تلفن</label>
+                            <input type="text" class="form-control" id="phoneNumber" placeholder="شماره تلفن">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>جستجو
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5><i class="fas fa-list me-2"></i>نتایج جستجو</h5>
+                </div>
+                <div class="card-body">
+                    <div id="searchResults">
+                        <div class="text-center text-muted">
+                            <i class="fas fa-search fa-3x mb-3"></i>
+                            <p>برای شروع جستجو، فیلترهای بالا را پر کنید</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    $('#patientSearchForm').on('submit', function(e) {
+        e.preventDefault();
+        performPatientSearch();
+    });
+});
+
+function performPatientSearch() {
+    const searchData = {
+        nationalCode: $('#nationalCode').val(),
+        firstName: $('#firstName').val(),
+        lastName: $('#lastName').val(),
+        phoneNumber: $('#phoneNumber').val()
+    };
+    
+    // AJAX call to search patients
+    $.ajax({
+        url: '/Reception/PatientSearch/SearchPatients',
+        type: 'POST',
+        data: searchData,
+        success: function(response) {
+            displaySearchResults(response);
+        },
+        error: function(xhr, status, error) {
+            console.error('خطا در جستجوی بیمار:', error);
+        }
+    });
+}
+
+function displaySearchResults(results) {
+    const container = $('#searchResults');
+    // Display search results
+}
+</script>

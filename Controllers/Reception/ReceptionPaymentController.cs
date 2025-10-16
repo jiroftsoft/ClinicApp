@@ -62,16 +62,16 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در پردازش پرداخت POS. PatientId: {PatientId}, Amount: {Amount}", 
                     paymentRequest.PatientId, paymentRequest.Amount);
-                return Json(new { success = false, message = "خطا در پردازش پرداخت POS" });
+                return Json(new { success = false, message = "خطا در پردازش پرداخت POS" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -98,15 +98,15 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در تأیید پرداخت. PaymentId: {PaymentId}", paymentId);
-                return Json(new { success = false, message = "خطا در تأیید پرداخت" });
+                return Json(new { success = false, message = "خطا در تأیید پرداخت" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -133,15 +133,15 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در دریافت تاریخچه پرداخت‌های بیمار. PatientId: {PatientId}", patientId);
-                return Json(new { success = false, message = "خطا در دریافت تاریخچه پرداخت‌ها" });
+                return Json(new { success = false, message = "خطا در دریافت تاریخچه پرداخت‌ها" }, JsonRequestBehavior.AllowGet);
             }
         }
 
@@ -169,15 +169,15 @@ namespace ClinicApp.Controllers.Reception
                 
                 if (result.Success)
                 {
-                    return Json(new { success = true, data = result.Data });
+                    return Json(new { success = true, data = result.Data }, JsonRequestBehavior.AllowGet);
                 }
 
-                return Json(new { success = false, message = result.Message });
+                return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "❌ خطا در مدیریت خطای پرداخت. ErrorCode: {ErrorCode}", errorCode);
-                return Json(new { success = false, message = "خطا در مدیریت خطای پرداخت" });
+                return Json(new { success = false, message = "خطا در مدیریت خطای پرداخت" }, JsonRequestBehavior.AllowGet);
             }
         }
 

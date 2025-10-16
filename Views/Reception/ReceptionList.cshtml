@@ -1,0 +1,122 @@
+@{
+    ViewBag.Title = "لیست پذیرش‌ها";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="page-header">
+                <h2><i class="fas fa-list me-2"></i>لیست پذیرش‌ها</h2>
+                <p class="text-muted">مدیریت و مشاهده تمام پذیرش‌های سیستم</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h5><i class="fas fa-clipboard-list me-2"></i>پذیرش‌های امروز</h5>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button class="btn btn-primary" onclick="refreshReceptionList()">
+                                <i class="fas fa-sync-alt me-2"></i>بروزرسانی
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="receptionListTable">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>شماره پذیرش</th>
+                                    <th>نام بیمار</th>
+                                    <th>کد ملی</th>
+                                    <th>تاریخ پذیرش</th>
+                                    <th>وضعیت</th>
+                                    <th>مبلغ</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>در حال بارگذاری...
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+$(document).ready(function() {
+    loadReceptionList();
+});
+
+function loadReceptionList() {
+    $.ajax({
+        url: '/Reception/ReceptionList/GetReceptionList',
+        type: 'GET',
+        success: function(response) {
+            displayReceptionList(response);
+        },
+        error: function(xhr, status, error) {
+            console.error('خطا در بارگذاری لیست پذیرش‌ها:', error);
+        }
+    });
+}
+
+function displayReceptionList(receptions) {
+    const tbody = $('#receptionListTable tbody');
+    tbody.empty();
+    
+    if (receptions && receptions.length > 0) {
+        receptions.forEach(function(reception) {
+            const row = `
+                <tr>
+                    <td>${reception.receptionNumber}</td>
+                    <td>${reception.patientName}</td>
+                    <td>${reception.nationalCode}</td>
+                    <td>${reception.receptionDate}</td>
+                    <td><span class="badge bg-${getStatusColor(reception.status)}">${reception.status}</span></td>
+                    <td>${reception.totalAmount.toLocaleString()} تومان</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewReception(${reception.id})">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+            tbody.append(row);
+        });
+    } else {
+        tbody.append('<tr><td colspan="7" class="text-center text-muted">هیچ پذیرشی یافت نشد</td></tr>');
+    }
+}
+
+function getStatusColor(status) {
+    switch(status) {
+        case 'تکمیل شده': return 'success';
+        case 'در انتظار': return 'warning';
+        case 'لغو شده': return 'danger';
+        default: return 'secondary';
+    }
+}
+
+function refreshReceptionList() {
+    loadReceptionList();
+}
+
+function viewReception(receptionId) {
+    window.location.href = `/Reception/ReceptionDetails/${receptionId}`;
+}
+</script>
