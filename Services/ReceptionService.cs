@@ -655,12 +655,14 @@ namespace ClinicApp.Services
                     PatientId = patient.PatientId,
                     FirstName = patient.FirstName,
                     LastName = patient.LastName,
+                    FatherName = patient.FatherName, // اضافه شده
                     NationalCode = patient.NationalCode,
                     PhoneNumber = patient.PhoneNumber,
                     BirthDate = patient.BirthDate,
                     BirthDateShamsi = patient.BirthDate?.ToPersianDateTime(),
                     Gender = patient.Gender,
-                    FullName = $"{patient.FirstName} {patient.LastName}"
+                    FullName = $"{patient.FirstName} {patient.LastName}",
+                    Age = patient.BirthDate.HasValue ? DateTime.Now.Year - patient.BirthDate.Value.Year : 0
                 };
 
                 _logger.Information(

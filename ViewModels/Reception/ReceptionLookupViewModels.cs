@@ -25,6 +25,9 @@ namespace ClinicApp.ViewModels.Reception
         [Display(Name = "نام خانوادگی")]
         public string LastName { get; set; }
 
+        [Display(Name = "نام پدر")]
+        public string FatherName { get; set; }
+
         [Display(Name = "نام کامل")]
         public string FullName { get; set; }
 

@@ -47,6 +47,16 @@ namespace ClinicApp
                 "~/Content/plugins/SweetAlert2/sweetalert2@11.js"
             ));
 
+            // Reception Module CSS Bundle
+            bundles.Add(new StyleBundle("~/Content/reception/css").Include(
+                "~/Content/css/reception/reception-accordion.css"
+            ));
+
+            // Reception Module JS Bundle
+            bundles.Add(new ScriptBundle("~/bundles/reception/js").Include(
+                "~/Scripts/reception/reception-modules.js"
+            ));
+
             // Admin Layout CSS Bundle
             bundles.Add(new StyleBundle("~/Content/admin").Include(
                 "~/Content/css/admin-layout.css",

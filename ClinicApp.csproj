@@ -1430,6 +1430,7 @@
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
+    <Content Include="Content\css\reception\reception-accordion.css" />
     <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\css\supplementary-tariff-styles.css" />
     <Content Include="Content\favicon.ico" />
@@ -4547,11 +4548,11 @@
     <Content Include="Views\Reception\Components\_PaymentAccordionSection.cshtml" />
     <Content Include="Views\Reception\Components\_ServiceAccordionSection.cshtml" />
     <Content Include="Views\Reception\Components\_PatientIdentityComponent.cshtml" />
+    <Content Include="Views\Reception\Components\_ReceptionAccordionForm.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
-    <Folder Include="Content\css\reception\" />
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
@@ -4724,6 +4725,7 @@
       <DependentUpon>202510161639438_change14040724.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
+    <EmbeddedResource Include="Resources\ReceptionTexts.resx" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>

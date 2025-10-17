@@ -1,0 +1,722 @@
+/* ========================================
+   RECEPTION ACCORDION STYLES - PRODUCTION READY
+   ======================================== */
+
+/* ========================================
+   CSS VARIABLES - متغیرهای CSS پویا
+   ======================================== */
+:root {
+    /* Primary Colors - از دیتابیس یا Configuration */
+    --primary-color: #007bff;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #17a2b8;
+    
+    /* Neutral Colors */
+    --light-color: #f8f9fa;
+    --dark-color: #343a40;
+    --border-color: #e9ecef;
+    --text-muted: #6c757d;
+    --text-dark: #2c3e50;
+    
+    /* Spacing */
+    --border-radius: 12px;
+    --transition-speed: 0.3s;
+    
+    /* Shadows */
+    --shadow-light: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --shadow-medium: 0 4px 16px rgba(0, 0, 0, 0.12);
+    --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.16);
+}
+
+/* ========================================
+   BASE ACCORDION STRUCTURE - PROFESSIONAL MEDICAL
+   ======================================== */
+
+.accordion-section {
+    background: #ffffff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    margin-bottom: 20px;
+    box-shadow: var(--shadow-light);
+    transition: all var(--transition-speed) ease;
+    overflow: hidden;
+}
+
+.accordion-section:hover {
+    box-shadow: var(--shadow-medium);
+}
+
+/* Accordion Collapse/Expand Functionality */
+.accordion-section .section-content {
+    display: none;
+    padding: 0;
+    transition: all 0.3s ease;
+}
+
+.accordion-section.active .section-content {
+    display: block;
+    padding: 2rem;
+    animation: slideDown 0.3s ease;
+}
+
+.accordion-section .section-header {
+    cursor: pointer;
+    user-select: none;
+    position: relative;
+}
+
+.accordion-section .section-header::after {
+    content: '\f078';
+    font-family: 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    right: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: transform 0.3s ease;
+    color: #6c757d;
+    font-size: 1.2rem;
+}
+
+.accordion-section.active .section-header::after {
+    transform: translateY(-50%) rotate(180deg);
+}
+
+/* Accordion States */
+.accordion-section.completed {
+    border-left: 4px solid var(--success-color);
+    background: linear-gradient(135deg, #d4edda 0%, #ffffff 100%);
+}
+
+.accordion-section.completed .section-header {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+}
+
+.accordion-section.in-progress {
+    border-left: 4px solid var(--warning-color);
+    background: linear-gradient(135deg, #fff3cd 0%, #ffffff 100%);
+}
+
+.accordion-section.in-progress .section-header {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+}
+
+.accordion-section.error {
+    border-left: 4px solid var(--danger-color);
+    background: linear-gradient(135deg, #f8d7da 0%, #ffffff 100%);
+}
+
+.accordion-section.error .section-header {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+}
+
+/* Animation for smooth accordion */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-bottom: 1px solid #dee2e6;
+    border-radius: 12px 12px 0 0;
+}
+
+.section-title h5 {
+    color: #2c3e50;
+    font-weight: 600;
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.section-subtitle {
+    color: #6c757d;
+    font-size: 0.875rem;
+    margin: 4px 0 0 0;
+}
+
+.section-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.section-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.section-status .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #6c757d;
+}
+
+.section-status.completed .status-dot {
+    background-color: #28a745;
+}
+
+.section-status.in-progress .status-dot {
+    background-color: #ffc107;
+}
+
+.section-status.error .status-dot {
+    background-color: #dc3545;
+}
+
+/* ========================================
+   BUTTONS - دکمه‌ها
+   ======================================== */
+
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+/* ========================================
+   LOADING STATES - وضعیت‌های بارگذاری
+   ======================================== */
+
+.btn-loading {
+    display: none;
+}
+
+.btn:disabled .btn-loading {
+    display: inline-flex;
+}
+
+.btn:disabled .btn-text {
+    display: none;
+}
+
+/* ========================================
+   FORM CONTROLS - کنترل‌های فرم
+   ======================================== */
+
+.form-control {
+    border-radius: 8px;
+    border: 1px solid #ced4da;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* ========================================
+   VALIDATION STATES - وضعیت‌های اعتبارسنجی
+   ======================================== */
+
+.form-control.is-valid {
+    border-color: #28a745;
+}
+
+.form-control.is-invalid {
+    border-color: #dc3545;
+}
+
+.invalid-feedback {
+    display: block;
+    color: #dc3545;
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* ========================================
+   ALERT CONTAINERS - کانتینرهای هشدار
+   ======================================== */
+
+.alert-container {
+    margin-top: 15px;
+}
+
+.alert {
+    border-radius: 8px;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.alert-success {
+    background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+    color: #155724;
+}
+
+.alert-danger {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+    color: #0c5460;
+}
+
+/* ========================================
+   PROGRESS BAR - نوار پیشرفت
+   ======================================== */
+
+.progress-indicator {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.progress-bar {
+    flex-grow: 1;
+    height: 10px;
+    background-color: #e9ecef;
+    border-radius: 5px;
+    overflow: hidden;
+    margin-inline-start: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #007bff 0%, #17a2b8 100%);
+    border-radius: 5px;
+    transition: width 0.5s ease-in-out;
+}
+
+.progress-text {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #6c757d;
+    white-space: nowrap;
+}
+
+/* ========================================
+   ANIMATIONS - انیمیشن‌ها
+   ======================================== */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+/* ========================================
+   RESPONSIVE DESIGN - طراحی واکنش‌گرا
+   ======================================== */
+
+@media (max-width: 768px) {
+    .accordion-section .section-header {
+        padding: 15px 20px;
+    }
+    
+    .accordion-section.active .section-content {
+        padding: 1.5rem;
+    }
+    
+    .section-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    
+    .progress-indicator {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .progress-bar {
+        margin-inline-start: 0;
+        margin-top: 10px;
+    }
+}
+
+/* ========================================
+   ACCESSIBILITY - دسترسی‌پذیری
+   ======================================== */
+
+.accordion-section .section-header:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.btn:focus {
+    outline: 2px solid #007bff;
+    outline-offset: 2px;
+}
+
+.form-control:focus {
+    outline: none;
+}
+
+/* ========================================
+   PRINT STYLES - استایل‌های چاپ
+   ======================================== */
+
+@media print {
+    .accordion-section {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+    }
+    
+    .accordion-section .section-header {
+        background: #f8f9fa !important;
+        color: #000 !important;
+    }
+    
+    .btn {
+        display: none;
+    }
+}
+
+/* ========================================
+   MEDICAL ENVIRONMENT SPECIFIC STYLES
+   ======================================== */
+
+/* Patient Information Section */
+.patient-info-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #ffffff 100%);
+    border-left: 4px solid #2196f3;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.1);
+}
+
+.patient-info-card .patient-name {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1976d2;
+    margin-bottom: 8px;
+}
+
+.patient-info-card .patient-details {
+    color: #424242;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Department Selection */
+.department-card {
+    background: linear-gradient(135deg, #f3e5f5 0%, #ffffff 100%);
+    border-left: 4px solid #9c27b0;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(156, 39, 176, 0.1);
+}
+
+.department-card .department-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #7b1fa2;
+    margin-bottom: 8px;
+}
+
+.department-card .doctor-info {
+    color: #424242;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Insurance Information */
+.insurance-card {
+    background: linear-gradient(135deg, #e8f5e8 0%, #ffffff 100%);
+    border-left: 4px solid #4caf50;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.1);
+}
+
+.insurance-card .insurance-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #388e3c;
+    margin-bottom: 8px;
+}
+
+.insurance-card .insurance-details {
+    color: #424242;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Service Selection */
+.service-card {
+    background: linear-gradient(135deg, #fff3e0 0%, #ffffff 100%);
+    border-left: 4px solid #ff9800;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(255, 152, 0, 0.1);
+}
+
+.service-card .service-name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #f57c00;
+    margin-bottom: 8px;
+}
+
+.service-card .service-details {
+    color: #424242;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* Payment Information */
+.payment-card {
+    background: linear-gradient(135deg, #fce4ec 0%, #ffffff 100%);
+    border-left: 4px solid #e91e63;
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 8px rgba(233, 30, 99, 0.1);
+}
+
+.payment-card .payment-method {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #c2185b;
+    margin-bottom: 8px;
+}
+
+.payment-card .payment-details {
+    color: #424242;
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+/* ========================================
+   REAL-TIME FEATURES
+   ======================================== */
+
+/* Real-time validation indicators */
+.real-time-validation {
+    position: relative;
+}
+
+.real-time-validation::after {
+    content: '';
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #6c757d;
+    transition: background-color 0.3s ease;
+}
+
+.real-time-validation.valid::after {
+    background-color: #28a745;
+}
+
+.real-time-validation.invalid::after {
+    background-color: #dc3545;
+}
+
+/* Auto-refresh indicators */
+.auto-refresh-indicator {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(0, 123, 255, 0.9);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    z-index: 1000;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.auto-refresh-indicator.show {
+    opacity: 1;
+}
+
+/* ========================================
+   HIGH-TRAFFIC OPTIMIZATIONS
+   ======================================== */
+
+/* Optimized for high patient volume */
+.high-traffic-mode .accordion-section {
+    transition: none;
+}
+
+.high-traffic-mode .btn {
+    transition: none;
+}
+
+.high-traffic-mode .form-control {
+    transition: none;
+}
+
+/* Performance optimizations */
+.accordion-section * {
+    will-change: auto;
+}
+
+.accordion-section.active * {
+    will-change: transform, opacity;
+}
+
+/* ========================================
+   MEDICAL ENVIRONMENT SPECIFIC ANIMATIONS
+   ======================================== */
+
+@keyframes medicalPulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
+    }
+}
+
+.medical-pulse {
+    animation: medicalPulse 2s infinite;
+}
+
+/* ========================================
+   ACCESSIBILITY ENHANCEMENTS
+   ======================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .accordion-section {
+        border: 2px solid #000;
+    }
+    
+    .accordion-section .section-header {
+        background: #000;
+        color: #fff;
+    }
+    
+    .btn {
+        border: 2px solid #000;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+    .accordion-section,
+    .btn,
+    .form-control {
+        transition: none;
+    }
+    
+    .accordion-section .section-content {
+        animation: none;
+    }
+}
+
+/* ========================================
+   PRINT OPTIMIZATIONS
+   ======================================== */
+
+@media print {
+    .accordion-section {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #000;
+        margin-bottom: 10px;
+    }
+    
+    .accordion-section .section-header {
+        background: #f8f9fa !important;
+        color: #000 !important;
+        border-bottom: 1px solid #000;
+    }
+    
+    .accordion-section .section-content {
+        display: block !important;
+        padding: 10px !important;
+    }
+    
+    .btn {
+        display: none;
+    }
+    
+    .progress-indicator {
+        display: none;
+    }
+}
+
+/* ========================================
+   DARK MODE SUPPORT
+   ======================================== */
+
+@media (prefers-color-scheme: dark) {
+    .accordion-section {
+        background: #2d3748;
+        border-color: #4a5568;
+        color: #e2e8f0;
+    }
+    
+    .accordion-section .section-header {
+        background: linear-gradient(135deg, #4a5568 0%, #2d3748 100%);
+        color: #e2e8f0;
+    }
+    
+    .form-control {
+        background: #4a5568;
+        border-color: #718096;
+        color: #e2e8f0;
+    }
+    
+    .btn {
+        background: #4299e1;
+        border-color: #3182ce;
+        color: #fff;
+    }
+}

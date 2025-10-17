@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- Patient Section Texts -->
+  <data name="PatientSectionTitle" xml:space="preserve">
+    <value>اطلاعات هویتی بیمار</value>
+  </data>
+  <data name="PatientSectionSubtitle" xml:space="preserve">
+    <value>جستجو و ثبت اطلاعات کامل بیمار</value>
+  </data>
+  <data name="SearchButton" xml:space="preserve">
+    <value>جستجو</value>
+  </data>
+  <data name="SaveButton" xml:space="preserve">
+    <value>ذخیره</value>
+  </data>
+  <data name="SearchingText" xml:space="preserve">
+    <value>در حال جستجو...</value>
+  </data>
+  <data name="SavingText" xml:space="preserve">
+    <value>در حال ذخیره...</value>
+  </data>
+  
+  <!-- Form Fields -->
+  <data name="NationalCodeLabel" xml:space="preserve">
+    <value>کد ملی</value>
+  </data>
+  <data name="NationalCodePlaceholder" xml:space="preserve">
+    <value>کد ملی 10 رقمی</value>
+  </data>
+  <data name="FirstNameLabel" xml:space="preserve">
+    <value>نام</value>
+  </data>
+  <data name="FirstNamePlaceholder" xml:space="preserve">
+    <value>نام بیمار</value>
+  </data>
+  <data name="LastNameLabel" xml:space="preserve">
+    <value>نام خانوادگی</value>
+  </data>
+  <data name="LastNamePlaceholder" xml:space="preserve">
+    <value>نام خانوادگی بیمار</value>
+  </data>
+  <data name="BirthDateLabel" xml:space="preserve">
+    <value>تاریخ تولد</value>
+  </data>
+  <data name="GenderLabel" xml:space="preserve">
+    <value>جنسیت</value>
+  </data>
+  
+  <!-- Department Section -->
+  <data name="DepartmentSectionTitle" xml:space="preserve">
+    <value>دپارتمان و پزشک</value>
+  </data>
+  <data name="DepartmentSectionSubtitle" xml:space="preserve">
+    <value>انتخاب دپارتمان و پزشک معالج</value>
+  </data>
+  
+  <!-- Insurance Section -->
+  <data name="InsuranceSectionTitle" xml:space="preserve">
+    <value>اطلاعات بیمه</value>
+  </data>
+  <data name="InsuranceSectionSubtitle" xml:space="preserve">
+    <value>بیمه اصلی و تکمیلی بیمار</value>
+  </data>
+  
+  <!-- Service Section -->
+  <data name="ServiceSectionTitle" xml:space="preserve">
+    <value>خدمات درمانی</value>
+  </data>
+  <data name="ServiceSectionSubtitle" xml:space="preserve">
+    <value>انتخاب و محاسبه خدمات</value>
+  </data>
+  
+  <!-- Payment Section -->
+  <data name="PaymentSectionTitle" xml:space="preserve">
+    <value>پرداخت</value>
+  </data>
+  <data name="PaymentSectionSubtitle" xml:space="preserve">
+    <value>پردازش پرداخت و صدور رسید</value>
+  </data>
+  
+  <!-- Validation Messages -->
+  <data name="NationalCodeInvalid" xml:space="preserve">
+    <value>کد ملی نامعتبر است</value>
+  </data>
+  <data name="RequiredField" xml:space="preserve">
+    <value>این فیلد الزامی است</value>
+  </data>
+  
+  <!-- Success Messages -->
+  <data name="PatientFound" xml:space="preserve">
+    <value>بیمار با موفقیت یافت شد</value>
+  </data>
+  <data name="PatientSaved" xml:space="preserve">
+    <value>اطلاعات بیمار با موفقیت ذخیره شد</value>
+  </data>
+  <data name="DepartmentsLoaded" xml:space="preserve">
+    <value>دپارتمان‌ها با موفقیت بارگذاری شدند</value>
+  </data>
+  <data name="DepartmentSaved" xml:space="preserve">
+    <value>انتخاب دپارتمان با موفقیت ذخیره شد</value>
+  </data>
+  <data name="InsuranceLoaded" xml:space="preserve">
+    <value>اطلاعات بیمه با موفقیت بارگذاری شد</value>
+  </data>
+  <data name="InsuranceSaved" xml:space="preserve">
+    <value>اطلاعات بیمه با موفقیت ذخیره شد</value>
+  </data>
+  <data name="ServicesLoaded" xml:space="preserve">
+    <value>خدمات با موفقیت بارگذاری شدند</value>
+  </data>
+  <data name="ServicesCalculated" xml:space="preserve">
+    <value>محاسبه خدمات با موفقیت انجام شد</value>
+  </data>
+  <data name="PaymentRefreshed" xml:space="preserve">
+    <value>اطلاعات پرداخت با موفقیت به‌روزرسانی شد</value>
+  </data>
+  <data name="PaymentProcessed" xml:space="preserve">
+    <value>پرداخت با موفقیت انجام شد</value>
+  </data>
+  
+  <!-- Error Messages -->
+  <data name="PatientNotFound" xml:space="preserve">
+    <value>بیمار یافت نشد</value>
+  </data>
+  <data name="ServerError" xml:space="preserve">
+    <value>خطا در ارتباط با سرور</value>
+  </data>
+  <data name="TimeoutError" xml:space="preserve">
+    <value>زمان اتصال به سرور تمام شد</value>
+  </data>
+</root>
