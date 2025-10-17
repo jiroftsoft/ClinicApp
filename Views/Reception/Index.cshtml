@@ -254,17 +254,38 @@
 <!-- JavaScript moved to centralized module -->
 
 @section Styles {
+    @Styles.Render("~/Content/toastr")
     @Styles.Render("~/Content/reception/css")
 }
 
 @section Scripts {
+    @Scripts.Render("~/bundles/toastr")
+    @Scripts.Render("~/bundles/reception-toastr")
     @Scripts.Render("~/bundles/reception/js")
     <script>
         $(document).ready(function () {
-            // Initialize centralized reception modules
-            if (typeof window.ReceptionModules !== 'undefined') {
-                window.ReceptionModules.initAll();
-            }
+            // تاخیر برای اطمینان از بارگذاری کامل
+            setTimeout(function() {
+                console.log('Reception Index: Starting initialization...');
+                
+                // Initialize Toastr Service first
+                if (typeof window.ReceptionToastr !== 'undefined') {
+                    console.log('Reception Index: Initializing Toastr Service...');
+                    window.ReceptionToastr.service.init();
+                } else {
+                    console.error('Reception Index: ReceptionToastr not found');
+                }
+                
+                // Initialize centralized reception modules
+                if (typeof window.ReceptionModules !== 'undefined') {
+                    console.log('Reception Index: Initializing Reception Modules...');
+                    window.ReceptionModules.initAll();
+                } else {
+                    console.error('Reception Index: ReceptionModules not found');
+                }
+                
+                console.log('Reception Index: Initialization completed');
+            }, 300);
         });
     </script>
 }

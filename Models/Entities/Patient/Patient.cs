@@ -65,6 +65,7 @@ public class Patient : ISoftDelete, ITrackable
     /// <summary>
     /// تاریخ تولد بیمار
     /// </summary>
+    [Column(TypeName = "date")]
     public DateTime? BirthDate { get; set; }
 
     /// <summary>

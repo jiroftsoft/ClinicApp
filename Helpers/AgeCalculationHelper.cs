@@ -64,13 +64,13 @@ namespace ClinicApp.Helpers
             if (birthDate == DateTime.MinValue || birthDate == DateTime.MaxValue)
             {
                 _log.Warning("🔍 Invalid birth date: {BirthDate}", birthDate);
-                throw new ArgumentException("تاریخ تولد نامعتبر است", nameof(birthDate));
+                throw new ArgumentException(@"تاریخ تولد نامعتبر است", nameof(birthDate));
             }
 
             if (referenceDate == DateTime.MinValue || referenceDate == DateTime.MaxValue)
             {
                 _log.Warning("🔍 Invalid reference date: {ReferenceDate}", referenceDate);
-                throw new ArgumentException("تاریخ مرجع نامعتبر است", nameof(referenceDate));
+                throw new ArgumentException(@"تاریخ مرجع نامعتبر است", nameof(referenceDate));
             }
 
             try
@@ -79,7 +79,7 @@ namespace ClinicApp.Helpers
                 if (!IsValidBirthDate(birthDate, referenceDate))
                 {
                     _log.Warning("🔍 Birth date is not valid: {BirthDate}, Reference: {ReferenceDate}", birthDate, referenceDate);
-                    throw new ArgumentException($"تاریخ تولد باید بین {MIN_BIRTH_DATE:yyyy/MM/dd} و {MAX_BIRTH_DATE:yyyy/MM/dd} باشد", nameof(birthDate));
+                    throw new ArgumentException($@"تاریخ تولد باید بین {MIN_BIRTH_DATE:yyyy/MM/dd} و {MAX_BIRTH_DATE:yyyy/MM/dd} باشد", nameof(birthDate));
                 }
 
                 // محاسبه سن دقیق

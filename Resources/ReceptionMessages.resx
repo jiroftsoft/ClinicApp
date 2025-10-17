@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  
+  <!-- ======================================== -->
+  <!-- VALIDATION MESSAGES - پیام‌های اعتبارسنجی -->
+  <!-- ======================================== -->
+  
+  <data name="NationalCode_Required" xml:space="preserve">
+    <value>کد ملی الزامی است</value>
+    <comment>پیام خطا برای کد ملی خالی</comment>
+  </data>
+  
+  <data name="NationalCode_Invalid" xml:space="preserve">
+    <value>کد ملی وارد شده معتبر نیست</value>
+    <comment>پیام خطا برای کد ملی نامعتبر</comment>
+  </data>
+  
+  <data name="NationalCode_Length" xml:space="preserve">
+    <value>کد ملی باید 10 رقم باشد</value>
+    <comment>پیام خطا برای طول کد ملی</comment>
+  </data>
+  
+  <data name="FirstName_Required" xml:space="preserve">
+    <value>نام بیمار الزامی است</value>
+    <comment>پیام خطا برای نام خالی</comment>
+  </data>
+  
+  <data name="LastName_Required" xml:space="preserve">
+    <value>نام خانوادگی بیمار الزامی است</value>
+    <comment>پیام خطا برای نام خانوادگی خالی</comment>
+  </data>
+  
+  <data name="PhoneNumber_Invalid" xml:space="preserve">
+    <value>شماره تلفن وارد شده معتبر نیست</value>
+    <comment>پیام خطا برای شماره تلفن نامعتبر</comment>
+  </data>
+  
+  <data name="BirthDate_Invalid" xml:space="preserve">
+    <value>تاریخ تولد وارد شده معتبر نیست</value>
+    <comment>پیام خطا برای تاریخ تولد نامعتبر</comment>
+  </data>
+  
+  <!-- ======================================== -->
+  <!-- SUCCESS MESSAGES - پیام‌های موفقیت -->
+  <!-- ======================================== -->
+  
+  <data name="Patient_Found" xml:space="preserve">
+    <value>بیمار با موفقیت یافت شد</value>
+    <comment>پیام موفقیت برای یافتن بیمار</comment>
+  </data>
+  
+  <data name="Patient_Saved" xml:space="preserve">
+    <value>اطلاعات بیمار با موفقیت ذخیره شد</value>
+    <comment>پیام موفقیت برای ذخیره بیمار</comment>
+  </data>
+  
+  <data name="Patient_Updated" xml:space="preserve">
+    <value>اطلاعات بیمار با موفقیت به‌روزرسانی شد</value>
+    <comment>پیام موفقیت برای به‌روزرسانی بیمار</comment>
+  </data>
+  
+  <data name="Insurance_Loaded" xml:space="preserve">
+    <value>اطلاعات بیمه با موفقیت بارگذاری شد</value>
+    <comment>پیام موفقیت برای بارگذاری بیمه</comment>
+  </data>
+  
+  <data name="Insurance_Saved" xml:space="preserve">
+    <value>اطلاعات بیمه با موفقیت ذخیره شد</value>
+    <comment>پیام موفقیت برای ذخیره بیمه</comment>
+  </data>
+  
+  <data name="Department_Loaded" xml:space="preserve">
+    <value>دپارتمان‌ها با موفقیت بارگذاری شدند</value>
+    <comment>پیام موفقیت برای بارگذاری دپارتمان‌ها</comment>
+  </data>
+  
+  <data name="Department_Saved" xml:space="preserve">
+    <value>انتخاب دپارتمان با موفقیت ذخیره شد</value>
+    <comment>پیام موفقیت برای ذخیره دپارتمان</comment>
+  </data>
+  
+  <data name="Service_Loaded" xml:space="preserve">
+    <value>خدمات با موفقیت بارگذاری شدند</value>
+    <comment>پیام موفقیت برای بارگذاری خدمات</comment>
+  </data>
+  
+  <data name="Service_Calculated" xml:space="preserve">
+    <value>محاسبه خدمات با موفقیت انجام شد</value>
+    <comment>پیام موفقیت برای محاسبه خدمات</comment>
+  </data>
+  
+  <data name="Payment_Processed" xml:space="preserve">
+    <value>پرداخت با موفقیت انجام شد</value>
+    <comment>پیام موفقیت برای پرداخت</comment>
+  </data>
+  
+  <!-- ======================================== -->
+  <!-- ERROR MESSAGES - پیام‌های خطا -->
+  <!-- ======================================== -->
+  
+  <data name="Patient_NotFound" xml:space="preserve">
+    <value>بیمار با این کد ملی یافت نشد</value>
+    <comment>پیام خطا برای عدم یافتن بیمار</comment>
+  </data>
+  
+  <data name="Patient_SaveError" xml:space="preserve">
+    <value>خطا در ذخیره اطلاعات بیمار</value>
+    <comment>پیام خطا برای ذخیره بیمار</comment>
+  </data>
+  
+  <data name="Insurance_LoadError" xml:space="preserve">
+    <value>خطا در بارگذاری اطلاعات بیمه</value>
+    <comment>پیام خطا برای بارگذاری بیمه</comment>
+  </data>
+  
+  <data name="Department_LoadError" xml:space="preserve">
+    <value>خطا در بارگذاری دپارتمان‌ها</value>
+    <comment>پیام خطا برای بارگذاری دپارتمان‌ها</comment>
+  </data>
+  
+  <data name="Service_LoadError" xml:space="preserve">
+    <value>خطا در بارگذاری خدمات</value>
+    <comment>پیام خطا برای بارگذاری خدمات</comment>
+  </data>
+  
+  <data name="Service_CalculateError" xml:space="preserve">
+    <value>خطا در محاسبه خدمات</value>
+    <comment>پیام خطا برای محاسبه خدمات</comment>
+  </data>
+  
+  <data name="Payment_ProcessError" xml:space="preserve">
+    <value>خطا در پردازش پرداخت</value>
+    <comment>پیام خطا برای پردازش پرداخت</comment>
+  </data>
+  
+  <data name="Network_Error" xml:space="preserve">
+    <value>خطا در ارتباط با سرور</value>
+    <comment>پیام خطا برای مشکل شبکه</comment>
+  </data>
+  
+  <data name="Server_Error" xml:space="preserve">
+    <value>خطا در سرور</value>
+    <comment>پیام خطا برای مشکل سرور</comment>
+  </data>
+  
+  <data name="Timeout_Error" xml:space="preserve">
+    <value>زمان درخواست به پایان رسید</value>
+    <comment>پیام خطا برای timeout</comment>
+  </data>
+  
+  <data name="Validation_Error" xml:space="preserve">
+    <value>خطا در اعتبارسنجی اطلاعات</value>
+    <comment>پیام خطا برای validation</comment>
+  </data>
+  
+  <!-- ======================================== -->
+  <!-- WARNING MESSAGES - پیام‌های هشدار -->
+  <!-- ======================================== -->
+  
+  <data name="Patient_Duplicate" xml:space="preserve">
+    <value>بیمار با این کد ملی قبلاً ثبت شده است</value>
+    <comment>پیام هشدار برای بیمار تکراری</comment>
+  </data>
+  
+  <data name="Insurance_Expired" xml:space="preserve">
+    <value>بیمه بیمار منقضی شده است</value>
+    <comment>پیام هشدار برای بیمه منقضی</comment>
+  </data>
+  
+  <data name="Insurance_Invalid" xml:space="preserve">
+    <value>بیمه بیمار معتبر نیست</value>
+    <comment>پیام هشدار برای بیمه نامعتبر</comment>
+  </data>
+  
+  <data name="Department_Unavailable" xml:space="preserve">
+    <value>دپارتمان انتخاب شده در دسترس نیست</value>
+    <comment>پیام هشدار برای دپارتمان غیرفعال</comment>
+  </data>
+  
+  <data name="Service_Unavailable" xml:space="preserve">
+    <value>خدمت انتخاب شده در دسترس نیست</value>
+    <comment>پیام هشدار برای خدمت غیرفعال</comment>
+  </data>
+  
+  <!-- ======================================== -->
+  <!-- INFO MESSAGES - پیام‌های اطلاعاتی -->
+  <!-- ======================================== -->
+  
+  <data name="Patient_Searching" xml:space="preserve">
+    <value>در حال جستجوی بیمار...</value>
+    <comment>پیام اطلاعاتی برای جستجو</comment>
+  </data>
+  
+  <data name="Patient_Saving" xml:space="preserve">
+    <value>در حال ذخیره اطلاعات بیمار...</value>
+    <comment>پیام اطلاعاتی برای ذخیره</comment>
+  </data>
+  
+  <data name="Insurance_Loading" xml:space="preserve">
+    <value>در حال بارگذاری اطلاعات بیمه...</value>
+    <comment>پیام اطلاعاتی برای بارگذاری بیمه</comment>
+  </data>
+  
+  <data name="Department_Loading" xml:space="preserve">
+    <value>در حال بارگذاری دپارتمان‌ها...</value>
+    <comment>پیام اطلاعاتی برای بارگذاری دپارتمان‌ها</comment>
+  </data>
+  
+  <data name="Service_Loading" xml:space="preserve">
+    <value>در حال بارگذاری خدمات...</value>
+    <comment>پیام اطلاعاتی برای بارگذاری خدمات</comment>
+  </data>
+  
+  <data name="Service_Calculating" xml:space="preserve">
+    <value>در حال محاسبه خدمات...</value>
+    <comment>پیام اطلاعاتی برای محاسبه خدمات</comment>
+  </data>
+  
+  <data name="Payment_Processing" xml:space="preserve">
+    <value>در حال پردازش پرداخت...</value>
+    <comment>پیام اطلاعاتی برای پردازش پرداخت</comment>
+  </data>
+  
+  <!-- ======================================== -->
+  <!-- TOASTR CONFIGURATION - تنظیمات Toastr -->
+  <!-- ======================================== -->
+  
+  <data name="Toastr_Config" xml:space="preserve">
+    <value>{
+      "closeButton": true,
+      "debug": false,
+      "newestOnTop": true,
+      "progressBar": true,
+      "positionClass": "toast-top-left",
+      "preventDuplicates": true,
+      "onclick": null,
+      "showDuration": "300",
+      "hideDuration": "1000",
+      "timeOut": "5000",
+      "extendedTimeOut": "1000",
+      "showEasing": "swing",
+      "hideEasing": "linear",
+      "showMethod": "fadeIn",
+      "hideMethod": "fadeOut"
+    }</value>
+    <comment>تنظیمات Toastr برای محیط درمانی</comment>
+  </data>
+  
+</root>

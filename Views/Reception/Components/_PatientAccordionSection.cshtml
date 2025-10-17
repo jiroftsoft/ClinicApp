@@ -53,9 +53,10 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         </div>
+        <!-- Layout بهینه: جستجو در بالا، فرم در پایین -->
         <div class="row">
-            <!-- ستون چپ: جستجوی بیمار -->
-            <div class="col-lg-6">
+            <!-- جستجوی بیمار - عرض کامل -->
+            <div class="col-12">
                 <div class="patient-search-card">
                     <div class="card-header">
                         <h6 class="card-title mb-0">
@@ -64,42 +65,49 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <!-- فیلد کد ملی -->
-                        <div class="form-group mb-3">
-                            <label class="form-label">
-                                <i class="fas fa-id-card me-1"></i>
-                                کد ملی <span class="text-danger">*</span>
-                            </label>
-                            <div class="input-group">
-                                @Html.TextBoxFor(m => m.NationalCode, new { 
-                                    @class = "form-control", 
-                                    id = "patientNationalCode",
-                                    placeholder = "کد ملی 10 رقمی",
-                                    maxlength = "10",
-                                    data_validation = "national-code",
-                                    data_required = "true"
-                                })
-                                <div class="invalid-feedback" id="nationalCodeError"></div>
-                                <button class="btn btn-outline-primary" type="button" id="searchByNationalCodeBtn">
-                                    <i class="fas fa-search"></i>
-                                </button>
+                        <div class="row">
+                            <div class="col-md-8">
+                                <!-- فیلد کد ملی -->
+                                <div class="form-group mb-3">
+                                    <label class="form-label">
+                                        <i class="fas fa-id-card me-1"></i>
+                                        کد ملی <span class="text-danger">*</span>
+                                    </label>
+                                    <div class="input-group">
+                                        @Html.TextBoxFor(m => m.NationalCode, new { 
+                                            @class = "form-control", 
+                                            id = "patientNationalCode",
+                                            placeholder = "کد ملی 10 رقمی",
+                                            maxlength = "10",
+                                            data_validation = "national-code",
+                                            data_required = "true"
+                                        })
+                                        <button class="btn btn-outline-primary" type="button" id="searchByNationalCodeBtn">
+                                            <i class="fas fa-search"></i>
+                                        </button>
+                                    </div>
+                                    <div class="invalid-feedback" id="nationalCodeError"></div>
+                                    <div class="form-text">کد ملی 10 رقمی بیمار را وارد کنید</div>
+                                </div>
                             </div>
-                            <div class="form-text">کد ملی 10 رقمی بیمار را وارد کنید</div>
-                        </div>
-
-                        <!-- نتایج جستجو -->
-                        <div class="search-results d-none" id="patientSearchResults">
-                            <div class="alert alert-info">
-                                <i class="fas fa-info-circle me-2"></i>
-                                <span id="searchResultMessage">در حال جستجو...</span>
+                            <div class="col-md-4">
+                                <!-- نتایج جستجو -->
+                                <div class="search-results d-none" id="patientSearchResults">
+                                    <div class="alert alert-info">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <span id="searchResultMessage">در حال جستجو...</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
 
-            <!-- ستون راست: اطلاعات بیمار -->
-            <div class="col-lg-6">
+        <!-- اطلاعات بیمار - Grid Layout بهینه -->
+        <div class="row">
+            <div class="col-12">
                 <div class="patient-info-card">
                     <div class="card-header">
                         <h6 class="card-title mb-0">
@@ -108,129 +116,115 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <form id="patientInfoForm">
+                        <form id="patientInfoForm" class="patient-info-form">
                             @Html.AntiForgeryToken()
                             
-                            <!-- ردیف اول: نام، نام خانوادگی، نام پدر -->
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-user me-1"></i>
-                                            نام <span class="text-danger">*</span>
-                                        </label>
-                                        @Html.TextBoxFor(m => m.FirstName, new { 
-                                            @class = "form-control", 
-                                            id = "patientFirstName",
-                                            placeholder = "نام بیمار",
-                                            required = "required"
-                                        })
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-user me-1"></i>
-                                            نام خانوادگی <span class="text-danger">*</span>
-                                        </label>
-                                        @Html.TextBoxFor(m => m.LastName, new { 
-                                            @class = "form-control", 
-                                            id = "patientLastName",
-                                            placeholder = "نام خانوادگی بیمار",
-                                            required = "required"
-                                        })
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-user me-1"></i>
-                                            نام پدر
-                                        </label>
-                                        @Html.TextBoxFor(m => m.FatherName, new { 
-                                            @class = "form-control", 
-                                            id = "patientFatherName",
-                                            placeholder = "نام پدر بیمار"
-                                        })
-                                    </div>
-                                </div>
+                            <!-- فیلدهای اطلاعات هویتی - Grid 3 ستونی -->
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    نام <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextBoxFor(m => m.FirstName, new { 
+                                    @class = "form-control", 
+                                    id = "patientFirstName",
+                                    placeholder = "نام بیمار",
+                                    required = "required"
+                                })
                             </div>
 
-                            <!-- ردیف دوم: تاریخ تولد، سن، جنسیت -->
-                            <div class="row">
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-calendar me-1"></i>
-                                            تاریخ تولد
-                                        </label>
-                                        <input type="date" 
-                                               class="form-control" 
-                                               id="patientBirthDate" 
-                                               name="BirthDate"
-                                               value="@(Model.BirthDate?.ToString("yyyy-MM-dd"))">
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-birthday-cake me-1"></i>
-                                            سن
-                                        </label>
-                                        <input type="number" 
-                                               class="form-control" 
-                                               id="patientAge" 
-                                               name="Age"
-                                               placeholder="سن بیمار"
-                                               readonly="readonly"
-                                               value="@Model.Age">
-                                        <div class="form-text">سن به صورت خودکار محاسبه می‌شود</div>
-                                    </div>
-                                </div>
-                                <div class="col-md-4">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-venus-mars me-1"></i>
-                                            جنسیت
-                                        </label>
-                                        @Html.DropDownListFor(m => m.Gender, new SelectList(new[] {
-                                            new { Value = "", Text = "انتخاب کنید" },
-                                            new { Value = "Male", Text = "مرد" },
-                                            new { Value = "Female", Text = "زن" }
-                                        }, "Value", "Text", Model.Gender), new { @class = "form-select", id = "patientGender" })
-                                    </div>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    نام خانوادگی <span class="text-danger">*</span>
+                                </label>
+                                @Html.TextBoxFor(m => m.LastName, new { 
+                                    @class = "form-control", 
+                                    id = "patientLastName",
+                                    placeholder = "نام خانوادگی بیمار",
+                                    required = "required"
+                                })
                             </div>
 
-                            <!-- ردیف سوم: شماره تلفن و آدرس -->
-                            <div class="row">
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-phone me-1"></i>
-                                            شماره تلفن
-                                        </label>
-                                        <input type="tel" 
-                                               class="form-control" 
-                                               id="patientPhone" 
-                                               name="PhoneNumber"
-                                               placeholder="09123456789"
-                                               value="@Model.PhoneNumber">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group mb-3">
-                                        <label class="form-label">
-                                            <i class="fas fa-map-marker-alt me-1"></i>
-                                            آدرس
-                                        </label>
-                                        <textarea class="form-control" 
-                                                  id="patientAddress" 
-                                                  name="Address"
-                                                  rows="3"
-                                                  placeholder="آدرس کامل بیمار">@Model.Address</textarea>
-                                    </div>
-                                </div>
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-user me-1"></i>
+                                    نام پدر
+                                </label>
+                                @Html.TextBoxFor(m => m.FatherName, new { 
+                                    @class = "form-control", 
+                                    id = "patientFatherName",
+                                    placeholder = "نام پدر بیمار"
+                                })
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    تاریخ تولد
+                                </label>
+                                <input type="date" 
+                                       class="form-control" 
+                                       id="patientBirthDate" 
+                                       name="BirthDate"
+                                       value="@(Model.BirthDate?.ToString("yyyy-MM-dd"))">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-birthday-cake me-1"></i>
+                                    سن
+                                </label>
+                                <input type="number" 
+                                       class="form-control" 
+                                       id="patientAge" 
+                                       name="Age"
+                                       placeholder="سن بیمار"
+                                       readonly="readonly"
+                                       value="@Model.Age">
+                                <div class="form-text">سن به صورت خودکار محاسبه می‌شود</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-venus-mars me-1"></i>
+                                    جنسیت
+                                </label>
+                                @Html.DropDownListFor(m => m.Gender, new SelectList(new[] {
+                                    new { Value = "", Text = "انتخاب کنید" },
+                                    new { Value = "Male", Text = "مرد" },
+                                    new { Value = "Female", Text = "زن" }
+                                }, "Value", "Text", Model.Gender), new { @class = "form-select", id = "patientGender" })
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-phone me-1"></i>
+                                    شماره تلفن
+                                </label>
+                                <input type="tel" 
+                                       class="form-control" 
+                                       id="patientPhone" 
+                                       name="PhoneNumber"
+                                       placeholder="09123456789"
+                                       value="@Model.PhoneNumber">
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>
+                                    آدرس
+                                </label>
+                                <textarea class="form-control" 
+                                          id="patientAddress" 
+                                          name="Address"
+                                          rows="3"
+                                          placeholder="آدرس کامل بیمار">@Model.Address</textarea>
+                            </div>
+
+                            <!-- فیلد خالی برای تکمیل Grid -->
+                            <div class="form-group">
+                                <!-- فیلد خالی برای حفظ ساختار Grid -->
                             </div>
                         </form>
                     </div>

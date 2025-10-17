@@ -74,11 +74,15 @@ namespace ClinicApp
             ));
             // Add a new bundle for Toastr styles
             bundles.Add(new StyleBundle("~/Content/toastr").Include(
-                "~/Content/toastr.min.css"));
+                "~/Content/plugins/toastr/toastr.min.css"));
 
             // Add a new bundle for Toastr script
             bundles.Add(new ScriptBundle("~/bundles/toastr").Include(
-                "~/Scripts/toastr.min.js"));
+                "~/Content/plugins/toastr/toastr.min.js"));
+
+            // Reception Toastr Service Bundle
+            bundles.Add(new ScriptBundle("~/bundles/reception-toastr").Include(
+                "~/Scripts/reception/reception-toastr-service.js"));
 
             // FIX: مطابق با VIEW_OPTIMIZATION_CONTRACT - اضافه کردن Bundle های پزشکی
             // Medical Environment CSS Bundle

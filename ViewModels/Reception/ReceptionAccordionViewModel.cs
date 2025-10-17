@@ -87,9 +87,20 @@ namespace ClinicApp.ViewModels.Reception
         public string LastName { get; set; }
 
         /// <summary>
+        /// نام پدر بیمار
+        /// </summary>
+        [StringLength(50, ErrorMessage = "نام پدر نمی‌تواند بیش از 50 کاراکتر باشد")]
+        public string FatherName { get; set; }
+
+        /// <summary>
         /// تاریخ تولد
         /// </summary>
         public DateTime? BirthDate { get; set; }
+
+        /// <summary>
+        /// سن بیمار
+        /// </summary>
+        public int? Age { get; set; }
 
         /// <summary>
         /// جنسیت

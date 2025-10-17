@@ -14,6 +14,55 @@
 window.ReceptionModules = window.ReceptionModules || {};
 
 // ========================================
+// UTILITY FUNCTIONS - توابع کمکی
+// ========================================
+window.ReceptionModules.utils = {
+    debounce: function(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+    
+    throttle: function(func, limit) {
+        let inThrottle;
+        return function() {
+            const args = arguments;
+            const context = this;
+            if (!inThrottle) {
+                func.apply(context, args);
+                inThrottle = true;
+                setTimeout(() => inThrottle = false, limit);
+            }
+        };
+    },
+    
+    formatCurrency: function(amount) {
+        return new Intl.NumberFormat('fa-IR').format(amount) + ' ریال';
+    },
+    
+    validateNationalCode: function(code) {
+        if (!/^\d{10}$/.test(code)) return false;
+        
+        const digits = code.split('').map(Number);
+        const checkDigit = digits[9];
+        const sum = digits.slice(0, 9).reduce((acc, digit, index) => acc + digit * (10 - index), 0);
+        const remainder = sum % 11;
+        
+        return (remainder < 2 && checkDigit === remainder) || (remainder >= 2 && checkDigit === 11 - remainder);
+    },
+    
+    formatPhoneNumber: function(phone) {
+        return phone.replace(/(\d{4})(\d{3})(\d{4})/, '$1-$2-$3');
+    }
+};
+
+// ========================================
 // CONFIGURATION MODULE - تنظیمات پویا
 // ========================================
 window.ReceptionModules.config = {
@@ -35,6 +84,8 @@ window.ReceptionModules.config = {
     messages: {
         validation: {
             nationalCodeInvalid: 'کد ملی نامعتبر است',
+            nationalCodeRequired: 'کد ملی الزامی است',
+            nationalCodeLength: 'کد ملی باید 10 رقم باشد',
             requiredField: 'این فیلد الزامی است'
         },
         success: {
@@ -179,10 +230,10 @@ window.ReceptionModules.Patient = {
         console.log('[ReceptionModules.Patient] Initializing...');
         
         // National Code validation
-        $('#patientNationalCode').on('input', this.debounce(function() {
+        $('#patientNationalCode').on('input', window.ReceptionModules.utils.debounce(function() {
             const value = $(this).val();
                 if (value.length === 10) {
-                    if (this.validateNationalCode(value)) {
+                    if (window.ReceptionModules.Patient.validateNationalCode(value)) {
                         $(this).removeClass('is-invalid').addClass('is-valid');
                         $('#nationalCodeError').text('');
                     } else {
@@ -196,17 +247,17 @@ window.ReceptionModules.Patient = {
         }.bind(this), 500));
 
         // Search patient
-        $('#searchPatientBtn').off('click.patient').on('click.patient', this.handleSearchPatient.bind(this));
+        $('#searchPatientBtn').off('click.patient').on('click.patient', window.ReceptionModules.Patient.handleSearchPatient);
         
         // Enter key support for national code
         $('#patientNationalCode').off('keypress.patient').on('keypress.patient', (e) => {
             if (e.which === 13) { // Enter key
-                this.handleSearchPatient.call(this);
+                window.ReceptionModules.Patient.handleSearchPatient.call($('#searchPatientBtn')[0]);
             }
         });
         
         // Save patient
-        $('#savePatientBtn').off('click.patient').on('click.patient', this.handleSavePatient.bind(this));
+        $('#savePatientBtn').off('click.patient').on('click.patient', window.ReceptionModules.Patient.handleSavePatient);
         
         console.log('[ReceptionModules.Patient] Initialized successfully');
     },
@@ -226,45 +277,76 @@ window.ReceptionModules.Patient = {
         const $btn = $(this);
         const nationalCode = $('#patientNationalCode').val().trim();
         
-        this.showButtonLoading($btn);
-        
-        if (!this.validateNationalCode(nationalCode)) {
-            this.hideButtonLoading($btn);
-            this.showError(window.ReceptionModules.config.messages.validation.nationalCodeInvalid);
+        // اعتبارسنجی اولیه
+        if (!nationalCode) {
+            window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.validation.nationalCodeRequired);
             return;
         }
-
+        
+        if (nationalCode.length !== 10) {
+            window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.validation.nationalCodeLength);
+            return;
+        }
+        
+        if (!window.ReceptionModules.Patient.validateNationalCode(nationalCode)) {
+            window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.validation.nationalCodeInvalid);
+            return;
+        }
+        
+        // نمایش loading state
+        window.ReceptionModules.Patient.showButtonLoading($btn);
+        window.ReceptionModules.Patient.showInfo(window.ReceptionModules.config.messages.info.patientSearching);
+        
+        // درخواست AJAX
         $.ajax({
             url: window.ReceptionModules.config.apiEndpoints.patientSearch,
             type: 'POST',
-            data: { nationalCode: nationalCode },
+            data: { 
+                nationalCode: nationalCode,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
             dataType: 'json',
-            timeout: 10000,
+            timeout: 15000,
+            cache: false,
             success: (response) => {
-                this.hideButtonLoading($btn);
-                if (response.success) {
-                    this.displayPatientInfo(response.data);
-                    this.showSuccess(window.ReceptionModules.config.messages.success.patientFound);
+                window.ReceptionModules.Patient.hideButtonLoading($btn);
+                
+                if (response.success && response.data) {
+                    // نمایش اطلاعات بیمار
+                    window.ReceptionModules.Patient.displayPatientInfo(response.data);
+                    window.ReceptionModules.Patient.showSuccess(window.ReceptionModules.config.messages.success.patientFound);
+                    
+                    // بارگذاری اطلاعات بیمه
+                    window.ReceptionModules.Patient.loadPatientInsurance(response.data.patientId);
+                    
+                    // به‌روزرسانی وضعیت آکاردئون
                     window.ReceptionModules.Accordion.setState('patientSection', 'completed');
                 } else {
-                    this.showError(response.message || window.ReceptionModules.config.messages.error.patientNotFound);
+                    window.ReceptionModules.Patient.showError(response.message || window.ReceptionModules.config.messages.error.patientNotFound);
                 }
             },
             error: (xhr, status, error) => {
-                this.hideButtonLoading($btn);
-                this.showError(window.ReceptionModules.config.messages.error.serverError);
+                window.ReceptionModules.Patient.hideButtonLoading($btn);
+                
+                if (status === 'timeout') {
+                    window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.error.timeoutError);
+                } else if (xhr.status === 0) {
+                    window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.error.networkError);
+                } else {
+                    window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.error.serverError);
+                }
             }
         });
     },
 
     handleSavePatient: function() {
         const $btn = $(this);
-        this.showButtonLoading($btn);
+        window.ReceptionModules.Patient.showButtonLoading($btn);
         
         // TODO: Implement save patient logic
         setTimeout(() => {
-            this.hideButtonLoading($btn);
-            this.showSuccess(window.ReceptionModules.config.messages.success.patientSaved);
+            window.ReceptionModules.Patient.hideButtonLoading($btn);
+            window.ReceptionModules.Patient.showSuccess(window.ReceptionModules.config.messages.success.patientSaved);
         }, 1000);
     },
 
@@ -277,6 +359,52 @@ window.ReceptionModules.Patient = {
         $('#patientGender').val(patientData.gender || '');
         $('#patientPhone').val(patientData.phoneNumber || '');
         $('#patientAddress').val(patientData.address || '');
+    },
+
+    loadPatientInsurance: function(patientId) {
+        if (!patientId) {
+            console.warn('Patient ID not provided for insurance loading');
+            return;
+        }
+
+        window.ReceptionModules.Patient.showInfo(window.ReceptionModules.config.messages.info.insuranceLoading);
+
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.insuranceLoad,
+            type: 'POST',
+            data: { 
+                patientId: patientId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            dataType: 'json',
+            timeout: 10000,
+            cache: false,
+            success: (response) => {
+                if (response.success && response.data) {
+                    window.ReceptionModules.Patient.displayInsuranceInfo(response.data);
+                    window.ReceptionModules.Patient.showSuccess(window.ReceptionModules.config.messages.success.insuranceLoaded);
+                } else {
+                    window.ReceptionModules.Patient.showWarning(response.message || 'اطلاعات بیمه یافت نشد');
+                }
+            },
+            error: (xhr, status, error) => {
+                console.error('Error loading patient insurance:', error);
+                window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.error.insuranceLoadError);
+            }
+        });
+    },
+
+    displayInsuranceInfo: function(insuranceData) {
+        // نمایش اطلاعات بیمه در بخش مربوطه
+        if (insuranceData.primaryInsurance) {
+            $('#primaryInsuranceName').val(insuranceData.primaryInsurance.name || '');
+            $('#primaryInsuranceNumber').val(insuranceData.primaryInsurance.number || '');
+        }
+        
+        if (insuranceData.supplementaryInsurance) {
+            $('#supplementaryInsuranceName').val(insuranceData.supplementaryInsurance.name || '');
+            $('#supplementaryInsuranceNumber').val(insuranceData.supplementaryInsurance.number || '');
+        }
     },
 
     showButtonLoading: function($btn) {
@@ -292,13 +420,39 @@ window.ReceptionModules.Patient = {
     },
 
     showError: function(message) {
-        $('#patientErrorContainer').removeClass('d-none');
-        $('#patientErrorContainer .error-message').text(message);
+        // نمایش خطا با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showError(message);
+        } else {
+            // Fallback به روش قدیمی
+            $('#patientErrorContainer').removeClass('d-none');
+            $('#patientErrorContainer .error-message').text(message);
+        }
     },
 
     showSuccess: function(message) {
-        $('#patientSuccessContainer').removeClass('d-none');
-        $('#patientSuccessContainer .success-message').text(message);
+        // نمایش موفقیت با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showSuccess(message);
+        } else {
+            // Fallback به روش قدیمی
+            $('#patientSuccessContainer').removeClass('d-none');
+            $('#patientSuccessContainer .success-message').text(message);
+        }
+    },
+
+    showWarning: function(message) {
+        // نمایش هشدار با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showWarning(message);
+        }
+    },
+
+    showInfo: function(message) {
+        // نمایش اطلاعات با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showInfo(message);
+        }
     }
 };
 

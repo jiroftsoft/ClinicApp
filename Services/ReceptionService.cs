@@ -662,7 +662,7 @@ namespace ClinicApp.Services
                     BirthDateShamsi = patient.BirthDate?.ToPersianDateTime(),
                     Gender = patient.Gender,
                     FullName = $"{patient.FirstName} {patient.LastName}",
-                    Age = patient.BirthDate.HasValue ? DateTime.Now.Year - patient.BirthDate.Value.Year : 0
+                    Age = patient.BirthDate.HasValue ? patient.BirthDate.Value.CalculateAge() : 0
                 };
 
                 _logger.Information(

@@ -843,6 +843,10 @@
     <Compile Include="Migrations\202510161639438_change14040724.Designer.cs">
       <DependentUpon>202510161639438_change14040724.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510171050535_ChnagTypeOfBirthDate.cs" />
+    <Compile Include="Migrations\202510171050535_ChnagTypeOfBirthDate.Designer.cs">
+      <DependentUpon>202510171050535_ChnagTypeOfBirthDate.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -4238,6 +4242,7 @@
     <Content Include="Documentation\TariffCodesAndGroups.md" />
     <Content Include="Documentation\TechnicalDocumentation.md" />
     <Content Include="Documentation\UserGuide.md" />
+    <Content Include="Documentation\HelpersAndExtensionsKnowledgeBase.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4436,6 +4441,8 @@
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.css" />
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.js" />
     <Content Include="Scripts\popper.min.js" />
+    <Content Include="Scripts\reception\reception-modules.js" />
+    <Content Include="Scripts\reception\reception-toastr-service.js" />
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
@@ -4556,7 +4563,6 @@
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
-    <Folder Include="Scripts\reception\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -4724,7 +4730,11 @@
     <EmbeddedResource Include="Migrations\202510161639438_change14040724.resx">
       <DependentUpon>202510161639438_change14040724.cs</DependentUpon>
     </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510171050535_ChnagTypeOfBirthDate.resx">
+      <DependentUpon>202510171050535_ChnagTypeOfBirthDate.cs</DependentUpon>
+    </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
+    <EmbeddedResource Include="Resources\ReceptionMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionTexts.resx" />
   </ItemGroup>
   <PropertyGroup>
