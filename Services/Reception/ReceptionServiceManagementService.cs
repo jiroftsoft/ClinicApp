@@ -83,7 +83,7 @@ namespace ClinicApp.Services.Reception
 
                 var servicesResult = await _serviceService.GetActiveServicesAsync();
 
-                var services = servicesResult.Select(s => new ViewModels.Reception.ServiceLookupViewModel
+                var services = servicesResult.Select(s => new ServiceLookupViewModel
                 {
                     ServiceId = s.ServiceId,
                     ServiceName = s.Title, // ServiceIndexViewModel uses Title
@@ -92,7 +92,7 @@ namespace ClinicApp.Services.Reception
                     CategoryId = s.ServiceCategoryId, // ServiceIndexViewModel uses ServiceCategoryId
                     CategoryName = s.ServiceCategoryTitle, // ServiceIndexViewModel uses ServiceCategoryTitle
                     Description = "", // Not available in ServiceIndexViewModel
-                    IsActive = s.IsActive,
+                                      //  IsActive = s.IsActive,
                     RequiresDoctor = false, // Not available in ServiceIndexViewModel
                     RequiresSpecialization = false // Not available in ServiceIndexViewModel
                 }).ToList();
@@ -206,7 +206,7 @@ namespace ClinicApp.Services.Reception
             try
             {
                 _logger.Information("محاسبه هزینه خدمات برای {ServiceCount} خدمت", request.Services?.Count ?? 0);
-                
+
                 var result = new ViewModels.Reception.ServiceCalculationResult
                 {
                     TotalBaseAmount = request.Services.Sum(s => s.Quantity * 100000), // مبلغ نمونه
@@ -246,7 +246,7 @@ namespace ClinicApp.Services.Reception
             try
             {
                 _logger.Information("اعتبارسنجی انتخاب {ServiceCount} خدمت", serviceIds?.Count ?? 0);
-                
+
                 if (serviceIds == null || !serviceIds.Any())
                 {
                     return ServiceResult<bool>.Failed("هیچ خدمتی انتخاب نشده است");
@@ -254,7 +254,7 @@ namespace ClinicApp.Services.Reception
 
                 // اعتبارسنجی ساده
                 var isValid = serviceIds.All(id => id > 0);
-                
+
                 return ServiceResult<bool>.Successful(isValid, isValid ? "انتخاب خدمات معتبر است" : "انتخاب خدمات نامعتبر است");
             }
             catch (Exception ex)
@@ -276,8 +276,8 @@ namespace ClinicApp.Services.Reception
 
                 if (services == null || !services.Any())
                 {
-                return ServiceResult<ViewModels.Reception.ServiceCalculationResult>.Failed(
-                    "هیچ خدمتی انتخاب نشده است");
+                    return ServiceResult<ViewModels.Reception.ServiceCalculationResult>.Failed(
+                        "هیچ خدمتی انتخاب نشده است");
                 }
 
                 // اعتبارسنجی خدمات

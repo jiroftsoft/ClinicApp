@@ -53,6 +53,7 @@ namespace ClinicApp.Controllers
         private readonly IPatientInsuranceValidationService _patientInsuranceValidationService;
         private readonly IPatientInsuranceManagementService _patientInsuranceManagementService;
         private readonly IReceptionNavigationService _receptionNavigationService;
+        private readonly IPatientService _patientService;
 
         public ReceptionController(
             IReceptionService receptionService,
@@ -64,7 +65,8 @@ namespace ClinicApp.Controllers
             IPatientInsuranceService patientInsuranceService,
             IPatientInsuranceValidationService patientInsuranceValidationService,
             IPatientInsuranceManagementService patientInsuranceManagementService,
-            IReceptionNavigationService receptionNavigationService) : base(logger)
+            IReceptionNavigationService receptionNavigationService,
+            IPatientService patientService) : base(logger)
         {
             _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
@@ -75,6 +77,7 @@ namespace ClinicApp.Controllers
             _patientInsuranceValidationService = patientInsuranceValidationService ?? throw new ArgumentNullException(nameof(patientInsuranceValidationService));
             _patientInsuranceManagementService = patientInsuranceManagementService ?? throw new ArgumentNullException(nameof(patientInsuranceManagementService));
             _receptionNavigationService = receptionNavigationService ?? throw new ArgumentNullException(nameof(receptionNavigationService));
+            _patientService = patientService ?? throw new ArgumentNullException(nameof(patientService));
         }
 
         #endregion
@@ -102,18 +105,13 @@ namespace ClinicApp.Controllers
                 _logger.Warning("⚠️ خطا در دریافت ناوبری پزشکی: {Message}", navigationResult.Message);
             }
 
-            var model = navigationResult.Data ?? new MedicalNavigationViewModel
+            var model = new ReceptionAccordionViewModel
             {
-                CurrentController = "Reception",
-                CurrentAction = "Index",
-                UserName = _currentUserService.UserName,
-                UserRole = "Receptionist",
-                ClinicName = "کلینیک تخصصی",
-                CurrentDate = DateTime.Now,
-                CurrentShift = GetCurrentShiftForNavigation(),
-                IsEmergencyMode = false,
-                Sections = new List<NavigationSection>(),
-                QuickActions = new List<QuickAction>()
+                Patient = new PatientAccordionViewModel(),
+                Department = new DepartmentAccordionViewModel(),
+                Insurance = new InsuranceAccordionViewModel(),
+                Service = new ServiceAccordionViewModel(),
+                Payment = new PaymentAccordionViewModel()
             };
 
             return View(model);
@@ -271,6 +269,145 @@ namespace ClinicApp.Controllers
             catch (Exception ex)
             {
                 return HandleException(ex, "جستجوی بیمار", _currentUserService.UserName);
+            }
+        }
+
+        /// <summary>
+        /// جستجوی بیماران برای کامپوننت PatientIdentity
+        /// </summary>
+        /// <param name="searchTerm">عبارت جستجو</param>
+        /// <returns>لیست بیماران</returns>
+        [HttpGet]
+        public async Task<JsonResult> SearchPatients(string searchTerm)
+        {
+            _logger.Information(
+                "جستجوی بیماران برای کامپوننت PatientIdentity. عبارت: {SearchTerm}, کاربر: {UserName}",
+                searchTerm, _currentUserService.UserName);
+
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    return Json(new { success = false, message = "عبارت جستجو الزامی است" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _receptionService.SearchPatientsByNameAsync(searchTerm, 1, 10);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var patients = result.Data.Select(p => new
+                {
+                    patientId = p.PatientId,
+                    firstName = p.FirstName,
+                    lastName = p.LastName,
+                    nationalCode = p.NationalCode,
+                    phoneNumber = p.PhoneNumber,
+                    birthDate = p.BirthDate?.ToString("yyyy/MM/dd"),
+                    address = p.Address
+                }).ToList();
+
+                return Json(new { success = true, data = patients }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در جستجوی بیماران برای کامپوننت PatientIdentity");
+                return Json(new { success = false, message = "خطا در جستجوی بیماران" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// دریافت جزئیات بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>جزئیات بیمار</returns>
+        [HttpGet]
+        public async Task<JsonResult> GetPatientDetails(int patientId)
+        {
+            _logger.Information(
+                "دریافت جزئیات بیمار. شناسه: {PatientId}, کاربر: {UserName}",
+                patientId, _currentUserService.UserName);
+
+            try
+            {
+                // استفاده از PatientService برای دریافت اطلاعات بیمار
+                var patientResult = await _patientService.GetPatientDetailsAsync(patientId);
+                if (!patientResult.Success)
+                {
+                    return Json(new { success = false, message = patientResult.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                var patient = patientResult.Data;
+                var patientDetails = new
+                {
+                    patientId = patient.PatientId,
+                    firstName = patient.FirstName,
+                    lastName = patient.LastName,
+                    nationalCode = patient.NationalCode,
+                    phoneNumber = patient.PhoneNumber,
+                    birthDate = patient.BirthDate?.ToString("yyyy/MM/dd"),
+                    address = patient.Address,
+                    gender = patient.Gender.ToString()
+                };
+
+                return Json(new { success = true, data = patientDetails }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت جزئیات بیمار. شناسه: {PatientId}", patientId);
+                return Json(new { success = false, message = "خطا در دریافت جزئیات بیمار" }, JsonRequestBehavior.AllowGet);
+            }
+        }
+
+        /// <summary>
+        /// ثبت بیمار جدید
+        /// </summary>
+        /// <param name="model">اطلاعات بیمار</param>
+        /// <returns>نتیجه ثبت</returns>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> CreatePatient(ReceptionFormPatientViewModel model)
+        {
+            _logger.Information(
+                "ثبت بیمار جدید. نام: {FirstName} {LastName}, کد ملی: {NationalCode}, کاربر: {UserName}",
+                model.PatientInfo?.FirstName, model.PatientInfo?.LastName, model.PatientInfo?.NationalCode, _currentUserService.UserName);
+
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    var errors = ModelState.Values
+                        .SelectMany(v => v.Errors)
+                        .Select(e => e.ErrorMessage)
+                        .ToList();
+                    return Json(new { success = false, message = "اطلاعات نامعتبر", errors = errors }, JsonRequestBehavior.AllowGet);
+                }
+
+                // تبدیل ReceptionFormPatientViewModel به PatientCreateEditViewModel
+                var patientModel = new PatientCreateEditViewModel
+                {
+                    FirstName = model.PatientInfo?.FirstName,
+                    LastName = model.PatientInfo?.LastName,
+                    NationalCode = model.PatientInfo?.NationalCode,
+                    PhoneNumber = model.PatientInfo?.PhoneNumber,
+                    BirthDate = model.PatientInfo?.BirthDate,
+                    Gender = model.PatientInfo?.Gender ?? Gender.Male,
+                    Address = model.PatientInfo?.Address
+                };
+
+                var result = await _receptionService.CreatePatientAsync(patientModel);
+                if (!result.Success)
+                {
+                    return Json(new { success = false, message = result.Message }, JsonRequestBehavior.AllowGet);
+                }
+
+                return Json(new { success = true, message = "بیمار با موفقیت ثبت شد", patientId = result.Data.PatientId }, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در ثبت بیمار جدید");
+                return Json(new { success = false, message = "خطا در ثبت بیمار" }, JsonRequestBehavior.AllowGet);
             }
         }
 

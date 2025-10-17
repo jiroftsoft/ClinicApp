@@ -514,23 +514,72 @@
         window.preventSyntaxErrors();
     </script>
     
-    <!-- jQuery Verification and Protection -->
+    <!-- Production Optimized jQuery Loading -->
     <script>
-        // Standardized jQuery Guard Function
-        window.whenJQ = function(cb) {
-            if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
-                console.log('jQuery verified and ready');
-                cb();
-            } else {
-                console.warn('jQuery not ready, retrying...');
-                setTimeout(() => window.whenJQ(cb), 50);
-            }
+        // Performance monitoring
+        window.performanceMetrics = {
+            startTime: performance.now(),
+            jqueryLoadTime: null,
+            domReadyTime: null,
+            metrics: {}
         };
+        
+        // Enhanced jQuery Guard Function with timeout
+        window.whenJQ = function(cb, timeout = 10000) {
+            const startTime = performance.now();
+            
+            function checkJQuery() {
+                if (typeof jQuery !== 'undefined' && typeof $ !== 'undefined') {
+                    window.performanceMetrics.jqueryLoadTime = performance.now() - startTime;
+                    console.log('✅ jQuery verified and ready in', window.performanceMetrics.jqueryLoadTime.toFixed(2), 'ms');
+                    cb();
+                } else if (performance.now() - startTime < timeout) {
+                    setTimeout(checkJQuery, 50);
+                } else {
+                    console.error('❌ jQuery failed to load within timeout period');
+                    if (window.ReceptionModules && window.ReceptionModules.errorHandler) {
+                        window.ReceptionModules.errorHandler(new Error('jQuery load timeout'), 'jQueryLoad');
+                    }
+                }
+            }
+            
+            checkJQuery();
+        };
+        
+        // DOM Ready with performance tracking
+        document.addEventListener('DOMContentLoaded', function() {
+            window.performanceMetrics.domReadyTime = performance.now() - window.performanceMetrics.startTime;
+            console.log('✅ DOM Ready in', window.performanceMetrics.domReadyTime.toFixed(2), 'ms');
+        });
         
         // اطمینان از بارگذاری jQuery
         window.whenJQ(function() {
             window.jQueryReady = true;
-            console.log('jQuery is fully loaded and ready');
+            console.log('✅ jQuery is fully loaded and ready');
+            
+            // Initialize tooltips globally
+            if (typeof bootstrap !== 'undefined' && bootstrap.Tooltip) {
+                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                tooltipTriggerList.map(function (tooltipTriggerEl) {
+                    return new bootstrap.Tooltip(tooltipTriggerEl);
+                });
+            }
+        });
+        
+        // Global error handling for production
+        window.addEventListener('error', function(event) {
+            console.error('❌ Global Error:', event.error);
+            if (window.ReceptionModules && window.ReceptionModules.errorHandler) {
+                window.ReceptionModules.errorHandler(event.error, 'GlobalError');
+            }
+        });
+        
+        // Unhandled promise rejection handling
+        window.addEventListener('unhandledrejection', function(event) {
+            console.error('❌ Unhandled Promise Rejection:', event.reason);
+            if (window.ReceptionModules && window.ReceptionModules.errorHandler) {
+                window.ReceptionModules.errorHandler(event.reason, 'UnhandledPromiseRejection');
+            }
         });
     </script>
     

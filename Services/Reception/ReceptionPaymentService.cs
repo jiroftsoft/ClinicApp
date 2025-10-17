@@ -441,20 +441,28 @@ namespace ClinicApp.Services.Reception
                         "خطا در دریافت وضعیت پرداخت");
                 }
 
+                // دریافت اطلاعات کامل تراکنش
+                var transactionResult = await _paymentService.GetTransactionByIdAsync(int.Parse(transactionId));
+                if (!transactionResult.Success)
+                {
+                    return ServiceResult<PaymentStatusViewModel>.Failed(
+                        "خطا در دریافت اطلاعات تراکنش");
+                }
+
                 var status = new PaymentStatusViewModel
                 {
-                    TransactionId = int.Parse(transactionId),
-                    Status = result.Data.Status.ToString(),
-                    StatusDescription = GetStatusDescription(result.Data.Status),
-                    CreatedAt = result.Data.CreatedAt,
-                    CompletedAt = result.Data.Status == Models.Enums.PaymentStatus.Completed ? result.Data.CreatedAt : (DateTime?)null,
-                    Amount = result.Data.Amount,
-                    PaymentMethod = result.Data.Method.ToString(),
-                    PatientId = result.Data.ReceptionId, // استفاده از ReceptionId به جای PatientId
-                    PatientName = result.Data.PatientName ?? "بیمار نمونه",
-                    ReceiptNumber = result.Data.ReceiptNo ?? "RCP_" + transactionId,
-                    CanCancel = result.Data.Status == Models.Enums.PaymentStatus.Pending,
-                    CanRefund = result.Data.Status == Models.Enums.PaymentStatus.Completed,
+                    TransactionId = transactionResult.Data.PaymentTransactionId,
+                    Status = result.Data.ToString(),
+                    StatusDescription = GetStatusDescription(result.Data.ToString()),
+                    CreatedAt = transactionResult.Data.CreatedAt,
+                    CompletedAt = result.Data == Models.Enums.PaymentStatus.Completed ? transactionResult.Data.CreatedAt : (DateTime?)null,
+                    Amount = transactionResult.Data.Amount,
+                    PaymentMethod = transactionResult.Data.Method.ToString(),
+                    PatientId = transactionResult.Data.ReceptionId,
+                    PatientName = transactionResult.Data.PatientName ?? "بیمار نمونه",
+                    ReceiptNumber = transactionResult.Data.ReceiptNo ?? "RCP_" + transactionId,
+                    CanCancel = result.Data == Models.Enums.PaymentStatus.Pending,
+                    CanRefund = result.Data == Models.Enums.PaymentStatus.Completed,
                     StatusHistory = new List<PaymentStatusHistoryViewModel>()
                 };
 

@@ -839,6 +839,10 @@
     <Compile Include="Migrations\202510132050140_FixDoctorSpecializationRelationships.Designer.cs">
       <DependentUpon>202510132050140_FixDoctorSpecializationRelationships.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510161639438_change14040724.cs" />
+    <Compile Include="Migrations\202510161639438_change14040724.Designer.cs">
+      <DependentUpon>202510161639438_change14040724.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -4541,15 +4545,17 @@
     <Content Include="Views\Reception\Components\_InsuranceAccordionSection.cshtml" />
     <Content Include="Views\Reception\Components\_PatientAccordionSection.cshtml" />
     <Content Include="Views\Reception\Components\_PaymentAccordionSection.cshtml" />
-    <Content Include="Views\Reception\Components\_ReceptionAccordionForm.cshtml" />
     <Content Include="Views\Reception\Components\_ServiceAccordionSection.cshtml" />
+    <Content Include="Views\Reception\Components\_PatientIdentityComponent.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
+    <Folder Include="Content\css\reception\" />
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
+    <Folder Include="Scripts\reception\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
@@ -4713,6 +4719,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510132050140_FixDoctorSpecializationRelationships.resx">
       <DependentUpon>202510132050140_FixDoctorSpecializationRelationships.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510161639438_change14040724.resx">
+      <DependentUpon>202510161639438_change14040724.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
   </ItemGroup>

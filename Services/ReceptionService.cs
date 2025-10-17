@@ -947,11 +947,11 @@ namespace ClinicApp.Services
                 {
                     ServiceId = s.ServiceId,
                     Title = s.Title,
-                    Description = "", // ServiceSelectItem doesn't have Description
+                    Description = "", // ServiceIndexViewModel doesn't have Description
                     ServiceCategoryId = s.ServiceCategoryId,
                     ServiceCategoryName = s.ServiceCategoryTitle, // Use ServiceCategoryTitle instead
                     BasePrice = s.Price, // Use Price instead of BasePrice
-                    IsActive = true, // ServiceSelectItem doesn't have IsActive
+                  //  IsActive = s.IsActive, // Use IsActive from ServiceIndexViewModel
                     DisplayName = s.Title,
                     PriceDisplay = s.Price.ToString("N0") + " تومان"
                 }).ToList();
