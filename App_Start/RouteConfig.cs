@@ -254,6 +254,21 @@ namespace ClinicApp
                 }
             );
 
+            // 🏥 Reception Patient Controller Routes - مسیرهای کنترلر بیمار
+            routes.MapRoute(
+                name: "ReceptionPatient",
+                url: "Reception/Patient/{action}",
+                defaults: new { 
+                    controller = "ReceptionPatient", 
+                    action = "Index", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Index|SearchByNationalCode|SavePatient|UpdatePatient)$"
+                }
+            );
+
             // 🏥 Reception List Routes - مسیرهای لیست پذیرش‌ها
             routes.MapRoute(
                 name: "ReceptionList",

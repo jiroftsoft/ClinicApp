@@ -82,6 +82,10 @@ namespace ClinicApp
             bundles.Add(new ScriptBundle("~/bundles/toastr").Include(
                 "~/Content/plugins/toastr/toastr.min.js"));
 
+            // Patient Accordion CSS Bundle
+            bundles.Add(new StyleBundle("~/Content/patient-accordion").Include(
+                "~/Content/css/reception/patient-accordion.css"));
+
             // Reception Toastr Service Bundle
             bundles.Add(new ScriptBundle("~/bundles/reception-toastr").Include(
                 "~/Scripts/reception/reception-toastr-service.js"));

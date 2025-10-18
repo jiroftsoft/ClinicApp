@@ -1434,6 +1434,7 @@
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
+    <Content Include="Content\css\reception\patient-accordion.css" />
     <Content Include="Content\css\reception\reception-accordion.css" />
     <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\css\supplementary-tariff-styles.css" />

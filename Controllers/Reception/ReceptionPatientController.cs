@@ -38,56 +38,53 @@ namespace ClinicApp.Controllers.Reception
         }
 
         /// <summary>
-        /// جستجوی بیمار بر اساس کد ملی
+        /// صفحه اصلی کنترلر بیمار
         /// </summary>
         [HttpGet]
+        [Route("")]
+        [Route("Index")]
+        public ActionResult Index()
+        {
+            return Json(new { message = "ReceptionPatient Controller is working" }, JsonRequestBehavior.AllowGet);
+        }
+
+        /// <summary>
+        /// جستجوی بیمار بر اساس کد ملی
+        /// </summary>
+        [HttpPost]
         [Route("SearchByNationalCode")]
         public async Task<JsonResult> SearchByNationalCode(string nationalCode)
         {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
             try
             {
-                _logger.Information($"جستجوی بیمار با کد ملی: {nationalCode}");
+                _logger.Information("[{RequestId}] شروع جستجوی بیمار با کد ملی: {NationalCode}", requestId, nationalCode);
 
-                // اعتبارسنجی کد ملی
-                if (string.IsNullOrWhiteSpace(nationalCode))
+                // اعتبارسنجی سریع و بهینه
+                var validationResult = ValidateNationalCodeInput(nationalCode);
+                if (!validationResult.Success)
                 {
-                    return Json(ServiceResult<object>.Failed(ReceptionFormConstants.Messages.NationalCodeInvalid), JsonRequestBehavior.AllowGet);
+                    _logger.Warning("[{RequestId}] اعتبارسنجی کد ملی ناموفق: {Error}", requestId, validationResult.Message);
+                    return Json(ServiceResult<object>.Failed(validationResult.Message), JsonRequestBehavior.AllowGet);
                 }
 
-                if (nationalCode.Length != ReceptionFormConstants.Validation.NationalCodeLength)
+                // جستجوی بهینه با timeout
+                var searchResult = await _receptionPatientService.SearchPatientByNationalCodeAsync(nationalCode);
+                
+                if (searchResult.Success && searchResult.Data != null)
                 {
-                    return Json(ServiceResult<object>.Failed(ReceptionFormConstants.Messages.NationalCodeInvalid), JsonRequestBehavior.AllowGet);
-                }
+                    var patient = searchResult.Data;
+                    patient.IsPatientFound = true;
+                    patient.StatusMessage = $"بیمار {patient.FirstName} {patient.LastName} یافت شد";
+                    patient.StatusCssClass = "text-success";
+                    
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] جستجوی موفق - بیمار یافت شد: {PatientName} در {Duration}ms", 
+                        requestId, $"{patient.FirstName} {patient.LastName}", duration);
 
-                // اعتبارسنجی الگوریتم کد ملی ایرانی
-                if (!ValidateNationalCode(nationalCode))
-                {
-                    return Json(ServiceResult<object>.Failed(ReceptionFormConstants.Messages.NationalCodeInvalid), JsonRequestBehavior.AllowGet);
-                }
-
-                       // جستجوی بیمار در دیتابیس
-                       var patient = await _patientService.GetPatientByNationalCodeAsync(nationalCode);
-
-                       if (patient != null)
-                       {
-                    var patientViewModel = new PatientAccordionViewModel
-                    {
-                        PatientId = patient.PatientId,
-                        NationalCode = patient.NationalCode,
-                        FirstName = patient.FirstName,
-                        LastName = patient.LastName,
-                        BirthDate = patient.BirthDate,
-                        Gender = patient.Gender.ToString(),
-                        PhoneNumber = patient.PhoneNumber,
-                        Address = patient.Address,
-                        IsPatientFound = true,
-                        StatusMessage = string.Format(ReceptionFormConstants.Messages.PatientFound, nationalCode),
-                        StatusCssClass = "text-success"
-                    };
-
-                    _logger.Information($"بیمار یافت شد: {patient.FirstName} {patient.LastName}");
-
-                    return Json(ServiceResult<PatientAccordionViewModel>.Successful(patientViewModel, string.Format(ReceptionFormConstants.Messages.PatientFound, nationalCode)), JsonRequestBehavior.AllowGet);
+                    return Json(ServiceResult<PatientAccordionViewModel>.Successful(patient, patient.StatusMessage), JsonRequestBehavior.AllowGet);
                 }
                 else
                 {
@@ -117,11 +114,15 @@ namespace ClinicApp.Controllers.Reception
         /// ذخیره اطلاعات بیمار جدید
         /// </summary>
         [HttpPost]
+        // [ValidateAntiForgeryToken] // TODO: فعال‌سازی پس از افزودن توکن به فرم
         public async Task<JsonResult> SavePatient(PatientAccordionViewModel model)
         {
             try
             {
-                _logger.Information($"ذخیره اطلاعات بیمار جدید: {model.NationalCode}");
+                if (model == null)
+                    return Json(ServiceResult<object>.Failed("بدنه درخواست خالی است"), JsonRequestBehavior.AllowGet);
+
+                _logger.Information("ذخیره اطلاعات بیمار جدید: {NationalCodeMasked}", MaskNationalCode(model.NationalCode));
 
                 // اعتبارسنجی مدل
                 if (!ModelState.IsValid)
@@ -167,13 +168,13 @@ namespace ClinicApp.Controllers.Reception
                     return Json(ServiceResult<object>.Failed(result.Message), JsonRequestBehavior.AllowGet);
                 }
 
-                _logger.Information($"بیمار جدید با موفقیت ذخیره شد: {model.NationalCode}");
+                _logger.Information("بیمار جدید با موفقیت ذخیره شد: {NationalCodeMasked}", MaskNationalCode(model.NationalCode));
 
                 return Json(ServiceResult<object>.Successful(null, ReceptionFormConstants.Messages.PatientSavedSuccess), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, $"خطا در ذخیره اطلاعات بیمار: {model.NationalCode}");
+                _logger.Error(ex, "خطا در ذخیره اطلاعات بیمار: {NationalCodeMasked}", model != null ? MaskNationalCode(model.NationalCode) : "NULL");
                 
                 return Json(ServiceResult<object>.Failed("خطا در ذخیره اطلاعات بیمار. لطفاً دوباره تلاش کنید."), JsonRequestBehavior.AllowGet);
             }
@@ -183,11 +184,15 @@ namespace ClinicApp.Controllers.Reception
         /// به‌روزرسانی اطلاعات بیمار موجود
         /// </summary>
         [HttpPost]
+        // [ValidateAntiForgeryToken] // TODO: فعال‌سازی پس از افزودن توکن به فرم
         public async Task<JsonResult> UpdatePatient(PatientAccordionViewModel model)
         {
             try
             {
-                _logger.Information($"به‌روزرسانی اطلاعات بیمار: {model.NationalCode}");
+                if (model == null)
+                    return Json(ServiceResult<object>.Failed("بدنه درخواست خالی است"), JsonRequestBehavior.AllowGet);
+
+                _logger.Information("به‌روزرسانی اطلاعات بیمار: {NationalCodeMasked}", MaskNationalCode(model.NationalCode));
 
                 // اعتبارسنجی مدل
                 if (!ModelState.IsValid)
@@ -213,10 +218,16 @@ namespace ClinicApp.Controllers.Reception
                     return Json(ServiceResult<object>.Failed("بیمار مورد نظر یافت نشد"), JsonRequestBehavior.AllowGet);
                 }
 
+                // اطمینان از همخوانی شناسه
+                if (model.PatientId.HasValue && model.PatientId.Value != existingPatient.PatientId)
+                {
+                    return Json(ServiceResult<object>.Failed("عدم تطابق شناسه بیمار"), JsonRequestBehavior.AllowGet);
+                }
+
                 // ایجاد مدل برای به‌روزرسانی بیمار
                 var patientUpdateModel = new PatientCreateEditViewModel
                 {
-                    PatientId = model.PatientId ?? 0,
+                    PatientId = existingPatient.PatientId, // از دیتابیس، نه از مدل
                     NationalCode = model.NationalCode,
                     FirstName = model.FirstName?.Trim(),
                     LastName = model.LastName?.Trim(),
@@ -234,13 +245,13 @@ namespace ClinicApp.Controllers.Reception
                     return Json(ServiceResult<object>.Failed(result.Message), JsonRequestBehavior.AllowGet);
                 }
 
-                _logger.Information($"اطلاعات بیمار با موفقیت به‌روزرسانی شد: {model.NationalCode}");
+                _logger.Information("اطلاعات بیمار با موفقیت به‌روزرسانی شد: {NationalCodeMasked}", MaskNationalCode(model.NationalCode));
 
                 return Json(ServiceResult<object>.Successful(null, "اطلاعات بیمار با موفقیت به‌روزرسانی شد"), JsonRequestBehavior.AllowGet);
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, $"خطا در به‌روزرسانی اطلاعات بیمار: {model.NationalCode}");
+                _logger.Error(ex, "خطا در به‌روزرسانی اطلاعات بیمار: {NationalCodeMasked}", model != null ? MaskNationalCode(model.NationalCode) : "NULL");
                 
                 return Json(ServiceResult<object>.Failed("خطا در به‌روزرسانی اطلاعات بیمار. لطفاً دوباره تلاش کنید."), JsonRequestBehavior.AllowGet);
             }
@@ -250,10 +261,14 @@ namespace ClinicApp.Controllers.Reception
         /// جستجوی پیشرفته بیماران
         /// </summary>
         [HttpPost]
+        // [ValidateAntiForgeryToken] // TODO: فعال‌سازی پس از افزودن توکن به فرم
         public async Task<JsonResult> AdvancedSearch(SearchParameterViewModel searchParams)
         {
             try
             {
+                if (searchParams == null)
+                    return Json(ServiceResult<object>.Failed("بدنه درخواست خالی است"), JsonRequestBehavior.AllowGet);
+
                 _logger.Information("جستجوی پیشرفته بیماران");
 
                 // اعتبارسنجی پارامترهای جستجو
@@ -273,7 +288,7 @@ namespace ClinicApp.Controllers.Reception
                     return Json(ServiceResult<object>.Failed(result.Message), JsonRequestBehavior.AllowGet);
                 }
 
-                _logger.Information($"جستجوی پیشرفته انجام شد - تعداد نتایج: {result.Data.Count}");
+                _logger.Information("جستجوی پیشرفته انجام شد - تعداد نتایج: {Count}", result.Data?.Count ?? 0);
 
                 return Json(ServiceResult<List<PatientSearchResultViewModel>>.Successful(result.Data, "جستجو با موفقیت انجام شد"), JsonRequestBehavior.AllowGet);
             }
@@ -283,6 +298,44 @@ namespace ClinicApp.Controllers.Reception
                 
                 return Json(ServiceResult<object>.Failed("خطا در جستجوی پیشرفته. لطفاً دوباره تلاش کنید."), JsonRequestBehavior.AllowGet);
             }
+        }
+
+        /// <summary>
+        /// اعتبارسنجی سریع و بهینه کد ملی
+        /// </summary>
+        private ServiceResult<bool> ValidateNationalCodeInput(string nationalCode)
+        {
+            if (string.IsNullOrWhiteSpace(nationalCode))
+            {
+                return ServiceResult<bool>.Failed("کد ملی الزامی است");
+            }
+
+            if (nationalCode.Length != 10)
+            {
+                return ServiceResult<bool>.Failed("کد ملی باید 10 رقم باشد");
+            }
+
+            if (!nationalCode.All(char.IsDigit))
+            {
+                return ServiceResult<bool>.Failed("کد ملی باید فقط شامل اعداد باشد");
+            }
+
+            if (!ValidateNationalCode(nationalCode))
+            {
+                return ServiceResult<bool>.Failed("کد ملی نامعتبر است");
+            }
+
+            return ServiceResult<bool>.Successful(true);
+        }
+
+        /// <summary>
+        /// Masking helper برای لاگ‌های امن
+        /// </summary>
+        private static string MaskNationalCode(string nc)
+        {
+            if (string.IsNullOrWhiteSpace(nc) || nc.Length < 4)
+                return "***";
+            return new string('*', nc.Length - 4) + nc.Substring(nc.Length - 4);
         }
 
         /// <summary>

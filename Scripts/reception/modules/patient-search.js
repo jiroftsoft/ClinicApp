@@ -152,7 +152,7 @@
         // NATIONAL CODE INPUT HANDLER - مدیریت ورودی کد ملی
         // ========================================
         handleNationalCodeInput: function(module) {
-            var value = $(this).val() || '';
+            const value = $(this).val() || '';
             
             if (value.length === CONFIG.validation.nationalCodeLength) {
                 module.validateNationalCode.call(this, module);
@@ -166,7 +166,7 @@
         // NATIONAL CODE VALIDATION - اعتبارسنجی کد ملی
         // ========================================
         validateNationalCode: function(module) {
-            var value = $(this).val() || '';
+            const value = $(this).val() || '';
             
             if (value.length !== CONFIG.validation.nationalCodeLength) {
                 $(this).removeClass('is-valid').addClass('is-invalid');
@@ -192,12 +192,11 @@
             if (!nationalCode || nationalCode.length !== 10) return false;
             
             try {
-                var digits = nationalCode.split('').map(Number);
-                var checkDigit = digits[9];
-                var sum = digits.slice(0, 9).reduce(function(acc, digit, index) { 
-                    return acc + digit * (10 - index); 
-                }, 0);
-                var remainder = sum % 11;
+                const digits = nationalCode.split('').map(Number);
+                const checkDigit = digits[9];
+                const sum = digits.slice(0, 9).reduce((acc, digit, index) => 
+                    acc + digit * (10 - index), 0);
+                const remainder = sum % 11;
                 
                 return remainder < 2 ? checkDigit === remainder : checkDigit === 11 - remainder;
             } catch (error) {
@@ -211,7 +210,7 @@
         // ========================================
         handleSearchPatient: function(module) {
             const $btn = $(this);
-            var nationalCode = $(CONFIG.selectors.nationalCode).val() || '';
+            const nationalCode = $(CONFIG.selectors.nationalCode).val() || '';
             
             // اعتبارسنجی اولیه
             if (!module.validateSearchInput(nationalCode)) {
@@ -279,17 +278,19 @@
         // SEARCH SUCCESS HANDLER - مدیریت موفقیت جستجو
         // ========================================
         handleSearchSuccess: function(response) {
-            if (response.success && response.data) {
-                this.displayPatientInfo(response.data);
+            console.log('[PatientSearchModule] Search response received:', response);
+            
+            if (response.Success && response.Data) {
+                this.displayPatientInfo(response.Data);
                 this.showSuccess(CONFIG.messages.success.found);
                 
                 // بارگذاری اطلاعات بیمه
-                this.loadPatientInsurance(response.data.patientId);
+                this.loadPatientInsurance(response.Data.PatientId);
                 
                 // به‌روزرسانی وضعیت آکاردئون
                 this.updateAccordionState('patientSection', 'completed');
             } else {
-                this.showError(response.message || CONFIG.messages.error.notFound);
+                this.showError(response.Message || CONFIG.messages.error.notFound);
             }
         },
 
@@ -297,7 +298,7 @@
         // SEARCH ERROR HANDLER - مدیریت خطای جستجو
         // ========================================
         handleSearchError: function(xhr, status, error) {
-            var errorMessage = CONFIG.messages.error.serverError;
+            let errorMessage = CONFIG.messages.error.serverError;
             
             if (status === 'timeout') {
                 errorMessage = CONFIG.messages.error.timeoutError;
@@ -318,14 +319,22 @@
             }
             
             try {
-                $(CONFIG.selectors.firstName).val(patientData.firstName || '');
-                $(CONFIG.selectors.lastName).val(patientData.lastName || '');
-                $(CONFIG.selectors.fatherName).val(patientData.fatherName || '');
-                $(CONFIG.selectors.birthDate).val(patientData.birthDate || '');
-                $(CONFIG.selectors.age).val(patientData.age || '');
-                $(CONFIG.selectors.gender).val(patientData.gender || '');
-                $(CONFIG.selectors.phone).val(patientData.phoneNumber || '');
-                $(CONFIG.selectors.address).val(patientData.address || '');
+                // استفاده از Property Names صحیح (با حروف بزرگ)
+                $(CONFIG.selectors.firstName).val(patientData.FirstName || '');
+                $(CONFIG.selectors.lastName).val(patientData.LastName || '');
+                $(CONFIG.selectors.fatherName).val(patientData.FatherName || '');
+                $(CONFIG.selectors.birthDate).val(patientData.BirthDate || '');
+                $(CONFIG.selectors.age).val(patientData.Age || '');
+                $(CONFIG.selectors.gender).val(patientData.Gender || '');
+                $(CONFIG.selectors.phone).val(patientData.PhoneNumber || '');
+                $(CONFIG.selectors.address).val(patientData.Address || '');
+                
+                // نمایش پیام موفقیت
+                if (patientData.StatusMessage) {
+                    this.showSuccess(patientData.StatusMessage);
+                }
+                
+                console.log('[PatientSearchModule] Patient info displayed successfully:', patientData);
             } catch (error) {
                 console.error('[PatientSearchModule] Error displaying patient info:', error);
                 this.handleError(error, 'displayPatientInfo');
@@ -353,7 +362,7 @@
             module.showButtonLoading($btn);
             
             // TODO: Implement save patient logic
-            setTimeout(function() {
+            setTimeout(() => {
                 module.hideButtonLoading($btn);
                 module.showSuccess(CONFIG.messages.success.saved);
             }, 1000);
@@ -458,7 +467,7 @@
         handleError: function(error, context) {
             console.error(`[PatientSearchModule] Error in ${context}:`, error);
             
-            if (window.ReceptionErrorHandler && typeof window.ReceptionErrorHandler.handle === 'function') {
+            if (window.ReceptionErrorHandler) {
                 window.ReceptionErrorHandler.handle(error, 'PatientSearchModule', context);
             }
         }

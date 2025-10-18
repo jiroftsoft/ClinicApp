@@ -20,10 +20,11 @@ window.ReceptionModules.utils = {
     debounce: function(func, wait) {
         var timeout;
         return function executedFunction() {
+            var context = this;
             var args = Array.prototype.slice.call(arguments);
             var later = function() {
                 clearTimeout(timeout);
-                func.apply(null, args);
+                func.apply(context, args);
             };
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
@@ -238,24 +239,35 @@ window.ReceptionModules.Patient = {
         console.log('[ReceptionModules.Patient] Initializing...');
         
         // National Code validation
-        $('#patientNationalCode').on('input', window.ReceptionModules.utils.debounce(function() {
-            var value = $(this).val() || '';
-                if (value.length === 10) {
-                    if (window.ReceptionModules.Patient.validateNationalCode(value)) {
-                        $(this).removeClass('is-invalid').addClass('is-valid');
-                        $('#nationalCodeError').text('');
-                    } else {
-                        $(this).removeClass('is-valid').addClass('is-invalid');
-                        $('#nationalCodeError').text(window.ReceptionModules.config.messages.validation.nationalCodeInvalid);
-                    }
-                } else {
-                    $(this).removeClass('is-valid is-invalid');
+        $('#patientNationalCode').on('input', window.ReceptionModules.utils.debounce(function(event) {
+            var $input = $(event.target);
+            var value = $input.val() || '';
+            
+            if (value.length === 10) {
+                if (window.ReceptionModules.Patient.validateNationalCode(value)) {
+                    $input.removeClass('is-invalid').addClass('is-valid');
                     $('#nationalCodeError').text('');
+                } else {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $('#nationalCodeError').text(window.ReceptionModules.config.messages.validation.nationalCodeInvalid);
                 }
-        }.bind(this), 500));
+            } else {
+                $input.removeClass('is-valid is-invalid');
+                $('#nationalCodeError').text('');
+            }
+        }, 500));
 
-        // Search patient
+        // Search patient - Click and Enter
         $('#searchPatientBtn').off('click.patient').on('click.patient', window.ReceptionModules.Patient.handleSearchPatient);
+        $('#searchByNationalCodeBtn').off('click.patient').on('click.patient', window.ReceptionModules.Patient.handleSearchPatient);
+        
+        // Enter key search
+        $('#patientNationalCode').off('keypress.patient').on('keypress.patient', function(e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                window.ReceptionModules.Patient.handleSearchPatient.call($('#searchByNationalCodeBtn')[0]);
+            }
+        });
         
         // Enter key support for national code
         $('#patientNationalCode').off('keypress.patient').on('keypress.patient', function(e) {
@@ -288,7 +300,17 @@ window.ReceptionModules.Patient = {
 
     handleSearchPatient: function() {
         var $btn = $(this);
-        var nationalCode = ($('#patientNationalCode').val() || '').trim();
+        var nationalCode = '';
+        
+        try {
+            var $input = $('#patientNationalCode');
+            if ($input && $input.length > 0) {
+                nationalCode = ($input.val() || '').trim();
+            }
+        } catch (error) {
+            console.error('Error getting national code value:', error);
+            nationalCode = '';
+        }
         
         // اعتبارسنجی اولیه
         if (!nationalCode) {
@@ -311,6 +333,8 @@ window.ReceptionModules.Patient = {
         window.ReceptionModules.Patient.showInfo(window.ReceptionModules.config.messages.info.patientSearching);
         
         // درخواست AJAX
+        console.log('[ReceptionModules.Patient] Starting search for national code:', nationalCode);
+        
         $.ajax({
             url: window.ReceptionModules.config.apiEndpoints.patientSearch,
             type: 'POST',
@@ -324,18 +348,21 @@ window.ReceptionModules.Patient = {
             success: function(response) {
                 window.ReceptionModules.Patient.hideButtonLoading($btn);
                 
-                if (response.success && response.data) {
+                console.log('[ReceptionModules.Patient] Search response received:', response);
+                
+                if (response.Success && response.Data) {
                     // نمایش اطلاعات بیمار
-                    window.ReceptionModules.Patient.displayPatientInfo(response.data);
-                    window.ReceptionModules.Patient.showSuccess(window.ReceptionModules.config.messages.success.patientFound);
+                    window.ReceptionModules.Patient.displayPatientInfo(response.Data);
                     
                     // بارگذاری اطلاعات بیمه
-                    window.ReceptionModules.Patient.loadPatientInsurance(response.data.patientId);
+                    window.ReceptionModules.Patient.loadPatientInsurance(response.Data.PatientId);
                     
                     // به‌روزرسانی وضعیت آکاردئون
-                    window.ReceptionModules.Accordion.setState('patientSection', 'completed');
+                    if (window.ReceptionModules.Accordion && window.ReceptionModules.Accordion.setState) {
+                        window.ReceptionModules.Accordion.setState('patientSection', 'completed');
+                    }
                 } else {
-                    window.ReceptionModules.Patient.showError(response.message || window.ReceptionModules.config.messages.error.patientNotFound);
+                    window.ReceptionModules.Patient.showError(response.Message || window.ReceptionModules.config.messages.error.patientNotFound);
                 }
             },
             error: function(xhr, status, error) {
@@ -354,6 +381,10 @@ window.ReceptionModules.Patient = {
 
     handleSavePatient: function() {
         var $btn = $(this);
+        if (!$btn || $btn.length === 0) {
+            console.error('Save button not found');
+            return;
+        }
         window.ReceptionModules.Patient.showButtonLoading($btn);
         
         // TODO: Implement save patient logic
@@ -370,16 +401,25 @@ window.ReceptionModules.Patient = {
         }
         
         try {
-            $('#patientFirstName').val(patientData.firstName || '');
-            $('#patientLastName').val(patientData.lastName || '');
-            $('#patientFatherName').val(patientData.fatherName || ''); // اضافه شده
-            $('#patientBirthDate').val(patientData.birthDate || '');
-            $('#patientAge').val(patientData.age || ''); // اضافه شده
-            $('#patientGender').val(patientData.gender || '');
-            $('#patientPhone').val(patientData.phoneNumber || '');
-            $('#patientAddress').val(patientData.address || '');
+            // استفاده از Property Names صحیح (با حروف بزرگ)
+            $('#patientFirstName').val(patientData.FirstName || '');
+            $('#patientLastName').val(patientData.LastName || '');
+            $('#patientFatherName').val(patientData.FatherName || '');
+            $('#patientBirthDate').val(patientData.BirthDate || '');
+            $('#patientAge').val(patientData.Age || '');
+            $('#patientGender').val(patientData.Gender || '');
+            $('#patientPhone').val(patientData.PhoneNumber || '');
+            $('#patientAddress').val(patientData.Address || '');
+            
+            // نمایش پیام موفقیت
+            if (patientData.StatusMessage) {
+                window.ReceptionModules.Patient.showSuccess(patientData.StatusMessage);
+            }
+            
+            console.log('[ReceptionModules.Patient] Patient info displayed successfully:', patientData);
         } catch (error) {
             console.error('Error displaying patient info:', error);
+            window.ReceptionModules.Patient.showError('خطا در نمایش اطلاعات بیمار');
         }
     },
 
@@ -545,15 +585,33 @@ window.ReceptionModules.Department = {
     },
 
     showButtonLoading: function($btn) {
-        $btn.prop('disabled', true);
-        $btn.find('.btn-text').addClass('d-none');
-        $btn.find('.btn-loading').removeClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', true);
+            $btn.find('.btn-text').addClass('d-none');
+            $btn.find('.btn-loading').removeClass('d-none');
+        } catch (error) {
+            console.error('Error showing button loading:', error);
+        }
     },
 
     hideButtonLoading: function($btn) {
-        $btn.prop('disabled', false);
-        $btn.find('.btn-text').removeClass('d-none');
-        $btn.find('.btn-loading').addClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', false);
+            $btn.find('.btn-text').removeClass('d-none');
+            $btn.find('.btn-loading').addClass('d-none');
+        } catch (error) {
+            console.error('Error hiding button loading:', error);
+        }
     },
 
     showSuccess: function(message) {
@@ -602,15 +660,33 @@ window.ReceptionModules.Insurance = {
     },
 
     showButtonLoading: function($btn) {
-        $btn.prop('disabled', true);
-        $btn.find('.btn-text').addClass('d-none');
-        $btn.find('.btn-loading').removeClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', true);
+            $btn.find('.btn-text').addClass('d-none');
+            $btn.find('.btn-loading').removeClass('d-none');
+        } catch (error) {
+            console.error('Error showing button loading:', error);
+        }
     },
 
     hideButtonLoading: function($btn) {
-        $btn.prop('disabled', false);
-        $btn.find('.btn-text').removeClass('d-none');
-        $btn.find('.btn-loading').addClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', false);
+            $btn.find('.btn-text').removeClass('d-none');
+            $btn.find('.btn-loading').addClass('d-none');
+        } catch (error) {
+            console.error('Error hiding button loading:', error);
+        }
     },
 
     showSuccess: function(message) {
@@ -658,15 +734,33 @@ window.ReceptionModules.Service = {
     },
 
     showButtonLoading: function($btn) {
-        $btn.prop('disabled', true);
-        $btn.find('.btn-text').addClass('d-none');
-        $btn.find('.btn-loading').removeClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', true);
+            $btn.find('.btn-text').addClass('d-none');
+            $btn.find('.btn-loading').removeClass('d-none');
+        } catch (error) {
+            console.error('Error showing button loading:', error);
+        }
     },
 
     hideButtonLoading: function($btn) {
-        $btn.prop('disabled', false);
-        $btn.find('.btn-text').removeClass('d-none');
-        $btn.find('.btn-loading').addClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', false);
+            $btn.find('.btn-text').removeClass('d-none');
+            $btn.find('.btn-loading').addClass('d-none');
+        } catch (error) {
+            console.error('Error hiding button loading:', error);
+        }
     },
 
     showSuccess: function(message) {
@@ -714,15 +808,33 @@ window.ReceptionModules.Payment = {
     },
 
     showButtonLoading: function($btn) {
-        $btn.prop('disabled', true);
-        $btn.find('.btn-text').addClass('d-none');
-        $btn.find('.btn-loading').removeClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', true);
+            $btn.find('.btn-text').addClass('d-none');
+            $btn.find('.btn-loading').removeClass('d-none');
+        } catch (error) {
+            console.error('Error showing button loading:', error);
+        }
     },
 
     hideButtonLoading: function($btn) {
-        $btn.prop('disabled', false);
-        $btn.find('.btn-text').removeClass('d-none');
-        $btn.find('.btn-loading').addClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', false);
+            $btn.find('.btn-text').removeClass('d-none');
+            $btn.find('.btn-loading').addClass('d-none');
+        } catch (error) {
+            console.error('Error hiding button loading:', error);
+        }
     },
 
     showSuccess: function(message) {

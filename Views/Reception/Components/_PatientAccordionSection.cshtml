@@ -53,49 +53,70 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         </div>
-        <!-- Layout بهینه: جستجو در بالا، فرم در پایین -->
+        <!-- Layout بهینه: جستجو یکپارچه در فرم -->
         <div class="row">
-            <!-- جستجوی بیمار - عرض کامل -->
+            <!-- جستجوی هوشمند - یکپارچه در فرم -->
             <div class="col-12">
-                <div class="patient-search-card">
-                    <div class="card-header">
-                        <h6 class="card-title mb-0">
+                <div class="smart-search-container">
+                    <div class="search-header">
+                        <h6 class="search-title">
                             <i class="fas fa-search me-2"></i>
-                            جستجوی بیمار
+                            جستجوی هوشمند بیمار
                         </h6>
+                        <div class="search-status" id="searchStatus">
+                            <span class="status-icon">
+                                <i class="fas fa-circle text-muted"></i>
+                            </span>
+                            <span class="status-text">آماده جستجو</span>
+                        </div>
                     </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-8">
-                                <!-- فیلد کد ملی -->
-                                <div class="form-group mb-3">
+                    <div class="search-body">
+                        <div class="row align-items-end">
+                            <div class="col-md-6">
+                                <!-- فیلد کد ملی بهینه -->
+                                <div class="form-group mb-0">
                                     <label class="form-label">
                                         <i class="fas fa-id-card me-1"></i>
                                         کد ملی <span class="text-danger">*</span>
                                     </label>
-                                    <div class="input-group">
+                                    <div class="input-group input-group-lg">
                                         @Html.TextBoxFor(m => m.NationalCode, new { 
-                                            @class = "form-control", 
+                                            @class = "form-control form-control-lg", 
                                             id = "patientNationalCode",
-                                            placeholder = "کد ملی 10 رقمی",
+                                            placeholder = "کد ملی 10 رقمی بیمار",
                                             maxlength = "10",
                                             data_validation = "national-code",
                                             data_required = "true"
                                         })
-                                        <button class="btn btn-outline-primary" type="button" id="searchByNationalCodeBtn">
-                                            <i class="fas fa-search"></i>
+                                        <button class="btn btn-primary btn-lg" type="button" id="searchByNationalCodeBtn">
+                                            <i class="fas fa-search me-1"></i>
+                                            <span class="btn-text">جستجو</span>
+                                            <span class="btn-loading d-none">
+                                                <i class="fas fa-spinner fa-spin me-1"></i>
+                                                در حال جستجو...
+                                            </span>
                                         </button>
                                     </div>
                                     <div class="invalid-feedback" id="nationalCodeError"></div>
-                                    <div class="form-text">کد ملی 10 رقمی بیمار را وارد کنید</div>
+                                    <div class="form-text">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        کد ملی 10 رقمی بیمار را وارد کنید و Enter بزنید یا روی جستجو کلیک کنید
+                                    </div>
                                 </div>
                             </div>
-                            <div class="col-md-4">
-                                <!-- نتایج جستجو -->
-                                <div class="search-results d-none" id="patientSearchResults">
-                                    <div class="alert alert-info">
-                                        <i class="fas fa-info-circle me-2"></i>
-                                        <span id="searchResultMessage">در حال جستجو...</span>
+                            <div class="col-md-6">
+                                <!-- نتایج جستجو فوری -->
+                                <div class="search-results-container">
+                                    <div class="search-results d-none" id="patientSearchResults">
+                                        <div class="result-card">
+                                            <div class="result-header">
+                                                <i class="fas fa-user-check text-success me-2"></i>
+                                                <span class="result-title">نتیجه جستجو</span>
+                                            </div>
+                                            <div class="result-body">
+                                                <span id="searchResultMessage">در حال جستجو...</span>
+                                            </div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

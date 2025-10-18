@@ -456,6 +456,9 @@ namespace ClinicApp
                 // Register User Context Service
                 container.RegisterType<IUserContextService, UserContextService>(new PerRequestLifetimeManager());
 
+                // Register Reception Services
+                container.RegisterType<IReceptionPatientService, ReceptionPatientService>(new PerRequestLifetimeManager());
+
                 // Register System Settings Service
                 container.RegisterType<ISystemSettingService, SystemSettingService>(new PerRequestLifetimeManager());
 
