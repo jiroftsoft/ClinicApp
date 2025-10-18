@@ -206,8 +206,71 @@ namespace ClinicApp.Services.Insurance
         /// <returns>وضعیت بیمه بیمار</returns>
         public async Task<ServiceResult<object>> GetPatientInsuranceStatusForReceptionAsync(int patientId)
         {
-            // TODO: پیاده‌سازی منطق دریافت وضعیت بیمه برای پذیرش
-            return ServiceResult<object>.Successful(new { PatientId = patientId, HasInsurance = true, Status = "فعال" });
+            try
+            {
+                _log.Information("🏥 دریافت وضعیت بیمه بیمار برای پذیرش: {PatientId}, کاربر: {UserName}", 
+                    patientId, _currentUserService.UserName);
+
+                // دریافت بیمه‌های فعال بیمار
+                var patientInsurances = await _patientInsuranceRepository.GetActiveByPatientIdAsync(patientId);
+                
+                if (!patientInsurances.Any())
+                {
+                    _log.Information("هیچ بیمه فعالی برای بیمار {PatientId} یافت نشد", patientId);
+                    return ServiceResult<object>.Successful(new { 
+                        PatientId = patientId, 
+                        HasInsurance = false, 
+                        Status = "بدون بیمه",
+                        PrimaryInsurance = (object)null,
+                        SupplementaryInsurance = (object)null
+                    });
+                }
+
+                // تفکیک بیمه پایه و تکمیلی
+                var primaryInsurance = patientInsurances.FirstOrDefault(pi => pi.IsPrimary);
+                var supplementaryInsurance = patientInsurances.FirstOrDefault(pi => !pi.IsPrimary);
+
+                // ساخت پاسخ کامل
+                var response = new
+                {
+                    PatientId = patientId,
+                    HasInsurance = true,
+                    Status = "فعال",
+                    PrimaryInsurance = primaryInsurance != null ? new
+                    {
+                        PatientInsuranceId = primaryInsurance.PatientInsuranceId,
+                        ProviderId = primaryInsurance.InsuranceProviderId,
+                        ProviderName = primaryInsurance.InsuranceProvider?.Name,
+                        PlanId = primaryInsurance.InsurancePlanId,
+                        PlanName = primaryInsurance.InsurancePlan?.Name,
+                        PolicyNumber = primaryInsurance.PolicyNumber,
+                        CardNumber = primaryInsurance.CardNumber,
+                        StartDate = primaryInsurance.StartDate,
+                        EndDate = primaryInsurance.EndDate,
+                        IsActive = primaryInsurance.IsActive
+                    } : null,
+                    SupplementaryInsurance = supplementaryInsurance != null ? new
+                    {
+                        PatientInsuranceId = supplementaryInsurance.PatientInsuranceId,
+                        ProviderId = supplementaryInsurance.SupplementaryInsuranceProviderId,
+                        ProviderName = supplementaryInsurance.SupplementaryInsuranceProvider?.Name,
+                        PlanId = supplementaryInsurance.SupplementaryInsurancePlanId,
+                        PlanName = supplementaryInsurance.SupplementaryInsurancePlan?.Name,
+                        PolicyNumber = supplementaryInsurance.SupplementaryPolicyNumber,
+                        StartDate = supplementaryInsurance.StartDate,
+                        EndDate = supplementaryInsurance.EndDate,
+                        IsActive = supplementaryInsurance.IsActive
+                    } : null
+                };
+
+                _log.Information("✅ وضعیت بیمه بیمار {PatientId} با موفقیت دریافت شد", patientId);
+                return ServiceResult<object>.Successful(response);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در دریافت وضعیت بیمه بیمار: {PatientId}", patientId);
+                return ServiceResult<object>.Failed("خطا در دریافت وضعیت بیمه بیمار");
+            }
         }
 
         /// <summary>
