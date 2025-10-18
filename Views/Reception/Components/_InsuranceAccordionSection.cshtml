@@ -28,6 +28,9 @@
 
     <!-- محتوای بخش -->
     <div class="section-content">
+        <!-- Hidden fields for data binding -->
+        <input type="hidden" id="patientId" name="patientId" value="@(Model?.PatientId ?? 0)">
+        
         <div class="row">
             <!-- ستون چپ: بیمه پایه -->
             <div class="col-lg-6">
@@ -44,12 +47,20 @@
                                 <i class="fas fa-building me-1"></i>
                                 سازمان بیمه <span class="text-danger">*</span>
                             </label>
-                            <select class="form-select" id="primaryInsuranceProvider">
-                                <option value="">انتخاب سازمان بیمه</option>
-                                <option value="tamin">تأمین اجتماعی</option>
-                                <option value="army">نیروهای مسلح</option>
-                                <option value="rural">روستایی</option>
-                                <option value="urban">شهری</option>
+                            <select class="form-select" id="insuranceProvider" name="insuranceProvider">
+                                <option value="">انتخاب سازمان بیمه...</option>
+                                <!-- Dynamic options loaded from API -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-list me-1"></i>
+                                طرح بیمه <span class="text-danger">*</span>
+                            </label>
+                            <select class="form-select" id="insurancePlan" name="insurancePlan">
+                                <option value="">انتخاب طرح بیمه...</option>
+                                <!-- Dynamic options loaded based on provider -->
                             </select>
                         </div>
                         
@@ -58,7 +69,23 @@
                                 <i class="fas fa-id-card me-1"></i>
                                 شماره بیمه
                             </label>
-                            <input type="text" class="form-control" id="primaryInsuranceNumber" placeholder="شماره بیمه">
+                            <input type="text" class="form-control" id="policyNumber" name="policyNumber" placeholder="شماره بیمه">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-credit-card me-1"></i>
+                                شماره کارت بیمه
+                            </label>
+                            <input type="text" class="form-control" id="cardNumber" name="cardNumber" placeholder="شماره کارت بیمه">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-calendar me-1"></i>
+                                تاریخ شروع
+                            </label>
+                            <input type="date" class="form-control" id="startDate" name="startDate">
                         </div>
                         
                         <div class="form-group">
@@ -66,7 +93,7 @@
                                 <i class="fas fa-calendar me-1"></i>
                                 تاریخ انقضا
                             </label>
-                            <input type="date" class="form-control" id="primaryInsuranceExpiry">
+                            <input type="date" class="form-control" id="endDate" name="endDate">
                         </div>
                     </div>
                 </div>
@@ -87,11 +114,20 @@
                                 <i class="fas fa-building me-1"></i>
                                 شرکت بیمه تکمیلی
                             </label>
-                            <select class="form-select" id="supplementaryInsuranceProvider">
-                                <option value="">انتخاب شرکت بیمه</option>
-                                <option value="iran">بیمه ایران</option>
-                                <option value="parsian">بیمه پارسیان</option>
-                                <option value="alborz">بیمه البرز</option>
+                            <select class="form-select" id="supplementaryProvider" name="supplementaryProvider">
+                                <option value="">انتخاب شرکت بیمه...</option>
+                                <!-- Dynamic options loaded from API -->
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-list me-1"></i>
+                                طرح بیمه تکمیلی
+                            </label>
+                            <select class="form-select" id="supplementaryPlan" name="supplementaryPlan">
+                                <option value="">انتخاب طرح بیمه...</option>
+                                <!-- Dynamic options loaded based on provider -->
                             </select>
                         </div>
                         
@@ -100,7 +136,7 @@
                                 <i class="fas fa-id-card me-1"></i>
                                 شماره بیمه تکمیلی
                             </label>
-                            <input type="text" class="form-control" id="supplementaryInsuranceNumber" placeholder="شماره بیمه تکمیلی">
+                            <input type="text" class="form-control" id="supplementaryPolicyNumber" name="supplementaryPolicyNumber" placeholder="شماره بیمه تکمیلی">
                         </div>
                         
                         <div class="form-group">
@@ -108,7 +144,7 @@
                                 <i class="fas fa-calendar me-1"></i>
                                 تاریخ انقضا
                             </label>
-                            <input type="date" class="form-control" id="supplementaryInsuranceExpiry">
+                            <input type="date" class="form-control" id="supplementaryExpiry" name="supplementaryExpiry">
                         </div>
                     </div>
                 </div>

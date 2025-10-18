@@ -280,7 +280,7 @@ namespace ClinicApp
                 },
                 constraints: new { 
                     httpMethod = new HttpMethodConstraint("GET", "POST"),
-                    action = @"^(Load|Save)$"
+                    action = @"^(Load|Save|ValidatePatientInsurance|QuickValidateInsurance|GetPatientInsuranceStatus|CalculateInsuranceShare|InquiryPatientIdentity|GetInsuranceProviders|GetInsurancePlans|GetSupplementaryInsurances|CalculateInsurance|ChangePatientInsurance)$"
                 }
             );
 

@@ -154,6 +154,11 @@ namespace ClinicApp.ViewModels.Reception
     public class InsuranceAccordionViewModel
     {
         /// <summary>
+        /// شناسه بیمار
+        /// </summary>
+        public int? PatientId { get; set; }
+
+        /// <summary>
         /// بیمه پایه
         /// </summary>
         public PrimaryInsuranceViewModel PrimaryInsurance { get; set; } = new PrimaryInsuranceViewModel();

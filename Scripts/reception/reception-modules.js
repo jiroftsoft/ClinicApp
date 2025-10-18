@@ -76,6 +76,9 @@ window.ReceptionModules.config = {
         departmentSave: '/Reception/Department/Save',
         insuranceLoad: '/Reception/Insurance/Load',
         insuranceSave: '/Reception/Insurance/Save',
+        insuranceProviders: '/Reception/Insurance/GetInsuranceProviders',
+        insurancePlans: '/Reception/Insurance/GetInsurancePlans',
+        supplementaryInsurances: '/Reception/Insurance/GetSupplementaryInsurances',
         serviceLoad: '/Reception/Service/Load',
         serviceCalculate: '/Reception/Service/Calculate',
         paymentRefresh: '/Reception/Payment/Refresh',
@@ -660,6 +663,9 @@ window.ReceptionModules.Department = {
 // INSURANCE MODULE - مدیریت بیمه
 // ========================================
 window.ReceptionModules.Insurance = {
+    // Flag to prevent duplicate loading
+    _providersLoaded: false,
+    
     init: function() {
         console.log('[ReceptionModules.Insurance] Initializing...');
         
@@ -669,30 +675,283 @@ window.ReceptionModules.Insurance = {
         // Save insurance
         $('#saveInsuranceBtn').off('click.insurance').on('click.insurance', this.handleSaveInsurance.bind(this));
         
+        // Insurance provider change event
+        $('#insuranceProvider').off('change.insurance').on('change.insurance', function() {
+            var providerId = $(this).val();
+            window.ReceptionModules.Insurance.loadInsurancePlans(providerId);
+        });
+        
+        // Load insurance providers on page load (only once)
+        if (!this._providersLoaded) {
+            this.loadInsuranceProviders();
+        }
+        
         console.log('[ReceptionModules.Insurance] Initialized successfully');
     },
 
     handleLoadInsurance: function() {
         var $btn = $(this);
+        var patientId = $('#patientId').val();
+        
+        if (!patientId || patientId <= 0) {
+            this.showError('شناسه بیمار نامعتبر است');
+            return;
+        }
+        
         this.showButtonLoading($btn);
         
-        // TODO: Implement load insurance logic
-        setTimeout(function() {
-            this.hideButtonLoading($btn);
-            this.showSuccess(window.ReceptionModules.config.messages.success.insuranceLoaded);
-        }, 1000);
+        var self = this;
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.insuranceLoad,
+            type: 'POST',
+            data: {
+                patientId: patientId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                self.hideButtonLoading($btn);
+                if (response.success) {
+                    self.displayInsuranceInfo(response.data);
+                    self.showSuccess('اطلاعات بیمه با موفقیت بارگذاری شد');
+                } else {
+                    self.showError(response.message || 'خطا در بارگذاری اطلاعات بیمه');
+                }
+            },
+            error: function(xhr, status, error) {
+                self.hideButtonLoading($btn);
+                self.showError('خطا در ارتباط با سرور: ' + error);
+            }
+        });
     },
 
     handleSaveInsurance: function() {
         var $btn = $(this);
+        var patientId = $('#patientId').val();
+        
+        if (!patientId || patientId <= 0) {
+            this.showError('شناسه بیمار نامعتبر است');
+            return;
+        }
+        
+        var insuranceData = this.collectInsuranceData();
+        if (!insuranceData) {
+            return;
+        }
+        
         this.showButtonLoading($btn);
         
-        // TODO: Implement save insurance logic
-        setTimeout(function() {
-            this.hideButtonLoading($btn);
-            this.showSuccess(window.ReceptionModules.config.messages.success.insuranceSaved);
-            window.ReceptionModules.Accordion.setState('insuranceSection', 'completed');
-        }, 1000);
+        var self = this;
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.insuranceSave,
+            type: 'POST',
+            data: $.extend(insuranceData, {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            }),
+            success: function(response) {
+                self.hideButtonLoading($btn);
+                if (response.success) {
+                    self.showSuccess('اطلاعات بیمه با موفقیت ذخیره شد');
+                    window.ReceptionModules.Accordion.setState('insuranceSection', 'completed');
+                } else {
+                    self.showError(response.message || 'خطا در ذخیره اطلاعات بیمه');
+                }
+            },
+            error: function(xhr, status, error) {
+                self.hideButtonLoading($btn);
+                self.showError('خطا در ارتباط با سرور: ' + error);
+            }
+        });
+    },
+
+    // Load insurance providers
+    loadInsuranceProviders: function() {
+        var self = this;
+        
+        // Prevent duplicate loading
+        if (this._providersLoaded) {
+            console.log('[ReceptionModules.Insurance] Providers already loaded, skipping...');
+            return;
+        }
+        
+        this._providersLoaded = true;
+        
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.insuranceProviders,
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log('[ReceptionModules.Insurance] API Response:', response);
+                
+                if (response.success) {
+                    console.log('[ReceptionModules.Insurance] Response success:', response.success);
+                    console.log('[ReceptionModules.Insurance] Data received:', response.data);
+                    
+                    self.populateInsuranceProviders(response.data);
+                    console.log('[ReceptionModules.Insurance] Providers loaded successfully');
+                    
+                    // Show success message
+                    self.showSuccess('ارائه‌دهندگان بیمه با موفقیت بارگذاری شدند');
+                } else {
+                    console.log('[ReceptionModules.Insurance] Response failed:', response.message);
+                    self.showError(response.message || 'خطا در بارگذاری ارائه‌دهندگان بیمه');
+                    self._providersLoaded = false; // Reset flag on error
+                }
+            },
+            error: function(xhr, status, error) {
+                self.showError('خطا در ارتباط با سرور: ' + error);
+                self._providersLoaded = false; // Reset flag on error
+            }
+        });
+    },
+
+    // Load insurance plans by provider
+    loadInsurancePlans: function(providerId) {
+        if (!providerId || providerId <= 0) {
+            this.clearInsurancePlans();
+            return;
+        }
+        
+        var self = this;
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.insurancePlans,
+            type: 'POST',
+            data: {
+                providerId: providerId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                if (response.success) {
+                    self.populateInsurancePlans(response.data);
+                } else {
+                    self.showError(response.message || 'خطا در بارگذاری طرح‌های بیمه');
+                }
+            },
+            error: function(xhr, status, error) {
+                self.showError('خطا در ارتباط با سرور: ' + error);
+            }
+        });
+    },
+
+    // Display insurance information
+    displayInsuranceInfo: function(insuranceData) {
+        if (!insuranceData) return;
+        
+        // Populate basic insurance info
+        if (insuranceData.ProviderName) {
+            $('#insuranceProvider').val(insuranceData.ProviderId);
+            // Don't trigger change event to prevent duplicate loading
+            // $('#insuranceProvider').trigger('change');
+        }
+        
+        if (insuranceData.PlanName) {
+            $('#insurancePlan').val(insuranceData.PlanId);
+        }
+        
+        if (insuranceData.PolicyNumber) {
+            $('#policyNumber').val(insuranceData.PolicyNumber);
+        }
+        
+        if (insuranceData.CardNumber) {
+            $('#cardNumber').val(insuranceData.CardNumber);
+        }
+        
+        // Populate supplementary insurance if exists
+        if (insuranceData.SupplementaryInsurance) {
+            this.displaySupplementaryInsurance(insuranceData.SupplementaryInsurance);
+        }
+    },
+
+    // Populate insurance providers dropdown
+    populateInsuranceProviders: function(providers) {
+        try {
+            console.log('[ReceptionModules.Insurance] populateInsuranceProviders called with:', providers);
+            
+            var $select = $('#insuranceProvider');
+            console.log('[ReceptionModules.Insurance] Select element found:', $select.length);
+            
+            if ($select.length === 0) {
+                console.error('[ReceptionModules.Insurance] Insurance provider select element not found!');
+                this.showError('عنصر انتخاب ارائه‌دهنده بیمه یافت نشد');
+                return;
+            }
+            
+            $select.empty().append('<option value="">انتخاب ارائه‌دهنده بیمه...</option>');
+            
+            if (providers && providers.length > 0) {
+                console.log('[ReceptionModules.Insurance] Adding providers:', providers.length);
+                $.each(providers, function(index, provider) {
+                    console.log('[ReceptionModules.Insurance] Adding provider:', provider.Name, 'ID:', provider.InsuranceProviderId);
+                    $select.append('<option value="' + provider.InsuranceProviderId + '">' + provider.Name + '</option>');
+                });
+                console.log('[ReceptionModules.Insurance] Providers populated successfully');
+            } else {
+                console.log('[ReceptionModules.Insurance] No providers to populate');
+                this.showWarning('هیچ ارائه‌دهنده بیمه‌ای یافت نشد');
+            }
+        } catch (error) {
+            console.error('[ReceptionModules.Insurance] Error in populateInsuranceProviders:', error);
+            this.showError('خطا در نمایش ارائه‌دهندگان بیمه: ' + error.message);
+        }
+    },
+
+    // Populate insurance plans dropdown
+    populateInsurancePlans: function(plans) {
+        var $select = $('#insurancePlan');
+        $select.empty().append('<option value="">انتخاب طرح بیمه...</option>');
+        
+        if (plans && plans.length > 0) {
+            $.each(plans, function(index, plan) {
+                $select.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
+            });
+        }
+    },
+
+    // Clear insurance plans dropdown
+    clearInsurancePlans: function() {
+        $('#insurancePlan').empty().append('<option value="">انتخاب طرح بیمه...</option>');
+    },
+
+    // Collect insurance data from form
+    collectInsuranceData: function() {
+        var patientId = $('#patientId').val();
+        var providerId = $('#insuranceProvider').val();
+        var planId = $('#insurancePlan').val();
+        var policyNumber = $('#policyNumber').val();
+        var cardNumber = $('#cardNumber').val();
+        
+        if (!patientId || patientId <= 0) {
+            this.showError('شناسه بیمار الزامی است');
+            return null;
+        }
+        
+        if (!providerId || providerId <= 0) {
+            this.showError('انتخاب ارائه‌دهنده بیمه الزامی است');
+            return null;
+        }
+        
+        if (!planId || planId <= 0) {
+            this.showError('انتخاب طرح بیمه الزامی است');
+            return null;
+        }
+        
+        return {
+            patientId: patientId,
+            providerId: providerId,
+            planId: planId,
+            policyNumber: policyNumber,
+            cardNumber: cardNumber
+        };
+    },
+
+    // Display supplementary insurance
+    displaySupplementaryInsurance: function(supplementaryData) {
+        if (supplementaryData && supplementaryData.ProviderName) {
+            $('#supplementaryProvider').val(supplementaryData.ProviderId);
+            $('#supplementaryPlan').val(supplementaryData.PlanId);
+            $('#supplementaryPolicyNumber').val(supplementaryData.PolicyNumber);
+        }
     },
 
     showButtonLoading: function($btn) {
@@ -726,7 +985,39 @@ window.ReceptionModules.Insurance = {
     },
 
     showSuccess: function(message) {
-        console.log('Success:', message);
+        // نمایش موفقیت با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showSuccess(message);
+        } else {
+            console.log('Success:', message);
+        }
+    },
+
+    showError: function(message) {
+        // نمایش خطا با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showError(message);
+        } else {
+            console.error('Error:', message);
+        }
+    },
+
+    showInfo: function(message) {
+        // نمایش اطلاعات با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showInfo(message);
+        } else {
+            console.log('Info:', message);
+        }
+    },
+
+    showWarning: function(message) {
+        // نمایش هشدار با Toastr
+        if (window.ReceptionToastr) {
+            window.ReceptionToastr.helpers.showWarning(message);
+        } else {
+            console.warn('Warning:', message);
+        }
     }
 };
 

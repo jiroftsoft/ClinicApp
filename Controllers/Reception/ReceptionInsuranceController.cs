@@ -18,24 +18,36 @@ namespace ClinicApp.Controllers.Reception
     [RoutePrefix("Reception/Insurance")]
     public class ReceptionInsuranceController : BaseController
     {
-        private readonly IReceptionService _receptionService;
         private readonly IPatientInsuranceService _patientInsuranceService;
         private readonly IPatientInsuranceValidationService _patientInsuranceValidationService;
         private readonly ICombinedInsuranceCalculationService _combinedInsuranceCalculationService;
+        private readonly IInsuranceProviderService _insuranceProviderService;
+        private readonly IInsurancePlanService _insurancePlanService;
+        private readonly ISupplementaryInsuranceService _supplementaryInsuranceService;
+        private readonly IReceptionService _receptionService;
+        private readonly IInsuranceCalculationService _insuranceCalculationService;
         private readonly ICurrentUserService _currentUserService;
 
         public ReceptionInsuranceController(
-            IReceptionService receptionService,
             IPatientInsuranceService patientInsuranceService,
             IPatientInsuranceValidationService patientInsuranceValidationService,
             ICombinedInsuranceCalculationService combinedInsuranceCalculationService,
+            IInsuranceProviderService insuranceProviderService,
+            IInsurancePlanService insurancePlanService,
+            ISupplementaryInsuranceService supplementaryInsuranceService,
+            IReceptionService receptionService,
+            IInsuranceCalculationService insuranceCalculationService,
             ICurrentUserService currentUserService,
             ILogger logger) : base(logger)
         {
-            _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
             _patientInsuranceService = patientInsuranceService ?? throw new ArgumentNullException(nameof(patientInsuranceService));
             _patientInsuranceValidationService = patientInsuranceValidationService ?? throw new ArgumentNullException(nameof(patientInsuranceValidationService));
             _combinedInsuranceCalculationService = combinedInsuranceCalculationService ?? throw new ArgumentNullException(nameof(combinedInsuranceCalculationService));
+            _insuranceProviderService = insuranceProviderService ?? throw new ArgumentNullException(nameof(insuranceProviderService));
+            _insurancePlanService = insurancePlanService ?? throw new ArgumentNullException(nameof(insurancePlanService));
+            _supplementaryInsuranceService = supplementaryInsuranceService ?? throw new ArgumentNullException(nameof(supplementaryInsuranceService));
+            _receptionService = receptionService ?? throw new ArgumentNullException(nameof(receptionService));
+            _insuranceCalculationService = insuranceCalculationService ?? throw new ArgumentNullException(nameof(insuranceCalculationService));
             _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
         }
 
@@ -268,6 +280,7 @@ namespace ClinicApp.Controllers.Reception
                     return Json(new { success = false, message = "کد ملی الزامی است" });
                 }
 
+                // استعلام هویت بیمار از سیستم خارجی
                 var result = await _receptionService.InquiryPatientIdentityAsync(nationalCode, birthDate);
                 
                 if (!result.Success)
@@ -293,33 +306,97 @@ namespace ClinicApp.Controllers.Reception
         #region Insurance Management
 
         /// <summary>
-        /// دریافت بیمه‌های پایه و تکمیلی
+        /// دریافت ارائه‌دهندگان بیمه - Production Ready
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<JsonResult> GetInsuranceProviders()
         {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
             try
             {
-                _logger.Information("🏥 دریافت بیمه‌های پایه و تکمیلی, کاربر: {UserName}", _currentUserService.UserName);
+                _logger.Information("[{RequestId}] 🏥 دریافت ارائه‌دهندگان بیمه، کاربر: {UserName}", 
+                    requestId, _currentUserService.UserName);
 
-                var result = await _receptionService.GetInsuranceProvidersAsync();
+                // دریافت ارائه‌دهندگان بیمه فعال از دیتابیس
+                var result = await _insuranceProviderService.GetProvidersAsync("", 1, 100);
                 
-                if (!result.Success)
+                if (result.Success)
                 {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ ارائه‌دهندگان بیمه با موفقیت دریافت شدند در {Duration}ms", 
+                        requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "ارائه‌دهندگان بیمه با موفقیت دریافت شدند"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در دریافت ارائه‌دهندگان بیمه: {Error}", 
+                        requestId, result.Message);
                     return Json(new { success = false, message = result.Message });
                 }
-
-                return Json(new { 
-                    success = true, 
-                    data = result.Data,
-                    message = "بیمه‌ها با موفقیت دریافت شدند"
-                });
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در دریافت بیمه‌ها");
-                return Json(new { success = false, message = "خطا در دریافت بیمه‌ها" });
+                _logger.Error(ex, "[{RequestId}] خطا در دریافت ارائه‌دهندگان بیمه", requestId);
+                return Json(new { success = false, message = "خطا در دریافت ارائه‌دهندگان بیمه. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه بر اساس ارائه‌دهنده - Production Ready
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetInsurancePlans(int providerId)
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🏥 دریافت طرح‌های بیمه برای ارائه‌دهنده: {ProviderId}, کاربر: {UserName}", 
+                    requestId, providerId, _currentUserService.UserName);
+
+                if (providerId <= 0)
+                {
+                    _logger.Warning("[{RequestId}] شناسه ارائه‌دهنده بیمه نامعتبر: {ProviderId}", requestId, providerId);
+                    return Json(new { success = false, message = "شناسه ارائه‌دهنده بیمه نامعتبر است" });
+                }
+
+                // دریافت طرح‌های بیمه فعال از دیتابیس
+                var result = await _insurancePlanService.GetPlansByProviderAsync(providerId);
+                
+                if (result.Success)
+                {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ طرح‌های بیمه با موفقیت دریافت شدند در {Duration}ms", 
+                        requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "طرح‌های بیمه با موفقیت دریافت شدند"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در دریافت طرح‌های بیمه: {Error}", 
+                        requestId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] خطا در دریافت طرح‌های بیمه برای ارائه‌دهنده: {ProviderId}", 
+                    requestId, providerId);
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه. لطفاً دوباره تلاش کنید." });
             }
         }
 
@@ -335,7 +412,8 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Information("🔄 دریافت بیمه‌های تکمیلی برای بیمه پایه: {BaseInsuranceId}, کاربر: {UserName}", 
                     baseInsuranceId, _currentUserService.UserName);
 
-                var result = await _receptionService.GetSupplementaryInsurancesAsync(baseInsuranceId);
+                // دریافت بیمه‌های تکمیلی بر اساس بیمه پایه
+                var result = await _patientInsuranceService.GetSupplementaryInsurancesByPatientAsync(baseInsuranceId);
                 
                 if (!result.Success)
                 {
@@ -367,7 +445,9 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Information("💰 محاسبه بیمه: پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, خدمت {ServiceId}, کاربر: {UserName}", 
                     baseInsuranceId, supplementaryInsuranceId, serviceId, _currentUserService.UserName);
 
-                var result = await _receptionService.CalculateInsuranceAsync(baseInsuranceId, supplementaryInsuranceId, serviceId);
+                // محاسبه سهم بیمه و بیمار
+                // TODO: پیاده‌سازی محاسبه سهم بیمه با سرویس مناسب
+                var result = ServiceResult<object>.Failed("محاسبه سهم بیمه در حال پیاده‌سازی است");
                 
                 if (!result.Success)
                 {
@@ -400,7 +480,9 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Information("🔄 تغییر بیمه بیمار: {PatientId}, پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, کاربر: {UserName}", 
                     patientId, baseInsuranceId, supplementaryInsuranceId, _currentUserService.UserName);
 
-                var result = await _receptionService.ChangePatientInsuranceAsync(patientId, baseInsuranceId, supplementaryInsuranceId);
+                // تغییر بیمه بیمار
+                // TODO: پیاده‌سازی تغییر بیمه بیمار با سرویس مناسب
+                var result = ServiceResult<object>.Failed("تغییر بیمه بیمار در حال پیاده‌سازی است");
                 
                 if (!result.Success)
                 {

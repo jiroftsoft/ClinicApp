@@ -8,6 +8,11 @@ namespace ClinicApp.ViewModels.Reception
     public class ReceptionInsuranceViewModel
     {
         /// <summary>
+        /// شناسه بیمار
+        /// </summary>
+        public int PatientId { get; set; }
+
+        /// <summary>
         /// شناسه بیمه بیمار
         /// </summary>
         public int PatientInsuranceId { get; set; }
