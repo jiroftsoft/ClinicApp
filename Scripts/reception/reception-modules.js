@@ -18,11 +18,12 @@ window.ReceptionModules = window.ReceptionModules || {};
 // ========================================
 window.ReceptionModules.utils = {
     debounce: function(func, wait) {
-        let timeout;
-        return function executedFunction(...args) {
-            const later = () => {
+        var timeout;
+        return function executedFunction() {
+            var args = Array.prototype.slice.call(arguments);
+            var later = function() {
                 clearTimeout(timeout);
-                func(...args);
+                func.apply(null, args);
             };
             clearTimeout(timeout);
             timeout = setTimeout(later, wait);
@@ -30,14 +31,14 @@ window.ReceptionModules.utils = {
     },
     
     throttle: function(func, limit) {
-        let inThrottle;
+        var inThrottle;
         return function() {
-            const args = arguments;
-            const context = this;
+            var args = arguments;
+            var context = this;
             if (!inThrottle) {
                 func.apply(context, args);
                 inThrottle = true;
-                setTimeout(() => inThrottle = false, limit);
+                setTimeout(function() { inThrottle = false; }, limit);
             }
         };
     },
@@ -49,10 +50,10 @@ window.ReceptionModules.utils = {
     validateNationalCode: function(code) {
         if (!/^\d{10}$/.test(code)) return false;
         
-        const digits = code.split('').map(Number);
-        const checkDigit = digits[9];
-        const sum = digits.slice(0, 9).reduce((acc, digit, index) => acc + digit * (10 - index), 0);
-        const remainder = sum % 11;
+        var digits = code.split('').map(Number);
+        var checkDigit = digits[9];
+        var sum = digits.slice(0, 9).reduce(function(acc, digit, index) { return acc + digit * (10 - index); }, 0);
+        var remainder = sum % 11;
         
         return (remainder < 2 && checkDigit === remainder) || (remainder >= 2 && checkDigit === 11 - remainder);
     },
@@ -103,7 +104,13 @@ window.ReceptionModules.config = {
         error: {
             patientNotFound: 'بیمار یافت نشد',
             serverError: 'خطا در ارتباط با سرور',
-            timeoutError: 'زمان اتصال به سرور تمام شد'
+            timeoutError: 'زمان اتصال به سرور تمام شد',
+            networkError: 'خطا در اتصال به شبکه',
+            insuranceLoadError: 'خطا در بارگذاری اطلاعات بیمه'
+        },
+        info: {
+            patientSearching: 'در حال جستجوی بیمار...',
+            insuranceLoading: 'در حال بارگذاری اطلاعات بیمه...'
         }
     },
     
@@ -139,11 +146,12 @@ window.ReceptionModules.Core = {
     // Utility Functions
     utils: {
         debounce: function(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
+            var timeout;
+            return function executedFunction() {
+                var args = Array.prototype.slice.call(arguments);
+                var later = function() {
                     clearTimeout(timeout);
-                    func(...args);
+                    func.apply(null, args);
                 };
                 clearTimeout(timeout);
                 timeout = setTimeout(later, wait);
@@ -151,13 +159,13 @@ window.ReceptionModules.Core = {
         },
         
         throttle: function(func, limit) {
-            let inThrottle;
+            var inThrottle;
             return function() {
-                const args = arguments;
+                var args = arguments;
                 if (!inThrottle) {
                     func.apply(this, args);
                     inThrottle = true;
-                    setTimeout(() => inThrottle = false, limit);
+                    setTimeout(function() { inThrottle = false; }, limit);
                 }
             };
         }
@@ -174,8 +182,8 @@ window.ReceptionModules.Accordion = {
         
         // Accordion click handlers
         $('.accordion-section .section-header').off('click.accordion').on('click.accordion', function() {
-            const $section = $(this).closest('.accordion-section');
-            const $content = $section.find('.section-content');
+            var $section = $(this).closest('.accordion-section');
+            var $content = $section.find('.section-content');
             
             // Toggle active state
             if ($section.hasClass('active')) {
@@ -201,7 +209,7 @@ window.ReceptionModules.Accordion = {
 
     // Section state management
     setState: function(sectionId, state) {
-        const $section = $(`#${sectionId}`);
+        var $section = $('#' + sectionId);
         $section.removeClass('completed in-progress error');
         $section.addClass(state);
         
@@ -211,9 +219,9 @@ window.ReceptionModules.Accordion = {
 
     // Update progress bar
     updateProgress: function() {
-        const completedSections = $('.accordion-section.completed').length;
-        const totalSections = $('.accordion-section').length;
-        const percentage = Math.round((completedSections / totalSections) * 100);
+        var completedSections = $('.accordion-section.completed').length;
+        var totalSections = $('.accordion-section').length;
+        var percentage = Math.round((completedSections / totalSections) * 100);
         
         $('#completedSections').text(completedSections);
         $('#totalSections').text(totalSections);
@@ -231,7 +239,7 @@ window.ReceptionModules.Patient = {
         
         // National Code validation
         $('#patientNationalCode').on('input', window.ReceptionModules.utils.debounce(function() {
-            const value = $(this).val();
+            var value = $(this).val() || '';
                 if (value.length === 10) {
                     if (window.ReceptionModules.Patient.validateNationalCode(value)) {
                         $(this).removeClass('is-invalid').addClass('is-valid');
@@ -250,7 +258,7 @@ window.ReceptionModules.Patient = {
         $('#searchPatientBtn').off('click.patient').on('click.patient', window.ReceptionModules.Patient.handleSearchPatient);
         
         // Enter key support for national code
-        $('#patientNationalCode').off('keypress.patient').on('keypress.patient', (e) => {
+        $('#patientNationalCode').off('keypress.patient').on('keypress.patient', function(e) {
             if (e.which === 13) { // Enter key
                 window.ReceptionModules.Patient.handleSearchPatient.call($('#searchPatientBtn')[0]);
             }
@@ -265,17 +273,22 @@ window.ReceptionModules.Patient = {
     validateNationalCode: function(nationalCode) {
         if (!nationalCode || nationalCode.length !== 10) return false;
         
-        const digits = nationalCode.split('').map(Number);
-        const checkDigit = digits[9];
-        const sum = digits.slice(0, 9).reduce((acc, digit, index) => acc + digit * (10 - index), 0);
-        const remainder = sum % 11;
-        
-        return remainder < 2 ? checkDigit === remainder : checkDigit === 11 - remainder;
+        try {
+            var digits = nationalCode.split('').map(Number);
+            var checkDigit = digits[9];
+            var sum = digits.slice(0, 9).reduce(function(acc, digit, index) { return acc + digit * (10 - index); }, 0);
+            var remainder = sum % 11;
+            
+            return remainder < 2 ? checkDigit === remainder : checkDigit === 11 - remainder;
+        } catch (error) {
+            console.error('Error validating national code:', error);
+            return false;
+        }
     },
 
     handleSearchPatient: function() {
-        const $btn = $(this);
-        const nationalCode = $('#patientNationalCode').val().trim();
+        var $btn = $(this);
+        var nationalCode = ($('#patientNationalCode').val() || '').trim();
         
         // اعتبارسنجی اولیه
         if (!nationalCode) {
@@ -308,7 +321,7 @@ window.ReceptionModules.Patient = {
             dataType: 'json',
             timeout: 15000,
             cache: false,
-            success: (response) => {
+            success: function(response) {
                 window.ReceptionModules.Patient.hideButtonLoading($btn);
                 
                 if (response.success && response.data) {
@@ -325,7 +338,7 @@ window.ReceptionModules.Patient = {
                     window.ReceptionModules.Patient.showError(response.message || window.ReceptionModules.config.messages.error.patientNotFound);
                 }
             },
-            error: (xhr, status, error) => {
+            error: function(xhr, status, error) {
                 window.ReceptionModules.Patient.hideButtonLoading($btn);
                 
                 if (status === 'timeout') {
@@ -340,25 +353,34 @@ window.ReceptionModules.Patient = {
     },
 
     handleSavePatient: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         window.ReceptionModules.Patient.showButtonLoading($btn);
         
         // TODO: Implement save patient logic
-        setTimeout(() => {
+        setTimeout(function() {
             window.ReceptionModules.Patient.hideButtonLoading($btn);
             window.ReceptionModules.Patient.showSuccess(window.ReceptionModules.config.messages.success.patientSaved);
         }, 1000);
     },
 
     displayPatientInfo: function(patientData) {
-        $('#patientFirstName').val(patientData.firstName || '');
-        $('#patientLastName').val(patientData.lastName || '');
-        $('#patientFatherName').val(patientData.fatherName || ''); // اضافه شده
-        $('#patientBirthDate').val(patientData.birthDate || '');
-        $('#patientAge').val(patientData.age || ''); // اضافه شده
-        $('#patientGender').val(patientData.gender || '');
-        $('#patientPhone').val(patientData.phoneNumber || '');
-        $('#patientAddress').val(patientData.address || '');
+        if (!patientData) {
+            console.error('Patient data is null or undefined');
+            return;
+        }
+        
+        try {
+            $('#patientFirstName').val(patientData.firstName || '');
+            $('#patientLastName').val(patientData.lastName || '');
+            $('#patientFatherName').val(patientData.fatherName || ''); // اضافه شده
+            $('#patientBirthDate').val(patientData.birthDate || '');
+            $('#patientAge').val(patientData.age || ''); // اضافه شده
+            $('#patientGender').val(patientData.gender || '');
+            $('#patientPhone').val(patientData.phoneNumber || '');
+            $('#patientAddress').val(patientData.address || '');
+        } catch (error) {
+            console.error('Error displaying patient info:', error);
+        }
     },
 
     loadPatientInsurance: function(patientId) {
@@ -379,7 +401,7 @@ window.ReceptionModules.Patient = {
             dataType: 'json',
             timeout: 10000,
             cache: false,
-            success: (response) => {
+            success: function(response) {
                 if (response.success && response.data) {
                     window.ReceptionModules.Patient.displayInsuranceInfo(response.data);
                     window.ReceptionModules.Patient.showSuccess(window.ReceptionModules.config.messages.success.insuranceLoaded);
@@ -387,7 +409,7 @@ window.ReceptionModules.Patient = {
                     window.ReceptionModules.Patient.showWarning(response.message || 'اطلاعات بیمه یافت نشد');
                 }
             },
-            error: (xhr, status, error) => {
+            error: function(xhr, status, error) {
                 console.error('Error loading patient insurance:', error);
                 window.ReceptionModules.Patient.showError(window.ReceptionModules.config.messages.error.insuranceLoadError);
             }
@@ -395,28 +417,55 @@ window.ReceptionModules.Patient = {
     },
 
     displayInsuranceInfo: function(insuranceData) {
-        // نمایش اطلاعات بیمه در بخش مربوطه
-        if (insuranceData.primaryInsurance) {
-            $('#primaryInsuranceName').val(insuranceData.primaryInsurance.name || '');
-            $('#primaryInsuranceNumber').val(insuranceData.primaryInsurance.number || '');
+        if (!insuranceData) {
+            console.error('Insurance data is null or undefined');
+            return;
         }
         
-        if (insuranceData.supplementaryInsurance) {
-            $('#supplementaryInsuranceName').val(insuranceData.supplementaryInsurance.name || '');
-            $('#supplementaryInsuranceNumber').val(insuranceData.supplementaryInsurance.number || '');
+        try {
+            // نمایش اطلاعات بیمه در بخش مربوطه
+            if (insuranceData.primaryInsurance) {
+                $('#primaryInsuranceName').val(insuranceData.primaryInsurance.name || '');
+                $('#primaryInsuranceNumber').val(insuranceData.primaryInsurance.number || '');
+            }
+            
+            if (insuranceData.supplementaryInsurance) {
+                $('#supplementaryInsuranceName').val(insuranceData.supplementaryInsurance.name || '');
+                $('#supplementaryInsuranceNumber').val(insuranceData.supplementaryInsurance.number || '');
+            }
+        } catch (error) {
+            console.error('Error displaying insurance info:', error);
         }
     },
 
     showButtonLoading: function($btn) {
-        $btn.prop('disabled', true);
-        $btn.find('.btn-text').addClass('d-none');
-        $btn.find('.btn-loading').removeClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', true);
+            $btn.find('.btn-text').addClass('d-none');
+            $btn.find('.btn-loading').removeClass('d-none');
+        } catch (error) {
+            console.error('Error showing button loading:', error);
+        }
     },
 
     hideButtonLoading: function($btn) {
-        $btn.prop('disabled', false);
-        $btn.find('.btn-text').removeClass('d-none');
-        $btn.find('.btn-loading').addClass('d-none');
+        if (!$btn || $btn.length === 0) {
+            console.error('Button element is null or undefined');
+            return;
+        }
+        
+        try {
+            $btn.prop('disabled', false);
+            $btn.find('.btn-text').removeClass('d-none');
+            $btn.find('.btn-loading').addClass('d-none');
+        } catch (error) {
+            console.error('Error hiding button loading:', error);
+        }
     },
 
     showError: function(message) {
@@ -473,22 +522,22 @@ window.ReceptionModules.Department = {
     },
 
     handleLoadDepartments: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement load departments logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.departmentsLoaded);
         }, 1000);
     },
 
     handleSaveDepartment: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement save department logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.departmentSaved);
             window.ReceptionModules.Accordion.setState('departmentSection', 'completed');
@@ -530,22 +579,22 @@ window.ReceptionModules.Insurance = {
     },
 
     handleLoadInsurance: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement load insurance logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.insuranceLoaded);
         }, 1000);
     },
 
     handleSaveInsurance: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement save insurance logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.insuranceSaved);
             window.ReceptionModules.Accordion.setState('insuranceSection', 'completed');
@@ -586,22 +635,22 @@ window.ReceptionModules.Service = {
     },
 
     handleLoadServices: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement load services logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.servicesLoaded);
         }, 1000);
     },
 
     handleCalculateServices: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement calculate services logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.servicesCalculated);
             window.ReceptionModules.Accordion.setState('serviceSection', 'completed');
@@ -642,22 +691,22 @@ window.ReceptionModules.Payment = {
     },
 
     handleRefreshPayment: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement refresh payment logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.paymentRefreshed);
         }, 1000);
     },
 
     handleProcessPayment: function() {
-        const $btn = $(this);
+        var $btn = $(this);
         this.showButtonLoading($btn);
         
         // TODO: Implement process payment logic
-        setTimeout(() => {
+        setTimeout(function() {
             this.hideButtonLoading($btn);
             this.showSuccess(window.ReceptionModules.config.messages.success.paymentProcessed);
             window.ReceptionModules.Accordion.setState('paymentSection', 'completed');
@@ -710,11 +759,11 @@ window.ReceptionModules.RealTime = {
     enableRealTimeValidation: function() {
         // Real-time validation for all inputs with data-validation attribute
         $('[data-validation]').on('input', function() {
-            const $input = $(this);
-            const validationType = $input.attr('data-validation');
+            var $input = $(this);
+            var validationType = $input.attr('data-validation');
             
             if (validationType === 'national-code') {
-                const value = $input.val();
+                var value = $input.val();
                 if (value.length === 10) {
                     // TODO: Implement national code validation
                 }
@@ -724,7 +773,7 @@ window.ReceptionModules.RealTime = {
 
     enableAutoRefresh: function() {
         // Auto-refresh patient data every 30 seconds
-        setInterval(() => {
+        setInterval(function() {
             if ($('#patientAccordionSection').is(':visible')) {
                 console.log('[Realtime] Auto-refreshing patient data...');
             }

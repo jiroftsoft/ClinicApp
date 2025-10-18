@@ -31,6 +31,14 @@
                     در حال محاسبه...
                 </span>
             </button>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="saveServicesBtn">
+                <i class="fas fa-save me-1"></i>
+                <span class="btn-text">ذخیره خدمات</span>
+                <span class="btn-loading d-none">
+                    <i class="fas fa-spinner fa-spin me-1"></i>
+                    در حال ذخیره...
+                </span>
+            </button>
         </div>
     </div>
 
@@ -55,8 +63,18 @@
                             <input type="text" class="form-control" id="serviceSearch" placeholder="نام خدمت را وارد کنید...">
                         </div>
                         
-                        <div class="services-list" id="servicesList">
-                            <!-- خدمات به صورت پویا لود می‌شوند -->
+                        <div class="form-group">
+                            <label class="form-label">
+                                <i class="fas fa-stethoscope me-1"></i>
+                                انتخاب خدمت
+                            </label>
+                            <select class="form-select" id="serviceSelect" data-placeholder="انتخاب خدمت">
+                                <option value="">انتخاب کنید</option>
+                            </select>
+                        </div>
+                        
+                        <div class="services-list" id="serviceList">
+                            <!-- خدمات انتخاب شده -->
                         </div>
                     </div>
                 </div>

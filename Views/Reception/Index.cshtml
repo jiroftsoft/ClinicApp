@@ -262,6 +262,9 @@
     @Scripts.Render("~/bundles/toastr")
     @Scripts.Render("~/bundles/reception-toastr")
     @Scripts.Render("~/bundles/reception/js")
+    @Scripts.Render("~/bundles/reception-core")
+    @Scripts.Render("~/bundles/reception-modules")
+    @Scripts.Render("~/bundles/reception-main")
     <script>
         $(document).ready(function () {
             // تاخیر برای اطمینان از بارگذاری کامل
@@ -276,9 +279,16 @@
                     console.error('Reception Index: ReceptionToastr not found');
                 }
                 
-                // Initialize centralized reception modules
+                // Initialize new modular architecture
+                if (typeof window.ReceptionMainModule !== 'undefined') {
+                    console.log('Reception Index: Main Module already initialized');
+                } else {
+                    console.error('Reception Index: ReceptionMainModule not found');
+                }
+                
+                // Initialize legacy modules for backward compatibility
                 if (typeof window.ReceptionModules !== 'undefined') {
-                    console.log('Reception Index: Initializing Reception Modules...');
+                    console.log('Reception Index: Initializing Legacy Reception Modules...');
                     window.ReceptionModules.initAll();
                 } else {
                     console.error('Reception Index: ReceptionModules not found');

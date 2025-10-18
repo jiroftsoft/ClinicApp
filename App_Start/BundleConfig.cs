@@ -7,6 +7,8 @@ namespace ClinicApp
     {
         public static void RegisterBundles(BundleCollection bundles)
         {
+            // Disable minification for debugging
+            BundleTable.EnableOptimizations = false;
                     bundles.Add(new ScriptBundle("~/bundles/jquery").Include(
             "~/Scripts/jquery-3.7.1.min.js",
             "~/Content/js/jquery-protection.js"));
@@ -83,6 +85,24 @@ namespace ClinicApp
             // Reception Toastr Service Bundle
             bundles.Add(new ScriptBundle("~/bundles/reception-toastr").Include(
                 "~/Scripts/reception/reception-toastr-service.js"));
+
+            // Reception Core Modules Bundle
+            bundles.Add(new ScriptBundle("~/bundles/reception-core").Include(
+                "~/Scripts/reception/core/event-bus.js",
+                "~/Scripts/reception/core/error-handler.js",
+                "~/Scripts/reception/core/reception-coordinator.js"));
+
+            // Reception Feature Modules Bundle
+            bundles.Add(new ScriptBundle("~/bundles/reception-modules").Include(
+                "~/Scripts/reception/modules/patient-search.js",
+                "~/Scripts/reception/modules/patient-insurance.js",
+                "~/Scripts/reception/modules/department-selection.js",
+                "~/Scripts/reception/modules/service-calculation.js",
+                "~/Scripts/reception/modules/payment-processing.js"));
+
+            // Reception Main Module Bundle
+            bundles.Add(new ScriptBundle("~/bundles/reception-main").Include(
+                "~/Scripts/reception/reception-main.js"));
 
             // FIX: مطابق با VIEW_OPTIMIZATION_CONTRACT - اضافه کردن Bundle های پزشکی
             // Medical Environment CSS Bundle

@@ -31,6 +31,14 @@
                     در حال پردازش...
                 </span>
             </button>
+            <button type="button" class="btn btn-outline-primary btn-sm" id="savePaymentBtn">
+                <i class="fas fa-save me-1"></i>
+                <span class="btn-text">ذخیره پرداخت</span>
+                <span class="btn-loading d-none">
+                    <i class="fas fa-spinner fa-spin me-1"></i>
+                    در حال ذخیره...
+                </span>
+            </button>
         </div>
     </div>
 
@@ -52,22 +60,13 @@
                                 <i class="fas fa-credit-card me-1"></i>
                                 نوع پرداخت <span class="text-danger">*</span>
                             </label>
-                            <div class="payment-method-options">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" id="onlinePayment" value="online">
-                                    <label class="form-check-label" for="onlinePayment">
-                                        <i class="fas fa-credit-card me-2"></i>
-                                        پرداخت آنلاین
-                                    </label>
-                                </div>
-                                <div class="form-check">
-                                    <input class="form-check-input" type="radio" name="paymentMethod" id="cashPayment" value="cash">
-                                    <label class="form-check-label" for="cashPayment">
-                                        <i class="fas fa-money-bill-wave me-2"></i>
-                                        پرداخت نقدی
-                                    </label>
-                                </div>
-                            </div>
+                            <select class="form-select" id="paymentMethod" name="paymentMethod">
+                                <option value="">انتخاب روش پرداخت</option>
+                                <option value="cash">نقدی</option>
+                                <option value="card">کارت</option>
+                                <option value="insurance">بیمه</option>
+                                <option value="mixed">ترکیبی</option>
+                            </select>
                         </div>
 
                         <!-- اطلاعات پرداخت آنلاین -->

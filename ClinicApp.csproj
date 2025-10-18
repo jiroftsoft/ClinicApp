@@ -4441,6 +4441,15 @@
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.css" />
     <Content Include="Scripts\PersianDateTimePicker\persian-datepicker.min.js" />
     <Content Include="Scripts\popper.min.js" />
+    <Content Include="Scripts\reception\core\error-handler.js" />
+    <Content Include="Scripts\reception\core\event-bus.js" />
+    <Content Include="Scripts\reception\core\reception-coordinator.js" />
+    <Content Include="Scripts\reception\modules\department-selection.js" />
+    <Content Include="Scripts\reception\modules\patient-insurance.js" />
+    <Content Include="Scripts\reception\modules\patient-search.js" />
+    <Content Include="Scripts\reception\modules\payment-processing.js" />
+    <Content Include="Scripts\reception\modules\service-calculation.js" />
+    <Content Include="Scripts\reception\reception-main.js" />
     <Content Include="Scripts\reception\reception-modules.js" />
     <Content Include="Scripts\reception\reception-toastr-service.js" />
     <Content Include="Scripts\select2.js" />
