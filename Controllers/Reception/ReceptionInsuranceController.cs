@@ -104,6 +104,53 @@ namespace ClinicApp.Controllers.Reception
         }
 
         /// <summary>
+        /// بارگذاری اطلاعات بیمه بیمار - Production Ready
+        /// </summary>
+        [HttpPost]
+        [Route("Load")]
+        public async Task<JsonResult> Load(int patientId)
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🏥 بارگذاری اطلاعات بیمه بیمار: {PatientId}, کاربر: {UserName}", 
+                    requestId, patientId, _currentUserService.UserName);
+
+                if (patientId <= 0)
+                {
+                    _logger.Warning("[{RequestId}] شناسه بیمار نامعتبر: {PatientId}", requestId, patientId);
+                    return Json(new { success = false, message = "شناسه بیمار نامعتبر است" });
+                }
+
+                var result = await _patientInsuranceService.GetPatientInsuranceStatusForReceptionAsync(patientId);
+                
+                if (result.Success)
+                {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ بارگذاری موفق اطلاعات بیمه در {Duration}ms", requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "اطلاعات بیمه با موفقیت بارگذاری شد"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در بارگذاری اطلاعات بیمه: {Error}", requestId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] خطا در بارگذاری اطلاعات بیمه برای بیمار: {PatientId}", requestId, patientId);
+                return Json(new { success = false, message = "خطا در بارگذاری اطلاعات بیمه. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
         /// دریافت وضعیت کامل بیمه بیمار
         /// </summary>
         [HttpPost]

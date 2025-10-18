@@ -269,6 +269,21 @@ namespace ClinicApp
                 }
             );
 
+            // 🏥 Reception Insurance Controller Routes - مسیرهای کنترلر بیمه
+            routes.MapRoute(
+                name: "ReceptionInsurance",
+                url: "Reception/Insurance/{action}",
+                defaults: new { 
+                    controller = "ReceptionInsurance", 
+                    action = "Load", 
+                    area = ""
+                },
+                constraints: new { 
+                    httpMethod = new HttpMethodConstraint("GET", "POST"),
+                    action = @"^(Load|Save)$"
+                }
+            );
+
             // 🏥 Reception List Routes - مسیرهای لیست پذیرش‌ها
             routes.MapRoute(
                 name: "ReceptionList",

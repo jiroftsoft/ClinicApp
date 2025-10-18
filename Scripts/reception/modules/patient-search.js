@@ -323,8 +323,44 @@
                 $(CONFIG.selectors.firstName).val(patientData.FirstName || '');
                 $(CONFIG.selectors.lastName).val(patientData.LastName || '');
                 $(CONFIG.selectors.fatherName).val(patientData.FatherName || '');
-                $(CONFIG.selectors.birthDate).val(patientData.BirthDate || '');
-                $(CONFIG.selectors.age).val(patientData.Age || '');
+                
+                // رفع مشکل فرمت تاریخ تولد (.NET Date format)
+                var birthDate = patientData.BirthDate;
+                if (birthDate) {
+                    // تبدیل فرمت .NET Date به فرمت قابل استفاده
+                    if (birthDate.startsWith('/Date(') && birthDate.endsWith(')/')) {
+                        var timestamp = parseInt(birthDate.substring(6, birthDate.length - 2));
+                        var date = new Date(timestamp);
+                        var formattedDate = date.getFullYear() + '-' + 
+                            String(date.getMonth() + 1).padStart(2, '0') + '-' + 
+                            String(date.getDate()).padStart(2, '0');
+                        $(CONFIG.selectors.birthDate).val(formattedDate);
+                    } else {
+                        $(CONFIG.selectors.birthDate).val(birthDate);
+                    }
+                } else {
+                    $(CONFIG.selectors.birthDate).val('');
+                }
+                
+                // محاسبه سن در سمت کلاینت (اگر در سمت سرور محاسبه نشده)
+                var age = patientData.Age;
+                if (!age && birthDate) {
+                    try {
+                        var birthDateObj = new Date(birthDate.startsWith('/Date(') ? 
+                            parseInt(birthDate.substring(6, birthDate.length - 2)) : birthDate);
+                        var today = new Date();
+                        age = today.getFullYear() - birthDateObj.getFullYear();
+                        var monthDiff = today.getMonth() - birthDateObj.getMonth();
+                        if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDateObj.getDate())) {
+                            age--;
+                        }
+                    } catch (e) {
+                        console.warn('[PatientSearchModule] Error calculating age:', e);
+                        age = null;
+                    }
+                }
+                $(CONFIG.selectors.age).val(age || '');
+                
                 $(CONFIG.selectors.gender).val(patientData.Gender || '');
                 $(CONFIG.selectors.phone).val(patientData.PhoneNumber || '');
                 $(CONFIG.selectors.address).val(patientData.Address || '');
