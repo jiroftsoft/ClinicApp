@@ -69,21 +69,25 @@ window.ReceptionModules.utils = {
 // ========================================
 window.ReceptionModules.config = {
     // API Endpoints - از دیتابیس یا Configuration
-    apiEndpoints: {
-        patientSearch: '/Reception/Patient/SearchByNationalCode',
-        patientSave: '/Reception/Patient/Save',
-        departmentLoad: '/Reception/Department/Load',
-        departmentSave: '/Reception/Department/Save',
-        insuranceLoad: '/Reception/Insurance/Load',
-        insuranceSave: '/Reception/Insurance/Save',
-        insuranceProviders: '/Reception/Insurance/GetInsuranceProviders',
-        insurancePlans: '/Reception/Insurance/GetInsurancePlans',
-        supplementaryInsurances: '/Reception/Insurance/GetSupplementaryInsurances',
-        serviceLoad: '/Reception/Service/Load',
-        serviceCalculate: '/Reception/Service/Calculate',
-        paymentRefresh: '/Reception/Payment/Refresh',
-        paymentProcess: '/Reception/Payment/Process'
-    },
+        apiEndpoints: {
+            patientSearch: '/Reception/Patient/SearchByNationalCode',
+            patientSave: '/Reception/Patient/Save',
+            departmentLoad: '/Reception/Department/Load',
+            departmentSave: '/Reception/Department/Save',
+            insuranceLoad: '/Reception/Insurance/Load',
+            insuranceSave: '/Reception/Insurance/Save',
+            insuranceProviders: '/Reception/Insurance/GetInsuranceProviders',
+            primaryInsuranceProviders: '/Reception/Insurance/GetPrimaryInsuranceProviders',
+            supplementaryInsuranceProviders: '/Reception/Insurance/GetSupplementaryInsuranceProviders',
+            insurancePlans: '/Reception/Insurance/GetInsurancePlans',
+            primaryInsurancePlans: '/Reception/Insurance/GetPrimaryInsurancePlans',
+            supplementaryInsurancePlans: '/Reception/Insurance/GetSupplementaryInsurancePlans',
+            supplementaryInsurances: '/Reception/Insurance/GetSupplementaryInsurances',
+            serviceLoad: '/Reception/Service/Load',
+            serviceCalculate: '/Reception/Service/Calculate',
+            paymentRefresh: '/Reception/Payment/Refresh',
+            paymentProcess: '/Reception/Payment/Process'
+        },
     
     // Messages - از دیتابیس یا Resource Files
     messages: {
@@ -675,16 +679,29 @@ window.ReceptionModules.Insurance = {
         // Save insurance
         $('#saveInsuranceBtn').off('click.insurance').on('click.insurance', this.handleSaveInsurance.bind(this));
         
-        // Insurance provider change event
+        // Insurance provider change event - Load primary insurance plans
         $('#insuranceProvider').off('change.insurance').on('change.insurance', function() {
             var providerId = $(this).val();
-            window.ReceptionModules.Insurance.loadInsurancePlans(providerId);
+            console.log('[ReceptionModules.Insurance] Insurance provider changed to:', providerId);
+            console.log('[ReceptionModules.Insurance] Calling loadPrimaryInsurancePlans with providerId:', providerId);
+            window.ReceptionModules.Insurance.loadPrimaryInsurancePlans(providerId);
+        });
+
+        // Supplementary insurance provider change event - Load supplementary insurance plans
+        $('#supplementaryProvider').off('change.insurance').on('change.insurance', function() {
+            var providerId = $(this).val();
+            console.log('[ReceptionModules.Insurance] Supplementary insurance provider changed to:', providerId);
+            console.log('[ReceptionModules.Insurance] Calling loadSupplementaryInsurancePlans with providerId:', providerId);
+            window.ReceptionModules.Insurance.loadSupplementaryInsurancePlans(providerId);
         });
         
-        // Load insurance providers on page load (only once)
+        // Load primary insurance providers on page load (only once)
         if (!this._providersLoaded) {
-            this.loadInsuranceProviders();
+            this.loadPrimaryInsuranceProviders();
         }
+
+        // Load supplementary insurance providers on page load
+        this.loadSupplementaryInsuranceProviders();
         
         console.log('[ReceptionModules.Insurance] Initialized successfully');
     },
@@ -763,52 +780,118 @@ window.ReceptionModules.Insurance = {
         });
     },
 
-    // Load insurance providers
-    loadInsuranceProviders: function() {
+    // Load primary insurance providers
+    loadPrimaryInsuranceProviders: function() {
         var self = this;
         
         // Prevent duplicate loading
         if (this._providersLoaded) {
-            console.log('[ReceptionModules.Insurance] Providers already loaded, skipping...');
+            console.log('[ReceptionModules.Insurance] Primary providers already loaded, skipping...');
             return;
         }
         
         this._providersLoaded = true;
         
         $.ajax({
-            url: window.ReceptionModules.config.apiEndpoints.insuranceProviders,
+            url: window.ReceptionModules.config.apiEndpoints.primaryInsuranceProviders,
             type: 'POST',
             data: {
                 __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             },
             success: function(response) {
-                console.log('[ReceptionModules.Insurance] API Response:', response);
+                console.log('[ReceptionModules.Insurance] Primary Providers API Response:', response);
+                console.log('[ReceptionModules.Insurance] Response type:', typeof response);
+                console.log('[ReceptionModules.Insurance] Response.success:', response.success);
+                console.log('[ReceptionModules.Insurance] Response.success type:', typeof response.success);
                 
-                if (response.success) {
-                    console.log('[ReceptionModules.Insurance] Response success:', response.success);
-                    console.log('[ReceptionModules.Insurance] Data received:', response.data);
+                // Check if response is a string (JSON string)
+                if (typeof response === 'string') {
+                    try {
+                        response = JSON.parse(response);
+                        console.log('[ReceptionModules.Insurance] Parsed JSON response:', response);
+                    } catch (e) {
+                        console.error('[ReceptionModules.Insurance] JSON parse error:', e);
+                        self.showError('خطا در پردازش پاسخ سرور');
+                        return;
+                    }
+                }
+                
+                if (response && response.success === true) {
+                    console.log('[ReceptionModules.Insurance] Primary providers response success:', response.success);
+                    console.log('[ReceptionModules.Insurance] Primary providers data received:', response.data);
                     
                     self.populateInsuranceProviders(response.data);
-                    console.log('[ReceptionModules.Insurance] Providers loaded successfully');
+                    console.log('[ReceptionModules.Insurance] Primary providers loaded successfully');
                     
                     // Show success message
-                    self.showSuccess('ارائه‌دهندگان بیمه با موفقیت بارگذاری شدند');
+                    self.showSuccess('ارائه‌دهندگان بیمه پایه با موفقیت بارگذاری شدند');
                 } else {
-                    console.log('[ReceptionModules.Insurance] Response failed:', response.message);
-                    self.showError(response.message || 'خطا در بارگذاری ارائه‌دهندگان بیمه');
+                    console.log('[ReceptionModules.Insurance] Primary providers response failed:', response.message);
+                    console.log('[ReceptionModules.Insurance] Primary providers response object:', response);
+                    self.showError(response.message || 'خطا در بارگذاری ارائه‌دهندگان بیمه پایه');
                     self._providersLoaded = false; // Reset flag on error
                 }
             },
             error: function(xhr, status, error) {
+                console.error('[ReceptionModules.Insurance] Primary providers AJAX error:', xhr, status, error);
                 self.showError('خطا در ارتباط با سرور: ' + error);
                 self._providersLoaded = false; // Reset flag on error
             }
         });
     },
 
-    // Load insurance plans by provider
+    // Load supplementary insurance providers
+    loadSupplementaryInsuranceProviders: function() {
+        var self = this;
+        
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.supplementaryInsuranceProviders,
+            type: 'POST',
+            data: {
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log('[ReceptionModules.Insurance] Supplementary Providers API Response:', response);
+                
+                // Check if response is a string (JSON string)
+                if (typeof response === 'string') {
+                    try {
+                        response = JSON.parse(response);
+                        console.log('[ReceptionModules.Insurance] Parsed JSON response:', response);
+                    } catch (e) {
+                        console.error('[ReceptionModules.Insurance] JSON parse error:', e);
+                        self.showError('خطا در پردازش پاسخ سرور');
+                        return;
+                    }
+                }
+                
+                if (response && response.success === true) {
+                    console.log('[ReceptionModules.Insurance] Supplementary providers response success:', response.success);
+                    console.log('[ReceptionModules.Insurance] Supplementary providers data received:', response.data);
+                    
+                    self.populateSupplementaryInsuranceProviders(response.data);
+                    console.log('[ReceptionModules.Insurance] Supplementary providers loaded successfully');
+                    
+                    // Show success message
+                    self.showSuccess('ارائه‌دهندگان بیمه تکمیلی با موفقیت بارگذاری شدند');
+                } else {
+                    console.log('[ReceptionModules.Insurance] Supplementary providers response failed:', response.message);
+                    self.showError(response.message || 'خطا در بارگذاری ارائه‌دهندگان بیمه تکمیلی');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[ReceptionModules.Insurance] Supplementary providers AJAX error:', xhr, status, error);
+                self.showError('خطا در ارتباط با سرور: ' + error);
+            }
+        });
+    },
+
+    // Load insurance plans by provider (all types)
     loadInsurancePlans: function(providerId) {
+        console.log('[ReceptionModules.Insurance] loadInsurancePlans called with providerId:', providerId);
+        
         if (!providerId || providerId <= 0) {
+            console.log('[ReceptionModules.Insurance] Invalid providerId, clearing plans');
             this.clearInsurancePlans();
             return;
         }
@@ -822,13 +905,153 @@ window.ReceptionModules.Insurance = {
                 __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
             },
             success: function(response) {
-                if (response.success) {
+                console.log('[ReceptionModules.Insurance] Insurance Plans API Response:', response);
+                console.log('[ReceptionModules.Insurance] Response type:', typeof response);
+                console.log('[ReceptionModules.Insurance] Response.success:', response.success);
+                
+                // Check if response is a string (JSON string)
+                if (typeof response === 'string') {
+                    try {
+                        response = JSON.parse(response);
+                        console.log('[ReceptionModules.Insurance] Parsed JSON response:', response);
+                    } catch (e) {
+                        console.error('[ReceptionModules.Insurance] JSON parse error:', e);
+                        self.showError('خطا در پردازش پاسخ سرور');
+                        return;
+                    }
+                }
+                
+                if (response && response.success === true) {
+                    console.log('[ReceptionModules.Insurance] Plans response success:', response.success);
+                    console.log('[ReceptionModules.Insurance] Plans data received:', response.data);
+                    
                     self.populateInsurancePlans(response.data);
+                    console.log('[ReceptionModules.Insurance] Plans loaded successfully');
+                    
+                    // Show success message
+                    self.showSuccess('طرح‌های بیمه با موفقیت بارگذاری شدند');
                 } else {
+                    console.log('[ReceptionModules.Insurance] Plans response failed:', response.message);
+                    console.log('[ReceptionModules.Insurance] Plans response object:', response);
                     self.showError(response.message || 'خطا در بارگذاری طرح‌های بیمه');
                 }
             },
             error: function(xhr, status, error) {
+                console.error('[ReceptionModules.Insurance] Plans AJAX error:', xhr, status, error);
+                self.showError('خطا در ارتباط با سرور: ' + error);
+            }
+        });
+    },
+
+    // Load primary insurance plans by provider
+    loadPrimaryInsurancePlans: function(providerId) {
+        console.log('[ReceptionModules.Insurance] loadPrimaryInsurancePlans called with providerId:', providerId);
+        
+        if (!providerId || providerId <= 0) {
+            console.log('[ReceptionModules.Insurance] Invalid providerId, clearing primary plans');
+            this.clearPrimaryInsurancePlans();
+            return;
+        }
+        
+        var self = this;
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.primaryInsurancePlans,
+            type: 'POST',
+            data: {
+                providerId: providerId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log('[ReceptionModules.Insurance] Primary Insurance Plans API Response:', response);
+                console.log('[ReceptionModules.Insurance] Response type:', typeof response);
+                console.log('[ReceptionModules.Insurance] Response.success:', response.success);
+                
+                // Check if response is a string (JSON string)
+                if (typeof response === 'string') {
+                    try {
+                        response = JSON.parse(response);
+                        console.log('[ReceptionModules.Insurance] Parsed JSON response:', response);
+                    } catch (e) {
+                        console.error('[ReceptionModules.Insurance] JSON parse error:', e);
+                        self.showError('خطا در پردازش پاسخ سرور');
+                        return;
+                    }
+                }
+                
+                if (response && response.success === true) {
+                    console.log('[ReceptionModules.Insurance] Primary plans response success:', response.success);
+                    console.log('[ReceptionModules.Insurance] Primary plans data received:', response.data);
+                    
+                    self.populatePrimaryInsurancePlans(response.data);
+                    console.log('[ReceptionModules.Insurance] Primary plans loaded successfully');
+                    
+                    // Show success message
+                    self.showSuccess('طرح‌های بیمه پایه با موفقیت بارگذاری شدند');
+                } else {
+                    console.log('[ReceptionModules.Insurance] Primary plans response failed:', response.message);
+                    console.log('[ReceptionModules.Insurance] Primary plans response object:', response);
+                    self.showError(response.message || 'خطا در بارگذاری طرح‌های بیمه پایه');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[ReceptionModules.Insurance] Primary plans AJAX error:', xhr, status, error);
+                self.showError('خطا در ارتباط با سرور: ' + error);
+            }
+        });
+    },
+
+    // Load supplementary insurance plans by provider
+    loadSupplementaryInsurancePlans: function(providerId) {
+        console.log('[ReceptionModules.Insurance] loadSupplementaryInsurancePlans called with providerId:', providerId);
+        
+        if (!providerId || providerId <= 0) {
+            console.log('[ReceptionModules.Insurance] Invalid providerId, clearing supplementary plans');
+            this.clearSupplementaryInsurancePlans();
+            return;
+        }
+        
+        var self = this;
+        $.ajax({
+            url: window.ReceptionModules.config.apiEndpoints.supplementaryInsurancePlans,
+            type: 'POST',
+            data: {
+                providerId: providerId,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            },
+            success: function(response) {
+                console.log('[ReceptionModules.Insurance] Supplementary Insurance Plans API Response:', response);
+                console.log('[ReceptionModules.Insurance] Response type:', typeof response);
+                console.log('[ReceptionModules.Insurance] Response.success:', response.success);
+                
+                // Check if response is a string (JSON string)
+                if (typeof response === 'string') {
+                    try {
+                        response = JSON.parse(response);
+                        console.log('[ReceptionModules.Insurance] Parsed JSON response:', response);
+                    } catch (e) {
+                        console.error('[ReceptionModules.Insurance] JSON parse error:', e);
+                        self.showError('خطا در پردازش پاسخ سرور');
+                        return;
+                    }
+                }
+                
+                if (response && response.success === true) {
+                    console.log('[ReceptionModules.Insurance] Supplementary plans response success:', response.success);
+                    console.log('[ReceptionModules.Insurance] Supplementary plans data received:', response.data);
+                    
+                    self.populateSupplementaryInsurancePlans(response.data);
+                    console.log('[ReceptionModules.Insurance] Supplementary plans loaded successfully');
+                    
+                    // Show success message
+                    self.showSuccess('طرح‌های بیمه تکمیلی با موفقیت بارگذاری شدند');
+                } else {
+                    console.log('[ReceptionModules.Insurance] Supplementary plans response failed:', response.message);
+                    console.log('[ReceptionModules.Insurance] Supplementary plans response object:', response);
+                    self.showError(response.message || 'خطا در بارگذاری طرح‌های بیمه تکمیلی');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('[ReceptionModules.Insurance] Supplementary plans AJAX error:', xhr, status, error);
                 self.showError('خطا در ارتباط با سرور: ' + error);
             }
         });
@@ -867,17 +1090,25 @@ window.ReceptionModules.Insurance = {
     populateInsuranceProviders: function(providers) {
         try {
             console.log('[ReceptionModules.Insurance] populateInsuranceProviders called with:', providers);
+            console.log('[ReceptionModules.Insurance] Providers type:', typeof providers);
+            console.log('[ReceptionModules.Insurance] Providers length:', providers ? providers.length : 'undefined');
             
             var $select = $('#insuranceProvider');
             console.log('[ReceptionModules.Insurance] Select element found:', $select.length);
+            console.log('[ReceptionModules.Insurance] Select element HTML:', $select.length > 0 ? $select[0].outerHTML : 'Not found');
             
             if ($select.length === 0) {
                 console.error('[ReceptionModules.Insurance] Insurance provider select element not found!');
+                console.log('[ReceptionModules.Insurance] Available elements with id containing "insurance":');
+                $('[id*="insurance"]').each(function() {
+                    console.log('[ReceptionModules.Insurance] Found element:', this.id, this.tagName);
+                });
                 this.showError('عنصر انتخاب ارائه‌دهنده بیمه یافت نشد');
                 return;
             }
             
             $select.empty().append('<option value="">انتخاب ارائه‌دهنده بیمه...</option>');
+            console.log('[ReceptionModules.Insurance] Select cleared and default option added');
             
             if (providers && providers.length > 0) {
                 console.log('[ReceptionModules.Insurance] Adding providers:', providers.length);
@@ -886,6 +1117,7 @@ window.ReceptionModules.Insurance = {
                     $select.append('<option value="' + provider.InsuranceProviderId + '">' + provider.Name + '</option>');
                 });
                 console.log('[ReceptionModules.Insurance] Providers populated successfully');
+                console.log('[ReceptionModules.Insurance] Final select options count:', $select.find('option').length);
             } else {
                 console.log('[ReceptionModules.Insurance] No providers to populate');
                 this.showWarning('هیچ ارائه‌دهنده بیمه‌ای یافت نشد');
@@ -896,21 +1128,187 @@ window.ReceptionModules.Insurance = {
         }
     },
 
+    // Populate supplementary insurance providers dropdown
+    populateSupplementaryInsuranceProviders: function(providers) {
+        try {
+            console.log('[ReceptionModules.Insurance] populateSupplementaryInsuranceProviders called with:', providers);
+            console.log('[ReceptionModules.Insurance] Supplementary providers type:', typeof providers);
+            console.log('[ReceptionModules.Insurance] Supplementary providers length:', providers ? providers.length : 'undefined');
+            
+            var $select = $('#supplementaryProvider');
+            console.log('[ReceptionModules.Insurance] Supplementary providers select element found:', $select.length);
+            console.log('[ReceptionModules.Insurance] Supplementary providers select element HTML:', $select.length > 0 ? $select[0].outerHTML : 'Not found');
+            
+            if ($select.length === 0) {
+                console.error('[ReceptionModules.Insurance] Supplementary insurance provider select element not found!');
+                console.log('[ReceptionModules.Insurance] Available elements with id containing "supplementary":');
+                $('[id*="supplementary"]').each(function() {
+                    console.log('[ReceptionModules.Insurance] Found element:', this.id, this.tagName);
+                });
+                this.showError('عنصر انتخاب ارائه‌دهنده بیمه تکمیلی یافت نشد');
+                return;
+            }
+            
+            $select.empty().append('<option value="">انتخاب ارائه‌دهنده بیمه تکمیلی...</option>');
+            console.log('[ReceptionModules.Insurance] Supplementary providers select cleared and default option added');
+            
+            if (providers && providers.length > 0) {
+                console.log('[ReceptionModules.Insurance] Adding supplementary providers:', providers.length);
+                $.each(providers, function(index, provider) {
+                    console.log('[ReceptionModules.Insurance] Adding supplementary provider:', provider.Name, 'ID:', provider.InsuranceProviderId);
+                    $select.append('<option value="' + provider.InsuranceProviderId + '">' + provider.Name + '</option>');
+                });
+                console.log('[ReceptionModules.Insurance] Supplementary providers populated successfully');
+                console.log('[ReceptionModules.Insurance] Final supplementary providers select options count:', $select.find('option').length);
+            } else {
+                console.log('[ReceptionModules.Insurance] No supplementary providers to populate');
+                this.showWarning('هیچ ارائه‌دهنده بیمه تکمیلی یافت نشد');
+            }
+        } catch (error) {
+            console.error('[ReceptionModules.Insurance] Error in populateSupplementaryInsuranceProviders:', error);
+            this.showError('خطا در نمایش ارائه‌دهندگان بیمه تکمیلی: ' + error.message);
+        }
+    },
+
     // Populate insurance plans dropdown
     populateInsurancePlans: function(plans) {
-        var $select = $('#insurancePlan');
-        $select.empty().append('<option value="">انتخاب طرح بیمه...</option>');
-        
-        if (plans && plans.length > 0) {
-            $.each(plans, function(index, plan) {
-                $select.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
-            });
+        try {
+            console.log('[ReceptionModules.Insurance] populateInsurancePlans called with:', plans);
+            console.log('[ReceptionModules.Insurance] Plans type:', typeof plans);
+            console.log('[ReceptionModules.Insurance] Plans length:', plans ? plans.length : 'undefined');
+            
+            var $select = $('#insurancePlan');
+            console.log('[ReceptionModules.Insurance] Plans select element found:', $select.length);
+            console.log('[ReceptionModules.Insurance] Plans select element HTML:', $select.length > 0 ? $select[0].outerHTML : 'Not found');
+            
+            if ($select.length === 0) {
+                console.error('[ReceptionModules.Insurance] Insurance plans select element not found!');
+                console.log('[ReceptionModules.Insurance] Available elements with id containing "plan":');
+                $('[id*="plan"]').each(function() {
+                    console.log('[ReceptionModules.Insurance] Found element:', this.id, this.tagName);
+                });
+                this.showError('عنصر انتخاب طرح بیمه یافت نشد');
+                return;
+            }
+            
+            $select.empty().append('<option value="">انتخاب طرح بیمه...</option>');
+            console.log('[ReceptionModules.Insurance] Plans select cleared and default option added');
+            
+            if (plans && plans.length > 0) {
+                console.log('[ReceptionModules.Insurance] Adding plans:', plans.length);
+                $.each(plans, function(index, plan) {
+                    console.log('[ReceptionModules.Insurance] Adding plan:', plan.Name, 'ID:', plan.InsurancePlanId);
+                    $select.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
+                });
+                console.log('[ReceptionModules.Insurance] Plans populated successfully');
+                console.log('[ReceptionModules.Insurance] Final plans select options count:', $select.find('option').length);
+            } else {
+                console.log('[ReceptionModules.Insurance] No plans to populate');
+                this.showWarning('هیچ طرح بیمه‌ای یافت نشد');
+            }
+        } catch (error) {
+            console.error('[ReceptionModules.Insurance] Error in populateInsurancePlans:', error);
+            this.showError('خطا در نمایش طرح‌های بیمه: ' + error.message);
         }
     },
 
     // Clear insurance plans dropdown
     clearInsurancePlans: function() {
         $('#insurancePlan').empty().append('<option value="">انتخاب طرح بیمه...</option>');
+    },
+
+    // Populate primary insurance plans dropdown
+    populatePrimaryInsurancePlans: function(plans) {
+        try {
+            console.log('[ReceptionModules.Insurance] populatePrimaryInsurancePlans called with:', plans);
+            console.log('[ReceptionModules.Insurance] Primary plans type:', typeof plans);
+            console.log('[ReceptionModules.Insurance] Primary plans length:', plans ? plans.length : 'undefined');
+            
+            var $select = $('#insurancePlan'); // Correct element ID
+            console.log('[ReceptionModules.Insurance] Primary plans select element found:', $select.length);
+            console.log('[ReceptionModules.Insurance] Primary plans select element HTML:', $select.length > 0 ? $select[0].outerHTML : 'Not found');
+            
+            if ($select.length === 0) {
+                console.error('[ReceptionModules.Insurance] Primary insurance plans select element not found!');
+                console.log('[ReceptionModules.Insurance] Available elements with id containing "insurance":');
+                $('[id*="insurance"]').each(function() {
+                    console.log('[ReceptionModules.Insurance] Found element:', this.id, this.tagName);
+                });
+                this.showError('عنصر انتخاب طرح بیمه پایه یافت نشد');
+                return;
+            }
+            
+            $select.empty().append('<option value="">انتخاب طرح بیمه پایه...</option>');
+            console.log('[ReceptionModules.Insurance] Primary plans select cleared and default option added');
+            
+            if (plans && plans.length > 0) {
+                console.log('[ReceptionModules.Insurance] Adding primary plans:', plans.length);
+                $.each(plans, function(index, plan) {
+                    console.log('[ReceptionModules.Insurance] Adding primary plan:', plan.Name, 'ID:', plan.InsurancePlanId);
+                    $select.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
+                });
+                console.log('[ReceptionModules.Insurance] Primary plans populated successfully');
+                console.log('[ReceptionModules.Insurance] Final primary plans select options count:', $select.find('option').length);
+            } else {
+                console.log('[ReceptionModules.Insurance] No primary plans to populate');
+                this.showWarning('هیچ طرح بیمه پایه‌ای یافت نشد');
+            }
+        } catch (error) {
+            console.error('[ReceptionModules.Insurance] Error in populatePrimaryInsurancePlans:', error);
+            this.showError('خطا در نمایش طرح‌های بیمه پایه: ' + error.message);
+        }
+    },
+
+    // Populate supplementary insurance plans dropdown
+    populateSupplementaryInsurancePlans: function(plans) {
+        try {
+            console.log('[ReceptionModules.Insurance] populateSupplementaryInsurancePlans called with:', plans);
+            console.log('[ReceptionModules.Insurance] Supplementary plans type:', typeof plans);
+            console.log('[ReceptionModules.Insurance] Supplementary plans length:', plans ? plans.length : 'undefined');
+            
+            var $select = $('#supplementaryPlan'); // Correct element ID
+            console.log('[ReceptionModules.Insurance] Supplementary plans select element found:', $select.length);
+            console.log('[ReceptionModules.Insurance] Supplementary plans select element HTML:', $select.length > 0 ? $select[0].outerHTML : 'Not found');
+            
+            if ($select.length === 0) {
+                console.error('[ReceptionModules.Insurance] Supplementary insurance plans select element not found!');
+                console.log('[ReceptionModules.Insurance] Available elements with id containing "supplementary":');
+                $('[id*="supplementary"]').each(function() {
+                    console.log('[ReceptionModules.Insurance] Found element:', this.id, this.tagName);
+                });
+                this.showError('عنصر انتخاب طرح بیمه تکمیلی یافت نشد');
+                return;
+            }
+            
+            $select.empty().append('<option value="">انتخاب طرح بیمه تکمیلی...</option>');
+            console.log('[ReceptionModules.Insurance] Supplementary plans select cleared and default option added');
+            
+            if (plans && plans.length > 0) {
+                console.log('[ReceptionModules.Insurance] Adding supplementary plans:', plans.length);
+                $.each(plans, function(index, plan) {
+                    console.log('[ReceptionModules.Insurance] Adding supplementary plan:', plan.Name, 'ID:', plan.InsurancePlanId);
+                    $select.append('<option value="' + plan.InsurancePlanId + '">' + plan.Name + '</option>');
+                });
+                console.log('[ReceptionModules.Insurance] Supplementary plans populated successfully');
+                console.log('[ReceptionModules.Insurance] Final supplementary plans select options count:', $select.find('option').length);
+            } else {
+                console.log('[ReceptionModules.Insurance] No supplementary plans to populate');
+                this.showWarning('هیچ طرح بیمه تکمیلی یافت نشد');
+            }
+        } catch (error) {
+            console.error('[ReceptionModules.Insurance] Error in populateSupplementaryInsurancePlans:', error);
+            this.showError('خطا در نمایش طرح‌های بیمه تکمیلی: ' + error.message);
+        }
+    },
+
+    // Clear primary insurance plans dropdown
+    clearPrimaryInsurancePlans: function() {
+        $('#insurancePlan').empty().append('<option value="">انتخاب طرح بیمه پایه...</option>');
+    },
+
+    // Clear supplementary insurance plans dropdown
+    clearSupplementaryInsurancePlans: function() {
+        $('#supplementaryPlan').empty().append('<option value="">انتخاب طرح بیمه تکمیلی...</option>');
     },
 
     // Collect insurance data from form

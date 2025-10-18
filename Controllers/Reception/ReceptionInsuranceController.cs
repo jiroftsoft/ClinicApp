@@ -7,6 +7,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Insurance;
 using ClinicApp.ViewModels.Reception;
+using ClinicApp.Models.Entities.Insurance;
 using Serilog;
 
 namespace ClinicApp.Controllers.Reception
@@ -350,6 +351,94 @@ namespace ClinicApp.Controllers.Reception
         }
 
         /// <summary>
+        /// دریافت ارائه‌دهندگان بیمه پایه - Production Ready
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetPrimaryInsuranceProviders()
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🏥 دریافت ارائه‌دهندگان بیمه پایه، کاربر: {UserName}", 
+                    requestId, _currentUserService.UserName);
+
+                // دریافت ارائه‌دهندگان بیمه پایه فعال از دیتابیس
+                var result = await _insuranceProviderService.GetProvidersByTypeAsync(InsuranceType.Primary);
+                
+                if (result.Success)
+                {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ ارائه‌دهندگان بیمه پایه با موفقیت دریافت شدند در {Duration}ms", 
+                        requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "ارائه‌دهندگان بیمه پایه با موفقیت دریافت شدند"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در دریافت ارائه‌دهندگان بیمه پایه: {Error}", 
+                        requestId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] خطا در دریافت ارائه‌دهندگان بیمه پایه", requestId);
+                return Json(new { success = false, message = "خطا در دریافت ارائه‌دهندگان بیمه پایه. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
+        /// دریافت ارائه‌دهندگان بیمه تکمیلی - Production Ready
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetSupplementaryInsuranceProviders()
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🏥 دریافت ارائه‌دهندگان بیمه تکمیلی، کاربر: {UserName}", 
+                    requestId, _currentUserService.UserName);
+
+                // دریافت ارائه‌دهندگان بیمه تکمیلی فعال از دیتابیس
+                var result = await _insuranceProviderService.GetProvidersByTypeAsync(InsuranceType.Supplementary);
+                
+                if (result.Success)
+                {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ ارائه‌دهندگان بیمه تکمیلی با موفقیت دریافت شدند در {Duration}ms", 
+                        requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "ارائه‌دهندگان بیمه تکمیلی با موفقیت دریافت شدند"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در دریافت ارائه‌دهندگان بیمه تکمیلی: {Error}", 
+                        requestId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] خطا در دریافت ارائه‌دهندگان بیمه تکمیلی", requestId);
+                return Json(new { success = false, message = "خطا در دریافت ارائه‌دهندگان بیمه تکمیلی. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
         /// دریافت طرح‌های بیمه بر اساس ارائه‌دهنده - Production Ready
         /// </summary>
         [HttpPost]
@@ -397,6 +486,108 @@ namespace ClinicApp.Controllers.Reception
                 _logger.Error(ex, "[{RequestId}] خطا در دریافت طرح‌های بیمه برای ارائه‌دهنده: {ProviderId}", 
                     requestId, providerId);
                 return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه پایه بر اساس ارائه‌دهنده - Production Ready
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetPrimaryInsurancePlans(int providerId)
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🏥 دریافت طرح‌های بیمه پایه برای ارائه‌دهنده: {ProviderId}, کاربر: {UserName}", 
+                    requestId, providerId, _currentUserService.UserName);
+
+                if (providerId <= 0)
+                {
+                    _logger.Warning("[{RequestId}] شناسه ارائه‌دهنده بیمه نامعتبر: {ProviderId}", requestId, providerId);
+                    return Json(new { success = false, message = "شناسه ارائه‌دهنده بیمه نامعتبر است" });
+                }
+
+                // دریافت طرح‌های بیمه پایه فعال از دیتابیس
+                var result = await _insurancePlanService.GetPrimaryInsurancePlansByProviderAsync(providerId);
+                
+                if (result.Success)
+                {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ طرح‌های بیمه پایه با موفقیت دریافت شدند در {Duration}ms", 
+                        requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "طرح‌های بیمه پایه با موفقیت دریافت شدند"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در دریافت طرح‌های بیمه پایه: {Error}", 
+                        requestId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] خطا در دریافت طرح‌های بیمه پایه برای ارائه‌دهنده: {ProviderId}", 
+                    requestId, providerId);
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه پایه. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
+        /// دریافت طرح‌های بیمه تکمیلی بر اساس ارائه‌دهنده - Production Ready
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<JsonResult> GetSupplementaryInsurancePlans(int providerId)
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🏥 دریافت طرح‌های بیمه تکمیلی برای ارائه‌دهنده: {ProviderId}, کاربر: {UserName}", 
+                    requestId, providerId, _currentUserService.UserName);
+
+                if (providerId <= 0)
+                {
+                    _logger.Warning("[{RequestId}] شناسه ارائه‌دهنده بیمه نامعتبر: {ProviderId}", requestId, providerId);
+                    return Json(new { success = false, message = "شناسه ارائه‌دهنده بیمه نامعتبر است" });
+                }
+
+                // دریافت طرح‌های بیمه تکمیلی فعال از دیتابیس
+                var result = await _insurancePlanService.GetSupplementaryInsurancePlansByProviderAsync(providerId);
+                
+                if (result.Success)
+                {
+                    var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                    _logger.Information("[{RequestId}] ✅ طرح‌های بیمه تکمیلی با موفقیت دریافت شدند در {Duration}ms", 
+                        requestId, duration);
+                    
+                    return Json(new { 
+                        success = true, 
+                        data = result.Data,
+                        message = "طرح‌های بیمه تکمیلی با موفقیت دریافت شدند"
+                    });
+                }
+                else
+                {
+                    _logger.Warning("[{RequestId}] خطا در دریافت طرح‌های بیمه تکمیلی: {Error}", 
+                        requestId, result.Message);
+                    return Json(new { success = false, message = result.Message });
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] خطا در دریافت طرح‌های بیمه تکمیلی برای ارائه‌دهنده: {ProviderId}", 
+                    requestId, providerId);
+                return Json(new { success = false, message = "خطا در دریافت طرح‌های بیمه تکمیلی. لطفاً دوباره تلاش کنید." });
             }
         }
 

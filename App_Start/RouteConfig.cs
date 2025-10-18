@@ -269,20 +269,20 @@ namespace ClinicApp
                 }
             );
 
-            // 🏥 Reception Insurance Controller Routes - مسیرهای کنترلر بیمه
-            routes.MapRoute(
-                name: "ReceptionInsurance",
-                url: "Reception/Insurance/{action}",
-                defaults: new { 
-                    controller = "ReceptionInsurance", 
-                    action = "Load", 
-                    area = ""
-                },
-                constraints: new { 
-                    httpMethod = new HttpMethodConstraint("GET", "POST"),
-                    action = @"^(Load|Save|ValidatePatientInsurance|QuickValidateInsurance|GetPatientInsuranceStatus|CalculateInsuranceShare|InquiryPatientIdentity|GetInsuranceProviders|GetInsurancePlans|GetSupplementaryInsurances|CalculateInsurance|ChangePatientInsurance)$"
-                }
-            );
+       // 🏥 Reception Insurance Controller Routes - مسیرهای کنترلر بیمه
+       routes.MapRoute(
+           name: "ReceptionInsurance",
+           url: "Reception/Insurance/{action}",
+           defaults: new { 
+               controller = "ReceptionInsurance", 
+               action = "Load", 
+               area = ""
+           },
+           constraints: new { 
+               httpMethod = new HttpMethodConstraint("GET", "POST"),
+               action = @"^(Load|Save|ValidatePatientInsurance|QuickValidateInsurance|GetPatientInsuranceStatus|CalculateInsuranceShare|InquiryPatientIdentity|GetInsuranceProviders|GetPrimaryInsuranceProviders|GetSupplementaryInsuranceProviders|GetInsurancePlans|GetPrimaryInsurancePlans|GetSupplementaryInsurancePlans|GetSupplementaryInsurances|CalculateInsurance|ChangePatientInsurance)$"
+           }
+       );
 
             // 🏥 Reception List Routes - مسیرهای لیست پذیرش‌ها
             routes.MapRoute(
