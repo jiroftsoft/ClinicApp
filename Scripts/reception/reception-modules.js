@@ -361,6 +361,9 @@ window.ReceptionModules.Patient = {
                     // نمایش اطلاعات بیمار
                     window.ReceptionModules.Patient.displayPatientInfo(response.Data);
                     
+                    // Trigger patient search success event for Real-Time Insurance Binding
+                    $(document).trigger('patientSearchSuccess', [response.Data]);
+                    
                     // بارگذاری اطلاعات بیمه
                     window.ReceptionModules.Patient.loadPatientInsurance(response.Data.PatientId);
                     

@@ -31,6 +31,57 @@
         <!-- Hidden fields for data binding -->
         <input type="hidden" id="patientId" name="patientId" value="@(Model?.PatientId ?? 0)">
         
+        <!-- Real-Time Insurance Binding Status -->
+        <div class="insurance-status-container">
+            <div id="insuranceStatus" class="insurance-status-indicator">
+                <span class="text-muted">آماده</span>
+            </div>
+            
+            <!-- Progress Steps for Receptionist -->
+            <div class="insurance-progress-steps">
+                <div class="step" id="step1" data-step="1">
+                    <div class="step-icon">
+                        <i class="fas fa-search"></i>
+                    </div>
+                    <div class="step-text">جستجوی بیمار</div>
+                </div>
+                <div class="step" id="step2" data-step="2">
+                    <div class="step-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <div class="step-text">بارگذاری بیمه</div>
+                </div>
+                <div class="step" id="step3" data-step="3">
+                    <div class="step-icon">
+                        <i class="fas fa-edit"></i>
+                    </div>
+                    <div class="step-text">ویرایش اطلاعات</div>
+                </div>
+                <div class="step" id="step4" data-step="4">
+                    <div class="step-icon">
+                        <i class="fas fa-save"></i>
+                    </div>
+                    <div class="step-text">ذخیره نهایی</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Indicator -->
+        <div id="insuranceLoadingIndicator" class="loading-indicator" style="display: none;">
+            <div class="spinner-border spinner-border-sm" role="status">
+                <span class="sr-only">در حال بارگذاری...</span>
+            </div>
+            <span class="ms-2">در حال بارگذاری اطلاعات بیمه...</span>
+        </div>
+
+        <!-- Success/Error Messages -->
+        <div id="insuranceMessages" class="insurance-messages" style="display: none;">
+            <div class="alert alert-success" role="alert">
+                <i class="fas fa-check-circle me-2"></i>
+                <span id="successMessage"></span>
+            </div>
+        </div>
+        
         <div class="row">
             <!-- ستون چپ: بیمه پایه -->
             <div class="col-lg-6">

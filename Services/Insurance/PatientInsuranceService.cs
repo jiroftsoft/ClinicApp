@@ -1587,6 +1587,218 @@ namespace ClinicApp.Services.Insurance
 
         #endregion
 
+        #region Insurance Update Methods
+
+        /// <summary>
+        /// به‌روزرسانی بیمه پایه بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> UpdatePatientPrimaryInsuranceAsync(int patientId, int insuranceId, string policyNumber, string cardNumber)
+        {
+            try
+            {
+                _log.Information("🔄 به‌روزرسانی بیمه پایه بیمار: {PatientId}, بیمه: {InsuranceId}, کاربر: {UserName}", 
+                    patientId, insuranceId, _currentUserService.UserName);
+
+                // اعتبارسنجی ورودی‌ها
+                if (patientId <= 0)
+                {
+                    _log.Warning("شناسه بیمار نامعتبر: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                if (insuranceId <= 0)
+                {
+                    _log.Warning("شناسه بیمه نامعتبر: {InsuranceId}", insuranceId);
+                    return ServiceResult<bool>.Failed("شناسه بیمه نامعتبر است", "INVALID_INSURANCE_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                // بررسی وجود بیمار
+                var patientExists = await _patientService.PatientExistsAsync(patientId);
+                if (!patientExists.Success || !patientExists.Data)
+                {
+                    _log.Warning("بیمار یافت نشد: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("بیمار یافت نشد", "PATIENT_NOT_FOUND", ErrorCategory.Validation, SecurityLevel.Medium);
+                }
+
+                // به‌روزرسانی بیمه پایه
+                var result = await _patientInsuranceRepository.UpdatePatientPrimaryInsuranceAsync(patientId, insuranceId, policyNumber, cardNumber);
+                
+                if (result.Success)
+                {
+                    _log.Information("✅ به‌روزرسانی بیمه پایه موفق: {PatientId}, بیمه: {InsuranceId}", patientId, insuranceId);
+                    return ServiceResult<bool>.Successful(true, "بیمه پایه با موفقیت به‌روزرسانی شد");
+                }
+                else
+                {
+                    _log.Warning("❌ خطا در به‌روزرسانی بیمه پایه: {PatientId}, خطا: {Error}", patientId, result.Message);
+                    return ServiceResult<bool>.Failed(result.Message, result.Code, result.Category, result.SecurityLevel);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در به‌روزرسانی بیمه پایه: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در به‌روزرسانی بیمه پایه", "UPDATE_PRIMARY_INSURANCE_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// به‌روزرسانی بیمه تکمیلی بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> UpdatePatientSupplementaryInsuranceAsync(int patientId, int insuranceId, string policyNumber, DateTime? expiryDate)
+        {
+            try
+            {
+                _log.Information("🔄 به‌روزرسانی بیمه تکمیلی بیمار: {PatientId}, بیمه: {InsuranceId}, کاربر: {UserName}", 
+                    patientId, insuranceId, _currentUserService.UserName);
+
+                // اعتبارسنجی ورودی‌ها
+                if (patientId <= 0)
+                {
+                    _log.Warning("شناسه بیمار نامعتبر: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                if (insuranceId <= 0)
+                {
+                    _log.Warning("شناسه بیمه نامعتبر: {InsuranceId}", insuranceId);
+                    return ServiceResult<bool>.Failed("شناسه بیمه نامعتبر است", "INVALID_INSURANCE_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                // بررسی وجود بیمار
+                var patientExists = await _patientService.PatientExistsAsync(patientId);
+                if (!patientExists.Success || !patientExists.Data)
+                {
+                    _log.Warning("بیمار یافت نشد: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("بیمار یافت نشد", "PATIENT_NOT_FOUND", ErrorCategory.Validation, SecurityLevel.Medium);
+                }
+
+                // به‌روزرسانی بیمه تکمیلی
+                var result = await _patientInsuranceRepository.UpdatePatientSupplementaryInsuranceAsync(patientId, insuranceId, policyNumber, expiryDate);
+                
+                if (result.Success)
+                {
+                    _log.Information("✅ به‌روزرسانی بیمه تکمیلی موفق: {PatientId}, بیمه: {InsuranceId}", patientId, insuranceId);
+                    return ServiceResult<bool>.Successful(true, "بیمه تکمیلی با موفقیت به‌روزرسانی شد");
+                }
+                else
+                {
+                    _log.Warning("❌ خطا در به‌روزرسانی بیمه تکمیلی: {PatientId}, خطا: {Error}", patientId, result.Message);
+                    return ServiceResult<bool>.Failed(result.Message, result.Code, result.Category, result.SecurityLevel);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در به‌روزرسانی بیمه تکمیلی: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در به‌روزرسانی بیمه تکمیلی", "UPDATE_SUPPLEMENTARY_INSURANCE_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// تغییر بیمه پایه بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> ChangePatientPrimaryInsuranceAsync(int patientId, int newInsuranceId)
+        {
+            try
+            {
+                _log.Information("🔄 تغییر بیمه پایه بیمار: {PatientId}, بیمه جدید: {NewInsuranceId}, کاربر: {UserName}", 
+                    patientId, newInsuranceId, _currentUserService.UserName);
+
+                // اعتبارسنجی ورودی‌ها
+                if (patientId <= 0)
+                {
+                    _log.Warning("شناسه بیمار نامعتبر: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                if (newInsuranceId <= 0)
+                {
+                    _log.Warning("شناسه بیمه جدید نامعتبر: {NewInsuranceId}", newInsuranceId);
+                    return ServiceResult<bool>.Failed("شناسه بیمه جدید نامعتبر است", "INVALID_NEW_INSURANCE_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                // بررسی وجود بیمار
+                var patientExists = await _patientService.PatientExistsAsync(patientId);
+                if (!patientExists.Success || !patientExists.Data)
+                {
+                    _log.Warning("بیمار یافت نشد: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("بیمار یافت نشد", "PATIENT_NOT_FOUND", ErrorCategory.Validation, SecurityLevel.Medium);
+                }
+
+                // تغییر بیمه پایه
+                var result = await _patientInsuranceRepository.ChangePatientPrimaryInsuranceAsync(patientId, newInsuranceId);
+                
+                if (result.Success)
+                {
+                    _log.Information("✅ تغییر بیمه پایه موفق: {PatientId}, بیمه جدید: {NewInsuranceId}", patientId, newInsuranceId);
+                    return ServiceResult<bool>.Successful(true, "بیمه پایه با موفقیت تغییر کرد");
+                }
+                else
+                {
+                    _log.Warning("❌ خطا در تغییر بیمه پایه: {PatientId}, خطا: {Error}", patientId, result.Message);
+                    return ServiceResult<bool>.Failed(result.Message, result.Code, result.Category, result.SecurityLevel);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در تغییر بیمه پایه: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در تغییر بیمه پایه", "CHANGE_PRIMARY_INSURANCE_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
+        /// تغییر بیمه تکمیلی بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> ChangePatientSupplementaryInsuranceAsync(int patientId, int newInsuranceId)
+        {
+            try
+            {
+                _log.Information("🔄 تغییر بیمه تکمیلی بیمار: {PatientId}, بیمه جدید: {NewInsuranceId}, کاربر: {UserName}", 
+                    patientId, newInsuranceId, _currentUserService.UserName);
+
+                // اعتبارسنجی ورودی‌ها
+                if (patientId <= 0)
+                {
+                    _log.Warning("شناسه بیمار نامعتبر: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                if (newInsuranceId <= 0)
+                {
+                    _log.Warning("شناسه بیمه جدید نامعتبر: {NewInsuranceId}", newInsuranceId);
+                    return ServiceResult<bool>.Failed("شناسه بیمه جدید نامعتبر است", "INVALID_NEW_INSURANCE_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                // بررسی وجود بیمار
+                var patientExists = await _patientService.PatientExistsAsync(patientId);
+                if (!patientExists.Success || !patientExists.Data)
+                {
+                    _log.Warning("بیمار یافت نشد: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("بیمار یافت نشد", "PATIENT_NOT_FOUND", ErrorCategory.Validation, SecurityLevel.Medium);
+                }
+
+                // تغییر بیمه تکمیلی
+                var result = await _patientInsuranceRepository.ChangePatientSupplementaryInsuranceAsync(patientId, newInsuranceId);
+                
+                if (result.Success)
+                {
+                    _log.Information("✅ تغییر بیمه تکمیلی موفق: {PatientId}, بیمه جدید: {NewInsuranceId}", patientId, newInsuranceId);
+                    return ServiceResult<bool>.Successful(true, "بیمه تکمیلی با موفقیت تغییر کرد");
+                }
+                else
+                {
+                    _log.Warning("❌ خطا در تغییر بیمه تکمیلی: {PatientId}, خطا: {Error}", patientId, result.Message);
+                    return ServiceResult<bool>.Failed(result.Message, result.Code, result.Category, result.SecurityLevel);
+                }
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ خطا در تغییر بیمه تکمیلی: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در تغییر بیمه تکمیلی", "CHANGE_SUPPLEMENTARY_INSURANCE_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
+        #endregion
+
         #region Statistics Methods
 
         /// <summary>

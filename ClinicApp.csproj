@@ -1236,6 +1236,7 @@
     <Compile Include="ViewModels\Reception\NavigationModels.cs" />
     <Compile Include="ViewModels\Reception\OnlinePaymentResponseViewModel.cs" />
     <Compile Include="ViewModels\Reception\PatientInquiryViewModel.cs" />
+    <Compile Include="ViewModels\Reception\PatientInsuranceReceptionFormViewModel.cs" />
     <Compile Include="ViewModels\Reception\PatientSearchResultViewModel.cs" />
     <Compile Include="ViewModels\Reception\PaymentConfirmationViewModel.cs" />
     <Compile Include="ViewModels\Reception\PaymentGatewayInfoViewModel.cs" />
@@ -1435,6 +1436,7 @@
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
     <Content Include="Content\css\reception\patient-accordion.css" />
+    <Content Include="Content\css\reception\realtime-insurance-binding.css" />
     <Content Include="Content\css\reception\reception-accordion.css" />
     <Content Include="Content\css\service-calculation.css" />
     <Content Include="Content\css\supplementary-tariff-styles.css" />
@@ -4449,6 +4451,7 @@
     <Content Include="Scripts\reception\modules\patient-insurance.js" />
     <Content Include="Scripts\reception\modules\patient-search.js" />
     <Content Include="Scripts\reception\modules\payment-processing.js" />
+    <Content Include="Scripts\reception\modules\realtime-insurance-binding.js" />
     <Content Include="Scripts\reception\modules\service-calculation.js" />
     <Content Include="Scripts\reception\reception-main.js" />
     <Content Include="Scripts\reception\reception-modules.js" />

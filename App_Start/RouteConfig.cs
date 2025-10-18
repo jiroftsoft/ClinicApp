@@ -278,10 +278,10 @@ namespace ClinicApp
                action = "Load", 
                area = ""
            },
-           constraints: new { 
-               httpMethod = new HttpMethodConstraint("GET", "POST"),
-               action = @"^(Load|Save|ValidatePatientInsurance|QuickValidateInsurance|GetPatientInsuranceStatus|CalculateInsuranceShare|InquiryPatientIdentity|GetInsuranceProviders|GetPrimaryInsuranceProviders|GetSupplementaryInsuranceProviders|GetInsurancePlans|GetPrimaryInsurancePlans|GetSupplementaryInsurancePlans|GetSupplementaryInsurances|CalculateInsurance|ChangePatientInsurance)$"
-           }
+            constraints: new { 
+                httpMethod = new HttpMethodConstraint("GET", "POST"),
+                action = @"^(Load|Save|ValidatePatientInsurance|QuickValidateInsurance|GetPatientInsuranceStatus|CalculateInsuranceShare|InquiryPatientIdentity|GetInsuranceProviders|GetPrimaryInsuranceProviders|GetSupplementaryInsuranceProviders|GetInsurancePlans|GetPrimaryInsurancePlans|GetSupplementaryInsurancePlans|GetSupplementaryInsurances|CalculateInsurance|ChangePatientInsurance|SavePatientInsurance)$"
+            }
        );
 
             // 🏥 Reception List Routes - مسیرهای لیست پذیرش‌ها

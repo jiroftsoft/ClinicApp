@@ -1108,6 +1108,28 @@ namespace ClinicApp.Services
         }
 
         /// <summary>
+        /// بررسی وجود بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> PatientExistsAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("بررسی وجود بیمار: {PatientId}", patientId);
+
+                var exists = await _context.Patients
+                    .AnyAsync(p => p.PatientId == patientId && !p.IsDeleted);
+
+                _log.Information("بررسی وجود بیمار: {PatientId}, نتیجه: {Exists}", patientId, exists);
+                return ServiceResult<bool>.Successful(exists, exists ? "بیمار یافت شد" : "بیمار یافت نشد");
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در بررسی وجود بیمار: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در بررسی وجود بیمار", "PATIENT_EXISTS_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
+        /// <summary>
         /// دریافت لیست بیماران برای SelectList
         /// </summary>
         public async Task<ServiceResult<List<SelectListItem>>> GetPatientsForLookupAsync()

@@ -132,6 +132,13 @@ namespace ClinicApp.Interfaces
         Task<ServiceResult<List<PatientLookupViewModel>>> GetActivePatientsForLookupAsync();
 
         /// <summary>
+        /// بررسی وجود بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>نتیجه بررسی</returns>
+        Task<ServiceResult<bool>> PatientExistsAsync(int patientId);
+
+        /// <summary>
         /// ایجاد یک بیمار جدید با رعایت تمام استانداردهای امنیتی و پزشکی
         /// 
         /// ویژگی‌های کلیدی:

@@ -26,6 +26,7 @@
             'ReceptionErrorHandler': ['ReceptionEventBus'],
             'PatientSearchModule': ['ReceptionEventBus', 'ReceptionErrorHandler'],
             'PatientInsuranceModule': ['ReceptionEventBus', 'ReceptionErrorHandler', 'PatientSearchModule'],
+            'RealTimeInsuranceBinding': ['ReceptionEventBus', 'ReceptionErrorHandler', 'PatientSearchModule', 'PatientInsuranceModule'],
             'DepartmentSelectionModule': ['ReceptionEventBus', 'ReceptionErrorHandler'],
             'ServiceCalculationModule': ['ReceptionEventBus', 'ReceptionErrorHandler'],
             'PaymentProcessingModule': ['ReceptionEventBus', 'ReceptionErrorHandler']
@@ -37,6 +38,7 @@
             'ReceptionErrorHandler',
             'PatientSearchModule',
             'PatientInsuranceModule',
+            'RealTimeInsuranceBinding',
             'DepartmentSelectionModule',
             'ServiceCalculationModule',
             'PaymentProcessingModule'

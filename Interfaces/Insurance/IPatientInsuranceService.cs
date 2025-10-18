@@ -296,6 +296,46 @@ namespace ClinicApp.Interfaces.Insurance
 
         #endregion
 
+        #region Insurance Update Methods
+
+        /// <summary>
+        /// به‌روزرسانی بیمه پایه بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="insuranceId">شناسه بیمه</param>
+        /// <param name="policyNumber">شماره بیمه</param>
+        /// <param name="cardNumber">شماره کارت</param>
+        /// <returns>نتیجه به‌روزرسانی</returns>
+        Task<ServiceResult<bool>> UpdatePatientPrimaryInsuranceAsync(int patientId, int insuranceId, string policyNumber, string cardNumber);
+
+        /// <summary>
+        /// به‌روزرسانی بیمه تکمیلی بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="insuranceId">شناسه بیمه</param>
+        /// <param name="policyNumber">شماره بیمه</param>
+        /// <param name="expiryDate">تاریخ انقضا</param>
+        /// <returns>نتیجه به‌روزرسانی</returns>
+        Task<ServiceResult<bool>> UpdatePatientSupplementaryInsuranceAsync(int patientId, int insuranceId, string policyNumber, DateTime? expiryDate);
+
+        /// <summary>
+        /// تغییر بیمه پایه بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="newInsuranceId">شناسه بیمه جدید</param>
+        /// <returns>نتیجه تغییر</returns>
+        Task<ServiceResult<bool>> ChangePatientPrimaryInsuranceAsync(int patientId, int newInsuranceId);
+
+        /// <summary>
+        /// تغییر بیمه تکمیلی بیمار
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <param name="newInsuranceId">شناسه بیمه جدید</param>
+        /// <returns>نتیجه تغییر</returns>
+        Task<ServiceResult<bool>> ChangePatientSupplementaryInsuranceAsync(int patientId, int newInsuranceId);
+
+        #endregion
+
         #region Statistics Methods
 
         /// <summary>

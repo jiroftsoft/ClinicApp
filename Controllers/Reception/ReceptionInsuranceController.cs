@@ -569,10 +569,10 @@ namespace ClinicApp.Controllers.Reception
                     var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
                     _logger.Information("[{RequestId}] ✅ طرح‌های بیمه تکمیلی با موفقیت دریافت شدند در {Duration}ms", 
                         requestId, duration);
-                    
-                    return Json(new { 
-                        success = true, 
-                        data = result.Data,
+
+                return Json(new { 
+                    success = true, 
+                    data = result.Data,
                         message = "طرح‌های بیمه تکمیلی با موفقیت دریافت شدند"
                     });
                 }
@@ -660,35 +660,151 @@ namespace ClinicApp.Controllers.Reception
         }
 
         /// <summary>
-        /// تغییر بیمه بیمار
+        /// ذخیره اطلاعات بیمه بیمار - Production Ready
         /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<JsonResult> ChangePatientInsurance(int patientId, int baseInsuranceId, int? supplementaryInsuranceId)
+        [Route("Save")]
+        public async Task<JsonResult> Save(PatientInsuranceReceptionFormViewModel model)
         {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
             try
             {
-                _logger.Information("🔄 تغییر بیمه بیمار: {PatientId}, پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, کاربر: {UserName}", 
-                    patientId, baseInsuranceId, supplementaryInsuranceId, _currentUserService.UserName);
+                _logger.Information("[{RequestId}] 💾 ذخیره اطلاعات بیمه بیمار: {PatientId}, کاربر: {UserName}", 
+                    requestId, model.PatientId, _currentUserService.UserName);
 
-                // تغییر بیمه بیمار
-                // TODO: پیاده‌سازی تغییر بیمه بیمار با سرویس مناسب
-                var result = ServiceResult<object>.Failed("تغییر بیمه بیمار در حال پیاده‌سازی است");
-                
-                if (!result.Success)
+                // اعتبارسنجی ورودی‌ها
+                if (model.PatientId <= 0)
                 {
-                    return Json(new { success = false, message = result.Message });
+                    _logger.Warning("[{RequestId}] شناسه بیمار نامعتبر: {PatientId}", requestId, model.PatientId);
+                    return Json(new { success = false, message = "شناسه بیمار نامعتبر است" });
                 }
+
+                // ذخیره بیمه پایه
+                if (model.PrimaryInsuranceId.HasValue)
+                {
+                    var primaryResult = await _patientInsuranceService.UpdatePatientPrimaryInsuranceAsync(
+                        model.PatientId, 
+                        model.PrimaryInsuranceId.Value,
+                        model.PrimaryPolicyNumber,
+                        model.PrimaryCardNumber
+                    );
+                    
+                    if (!primaryResult.Success)
+                    {
+                        _logger.Warning("[{RequestId}] خطا در ذخیره بیمه پایه: {Error}", requestId, primaryResult.Message);
+                        return Json(new { success = false, message = $"خطا در ذخیره بیمه پایه: {primaryResult.Message}" });
+                    }
+                }
+
+                // ذخیره بیمه تکمیلی
+                if (model.SupplementaryInsuranceId.HasValue)
+                {
+                    var supplementaryResult = await _patientInsuranceService.UpdatePatientSupplementaryInsuranceAsync(
+                        model.PatientId, 
+                        model.SupplementaryInsuranceId.Value,
+                        model.SupplementaryPolicyNumber,
+                        model.SupplementaryExpiryDate
+                    );
+                    
+                    if (!supplementaryResult.Success)
+                    {
+                        _logger.Warning("[{RequestId}] خطا در ذخیره بیمه تکمیلی: {Error}", requestId, supplementaryResult.Message);
+                        return Json(new { success = false, message = $"خطا در ذخیره بیمه تکمیلی: {supplementaryResult.Message}" });
+                    }
+                }
+
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Information("[{RequestId}] ✅ ذخیره اطلاعات بیمه موفق در {Duration}ms", requestId, duration);
 
                 return Json(new { 
                     success = true, 
-                    message = "بیمه بیمار با موفقیت تغییر کرد"
+                    message = "اطلاعات بیمه با موفقیت ذخیره شد",
+                    data = new {
+                        PatientId = model.PatientId,
+                        PrimaryInsuranceId = model.PrimaryInsuranceId,
+                        SupplementaryInsuranceId = model.SupplementaryInsuranceId,
+                        SavedAt = DateTime.Now
+                    }
                 });
             }
             catch (Exception ex)
             {
-                _logger.Error(ex, "❌ خطا در تغییر بیمه بیمار: {PatientId}", patientId);
-                return Json(new { success = false, message = "خطا در تغییر بیمه بیمار" });
+                _logger.Error(ex, "[{RequestId}] ❌ خطا در ذخیره اطلاعات بیمه بیمار: {PatientId}", requestId, model.PatientId);
+                return Json(new { success = false, message = "خطا در ذخیره اطلاعات بیمه. لطفاً دوباره تلاش کنید." });
+            }
+        }
+
+        /// <summary>
+        /// تغییر بیمه بیمار - Production Ready
+        /// </summary>
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Route("ChangePatientInsurance")]
+        public async Task<JsonResult> ChangePatientInsurance(int patientId, int baseInsuranceId, int? supplementaryInsuranceId)
+        {
+            var startTime = DateTime.UtcNow;
+            var requestId = Guid.NewGuid().ToString("N").Substring(0, 8);
+            
+            try
+            {
+                _logger.Information("[{RequestId}] 🔄 تغییر بیمه بیمار: {PatientId}, پایه {BaseInsuranceId}, تکمیلی {SupplementaryInsuranceId}, کاربر: {UserName}", 
+                    requestId, patientId, baseInsuranceId, supplementaryInsuranceId, _currentUserService.UserName);
+
+                // اعتبارسنجی ورودی‌ها
+                if (patientId <= 0)
+                {
+                    _logger.Warning("[{RequestId}] شناسه بیمار نامعتبر: {PatientId}", requestId, patientId);
+                    return Json(new { success = false, message = "شناسه بیمار نامعتبر است" });
+                }
+
+                // تغییر بیمه پایه
+                var primaryResult = await _patientInsuranceService.ChangePatientPrimaryInsuranceAsync(
+                    patientId, 
+                    baseInsuranceId
+                );
+                
+                if (!primaryResult.Success)
+                {
+                    _logger.Warning("[{RequestId}] خطا در تغییر بیمه پایه: {Error}", requestId, primaryResult.Message);
+                    return Json(new { success = false, message = $"خطا در تغییر بیمه پایه: {primaryResult.Message}" });
+                }
+
+                // تغییر بیمه تکمیلی (اگر انتخاب شده باشد)
+                if (supplementaryInsuranceId.HasValue)
+                {
+                    var supplementaryResult = await _patientInsuranceService.ChangePatientSupplementaryInsuranceAsync(
+                        patientId, 
+                        supplementaryInsuranceId.Value
+                    );
+                    
+                    if (!supplementaryResult.Success)
+                    {
+                        _logger.Warning("[{RequestId}] خطا در تغییر بیمه تکمیلی: {Error}", requestId, supplementaryResult.Message);
+                        return Json(new { success = false, message = $"خطا در تغییر بیمه تکمیلی: {supplementaryResult.Message}" });
+                    }
+                }
+
+                var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
+                _logger.Information("[{RequestId}] ✅ تغییر بیمه بیمار موفق در {Duration}ms", requestId, duration);
+
+                return Json(new { 
+                    success = true, 
+                    message = "بیمه بیمار با موفقیت تغییر کرد",
+                    data = new {
+                        PatientId = patientId,
+                        BaseInsuranceId = baseInsuranceId,
+                        SupplementaryInsuranceId = supplementaryInsuranceId,
+                        ChangedAt = DateTime.Now
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "[{RequestId}] ❌ خطا در تغییر بیمه بیمار: {PatientId}", requestId, patientId);
+                return Json(new { success = false, message = "خطا در تغییر بیمه بیمار. لطفاً دوباره تلاش کنید." });
             }
         }
 

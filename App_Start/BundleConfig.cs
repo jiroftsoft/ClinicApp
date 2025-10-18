@@ -51,7 +51,8 @@ namespace ClinicApp
 
             // Reception Module CSS Bundle
             bundles.Add(new StyleBundle("~/Content/reception/css").Include(
-                "~/Content/css/reception/reception-accordion.css"
+                "~/Content/css/reception/reception-accordion.css",
+                "~/Content/css/reception/realtime-insurance-binding.css"
             ));
 
             // Reception Module JS Bundle
@@ -100,6 +101,7 @@ namespace ClinicApp
             bundles.Add(new ScriptBundle("~/bundles/reception-modules").Include(
                 "~/Scripts/reception/modules/patient-search.js",
                 "~/Scripts/reception/modules/patient-insurance.js",
+                "~/Scripts/reception/modules/realtime-insurance-binding.js",
                 "~/Scripts/reception/modules/department-selection.js",
                 "~/Scripts/reception/modules/service-calculation.js",
                 "~/Scripts/reception/modules/payment-processing.js"));
