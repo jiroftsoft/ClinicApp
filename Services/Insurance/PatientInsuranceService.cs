@@ -228,7 +228,15 @@ namespace ClinicApp.Services.Insurance
 
                 // تفکیک بیمه پایه و تکمیلی
                 var primaryInsurance = patientInsurances.FirstOrDefault(pi => pi.IsPrimary);
-                var supplementaryInsurance = patientInsurances.FirstOrDefault(pi => !pi.IsPrimary);
+                
+                // تشخیص بیمه تکمیلی: یا رکورد جداگانه یا فیلدهای تکمیلی در بیمه اصلی
+                var supplementaryInsurance = patientInsurances.FirstOrDefault(pi => !pi.IsPrimary) ?? 
+                    (primaryInsurance != null && primaryInsurance.SupplementaryInsuranceProviderId.HasValue ? primaryInsurance : null);
+                
+                _log.Information("🔍 تحلیل بیمه‌های بیمار {PatientId}: Primary={HasPrimary}, Supplementary={HasSupplementary}", 
+                    patientId, 
+                    primaryInsurance != null, 
+                    supplementaryInsurance != null);
 
                 // ساخت پاسخ کامل
                 var response = new

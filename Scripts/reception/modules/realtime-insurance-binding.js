@@ -345,10 +345,12 @@
                 
                 // Bind supplementary insurance data
                 if (insuranceData.SupplementaryInsurance) {
-                    console.log('[RealTimeInsuranceBinding] Binding supplementary insurance:', insuranceData.SupplementaryInsurance);
+                    console.log('[RealTimeInsuranceBinding] ✅ Supplementary insurance found:', insuranceData.SupplementaryInsurance);
                     this.bindSupplementaryInsuranceData(insuranceData.SupplementaryInsurance);
                 } else {
-                    console.log('[RealTimeInsuranceBinding] No supplementary insurance data');
+                    console.log('[RealTimeInsuranceBinding] ℹ️ No supplementary insurance data - patient has only primary insurance');
+                    // پاک کردن فیلدهای بیمه تکمیلی
+                    this.clearSupplementaryInsuranceFields();
                 }
                 
                 // Update form state
@@ -652,6 +654,32 @@
         },
 
         // ========================================
+        // CLEAR SUPPLEMENTARY INSURANCE FIELDS - پاک کردن فیلدهای بیمه تکمیلی
+        // ========================================
+        clearSupplementaryInsuranceFields: function() {
+            console.log('[RealTimeInsuranceBinding] Clearing supplementary insurance fields...');
+            
+            try {
+                // پاک کردن provider
+                $(CONFIG.selectors.supplementaryProvider).val('').trigger('change');
+                
+                // پاک کردن plan
+                $(CONFIG.selectors.supplementaryPlan).empty().append('<option value="">انتخاب طرح بیمه تکمیلی...</option>');
+                
+                // پاک کردن policy number
+                $(CONFIG.selectors.supplementaryPolicyNumber).val('');
+                
+                // پاک کردن expiry date
+                $(CONFIG.selectors.supplementaryExpiry).val('');
+                
+                console.log('[RealTimeInsuranceBinding] ✅ Supplementary insurance fields cleared');
+            } catch (error) {
+                console.error('[RealTimeInsuranceBinding] Error clearing supplementary insurance fields:', error);
+                this.handleError(error, 'clearSupplementaryInsuranceFields');
+            }
+        },
+
+        // ========================================
         // INSURANCE FORM CHANGE HANDLER - مدیریت تغییر فرم بیمه
         // ========================================
         handleInsuranceFormChange: function() {
@@ -821,55 +849,117 @@
         // UPDATE FORM STATE - به‌روزرسانی وضعیت فرم
         // ========================================
         updateFormState: function(insuranceData) {
-            // Update form validation state
-            this.validateInsuranceForm();
+            console.log('[RealTimeInsuranceBinding] Updating form state...');
             
-            // Update save button state
-            this.updateSaveButtonState();
+            try {
+                // Update form validation state
+                this.validateInsuranceForm();
+                
+                // Update save button state
+                this.updateSaveButtonState();
+                
+                // نمایش وضعیت بیمه
+                if (insuranceData) {
+                    if (insuranceData.PrimaryInsurance) {
+                        console.log('[RealTimeInsuranceBinding] ✅ Primary insurance available:', {
+                            ProviderId: insuranceData.PrimaryInsurance.ProviderId,
+                            PlanId: insuranceData.PrimaryInsurance.PlanId,
+                            PolicyNumber: insuranceData.PrimaryInsurance.PolicyNumber
+                        });
+                    }
+                    if (insuranceData.SupplementaryInsurance) {
+                        console.log('[RealTimeInsuranceBinding] ✅ Supplementary insurance available:', {
+                            ProviderId: insuranceData.SupplementaryInsurance.ProviderId,
+                            PlanId: insuranceData.SupplementaryInsurance.PlanId,
+                            PolicyNumber: insuranceData.SupplementaryInsurance.PolicyNumber
+                        });
+                    } else {
+                        console.log('[RealTimeInsuranceBinding] ℹ️ No supplementary insurance - patient has only primary insurance');
+                    }
+                }
+                
+                console.log('[RealTimeInsuranceBinding] ✅ Form state updated successfully');
+            } catch (error) {
+                console.error('[RealTimeInsuranceBinding] Error updating form state:', error);
+                this.handleError(error, 'updateFormState');
+            }
         },
 
         // ========================================
         // VALIDATE INSURANCE FORM - اعتبارسنجی فرم بیمه
         // ========================================
         validateInsuranceForm: function() {
-            var isValid = true;
-            var errors = [];
+            console.log('[RealTimeInsuranceBinding] Validating insurance form...');
             
-            // Validate primary insurance
-            var primaryProvider = $(CONFIG.selectors.primaryProvider).val();
-            var primaryPlan = $(CONFIG.selectors.primaryPlan).val();
-            
-            if (primaryProvider && !primaryPlan) {
-                isValid = false;
-                errors.push('لطفاً طرح بیمه پایه را انتخاب کنید');
+            try {
+                var isValid = true;
+                var errors = [];
+                
+                // Validate primary insurance
+                var primaryProvider = $(CONFIG.selectors.primaryProvider).val();
+                var primaryPlan = $(CONFIG.selectors.primaryPlan).val();
+                
+                if (primaryProvider && !primaryPlan) {
+                    isValid = false;
+                    errors.push('لطفاً طرح بیمه پایه را انتخاب کنید');
+                }
+                
+                // Validate supplementary insurance
+                var supplementaryProvider = $(CONFIG.selectors.supplementaryProvider).val();
+                var supplementaryPlan = $(CONFIG.selectors.supplementaryPlan).val();
+                
+                if (supplementaryProvider && !supplementaryPlan) {
+                    isValid = false;
+                    errors.push('لطفاً طرح بیمه تکمیلی را انتخاب کنید');
+                }
+                
+                console.log('[RealTimeInsuranceBinding] Form validation result:', {
+                    isValid: isValid,
+                    errors: errors,
+                    primaryProvider: primaryProvider,
+                    primaryPlan: primaryPlan,
+                    supplementaryProvider: supplementaryProvider,
+                    supplementaryPlan: supplementaryPlan
+                });
+                
+                return {
+                    isValid: isValid,
+                    errors: errors
+                };
+            } catch (error) {
+                console.error('[RealTimeInsuranceBinding] Error validating insurance form:', error);
+                return {
+                    isValid: false,
+                    errors: ['خطا در اعتبارسنجی فرم']
+                };
             }
-            
-            // Validate supplementary insurance
-            var supplementaryProvider = $(CONFIG.selectors.supplementaryProvider).val();
-            var supplementaryPlan = $(CONFIG.selectors.supplementaryPlan).val();
-            
-            if (supplementaryProvider && !supplementaryPlan) {
-                isValid = false;
-                errors.push('لطفاً طرح بیمه تکمیلی را انتخاب کنید');
-            }
-            
-            return {
-                isValid: isValid,
-                errors: errors
-            };
         },
 
         // ========================================
         // UPDATE SAVE BUTTON STATE - به‌روزرسانی وضعیت دکمه ذخیره
         // ========================================
         updateSaveButtonState: function() {
-            var validation = this.validateInsuranceForm();
-            var $saveBtn = $(CONFIG.selectors.saveInsuranceBtn);
+            console.log('[RealTimeInsuranceBinding] Updating save button state...');
             
-            if (validation.isValid) {
-                $saveBtn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
-            } else {
-                $saveBtn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+            try {
+                var validation = this.validateInsuranceForm();
+                var $saveBtn = $(CONFIG.selectors.saveInsuranceBtn);
+                
+                console.log('[RealTimeInsuranceBinding] Save button validation:', {
+                    isValid: validation.isValid,
+                    errors: validation.errors
+                });
+                
+                if (validation.isValid) {
+                    $saveBtn.prop('disabled', false).removeClass('btn-secondary').addClass('btn-success');
+                    console.log('[RealTimeInsuranceBinding] ✅ Save button enabled');
+                } else {
+                    $saveBtn.prop('disabled', true).removeClass('btn-success').addClass('btn-secondary');
+                    console.log('[RealTimeInsuranceBinding] ❌ Save button disabled');
+                }
+            } catch (error) {
+                console.error('[RealTimeInsuranceBinding] Error updating save button state:', error);
+                this.handleError(error, 'updateSaveButtonState');
             }
         },
 

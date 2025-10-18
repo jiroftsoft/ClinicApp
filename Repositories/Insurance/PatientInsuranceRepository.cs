@@ -177,6 +177,8 @@ namespace ClinicApp.Repositories.Insurance
                     .Where(pi => pi.PatientId == patientId && pi.IsActive && !pi.IsDeleted)
                     .Include(pi => pi.InsurancePlan)
                     .Include(pi => pi.InsurancePlan.InsuranceProvider)
+                    .Include(pi => pi.SupplementaryInsuranceProvider) // بیمه‌گذار تکمیلی
+                    .Include(pi => pi.SupplementaryInsurancePlan) // طرح بیمه تکمیلی
                     .Include(pi => pi.Patient)
                     .OrderBy(pi => pi.IsPrimary ? 0 : 1)
                     .ThenBy(pi => pi.StartDate)
