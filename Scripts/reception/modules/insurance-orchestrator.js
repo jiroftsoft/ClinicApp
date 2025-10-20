@@ -42,61 +42,263 @@
         },
 
         // ========================================
-        // SETUP EVENT LISTENERS - تنظیم event listeners
+        // SETUP EVENT LISTENERS - تنظیم event listeners (Production-Optimized)
         // ========================================
         setupEventListeners: function() {
-            console.log('[InsuranceOrchestrator] Setting up event listeners...');
+            console.log('[InsuranceOrchestrator] 🔗 Setting up event listeners...');
             
             try {
                 var self = this;
                 
-                // Form change events
-                $(document).on('change input', this.config.selectors.form + ' input, ' + this.config.selectors.form + ' select', function() {
+                // Form change events with debouncing - SPECIFIC SELECTORS
+                var formSelectors = '#insuranceProvider, #insurancePlan, #policyNumber, #cardNumber, #supplementaryProvider, #supplementaryPlan, #supplementaryPolicyNumber, #supplementaryExpiry';
+                
+                $(document).on('change.insuranceOrchestrator', formSelectors, function() {
+                    console.log('[InsuranceOrchestrator] 🔄 Form field changed:', this.id);
                     self.handleFormChange();
                 });
                 
+                $(document).on('input.insuranceOrchestrator', formSelectors, this.debounce(function() {
+                    console.log('[InsuranceOrchestrator] 🔄 Form field input:', this.id);
+                    self.handleFormChange();
+                }, 300));
+                
                 // Save button click
-                $(document).on('click', this.config.selectors.saveButton, function(e) {
+                $(document).on('click.insuranceOrchestrator', this.config.selectors.saveButton, function(e) {
                     e.preventDefault();
+                    console.log('[InsuranceOrchestrator] 💾 Save button clicked');
                     self.handleSaveClick();
                 });
                 
                 // Patient search success
-                $(document).on('patientSearchSuccess', function(e, data) {
+                $(document).on('patientSearchSuccess.insuranceOrchestrator', function(e, data) {
+                    console.log('[InsuranceOrchestrator] 👤 Patient search success:', data);
                     self.handlePatientSearchSuccess(data);
                 });
                 
                 // Insurance load success
-                $(document).on('insuranceLoadSuccess', function(e, data) {
+                $(document).on('insuranceLoadSuccess.insuranceOrchestrator', function(e, data) {
+                    console.log('[InsuranceOrchestrator] 🏥 Insurance load success:', data);
                     self.handleInsuranceLoadSuccess(data);
                 });
                 
-                console.log('[InsuranceOrchestrator] Event listeners setup completed');
+                // EventBus integration
+                if (window.ReceptionEventBus) {
+                    window.ReceptionEventBus.on('insurance:changed', function(data) {
+                        console.log('[InsuranceOrchestrator] 📡 Insurance changed event received:', data);
+                        self.handleInsuranceChanged(data);
+                    });
+                }
+                
+                console.log('[InsuranceOrchestrator] ✅ Event listeners setup completed');
             } catch (error) {
-                console.error('[InsuranceOrchestrator] Error setting up event listeners:', error);
+                console.error('[InsuranceOrchestrator] ❌ Error setting up event listeners:', error);
                 throw error;
             }
         },
 
         // ========================================
-        // HANDLE FORM CHANGE - مدیریت تغییر فرم
+        // DEBOUNCE FUNCTION - تابع debounce
+        // ========================================
+        debounce: function(func, wait) {
+            var timeout;
+            return function() {
+                var context = this;
+                var args = arguments;
+                clearTimeout(timeout);
+                timeout = setTimeout(function() {
+                    func.apply(context, args);
+                }, wait);
+            };
+        },
+
+        // ========================================
+        // HANDLE FORM CHANGE - مدیریت تغییر فرم (Production-Optimized)
         // ========================================
         handleFormChange: function() {
-            console.log('[InsuranceOrchestrator] Handling form change...');
+            console.log('[InsuranceOrchestrator] 🔄 Handling form change...');
             
             try {
-                // تشخیص تغییرات با استفاده از FormChangeDetector
+                // 1. Detect changes using FormChangeDetector
                 var changeResult = window.FormChangeDetector.detectChanges();
                 
+                console.log('[InsuranceOrchestrator] 📊 Change detection result:', {
+                    hasChanges: changeResult.hasChanges,
+                    changesCount: changeResult.changes ? changeResult.changes.length : 0,
+                    changes: changeResult.changes
+                });
+                
                 if (changeResult.hasChanges) {
-                    console.log('[InsuranceOrchestrator] Changes detected, enabling edit mode');
-                    window.EditModeManager.enableEditMode();
+                    console.log('[InsuranceOrchestrator] ✅ Changes detected, enabling edit mode');
+                    
+                    // 2. Enable edit mode using EditModeManager
+                    if (window.EditModeManager) {
+                        window.EditModeManager.enableEditMode();
+                        console.log('[InsuranceOrchestrator] ✅ Edit mode enabled');
+                    }
+                    
+                    // 3. Validate form using ValidationEngine
+                    if (window.ValidationEngine) {
+                        var validationResult = window.ValidationEngine.validateForm();
+                        console.log('[InsuranceOrchestrator] 📊 Validation result:', validationResult);
+                        
+                        // 4. Update save button state
+                        this.updateSaveButtonState(validationResult);
+                    }
+                    
+                    // 5. Show user feedback
+                    this.showChangeDetectedMessage(changeResult.changes);
+                    
                 } else {
-                    console.log('[InsuranceOrchestrator] No changes detected, disabling edit mode');
-                    window.EditModeManager.disableEditMode();
+                    console.log('[InsuranceOrchestrator] ❌ No changes detected, disabling edit mode');
+                    
+                    // Disable edit mode
+                    if (window.EditModeManager) {
+                        window.EditModeManager.disableEditMode();
+                        console.log('[InsuranceOrchestrator] ❌ Edit mode disabled');
+                    }
                 }
+                
             } catch (error) {
-                console.error('[InsuranceOrchestrator] Error handling form change:', error);
+                console.error('[InsuranceOrchestrator] ❌ Error handling form change:', error);
+                this.handleError(error, 'handleFormChange');
+            }
+        },
+
+        // ========================================
+        // FORCE FORM CHANGE DETECTION - اجبار تشخیص تغییرات فرم
+        // ========================================
+        forceFormChangeDetection: function() {
+            console.log('[InsuranceOrchestrator] 🔄 Forcing form change detection...');
+            
+            try {
+                // Force FormChangeDetector to re-capture current values
+                if (window.FormChangeDetector) {
+                    window.FormChangeDetector.updateOriginalValuesFromCurrentForm();
+                    console.log('[InsuranceOrchestrator] ✅ Original values updated from current form');
+                }
+                
+                // Trigger form change detection
+                this.handleFormChange();
+                
+            } catch (error) {
+                console.error('[InsuranceOrchestrator] ❌ Error forcing form change detection:', error);
+                this.handleError(error, 'forceFormChangeDetection');
+            }
+        },
+
+        // ========================================
+        // SHOW CHANGE DETECTED MESSAGE - نمایش پیام تشخیص تغییرات
+        // ========================================
+        showChangeDetectedMessage: function(changes) {
+            console.log('[InsuranceOrchestrator] 📢 Showing change detected message...');
+            
+            try {
+                var changeCount = changes ? changes.length : 0;
+                var message = 'تغییرات در فرم تشخیص داده شد. برای ذخیره تغییرات روی دکمه ذخیره کلیک کنید.';
+                
+                // Use Toastr if available
+                if (window.ReceptionToastr && window.ReceptionToastr.helpers && window.ReceptionToastr.helpers.showInfo) {
+                    window.ReceptionToastr.helpers.showInfo(message);
+                } else {
+                    console.log('[InsuranceOrchestrator] ℹ️ Info:', message);
+                }
+                
+            } catch (error) {
+                console.error('[InsuranceOrchestrator] ❌ Error showing change detected message:', error);
+            }
+        },
+
+        // ========================================
+        // UPDATE SAVE BUTTON STATE - به‌روزرسانی وضعیت دکمه ذخیره
+        // ========================================
+        updateSaveButtonState: function(validationResult) {
+            console.log('[InsuranceOrchestrator] 🔄 Updating save button state...');
+            
+            try {
+                var $saveButton = $(this.config.selectors.saveButton);
+                
+                if ($saveButton.length === 0) {
+                    console.warn('[InsuranceOrchestrator] ⚠️ Save button not found');
+                    return;
+                }
+                
+                // Enable save button if there are changes and edit mode is enabled
+                var shouldEnable = validationResult.hasChanges && window.EditModeManager && window.EditModeManager.isEditMode;
+                
+                if (shouldEnable) {
+                    $saveButton
+                        .prop('disabled', false)
+                        .removeClass('d-none btn-secondary')
+                        .addClass('btn-success')
+                        .html('<i class="fas fa-save"></i> ذخیره اطلاعات بیمه');
+                    console.log('[InsuranceOrchestrator] ✅ Save button enabled and shown');
+                } else {
+                    $saveButton
+                        .prop('disabled', true)
+                        .addClass('d-none btn-secondary')
+                        .removeClass('btn-success')
+                        .html('<i class="fas fa-save"></i> ذخیره اطلاعات بیمه');
+                    console.log('[InsuranceOrchestrator] ❌ Save button disabled and hidden');
+                }
+                
+            } catch (error) {
+                console.error('[InsuranceOrchestrator] ❌ Error updating save button state:', error);
+            }
+        },
+
+        // ========================================
+        // HANDLE INSURANCE CHANGED - مدیریت تغییر بیمه
+        // ========================================
+        handleInsuranceChanged: function(data) {
+            console.log('[InsuranceOrchestrator] 📡 Handling insurance changed event...');
+            
+            try {
+                // Update form state based on changed data
+                this.updateFormState(data);
+                
+            } catch (error) {
+                console.error('[InsuranceOrchestrator] ❌ Error handling insurance changed:', error);
+            }
+        },
+
+        // ========================================
+        // UPDATE FORM STATE - به‌روزرسانی وضعیت فرم
+        // ========================================
+        updateFormState: function(data) {
+            console.log('[InsuranceOrchestrator] 🔄 Updating form state...');
+            
+            try {
+                // Update form fields based on data
+                if (data.primaryProvider) {
+                    $('#insuranceProvider').val(data.primaryProvider).trigger('change');
+                }
+                if (data.primaryPlan) {
+                    $('#insurancePlan').val(data.primaryPlan).trigger('change');
+                }
+                // ... other fields
+                
+            } catch (error) {
+                console.error('[InsuranceOrchestrator] ❌ Error updating form state:', error);
+            }
+        },
+
+        // ========================================
+        // HANDLE ERROR - مدیریت خطا
+        // ========================================
+        handleError: function(error, context) {
+            console.error('[InsuranceOrchestrator] 🚨 Error in', context, ':', error);
+            this.showError('خطا در سیستم. لطفاً صفحه را بازخوانی کنید.');
+        },
+
+        // ========================================
+        // SHOW ERROR - نمایش پیام خطا
+        // ========================================
+        showError: function(message) {
+            if (window.ReceptionToastr && window.ReceptionToastr.helpers && window.ReceptionToastr.helpers.showError) {
+                window.ReceptionToastr.helpers.showError(message);
+            } else {
+                console.error('[InsuranceOrchestrator] ❌ Error:', message);
             }
         },
 
@@ -156,13 +358,24 @@
             console.log('[InsuranceOrchestrator] Handling insurance load success...');
             
             try {
-                // به‌روزرسانی مقادیر اولیه در FormChangeDetector
-                window.FormChangeDetector.updateOriginalValues();
+                // Wait for form to be fully populated before setting original values
+                var self = this;
+                setTimeout(function() {
+                    // به‌روزرسانی مقادیر اولیه در FormChangeDetector
+                    if (window.FormChangeDetector) {
+                        window.FormChangeDetector.updateOriginalValuesFromCurrentForm();
+                        console.log('[InsuranceOrchestrator] ✅ Original values updated from current form');
+                    }
+                    
+                    // غیرفعال کردن حالت ویرایش
+                    if (window.EditModeManager) {
+                        window.EditModeManager.disableEditMode();
+                        console.log('[InsuranceOrchestrator] ✅ Edit mode disabled');
+                    }
+                    
+                    console.log('[InsuranceOrchestrator] ✅ Insurance load success handled');
+                }, 1500); // Wait for form to be fully populated
                 
-                // غیرفعال کردن حالت ویرایش
-                window.EditModeManager.disableEditMode();
-                
-                console.log('[InsuranceOrchestrator] Insurance load success handled');
             } catch (error) {
                 console.error('[InsuranceOrchestrator] Error handling insurance load success:', error);
             }

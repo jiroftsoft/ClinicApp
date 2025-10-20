@@ -4462,6 +4462,7 @@
     <Content Include="Scripts\reception\reception-main.js" />
     <Content Include="Scripts\reception\reception-modules.js" />
     <Content Include="Scripts\reception\reception-toastr-service.js" />
+    <Content Include="Scripts\reception\test-insurance-change-detection.js" />
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />

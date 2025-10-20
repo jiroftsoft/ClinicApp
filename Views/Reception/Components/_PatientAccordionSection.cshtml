@@ -30,7 +30,7 @@
         </div>
     </div>
 
-    <!-- محتوای بخش -->
+    <!-- محتوای بخش - بهینه‌سازی UX -->
     <div class="section-content">
         <!-- Error Handling Container -->
         <div class="alert-container d-none" id="patientErrorContainer">
@@ -68,8 +68,8 @@
                     </div>
                     <div class="search-body">
                         <div class="row align-items-end">
-                            <div class="col-md-8">
-                                <!-- فیلد کد ملی بهینه - UX بهتر -->
+                            <div class="col-md-6">
+                                <!-- فیلد کد ملی بهینه - UX حرفه‌ای -->
                                 <div class="form-group mb-0">
                                     <label class="form-label">
                                         <i class="fas fa-id-card me-1"></i>
@@ -90,6 +90,31 @@
                                         </button>
                                     </div>
                                     <div class="invalid-feedback" id="nationalCodeError"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <!-- نتایج جستجو فوری -->
+                                <div class="search-results-container">
+                                    <div class="search-results d-none" id="patientSearchResults">
+                                        <div class="result-card">
+                                            <div class="result-header">
+                                                <i class="fas fa-user-check text-success me-2"></i>
+                                                <span class="result-title">بیمار یافت شد</span>
+                                            </div>
+                                            <div class="result-body">
+                                                <div class="patient-info">
+                                                    <div class="info-item">
+                                                        <span class="info-label">نام:</span>
+                                                        <span class="info-value" id="foundPatientName"></span>
+                                                    </div>
+                                                    <div class="info-item">
+                                                        <span class="info-label">کد ملی:</span>
+                                                        <span class="info-value" id="foundPatientNationalCode"></span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">

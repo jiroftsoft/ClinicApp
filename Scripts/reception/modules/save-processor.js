@@ -50,31 +50,292 @@
         },
 
         // ========================================
-        // SAVE INSURANCE - ذخیره اطلاعات بیمه
+        // SAVE INSURANCE - ذخیره اطلاعات بیمه (Production-Optimized)
         // ========================================
         saveInsurance: function(patientId, formData) {
-            console.log('[SaveProcessor] Saving insurance for patient:', patientId);
+            console.log('[SaveProcessor] 💾 Starting save process for patient:', patientId);
             
             try {
+                // 1. CONCURRENCY PROTECTION - محافظت از تداخل
                 if (this.isSaving) {
-                    console.warn('[SaveProcessor] Save operation already in progress');
-                    return Promise.reject('Save operation already in progress');
+                    console.warn('[SaveProcessor] ⚠️ Save already in progress, queuing request');
+                    this.queueSaveRequest(patientId, formData);
+                    return Promise.reject('Save operation queued');
                 }
                 
-                this.isSaving = true;
-                this.showSavingMessage();
+                // 2. PERFORMANCE MONITORING - نظارت بر عملکرد
+                this.startPerformanceMonitoring('save');
                 
-                var requestData = this.prepareRequestData(patientId, formData);
+                // 3. UI STATE MANAGEMENT - مدیریت وضعیت UI
+                this.setSaveInProgressState();
+                
+                // 4. DATA SANITIZATION - پاکسازی داده
+                var sanitizedData = this.sanitizeFormData(formData);
+                
+                // 5. REQUEST PREPARATION - آماده‌سازی درخواست
+                var requestData = this.prepareRequestData(patientId, sanitizedData);
+                
+                // 6. AJAX REQUEST - درخواست AJAX
                 var request = this.sendSaveRequest(requestData);
                 
                 this.currentRequest = request;
-                
                 return request;
+                
             } catch (error) {
-                console.error('[SaveProcessor] Error saving insurance:', error);
-                this.isSaving = false;
+                console.error('[SaveProcessor] ❌ Critical error in save process:', error);
+                this.handleCriticalError(error, 'saveInsurance');
+                return Promise.reject(error);
+            }
+        },
+
+        // ========================================
+        // UPDATE SAVE BUTTON STATE - به‌روزرسانی وضعیت دکمه ذخیره (Production-Optimized)
+        // ========================================
+        updateSaveButtonState: function() {
+            console.log('[SaveProcessor] 🔄 Updating save button state...');
+            
+            try {
+                var validation = this.validateForm();
+                var $saveBtn = $('#saveInsuranceBtn');
+                
+                console.log('[SaveProcessor] 📊 Save button validation:', {
+                    isValid: validation.isValid,
+                    hasChanges: validation.hasChanges,
+                    canSave: validation.canSave,
+                    errors: validation.errors,
+                    warnings: validation.warnings
+                });
+                
+                // Check if save button exists
+                if ($saveBtn.length === 0) {
+                    console.warn('[SaveProcessor] ⚠️ Save button not found');
+                    return;
+                }
+                
+                // Determine button state
+                var shouldEnable = validation.canSave; // isValid && hasChanges
+                
+                if (shouldEnable) {
+                    // Enable and show save button
+                    $saveBtn
+                        .prop('disabled', false)
+                        .removeClass('d-none btn-secondary')
+                        .addClass('btn-success')
+                        .html('<i class="fas fa-save"></i> ذخیره اطلاعات بیمه');
+                    
+                    console.log('[SaveProcessor] ✅ Save button enabled and shown');
+                } else {
+                    // Disable and hide save button
+                    $saveBtn
+                        .prop('disabled', true)
+                        .addClass('d-none btn-secondary')
+                        .removeClass('btn-success')
+                        .html('<i class="fas fa-save"></i> ذخیره اطلاعات بیمه');
+                    
+                    console.log('[SaveProcessor] ❌ Save button disabled and hidden');
+                }
+                
+                // Show validation messages if needed
+                if (validation.errors.length > 0) {
+                    this.showValidationErrors(validation.errors);
+                }
+                
+                if (validation.warnings.length > 0) {
+                    this.showValidationWarnings(validation.warnings);
+                }
+                
+                console.log('[SaveProcessor] ✅ Save button state updated');
+                
+            } catch (error) {
+                console.error('[SaveProcessor] ❌ Error updating save button state:', error);
+                this.handleCriticalError(error);
+            }
+        },
+
+        // ========================================
+        // VALIDATE FORM - اعتبارسنجی فرم
+        // ========================================
+        validateForm: function() {
+            console.log('[SaveProcessor] 🔍 Validating form...');
+            
+            try {
+                if (window.ValidationEngine) {
+                    return window.ValidationEngine.validateForm();
+                }
+                
+                return {
+                    isValid: false,
+                    errors: ['ValidationEngine not available'],
+                    warnings: [],
+                    hasChanges: false,
+                    canSave: false
+                };
+                
+            } catch (error) {
+                console.error('[SaveProcessor] ❌ Error validating form:', error);
+                return {
+                    isValid: false,
+                    errors: ['خطا در اعتبارسنجی فرم'],
+                    warnings: [],
+                    hasChanges: false,
+                    canSave: false
+                };
+            }
+        },
+
+        // ========================================
+        // SHOW VALIDATION ERRORS - نمایش خطاهای اعتبارسنجی
+        // ========================================
+        showValidationErrors: function(errors) {
+            console.log('[SaveProcessor] ❌ Validation errors:', errors);
+            
+            var errorMessage = errors.join(', ');
+            
+            if (window.ReceptionToastr && window.ReceptionToastr.helpers && window.ReceptionToastr.helpers.showError) {
+                window.ReceptionToastr.helpers.showError('خطاهای اعتبارسنجی: ' + errorMessage);
+            } else {
+                console.error('[SaveProcessor] Validation errors: ' + errorMessage);
+            }
+        },
+
+        // ========================================
+        // SHOW VALIDATION WARNINGS - نمایش هشدارهای اعتبارسنجی
+        // ========================================
+        showValidationWarnings: function(warnings) {
+            console.log('[SaveProcessor] ⚠️ Validation warnings:', warnings);
+            
+            var warningMessage = warnings.join(', ');
+            
+            if (window.ReceptionToastr && window.ReceptionToastr.helpers && window.ReceptionToastr.helpers.showWarning) {
+                window.ReceptionToastr.helpers.showWarning('هشدارهای اعتبارسنجی: ' + warningMessage);
+            } else {
+                console.warn('[SaveProcessor] Validation warnings: ' + warningMessage);
+            }
+        },
+
+        // ========================================
+        // SANITIZE FORM DATA - پاکسازی داده‌های فرم
+        // ========================================
+        sanitizeFormData: function(formData) {
+            console.log('[SaveProcessor] 🧹 Sanitizing form data...');
+            
+            try {
+                var sanitized = {};
+                
+                for (var key in formData) {
+                    if (formData.hasOwnProperty(key)) {
+                        sanitized[key] = this.sanitizeValue(formData[key]);
+                    }
+                }
+                
+                console.log('[SaveProcessor] 📊 Sanitized data:', sanitized);
+                return sanitized;
+                
+            } catch (error) {
+                console.error('[SaveProcessor] ❌ Error sanitizing data:', error);
                 throw error;
             }
+        },
+
+        // ========================================
+        // SANITIZE VALUE - پاکسازی مقدار
+        // ========================================
+        sanitizeValue: function(value) {
+            if (!value || value === '') {
+                return null;
+            }
+            
+            // Trim whitespace
+            value = value.toString().trim();
+            
+            // Remove potentially dangerous characters
+            value = value.replace(/[<>\"'&]/g, '');
+            
+            return value;
+        },
+
+        // ========================================
+        // SET SAVE IN PROGRESS STATE - تنظیم وضعیت در حال ذخیره
+        // ========================================
+        setSaveInProgressState: function() {
+            console.log('[SaveProcessor] 🔄 Setting save in progress state...');
+            
+            this.isSaving = true;
+            this._saveStartTime = Date.now();
+            
+            // UI State Management
+            $('#saveInsuranceBtn')
+                .prop('disabled', true)
+                .addClass('disabled')
+                .html('<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...');
+            
+            console.log('[SaveProcessor] ✅ Save in progress state set');
+        },
+
+        // ========================================
+        // PERFORMANCE MONITORING - نظارت بر عملکرد
+        // ========================================
+        startPerformanceMonitoring: function(operation) {
+            this._performanceMetrics = this._performanceMetrics || {};
+            this._performanceMetrics[operation] = {
+                startTime: performance.now(),
+                memoryBefore: performance.memory ? performance.memory.usedJSHeapSize : 0
+            };
+            
+            console.log('[SaveProcessor] 📊 Performance monitoring started for:', operation);
+        },
+
+        endPerformanceMonitoring: function(operation) {
+            if (!this._performanceMetrics || !this._performanceMetrics[operation]) {
+                return;
+            }
+            
+            var metrics = this._performanceMetrics[operation];
+            var duration = performance.now() - metrics.startTime;
+            var memoryAfter = performance.memory ? performance.memory.usedJSHeapSize : 0;
+            var memoryDelta = memoryAfter - metrics.memoryBefore;
+            
+            console.log('[SaveProcessor] 📊 Performance metrics for', operation, ':', {
+                duration: duration.toFixed(2) + 'ms',
+                memoryDelta: (memoryDelta / 1024 / 1024).toFixed(2) + 'MB',
+                timestamp: new Date().toISOString()
+            });
+            
+            // Clean up metrics
+            delete this._performanceMetrics[operation];
+        },
+
+        // ========================================
+        // QUEUE SAVE REQUEST - صف درخواست‌های ذخیره
+        // ========================================
+        queueSaveRequest: function(patientId, formData) {
+            if (!this._saveQueue) {
+                this._saveQueue = [];
+            }
+            
+            this._saveQueue.push({
+                patientId: patientId,
+                formData: formData,
+                timestamp: Date.now(),
+                retryCount: 0,
+                maxRetries: 3
+            });
+            
+            console.log('[SaveProcessor] 📋 Save request queued. Queue length:', this._saveQueue.length);
+        },
+
+        // ========================================
+        // HANDLE CRITICAL ERROR - مدیریت خطای بحرانی
+        // ========================================
+        handleCriticalError: function(error, context) {
+            console.error('[SaveProcessor] 🚨 Critical error in', context, ':', error);
+            
+            // Reset all states
+            this.isSaving = false;
+            this.currentRequest = null;
+            
+            // Show user-friendly error
+            this.showError('خطای بحرانی در سیستم. لطفاً صفحه را بازخوانی کنید.');
         },
 
         // ========================================
@@ -106,35 +367,41 @@
         },
 
         // ========================================
-        // SEND SAVE REQUEST - ارسال درخواست ذخیره
+        // SEND SAVE REQUEST - ارسال درخواست ذخیره (Production-Optimized)
         // ========================================
         sendSaveRequest: function(requestData) {
-            console.log('[SaveProcessor] Sending save request...');
+            console.log('[SaveProcessor] 🚀 Executing save request...');
             
             try {
                 var self = this;
+                var requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5);
                 
                 return $.ajax({
                     url: this.config.endpoints.save,
                     type: 'POST',
                     data: requestData,
                     timeout: this.config.timeout,
-                    success: function(response) {
-                        console.log('[SaveProcessor] Save request successful:', response);
-                        self.handleSaveSuccess(response);
+                    cache: false,
+                    beforeSend: function(xhr) {
+                        xhr.setRequestHeader('X-Request-ID', requestId);
+                        xhr.setRequestHeader('X-Request-Time', Date.now().toString());
+                    },
+                    success: function(response, textStatus, xhr) {
+                        self.endPerformanceMonitoring('save');
+                        self.handleSaveSuccess(response, requestId);
                     },
                     error: function(xhr, status, error) {
-                        console.error('[SaveProcessor] Save request failed:', xhr, status, error);
-                        self.handleSaveError(xhr, status, error);
+                        self.endPerformanceMonitoring('save');
+                        self.handleSaveError(xhr, status, error, requestId);
                     },
-                    complete: function() {
+                    complete: function(xhr, status) {
                         console.log('[SaveProcessor] Save request completed');
                         self.isSaving = false;
                         self.currentRequest = null;
                     }
                 });
             } catch (error) {
-                console.error('[SaveProcessor] Error sending save request:', error);
+                console.error('[SaveProcessor] ❌ Error sending save request:', error);
                 this.isSaving = false;
                 throw error;
             }

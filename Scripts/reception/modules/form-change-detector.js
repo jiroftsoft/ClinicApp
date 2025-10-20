@@ -49,16 +49,68 @@
         },
 
         // ========================================
-        // CAPTURE INITIAL VALUES - ثبت مقادیر اولیه
+        // CAPTURE INITIAL VALUES - ثبت مقادیر اولیه (Production-Optimized)
         // ========================================
         captureInitialValues: function() {
-            console.log('[FormChangeDetector] Capturing initial form values...');
+            console.log('[FormChangeDetector] 📝 Capturing initial form values...');
+            
+            try {
+                // Wait for DOM elements to be available
+                var self = this;
+                setTimeout(function() {
+                    self.originalValues = self.captureFormValues();
+                    console.log('[FormChangeDetector] ✅ Initial values captured:', self.originalValues);
+                    
+                    // Emit event for other modules
+                    if (window.ReceptionEventBus) {
+                        window.ReceptionEventBus.emit('form:initialValuesCaptured', self.originalValues);
+                    }
+                }, 100);
+                
+            } catch (error) {
+                console.error('[FormChangeDetector] ❌ Error capturing initial values:', error);
+                throw error;
+            }
+        },
+
+        // ========================================
+        // SET ORIGINAL VALUES - تنظیم مقادیر اولیه
+        // ========================================
+        setOriginalValues: function(values) {
+            console.log('[FormChangeDetector] 📝 Setting original values...');
+            
+            try {
+                this.originalValues = values;
+                console.log('[FormChangeDetector] ✅ Original values set:', this.originalValues);
+                
+                // Emit event for other modules
+                if (window.ReceptionEventBus) {
+                    window.ReceptionEventBus.emit('form:originalValuesSet', this.originalValues);
+                }
+                
+            } catch (error) {
+                console.error('[FormChangeDetector] ❌ Error setting original values:', error);
+                throw error;
+            }
+        },
+
+        // ========================================
+        // UPDATE ORIGINAL VALUES FROM CURRENT FORM - به‌روزرسانی مقادیر اولیه از فرم فعلی
+        // ========================================
+        updateOriginalValuesFromCurrentForm: function() {
+            console.log('[FormChangeDetector] 📝 Updating original values from current form...');
             
             try {
                 this.originalValues = this.captureFormValues();
-                console.log('[FormChangeDetector] Initial values captured:', this.originalValues);
+                console.log('[FormChangeDetector] ✅ Original values updated from current form:', this.originalValues);
+                
+                // Emit event for other modules
+                if (window.ReceptionEventBus) {
+                    window.ReceptionEventBus.emit('form:originalValuesUpdated', this.originalValues);
+                }
+                
             } catch (error) {
-                console.error('[FormChangeDetector] Error capturing initial values:', error);
+                console.error('[FormChangeDetector] ❌ Error updating original values from current form:', error);
                 throw error;
             }
         },
@@ -90,16 +142,27 @@
         },
 
         // ========================================
-        // DETECT CHANGES - تشخیص تغییرات
+        // DETECT CHANGES - تشخیص تغییرات (Production-Optimized)
         // ========================================
         detectChanges: function() {
-            console.log('[FormChangeDetector] Detecting form changes...');
+            console.log('[FormChangeDetector] 🔍 Detecting form changes...');
             
             try {
+                if (!this.originalValues) {
+                    console.warn('[FormChangeDetector] ⚠️ Original values not set, capturing current values');
+                    this.originalValues = this.captureFormValues();
+                    return {
+                        hasChanges: false,
+                        changes: [],
+                        originalValues: this.originalValues,
+                        currentValues: this.originalValues
+                    };
+                }
+                
                 this.currentValues = this.captureFormValues();
                 var changes = this.compareValues(this.originalValues, this.currentValues);
                 
-                console.log('[FormChangeDetector] Changes detected:', changes);
+                console.log('[FormChangeDetector] 📊 Changes detected:', changes);
                 return {
                     hasChanges: changes.length > 0,
                     changes: changes,
@@ -107,52 +170,166 @@
                     currentValues: this.currentValues
                 };
             } catch (error) {
-                console.error('[FormChangeDetector] Error detecting changes:', error);
+                console.error('[FormChangeDetector] ❌ Error detecting changes:', error);
                 throw error;
             }
         },
 
         // ========================================
-        // COMPARE VALUES - مقایسه مقادیر
+        // HAS FORM CHANGED - بررسی تغییرات فرم (Production-Optimized)
+        // ========================================
+        hasFormChanged: function() {
+            console.log('[FormChangeDetector] 🔍 Checking if form has changed...');
+            
+            try {
+                if (!this.originalValues) {
+                    console.warn('[FormChangeDetector] ⚠️ No original values set');
+                    return false;
+                }
+                
+                var currentValues = this.captureFormValues();
+                var hasChanged = false;
+                var changes = [];
+                
+                // Compare each field
+                Object.keys(this.originalValues).forEach(function(key) {
+                    var original = (this.originalValues[key] || '').toString().trim();
+                    var current = (currentValues[key] || '').toString().trim();
+                    
+                    if (original !== current) {
+                        hasChanged = true;
+                        changes.push({
+                            field: key,
+                            original: original,
+                            current: current
+                        });
+                    }
+                }.bind(this));
+                
+                console.log('[FormChangeDetector] 📊 Form change check:', {
+                    hasChanged: hasChanged,
+                    changesCount: changes.length,
+                    changes: changes
+                });
+                
+                return hasChanged;
+                
+            } catch (error) {
+                console.error('[FormChangeDetector] ❌ Error checking form changes:', error);
+                return false;
+            }
+        },
+
+        // ========================================
+        // SAFE COMPARE - مقایسه امن مقادیر
+        // ========================================
+        safeCompare: function(original, current) {
+            // Convert to strings and trim
+            var origStr = (original || '').toString().trim();
+            var currStr = (current || '').toString().trim();
+            
+            return origStr === currStr;
+        },
+
+        // ========================================
+        // SAFE GET VALUE - دریافت امن مقدار
+        // ========================================
+        safeGetValue: function(selector) {
+            try {
+                var element = $(selector);
+                if (element.length === 0) {
+                    return '';
+                }
+                
+                var value = element.val();
+                return value ? value.toString().trim() : '';
+            } catch (error) {
+                console.warn('[FormChangeDetector] Error getting value for selector:', selector, error);
+                return '';
+            }
+        },
+
+        // ========================================
+        // COMPARE VALUES - مقایسه مقادیر (Production-Optimized)
         // ========================================
         compareValues: function(original, current) {
-            console.log('[FormChangeDetector] Comparing values...');
+            console.log('[FormChangeDetector] 🔍 Comparing values...');
             
             try {
                 var changes = [];
                 
                 // بررسی تغییرات بیمه پایه
-                if (original.primaryProvider !== current.primaryProvider) {
-                    changes.push('Primary Provider');
+                if (!this.safeCompare(original.primaryProvider, current.primaryProvider)) {
+                    changes.push({
+                        field: 'primaryProvider',
+                        original: original.primaryProvider,
+                        current: current.primaryProvider,
+                        type: 'Primary Provider'
+                    });
                 }
-                if (original.primaryPlan !== current.primaryPlan) {
-                    changes.push('Primary Plan');
+                if (!this.safeCompare(original.primaryPlan, current.primaryPlan)) {
+                    changes.push({
+                        field: 'primaryPlan',
+                        original: original.primaryPlan,
+                        current: current.primaryPlan,
+                        type: 'Primary Plan'
+                    });
                 }
-                if (original.primaryPolicyNumber !== current.primaryPolicyNumber) {
-                    changes.push('Primary Policy Number');
+                if (!this.safeCompare(original.primaryPolicyNumber, current.primaryPolicyNumber)) {
+                    changes.push({
+                        field: 'primaryPolicyNumber',
+                        original: original.primaryPolicyNumber,
+                        current: current.primaryPolicyNumber,
+                        type: 'Primary Policy Number'
+                    });
                 }
-                if (original.primaryCardNumber !== current.primaryCardNumber) {
-                    changes.push('Primary Card Number');
+                if (!this.safeCompare(original.primaryCardNumber, current.primaryCardNumber)) {
+                    changes.push({
+                        field: 'primaryCardNumber',
+                        original: original.primaryCardNumber,
+                        current: current.primaryCardNumber,
+                        type: 'Primary Card Number'
+                    });
                 }
                 
                 // بررسی تغییرات بیمه تکمیلی
-                if (original.supplementaryProvider !== current.supplementaryProvider) {
-                    changes.push('Supplementary Provider');
+                if (!this.safeCompare(original.supplementaryProvider, current.supplementaryProvider)) {
+                    changes.push({
+                        field: 'supplementaryProvider',
+                        original: original.supplementaryProvider,
+                        current: current.supplementaryProvider,
+                        type: 'Supplementary Provider'
+                    });
                 }
-                if (original.supplementaryPlan !== current.supplementaryPlan) {
-                    changes.push('Supplementary Plan');
+                if (!this.safeCompare(original.supplementaryPlan, current.supplementaryPlan)) {
+                    changes.push({
+                        field: 'supplementaryPlan',
+                        original: original.supplementaryPlan,
+                        current: current.supplementaryPlan,
+                        type: 'Supplementary Plan'
+                    });
                 }
-                if (original.supplementaryPolicyNumber !== current.supplementaryPolicyNumber) {
-                    changes.push('Supplementary Policy Number');
+                if (!this.safeCompare(original.supplementaryPolicyNumber, current.supplementaryPolicyNumber)) {
+                    changes.push({
+                        field: 'supplementaryPolicyNumber',
+                        original: original.supplementaryPolicyNumber,
+                        current: current.supplementaryPolicyNumber,
+                        type: 'Supplementary Policy Number'
+                    });
                 }
-                if (original.supplementaryExpiry !== current.supplementaryExpiry) {
-                    changes.push('Supplementary Expiry');
+                if (!this.safeCompare(original.supplementaryExpiry, current.supplementaryExpiry)) {
+                    changes.push({
+                        field: 'supplementaryExpiry',
+                        original: original.supplementaryExpiry,
+                        current: current.supplementaryExpiry,
+                        type: 'Supplementary Expiry'
+                    });
                 }
                 
-                console.log('[FormChangeDetector] Comparison result:', changes);
+                console.log('[FormChangeDetector] 📊 Comparison result:', changes);
                 return changes;
             } catch (error) {
-                console.error('[FormChangeDetector] Error comparing values:', error);
+                console.error('[FormChangeDetector] ❌ Error comparing values:', error);
                 throw error;
             }
         },

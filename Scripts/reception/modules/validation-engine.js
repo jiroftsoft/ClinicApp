@@ -30,7 +30,7 @@
             rules: {
                 required: {
                     primaryProvider: true,
-                    primaryPlan: true,
+                    primaryPlan: false, // فقط وقتی provider انتخاب شده باشد الزامی است
                     primaryPolicyNumber: false,
                     primaryCardNumber: false,
                     supplementaryProvider: false,
@@ -77,13 +77,88 @@
         },
 
         // ========================================
-        // VALIDATE FORM - اعتبارسنجی فرم
+        // COMPREHENSIVE VALIDATION - اعتبارسنجی جامع
         // ========================================
-        validateForm: function() {
-            console.log('[ValidationEngine] Validating form...');
+        performComprehensiveValidation: function() {
+            console.log('[ValidationEngine] 🔍 Performing comprehensive validation...');
             
             try {
                 var errors = [];
+                var patientId = $('#patientId').val();
+                
+                // 1. Patient ID Validation
+                if (!patientId || patientId <= 0) {
+                    errors.push({
+                        field: 'patientId',
+                        message: 'شناسه بیمار نامعتبر است',
+                        severity: 'error'
+                    });
+                }
+                
+                // 2. Form Data Validation
+                var formValidation = this.validateForm();
+                if (!formValidation.isValid) {
+                    formValidation.errors.forEach(function(error) {
+                        errors.push({
+                            field: 'form',
+                            message: error,
+                            severity: 'error'
+                        });
+                    });
+                }
+                
+                // 3. Business Logic Validation
+                var businessValidation = this.validateBusinessRules();
+                if (!businessValidation.isValid) {
+                    businessValidation.errors.forEach(function(error) {
+                        errors.push({
+                            field: 'business',
+                            message: error,
+                            severity: 'warning'
+                        });
+                    });
+                }
+                
+                // 4. Network State Validation
+                if (!navigator.onLine) {
+                    errors.push({
+                        field: 'network',
+                        message: 'اتصال اینترنت قطع است',
+                        severity: 'error'
+                    });
+                }
+                
+                console.log('[ValidationEngine] 📊 Validation result:', {
+                    isValid: errors.filter(e => e.severity === 'error').length === 0,
+                    errors: errors,
+                    patientId: patientId
+                });
+                
+                return {
+                    isValid: errors.filter(e => e.severity === 'error').length === 0,
+                    errors: errors,
+                    patientId: patientId
+                };
+                
+            } catch (error) {
+                console.error('[ValidationEngine] ❌ Validation error:', error);
+                return {
+                    isValid: false,
+                    errors: [{ field: 'system', message: 'خطا در اعتبارسنجی', severity: 'error' }],
+                    patientId: null
+                };
+            }
+        },
+
+        // ========================================
+        // VALIDATE FORM - اعتبارسنجی فرم
+        // ========================================
+        validateForm: function() {
+            console.log('[ValidationEngine] 🔍 Validating form...');
+            
+            try {
+                var errors = [];
+                var warnings = [];
                 var values = this.getFormValues();
                 
                 // اعتبارسنجی فیلدهای الزامی
@@ -95,19 +170,48 @@
                 // اعتبارسنجی فرمت فیلدها
                 errors = errors.concat(this.validateFieldFormats(values));
                 
+                // اعتبارسنجی business rules
+                errors = errors.concat(this.validateBusinessRules(values));
+                
+                // بررسی تغییرات فرم
+                var hasChanges = this.checkFormChanges();
+                
                 var result = {
                     isValid: errors.length === 0,
                     errors: errors,
+                    warnings: warnings,
+                    hasChanges: hasChanges,
+                    canSave: errors.length === 0 && hasChanges,
                     values: values
                 };
                 
                 this.validationResults = result;
-                console.log('[ValidationEngine] Validation completed:', result);
+                console.log('[ValidationEngine] 📊 Validation completed:', result);
                 
                 return result;
             } catch (error) {
-                console.error('[ValidationEngine] Error validating form:', error);
+                console.error('[ValidationEngine] ❌ Error validating form:', error);
                 throw error;
+            }
+        },
+
+        // ========================================
+        // CHECK FORM CHANGES - بررسی تغییرات فرم
+        // ========================================
+        checkFormChanges: function() {
+            console.log('[ValidationEngine] 🔍 Checking form changes...');
+            
+            try {
+                if (window.FormChangeDetector) {
+                    var changeResult = window.FormChangeDetector.detectChanges();
+                    return changeResult.hasChanges;
+                }
+                
+                return false;
+                
+            } catch (error) {
+                console.error('[ValidationEngine] ❌ Error checking form changes:', error);
+                return false;
             }
         },
 
@@ -146,8 +250,11 @@
             try {
                 var errors = [];
                 
-                for (var field in this.config.rules.required) {
-                    if (this.config.rules.required[field] && (!values[field] || values[field].trim() === '')) {
+                // Dynamic validation based on form state
+                var dynamicRules = this.getDynamicRequiredRules(values);
+                
+                for (var field in dynamicRules) {
+                    if (dynamicRules[field] && (!values[field] || values[field].trim() === '')) {
                         errors.push({
                             field: field,
                             message: this.config.messages.required,
@@ -161,6 +268,40 @@
             } catch (error) {
                 console.error('[ValidationEngine] Error validating required fields:', error);
                 throw error;
+            }
+        },
+
+        // ========================================
+        // DYNAMIC VALIDATION RULES - قوانین اعتبارسنجی پویا
+        // ========================================
+        getDynamicRequiredRules: function(values) {
+            console.log('[ValidationEngine] Getting dynamic required rules...');
+            
+            try {
+                var rules = {};
+                
+                // Primary Provider is always required
+                rules.primaryProvider = true;
+                
+                // Primary Plan is required only if Primary Provider is selected
+                if (values.primaryProvider && values.primaryProvider.trim() !== '') {
+                    rules.primaryPlan = true;
+                } else {
+                    rules.primaryPlan = false;
+                }
+                
+                // Supplementary Plan is required only if Supplementary Provider is selected
+                if (values.supplementaryProvider && values.supplementaryProvider.trim() !== '') {
+                    rules.supplementaryPlan = true;
+                } else {
+                    rules.supplementaryPlan = false;
+                }
+                
+                console.log('[ValidationEngine] Dynamic rules:', rules);
+                return rules;
+            } catch (error) {
+                console.error('[ValidationEngine] Error getting dynamic rules:', error);
+                return this.config.rules.required;
             }
         },
 
@@ -252,6 +393,65 @@
         isValidCardNumber: function(cardNumber) {
             // شماره کارت باید فقط شامل اعداد باشد
             return /^[0-9]+$/.test(cardNumber);
+        },
+
+        // ========================================
+        // BUSINESS RULES VALIDATION - اعتبارسنجی قوانین کسب‌وکار
+        // ========================================
+        validateBusinessRules: function() {
+            console.log('[ValidationEngine] 🏥 Validating business rules...');
+            
+            try {
+                var errors = [];
+                var values = this.getFormValues();
+                var primaryProvider = values.primaryProvider;
+                var supplementaryProvider = values.supplementaryProvider;
+                
+                // Rule 1: Primary insurance is mandatory
+                if (!primaryProvider) {
+                    errors.push('بیمه پایه الزامی است');
+                }
+                
+                // Rule 2: Supplementary insurance cannot be same as primary
+                if (primaryProvider && supplementaryProvider && primaryProvider === supplementaryProvider) {
+                    errors.push('بیمه تکمیلی نمی‌تواند همان بیمه پایه باشد');
+                }
+                
+                // Rule 3: Policy number format validation
+                if (values.primaryPolicyNumber && !this.isValidPolicyNumber(values.primaryPolicyNumber)) {
+                    errors.push('شماره بیمه پایه نامعتبر است');
+                }
+                
+                return {
+                    isValid: errors.length === 0,
+                    errors: errors
+                };
+                
+            } catch (error) {
+                console.error('[ValidationEngine] ❌ Business rules validation error:', error);
+                return {
+                    isValid: false,
+                    errors: ['خطا در اعتبارسنجی قوانین کسب‌وکار']
+                };
+            }
+        },
+
+        // ========================================
+        // SHOW VALIDATION ERRORS - نمایش خطاهای اعتبارسنجی
+        // ========================================
+        showValidationErrors: function(errors) {
+            console.log('[ValidationEngine] ❌ Validation errors:', errors);
+            
+            var errorMessages = errors.map(function(error) {
+                return error.message;
+            });
+            
+            // Use Toastr if available
+            if (window.ReceptionToastr && window.ReceptionToastr.helpers && window.ReceptionToastr.helpers.showError) {
+                window.ReceptionToastr.helpers.showError('خطاهای اعتبارسنجی: ' + errorMessages.join(', '));
+            } else {
+                console.error('[ValidationEngine] Validation errors: ' + errorMessages.join(', '));
+            }
         },
 
         // ========================================

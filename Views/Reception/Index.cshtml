@@ -101,6 +101,23 @@
     .reception-interface {
         padding: 0;
         width: 100%;
+        margin: 0;
+    }
+    
+    /* حذف کامل حاشیه‌ها */
+    .container-fluid {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    
+    .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+    }
+    
+    .col-12 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }
 
     .medical-panel {
@@ -191,20 +208,66 @@
         min-height: 85vh;
     }
 
-    /* Enhanced Form Components */
+    /* Enhanced Form Components - حرفه‌ای */
     .reception-form-components > div {
         background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        padding: 1rem;
+        margin-bottom: 0.5rem;
         width: 100%;
+        border: 1px solid #e9ecef;
+    }
+    
+    /* حذف فاصله‌های اضافی */
+    .reception-form-components {
+        padding: 0.5rem !important;
+        gap: 0.5rem !important;
+    }
+    
+    /* بهینه‌سازی بخش‌ها */
+    .accordion-section {
+        background: #fff;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        overflow: hidden;
+    }
+    
+    .section-header {
+        background: #f8f9fa;
+        padding: 1rem;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+    
+    .section-content {
+        padding: 1rem;
+        background: #fff;
     }
 
-    /* Full Width Accordion Form */
+    /* Full Width Accordion Form - حرفه‌ای */
     .reception-accordion-form {
         width: 100%;
         max-width: none;
+        margin: 0;
+        padding: 0;
+        border-radius: 0;
+    }
+    
+    /* حذف فاصله‌های اضافی */
+    .accordion-section {
+        margin-bottom: 0.5rem !important;
+        padding: 0.5rem !important;
+    }
+    
+    .section-content {
+        padding: 1rem !important;
+        margin: 0 !important;
     }
 
     .accordion-form-header {
@@ -362,6 +425,52 @@
         transform: translateY(0);
     }
     
+    /* نتایج جستجو بهینه */
+    .search-results-container {
+        margin-top: 1rem;
+    }
+    
+    .result-card {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .result-title {
+        font-weight: 600;
+        color: #28a745;
+    }
+    
+    .patient-info {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #6c757d;
+    }
+    
+    .info-value {
+        color: #495057;
+        font-weight: 500;
+    }
+    
     /* Responsive Design */
     @@media (max-width: 1200px) {
         .accordion-form-header {
@@ -476,13 +585,22 @@
     @Scripts.Render("~/bundles/reception-toastr")
     @Scripts.Render("~/bundles/reception/js")
     @Scripts.Render("~/bundles/reception-core")
+    @Scripts.Render("~/bundles/reception-specialized")
     @Scripts.Render("~/bundles/reception-modules")
     @Scripts.Render("~/bundles/reception-main")
     <script>
         $(document).ready(function () {
-            // تاخیر برای اطمینان از بارگذاری کامل
-            setTimeout(function() {
-                console.log('Reception Index: Starting initialization...');
+                // تاخیر برای اطمینان از بارگذاری کامل
+                setTimeout(function() {
+                    console.log('Reception Index: Starting initialization...');
+                    
+                    // تست بارگذاری ماژول‌های تخصصی
+                    console.log('Reception Index: Testing specialized modules...');
+                    console.log('ValidationEngine available:', typeof window.ValidationEngine !== 'undefined');
+                    console.log('FormChangeDetector available:', typeof window.FormChangeDetector !== 'undefined');
+                    console.log('SaveProcessor available:', typeof window.SaveProcessor !== 'undefined');
+                    console.log('EditModeManager available:', typeof window.EditModeManager !== 'undefined');
+                    console.log('InsuranceOrchestrator available:', typeof window.InsuranceOrchestrator !== 'undefined');
                 
                 // Initialize Toastr Service first
                 if (typeof window.ReceptionToastr !== 'undefined') {

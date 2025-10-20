@@ -97,6 +97,14 @@ namespace ClinicApp
                 "~/Scripts/reception/core/error-handler.js",
                 "~/Scripts/reception/core/reception-coordinator.js"));
 
+            // Reception Specialized Modules Bundle (Load First)
+            bundles.Add(new ScriptBundle("~/bundles/reception-specialized").Include(
+                "~/Scripts/reception/modules/validation-engine.js",
+                "~/Scripts/reception/modules/form-change-detector.js",
+                "~/Scripts/reception/modules/save-processor.js",
+                "~/Scripts/reception/modules/edit-mode-manager.js",
+                "~/Scripts/reception/modules/insurance-orchestrator.js"));
+
             // Reception Feature Modules Bundle
             bundles.Add(new ScriptBundle("~/bundles/reception-modules").Include(
                 "~/Scripts/reception/modules/patient-search.js",
