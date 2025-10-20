@@ -334,6 +334,13 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>نتیجه تغییر</returns>
         Task<ServiceResult<bool>> ChangePatientSupplementaryInsuranceAsync(int patientId, int newInsuranceId);
 
+        /// <summary>
+        /// حذف/غیرفعال‌سازی بیمه تکمیلی بیمار (Production Ready)
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>نتیجه عملیات</returns>
+        Task<ServiceResult<bool>> RemovePatientSupplementaryInsuranceAsync(int patientId);
+
         #endregion
 
         #region Statistics Methods

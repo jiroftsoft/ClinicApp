@@ -134,11 +134,13 @@
                 // Insurance Provider Change Events
                 $(CONFIG.selectors.primaryProvider).on('change.insuranceBinding', function() {
                     console.log('[RealTimeInsuranceBinding] Primary provider changed');
+                    if (self.suppressFormChange) { console.log('[RealTimeInsuranceBinding] Change suppressed'); return; }
                     self.handlePrimaryProviderChange();
                 });
                 
                 $(CONFIG.selectors.supplementaryProvider).on('change.insuranceBinding', function() {
                     console.log('[RealTimeInsuranceBinding] Supplementary provider changed');
+                    if (self.suppressFormChange) { console.log('[RealTimeInsuranceBinding] Change suppressed'); return; }
                     self.handleSupplementaryProviderChange();
                 });
                 
@@ -157,8 +159,30 @@
                 // Form Change Detection
                 $(CONFIG.selectors.insuranceSection + ' input, ' + CONFIG.selectors.insuranceSection + ' select').on('change.insuranceBinding', function() {
                     console.log('[RealTimeInsuranceBinding] Insurance form changed');
+                    if (self.suppressFormChange) { console.log('[RealTimeInsuranceBinding] Change suppressed'); return; }
                     self.handleInsuranceFormChange();
                 });
+
+                // Input events to catch clears/typing (real-time UX)
+                $(CONFIG.selectors.insuranceSection + ' input').on('input.insuranceBinding', function() {
+                    console.log('[RealTimeInsuranceBinding] Insurance form input changed');
+                    if (self.suppressFormChange) { console.log('[RealTimeInsuranceBinding] Input suppressed'); return; }
+                    self.handleInsuranceFormChange();
+                });
+
+                // Select2 clear/unselect safety (if Select2 is used)
+                if ($.fn.select2) {
+                    $(CONFIG.selectors.supplementaryProvider).on('select2:clear.select2Insurance select2:unselect.select2Insurance', function() {
+                        console.log('[RealTimeInsuranceBinding] Supplementary provider cleared via Select2');
+                        if (self.suppressFormChange) { console.log('[RealTimeInsuranceBinding] Select2 clear suppressed'); return; }
+                        self.handleInsuranceFormChange();
+                    });
+                    $(CONFIG.selectors.supplementaryPlan).on('select2:clear.select2Insurance select2:unselect.select2Insurance', function() {
+                        console.log('[RealTimeInsuranceBinding] Supplementary plan cleared via Select2');
+                        if (self.suppressFormChange) { console.log('[RealTimeInsuranceBinding] Select2 clear suppressed'); return; }
+                        self.handleInsuranceFormChange();
+                    });
+                }
                 
                 console.log('[RealTimeInsuranceBinding] ✅ Events bound successfully');
             } catch (error) {
@@ -661,17 +685,25 @@
             
             try {
                 // پاک کردن provider
-                $(CONFIG.selectors.supplementaryProvider).val('').trigger('change');
+                $(CONFIG.selectors.supplementaryProvider).val('');
+                // Trigger both native and plugin events
+                $(CONFIG.selectors.supplementaryProvider).trigger('change').trigger('input');
                 
                 // پاک کردن plan
-                $(CONFIG.selectors.supplementaryPlan).empty().append('<option value="">انتخاب طرح بیمه تکمیلی...</option>');
+                $(CONFIG.selectors.supplementaryPlan)
+                    .empty()
+                    .append('<option value="">انتخاب طرح بیمه تکمیلی...</option>')
+                    .trigger('change').trigger('input');
                 
                 // پاک کردن policy number
-                $(CONFIG.selectors.supplementaryPolicyNumber).val('');
+                $(CONFIG.selectors.supplementaryPolicyNumber).val('').trigger('input').trigger('change');
                 
                 // پاک کردن expiry date
-                $(CONFIG.selectors.supplementaryExpiry).val('');
+                $(CONFIG.selectors.supplementaryExpiry).val('').trigger('input').trigger('change');
                 
+                // اطمینان از فعال شدن ویرایش پس از پاکسازی
+                this.handleInsuranceFormChange();
+
                 console.log('[RealTimeInsuranceBinding] ✅ Supplementary insurance fields cleared');
             } catch (error) {
                 console.error('[RealTimeInsuranceBinding] Error clearing supplementary insurance fields:', error);
@@ -712,6 +744,12 @@
             }
             
             console.log('[RealTimeInsuranceBinding] Saving insurance for patient:', patientId);
+
+            // Prevent double-submit in high-traffic environments
+            if (this._isSaving) {
+                console.warn('[RealTimeInsuranceBinding] Save already in progress, ignoring duplicate submit');
+                return;
+            }
             
             // اعتبارسنجی فرم
             var validation = this.validateInsuranceForm();
@@ -722,6 +760,8 @@
             
             // Show loading indicator
             this.showLoadingIndicator();
+            this._isSaving = true;
+            $(CONFIG.selectors.saveInsuranceBtn).prop('disabled', true).addClass('disabled');
             this.updateProgressSteps(3); // مرحله 3: ویرایش اطلاعات
             
             // Collect insurance data
@@ -738,10 +778,14 @@
                 cache: false,
                 success: function(response) {
                     self.hideLoadingIndicator();
+                    self._isSaving = false;
+                    $(CONFIG.selectors.saveInsuranceBtn).prop('disabled', false).removeClass('disabled');
                     self.handleInsuranceSaveSuccess(response);
                 },
                 error: function(xhr, status, error) {
                     self.hideLoadingIndicator();
+                    self._isSaving = false;
+                    $(CONFIG.selectors.saveInsuranceBtn).prop('disabled', false).removeClass('disabled');
                     self.handleInsuranceSaveError(xhr, status, error);
                 }
             });
@@ -773,22 +817,50 @@
             console.log('[RealTimeInsuranceBinding] Insurance save success:', response);
             
             try {
-                if (response.success) {
+                // Normalize/parse response if needed
+                var parsed = response;
+                if (typeof response === 'string') {
+                    try {
+                        parsed = JSON.parse(response);
+                        console.log('[RealTimeInsuranceBinding] Save response parsed successfully');
+                    } catch (e) {
+                        console.error('[RealTimeInsuranceBinding] Failed to parse save response:', e);
+                        this.showError(CONFIG.messages.error.saveError);
+                        return;
+                    }
+                }
+
+                if (parsed && parsed.success === true) {
                     this.updateInsuranceStatus('saved');
-                    this.showSuccess(CONFIG.messages.success.saved);
-                    
+                    this.showSuccess(parsed.message || CONFIG.messages.success.saved);
+
                     // به‌روزرسانی مقادیر اولیه فرم پس از ذخیره موفق
                     this.originalFormValues = this.captureFormValues();
-                    
+
                     // غیرفعال کردن حالت ویرایش
                     this.disableEditMode();
-                    
+
+                    // همگام‌سازی UI با وضعیت قطعی سرور
+                    try {
+                        if (parsed.data && parsed.data.Status) {
+                            console.log('[RealTimeInsuranceBinding] Rebinding insurance with authoritative server state after save');
+                            this.bindInsuranceDataToForm(parsed.data.Status);
+                        } else {
+                            console.log('[RealTimeInsuranceBinding] Reloading insurance after save (no Status payload)');
+                            this.loadPatientInsurance($(CONFIG.selectors.patientId).val());
+                        }
+                        this.updateSaveButtonState();
+                    } catch (syncError) {
+                        console.warn('[RealTimeInsuranceBinding] Post-save UI sync failed, fallback to reload:', syncError);
+                        this.loadPatientInsurance($(CONFIG.selectors.patientId).val());
+                    }
+
                     // Trigger insurance saved event
-                    $(document).trigger('insuranceSaved', [response.data]);
-                    
+                    $(document).trigger('insuranceSaved', [parsed.data]);
+
                     console.log('[RealTimeInsuranceBinding] ✅ Insurance saved successfully');
                 } else {
-                    this.showError(response.message || CONFIG.messages.error.saveError);
+                    this.showError((parsed && parsed.message) || CONFIG.messages.error.saveError);
                 }
             } catch (error) {
                 console.error('[RealTimeInsuranceBinding] Error handling insurance save success:', error);
@@ -1080,6 +1152,11 @@
             console.log('[RealTimeInsuranceBinding] Initializing state...');
             
             try {
+                // Flags for robust real-time UX
+                this.suppressFormChange = false;
+                this._isSaving = false;
+                this.pendingPrimaryPlanId = null;
+                this.pendingSupplementaryPlanId = null;
                 this.updateInsuranceStatus('unknown');
                 this.updateSaveButtonState();
                 this.initializeFormEditMode();

@@ -1868,6 +1868,46 @@ namespace ClinicApp.Services.Insurance
             }
         }
 
+        /// <summary>
+        /// حذف/غیرفعال‌سازی بیمه تکمیلی بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> RemovePatientSupplementaryInsuranceAsync(int patientId)
+        {
+            try
+            {
+                _log.Information("🗑️ حذف بیمه تکمیلی بیمار: {PatientId}, کاربر: {UserName}", patientId, _currentUserService.UserName);
+
+                if (patientId <= 0)
+                {
+                    _log.Warning("شناسه بیمار نامعتبر: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("شناسه بیمار نامعتبر است", "INVALID_PATIENT_ID", ErrorCategory.Validation, SecurityLevel.Low);
+                }
+
+                var patientExists = await _patientService.PatientExistsAsync(patientId);
+                if (!patientExists.Success || !patientExists.Data)
+                {
+                    _log.Warning("بیمار یافت نشد: {PatientId}", patientId);
+                    return ServiceResult<bool>.Failed("بیمار یافت نشد", "PATIENT_NOT_FOUND", ErrorCategory.Validation, SecurityLevel.Medium);
+                }
+
+                // منطق حذف/غیرفعال‌سازی تکمیلی در Repository
+                var result = await _patientInsuranceRepository.RemovePatientSupplementaryInsuranceAsync(patientId);
+                if (result.Success)
+                {
+                    _log.Information("✅ حذف بیمه تکمیلی موفق: {PatientId}", patientId);
+                    return ServiceResult<bool>.Successful(true, "بیمه تکمیلی حذف شد");
+                }
+
+                _log.Warning("❌ خطا در حذف بیمه تکمیلی: {PatientId}, خطا: {Error}", patientId, result.Message);
+                return ServiceResult<bool>.Failed(result.Message, result.Code, result.Category, result.SecurityLevel);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "❌ استثناء در حذف بیمه تکمیلی: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در حذف بیمه تکمیلی", "REMOVE_SUPPLEMENTARY_INSURANCE_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
         #endregion
 
         #region Statistics Methods

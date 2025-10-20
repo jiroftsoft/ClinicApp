@@ -682,16 +682,17 @@ namespace ClinicApp.Controllers.Reception
                     return Json(new { success = false, message = "شناسه بیمار نامعتبر است" });
                 }
 
-                // ذخیره بیمه پایه
+                // اجرای تراکنش منطقی: ابتدا به‌روزرسانی/تغییر بیمه‌ها سپس بازخوانی وضعیت
+                // بیمه پایه
                 if (model.PrimaryInsuranceId.HasValue)
                 {
                     var primaryResult = await _patientInsuranceService.UpdatePatientPrimaryInsuranceAsync(
-                        model.PatientId, 
+                        model.PatientId,
                         model.PrimaryInsuranceId.Value,
                         model.PrimaryPolicyNumber,
                         model.PrimaryCardNumber
                     );
-                    
+
                     if (!primaryResult.Success)
                     {
                         _logger.Warning("[{RequestId}] خطا در ذخیره بیمه پایه: {Error}", requestId, primaryResult.Message);
@@ -699,33 +700,49 @@ namespace ClinicApp.Controllers.Reception
                     }
                 }
 
-                // ذخیره بیمه تکمیلی
+                // بیمه تکمیلی: اگر شناسه دارد به‌روزرسانی؛ اگر خالی است، حذف/غیرفعال‌سازی
                 if (model.SupplementaryInsuranceId.HasValue)
                 {
                     var supplementaryResult = await _patientInsuranceService.UpdatePatientSupplementaryInsuranceAsync(
-                        model.PatientId, 
+                        model.PatientId,
                         model.SupplementaryInsuranceId.Value,
                         model.SupplementaryPolicyNumber,
                         model.SupplementaryExpiryDate
                     );
-                    
+
                     if (!supplementaryResult.Success)
                     {
                         _logger.Warning("[{RequestId}] خطا در ذخیره بیمه تکمیلی: {Error}", requestId, supplementaryResult.Message);
                         return Json(new { success = false, message = $"خطا در ذخیره بیمه تکمیلی: {supplementaryResult.Message}" });
                     }
                 }
+                else
+                {
+                    // اگر قبلاً بیمه تکمیلی داشته و اکنون پاک شده است → حذف/غیرفعال‌سازی استاندارد
+                    var removeSuppResult = await _patientInsuranceService.RemovePatientSupplementaryInsuranceAsync(model.PatientId);
+                    if (!removeSuppResult.Success)
+                    {
+                        _logger.Warning("[{RequestId}] خطا در حذف بیمه تکمیلی: {Error}", requestId, removeSuppResult.Message);
+                        return Json(new { success = false, message = $"خطا در حذف بیمه تکمیلی: {removeSuppResult.Message}" });
+                    }
+                }
 
                 var duration = (DateTime.UtcNow - startTime).TotalMilliseconds;
                 _logger.Information("[{RequestId}] ✅ ذخیره اطلاعات بیمه موفق در {Duration}ms", requestId, duration);
 
-                return Json(new { 
-                    success = true, 
+                // بازخوانی وضعیت نهایی جهت بازگشت داده‌های معتبر و همگام با UI
+                var statusResult = await _patientInsuranceService.GetPatientInsuranceStatusForReceptionAsync(model.PatientId);
+                if (!statusResult.Success)
+                {
+                    _logger.Warning("[{RequestId}] وضعیت بیمه پس از ذخیره قابل دریافت نیست: {Message}", requestId, statusResult.Message);
+                }
+
+                return Json(new {
+                    success = true,
                     message = "اطلاعات بیمه با موفقیت ذخیره شد",
                     data = new {
                         PatientId = model.PatientId,
-                        PrimaryInsuranceId = model.PrimaryInsuranceId,
-                        SupplementaryInsuranceId = model.SupplementaryInsuranceId,
+                        Status = statusResult.Success ? statusResult.Data : null,
                         SavedAt = DateTime.Now
                     }
                 });

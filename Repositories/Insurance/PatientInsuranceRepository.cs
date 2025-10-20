@@ -544,6 +544,44 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// حذف/غیرفعال‌سازی بیمه تکمیلی بیمار - Production Ready
+        /// </summary>
+        public async Task<ServiceResult<bool>> RemovePatientSupplementaryInsuranceAsync(int patientId)
+        {
+            try
+            {
+                _logger.Information("🗑️ حذف بیمه تکمیلی بیمار: {PatientId}, کاربر: {UserName}", patientId, _currentUserService.UserName);
+
+                var patientInsurance = await _context.PatientInsurances
+                    .FirstOrDefaultAsync(pi => pi.PatientId == patientId && !pi.IsPrimary && !pi.IsDeleted);
+
+                if (patientInsurance == null)
+                {
+                    _logger.Information("بیمه تکمیلی فعالی برای حذف یافت نشد: {PatientId}", patientId);
+                    return ServiceResult<bool>.Successful(true, "بیمه تکمیلی برای حذف وجود ندارد");
+                }
+
+                // Soft delete/disable supplementary insurance record
+                patientInsurance.IsActive = false;
+                patientInsurance.IsDeleted = true;
+                patientInsurance.DeletedAt = DateTime.Now;
+                patientInsurance.DeletedByUserId = _currentUserService.UserId;
+                patientInsurance.UpdatedAt = DateTime.Now;
+                patientInsurance.UpdatedByUserId = _currentUserService.UserId;
+
+                await _context.SaveChangesAsync();
+
+                _logger.Information("✅ حذف بیمه تکمیلی موفق: {PatientId}", patientId);
+                return ServiceResult<bool>.Successful(true, "بیمه تکمیلی حذف شد");
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "❌ خطا در حذف بیمه تکمیلی: {PatientId}", patientId);
+                return ServiceResult<bool>.Failed("خطا در حذف بیمه تکمیلی", "REMOVE_SUPPLEMENTARY_INSURANCE_ERROR", ErrorCategory.System, SecurityLevel.High);
+            }
+        }
+
         #endregion
 
         #region Search Operations
