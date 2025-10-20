@@ -104,12 +104,12 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("بررسی وجود بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // استفاده از PatientService موجود
+                // بررسی وجود بیمار با استفاده از PatientService
                 var patientResult = await _patientService.GetPatientDetailsAsync(patientId);
-                var exists = patientResult.Success;
+                var exists = patientResult.Success && patientResult.Data != null;
                 
-                _log.Information("نتیجه بررسی وجود بیمار. PatientId: {PatientId}, Exists: {Exists}. User: {UserName} (Id: {UserId})",
-                    patientId, exists, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("نتیجه بررسی وجود بیمار. PatientId: {PatientId}, Exists: {Exists}, Success: {Success}, Data: {Data}. User: {UserName} (Id: {UserId})",
+                    patientId, exists, patientResult.Success, patientResult.Data != null, _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<bool>.Successful(exists);
             }
@@ -1875,7 +1875,8 @@ namespace ClinicApp.Services.Insurance
         {
             try
             {
-                _log.Information("🗑️ حذف بیمه تکمیلی بیمار: {PatientId}, کاربر: {UserName}", patientId, _currentUserService.UserName);
+                _log.Information("🗑️ حذف بیمه تکمیلی بیمار: {PatientId}, کاربر: {UserName}", 
+                    patientId, _currentUserService.UserName);
 
                 if (patientId <= 0)
                 {

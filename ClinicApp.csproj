@@ -4448,11 +4448,15 @@
     <Content Include="Scripts\reception\core\event-bus.js" />
     <Content Include="Scripts\reception\core\reception-coordinator.js" />
     <Content Include="Scripts\reception\modules\department-selection.js" />
+    <Content Include="Scripts\reception\modules\edit-mode-manager.js" />
+    <Content Include="Scripts\reception\modules\form-change-detector.js" />
     <Content Include="Scripts\reception\modules\patient-insurance.js" />
     <Content Include="Scripts\reception\modules\patient-search.js" />
     <Content Include="Scripts\reception\modules\payment-processing.js" />
     <Content Include="Scripts\reception\modules\realtime-insurance-binding.js" />
+    <Content Include="Scripts\reception\modules\save-processor.js" />
     <Content Include="Scripts\reception\modules\service-calculation.js" />
+    <Content Include="Scripts\reception\modules\validation-engine.js" />
     <Content Include="Scripts\reception\reception-main.js" />
     <Content Include="Scripts\reception\reception-modules.js" />
     <Content Include="Scripts\reception\reception-toastr-service.js" />
