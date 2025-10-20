@@ -4450,6 +4450,8 @@
     <Content Include="Scripts\reception\modules\department-selection.js" />
     <Content Include="Scripts\reception\modules\edit-mode-manager.js" />
     <Content Include="Scripts\reception\modules\form-change-detector.js" />
+    <Content Include="Scripts\reception\modules\insurance-modules-bundle.js" />
+    <Content Include="Scripts\reception\modules\insurance-orchestrator.js" />
     <Content Include="Scripts\reception\modules\patient-insurance.js" />
     <Content Include="Scripts\reception\modules\patient-search.js" />
     <Content Include="Scripts\reception\modules\payment-processing.js" />
@@ -4573,6 +4575,7 @@
     <Content Include="Views\Reception\Components\_ServiceAccordionSection.cshtml" />
     <Content Include="Views\Reception\Components\_PatientIdentityComponent.cshtml" />
     <Content Include="Views\Reception\Components\_ReceptionAccordionForm.cshtml" />
+    <Content Include="Views\Reception\Components\_ProfessionalReceptionForm.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

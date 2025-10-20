@@ -32,8 +32,8 @@
 
 <!-- Main Reception Interface -->
 <div class="reception-interface">
-    <div class="container-fluid">
-        <div class="row">
+    <div class="container-fluid px-0">
+        <div class="row g-0">
             <!-- Main Reception Form - Full Width -->
             <div class="col-12">
                 <div class="medical-panel reception-panel">
@@ -99,7 +99,8 @@
     }
 
     .reception-interface {
-        padding: 0 1rem;
+        padding: 0;
+        width: 100%;
     }
 
     .medical-panel {
@@ -109,6 +110,9 @@
         border: 1px solid #e9ecef;
         margin-bottom: 1.5rem;
         overflow: hidden;
+        width: 100%;
+        margin-left: 0;
+        margin-right: 0;
     }
 
     .panel-header {
@@ -167,6 +171,8 @@
         gap: 2rem;
         padding: 1.5rem;
         min-height: 80vh;
+        width: 100%;
+        max-width: none;
     }
 
     /* Optimized Panel Layout */
@@ -192,6 +198,212 @@
         box-shadow: 0 4px 12px rgba(0,0,0,0.1);
         padding: 1.5rem;
         margin-bottom: 1.5rem;
+        width: 100%;
+    }
+
+    /* Full Width Accordion Form */
+    .reception-accordion-form {
+        width: 100%;
+        max-width: none;
+    }
+
+    .accordion-form-header {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .form-title-section {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .form-status-section {
+        display: flex;
+        align-items: center;
+        gap: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    /* Accordion Sections Full Width */
+    .accordion-sections {
+        width: 100%;
+    }
+
+    .accordion-section {
+        width: 100%;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-header {
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .section-title {
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .section-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .section-actions {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    /* Status Indicators - UX بهینه */
+    .status-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-left: 8px;
+    }
+    
+    .status-dot.pending {
+        background-color: #ffc107;
+    }
+    
+    .status-dot.success {
+        background-color: #28a745;
+    }
+    
+    .status-dot.error {
+        background-color: #dc3545;
+    }
+    
+    .status-dot.loading {
+        background-color: #007bff;
+        animation: pulse 1.5s infinite;
+    }
+    
+    @@keyframes pulse {
+        0% { opacity: 1; }
+        50% { opacity: 0.5; }
+        100% { opacity: 1; }
+    }
+    
+    /* Section Status */
+    .section-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .status-text {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    
+    /* Form Groups بهینه */
+    .form-group {
+        margin-bottom: 1rem;
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 0.5rem;
+    }
+    
+    .form-control {
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        padding: 0.75rem;
+        transition: all 0.2s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Input Group بهینه */
+    .input-group .btn {
+        border-radius: 0 6px 6px 0;
+    }
+    
+    .input-group .form-control {
+        border-radius: 6px 0 0 6px;
+    }
+    
+    /* Button States */
+    .btn {
+        border-radius: 6px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .btn:active {
+        transform: translateY(0);
+    }
+    
+    /* Responsive Design */
+    @@media (max-width: 1200px) {
+        .accordion-form-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .form-status-section {
+            justify-content: center;
+        }
+        
+        .form-actions {
+            justify-content: center;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .reception-form-components {
+            padding: 1rem;
+        }
+        
+        .section-header {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        
+        .section-actions {
+            justify-content: center;
+        }
+        
+        .input-group {
+            flex-direction: column;
+        }
+        
+        .input-group .btn {
+            border-radius: 6px;
+            margin-top: 0.5rem;
+        }
+        
+        .input-group .form-control {
+            border-radius: 6px;
+        }
     }
 
     .medical-error-alert {

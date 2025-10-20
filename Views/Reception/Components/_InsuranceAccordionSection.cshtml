@@ -5,23 +5,27 @@
 <!-- بخش اطلاعات بیمه - آکاردئون -->
 <div class="insurance-accordion-section" id="insuranceAccordionSection">
     
-    <!-- Header بخش -->
+    <!-- Header بخش - بهینه‌سازی UX -->
     <div class="section-header">
         <div class="section-title">
             <h5 class="mb-0">
                 <i class="fas fa-shield-alt me-2"></i>
                 اطلاعات بیمه
             </h5>
-            <p class="section-subtitle mb-0">بیمه پایه و تکمیلی بیمار</p>
+            <p class="section-subtitle mb-0">بیمه پایه و تکمیلی</p>
+        </div>
+        <div class="section-status">
+            <span class="status-dot pending" id="insuranceStatusDot"></span>
+            <span class="status-text" id="insuranceStatusText">در انتظار</span>
         </div>
         <div class="section-actions">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="loadPatientInsuranceBtn">
+            <button type="button" class="btn btn-primary btn-sm" id="loadPatientInsuranceBtn">
                 <i class="fas fa-sync me-1"></i>
-                بارگذاری بیمه
+                بارگذاری
             </button>
-            <button type="button" class="btn btn-outline-success btn-sm" id="saveInsuranceBtn">
+            <button type="button" class="btn btn-success btn-sm d-none" id="saveInsuranceBtn">
                 <i class="fas fa-save me-1"></i>
-                ذخیره بیمه
+                ذخیره
             </button>
         </div>
     </div>

@@ -5,31 +5,27 @@
 <!-- بخش اطلاعات بیمار - آکاردئون -->
 <div class="patient-accordion-section" id="patientAccordionSection">
     
-    <!-- Header بخش -->
+    <!-- Header بخش - بهینه‌سازی UX -->
     <div class="section-header">
         <div class="section-title">
             <h5 class="mb-0">
                 <i class="fas fa-user me-2"></i>
-                اطلاعات هویتی بیمار
+                اطلاعات بیمار
             </h5>
-            <p class="section-subtitle mb-0">جستجو و ثبت اطلاعات کامل بیمار</p>
+            <p class="section-subtitle mb-0">جستجو و ثبت اطلاعات بیمار</p>
+        </div>
+        <div class="section-status">
+            <span class="status-dot pending" id="patientStatusDot"></span>
+            <span class="status-text" id="patientStatusText">در انتظار</span>
         </div>
         <div class="section-actions">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="searchPatientBtn">
+            <button type="button" class="btn btn-primary btn-sm" id="searchPatientBtn">
                 <i class="fas fa-search me-1"></i>
-                <span class="btn-text">جستجو</span>
-                <span class="btn-loading d-none">
-                    <i class="fas fa-spinner fa-spin me-1"></i>
-                    در حال جستجو...
-                </span>
+                جستجو
             </button>
-            <button type="button" class="btn btn-outline-success btn-sm" id="savePatientBtn">
+            <button type="button" class="btn btn-success btn-sm d-none" id="savePatientBtn">
                 <i class="fas fa-save me-1"></i>
-                <span class="btn-text">ذخیره</span>
-                <span class="btn-loading d-none">
-                    <i class="fas fa-spinner fa-spin me-1"></i>
-                    در حال ذخیره...
-                </span>
+                ذخیره
             </button>
         </div>
     </div>
@@ -72,36 +68,28 @@
                     </div>
                     <div class="search-body">
                         <div class="row align-items-end">
-                            <div class="col-md-6">
-                                <!-- فیلد کد ملی بهینه -->
+                            <div class="col-md-8">
+                                <!-- فیلد کد ملی بهینه - UX بهتر -->
                                 <div class="form-group mb-0">
                                     <label class="form-label">
                                         <i class="fas fa-id-card me-1"></i>
-                                        کد ملی <span class="text-danger">*</span>
+                                        کد ملی بیمار
                                     </label>
-                                    <div class="input-group input-group-lg">
+                                    <div class="input-group">
                                         @Html.TextBoxFor(m => m.NationalCode, new { 
-                                            @class = "form-control form-control-lg", 
+                                            @class = "form-control", 
                                             id = "patientNationalCode",
-                                            placeholder = "کد ملی 10 رقمی بیمار",
+                                            placeholder = "کد ملی 10 رقمی",
                                             maxlength = "10",
                                             data_validation = "national-code",
                                             data_required = "true"
                                         })
-                                        <button class="btn btn-primary btn-lg" type="button" id="searchByNationalCodeBtn">
+                                        <button class="btn btn-primary" type="button" id="searchByNationalCodeBtn">
                                             <i class="fas fa-search me-1"></i>
-                                            <span class="btn-text">جستجو</span>
-                                            <span class="btn-loading d-none">
-                                                <i class="fas fa-spinner fa-spin me-1"></i>
-                                                در حال جستجو...
-                                            </span>
+                                            جستجو
                                         </button>
                                     </div>
                                     <div class="invalid-feedback" id="nationalCodeError"></div>
-                                    <div class="form-text">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        کد ملی 10 رقمی بیمار را وارد کنید و Enter بزنید یا روی جستجو کلیک کنید
-                                    </div>
                                 </div>
                             </div>
                             <div class="col-md-6">

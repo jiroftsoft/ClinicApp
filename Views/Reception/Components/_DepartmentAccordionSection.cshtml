@@ -5,31 +5,27 @@
 <!-- بخش دپارتمان و پزشک - آکاردئون -->
 <div class="department-accordion-section" id="departmentAccordionSection">
     
-    <!-- Header بخش -->
+    <!-- Header بخش - بهینه‌سازی UX -->
     <div class="section-header">
         <div class="section-title">
             <h5 class="mb-0">
                 <i class="fas fa-hospital me-2"></i>
                 دپارتمان و پزشک
             </h5>
-            <p class="section-subtitle mb-0">انتخاب تخصص و پزشک معالج</p>
+            <p class="section-subtitle mb-0">انتخاب تخصص و پزشک</p>
+        </div>
+        <div class="section-status">
+            <span class="status-dot pending" id="departmentStatusDot"></span>
+            <span class="status-text" id="departmentStatusText">در انتظار</span>
         </div>
         <div class="section-actions">
-            <button type="button" class="btn btn-outline-primary btn-sm" id="loadDepartmentsBtn">
+            <button type="button" class="btn btn-primary btn-sm" id="loadDepartmentsBtn">
                 <i class="fas fa-sync me-1"></i>
-                <span class="btn-text">بارگذاری دپارتمان‌ها</span>
-                <span class="btn-loading d-none">
-                    <i class="fas fa-spinner fa-spin me-1"></i>
-                    در حال بارگذاری...
-                </span>
+                بارگذاری
             </button>
-            <button type="button" class="btn btn-outline-success btn-sm" id="saveDepartmentBtn">
+            <button type="button" class="btn btn-success btn-sm d-none" id="saveDepartmentBtn">
                 <i class="fas fa-save me-1"></i>
-                <span class="btn-text">ذخیره انتخاب</span>
-                <span class="btn-loading d-none">
-                    <i class="fas fa-spinner fa-spin me-1"></i>
-                    در حال ذخیره...
-                </span>
+                ذخیره
             </button>
         </div>
     </div>
