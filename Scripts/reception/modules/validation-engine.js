@@ -157,6 +157,13 @@
             console.log('[ValidationEngine] 🔍 Validating form...');
             
             try {
+                // Prevent rapid fire calls
+                if (this.isValidating) {
+                    console.log('[ValidationEngine] ⚠️ Already validating, skipping');
+                    return { isValid: true, errors: [], warnings: [], hasChanges: false };
+                }
+                
+                this.isValidating = true;
                 var errors = [];
                 var warnings = [];
                 var values = this.getFormValues();
@@ -192,6 +199,9 @@
             } catch (error) {
                 console.error('[ValidationEngine] ❌ Error validating form:', error);
                 throw error;
+            } finally {
+                // Reset validating flag
+                this.isValidating = false;
             }
         },
 
@@ -443,7 +453,16 @@
             console.log('[ValidationEngine] ❌ Validation errors:', errors);
             
             var errorMessages = errors.map(function(error) {
-                return error.message;
+                // Handle both string and object errors
+                if (typeof error === 'string') {
+                    return error;
+                } else if (error && error.message) {
+                    return error.message;
+                } else if (error && typeof error === 'object') {
+                    return JSON.stringify(error);
+                } else {
+                    return String(error);
+                }
             });
             
             // Use Toastr if available

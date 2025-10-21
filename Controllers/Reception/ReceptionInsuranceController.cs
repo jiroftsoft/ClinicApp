@@ -672,8 +672,20 @@ namespace ClinicApp.Controllers.Reception
             
             try
             {
+                _logger.Information("[{RequestId}] ========================================", requestId);
                 _logger.Information("[{RequestId}] 💾 ذخیره اطلاعات بیمه بیمار: {PatientId}, کاربر: {UserName}", 
                     requestId, model.PatientId, _currentUserService.UserName);
+                _logger.Information("[{RequestId}] 📋 SupplementaryInsuranceId.HasValue: {HasValue}", requestId, model.SupplementaryInsuranceId.HasValue);
+                _logger.Information("[{RequestId}] 📋 SupplementaryInsuranceId Value: {Value}", requestId, model.SupplementaryInsuranceId?.ToString() ?? "NULL");
+                _logger.Information("[{RequestId}] ========================================", requestId);
+                
+                // Debug Console Output
+                System.Diagnostics.Debug.WriteLine($"=== DEBUG SAVE REQUEST ===");
+                System.Diagnostics.Debug.WriteLine($"PatientId: {model.PatientId}");
+                System.Diagnostics.Debug.WriteLine($"PrimaryInsuranceId: {model.PrimaryInsuranceId}");
+                System.Diagnostics.Debug.WriteLine($"SupplementaryInsuranceId: {model.SupplementaryInsuranceId}");
+                System.Diagnostics.Debug.WriteLine($"SupplementaryInsuranceId.HasValue: {model.SupplementaryInsuranceId.HasValue}");
+                System.Diagnostics.Debug.WriteLine($"=== END DEBUG ===");
 
                 // اعتبارسنجی ورودی‌ها
                 if (model.PatientId <= 0)
@@ -700,30 +712,51 @@ namespace ClinicApp.Controllers.Reception
                     }
                 }
 
-                // بیمه تکمیلی: اگر شناسه دارد به‌روزرسانی؛ اگر خالی است، حذف/غیرفعال‌سازی
-                if (model.SupplementaryInsuranceId.HasValue)
+                // بیمه تکمیلی: بررسی وجود بیمه تکمیلی فعلی
+                var currentInsuranceResult = await _patientInsuranceService.GetPatientInsuranceStatusForReceptionAsync(model.PatientId);
+                if (currentInsuranceResult.Success && currentInsuranceResult.Data != null)
                 {
-                    var supplementaryResult = await _patientInsuranceService.UpdatePatientSupplementaryInsuranceAsync(
-                        model.PatientId,
-                        model.SupplementaryInsuranceId.Value,
-                        model.SupplementaryPolicyNumber,
-                        model.SupplementaryExpiryDate
-                    );
-
-                    if (!supplementaryResult.Success)
+                    // بررسی وجود بیمه تکمیلی فعلی در دیتابیس - استفاده از dynamic
+                    dynamic currentData = currentInsuranceResult.Data;
+                    var hasCurrentSupplementary = currentData.SupplementaryInsurance != null && 
+                                                currentData.SupplementaryInsurance.ProviderId > 0;
+                    
+                    _logger.Information("[{RequestId}] بررسی بیمه تکمیلی - موجود در دیتابیس: {HasCurrent}, ارسالی: {HasNew}", 
+                        requestId, hasCurrentSupplementary, model.SupplementaryInsuranceId.HasValue);
+                    
+                    // اگر قبلاً بیمه تکمیلی داشته و اکنون پاک شده است → حذف/غیرفعال‌سازی
+                    if (hasCurrentSupplementary && !model.SupplementaryInsuranceId.HasValue)
                     {
-                        _logger.Warning("[{RequestId}] خطا در ذخیره بیمه تکمیلی: {Error}", requestId, supplementaryResult.Message);
-                        return Json(new { success = false, message = $"خطا در ذخیره بیمه تکمیلی: {supplementaryResult.Message}" });
+                        _logger.Information("[{RequestId}] حذف بیمه تکمیلی - قبلاً موجود بود، اکنون پاک شده", requestId);
+                        var removeSuppResult = await _patientInsuranceService.RemovePatientSupplementaryInsuranceAsync(model.PatientId);
+                        if (!removeSuppResult.Success)
+                        {
+                            _logger.Warning("[{RequestId}] خطا در حذف بیمه تکمیلی: {Error}", requestId, removeSuppResult.Message);
+                            return Json(new { success = false, message = $"خطا در حذف بیمه تکمیلی: {removeSuppResult.Message}" });
+                        }
+                        _logger.Information("[{RequestId}] ✅ بیمه تکمیلی با موفقیت حذف شد", requestId);
                     }
-                }
-                else
-                {
-                    // اگر قبلاً بیمه تکمیلی داشته و اکنون پاک شده است → حذف/غیرفعال‌سازی استاندارد
-                    var removeSuppResult = await _patientInsuranceService.RemovePatientSupplementaryInsuranceAsync(model.PatientId);
-                    if (!removeSuppResult.Success)
+                    // اگر بیمه تکمیلی جدید اضافه شده است → به‌روزرسانی
+                    else if (model.SupplementaryInsuranceId.HasValue)
                     {
-                        _logger.Warning("[{RequestId}] خطا در حذف بیمه تکمیلی: {Error}", requestId, removeSuppResult.Message);
-                        return Json(new { success = false, message = $"خطا در حذف بیمه تکمیلی: {removeSuppResult.Message}" });
+                        _logger.Information("[{RequestId}] به‌روزرسانی بیمه تکمیلی - PlanId: {PlanId}", requestId, model.SupplementaryInsuranceId.Value);
+                        var supplementaryResult = await _patientInsuranceService.UpdatePatientSupplementaryInsuranceAsync(
+                            model.PatientId,
+                            model.SupplementaryInsuranceId.Value,
+                            model.SupplementaryPolicyNumber,
+                            model.SupplementaryExpiryDate
+                        );
+
+                        if (!supplementaryResult.Success)
+                        {
+                            _logger.Warning("[{RequestId}] خطا در ذخیره بیمه تکمیلی: {Error}", requestId, supplementaryResult.Message);
+                            return Json(new { success = false, message = $"خطا در ذخیره بیمه تکمیلی: {supplementaryResult.Message}" });
+                        }
+                        _logger.Information("[{RequestId}] ✅ بیمه تکمیلی با موفقیت به‌روزرسانی شد", requestId);
+                    }
+                    else
+                    {
+                        _logger.Information("[{RequestId}] هیچ تغییری در بیمه تکمیلی - قبلاً موجود نبود، اکنون هم نیست", requestId);
                     }
                 }
 

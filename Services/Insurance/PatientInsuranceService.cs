@@ -104,12 +104,12 @@ namespace ClinicApp.Services.Insurance
                 _log.Information("بررسی وجود بیمار. PatientId: {PatientId}. User: {UserName} (Id: {UserId})",
                     patientId, _currentUserService.UserName, _currentUserService.UserId);
 
-                // بررسی وجود بیمار با استفاده از PatientService
-                var patientResult = await _patientService.GetPatientDetailsAsync(patientId);
-                var exists = patientResult.Success && patientResult.Data != null;
+                // بررسی مستقیم از Repository به جای PatientService
+                var patient = await _patientInsuranceRepository.GetPatientByIdAsync(patientId);
+                var exists = patient != null;
                 
-                _log.Information("نتیجه بررسی وجود بیمار. PatientId: {PatientId}, Exists: {Exists}, Success: {Success}, Data: {Data}. User: {UserName} (Id: {UserId})",
-                    patientId, exists, patientResult.Success, patientResult.Data != null, _currentUserService.UserName, _currentUserService.UserId);
+                _log.Information("نتیجه بررسی وجود بیمار. PatientId: {PatientId}, Exists: {Exists}. User: {UserName} (Id: {UserId})",
+                    patientId, exists, _currentUserService.UserName, _currentUserService.UserId);
 
                 return ServiceResult<bool>.Successful(exists);
             }

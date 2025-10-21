@@ -1,4 +1,3 @@
-@using ClinicApp.ViewModels.Reception
 @model ClinicApp.ViewModels.Reception.ReceptionAccordionViewModel
 
 @{
@@ -586,6 +585,9 @@
     @Scripts.Render("~/bundles/reception/js")
     @Scripts.Render("~/bundles/reception-core")
     @Scripts.Render("~/bundles/reception-specialized")
+    @* Temporarily disable advanced insurance system to fix event storm *@
+    @* @Scripts.Render("~/bundles/advanced-insurance") *@
+    @* @Scripts.Render("~/bundles/advanced-insurance-test") *@
     @Scripts.Render("~/bundles/reception-modules")
     @Scripts.Render("~/bundles/reception-main")
     <script>
@@ -601,6 +603,14 @@
                     console.log('SaveProcessor available:', typeof window.SaveProcessor !== 'undefined');
                     console.log('EditModeManager available:', typeof window.EditModeManager !== 'undefined');
                     console.log('InsuranceOrchestrator available:', typeof window.InsuranceOrchestrator !== 'undefined');
+                    
+                    // تست بارگذاری سیستم پیشرفته جدید
+                    console.log('Reception Index: Testing advanced insurance system...');
+                    console.log('AdvancedChangeDetector available:', typeof window.AdvancedChangeDetector !== 'undefined');
+                    console.log('AdvancedStateManager available:', typeof window.AdvancedStateManager !== 'undefined');
+                    console.log('AdvancedInsuranceCoordinator available:', typeof window.AdvancedInsuranceCoordinator !== 'undefined');
+                    console.log('AdvancedInsuranceSystem available:', typeof window.AdvancedInsuranceSystem !== 'undefined');
+                    console.log('AdvancedInsuranceSystemTest available:', typeof window.AdvancedInsuranceSystemTest !== 'undefined');
                 
                 // Initialize Toastr Service first
                 if (typeof window.ReceptionToastr !== 'undefined') {
@@ -624,6 +634,76 @@
                 } else {
                     console.error('Reception Index: ReceptionModules not found');
                 }
+                
+                // اضافه کردن event listener برای دکمه ذخیره
+                console.log('Reception Index: Setting up save button click handler...');
+                $('#saveInsuranceBtn').off('click.saveHandler').on('click.saveHandler', function() {
+                    console.log('Save button clicked!');
+                    
+                    // جمع‌آوری داده‌های فرم
+                    var formData = {
+                        primaryProvider: $('#insuranceProvider').val(),
+                        primaryPlan: $('#insurancePlan').val(),
+                        primaryPolicyNumber: $('#policyNumber').val(),
+                        primaryCardNumber: $('#cardNumber').val(),
+                        supplementaryProvider: $('#supplementaryProvider').val(),
+                        supplementaryPlan: $('#supplementaryPlan').val(),
+                        supplementaryPolicyNumber: $('#supplementaryPolicyNumber').val(),
+                        supplementaryExpiry: $('#supplementaryExpiry').val()
+                    };
+                    
+                    var patientId = $('#patientId').val();
+                    
+                    console.log('Form data collected:', formData);
+                    console.log('Patient ID:', patientId);
+                    console.log('Supplementary Plan Value:', formData.supplementaryPlan);
+                    console.log('Supplementary Plan Type:', typeof formData.supplementaryPlan);
+                    console.log('Supplementary Plan Length:', formData.supplementaryPlan ? formData.supplementaryPlan.length : 'undefined');
+                    
+                    // ارسال درخواست ذخیره
+                    if (patientId && patientId > 0) {
+                        $.ajax({
+                            url: '/Reception/Insurance/Save',
+                            type: 'POST',
+                            data: (function() {
+                                var data = {
+                                    PatientId: patientId,
+                                    PrimaryInsuranceId: formData.primaryPlan,
+                                    PrimaryPolicyNumber: formData.primaryPolicyNumber,
+                                    PrimaryCardNumber: formData.primaryCardNumber,
+                                    SupplementaryPolicyNumber: formData.supplementaryPolicyNumber,
+                                    SupplementaryExpiryDate: formData.supplementaryExpiry,
+                                    __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+                                };
+                                
+                                // Only add SupplementaryInsuranceId if it has a value
+                                if (formData.supplementaryPlan && formData.supplementaryPlan.trim() !== '') {
+                                    data.SupplementaryInsuranceId = formData.supplementaryPlan;
+                                }
+                                
+                                return data;
+                            })(),
+                            beforeSend: function(xhr, settings) {
+                                console.log('AJAX Data being sent:', settings.data);
+                                console.log('SupplementaryInsuranceId value:', formData.supplementaryPlan && formData.supplementaryPlan.trim() !== '' ? formData.supplementaryPlan : null);
+                            },
+                            success: function(response) {
+                                console.log('Save successful:', response);
+                                if (response.success) {
+                                    toastr.success('اطلاعات بیمه با موفقیت ذخیره شد');
+                                } else {
+                                    toastr.error('خطا در ذخیره: ' + (response.message || 'خطای نامشخص'));
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                console.error('Save error:', xhr.responseText);
+                                toastr.error('خطا در ذخیره اطلاعات');
+                            }
+                        });
+                    } else {
+                        toastr.error('شناسه بیمار نامعتبر است');
+                    }
+                });
                 
                 console.log('Reception Index: Initialization completed');
             }, 300);

@@ -105,6 +105,21 @@ namespace ClinicApp
                 "~/Scripts/reception/modules/edit-mode-manager.js",
                 "~/Scripts/reception/modules/insurance-orchestrator.js"));
 
+            // Advanced Insurance System Bundle (New Modern Architecture) - No Minification
+            var advancedInsuranceBundle = new ScriptBundle("~/bundles/advanced-insurance").Include(
+                "~/Scripts/reception/modules/advanced-change-detector.js",
+                "~/Scripts/reception/modules/advanced-state-manager.js",
+                "~/Scripts/reception/modules/advanced-insurance-coordinator.js",
+                "~/Scripts/reception/modules/advanced-insurance-system.js");
+            advancedInsuranceBundle.ConcatenationToken = "/* Advanced Insurance System */";
+            bundles.Add(advancedInsuranceBundle);
+
+            // Advanced Insurance System Test Bundle - No Minification
+            var advancedInsuranceTestBundle = new ScriptBundle("~/bundles/advanced-insurance-test").Include(
+                "~/Scripts/reception/test-advanced-insurance-system.js");
+            advancedInsuranceTestBundle.ConcatenationToken = "/* Advanced Insurance System Test */";
+            bundles.Add(advancedInsuranceTestBundle);
+
             // Reception Feature Modules Bundle
             bundles.Add(new ScriptBundle("~/bundles/reception-modules").Include(
                 "~/Scripts/reception/modules/patient-search.js",

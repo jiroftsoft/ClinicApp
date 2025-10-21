@@ -148,6 +148,13 @@
             console.log('[FormChangeDetector] 🔍 Detecting form changes...');
             
             try {
+                // Prevent rapid fire calls
+                if (this.isDetecting) {
+                    console.log('[FormChangeDetector] ⚠️ Already detecting, skipping');
+                    return { hasChanges: false, changes: [] };
+                }
+                
+                this.isDetecting = true;
                 if (!this.originalValues) {
                     console.warn('[FormChangeDetector] ⚠️ Original values not set, capturing current values');
                     this.originalValues = this.captureFormValues();
@@ -172,6 +179,9 @@
             } catch (error) {
                 console.error('[FormChangeDetector] ❌ Error detecting changes:', error);
                 throw error;
+            } finally {
+                // Reset detecting flag
+                this.isDetecting = false;
             }
         },
 

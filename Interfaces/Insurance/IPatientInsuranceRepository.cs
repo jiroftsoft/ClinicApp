@@ -99,6 +99,13 @@ namespace ClinicApp.Interfaces.Insurance
         /// <returns>بیمه بیمار مورد نظر</returns>
         Task<PatientInsurance> GetByPolicyNumberAsync(string policyNumber);
 
+        /// <summary>
+        /// دریافت بیمار بر اساس شناسه
+        /// </summary>
+        /// <param name="patientId">شناسه بیمار</param>
+        /// <returns>بیمار مورد نظر</returns>
+        Task<Patient> GetPatientByIdAsync(int patientId);
+
         #endregion
 
         #region Validation Operations

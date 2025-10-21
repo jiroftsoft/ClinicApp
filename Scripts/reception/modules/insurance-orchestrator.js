@@ -55,13 +55,17 @@
                 
                 $(document).on('change.insuranceOrchestrator', formSelectors, function() {
                     console.log('[InsuranceOrchestrator] 🔄 Form field changed:', this.id);
-                    self.handleFormChange();
+                    // Throttle to prevent event storm
+                    if (!self.lastChangeTime || Date.now() - self.lastChangeTime > 500) {
+                        self.lastChangeTime = Date.now();
+                        self.handleFormChange();
+                    }
                 });
                 
-                $(document).on('input.insuranceOrchestrator', formSelectors, this.debounce(function() {
+                $(document).on('input.insuranceOrchestrator', formSelectors, function() {
                     console.log('[InsuranceOrchestrator] 🔄 Form field input:', this.id);
-                    self.handleFormChange();
-                }, 300));
+                    self.debounceInput(self.handleFormChange.bind(self), 300);
+                });
                 
                 // Save button click
                 $(document).on('click.insuranceOrchestrator', this.config.selectors.saveButton, function(e) {
@@ -112,6 +116,17 @@
             };
         },
 
+        // Debounce input with proper context
+        debounceInput: function(func, wait) {
+            if (this.inputTimeout) {
+                clearTimeout(this.inputTimeout);
+            }
+            var self = this;
+            this.inputTimeout = setTimeout(function() {
+                func();
+            }, wait);
+        },
+
         // ========================================
         // HANDLE FORM CHANGE - مدیریت تغییر فرم (Production-Optimized)
         // ========================================
@@ -119,6 +134,14 @@
             console.log('[InsuranceOrchestrator] 🔄 Handling form change...');
             
             try {
+                // Prevent event storm - check if already processing
+                if (this.isProcessing) {
+                    console.log('[InsuranceOrchestrator] ⚠️ Already processing, skipping change');
+                    return;
+                }
+                
+                this.isProcessing = true;
+                
                 // 1. Detect changes using FormChangeDetector
                 var changeResult = window.FormChangeDetector.detectChanges();
                 
@@ -162,6 +185,9 @@
             } catch (error) {
                 console.error('[InsuranceOrchestrator] ❌ Error handling form change:', error);
                 this.handleError(error, 'handleFormChange');
+            } finally {
+                // Reset processing flag
+                this.isProcessing = false;
             }
         },
 
@@ -389,7 +415,16 @@
             
             try {
                 var errorMessages = errors.map(function(error) {
-                    return error.message;
+                    // Handle both string and object errors
+                    if (typeof error === 'string') {
+                        return error;
+                    } else if (error && error.message) {
+                        return error.message;
+                    } else if (error && typeof error === 'object') {
+                        return JSON.stringify(error);
+                    } else {
+                        return String(error);
+                    }
                 });
                 
                 var message = 'لطفاً فرم را کامل کنید:\n' + errorMessages.join('\n');

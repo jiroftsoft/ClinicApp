@@ -1676,7 +1676,16 @@
             console.log('[RealTimeInsuranceBinding] ❌ Validation errors:', errors);
             
             var errorMessages = errors.map(function(error) {
-                return error.message;
+                // Handle both string and object errors
+                if (typeof error === 'string') {
+                    return error;
+                } else if (error && error.message) {
+                    return error.message;
+                } else if (error && typeof error === 'object') {
+                    return JSON.stringify(error);
+                } else {
+                    return String(error);
+                }
             });
             
             this.showError('خطاهای اعتبارسنجی: ' + errorMessages.join(', '));
@@ -2078,7 +2087,20 @@
         showValidationErrors: function(errors) {
             console.log('[RealTimeInsuranceBinding] ❌ Validation errors:', errors);
             
-            var errorMessage = errors.join(', ');
+            var errorMessages = errors.map(function(error) {
+                // Handle both string and object errors
+                if (typeof error === 'string') {
+                    return error;
+                } else if (error && error.message) {
+                    return error.message;
+                } else if (error && typeof error === 'object') {
+                    return JSON.stringify(error);
+                } else {
+                    return String(error);
+                }
+            });
+            
+            var errorMessage = errorMessages.join(', ');
             
             if (window.ReceptionToastr && window.ReceptionToastr.helpers && window.ReceptionToastr.helpers.showError) {
                 window.ReceptionToastr.helpers.showError('خطاهای اعتبارسنجی: ' + errorMessage);

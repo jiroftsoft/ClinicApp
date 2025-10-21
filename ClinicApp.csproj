@@ -4246,6 +4246,7 @@
     <Content Include="Documentation\TechnicalDocumentation.md" />
     <Content Include="Documentation\UserGuide.md" />
     <Content Include="Documentation\HelpersAndExtensionsKnowledgeBase.md" />
+    <Content Include="Documentation\AdvancedInsuranceSystem.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4447,6 +4448,9 @@
     <Content Include="Scripts\reception\core\error-handler.js" />
     <Content Include="Scripts\reception\core\event-bus.js" />
     <Content Include="Scripts\reception\core\reception-coordinator.js" />
+    <Content Include="Scripts\reception\modules\advanced-change-detector.js" />
+    <Content Include="Scripts\reception\modules\advanced-insurance-coordinator.js" />
+    <Content Include="Scripts\reception\modules\advanced-state-manager.js" />
     <Content Include="Scripts\reception\modules\department-selection.js" />
     <Content Include="Scripts\reception\modules\edit-mode-manager.js" />
     <Content Include="Scripts\reception\modules\form-change-detector.js" />
@@ -4462,7 +4466,6 @@
     <Content Include="Scripts\reception\reception-main.js" />
     <Content Include="Scripts\reception\reception-modules.js" />
     <Content Include="Scripts\reception\reception-toastr-service.js" />
-    <Content Include="Scripts\reception\test-insurance-change-detection.js" />
     <Content Include="Scripts\select2.js" />
     <Content Include="Scripts\select2.min.js" />
     <Content Include="Scripts\toastr.js" />
@@ -4577,6 +4580,7 @@
     <Content Include="Views\Reception\Components\_PatientIdentityComponent.cshtml" />
     <Content Include="Views\Reception\Components\_ReceptionAccordionForm.cshtml" />
     <Content Include="Views\Reception\Components\_ProfessionalReceptionForm.cshtml" />
+    <Content Include="Scripts\reception\modules\README.md" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />

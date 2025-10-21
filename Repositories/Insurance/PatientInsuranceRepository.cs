@@ -769,6 +769,31 @@ namespace ClinicApp.Repositories.Insurance
             }
         }
 
+        /// <summary>
+        /// دریافت بیمار بر اساس شناسه
+        /// </summary>
+        public async Task<Patient> GetPatientByIdAsync(int patientId)
+        {
+            try
+            {
+                _logger.Information("🔍 جستجوی بیمار {PatientId} در دیتابیس", patientId);
+                
+                var patient = await _context.Patients
+                    .Where(p => p.PatientId == patientId && !p.IsDeleted)
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync();
+                    
+                _logger.Information("📊 بیمار {PatientId} یافت شد: {Found}", patientId, patient != null);
+                
+                return patient;
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در دریافت بیمار. PatientId: {PatientId}", patientId);
+                throw new InvalidOperationException($"خطا در دریافت بیمار {patientId}", ex);
+            }
+        }
+
         #endregion
 
         #region Active Insurance Operations
