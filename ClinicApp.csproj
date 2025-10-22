@@ -1435,6 +1435,7 @@
     <Content Include="Content\css\patient-insurance-enhanced.css" />
     <Content Include="Content\css\patient-insurance.css" />
     <Content Include="Content\css\reception-standards.css" />
+    <Content Include="Content\css\reception\advanced-department-styles.css" />
     <Content Include="Content\css\reception\patient-accordion.css" />
     <Content Include="Content\css\reception\realtime-insurance-binding.css" />
     <Content Include="Content\css\reception\reception-accordion.css" />
@@ -4449,6 +4450,7 @@
     <Content Include="Scripts\reception\core\event-bus.js" />
     <Content Include="Scripts\reception\core\reception-coordinator.js" />
     <Content Include="Scripts\reception\modules\advanced-change-detector.js" />
+    <Content Include="Scripts\reception\modules\advanced-department-manager.js" />
     <Content Include="Scripts\reception\modules\advanced-insurance-coordinator.js" />
     <Content Include="Scripts\reception\modules\advanced-state-manager.js" />
     <Content Include="Scripts\reception\modules\department-selection.js" />
@@ -4459,6 +4461,7 @@
     <Content Include="Scripts\reception\modules\patient-insurance.js" />
     <Content Include="Scripts\reception\modules\patient-search.js" />
     <Content Include="Scripts\reception\modules\payment-processing.js" />
+    <Content Include="Scripts\reception\modules\professional-cascade-loader.js" />
     <Content Include="Scripts\reception\modules\realtime-insurance-binding.js" />
     <Content Include="Scripts\reception\modules\save-processor.js" />
     <Content Include="Scripts\reception\modules\service-calculation.js" />

@@ -80,17 +80,23 @@ namespace ClinicApp.Controllers.Reception
         /// </summary>
         /// <param name="clinicId">شناسه کلینیک</param>
         /// <returns>لیست دپارتمان‌های کلینیک</returns>
-        [HttpPost]
+        [HttpGet]
         [Route("GetClinicDepartments")]
-        [ValidateAntiForgeryToken]
-        public async Task<JsonResult> GetClinicDepartments(int clinicId)
+         public async Task<JsonResult> GetClinicDepartments(int? clinicId)
         {
             try
             {
                 _logger.Information("🏥 دریافت دپارتمان‌های کلینیک برای فرم پذیرش. ClinicId: {ClinicId}, User: {UserName}", 
                     clinicId, _currentUserService.UserName);
 
-                var result = await _departmentService.GetClinicDepartmentsForReceptionAsync(clinicId);
+                // Validate clinicId
+                if (!clinicId.HasValue || clinicId.Value <= 0)
+                {
+                    _logger.Warning("شناسه کلینیک نامعتبر: {ClinicId}", clinicId);
+                    return Json(new { success = false, message = "شناسه کلینیک نامعتبر است" }, JsonRequestBehavior.AllowGet);
+                }
+
+                var result = await _departmentService.GetClinicDepartmentsForReceptionAsync(clinicId.Value);
                 
                 if (result.Success)
                 {
@@ -115,9 +121,8 @@ namespace ClinicApp.Controllers.Reception
         /// </summary>
         /// <param name="departmentId">شناسه دپارتمان</param>
         /// <returns>لیست پزشکان دپارتمان</returns>
-        [HttpPost]
+        [HttpGet]
         [Route("GetDepartmentDoctors")]
-        [ValidateAntiForgeryToken]
         public async Task<JsonResult> GetDepartmentDoctors(int departmentId)
         {
             try
