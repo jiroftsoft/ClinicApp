@@ -42,7 +42,6 @@ using ClinicApp.ViewModels.Insurance.InsurancePlan;
 using ClinicApp.Services.DataSeeding;
 using ClinicApp.Services.UserContext;
 using ClinicApp.Services.SystemSettings;
-using ClinicApp.Services.Interfaces;
 using ClinicApp.Services.Triage;
 using ClinicApp.Services;
 using ClinicApp.Interfaces.Reception;

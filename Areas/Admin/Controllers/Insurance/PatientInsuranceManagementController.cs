@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using System.Web.Mvc;
 using ClinicApp.Core;
 using ClinicApp.Interfaces.Insurance;
-using ClinicApp.Services.Interfaces;
 using ClinicApp.Services.Insurance;
 using Serilog;
 

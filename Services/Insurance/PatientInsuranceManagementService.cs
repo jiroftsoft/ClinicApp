@@ -10,7 +10,6 @@ using ClinicApp.Interfaces.Insurance;
 using ClinicApp.Models.DTOs.Insurance;
 using ClinicApp.Models.Entities.Insurance;
 using ClinicApp.Models.Entities.Patient;
-using ClinicApp.Services.Interfaces;
 using Serilog;
 
 namespace ClinicApp.Services.Insurance

@@ -469,7 +469,6 @@
     <Compile Include="Areas\Admin\Controllers\InsuranceTypeUpdateController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\BusinessRuleController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\CombinedInsuranceCalculationController.cs" />
-    <Compile Include="Areas\Admin\Controllers\DataFixController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\InsuranceTariffController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\PatientInsuranceManagementController.cs" />
     <Compile Include="Areas\Admin\Controllers\Insurance\SupplementaryTariffController.cs" />
@@ -1006,7 +1005,6 @@
     <Compile Include="Services\AuthService.cs" />
     <Compile Include="Services\BackgroundCurrentUserService.cs" />
     <Compile Include="Services\Calculation\TariffCalculator.cs" />
-    <Compile Include="Services\Class1.cs" />
     <Compile Include="Services\ClinicAdmin\AppointmentAvailabilityService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentHistoryService.cs" />
     <Compile Include="Services\ClinicAdmin\DoctorAssignmentService.cs" />
@@ -1058,7 +1056,6 @@
     <Compile Include="Services\Insurance\SupplementaryInsuranceService.cs" />
     <Compile Include="Services\Insurance\SupplementaryTariffSeederService.cs" />
     <Compile Include="Services\Insurance\TariffDomainValidationService.cs" />
-    <Compile Include="Services\Interfaces\ServiceCalculationDetails.cs" />
     <Compile Include="Services\MessageNotificationService.cs" />
     <Compile Include="Services\Notification\NotificationModule.cs" />
     <Compile Include="Services\PatientService.cs" />
@@ -1336,7 +1333,6 @@
     <Compile Include="Helpers\ServiceResult.cs" />
     <Compile Include="Helpers\ValidationResult.cs" />
     <Compile Include="Helpers\SecurityValidationResult.cs" />
-    <Compile Include="Interfaces\Class1.cs" />
     <Compile Include="Interfaces\IAuthService.cs" />
     <Compile Include="Interfaces\IClinicService.cs" />
     <Compile Include="Interfaces\ICurrentUserService.cs" />
@@ -1380,7 +1376,6 @@
     <Compile Include="ViewModels\Triage\TriageReportViewModel.cs" />
     <Compile Include="ViewModels\Triage\TriageSummaryDto.cs" />
     <Compile Include="ViewModels\Triage\TriageVitalSignsDto.cs" />
-    <Compile Include="ViewModels\Validators\Class1.cs" />
     <Compile Include="ViewModels\Validators\ClinicCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\DepartmentCreateEditViewModelValidator.cs" />
     <Compile Include="ViewModels\Validators\InsuranceCalculationViewModelValidator.cs" />
@@ -4450,7 +4445,6 @@
     <Content Include="Scripts\reception\core\event-bus.js" />
     <Content Include="Scripts\reception\core\reception-coordinator.js" />
     <Content Include="Scripts\reception\modules\advanced-change-detector.js" />
-    <Content Include="Scripts\reception\modules\advanced-department-manager.js" />
     <Content Include="Scripts\reception\modules\advanced-insurance-coordinator.js" />
     <Content Include="Scripts\reception\modules\advanced-state-manager.js" />
     <Content Include="Scripts\reception\modules\department-selection.js" />
@@ -4461,7 +4455,6 @@
     <Content Include="Scripts\reception\modules\patient-insurance.js" />
     <Content Include="Scripts\reception\modules\patient-search.js" />
     <Content Include="Scripts\reception\modules\payment-processing.js" />
-    <Content Include="Scripts\reception\modules\professional-cascade-loader.js" />
     <Content Include="Scripts\reception\modules\realtime-insurance-binding.js" />
     <Content Include="Scripts\reception\modules\save-processor.js" />
     <Content Include="Scripts\reception\modules\service-calculation.js" />
@@ -4479,12 +4472,6 @@
     <Content Include="Scripts\triage\triage.ajax.js" />
     <Content Include="Scripts\triage\triage.forms.js" />
     <Content Include="Scripts\triage\triage.queue.js" />
-    <Content Include="SQL\CheckCurrentData.sql" />
-    <Content Include="SQL\CurrentDataResults.txt" />
-    <Content Include="SQL\FixInsuranceData.sql" />
-    <Content Include="SQL\VerifyDataFix.sql" />
-    <Content Include="TEMPLATES\ComplexFormCSS.css" />
-    <Content Include="TEMPLATES\ComplexFormJavaScript.js" />
     <Content Include="Views\Shared\jqueryui.html" />
     <Content Include="Web.config" />
     <Content Include="Web.Debug.config">
@@ -4533,7 +4520,6 @@
     <Content Include="Views\Shared\_Layout.cshtml" />
     <Content Include="Views\Shared\_PersianDatePickerTemplate.cshtml" />
     <Content Include="Views\Shared\_PersianDatePickerExample.cshtml" />
-    <Content Include="TEMPLATES\README.md" />
     <Content Include="Views\Patient\_PatientInsurancesPartial.cshtml" />
     <Content Include="Views\TokenTest\Index.cshtml" />
     <Content Include="Views\Reception\Index.cshtml" />
@@ -4545,7 +4531,6 @@
     <Content Include="Views\Payment\_PaymentTransactionCardPartial.cshtml" />
     <Content Include="Views\Payment\_PaymentTransactionListPartial.cshtml" />
     <Content Include="site.webmanifest" />
-    <Content Include="TEMPLATES\ComplexFormTemplate.cshtml" />
     <Content Include="Views\Shared\_PaginationPartial.cshtml" />
     <Content Include="Views\Shared\EditorTemplates\PersianDatePicker.cshtml" />
     <Content Include="Views\Shared\EditorTemplates\PersianDateRange.cshtml" />
@@ -4591,6 +4576,7 @@
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
+    <Folder Include="SQL\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />
