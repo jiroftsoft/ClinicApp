@@ -846,6 +846,10 @@
     <Compile Include="Migrations\202510171050535_ChnagTypeOfBirthDate.Designer.cs">
       <DependentUpon>202510171050535_ChnagTypeOfBirthDate.cs</DependentUpon>
     </Compile>
+    <Compile Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs" />
+    <Compile Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.Designer.cs">
+      <DependentUpon>202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs</DependentUpon>
+    </Compile>
     <Compile Include="Models\Binders\DecimalModelBinder.cs" />
     <Compile Include="Models\Binders\InsuranceTariffModelBinder.cs" />
     <Compile Include="Models\ClinicDependencyInfo.cs" />
@@ -965,6 +969,7 @@
     <Compile Include="Models\Statistics\PaymentStatistics.cs" />
     <Compile Include="Models\Statistics\PaymentTransactionStatistics.cs" />
     <Compile Include="Models\SystemSettings\SystemSetting.cs" />
+    <Compile Include="ReceptionConstants.cs" />
     <Compile Include="Repositories\Reception\ClinicManagementRepository.cs" />
     <Compile Include="Repositories\Reception\DoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IClinicManagementRepository.cs" />
@@ -4692,6 +4697,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Migrations\202510171050535_ChnagTypeOfBirthDate.resx">
       <DependentUpon>202510171050535_ChnagTypeOfBirthDate.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Migrations\202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.resx">
+      <DependentUpon>202510241551586_Fix_Money_Fields_To_Decimal18_0_IRR.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Resources\ErrorMessages.resx" />
     <EmbeddedResource Include="Resources\ReceptionMessages.resx" />

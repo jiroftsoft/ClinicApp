@@ -162,19 +162,19 @@ public class ReceptionItemConfig : EntityTypeConfiguration<ReceptionItem>
 
         Property(ri => ri.UnitPrice)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)  // ✅ ریال - بدون اعشار
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ReceptionItem_UnitPrice")));
 
         Property(ri => ri.PatientShareAmount)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)  // ✅ ریال - بدون اعشار
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ReceptionItem_PatientShareAmount")));
 
         Property(ri => ri.InsurerShareAmount)
             .IsRequired()
-            .HasPrecision(18, 2)
+            .HasPrecision(18, 0)  // ✅ ریال - بدون اعشار
             .HasColumnAnnotation("Index",
                 new IndexAnnotation(new IndexAttribute("IX_ReceptionItem_InsurerShareAmount")));
 

@@ -444,7 +444,7 @@ public class OnlinePaymentConfig : EntityTypeConfiguration<OnlinePayment>
 
         Property(op => op.RefundAmount)
             .IsOptional()
-            .HasPrecision(18, 2);
+            .HasPrecision(18, 0);  // ✅ ریال - بدون اعشار
 
         Property(op => op.RefundReason)
             .IsOptional()

@@ -240,15 +240,19 @@ public class ReceptionConfig : EntityTypeConfiguration<Reception>
 
         Property(r => r.TotalAmount)
             .IsRequired()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0)  // ✅ ریال - بدون اعشار
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_TotalAmount")));
 
         Property(r => r.PatientCoPay)
             .IsRequired()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0)  // ✅ ریال - بدون اعشار
+            .HasColumnAnnotation("Index",
+                new IndexAnnotation(new IndexAttribute("IX_Reception_PatientCoPay")));
 
         Property(r => r.InsurerShareAmount)
             .IsRequired()
-            .HasPrecision(18, 4);
+            .HasPrecision(18, 0);  // ✅ ریال - بدون اعشار
 
         Property(r => r.Status)
             .IsRequired()
