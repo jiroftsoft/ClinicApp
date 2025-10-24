@@ -1076,8 +1076,9 @@ namespace ClinicApp.Services.Insurance
                     ClinicApp.Models.Enums.ServiceComponentType.Technical, service.IsHashtagged, currentFinancialYear);
 
                 // دریافت کای حرفه‌ای
+                // ✅ FIX: ضریب حرفه‌ای بر اساس نوع خدمت (هشتگ‌دار: 770k، عادی: 1.37M)
                 var professionalFactor = await _factorSettingService.GetActiveFactorByTypeAndHashtaggedAsync(
-                    ClinicApp.Models.Enums.ServiceComponentType.Professional, false, currentFinancialYear); // حرفه‌ای همیشه false
+                    ClinicApp.Models.Enums.ServiceComponentType.Professional, service.IsHashtagged, currentFinancialYear); // ✅ بر اساس نوع خدمت
 
                 if (technicalFactor == null || professionalFactor == null)
                 {

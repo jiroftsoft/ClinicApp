@@ -372,10 +372,11 @@ namespace ClinicApp.Services
             var calculationDate = date ?? DateTime.Now;
             var currentFinancialYear = GetCurrentFinancialYear(calculationDate);
 
-            // دریافت ضریب حرفه‌ای (همیشه ثابت برای همه خدمات)
+            // دریافت ضریب حرفه‌ای
+            // ✅ FIX: ضریب حرفه‌ای بر اساس نوع خدمت (هشتگ‌دار: 770k، عادی: 1.37M)
             var professionalFactor = context.FactorSettings
                 .Where(fs => fs.FactorType == ServiceComponentType.Professional &&
-                            fs.IsHashtagged == false && // کای حرفه‌ای همیشه false است
+                            fs.IsHashtagged == service.IsHashtagged && // ✅ بر اساس نوع خدمت
                             fs.FinancialYear == currentFinancialYear &&
                             fs.IsActive && !fs.IsDeleted &&
                             !fs.IsFrozen &&

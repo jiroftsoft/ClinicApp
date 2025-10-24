@@ -191,9 +191,10 @@ namespace ClinicApp.Services.Insurance
                             .FirstOrDefaultAsync();
 
                         // دریافت ضریب حرفه‌ای از دیتابیس
+                        // ✅ FIX: ضریب حرفه‌ای بر اساس نوع خدمت (هشتگ‌دار: 770k، عادی: 1.37M)
                         var professionalFactor = await _context.FactorSettings
                             .Where(fs => fs.FactorType == ServiceComponentType.Professional &&
-                                        fs.IsHashtagged == false && // کای حرفه‌ای همیشه false است
+                                        fs.IsHashtagged == service.IsHashtagged && // ✅ بر اساس نوع خدمت
                                         fs.FinancialYear == currentFinancialYear &&
                                         fs.IsActive && !fs.IsDeleted &&
                                         !fs.IsFrozen &&

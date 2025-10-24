@@ -4194,6 +4194,10 @@
     <Content Include="Documentation\UserGuide.md" />
     <Content Include="Documentation\HelpersAndExtensionsKnowledgeBase.md" />
     <Content Include="Documentation\AdvancedInsuranceSystem.md" />
+    <Content Include="Contracts\01-PreFlight-Protocol.md" />
+    <Content Include="Contracts\02-Architecture-Guidelines.md" />
+    <Content Include="Contracts\03-Code-Quality-Standards.md" />
+    <Content Include="Contracts\04-Security-Requirements.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
