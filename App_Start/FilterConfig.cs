@@ -16,8 +16,8 @@ namespace ClinicApp
             // 🏥 MEDICAL: فیلتر ضد کش برای مسیرهای درمانی - Real-time data for clinical safety
             filters.Add(new NoCacheFilter());
             
-            // عدم اضافه کردن Global Anti-Forgery Filter
-            // چون این کار باعث مشکل در GET requests می‌شود
+            // 🔒 SECURITY: Global Anti-Forgery Filter برای تمام POST requests
+            filters.Add(new ValidateAntiForgeryTokenAttribute());
         }
     }
 }

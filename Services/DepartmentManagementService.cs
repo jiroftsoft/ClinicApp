@@ -11,6 +11,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.ViewModels.ClinicAdmin;
 
 namespace ClinicApp.Services
 {
@@ -227,6 +228,77 @@ namespace ClinicApp.Services
             {
                 _log.Error(ex, "Error retrieving active departments for lookup for ClinicId {ClinicId}", clinicId);
                 return ServiceResult<List<LookupItemViewModel>>.Failed("خطای سیستمی در بازیابی اطلاعات رخ داد.", "DB_ERROR");
+            }
+        }
+
+        /// <summary>
+        /// دریافت تمام دپارتمان‌ها
+        /// </summary>
+        public async Task<ServiceResult<List<DepartmentDto>>> GetAllDepartmentsAsync()
+        {
+            try
+            {
+                _log.Information("Getting all departments");
+                var departments = await _departmentRepo.GetDepartmentsAsync(1, ""); // TODO: Fix clinicId
+                var departmentDtos = departments.Select(d => new DepartmentDto
+                {
+                    DepartmentId = d.DepartmentId,
+                    Name = d.Name,
+                    Code = d.Code,
+                    IsActive = d.IsActive,
+                    Description = d.Description,
+                    ClinicId = d.ClinicId,
+                    ClinicName = d.Clinic?.Name ?? "",
+                    CreatedAt = d.CreatedAt,
+                    CreatedBy = d.CreatedByUser?.UserName ?? ""
+                }).ToList();
+
+                return ServiceResult<List<DepartmentDto>>.Successful(departmentDtos);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting all departments");
+                return ServiceResult<List<DepartmentDto>>.Failed("خطا در دریافت دپارتمان‌ها");
+            }
+        }
+
+        /// <summary>
+        /// دریافت خدمات دپارتمان
+        /// </summary>
+        public async Task<ServiceResult<List<ServiceDto>>> GetDepartmentServicesAsync(int deptId)
+        {
+            try
+            {
+                _log.Information("Getting services for department {DeptId}", deptId);
+                // Assuming there's a method to get department services
+                // This is a placeholder implementation
+                var services = new List<ServiceDto>();
+                return ServiceResult<List<ServiceDto>>.Successful(services);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting department services for {DeptId}", deptId);
+                return ServiceResult<List<ServiceDto>>.Failed("خطا در دریافت خدمات دپارتمان");
+            }
+        }
+
+        /// <summary>
+        /// دریافت خدمات مشترک
+        /// </summary>
+        public async Task<ServiceResult<List<ServiceDto>>> GetSharedServicesAsync()
+        {
+            try
+            {
+                _log.Information("Getting shared services");
+                // Assuming there's a method to get shared services
+                // This is a placeholder implementation
+                var services = new List<ServiceDto>();
+                return ServiceResult<List<ServiceDto>>.Successful(services);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "Error getting shared services");
+                return ServiceResult<List<ServiceDto>>.Failed("خطا در دریافت خدمات مشترک");
             }
         }
     }

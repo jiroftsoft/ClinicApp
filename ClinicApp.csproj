@@ -487,6 +487,11 @@
     <Compile Include="Areas\Admin\Controllers\SystemSeedController.cs" />
     <Compile Include="Constants\ReceptionConstants.cs" />
     <Compile Include="Constants\ReceptionFormConstants.cs" />
+    <Compile Include="Controllers\Api\ClinicController.cs" />
+    <Compile Include="Controllers\Api\DoctorController.cs" />
+    <Compile Include="Controllers\Api\InsuranceController.cs" />
+    <Compile Include="Controllers\Api\PatientController.cs" />
+    <Compile Include="Controllers\Api\ServiceController.cs" />
     <Compile Include="Controllers\BaseController.cs" />
     <Compile Include="Controllers\Base\OptimizedBaseController.cs" />
     <Compile Include="Controllers\Base\PersianDateController.cs" />
@@ -500,6 +505,7 @@
     <Compile Include="Controllers\Reception\ReceptionCalculationController.cs" />
     <Compile Include="Controllers\Reception\ReceptionDepartmentController.cs" />
     <Compile Include="Controllers\Reception\ReceptionDepartmentDoctorController.cs" />
+    <Compile Include="Controllers\Reception\ReceptionFacadeController.cs" />
     <Compile Include="Controllers\Reception\ReceptionFormController.cs" />
     <Compile Include="Controllers\Reception\ReceptionHistoryController.cs" />
     <Compile Include="Controllers\Reception\ReceptionInsuranceAutoController.cs" />
@@ -527,6 +533,7 @@
     <Compile Include="Extensions\ApplicationUserManagerExtensions.cs" />
     <Compile Include="Extensions\CultureExtensions.cs" />
     <Compile Include="Extensions\DateTimeExtensions.cs" />
+    <Compile Include="Extensions\EnumExtensions.cs" />
     <Compile Include="Extensions\GenderParsing.cs" />
     <Compile Include="Extensions\PersianDateExtensions.cs" />
     <Compile Include="Factories\ReceptionValidationFactory.cs" />
@@ -643,6 +650,7 @@
     <Compile Include="Interfaces\Reception\IReceptionCalculationService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionDepartmentDoctorService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionDomainService.cs" />
+    <Compile Include="Interfaces\Reception\IReceptionFacade.cs" />
     <Compile Include="Interfaces\Reception\IReceptionFormService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionNavigationService.cs" />
     <Compile Include="Interfaces\Reception\IReceptionPaymentService.cs" />
@@ -976,6 +984,7 @@
     <Compile Include="Repositories\Reception\IDoctorManagementRepository.cs" />
     <Compile Include="Repositories\Reception\IShiftManagementRepository.cs" />
     <Compile Include="Repositories\Reception\ShiftManagementRepository.cs" />
+    <Compile Include="Services\Insurance\ServiceCalculationEngine.cs" />
     <Compile Include="Services\Reception\ReceptionConstants.cs" />
     <Compile Include="Repositories\Base\BaseRepository.cs" />
     <Compile Include="Repositories\ClinicAdmin\DoctorAssignmentHistoryRepository.cs" />
@@ -1090,6 +1099,7 @@
     <Compile Include="Services\Reception\ReceptionDepartmentService.cs" />
     <Compile Include="Services\Reception\ReceptionDomainService.cs" />
     <Compile Include="Services\Reception\ReceptionEventHandler.cs" />
+    <Compile Include="Services\Reception\ReceptionFacade.cs" />
     <Compile Include="Services\Reception\ReceptionFormService.cs" />
     <Compile Include="Services\Reception\ReceptionInformationService.cs" />
     <Compile Include="Services\Reception\ReceptionInsuranceAutoService.cs" />
@@ -1130,6 +1140,7 @@
     <Compile Include="Validators\PercentageValidationAttribute.cs" />
     <Compile Include="Validators\Reception\EnhancedReceptionValidators.cs" />
     <Compile Include="ViewModels\Base\PersianDateViewModel.cs" />
+    <Compile Include="ViewModels\ClinicAdmin\DepartmentDtos.cs" />
     <Compile Include="ViewModels\DepartmentViewModels.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AppointmentBookingViewModel.cs" />
     <Compile Include="ViewModels\DoctorManagementVM\AssignmentHistoryViewModel.cs" />
@@ -1225,6 +1236,7 @@
     <Compile Include="ViewModels\PatientLookupViewModel.cs" />
     <Compile Include="ViewModels\Payment\Gateway\PaymentGatewayViewModels.cs" />
     <Compile Include="ViewModels\Payment\PaymentTransactionViewModels.cs" />
+    <Compile Include="ViewModels\Payment\POS\PosManagementDtos.cs" />
     <Compile Include="ViewModels\Payment\POS\PosManagementViewModels.cs" />
     <Compile Include="ViewModels\Reception\AccordionSectionViewModel.cs" />
     <Compile Include="ViewModels\Reception\CashPaymentRequestViewModel.cs" />
@@ -1248,6 +1260,7 @@
     <Compile Include="ViewModels\Reception\PaymentRequestViewModel.cs" />
     <Compile Include="ViewModels\Reception\PaymentStatusViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionAccordionViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionBaseController.cs" />
     <Compile Include="ViewModels\Reception\ReceptionCalculationViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionCascadeViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionClinicLookupViewModel.cs" />
@@ -1262,6 +1275,7 @@
     <Compile Include="ViewModels\Reception\ReceptionDoctorStatsViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionDoctorViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionEditViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionFacadeDtos.cs" />
     <Compile Include="ViewModels\Reception\ReceptionFormModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionFormPatientViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionHistoryViewModel.cs" />
@@ -1275,6 +1289,7 @@
     <Compile Include="ViewModels\Reception\ReceptionInsuranceViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionLookupViewModels.cs" />
     <Compile Include="ViewModels\Reception\ReceptionMonthlyStatsViewModel.cs" />
+    <Compile Include="ViewModels\Reception\ReceptionPatientHistoryViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionPatientIdentityViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionPaymentErrorViewModel.cs" />
     <Compile Include="ViewModels\Reception\ReceptionPaymentHistoryViewModel.cs" />
@@ -3771,6 +3786,7 @@
     <Content Include="favicon.ico" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
+    <Content Include="Scripts\anti-forgery-ajax.js" />
     <Content Include="Scripts\aos.js" />
     <Content Include="Scripts\app\assignment-form.js" />
     <Content Include="Scripts\app\combined-insurance-calculation.js" />
@@ -4198,6 +4214,8 @@
     <Content Include="Contracts\02-Architecture-Guidelines.md" />
     <Content Include="Contracts\03-Code-Quality-Standards.md" />
     <Content Include="Contracts\04-Security-Requirements.md" />
+    <Content Include="Contracts\DEBUGGING_SPECIALIST_CONTRACT.md" />
+    <Content Include="Contracts\MODULE_ANALYSIS_CONTRACT.md" />
     <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
@@ -4524,13 +4542,24 @@
     <Content Include="Views\Reception\Components\_ReceptionAccordionForm.cshtml" />
     <Content Include="Views\Reception\Components\_ProfessionalReceptionForm.cshtml" />
     <Content Include="Scripts\reception\modules\README.md" />
+    <Content Include="Views\ReceptionV2\Index.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_ClinicDept.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_Insurance.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_ItemsGrid.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_Patient.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_Payment.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_ServicePicker.cshtml" />
+    <Content Include="Views\ReceptionV2\Partials\_Totals.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
     <Folder Include="Areas\Admin\Data\" />
+    <Folder Include="Dtos\Reception\" />
     <Folder Include="Interfaces\Medical\" />
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
+    <Folder Include="Scripts\reception.v2\" />
+    <Folder Include="Services\Finance\" />
     <Folder Include="SQL\" />
   </ItemGroup>
   <ItemGroup>

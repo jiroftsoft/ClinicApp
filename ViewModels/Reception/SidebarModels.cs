@@ -40,15 +40,6 @@ namespace ClinicApp.ViewModels.Reception
         public DateTime LastUpdated { get; set; }
     }
 
-    /// <summary>
-    /// وضعیت پرداخت‌ها
-    /// </summary>
-    public class PaymentStatus
-    {
-        public int TodayPayments { get; set; }
-        public decimal TotalAmount { get; set; }
-        public int PendingPayments { get; set; }
-        public DateTime LastUpdated { get; set; }
-    }
+
 
 }

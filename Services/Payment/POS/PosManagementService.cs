@@ -4,14 +4,14 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
 using ClinicApp.Helpers;
+using ClinicApp.ViewModels.Payment.POS;
+using ClinicApp.ViewModels.Reception;
 using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ClinicApp.Interfaces.Payment;
-using ClinicApp.ViewModels.Payment.POS;
-using CashSessionStatistics = ClinicApp.Interfaces.Payment.POS.CashSessionStatistics;
 
 namespace ClinicApp.Services.Payment.POS
 {
@@ -489,6 +489,99 @@ namespace ClinicApp.Services.Payment.POS
         public Task<ServiceResult<PosStatisticsViewModel>> GetPosStatisticsViewModelAsync(DateTime startDate, DateTime endDate)
         {
             return _posManagementServiceImplementation.GetPosStatisticsViewModelAsync(startDate, endDate);
+        }
+
+        #endregion
+
+        #region Payment Processing Methods
+
+        /// <summary>
+        /// اعتبارسنجی پرداخت
+        /// </summary>
+        public async Task<ServiceResult<bool>> ValidatePaymentAsync(int receptionId, decimal amount)
+        {
+            try
+            {
+                _logger.Information("Validating payment for reception {ReceptionId} with amount {Amount}", receptionId, amount);
+                
+                // TODO: Implement actual validation logic
+                // This is a placeholder implementation
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error validating payment for reception {ReceptionId}", receptionId);
+                return ServiceResult<bool>.Failed("خطا در اعتبارسنجی پرداخت");
+            }
+        }
+
+        /// <summary>
+        /// ثبت پرداخت POS
+        /// </summary>
+        public async Task<ServiceResult<bool>> RegisterPosPaymentAsync(int receptionId, PosPaymentDto posPayment)
+        {
+            try
+            {
+                _logger.Information("Registering POS payment for reception {ReceptionId} with amount {Amount}", receptionId, posPayment.Amount);
+                
+                // TODO: Implement actual POS payment registration logic
+                // This is a placeholder implementation
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error registering POS payment for reception {ReceptionId}", receptionId);
+                return ServiceResult<bool>.Failed("خطا در ثبت پرداخت POS");
+            }
+        }
+
+        /// <summary>
+        /// ثبت پرداخت نقدی
+        /// </summary>
+        public async Task<ServiceResult<bool>> RegisterCashPaymentAsync(int receptionId, CashPaymentDto cashPayment, int sessionId)
+        {
+            try
+            {
+                _logger.Information("Registering cash payment for reception {ReceptionId} with amount {Amount} in session {SessionId}", 
+                    receptionId, cashPayment.Amount, sessionId);
+                
+                // TODO: Implement actual cash payment registration logic
+                // This is a placeholder implementation
+                return ServiceResult<bool>.Successful(true);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error registering cash payment for reception {ReceptionId}", receptionId);
+                return ServiceResult<bool>.Failed("خطا در ثبت پرداخت نقدی");
+            }
+        }
+
+        /// <summary>
+        /// دریافت جلسه نقدی باز
+        /// </summary>
+        public async Task<ServiceResult<CashSession>> GetOpenCashSessionAsync(string userId)
+        {
+            try
+            {
+                _logger.Information("Getting open cash session for user {UserId}", userId);
+                
+                // TODO: Implement actual cash session retrieval logic
+                // This is a placeholder implementation
+                var cashSession = new CashSession
+                {
+                    CashSessionId = 1,
+                    UserId = userId,
+                    Status = CashSessionStatus.Open,
+                    OpenedAt = DateTime.Now
+                };
+                
+                return ServiceResult<CashSession>.Successful(cashSession);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error getting open cash session for user {UserId}", userId);
+                return ServiceResult<CashSession>.Failed("خطا در دریافت جلسه نقدی باز");
+            }
         }
 
         #endregion

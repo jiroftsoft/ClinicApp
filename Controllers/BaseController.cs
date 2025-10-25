@@ -4,6 +4,7 @@ using System.Linq;
 using System.Web;
 using System.Web.Mvc;
 using ClinicApp.Helpers;
+using ClinicApp.Interfaces;
 using Serilog;
 
 namespace ClinicApp.Controllers
@@ -23,9 +24,16 @@ namespace ClinicApp.Controllers
     public abstract class BaseController : Controller
     {
         protected readonly ILogger _logger;
+        protected readonly ICurrentUserService _currentUserService;
 
         protected BaseController(ILogger logger)
         {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        protected BaseController(ICurrentUserService currentUserService, ILogger logger)
+        {
+            _currentUserService = currentUserService ?? throw new ArgumentNullException(nameof(currentUserService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
@@ -199,6 +207,79 @@ namespace ClinicApp.Controllers
         protected JsonResult ErrorResponse(string message, List<string> errors = null)
         {
             return StandardJsonResponse(false, message, null, errors);
+        }
+
+        /// <summary>
+        /// شروع مانیتورینگ عملکرد
+        /// </summary>
+        /// <param name="operationName">نام عملیات</param>
+        /// <returns>IDisposable برای مدیریت مانیتورینگ</returns>
+        protected IDisposable StartPerformanceMonitoring(string operationName)
+        {
+            return new PerformanceMonitor(_logger, operationName);
+        }
+
+        /// <summary>
+        /// مدیریت خطاهای پذیرش
+        /// </summary>
+        /// <param name="ex">Exception</param>
+        /// <param name="operation">نام عملیات</param>
+        /// <param name="context">اطلاعات اضافی</param>
+        /// <returns>JsonResult با خطا</returns>
+        protected JsonResult HandleReceptionError(Exception ex, string operation, object context = null)
+        {
+            _logger.Error(ex, "خطا در {Operation}. Context: {@Context}", operation, context);
+            return StandardJsonResponse(false, $"خطا در {operation}. لطفاً مجدداً تلاش کنید.");
+        }
+
+        /// <summary>
+        /// افزودن هدرهای امنیتی
+        /// </summary>
+        protected void AddSecurityHeaders()
+        {
+            try
+            {
+                if (Response != null)
+                {
+                    Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                    Response.Headers.Add("X-Frame-Options", "DENY");
+                    Response.Headers.Add("X-XSS-Protection", "1; mode=block");
+                    Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.Warning("خطا در افزودن هدرهای امنیتی: {Message}", ex.Message);
+            }
+        }
+    }
+
+    /// <summary>
+    /// کلاس مانیتورینگ عملکرد
+    /// </summary>
+    public class PerformanceMonitor : IDisposable
+    {
+        private readonly ILogger _logger;
+        private readonly string _operationName;
+        private readonly DateTime _startTime;
+        private bool _disposed = false;
+
+        public PerformanceMonitor(ILogger logger, string operationName)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _operationName = operationName ?? throw new ArgumentNullException(nameof(operationName));
+            _startTime = DateTime.UtcNow;
+        }
+
+        public void Dispose()
+        {
+            if (!_disposed)
+            {
+                var duration = DateTime.UtcNow - _startTime;
+                _logger.Information("عملیات {OperationName} در {Duration}ms تکمیل شد", 
+                    _operationName, duration.TotalMilliseconds);
+                _disposed = true;
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
 using ClinicApp.ViewModels.Reception;
+using ClinicApp.Models.Enums;
 
 namespace ClinicApp.Interfaces.Reception
 {

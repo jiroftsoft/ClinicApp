@@ -24,7 +24,7 @@ namespace ClinicApp.Controllers.Api
     /// ✅ No Cache: طبق سیاست
     /// ✅ Conditional Authorization
     /// </summary>
-    public class InsuranceController : ReceptionBaseController
+    public class InsuranceController : BaseController
     {
         #region Fields
 

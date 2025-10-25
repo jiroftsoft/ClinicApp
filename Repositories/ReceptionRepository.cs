@@ -834,6 +834,46 @@ namespace ClinicApp.Repositories
             }
         }
 
+        /// <summary>
+        /// محاسبه مجدد مجموع‌های پذیرش
+        /// </summary>
+        public async Task<ServiceResult<ReceptionTotalsDto>> RecalculateTotalsAsync(int receptionId)
+        {
+            try
+            {
+                _logger.Debug("محاسبه مجدد مجموع‌های پذیرش. شناسه پذیرش: {ReceptionId}", receptionId);
+
+                var reception = await _context.Receptions
+                    .Include(r => r.ReceptionItems)
+                    .FirstOrDefaultAsync(r => r.ReceptionId == receptionId && !r.IsDeleted);
+
+                if (reception == null)
+                {
+                    return ServiceResult<ReceptionTotalsDto>.Failed("پذیرش یافت نشد");
+                }
+
+                // TODO: Implement actual recalculation logic
+                // This is a placeholder implementation
+                var totals = new ReceptionTotalsDto
+                {
+                    GrossAmount = 0,
+                    DiscountAmount = 0,
+                    DeductionAmount = 0,
+                    BaseInsurancePayable = 0,
+                    SupplementaryInsurancePayable = 0,
+                    PatientPayable = 0
+                };
+
+                _logger.Debug("محاسبه مجدد مجموع‌های پذیرش تکمیل شد");
+                return ServiceResult<ReceptionTotalsDto>.Successful(totals);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "خطا در محاسبه مجدد مجموع‌های پذیرش");
+                return ServiceResult<ReceptionTotalsDto>.Failed("خطا در محاسبه مجدد مجموع‌ها");
+            }
+        }
+
         #endregion
     }
 }

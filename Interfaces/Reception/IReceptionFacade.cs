@@ -1,0 +1,67 @@
+using System.Threading.Tasks;
+using ClinicApp.Helpers;
+using ClinicApp.ViewModels.Reception;
+
+namespace ClinicApp.Interfaces.Reception
+{
+    /// <summary>
+    /// Interface برای ReceptionFacade - Orchestrator نازک ماژول پذیرش
+    /// 
+    /// مسئولیت: هماهنگی سرویس‌های موجود بدون اضافه کردن منطق جدید
+    /// هدف: API-محور و اتمیک کردن فراخوانی‌ها
+    /// </summary>
+    public interface IReceptionFacade
+    {
+        #region Loaders
+
+        /// <summary>
+        /// بارگذاری اولیه فرم پذیرش
+        /// </summary>
+        Task<ServiceResult<ReceptionLoadDto>> LoadInitialAsync(int clinicId, int? deptId);
+
+        /// <summary>
+        /// جستجو یا ایجاد بیمار
+        /// </summary>
+        Task<ServiceResult<PatientDto>> FindOrCreatePatientAsync(string nationalCode, PatientCreateDto dtoIfNotExists);
+
+        /// <summary>
+        /// بارگذاری بیمه‌های بیمار
+        /// </summary>
+        Task<ServiceResult<InsuranceBundleDto>> LoadPatientInsurancesAsync(int patientId);
+
+        #endregion
+
+        #region Items & Calculation
+
+        /// <summary>
+        /// دریافت خدمات دپارتمان
+        /// </summary>
+        Task<ServiceResult<ServicePickListDto>> GetServicesForDeptAsync(int deptId);
+
+        /// <summary>
+        /// افزودن آیتم به پذیرش - سه محرک محاسبه
+        /// </summary>
+        Task<ServiceResult<AddItemResultDto>> AddItemAsync(int receptionId, int serviceId, int quantity, int year);
+
+        #endregion
+
+        #region Insurances & Finalize
+
+        /// <summary>
+        /// تنظیم بیمه‌های پذیرش
+        /// </summary>
+        Task<ServiceResult<bool>> SetInsurancesAsync(int receptionId, int? basePlanId, int? suppPlanId);
+
+        /// <summary>
+        /// نهایی‌سازی با پرداخت POS
+        /// </summary>
+        Task<ServiceResult<FinalizeResultDto>> FinalizeWithPosAsync(int receptionId, PosPaymentDto pos);
+
+        /// <summary>
+        /// نهایی‌سازی با پرداخت نقدی
+        /// </summary>
+        Task<ServiceResult<FinalizeResultDto>> FinalizeWithCashAsync(int receptionId, CashPaymentDto cash);
+
+        #endregion
+    }
+}

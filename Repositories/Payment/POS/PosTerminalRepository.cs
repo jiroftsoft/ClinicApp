@@ -1,6 +1,7 @@
 using ClinicApp.Interfaces.Payment.POS;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Payment.POS;
 using ClinicApp.Helpers;
 using System.Data.Entity;
 using System;

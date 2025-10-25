@@ -12,7 +12,7 @@ using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using Serilog;
 
-namespace ClinicApp.Services
+namespace ClinicApp.Services.Reception
 {
     /// <summary>
     /// سرویس ساده برای مدیریت بیماران در ماژول پذیرش

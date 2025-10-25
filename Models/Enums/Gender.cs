@@ -7,6 +7,8 @@ namespace ClinicApp.Models.Enums;
 /// </summary>
 public enum Gender : byte
 {
+    [Display(Name = "نامشخص")]
+    Unknown = 0,
     [Display(Name = "مرد")]
     Male = 1,
     [Display(Name = "زن")]

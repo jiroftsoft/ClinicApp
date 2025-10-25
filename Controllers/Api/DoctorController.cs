@@ -3,7 +3,6 @@ using System.Data.Entity;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Web.Mvc;
-using ClinicApp.Controllers.Base;
 using ClinicApp.Interfaces;
 using ClinicApp.Models;
 using ClinicApp.Models.Enums;
@@ -26,7 +25,7 @@ namespace ClinicApp.Controllers.Api
     /// ✅ No Cache: طبق سیاست
     /// ✅ Conditional Authorization
     /// </summary>
-    public class DoctorController : ReceptionBaseController
+    public class DoctorController : BaseController
     {
         #region Fields
 

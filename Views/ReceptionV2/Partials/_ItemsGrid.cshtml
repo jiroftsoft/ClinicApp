@@ -1,0 +1,15 @@
+@model IEnumerable<ClinicApp.ViewModels.Reception.ReceptionItemVM>
+<div class="card mb-3">
+  <div class="card-header">آیتم‌ها</div>
+  <div class="card-body p-0">
+    <table id="items-grid" class="table table-sm table-striped m-0">
+      <thead><tr><th>کد</th><th>خدمت</th><th>تعداد</th><th>فی (ریال)</th><th>مبلغ (ریال)</th><th></th></tr></thead>
+      <tbody>
+      @foreach(var it in Model){ <tr>
+        <td>@it.Code</td><td>@it.Name</td><td>@it.Qty</td><td>@it.UnitPriceIRR</td><td>@it.TotalIRR</td>
+        <td><button class="btn btn-link text-danger btn-sm remove-item" data-id="@it.ServiceId">حذف</button></td>
+      </tr>}
+      </tbody>
+    </table>
+  </div>
+</div>

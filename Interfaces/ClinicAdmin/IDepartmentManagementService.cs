@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities;
 using ClinicApp.Models.Entities.Clinic;
+using ClinicApp.ViewModels.ClinicAdmin;
 
 namespace ClinicApp.Interfaces.ClinicAdmin
 {
@@ -52,5 +53,24 @@ namespace ClinicApp.Interfaces.ClinicAdmin
         /// دریافت لیست دپارتمان‌های فعال یک کلینیک برای استفاده در لیست‌های کشویی.
         /// </summary>
         Task<ServiceResult<List<LookupItemViewModel>>> GetActiveDepartmentsForLookupAsync(int clinicId);
+
+        /// <summary>
+        /// دریافت تمام دپارتمان‌ها
+        /// </summary>
+        /// <returns>لیست دپارتمان‌ها</returns>
+        Task<ServiceResult<List<DepartmentDto>>> GetAllDepartmentsAsync();
+
+        /// <summary>
+        /// دریافت خدمات دپارتمان
+        /// </summary>
+        /// <param name="deptId">شناسه دپارتمان</param>
+        /// <returns>لیست خدمات</returns>
+        Task<ServiceResult<List<ServiceDto>>> GetDepartmentServicesAsync(int deptId);
+
+        /// <summary>
+        /// دریافت خدمات مشترک
+        /// </summary>
+        /// <returns>لیست خدمات مشترک</returns>
+        Task<ServiceResult<List<ServiceDto>>> GetSharedServicesAsync();
     }
 }

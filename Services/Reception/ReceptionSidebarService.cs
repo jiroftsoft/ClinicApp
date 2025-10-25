@@ -8,6 +8,7 @@ using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.ViewModels.Reception;
+using ClinicApp.Models.Enums;
 using Serilog;
 
 namespace ClinicApp.Services.Reception

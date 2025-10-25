@@ -255,6 +255,13 @@ namespace ClinicApp.Interfaces
         /// <returns>تعداد پذیرش‌ها</returns>
         Task<int> GetReceptionCountByDoctorAsync(int doctorId);
 
+        /// <summary>
+        /// محاسبه مجدد مجموع‌های پذیرش
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <returns>نتیجه محاسبه مجدد</returns>
+        Task<ServiceResult<ReceptionTotalsDto>> RecalculateTotalsAsync(int receptionId);
+
         #endregion
     }
 }

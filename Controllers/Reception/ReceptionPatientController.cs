@@ -6,14 +6,15 @@ using System.Web.Mvc;
 using ClinicApp.Controllers;
 using ClinicApp.Core;
 using ClinicApp.Helpers;
-using ClinicApp.Interfaces;
 using ClinicApp.Interfaces.Reception;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Reception;
 using ClinicApp.Constants;
 using ClinicApp.Extensions;
+using ClinicApp.Interfaces;
 using Serilog;
+using IReceptionPatientService = ClinicApp.Interfaces.Reception.IReceptionPatientService;
 
 namespace ClinicApp.Controllers.Reception
 {

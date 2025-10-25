@@ -1,0 +1,17 @@
+@model ClinicApp.ViewModels.Reception.PaymentSectionVM
+<div class="card">
+  <div class="card-header">پرداخت</div>
+  <div class="card-body row g-2">
+    <div class="col-12">
+      <div class="btn-group w-100">
+        <button id="PayPOS" class="btn btn-outline-primary active w-50">POS</button>
+        <button id="PayCash" class="btn btn-outline-secondary w-50">نقدی</button>
+      </div>
+    </div>
+    <div class="col-6"><label class="form-label">RRN</label><input id="RRN" class="form-control" /></div>
+    <div class="col-6"><label class="form-label">Trace</label><input id="TraceNo" class="form-control" /></div>
+    <div class="col-6"><label class="form-label">Terminal</label><input id="TerminalId" class="form-control" /></div>
+    <div class="col-6"><label class="form-label">4 رقم کارت</label><input id="CardLast4" class="form-control" /></div>
+    <div class="col-12"><button id="BtnFinalizePOS" class="btn btn-primary w-100">نهایی‌سازی</button></div>
+  </div>
+</div>

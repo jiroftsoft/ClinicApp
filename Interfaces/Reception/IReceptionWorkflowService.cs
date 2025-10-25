@@ -39,5 +39,31 @@ namespace ClinicApp.Interfaces.Reception
         /// <param name="reason">دلیل لغو</param>
         /// <returns>نتیجه لغو فرآیند</returns>
         Task<ServiceResult<ReceptionWorkflowResult>> CancelReceptionWorkflowAsync(int receptionId, string reason);
+
+        /// <summary>
+        /// افزودن آیتم به پذیرش
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <param name="serviceId">شناسه خدمت</param>
+        /// <param name="quantity">تعداد</param>
+        /// <param name="unitPrice">قیمت واحد</param>
+        /// <returns>نتیجه افزودن آیتم</returns>
+        Task<ServiceResult<bool>> AddItemAsync(int receptionId, int serviceId, int quantity, decimal unitPrice);
+
+        /// <summary>
+        /// تنظیم بیمه‌های پذیرش
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <param name="basePlanId">شناسه بیمه پایه</param>
+        /// <param name="suppPlanId">شناسه بیمه تکمیلی</param>
+        /// <returns>نتیجه تنظیم بیمه‌ها</returns>
+        Task<ServiceResult<bool>> SetInsurancesAsync(int receptionId, int? basePlanId, int? suppPlanId);
+
+        /// <summary>
+        /// نهایی‌سازی پذیرش
+        /// </summary>
+        /// <param name="receptionId">شناسه پذیرش</param>
+        /// <returns>نتیجه نهایی‌سازی</returns>
+        Task<ServiceResult<bool>> FinalizeAsync(int receptionId);
     }
 }

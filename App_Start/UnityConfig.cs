@@ -10,6 +10,7 @@ using ClinicApp.Models.Entities;
 using ClinicApp.Repositories;
 using ClinicApp.Repositories.Payment;
 using ClinicApp.Services;
+using ClinicApp.Services.Reception;
 using ClinicApp.Services.Idempotency;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
@@ -497,6 +498,9 @@ namespace ClinicApp
             container.RegisterType<IReceptionNavigationService, ReceptionNavigationService>(new PerRequestLifetimeManager());
             container.RegisterType<ReceptionInsuranceAutoService, ReceptionInsuranceAutoService>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionDepartmentDoctorService, Services.Reception.ReceptionDepartmentDoctorService>(new PerRequestLifetimeManager());
+            
+            // ثبت ReceptionFacade - Orchestrator نازک
+            container.RegisterType<IReceptionFacade, ReceptionFacade>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionServiceManagementService, Services.Reception.ReceptionServiceManagementService>(new PerRequestLifetimeManager());
             container.RegisterType<IReceptionPaymentService, Services.Reception.ReceptionPaymentService>(new PerRequestLifetimeManager());
             

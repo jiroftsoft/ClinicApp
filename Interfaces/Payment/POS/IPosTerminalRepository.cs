@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ClinicApp.Models.Entities.Payment;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Payment.POS;
 
 namespace ClinicApp.Interfaces.Payment.POS
 {

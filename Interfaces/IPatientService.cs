@@ -5,6 +5,7 @@ using ClinicApp.Helpers;
 using ClinicApp.ViewModels;
 using ClinicApp.ViewModels.Insurance.PatientInsurance;
 using ClinicApp.Models.Entities.Patient;
+using ClinicApp.ViewModels.Reception;
 
 namespace ClinicApp.Interfaces
 {
@@ -424,6 +425,20 @@ namespace ClinicApp.Interfaces
         /// <param name="nationalCode">کد ملی بیمار</param>
         /// <returns>بیمار یا null اگر یافت نشود</returns>
         Task<Patient> GetPatientByNationalCodeAsync(string nationalCode);
+
+        /// <summary>
+        /// جستجوی بیمار بر اساس کد ملی
+        /// </summary>
+        /// <param name="nationalCode">کد ملی بیمار</param>
+        /// <returns>نتیجه جستجو</returns>
+        Task<ServiceResult<Patient>> FindByNationalCodeAsync(string nationalCode);
+
+        /// <summary>
+        /// ایجاد بیمار جدید
+        /// </summary>
+        /// <param name="patientDto">اطلاعات بیمار</param>
+        /// <returns>نتیجه ایجاد</returns>
+        Task<ServiceResult<Patient>> CreatePatientAsync(PatientCreateDto patientDto);
 
     }
 }

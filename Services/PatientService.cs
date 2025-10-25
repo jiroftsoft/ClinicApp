@@ -2,6 +2,7 @@
 using ClinicApp.Extensions;
 using ClinicApp.Helpers;
 using ClinicApp.Interfaces;
+using ClinicApp.Interfaces.Repositories;
 using ClinicApp.Models;
 using ClinicApp.Models.Entities;
 using ClinicApp.ViewModels;
@@ -18,6 +19,8 @@ using System.Web.Mvc;
 using ClinicApp.Models.Core;
 using ClinicApp.Models.Entities.Patient;
 using ClinicApp.Models.Enums;
+using ClinicApp.ViewModels.Reception;
+using PaymentStatus = ClinicApp.Models.Enums.PaymentStatus;
 
 namespace ClinicApp.Services
 {
@@ -43,19 +46,22 @@ namespace ClinicApp.Services
         private readonly ILogger _log;
         private readonly ICurrentUserService _currentUserService;
         private readonly IAppSettings _appSettings;
+        private readonly IPatientRepository _patientRepository;
 
         public PatientService(
             ApplicationDbContext context,
             ApplicationUserManager userManager,
             ILogger logger,
             ICurrentUserService currentUserService,
-            IAppSettings appSettings)
+            IAppSettings appSettings,
+            IPatientRepository patientRepository)
         {
             _context = context;
             _userManager = userManager;
             _log = logger.ForContext<PatientService>();
             _currentUserService = currentUserService;
             _appSettings = appSettings;
+            _patientRepository = patientRepository;
         }
 
         private int PageSize => _appSettings.DefaultPageSize;
@@ -1795,6 +1801,59 @@ namespace ClinicApp.Services
             {
                 Log.Error(ex, "خطا در محاسبه سن برای تاریخ تولد: {BirthDate}", birthDate);
                 return 0; // مقدار پیش‌فرض در صورت خطا
+            }
+        }
+
+        /// <summary>
+        /// جستجوی بیمار بر اساس کد ملی
+        /// </summary>
+        public async Task<ServiceResult<Patient>> FindByNationalCodeAsync(string nationalCode)
+        {
+            try
+            {
+                _log.Information("جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
+                
+                var patient = await _patientRepository.GetPatientByNationalCodeAsync(nationalCode);
+                if (patient == null)
+                {
+                    return ServiceResult<Patient>.Failed("بیمار یافت نشد");
+                }
+                
+                return ServiceResult<Patient>.Successful(patient);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در جستجوی بیمار با کد ملی: {NationalCode}", nationalCode);
+                return ServiceResult<Patient>.Failed("خطا در جستجوی بیمار");
+            }
+        }
+
+        /// <summary>
+        /// ایجاد بیمار جدید
+        /// </summary>
+        public async Task<ServiceResult<Patient>> CreatePatientAsync(PatientCreateDto patientDto)
+        {
+            try
+            {
+                _log.Information("ایجاد بیمار جدید با کد ملی: {NationalCode}", patientDto.NationalCode);
+                
+                // TODO: Implement actual patient creation logic
+                // This is a placeholder implementation
+                var patient = new Patient
+                {
+                    NationalCode = patientDto.NationalCode,
+                    FirstName = patientDto.FirstName,
+                    LastName = patientDto.LastName,
+                    PhoneNumber = patientDto.PhoneNumber,
+                    Email = patientDto.Email
+                };
+                
+                return ServiceResult<Patient>.Successful(patient);
+            }
+            catch (Exception ex)
+            {
+                _log.Error(ex, "خطا در ایجاد بیمار جدید");
+                return ServiceResult<Patient>.Failed("خطا در ایجاد بیمار");
             }
         }
     }
