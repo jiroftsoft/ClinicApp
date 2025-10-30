@@ -573,10 +573,18 @@ namespace ClinicApp.Services.Reception
 
                 // var year = _financialYearService.GetCurrentYear(); // TODO: Add FinancialYear field to Reception
 
+                // Validate required fields for creating a draft using Reception entity (non-nullable columns)
+                if (!request.PatientId.HasValue || !request.DoctorId.HasValue || !request.ClinicId.HasValue || !request.DepartmentId.HasValue)
+                {
+                    return ServiceResult<CreateDraftResponse>.Failed("اطلاعات بیمار/کلینیک/بخش/پزشک ناقص است. ابتدا فیلدهای لازم را تکمیل کنید.");
+                }
+
                 var draft = new Models.Entities.Reception.Reception
                 {
-                    PatientId = request.PatientId,
-                    DoctorId = request.DoctorId,
+                    PatientId = request.PatientId.Value,
+                    DoctorId = request.DoctorId.Value,
+                    ClinicId = request.ClinicId.Value,
+                    DepartmentId = request.DepartmentId.Value,
                     ReceptionDate = DateTime.Now,
                     Status = ReceptionStatus.Pending, // Draft status
                     Type = ReceptionType.Normal,

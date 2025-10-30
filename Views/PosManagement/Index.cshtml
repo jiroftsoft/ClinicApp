@@ -187,8 +187,10 @@
     modal.show();
   });
 
-  // Network/Protocol save
-  document.getElementById('net-save').addEventListener('click', function(){
+  // Network/Protocol save (delegated to avoid null before modal renders)
+  document.addEventListener('click', function(ev){
+    var saveBtn = ev.target.closest('#net-save');
+    if(!saveBtn) return;
     var id = document.getElementById('net-id').value;
     var conn = document.getElementById('net-conn').value; // e.g. 192.168.1.10:5000
     var mac = document.getElementById('net-mac').value || null;

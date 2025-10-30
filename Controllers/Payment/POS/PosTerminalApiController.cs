@@ -26,6 +26,22 @@ namespace ClinicApp.Controllers.Payment.POS
             _logger = logger.ForContext<PosTerminalApiController>();
         }
 
+        // GET /api/v1/pos/sessions/active
+        [HttpGet, Route("sessions/active")]
+        public async Task<ActionResult> ActiveSessions()
+        {
+            try
+            {
+                var res = await _service.GetActiveSessionsAsync();
+                return Json(res, JsonRequestBehavior.AllowGet);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "POS: active sessions error");
+                return Json(ServiceResult.Failed("خطا در دریافت جلسات فعال"), JsonRequestBehavior.AllowGet);
+            }
+        }
+
         // GET /api/v1/pos/terminals?provider=&protocol=&active=
         [HttpGet, Route("terminals")]
         public async Task<ActionResult> List(PosProviderType? provider = null, PosProtocol? protocol = null, bool? active = null, int page = 1, int pageSize = 50)

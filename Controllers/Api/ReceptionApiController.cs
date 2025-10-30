@@ -51,7 +51,7 @@ namespace ClinicApp.Controllers.Api
         /// جستجو یا ایجاد بیمار
         /// POST: /Api/ReceptionApi/PatientLookup
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("patient/lookup-or-create")]
+        [HttpPost, Route("patient/lookup-or-create")]
         public async Task<ActionResult> PatientLookup(PatientLookupRequest request)
         {
             try
@@ -145,7 +145,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// ایجاد پیش‌نویس پذیرش
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("draft/create")]
+        [HttpPost, Route("draft/create")]
         public async Task<ActionResult> CreateDraft(CreateDraftRequest request)
         {
             try
@@ -165,7 +165,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// افزودن آیتم به پیش‌نویس
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("item/add")]
+        [HttpPost, Route("item/add")]
         public async Task<ActionResult> AddItem(AddItemRequest request)
         {
             try
@@ -191,7 +191,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// حذف آیتم از پیش‌نویس
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("item/remove")]
+        [HttpPost, Route("item/remove")]
         public async Task<ActionResult> RemoveItem(RemoveItemRequest request)
         {
             try
@@ -211,7 +211,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// تنظیم بیمه‌های پیش‌نویس
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("insurances/set")]
+        [HttpPost, Route("insurances/set")]
         public async Task<ActionResult> SetInsurances(SetInsurancesRequest request)
         {
             try
@@ -237,7 +237,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// نهایی‌سازی با POS
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("finalize/pos")]
+        [HttpPost, Route("finalize/pos")]
         public async Task<ActionResult> FinalizeWithPos(FinalizePosRequest request)
         {
             try
@@ -271,7 +271,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// نهایی‌سازی با نقدی
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("finalize/cash")]
+        [HttpPost, Route("finalize/cash")]
         public async Task<ActionResult> FinalizeWithCash(FinalizeCashRequest request)
         {
             try
@@ -302,7 +302,7 @@ namespace ClinicApp.Controllers.Api
         /// <summary>
         /// به‌روزرسانی پیش‌نویس پذیرش
         /// </summary>
-        [HttpPost, ValidateAntiForgeryToken, Route("draft/update")]
+        [HttpPost, Route("draft/update")]
         public async Task<ActionResult> DraftUpdate(ClinicApp.Dtos.Reception.UpdateDraftRequest request)
         {
             try

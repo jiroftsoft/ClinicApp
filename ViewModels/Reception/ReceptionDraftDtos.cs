@@ -9,10 +9,10 @@ namespace ClinicApp.ViewModels.Reception
     
     public class CreateDraftRequest
     {
-        public int ClinicId { get; set; }
-        public int DepartmentId { get; set; }
-        public int DoctorId { get; set; }
-        public int PatientId { get; set; }
+        public int? ClinicId { get; set; }
+        public int? DepartmentId { get; set; }
+        public int? DoctorId { get; set; }
+        public int? PatientId { get; set; }
     }
 
     public class CreateDraftResponse

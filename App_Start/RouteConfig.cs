@@ -15,6 +15,29 @@ namespace ClinicApp
             
             // Enable Attribute Routing
             routes.MapMvcAttributeRoutes();
+            // Explicit MVC route for v1 reception API (defensive against attribute routing issues)
+            routes.MapRoute(
+                name: "ReceptionApiV1",
+                url: "api/v1/reception/{action}",
+                defaults: new { controller = "ReceptionApi", action = "Index", area = "" },
+                namespaces: new[] { "ClinicApp.Controllers.Api" }
+            );
+
+            // Specific routes for dashed paths that don't map to action names directly
+            routes.MapRoute(
+                name: "ReceptionApiV1_DraftCreate",
+                url: "api/v1/reception/draft/create",
+                defaults: new { controller = "ReceptionApi", action = "CreateDraft", area = "" },
+                constraints: new { httpMethod = new HttpMethodConstraint("POST") },
+                namespaces: new[] { "ClinicApp.Controllers.Api" }
+            );
+            routes.MapRoute(
+                name: "ReceptionApiV1_PatientLookupOrCreate",
+                url: "api/v1/reception/patient/lookup-or-create",
+                defaults: new { controller = "ReceptionApi", action = "PatientLookup", area = "" },
+                constraints: new { httpMethod = new HttpMethodConstraint("POST") },
+                namespaces: new[] { "ClinicApp.Controllers.Api" }
+            );
             // Legacy API route for MVC controllers under ClinicApp.Controllers.Api
             routes.MapRoute(
                 name: "ReceptionApiLegacy",

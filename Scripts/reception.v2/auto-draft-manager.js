@@ -11,9 +11,13 @@
     
     const patientId = $("#Patient_PatientId").val();
     const nationalCode = $("#Patient_NationalCode").val();
+    const clinicId = $("#ClinicId").val();
+    const departmentId = $("#DepartmentId").val();
+    const doctorId = $("#DoctorId").val();
     
-    if (!patientId && !nationalCode) {
-      console.log('🏥 V2: No patient data yet, skipping auto-draft creation');
+    // Require minimal data to avoid server 400/500: patient + clinic + department + doctor
+    if ((!patientId && !nationalCode) || !clinicId || !departmentId || !doctorId) {
+      console.log('🏥 V2: Missing required fields for draft (patient/clinic/department/doctor). Skipping.');
       return Promise.resolve(null);
     }
     
@@ -22,9 +26,9 @@
     const payload = {
       patientId: patientId || null,
       nationalCode: nationalCode || null,
-      clinicId: $("#ClinicId").val() || 1, // Default clinic
-      departmentId: $("#DepartmentId").val() || null,
-      doctorId: $("#DoctorId").val() || null,
+      clinicId: clinicId,
+      departmentId: departmentId,
+      doctorId: doctorId,
       financialYear: (window.ReceptionBootstrap && window.ReceptionBootstrap.FinancialYear) || 1404
     };
     
