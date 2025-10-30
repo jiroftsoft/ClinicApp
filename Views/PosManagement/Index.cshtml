@@ -1,0 +1,243 @@
+@{
+    ViewBag.Title = "مدیریت دستگاه‌های پوز";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="container-fluid" dir="rtl">
+  @Html.AntiForgeryToken()
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="m-0">مدیریت دستگاه‌های پوز</h5>
+    <div class="d-flex gap-2">
+      <a class="btn btn-primary" href="@Url.Action("CreateTerminal","PosManagement")">ایجاد ترمینال</a>
+      <button id="btnRefresh" class="btn btn-outline-secondary">بروزرسانی</button>
+      <a class="btn btn-outline-secondary" href="/ReceptionV2/Index">بازگشت به پذیرش</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped m-0" id="pos-table">
+          <thead>
+            <tr>
+              <th>عنوان</th>
+              <th>سریال</th>
+              <th>Provider</th>
+              <th>Protocol</th>
+              <th>Active</th>
+              <th>Default</th>
+              <th style="width:280px">اقدامات</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function anti(){ var t = document.querySelector('input[name="__RequestVerificationToken"]'); return t? t.value : ''; }
+  function load(){
+    var url = '@Url.Action("GetTerminals","PosManagement")';
+    fetch(url, { credentials:'same-origin' })
+      .then(r=>r.json())
+      .then(function(res){
+        var ok = res && (res.Success === true || res.success === true);
+        if(!ok){ console.error('get terminals', res); return; }
+        var data = (res.Data && res.Data.terminals) || (res.data && res.data.terminals) || [];
+        var tb = document.querySelector('#pos-table tbody');
+        tb.innerHTML = '';
+        data.forEach(function(t){
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td>'+ (t.Name||'') +'</td>'+
+                         '<td>'+ (t.SerialNumber||'') +'</td>'+
+                         '<td>'+ (t.ProviderType||'') +'</td>'+
+                         '<td>'+ (t.Protocol||'') +'</td>'+
+                         '<td>'+ (t.IsActive? '✔':'✖') +'</td>'+
+                         '<td>'+ (t.IsDefault? '✔':'') +'</td>'+
+                         '<td class="d-flex gap-1 flex-wrap">'+
+                           '<a class="btn btn-sm btn-outline-primary" href="@Url.Action("TerminalDetails","PosManagement")' + '?id='+ t.Id +'">جزئیات</a>'+
+                           '<a class="btn btn-sm btn-outline-secondary" href="@Url.Action("EditTerminal","PosManagement")' + '?id='+ t.Id +'">ویرایش</a>'+
+                         '</td>';
+          tb.appendChild(tr);
+        });
+      })
+      .catch(function(e){ console.error('load terminals', e); });
+  }
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.addEventListener('DOMContentLoaded', load);
+})();
+</script>
+
+@{
+    ViewBag.Title = "مدیریت دستگاه‌های پوز";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+<div class="container-fluid" dir="rtl">
+  @Html.AntiForgeryToken()
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h5 class="m-0">مدیریت دستگاه‌های پوز</h5>
+    <div class="d-flex gap-2">
+      <a class="btn btn-primary" href="@Url.Action("CreateTerminal","PosManagement")">ایجاد ترمینال</a>
+      <button id="btnRefresh" class="btn btn-outline-secondary">بروزرسانی</button>
+      <a class="btn btn-outline-secondary" href="/ReceptionV2/Index">بازگشت به پذیرش</a>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped m-0" id="pos-table">
+          <thead>
+            <tr>
+              <th>عنوان</th>
+              <th>ترمینال</th>
+              <th>پذیرنده</th>
+              <th>Provider</th>
+              <th>Protocol</th>
+              <th>Active</th>
+              <th>Default</th>
+              <th style="width:280px">اقدامات</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  function anti(){ var t = document.querySelector('input[name="__RequestVerificationToken"]'); return t? t.value : ''; }
+  function load(){
+    var url = '@Url.Action("GetTerminals","PosManagement")';
+    fetch(url, { credentials:'same-origin' })
+      .then(r=>r.json())
+      .then(function(res){
+        var ok = res && (res.Success === true || res.success === true);
+        if(!ok){ console.error('get terminals', res); return; }
+        var data = (res.Data && res.Data.terminals) || (res.data && res.data.terminals) || [];
+        var tb = document.querySelector('#pos-table tbody');
+        tb.innerHTML = '';
+        data.forEach(function(t){
+          var tr = document.createElement('tr');
+          tr.innerHTML = '<td>'+ (t.Name||'') +'</td>'+
+                         '<td>'+ (t.SerialNumber||'') +'</td>'+
+                         '<td>'+ '' +'</td>'+
+                         '<td>'+ (t.ProviderType||'') +'</td>'+
+                         '<td>'+ (t.Protocol||'') +'</td>'+
+                         '<td>'+ (t.IsActive? '✔':'✖') +'</td>'+
+                         '<td>'+ (t.IsDefault? '✔':'') +'</td>'+
+                         '<td class="d-flex gap-1 flex-wrap">'+
+                           '<a class="btn btn-sm btn-outline-primary" href="@Url.Action("TerminalDetails","PosManagement")' + '?id='+ t.Id +'">جزئیات</a>'+
+                           '<a class="btn btn-sm btn-outline-secondary" href="@Url.Action("EditTerminal","PosManagement")' + '?id='+ t.Id +'">ویرایش</a>'+
+                           '<button data-id="'+t.Id+'" data-active="'+(!t.IsActive)+'" class="btn btn-sm btn-outline-warning btn-toggle-active">'+ (t.IsActive? 'غیرفعال' : 'فعال') +'</button>'+
+                           '<button data-id="'+t.Id+'" class="btn btn-sm btn-outline-success btn-set-default">پیش‌فرض</button>'+
+                           '<button data-id="'+t.Id+'" data-conn="" class="btn btn-sm btn-outline-dark btn-network">شبکه/پروتکل</button>'+
+                         '</td>';
+          tb.appendChild(tr);
+        });
+      })
+      .catch(function(e){ console.error('load terminals', e); });
+  }
+  document.getElementById('btnRefresh').addEventListener('click', load);
+  document.addEventListener('DOMContentLoaded', load);
+
+  // Toggle Active
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest('.btn-toggle-active');
+    if(!btn) return;
+    var id = btn.getAttribute('data-id');
+    var to = btn.getAttribute('data-active') === 'true';
+    if(!confirm('آیا از تغییر وضعیت مطمئن هستید؟')) return;
+    fetch('/api/v1/pos/terminals/'+id+'/active?isActive='+to, {
+      method:'POST', headers:{ 'RequestVerificationToken': anti() }
+    }).then(r=>r.json()).then(function(res){
+      if(!(res && (res.Success||res.success))) throw res;
+      load();
+    }).catch(function(e){ console.error('toggle active', e); alert('خطا در تغییر وضعیت'); });
+  });
+
+  // Set Default
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest('.btn-set-default');
+    if(!btn) return;
+    var id = btn.getAttribute('data-id');
+    if(!confirm('این ترمینال به عنوان پیش‌فرض تنظیم شود؟')) return;
+    fetch('/api/v1/pos/terminals/'+id+'/default', {
+      method:'POST', headers:{ 'RequestVerificationToken': anti() }
+    }).then(r=>r.json()).then(function(res){
+      if(!(res && (res.Success||res.success))) throw res;
+      load();
+    }).catch(function(e){ console.error('set default', e); alert('خطا در تنظیم پیش‌فرض'); });
+  });
+
+  // Network/Protocol modal open
+  document.addEventListener('click', function(ev){
+    var btn = ev.target.closest('.btn-network');
+    if(!btn) return;
+    var id = btn.getAttribute('data-id');
+    var modal = new bootstrap.Modal(document.getElementById('netModal'));
+    document.getElementById('net-id').value = id;
+    document.getElementById('net-conn').value = '';
+    document.getElementById('net-protocol').value = 'Tcp';
+    document.getElementById('net-mac').value = '';
+    modal.show();
+  });
+
+  // Network/Protocol save
+  document.getElementById('net-save').addEventListener('click', function(){
+    var id = document.getElementById('net-id').value;
+    var conn = document.getElementById('net-conn').value; // e.g. 192.168.1.10:5000
+    var mac = document.getElementById('net-mac').value || null;
+    var protocol = document.getElementById('net-protocol').value;
+    var body = { id: parseInt(id,10), connectionString: conn, protocol: protocol };
+    fetch('/api/v1/pos/terminals/'+id, {
+      method:'PUT',
+      headers:{ 'RequestVerificationToken': anti(), 'Content-Type':'application/json; charset=utf-8' },
+      body: JSON.stringify(body)
+    }).then(r=>r.json()).then(function(res){
+      if(!(res && (res.Success||res.success))) throw res;
+      bootstrap.Modal.getInstance(document.getElementById('netModal')).hide();
+      load();
+    }).catch(function(e){ console.error('update network', e); alert('خطا در بروزرسانی تنظیمات'); });
+  });
+})();
+</script>
+
+<!-- Network/Protocol Modal -->
+<div class="modal fade" id="netModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">تنظیمات شبکه/پروتکل</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="net-id" />
+        <div class="mb-2">
+          <label class="form-label">ConnectionString (IP:Port)</label>
+          <input class="form-control" id="net-conn" placeholder="192.168.1.10:5000" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">MAC Address (اختیاری)</label>
+          <input class="form-control" id="net-mac" placeholder="AA:BB:CC:DD:EE:FF" />
+        </div>
+        <div class="mb-2">
+          <label class="form-label">Protocol</label>
+          <select class="form-select" id="net-protocol">
+            <option value="Tcp">TCP/IP</option>
+            <option value="Serial">Serial</option>
+            <option value="Api">API</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">انصراف</button>
+        <button type="button" class="btn btn-primary" id="net-save">ذخیره</button>
+      </div>
+    </div>
+  </div>
+ </div>

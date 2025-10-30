@@ -552,6 +552,20 @@ namespace ClinicApp
                 container.RegisterType<IValidator<ViewModels.Insurance.Supplementary.SupplementaryCalculationResult>, 
                     ClinicApp.Validators.Insurance.SupplementaryCalculationResultValidator>(new PerRequestLifetimeManager());
 
+                // Register POS Validators
+                container.RegisterType<IValidator<ViewModels.Payment.POS.PosTerminalCreateViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.POS.PosTerminalCreateViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.POS.PosTerminalEditViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.POS.PosTerminalEditViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.POS.PosTerminalSearchViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.POS.PosTerminalSearchViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.POS.CashSessionStartViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.POS.CashSessionStartViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.POS.CashSessionEndViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.POS.CashSessionEndViewModelValidator>(new PerRequestLifetimeManager());
+                container.RegisterType<IValidator<ViewModels.Payment.POS.CashSessionSearchViewModel>, 
+                    ClinicApp.ViewModels.Validators.Payment.POS.CashSessionSearchViewModelValidator>(new PerRequestLifetimeManager());
+
 
                 // طبق DESIGN_PRINCIPLES_CONTRACT از AutoMapper استفاده نمی‌کنیم
                 // از Factory Method Pattern استفاده می‌کنیم

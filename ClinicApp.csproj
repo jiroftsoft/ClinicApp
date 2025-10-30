@@ -4571,6 +4571,7 @@
     <Content Include="Views\ReceptionV2\Partials\_Totals.cshtml" />
     <Content Include="Views\ReceptionV2\Print.cshtml" />
     <Content Include="Views\Shared\_PrintLayout.cshtml" />
+    <Content Include="Views\PosManagement\Index.cshtml" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="App_Data\Logs\" />
@@ -4579,6 +4580,7 @@
     <Folder Include="Models\Validation\" />
     <Folder Include="Models\ValueObjects\" />
     <Folder Include="SQL\" />
+    <Folder Include="Views\Payment\POS\" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Content\bootstrap.rtl.min.css.map" />

@@ -3,12 +3,14 @@
   <div class="card-header">بیمه</div>
   <div class="card-body row g-2 align-items-end">
     <div class="col-md-6">
-      <label class="form-label">بیمه پایه</label>
-      <select id="BasePlanId" class="form-select"></select>
+      @Html.LabelFor(m => m.BasePlanId, new { @class = "form-label" })
+      @Html.DropDownListFor(m => m.BasePlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "BasePlanId" })
+      @Html.ValidationMessageFor(m => m.BasePlanId, null, new { @class = "text-danger small" })
     </div>
     <div class="col-md-6">
-      <label class="form-label">بیمه تکمیلی</label>
-      <select id="SuppPlanId" class="form-select"></select>
+      @Html.LabelFor(m => m.SupplementaryPlanId, new { @class = "form-label" })
+      @Html.DropDownListFor(m => m.SupplementaryPlanId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "SuppPlanId" })
+      @Html.ValidationMessageFor(m => m.SupplementaryPlanId, null, new { @class = "text-danger small" })
     </div>
     <div class="col-12">
       <button id="BtnSetInsurances" class="btn btn-outline-primary">ثبت/بازمحاسبه</button>

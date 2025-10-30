@@ -446,9 +446,18 @@ namespace ClinicApp.Services.Payment.POS
             throw new NotImplementedException("ValidateCashSessionAsync will be implemented in next part");
         }
 
-        public Task<ServiceResult<IEnumerable<PosTerminal>>> GetTerminalsAsync(int pageNumber = 1, int pageSize = 50)
+        public async Task<ServiceResult<IEnumerable<PosTerminal>>> GetTerminalsAsync(int pageNumber = 1, int pageSize = 50)
         {
-            return _posManagementServiceImplementation.GetTerminalsAsync(pageNumber, pageSize);
+            try
+            {
+                var items = await _posTerminalRepository.GetAllAsync(pageNumber, pageSize);
+                return ServiceResult<IEnumerable<PosTerminal>>.Successful(items);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error getting POS terminals list");
+                return ServiceResult<IEnumerable<PosTerminal>>.Failed("خطا در دریافت ترمینال‌ها");
+            }
         }
 
         public Task<ServiceResult<PosTerminal>> GetTerminalByIdAsync(int terminalId)
@@ -476,9 +485,18 @@ namespace ClinicApp.Services.Payment.POS
             return _posManagementServiceImplementation.GetSessionByIdAsync(sessionId);
         }
 
-        public Task<ServiceResult<IEnumerable<CashSession>>> GetActiveSessionsAsync()
+        public async Task<ServiceResult<IEnumerable<CashSession>>> GetActiveSessionsAsync()
         {
-            return _posManagementServiceImplementation.GetActiveSessionsAsync();
+            try
+            {
+                var sessions = await _cashSessionRepository.GetActiveSessionsAsync();
+                return ServiceResult<IEnumerable<CashSession>>.Successful(sessions);
+            }
+            catch (Exception ex)
+            {
+                _logger.Error(ex, "Error getting active cash sessions");
+                return ServiceResult<IEnumerable<CashSession>>.Failed("خطا در دریافت جلسات فعال");
+            }
         }
 
         public Task<ServiceResult<PosStatistics>> GetPosStatisticsAsync(DateTime startDate, DateTime endDate)

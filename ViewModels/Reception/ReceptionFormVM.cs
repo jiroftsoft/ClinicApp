@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 namespace ClinicApp.ViewModels.Reception
 {
@@ -15,15 +16,31 @@ namespace ClinicApp.ViewModels.Reception
     }
 
     public class PatientSectionVM { 
+        [Display(Name = "کدملی")]
+        [Required(ErrorMessage = "کدملی الزامی است")]
+        [RegularExpression(@"^\d{10}$", ErrorMessage = "کدملی باید 10 رقم باشد")]
         public string NationalCode { get; set; } 
+
         public int? PatientId { get; set; } 
+
+        [Display(Name = "نام و نام خانوادگی")]
+        [Required(ErrorMessage = "نام و نام خانوادگی الزامی است")]
+        [StringLength(100, ErrorMessage = "حداکثر 100 کاراکتر")]
         public string FullName { get; set; } 
+
+        [Display(Name = "موبایل")]
+        [Required(ErrorMessage = "موبایل الزامی است")]
+        [RegularExpression(@"^0\d{10}$", ErrorMessage = "شماره موبایل نامعتبر است")]
         public string Mobile { get; set; } 
     }
     
     public class InsuranceSectionVM { 
+        [Display(Name = "بیمه پایه")]
         public int? BasePlanId { get; set; } 
+
+        [Display(Name = "بیمه تکمیلی")]
         public int? SupplementaryPlanId { get; set; } 
+
         public string BasePlanTitle { get; set; } 
         public string SuppPlanTitle { get; set; } 
     }
@@ -35,6 +52,14 @@ namespace ClinicApp.ViewModels.Reception
     }
     
     public class ServicePickerSectionVM { 
+        [Display(Name = "خدمت")]
+        [Required(ErrorMessage = "انتخاب خدمت الزامی است")]
+        public int? ServiceId { get; set; }
+
+        [Display(Name = "تعداد")]
+        [Range(1, int.MaxValue, ErrorMessage = "تعداد باید حداقل 1 باشد")]
+        public int Quantity { get; set; } = 1;
+
         public List<ReceptionItemVM> SelectedItems { get; set; } = new List<ReceptionItemVM>(); 
     }
     
@@ -55,12 +80,27 @@ namespace ClinicApp.ViewModels.Reception
     }
     
     public class PaymentSectionVM { 
+        [Display(Name = "روش پرداخت")]
+        [Required]
         public string Method { get; set; } = "POS"; 
+
+        [Display(Name = "مبلغ (ریال)")]
+        [Range(0, double.MaxValue, ErrorMessage = "مبلغ نامعتبر است")]
         public decimal AmountIRR { get; set; } 
+
+        [Display(Name = "RRN")]
         public string RRN { get; set; } 
+
+        [Display(Name = "Trace")]
         public string TraceNo { get; set; } 
+
+        [Display(Name = "Terminal")]
         public string TerminalId { get; set; } 
+
+        [Display(Name = "4 رقم کارت")]
+        [RegularExpression(@"^\d{4}$", ErrorMessage = "۴ رقم کارت نامعتبر است")]
         public string CardLast4 { get; set; } 
+
         public int? CashSessionId { get; set; } 
     }
     

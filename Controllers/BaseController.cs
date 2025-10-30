@@ -103,7 +103,7 @@ namespace ClinicApp.Controllers
                 errors = errors
             };
 
-            return Json(response);
+            return Json(response, JsonRequestBehavior.AllowGet);
         }
 
         /// <summary>

@@ -3,12 +3,14 @@
   <div class="card-header">انتخاب خدمت</div>
   <div class="card-body row g-2 align-items-end">
     <div class="col-md-8">
-      <label class="form-label">خدمت</label>
-      <select id="ServiceId" class="form-select"></select>
+      @Html.LabelFor(m => m.ServiceId, new { @class = "form-label" })
+      @Html.DropDownListFor(m => m.ServiceId, new SelectList(Enumerable.Empty<SelectListItem>(), "Value", "Text"), new { @class = "form-select", id = "ServiceId" })
+      @Html.ValidationMessageFor(m => m.ServiceId, null, new { @class = "text-danger small" })
     </div>
     <div class="col-md-2">
-      <label class="form-label">تعداد</label>
-      <input id="Quantity" class="form-control" value="1" />
+      @Html.LabelFor(m => m.Quantity, new { @class = "form-label" })
+      @Html.TextBoxFor(m => m.Quantity, new { @class = "form-control", id = "Quantity" })
+      @Html.ValidationMessageFor(m => m.Quantity, null, new { @class = "text-danger small" })
     </div>
     <div class="col-md-2">
       <button id="BtnAddItem" class="btn btn-success w-100">افزودن</button>

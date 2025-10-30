@@ -18,7 +18,6 @@ namespace ClinicApp.Controllers.Payment.POS
     /// <summary>
     /// کنترلر مدیریت ترمینال‌های POS و جلسات نقدی
     /// </summary>
-    [Authorize(Roles = "Admin,Accountant")]
     public class PosManagementController : BaseController
     {
         private readonly IPosManagementService _posManagementService;
